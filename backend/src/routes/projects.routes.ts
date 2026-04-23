@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, or, inArray, type SQL } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { projects } from "../db/schema/projects.js";
 import { proposals } from "../db/schema/proposals.js";
@@ -7,7 +7,7 @@ import { moas } from "../db/schema/moas.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
-import { PROPOSAL_STATUS, PROJECT_STATUS } from "../lib/types.js";
+import { PROPOSAL_STATUS, PROJECT_STATUS, ROLE_NAMES } from "../lib/types.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -89,13 +89,39 @@ const listRoute = createRoute({
 });
 
 app.openapi(listRoute, async (c) => {
+  const user = c.get("user");
   const { page, limit } = c.req.valid("query");
   const offset = (page - 1) * limit;
+
+  const proposalConditions: SQL[] = [isNull(proposals.archivedAt)];
+  
+  if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
+    if (user.departmentId) {
+      proposalConditions.push(
+        or(
+          eq(proposals.projectLeaderId, user.userId),
+          eq(proposals.departmentId, user.departmentId)
+        )
+      );
+    } else {
+      proposalConditions.push(
+        or(
+          eq(proposals.projectLeaderId, user.userId),
+          eq(proposals.campusId, user.campusId)
+        )
+      );
+    }
+  }
+
+  const allowedProposals = db
+    .select({ proposalId: proposals.proposalId })
+    .from(proposals)
+    .where(and(...proposalConditions));
 
   const rows = await db
     .select()
     .from(projects)
-    .where(isNull(projects.archivedAt))
+    .where(and(isNull(projects.archivedAt), inArray(projects.proposalId, allowedProposals)))
     .limit(limit)
     .offset(offset);
 

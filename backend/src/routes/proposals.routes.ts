@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, and, isNull, desc } from "drizzle-orm";
+import { eq, and, isNull, desc, or, type SQL } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { proposals } from "../db/schema/proposals.js";
 import { proposalDepartments } from "../db/schema/proposal-departments.js";
@@ -129,13 +129,34 @@ const listRoute = createRoute({
 });
 
 app.openapi(listRoute, async (c) => {
+  const user = c.get("user");
   const { page, limit } = c.req.valid("query");
   const offset = (page - 1) * limit;
+
+  const whereConditions: SQL[] = [isNull(proposals.archivedAt)];
+  
+  if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
+    if (user.departmentId) {
+      whereConditions.push(
+        or(
+          eq(proposals.projectLeaderId, user.userId),
+          eq(proposals.departmentId, user.departmentId)
+        )
+      );
+    } else {
+      whereConditions.push(
+        or(
+          eq(proposals.projectLeaderId, user.userId),
+          eq(proposals.campusId, user.campusId)
+        )
+      );
+    }
+  }
 
   const rows = await db
     .select()
     .from(proposals)
-    .where(isNull(proposals.archivedAt))
+    .where(and(...whereConditions))
     .orderBy(desc(proposals.createdAt))
     .limit(limit)
     .offset(offset);
@@ -171,12 +192,33 @@ const getRoute = createRoute({
 });
 
 app.openapi(getRoute, async (c) => {
+  const user = c.get("user");
   const { id } = c.req.valid("param");
+
+  const whereConditions: SQL[] = [eq(proposals.proposalId, id), isNull(proposals.archivedAt)];
+
+  if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
+    if (user.departmentId) {
+      whereConditions.push(
+        or(
+          eq(proposals.projectLeaderId, user.userId),
+          eq(proposals.departmentId, user.departmentId)
+        )
+      );
+    } else {
+      whereConditions.push(
+        or(
+          eq(proposals.projectLeaderId, user.userId),
+          eq(proposals.campusId, user.campusId)
+        )
+      );
+    }
+  }
 
   const [row] = await db
     .select()
     .from(proposals)
-    .where(and(eq(proposals.proposalId, id), isNull(proposals.archivedAt)))
+    .where(and(...whereConditions))
     .limit(1);
 
   if (!row) {
