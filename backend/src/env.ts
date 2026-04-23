@@ -3,6 +3,9 @@ import "dotenv/config";
 
 const envSchema = z.object({
   DATABASE_URL: z.string().url(),
+  DB_POOL_MAX: z.coerce.number().int().positive().default(20),
+  DB_IDLE_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
+  DB_CONNECTION_TIMEOUT_MS: z.coerce.number().int().positive().default(5_000),
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),

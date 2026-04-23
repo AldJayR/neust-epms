@@ -49,6 +49,15 @@ const ParamId = z.object({
   id: z.string().openapi({ param: { name: "id", in: "path" } }),
 });
 
+const PaginationQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1).openapi({
+    param: { name: "page", in: "query" },
+  }),
+  limit: z.coerce.number().int().min(1).max(100).default(50).openapi({
+    param: { name: "limit", in: "query" },
+  }),
+});
+
 app.use("/*", authMiddleware);
 
 // ── GET /reports ──
@@ -58,6 +67,7 @@ const listRoute = createRoute({
   tags: ["Reports"],
   summary: "List all non-archived progress reports",
   security: [{ Bearer: [] }],
+  request: { query: PaginationQuery },
   responses: {
     200: {
       content: { "application/json": { schema: ReportListSchema } },
@@ -67,11 +77,16 @@ const listRoute = createRoute({
 });
 
 app.openapi(listRoute, async (c) => {
+  const { page, limit } = c.req.valid("query");
+  const offset = (page - 1) * limit;
+
   const rows = await db
     .select()
     .from(progressReports)
     .where(isNull(progressReports.archivedAt))
-    .orderBy(desc(progressReports.submittedAt));
+    .orderBy(desc(progressReports.submittedAt))
+    .limit(limit)
+    .offset(offset);
 
   const items = rows.map((r) => ({
     ...r,

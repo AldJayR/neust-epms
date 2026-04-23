@@ -37,6 +37,15 @@ const ErrorSchema = z
   })
   .openapi("SettingError");
 
+const PaginationQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1).openapi({
+    param: { name: "page", in: "query" },
+  }),
+  limit: z.coerce.number().int().min(1).max(100).default(50).openapi({
+    param: { name: "limit", in: "query" },
+  }),
+});
+
 app.use("/*", authMiddleware);
 
 // ── GET /settings ──
@@ -46,6 +55,7 @@ const listRoute = createRoute({
   tags: ["Settings"],
   summary: "List all system settings",
   security: [{ Bearer: [] }],
+  request: { query: PaginationQuery },
   responses: {
     200: {
       content: { "application/json": { schema: SettingListSchema } },
@@ -55,7 +65,15 @@ const listRoute = createRoute({
 });
 
 app.openapi(listRoute, async (c) => {
-  const rows = await db.select().from(systemSettings);
+  const { page, limit } = c.req.valid("query");
+  const offset = (page - 1) * limit;
+
+  const rows = await db
+    .select()
+    .from(systemSettings)
+    .orderBy(systemSettings.settingKey)
+    .limit(limit)
+    .offset(offset);
   const items = rows.map((r) => ({
     ...r,
     updatedAt: r.updatedAt.toISOString(),

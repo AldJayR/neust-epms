@@ -63,6 +63,15 @@ const ParamId = z.object({
   id: z.string().openapi({ param: { name: "id", in: "path" } }),
 });
 
+const PaginationQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1).openapi({
+    param: { name: "page", in: "query" },
+  }),
+  limit: z.coerce.number().int().min(1).max(100).default(50).openapi({
+    param: { name: "limit", in: "query" },
+  }),
+});
+
 app.use("/*", authMiddleware);
 
 // ── GET /moas ──
@@ -72,6 +81,7 @@ const listRoute = createRoute({
   tags: ["MOAs"],
   summary: "List all non-archived MOAs",
   security: [{ Bearer: [] }],
+  request: { query: PaginationQuery },
   responses: {
     200: {
       content: { "application/json": { schema: MoaListSchema } },
@@ -81,11 +91,16 @@ const listRoute = createRoute({
 });
 
 app.openapi(listRoute, async (c) => {
+  const { page, limit } = c.req.valid("query");
+  const offset = (page - 1) * limit;
+
   const rows = await db
     .select()
     .from(moas)
     .where(isNull(moas.archivedAt))
-    .orderBy(desc(moas.validUntil));
+    .orderBy(desc(moas.validUntil))
+    .limit(limit)
+    .offset(offset);
 
   const items = rows.map((r) => ({
     ...r,

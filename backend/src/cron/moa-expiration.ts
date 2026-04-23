@@ -19,29 +19,26 @@ export function startMoaExpirationCron(): void {
     try {
       const now = new Date();
 
-      // Find non-archived, non-expired MOAs whose validUntil is in the past
+      // Mark expired MOAs in one statement and return changed rows for notification.
       const expiredMoas = await db
-        .select()
-        .from(moas)
+        .update(moas)
+        .set({ isExpired: true, updatedAt: now })
         .where(
           and(
             eq(moas.isExpired, false),
             lte(moas.validUntil, now),
             isNull(moas.archivedAt),
           ),
-        );
+        )
+        .returning({
+          moaId: moas.moaId,
+          partnerName: moas.partnerName,
+          validUntil: moas.validUntil,
+        });
 
       if (expiredMoas.length === 0) {
         console.log("[CRON] No newly expired MOAs found.");
         return;
-      }
-
-      // Mark them as expired
-      for (const moa of expiredMoas) {
-        await db
-          .update(moas)
-          .set({ isExpired: true, updatedAt: now })
-          .where(eq(moas.moaId, moa.moaId));
       }
 
       console.log(

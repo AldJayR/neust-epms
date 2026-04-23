@@ -62,6 +62,15 @@ const DocumentParam = z.object({
   }),
 });
 
+const PaginationQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1).openapi({
+    param: { name: "page", in: "query" },
+  }),
+  limit: z.coerce.number().int().min(1).max(100).default(50).openapi({
+    param: { name: "limit", in: "query" },
+  }),
+});
+
 app.use("/*", authMiddleware);
 
 // ── GET /proposals/:proposalId/documents ──
@@ -71,7 +80,7 @@ const listDocsRoute = createRoute({
   tags: ["Storage"],
   summary: "List all document versions for a proposal (EC-04)",
   security: [{ Bearer: [] }],
-  request: { params: ProposalParam },
+  request: { params: ProposalParam, query: PaginationQuery },
   responses: {
     200: {
       content: { "application/json": { schema: DocumentListSchema } },
@@ -82,12 +91,16 @@ const listDocsRoute = createRoute({
 
 app.openapi(listDocsRoute, async (c) => {
   const { proposalId } = c.req.valid("param");
+  const { page, limit } = c.req.valid("query");
+  const offset = (page - 1) * limit;
 
   const rows = await db
     .select()
     .from(proposalDocuments)
     .where(eq(proposalDocuments.proposalId, proposalId))
-    .orderBy(proposalDocuments.versionNum);
+    .orderBy(proposalDocuments.versionNum)
+    .limit(limit)
+    .offset(offset);
 
   const items = rows.map((r) => ({
     ...r,

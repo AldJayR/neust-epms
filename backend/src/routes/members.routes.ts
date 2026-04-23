@@ -58,6 +58,15 @@ const MemberParam = z.object({
   }),
 });
 
+const PaginationQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1).openapi({
+    param: { name: "page", in: "query" },
+  }),
+  limit: z.coerce.number().int().min(1).max(100).default(50).openapi({
+    param: { name: "limit", in: "query" },
+  }),
+});
+
 app.use("/*", authMiddleware);
 
 // ── GET /proposals/:proposalId/members ──
@@ -67,7 +76,7 @@ const listMembersRoute = createRoute({
   tags: ["Members"],
   summary: "List members of a proposal",
   security: [{ Bearer: [] }],
-  request: { params: ProposalParam },
+  request: { params: ProposalParam, query: PaginationQuery },
   responses: {
     200: {
       content: { "application/json": { schema: MemberListSchema } },
@@ -78,11 +87,16 @@ const listMembersRoute = createRoute({
 
 app.openapi(listMembersRoute, async (c) => {
   const { proposalId } = c.req.valid("param");
+  const { page, limit } = c.req.valid("query");
+  const offset = (page - 1) * limit;
 
   const rows = await db
     .select()
     .from(proposalMembers)
-    .where(eq(proposalMembers.proposalId, proposalId));
+    .where(eq(proposalMembers.proposalId, proposalId))
+    .orderBy(proposalMembers.addedAt)
+    .limit(limit)
+    .offset(offset);
 
   const items = rows.map((r) => ({
     ...r,

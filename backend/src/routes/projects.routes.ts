@@ -61,6 +61,15 @@ const ParamId = z.object({
   id: z.string().openapi({ param: { name: "id", in: "path" } }),
 });
 
+const PaginationQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1).openapi({
+    param: { name: "page", in: "query" },
+  }),
+  limit: z.coerce.number().int().min(1).max(100).default(50).openapi({
+    param: { name: "limit", in: "query" },
+  }),
+});
+
 app.use("/*", authMiddleware);
 
 // ── GET /projects ──
@@ -70,6 +79,7 @@ const listRoute = createRoute({
   tags: ["Projects"],
   summary: "List all non-archived projects",
   security: [{ Bearer: [] }],
+  request: { query: PaginationQuery },
   responses: {
     200: {
       content: { "application/json": { schema: ProjectListSchema } },
@@ -79,10 +89,15 @@ const listRoute = createRoute({
 });
 
 app.openapi(listRoute, async (c) => {
+  const { page, limit } = c.req.valid("query");
+  const offset = (page - 1) * limit;
+
   const rows = await db
     .select()
     .from(projects)
-    .where(isNull(projects.archivedAt));
+    .where(isNull(projects.archivedAt))
+    .limit(limit)
+    .offset(offset);
 
   const items = rows.map((r) => ({
     ...r,
