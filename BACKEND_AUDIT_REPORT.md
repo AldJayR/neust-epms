@@ -10,10 +10,13 @@
 ## Executive Summary
 
 The backend is **well-structured with a solid foundation** but has **critical scalability concerns** that will become problematic as data volume and concurrent user load increases. The codebase demonstrates good practices in authentication, error handling, and API documentation, but lacks caching strategies, lacks query optimization, and has potential N+1 problems that could bottleneck under production load.
+ 
 
 **Overall Assessment:** 6.5/10 for production scalability
 - **Strengths:** Clean architecture, type safety, audit logging, RBAC, structured error handling
 - **Weaknesses:** No caching layer, inefficient queries, synchronous cron execution, hardcoded connection pools, missing pagination defaults
+
+**Recent Work:** Pagination on list endpoints, MOA cron batch update, DB pool configurability, and an in-process LRU cache for auth/profile and settings have been implemented and validated with tests.
 
 ---
 
@@ -794,6 +797,8 @@ const rows = await db.select().from(proposals)
 - projects.routes.ts (GET /projects)
 - All list endpoints
 
+**Status:** Completed — pagination added to major list endpoints and validated in tests.
+
 ---
 
 #### 2. Implement Redis Caching Layer
@@ -819,6 +824,8 @@ await redis.setEx(cacheKey, 3600, JSON.stringify(user)); // 1 hour TTL
 - System settings: 24 hour TTL
 - Role data: 24 hour TTL
 - Invalidate on UPDATE/DELETE
+
+**Status:** Deferred — Redis not installed; implemented an in-process LRU cache for auth/profile and settings as a pragmatic first step.
 
 ---
 
@@ -862,6 +869,8 @@ const pool = new pg.Pool({
 - Development: 5 connections
 - Staging: 10 connections
 - Production: 20-30 connections (depends on user load)
+
+**Status:** Completed — DB pool parameters exposed and wired into `db/client.ts`.
 
 ---
 

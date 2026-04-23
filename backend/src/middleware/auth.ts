@@ -5,6 +5,7 @@ import { env } from "../env.js";
 import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
 import { roles } from "../db/schema/roles.js";
+import { authUserCache, cacheEnabled } from "../lib/cache.js";
 import { ApiError } from "../lib/errors.js";
 import type { AuthUser } from "../lib/types.js";
 
@@ -40,6 +41,16 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
     throw new ApiError(401, "INVALID_TOKEN", "Invalid or expired token");
   }
 
+  const cacheKey = `auth:user:${supabaseUser.id}`;
+  if (cacheEnabled) {
+    const cachedUser = authUserCache.get(cacheKey);
+    if (cachedUser) {
+      c.set("user", cachedUser);
+      await next();
+      return;
+    }
+  }
+
   // Fetch the application user record with role
   const [appUser] = await db
     .select({
@@ -68,14 +79,20 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
     throw new ApiError(403, "USER_INACTIVE", "User account is deactivated");
   }
 
-  c.set("user", {
+  const userContext: AuthUser = {
     userId: appUser.userId,
     email: appUser.email,
     roleId: appUser.roleId,
     roleName: appUser.roleName,
     campusId: appUser.campusId,
     departmentId: appUser.departmentId,
-  });
+  };
+
+  if (cacheEnabled) {
+    authUserCache.set(cacheKey, userContext);
+  }
+
+  c.set("user", userContext);
 
   await next();
 });

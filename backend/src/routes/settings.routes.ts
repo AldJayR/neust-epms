@@ -5,6 +5,11 @@ import { systemSettings } from "../db/schema/system-settings.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
 import { insertAuditLog } from "../lib/audit.js";
+import {
+  cacheEnabled,
+  settingsListCache,
+  type SettingListCacheValue,
+} from "../lib/cache.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
 
@@ -67,6 +72,14 @@ const listRoute = createRoute({
 app.openapi(listRoute, async (c) => {
   const { page, limit } = c.req.valid("query");
   const offset = (page - 1) * limit;
+  const cacheKey = `settings:list:${page}:${limit}`;
+
+  if (cacheEnabled) {
+    const cached = settingsListCache.get(cacheKey);
+    if (cached) {
+      return c.json(cached, 200);
+    }
+  }
 
   const rows = await db
     .select()
@@ -78,7 +91,13 @@ app.openapi(listRoute, async (c) => {
     ...r,
     updatedAt: r.updatedAt.toISOString(),
   }));
-  return c.json({ items }, 200);
+  const payload: SettingListCacheValue = { items };
+
+  if (cacheEnabled) {
+    settingsListCache.set(cacheKey, payload);
+  }
+
+  return c.json(payload, 200);
 });
 
 // ── PUT /settings ──
@@ -145,6 +164,10 @@ app.openapi(upsertRoute, async (c) => {
     tableAffected: "system_settings",
     ipAddress: c.req.header("x-forwarded-for") ?? null,
   });
+
+  if (cacheEnabled) {
+    settingsListCache.clear();
+  }
 
   return c.json(
     { ...result, updatedAt: result.updatedAt.toISOString() },
