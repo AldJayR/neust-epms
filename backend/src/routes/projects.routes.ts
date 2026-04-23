@@ -6,10 +6,11 @@ import { proposals } from "../db/schema/proposals.js";
 import { moas } from "../db/schema/moas.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { insertAuditLog } from "../lib/audit.js";
-import { ApiError } from "../lib/errors.js";
+import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { PROPOSAL_STATUS, PROJECT_STATUS } from "../lib/types.js";
 
 const app = new OpenAPIHono<AuthEnv>();
+installApiErrorHandler(app);
 
 // ── Schemas ──
 const ProjectSchema = z
@@ -32,14 +33,14 @@ const ProjectListSchema = z
 
 const CreateProjectSchema = z
   .object({
-    proposalId: z.string().uuid(),
+    proposalId: z.string(),
     startDate: z.string().datetime().optional(),
     targetEnd: z.string().datetime().optional(),
   })
   .openapi("CreateProject");
 
 const LinkMoaSchema = z
-  .object({ moaId: z.string().uuid() })
+  .object({ moaId: z.string() })
   .openapi("LinkMoa");
 
 const TransitionSchema = z
@@ -57,7 +58,7 @@ const MessageSchema = z
   .openapi("ProjectMessage");
 
 const ParamId = z.object({
-  id: z.string().uuid().openapi({ param: { name: "id", in: "path" } }),
+  id: z.string().openapi({ param: { name: "id", in: "path" } }),
 });
 
 app.use("/*", authMiddleware);

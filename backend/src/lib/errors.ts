@@ -1,5 +1,11 @@
 import { HTTPException } from "hono/http-exception";
 
+type ErrorLikeApp = {
+  onError: (
+    handler: (err: unknown, c: any) => Response | Promise<Response>,
+  ) => void;
+};
+
 /**
  * Structured API error that serializes cleanly to JSON.
  */
@@ -12,6 +18,7 @@ export class ApiError extends HTTPException {
     message: string,
   ) {
     super(status, { message });
+    this.name = "ApiError";
     this.code = code;
   }
 }
@@ -31,4 +38,26 @@ export function createErrorResponse(err: ApiError): ErrorResponse {
       message: err.message,
     },
   };
+}
+
+export function installApiErrorHandler(app: ErrorLikeApp): void {
+  app.onError((err, c) => {
+    if (err instanceof ApiError || err.name === "ApiError") {
+      return c.json(createErrorResponse(err as ApiError), (err as ApiError).status);
+    }
+
+    if (err instanceof HTTPException || err.name === "HTTPException") {
+      const status = "status" in err && typeof err.status === "number" ? err.status : 500;
+      return c.json(
+        { error: { code: "HTTP_ERROR", message: err.message } },
+        status as never,
+      );
+    }
+
+    console.error("Unhandled error:", err);
+    return c.json(
+      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      500,
+    );
+  });
 }

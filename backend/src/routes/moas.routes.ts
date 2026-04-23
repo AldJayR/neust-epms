@@ -5,15 +5,16 @@ import { moas } from "../db/schema/moas.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
 import { insertAuditLog } from "../lib/audit.js";
-import { ApiError } from "../lib/errors.js";
+import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
 
 const app = new OpenAPIHono<AuthEnv>();
+installApiErrorHandler(app);
 
 // ── Schemas ──
 const MoaSchema = z
   .object({
-    moaId: z.string().uuid(),
+    moaId: z.string(),
     partnerName: z.string(),
     partnerType: z.string(),
     storagePath: z.string().nullable(),
@@ -59,7 +60,7 @@ const MessageSchema = z
   .openapi("MoaMessage");
 
 const ParamId = z.object({
-  id: z.string().uuid().openapi({ param: { name: "id", in: "path" } }),
+  id: z.string().openapi({ param: { name: "id", in: "path" } }),
 });
 
 app.use("/*", authMiddleware);

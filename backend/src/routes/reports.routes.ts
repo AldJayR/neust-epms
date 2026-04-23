@@ -5,16 +5,17 @@ import { progressReports } from "../db/schema/progress-reports.js";
 import { projects } from "../db/schema/projects.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { insertAuditLog } from "../lib/audit.js";
-import { ApiError } from "../lib/errors.js";
+import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 
 const app = new OpenAPIHono<AuthEnv>();
+installApiErrorHandler(app);
 
 // ── Schemas ──
 const ReportSchema = z
   .object({
-    reportId: z.string().uuid(),
-    projectId: z.string().uuid(),
-    submittedBy: z.string().uuid(),
+    reportId: z.string(),
+    projectId: z.string(),
+    submittedBy: z.string(),
     storagePath: z.string().nullable(),
     remarks: z.string().nullable(),
     submittedAt: z.string(),
@@ -28,7 +29,7 @@ const ReportListSchema = z
 
 const CreateReportSchema = z
   .object({
-    projectId: z.string().uuid(),
+    projectId: z.string(),
     remarks: z.string().optional(),
     storagePath: z.string().optional(),
   })
@@ -45,7 +46,7 @@ const MessageSchema = z
   .openapi("ReportMessage");
 
 const ParamId = z.object({
-  id: z.string().uuid().openapi({ param: { name: "id", in: "path" } }),
+  id: z.string().openapi({ param: { name: "id", in: "path" } }),
 });
 
 app.use("/*", authMiddleware);

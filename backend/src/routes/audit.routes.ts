@@ -4,9 +4,11 @@ import { db } from "../db/client.js";
 import { auditLogs } from "../db/schema/audit-logs.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
+import { installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
 
 const app = new OpenAPIHono<AuthEnv>();
+installApiErrorHandler(app);
 
 // ── Schemas ──
 const AuditLogSchema = z

@@ -7,16 +7,17 @@ import { proposals } from "../db/schema/proposals.js";
 import { env } from "../env.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { insertAuditLog } from "../lib/audit.js";
-import { ApiError } from "../lib/errors.js";
+import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 
 const app = new OpenAPIHono<AuthEnv>();
+installApiErrorHandler(app);
 
 const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
 // ── Schemas ──
 const UploadResponseSchema = z
   .object({
-    documentId: z.string().uuid(),
+    documentId: z.string(),
     storagePath: z.string(),
     versionNum: z.number(),
   })
@@ -26,8 +27,8 @@ const DocumentListSchema = z
   .object({
     items: z.array(
       z.object({
-        documentId: z.string().uuid(),
-        proposalId: z.string().uuid(),
+        documentId: z.string(),
+        proposalId: z.string(),
         storagePath: z.string(),
         versionNum: z.number(),
         uploadedAt: z.string(),
@@ -47,16 +48,16 @@ const ErrorSchema = z
   .openapi("StorageError");
 
 const ProposalParam = z.object({
-  proposalId: z.string().uuid().openapi({
+  proposalId: z.string().openapi({
     param: { name: "proposalId", in: "path" },
   }),
 });
 
 const DocumentParam = z.object({
-  proposalId: z.string().uuid().openapi({
+  proposalId: z.string().openapi({
     param: { name: "proposalId", in: "path" },
   }),
-  documentId: z.string().uuid().openapi({
+  documentId: z.string().openapi({
     param: { name: "documentId", in: "path" },
   }),
 });

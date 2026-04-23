@@ -8,15 +8,16 @@ import { departments } from "../db/schema/departments.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
 import { insertAuditLog } from "../lib/audit.js";
-import { ApiError } from "../lib/errors.js";
+import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
 
 const app = new OpenAPIHono<AuthEnv>();
+installApiErrorHandler(app);
 
 // ── Schemas ──
 const UserResponseSchema = z
   .object({
-    userId: z.string().uuid(),
+    userId: z.string(),
     employeeId: z.string(),
     firstName: z.string(),
     middleName: z.string().nullable(),
@@ -43,7 +44,7 @@ const CreateUserBodySchema = z
     roleId: z.number().int().positive(),
     campusId: z.number().int().positive(),
     departmentId: z.number().int().positive().optional(),
-    supabaseUserId: z.string().uuid(),
+    supabaseUserId: z.string(),
   })
   .openapi("CreateUserBody");
 

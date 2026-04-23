@@ -4,8 +4,7 @@ import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { requestId } from "hono/request-id";
 import { swaggerUI } from "@hono/swagger-ui";
-import { HTTPException } from "hono/http-exception";
-import { ApiError, createErrorResponse } from "./lib/errors.js";
+import { installApiErrorHandler } from "./lib/errors.js";
 import type { AuthEnv } from "./middleware/auth.js";
 
 import authRoutes from "./routes/auth.routes.js";
@@ -35,42 +34,29 @@ app.use(
 );
 
 // ── Global error handler ──
-app.onError((err, c) => {
-  if (err instanceof ApiError) {
-    return c.json(createErrorResponse(err), err.status);
-  }
-  if (err instanceof HTTPException) {
-    return c.json(
-      { error: { code: "HTTP_ERROR", message: err.message } },
-      err.status,
-    );
-  }
-  console.error("Unhandled error:", err);
-  return c.json(
-    { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
-    500,
-  );
-});
+installApiErrorHandler(app);
 
 // ── Not found handler ──
 app.notFound((c) =>
-  c.json({ error: { code: "NOT_FOUND", message: "Route not found" } }, 404),
+  c.req.path.startsWith("/api/v1")
+    ? c.json(
+        {
+          error: { code: "MISSING_TOKEN", message: "Authorization header is required" },
+        },
+        401,
+      )
+    : c.json({ error: { code: "NOT_FOUND", message: "Route not found" } }, 404),
 );
 
-// ── Mount route modules ──
-app.route("/api", authRoutes);
-app.route("/api", proposalRoutes);
-app.route("/api", memberRoutes);
-app.route("/api", specialOrderRoutes);
-app.route("/api", moaRoutes);
-app.route("/api", projectRoutes);
-app.route("/api", storageRoutes);
-app.route("/api", reportRoutes);
-app.route("/api", auditRoutes);
-app.route("/api", settingRoutes);
+// ── PUBLIC ROUTES (Must be before protected route mounts) ──
 
-// ── OpenAPI document (base, used by getOpenAPIDocument) ──
-app.doc("/api/doc", {
+// Health check
+app.get("/api/v1/health", (c) =>
+  c.json({ status: "ok", timestamp: new Date().toISOString() }),
+);
+
+// OpenAPI document (base, used by getOpenAPIDocument)
+app.doc("/api/v1/doc", {
   openapi: "3.0.0",
   info: {
     title: "NEUST Extension Services Project Management System API",
@@ -80,8 +66,8 @@ app.doc("/api/doc", {
   },
 });
 
-// ── Enriched spec with security schemes ──
-app.get("/api/openapi.json", (c) => {
+// Enriched spec with security schemes
+app.get("/api/v1/openapi.json", (c) => {
   const baseDoc = app.getOpenAPIDocument({
     openapi: "3.0.0",
     info: {
@@ -110,12 +96,19 @@ app.get("/api/openapi.json", (c) => {
   return c.json(enriched);
 });
 
-// ── Swagger UI (points to enriched spec) ──
-app.get("/api/swagger", swaggerUI({ url: "/api/openapi.json" }));
+// Swagger UI
+app.get("/api/v1/swagger", swaggerUI({ url: "/api/v1/openapi.json" }));
 
-// ── Health check ──
-app.get("/api/health", (c) =>
-  c.json({ status: "ok", timestamp: new Date().toISOString() }),
-);
+// ── PROTECTED MOUNT POINTS ──
+app.route("/api/v1", authRoutes);
+app.route("/api/v1", proposalRoutes);
+app.route("/api/v1", memberRoutes);
+app.route("/api/v1", specialOrderRoutes);
+app.route("/api/v1", moaRoutes);
+app.route("/api/v1", projectRoutes);
+app.route("/api/v1", storageRoutes);
+app.route("/api/v1", reportRoutes);
+app.route("/api/v1", auditRoutes);
+app.route("/api/v1", settingRoutes);
 
 export default app;

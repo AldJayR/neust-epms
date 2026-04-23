@@ -6,16 +6,17 @@ import { proposals } from "../db/schema/proposals.js";
 import { users } from "../db/schema/users.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { insertAuditLog } from "../lib/audit.js";
-import { ApiError } from "../lib/errors.js";
+import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 
 const app = new OpenAPIHono<AuthEnv>();
+installApiErrorHandler(app);
 
 // ── Schemas ──
 const MemberSchema = z
   .object({
-    memberId: z.string().uuid(),
-    proposalId: z.string().uuid(),
-    userId: z.string().uuid(),
+    memberId: z.string(),
+    proposalId: z.string(),
+    userId: z.string(),
     projectRole: z.string(),
     addedAt: z.string(),
   })
@@ -27,7 +28,7 @@ const MemberListSchema = z
 
 const AddMemberSchema = z
   .object({
-    userId: z.string().uuid(),
+    userId: z.string(),
     projectRole: z.string().min(1),
   })
   .openapi("AddMember");
@@ -43,16 +44,16 @@ const MessageSchema = z
   .openapi("MemberMessage");
 
 const ProposalParam = z.object({
-  proposalId: z.string().uuid().openapi({
+  proposalId: z.string().openapi({
     param: { name: "proposalId", in: "path" },
   }),
 });
 
 const MemberParam = z.object({
-  proposalId: z.string().uuid().openapi({
+  proposalId: z.string().openapi({
     param: { name: "proposalId", in: "path" },
   }),
-  memberId: z.string().uuid().openapi({
+  memberId: z.string().openapi({
     param: { name: "memberId", in: "path" },
   }),
 });

@@ -8,7 +8,7 @@ import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
 import { proposalReviews } from "../db/schema/proposal-reviews.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { insertAuditLog } from "../lib/audit.js";
-import { ApiError } from "../lib/errors.js";
+import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import {
   ROLE_NAMES,
   PROPOSAL_STATUS,
@@ -17,6 +17,7 @@ import {
 } from "../lib/types.js";
 
 const app = new OpenAPIHono<AuthEnv>();
+installApiErrorHandler(app);
 
 // ── Schemas ──
 const ProposalSchema = z
@@ -86,7 +87,7 @@ const ReviewProposalSchema = z
   .openapi("ReviewProposal");
 
 const ParamId = z.object({
-  id: z.string().uuid().openapi({ param: { name: "id", in: "path" } }),
+  id: z.string().openapi({ param: { name: "id", in: "path" } }),
 });
 
 const ErrorSchema = z

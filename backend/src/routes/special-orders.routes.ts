@@ -5,15 +5,16 @@ import { specialOrders } from "../db/schema/special-orders.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { insertAuditLog } from "../lib/audit.js";
-import { ApiError } from "../lib/errors.js";
+import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 
 const app = new OpenAPIHono<AuthEnv>();
+installApiErrorHandler(app);
 
 // ── Schemas ──
 const SpecialOrderSchema = z
   .object({
-    specialOrderId: z.string().uuid(),
-    memberId: z.string().uuid(),
+    specialOrderId: z.string(),
+    memberId: z.string(),
     soNumber: z.string(),
     storagePath: z.string().nullable(),
     dateIssued: z.string().nullable(),
@@ -30,7 +31,7 @@ const SpecialOrderListSchema = z
 
 const CreateSpecialOrderSchema = z
   .object({
-    memberId: z.string().uuid(),
+    memberId: z.string(),
     soNumber: z.string().min(1),
     dateIssued: z.string().datetime().optional(),
   })
@@ -54,7 +55,7 @@ const MessageSchema = z
   .openapi("SOMessage");
 
 const ParamId = z.object({
-  id: z.string().uuid().openapi({ param: { name: "id", in: "path" } }),
+  id: z.string().openapi({ param: { name: "id", in: "path" } }),
 });
 
 app.use("/*", authMiddleware);
