@@ -1,0 +1,31 @@
+# Backend Todo
+
+- [x] Scaffold backend app and test harness
+  - [x] Initialize Hono with `@hono/node-server` (Node.js runtime)
+  - [x] Set up Drizzle ORM and Postgres connection
+- [x] Define Drizzle schema and constraints
+  - [x] Create USER & RBAC, PROPOSAL, PROJECT, and REPORTING tables
+- [x] Add auth, roles, and request context
+  - [x] Create Supabase JWT auth middleware
+  - [x] Create RBAC authorization middleware
+- [x] Implement proposal review workflow
+  - [x] Create CRUD endpoints (EC-01, EC-04, EC-05)
+- [x] Implement membership and collaboration rules
+  - [x] Strict linking of special orders to members (EC-03)
+- [x] Implement project and MOA lifecycle
+  - [x] Implement logic preventing projects without active MOAs from starting
+  - [x] Setup `node-cron` scheduled background job for MOA expirations and email payloads via Resend
+- [x] Implement Storage Architecture
+  - [x] Create backend proxy endpoints to handle secure file uploads to Supabase
+- [x] Add reporting, audit logs, and settings
+  - [x] Automatically insert `audit_logs` for critical transitions
+- [x] Wire OpenAPI, errors, and observability
+  - [x] Integrate `@hono/zod-openapi` and Swagger UI
+  - [x] Integrate Sentry for exception tracking
+- [x] **Database Normalization & Refinement**
+  - [x] Replace "College" with "Department" throughout the schema and routes
+  - [x] Implement many-to-many relationship for collaborating departments in proposals
+  - [x] Normalize target beneficiaries into sectors and junction table
+  - [x] Implement Sustainable Development Goals (SDG) mapping for proposals
+  - [x] Add fiscal and categorical attributes to proposals (Budgets, Locale, Category, Agenda)
+  - [x] Refactor MOA to use `partner_name`
