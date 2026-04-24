@@ -398,6 +398,92 @@ audit_logs:
 | Endpoint | Auth | DB Queries | Serialization | Total |
 |----------|------|-----------|----------------|-------|
 | `GET /proposals` (empty list) | 20ms | 50ms | 5ms | **75ms** ⚠️ |
+
+---
+
+## 4. Security & Validation Findings (Immediate fixes)
+
+### 4.1 Path parameter validation missing UUID check (HIGH)
+- Issue: Several route param schemas (e.g. `ParamId`, `ProposalParam`, `DocumentParam`) declare `id`/`proposalId` as `z.string()` without `.uuid()` validation. This allows invalid or malicious strings to reach DB layer and causes unexpected 500 errors.
+- Risk: Invalid IDs, accidental DB errors, and unclear 400 vs 500 semantics.
+- Fix: Change param schemas to `z.string().uuid()` (or `z.string().uuid().openapi(...)`) so invalid IDs return 400.
+
+### 4.2 Numeric/monetary fields accepted as free-form strings (HIGH)
+- Issue: `CreateProposalSchema` and `UpdateProposalSchema` accept `budgetPartner` and `budgetNeust` as `z.string()` which permits non-numeric values (e.g., `sudhidahidada`). The DB stores these as `numeric` and will throw on invalid input.
+- Risk: Requests with invalid numeric payloads cause 500 errors; inconsistent validation surfaces between API and DB.
+- Fix: Validate numeric money fields with `z.coerce.number().nonnegative()` or use `z.string().regex()` for decimal format; return 400 for invalid input.
+
+### 4.3 File upload handling lacks size/type sanitization (HIGH)
+- Issue: `storage.routes.ts` accepts multipart `file` and only checks `instanceof File` and uses `file.name` directly in storage path. No content-type or size limit enforcement and no filename sanitization.
+- Risks:
+  - Upload of extremely large files → DoS and storage cost
+  - Malicious filenames with path-like segments → unexpected storage keys
+  - Non-PDF uploads despite message claiming PDF required
+- Fixes:
+  - Enforce max file size (e.g., 10MB) and check `file.size`.
+  - Enforce `file.type === 'application/pdf'` or extension whitelist.
+  - Sanitize `file.name` to allow only safe chars (e.g., base64 slug or timestamped UUID).
+  - Consider streaming upload or direct client-to-Supabase signed upload to avoid proxying large files.
+
+### 4.4 Insufficient rate limiting / abuse protection (HIGH)
+- Issue: No rate limiting or abuse protection middleware. Auth endpoints, upload endpoints and list endpoints are exposed to unauthenticated or authenticated but unchecked high-frequency requests.
+- Risk: Brute force, credential stuffing, or abuse of endpoints causing resource exhaustion.
+- Fix: Add rate limiting middleware (IP + user scoped), e.g., Redis-backed token bucket or use Cloud Provider WAF/rate limiting.
+
+### 4.5 CORS is hard-coded to localhost only (MEDIUM)
+- Issue: `app.ts` allows only `http://localhost:3001` and `http://localhost:5173`. For staging/production, rely on env-driven allowed origins.
+- Fix: Drive CORS origins from `env.ALLOWED_ORIGINS` or similar, defaulting to localhost for dev.
+
+### 4.6 Audit & Logging (IMPROVEMENTS)
+- Good: Structured `ApiError`, centralized `installApiErrorHandler`, and `insertAuditLog` usage.
+- Improvements:
+  - Attach request id to audit logs for traceability (`c.req.get('X-Request-ID')` or middleware-set id).
+  - Use Sentry (SENTRY_DSN present) to capture unhandled exceptions with contexts (userId, route).
+  - Mask sensitive fields in logs (authorization headers, tokens).
+
+---
+
+## 5. Actionable Remediation Checklist (prioritized)
+
+1. Fix parameter validation (HIGH)
+  - Update all `Param` schemas to use `z.string().uuid()`.
+2. Enforce numeric validation (HIGH)
+  - Replace `budget*` strings with `z.coerce.number().nonnegative()`.
+3. Harden file uploads (HIGH)
+  - Enforce `file.size` and `file.type`, sanitize filenames.
+4. Add rate limiting middleware (HIGH)
+  - Implement Redis-backed rate limiter or cloud WAF rules.
+5. Cache auth/user profiles (MEDIUM)
+  - Use Redis or extend `authUserCache` with invalidation on role change.
+6. Make CORS origins configurable (MEDIUM)
+7. Add monitoring/metrics (MEDIUM)
+  - Expose Prometheus metrics for DB pool usage, request latency, error rate.
+8. Improve tests for edge-cases (MEDIUM)
+  - Add tests for invalid UUIDs, invalid monetary strings, large file uploads.
+
+---
+
+## 6. Quick Patch Suggestions (small PRs)
+
+1) Param UUID validation (example): update `ParamId` → `z.object({ id: z.string().uuid().openapi({ param: { name: "id", in: "path" } }) })`.
+
+2) Budget numeric validation (example):
+```ts
+budgetPartner: z.coerce.number().nonnegative().optional(),
+budgetNeust: z.coerce.number().nonnegative().optional(),
+```
+
+3) File upload checks (example): validate `file.type` and `file.size`, and sanitize `file.name` to slug.
+
+---
+
+## 7. Next Steps I can take (pick one)
+
+- Run an automated grep for missing `.uuid()` param schemas and prepare a PR to fix them.
+- Implement file upload hardening in `storage.routes.ts` with size/type checks and filename sanitization.
+- Add a Redis-backed cache for auth profiles and patch `middleware/auth.ts` to use it safely.
+
+If you say which to prioritize I will create focused PRs and tests.
 | `GET /proposals` (100K rows) | 20ms | 500ms+ | 100ms+ | **600ms+** 🔴 |
 | `GET /auth/me` | 15ms | 10ms | 2ms | **27ms** ✅ |
 | `POST /proposals` | 20ms | 100ms | 10ms | **130ms** ⚠️ |
