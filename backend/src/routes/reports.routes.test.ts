@@ -36,7 +36,7 @@ describe("POST /reports", () => {
     const res = await app.request("/reports", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ projectId: "ffffffff-0000-0000-0000-ffffffffffff" }),
+      body: JSON.stringify({ projectId: "ffffffff-0000-4000-8000-ffffffffffff" }),
     });
     expect(res.status).toBe(404);
   });
@@ -46,13 +46,13 @@ describe("DELETE /reports/:id (soft delete)", () => {
   it("should archive an existing report", async () => {
     const mock = { reportId: "aaa", archivedAt: new Date() };
     vi.mocked(db.update).mockReturnValue(mockMutationChain([mock]) as never);
-    const res = await app.request("/reports/aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa", { method: "DELETE" });
+    const res = await app.request("/reports/aaaaaaaa-0000-4000-8000-aaaaaaaaaaaa", { method: "DELETE" });
     expect(res.status).toBe(200);
   });
 
   it("should return 404 for non-existent report", async () => {
     vi.mocked(db.update).mockReturnValue(mockMutationChain([]) as never);
-    const res = await app.request("/reports/aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa", { method: "DELETE" });
+    const res = await app.request("/reports/aaaaaaaa-0000-4000-8000-aaaaaaaaaaaa", { method: "DELETE" });
     expect(res.status).toBe(404);
   });
 });

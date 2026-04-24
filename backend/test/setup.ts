@@ -7,7 +7,7 @@ import { vi } from "vitest";
 
 // ── Default mock user (Faculty) ──
 (globalThis as Record<string, unknown>).__testMockUser = {
-  userId: "aaaaaaaa-1111-1111-1111-aaaaaaaaaaaa",
+  userId: "aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa",
   email: "faculty@neust.edu.ph",
   roleId: 4,
   roleName: "Faculty",

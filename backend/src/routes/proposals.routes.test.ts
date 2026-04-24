@@ -16,6 +16,8 @@ import {
 } from "../../test/helpers.js";
 import app from "./proposals.routes.js";
 
+const PROPOSAL_ID = "eeeeeeee-5555-4555-8555-eeeeeeeeeeee";
+
 beforeEach(() => {
   setMockUser(MOCK_USERS.faculty);
 });
@@ -49,7 +51,7 @@ describe("GET /proposals/:id", () => {
   it("should return 404 when proposal not found", async () => {
     vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
 
-    const res = await app.request("/proposals/eeeeeeee-5555-5555-5555-eeeeeeeeeeee");
+    const res = await app.request(`/proposals/${PROPOSAL_ID}`);
     expect(res.status).toBe(404);
   });
 
@@ -57,7 +59,7 @@ describe("GET /proposals/:id", () => {
     const mock = createMockProposal();
     vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
 
-    const res = await app.request("/proposals/eeeeeeee-5555-5555-5555-eeeeeeeeeeee");
+    const res = await app.request(`/proposals/${PROPOSAL_ID}`);
     expect(res.status).toBe(200);
 
     const body = await res.json();
@@ -86,6 +88,46 @@ describe("POST /proposals", () => {
 
     expect(res.status).toBe(201);
   });
+
+  it("should reject non-numeric budgets", async () => {
+    const res = await app.request("/proposals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        campusId: 1,
+        departmentId: 1,
+        title: "Test Proposal",
+        bannerProgram: "Test Program",
+        projectLocale: "Test City",
+        extensionCategory: "Training",
+        extensionAgenda: "Health",
+        budgetPartner: "not-a-number",
+        budgetNeust: "25000.00",
+      }),
+    });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("should reject negative budgets", async () => {
+    const res = await app.request("/proposals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        campusId: 1,
+        departmentId: 1,
+        title: "Test Proposal",
+        bannerProgram: "Test Program",
+        projectLocale: "Test City",
+        extensionCategory: "Training",
+        extensionAgenda: "Health",
+        budgetPartner: -1,
+        budgetNeust: 25000,
+      }),
+    });
+
+    expect(res.status).toBe(400);
+  });
 });
 
 describe("POST /proposals/:id/submit", () => {
@@ -95,7 +137,7 @@ describe("POST /proposals/:id/submit", () => {
     vi.mocked(db.update).mockReturnValue(mockMutationChain([mock]) as never);
 
     const res = await app.request(
-      "/proposals/eeeeeeee-5555-5555-5555-eeeeeeeeeeee/submit",
+      `/proposals/${PROPOSAL_ID}/submit`,
       { method: "POST" },
     );
 
@@ -109,7 +151,7 @@ describe("POST /proposals/:id/submit", () => {
     vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
 
     const res = await app.request(
-      "/proposals/eeeeeeee-5555-5555-5555-eeeeeeeeeeee/submit",
+      `/proposals/${PROPOSAL_ID}/submit`,
       { method: "POST" },
     );
 
@@ -126,7 +168,7 @@ describe("POST /proposals/:id/submit", () => {
     vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
 
     const res = await app.request(
-      "/proposals/eeeeeeee-5555-5555-5555-eeeeeeeeeeee/submit",
+      `/proposals/${PROPOSAL_ID}/submit`,
       { method: "POST" },
     );
 
@@ -144,7 +186,7 @@ describe("POST /proposals/:id/review", () => {
     vi.mocked(db.transaction).mockImplementation(mockTransaction(mock) as never);
 
     const res = await app.request(
-      "/proposals/eeeeeeee-5555-5555-5555-eeeeeeeeeeee/review",
+      `/proposals/${PROPOSAL_ID}/review`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -162,7 +204,7 @@ describe("POST /proposals/:id/review", () => {
     vi.mocked(db.transaction).mockImplementation(mockTransaction(mock) as never);
 
     const res = await app.request(
-      "/proposals/eeeeeeee-5555-5555-5555-eeeeeeeeeeee/review",
+      `/proposals/${PROPOSAL_ID}/review`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -180,7 +222,7 @@ describe("POST /proposals/:id/review", () => {
     vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
 
     const res = await app.request(
-      "/proposals/eeeeeeee-5555-5555-5555-eeeeeeeeeeee/review",
+      `/proposals/${PROPOSAL_ID}/review`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -199,7 +241,7 @@ describe("POST /proposals/:id/review", () => {
     vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
 
     const res = await app.request(
-      "/proposals/eeeeeeee-5555-5555-5555-eeeeeeeeeeee/review",
+      `/proposals/${PROPOSAL_ID}/review`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -220,7 +262,7 @@ describe("DELETE /proposals/:id (soft delete)", () => {
     vi.mocked(db.update).mockReturnValue(mockMutationChain([mock]) as never);
 
     const res = await app.request(
-      "/proposals/eeeeeeee-5555-5555-5555-eeeeeeeeeeee",
+      `/proposals/${PROPOSAL_ID}`,
       { method: "DELETE" },
     );
 
@@ -233,7 +275,7 @@ describe("DELETE /proposals/:id (soft delete)", () => {
     vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
 
     const res = await app.request(
-      "/proposals/eeeeeeee-5555-5555-5555-eeeeeeeeeeee",
+      `/proposals/${PROPOSAL_ID}`,
       { method: "DELETE" },
     );
 

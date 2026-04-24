@@ -54,8 +54,8 @@ const CreateProposalSchema = z
     projectLocale: z.string().min(1),
     extensionCategory: z.string().min(1),
     extensionAgenda: z.string().min(1),
-    budgetPartner: z.string().optional(),
-    budgetNeust: z.string().optional(),
+    budgetPartner: z.coerce.number().nonnegative().finite().optional(),
+    budgetNeust: z.coerce.number().nonnegative().finite().optional(),
     departmentIds: z.array(z.number().int().positive()).optional(),
     sectorIds: z.array(z.number().int().positive()).optional(),
     sdgIds: z.array(z.number().int().positive()).optional(),
@@ -69,8 +69,8 @@ const UpdateProposalSchema = z
     projectLocale: z.string().min(1).optional(),
     extensionCategory: z.string().min(1).optional(),
     extensionAgenda: z.string().min(1).optional(),
-    budgetPartner: z.string().optional(),
-    budgetNeust: z.string().optional(),
+    budgetPartner: z.coerce.number().nonnegative().finite().optional(),
+    budgetNeust: z.coerce.number().nonnegative().finite().optional(),
   })
   .openapi("UpdateProposal");
 
@@ -87,7 +87,7 @@ const ReviewProposalSchema = z
   .openapi("ReviewProposal");
 
 const ParamId = z.object({
-  id: z.string().openapi({ param: { name: "id", in: "path" } }),
+  id: z.string().uuid().openapi({ param: { name: "id", in: "path" } }),
 });
 
 const PaginationQuery = z.object({
@@ -277,8 +277,8 @@ app.openapi(createProposalRoute, async (c) => {
         projectLocale: body.projectLocale,
         extensionCategory: body.extensionCategory,
         extensionAgenda: body.extensionAgenda,
-        budgetPartner: body.budgetPartner ?? "0",
-        budgetNeust: body.budgetNeust ?? "0",
+        budgetPartner: (body.budgetPartner ?? 0).toFixed(2),
+        budgetNeust: (body.budgetNeust ?? 0).toFixed(2),
       })
       .returning();
 
@@ -401,12 +401,32 @@ app.openapi(updateRoute, async (c) => {
     );
   }
 
+  const updateValues = {
+    ...(body.title !== undefined ? { title: body.title } : {}),
+    ...(body.bannerProgram !== undefined
+      ? { bannerProgram: body.bannerProgram }
+      : {}),
+    ...(body.projectLocale !== undefined
+      ? { projectLocale: body.projectLocale }
+      : {}),
+    ...(body.extensionCategory !== undefined
+      ? { extensionCategory: body.extensionCategory }
+      : {}),
+    ...(body.extensionAgenda !== undefined
+      ? { extensionAgenda: body.extensionAgenda }
+      : {}),
+    ...(body.budgetPartner !== undefined
+      ? { budgetPartner: body.budgetPartner.toFixed(2) }
+      : {}),
+    ...(body.budgetNeust !== undefined
+      ? { budgetNeust: body.budgetNeust.toFixed(2) }
+      : {}),
+    updatedAt: new Date(),
+  };
+
   const [updated] = await db
     .update(proposals)
-    .set({
-      ...body,
-      updatedAt: new Date(),
-    })
+    .set(updateValues)
     .where(eq(proposals.proposalId, id))
     .returning();
 

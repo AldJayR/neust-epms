@@ -55,7 +55,7 @@ const MessageSchema = z
   .openapi("SOMessage");
 
 const ParamId = z.object({
-  id: z.string().openapi({ param: { name: "id", in: "path" } }),
+  id: z.string().uuid().openapi({ param: { name: "id", in: "path" } }),
 });
 
 const PaginationQuery = z.object({

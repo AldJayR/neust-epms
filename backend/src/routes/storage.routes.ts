@@ -13,6 +13,20 @@ const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
 
 const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+function sanitizeFilename(fileName: string): string {
+  const normalized = fileName
+    .normalize("NFKD")
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  const fallback = "document.pdf";
+  const candidate = normalized.length > 0 ? normalized : fallback;
+
+  return candidate.toLowerCase().endsWith(".pdf") ? candidate : `${candidate}.pdf`;
+}
 
 // ── Schemas ──
 const UploadResponseSchema = z
@@ -48,16 +62,16 @@ const ErrorSchema = z
   .openapi("StorageError");
 
 const ProposalParam = z.object({
-  proposalId: z.string().openapi({
+  proposalId: z.string().uuid().openapi({
     param: { name: "proposalId", in: "path" },
   }),
 });
 
 const DocumentParam = z.object({
-  proposalId: z.string().openapi({
+  proposalId: z.string().uuid().openapi({
     param: { name: "proposalId", in: "path" },
   }),
-  documentId: z.string().openapi({
+  documentId: z.string().uuid().openapi({
     param: { name: "documentId", in: "path" },
   }),
 });
@@ -119,13 +133,7 @@ const uploadRoute = createRoute({
   description:
     "Proxies file upload to Supabase Storage. EC-04: new uploads increment version_num.",
   security: [{ Bearer: [] }],
-  request: {
-    params: ProposalParam,
-    body: {
-      content: { "multipart/form-data": { schema: z.object({ file: z.string().openapi({ format: "binary" }) }) } },
-      required: true,
-    },
-  },
+  request: { params: ProposalParam },
   responses: {
     201: {
       content: { "application/json": { schema: UploadResponseSchema } },
@@ -138,6 +146,14 @@ const uploadRoute = createRoute({
     404: {
       content: { "application/json": { schema: ErrorSchema } },
       description: "Proposal not found",
+    },
+    413: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "File too large",
+    },
+    422: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Invalid file type",
     },
   },
 });
@@ -167,6 +183,18 @@ app.openapi(uploadRoute, async (c) => {
     throw new ApiError(400, "NO_FILE", "A PDF file is required");
   }
 
+  if (file.size <= 0) {
+    throw new ApiError(422, "EMPTY_FILE", "Uploaded file cannot be empty");
+  }
+
+  if (file.size > MAX_UPLOAD_BYTES) {
+    throw new ApiError(413, "FILE_TOO_LARGE", "File exceeds 10MB limit");
+  }
+
+  if (file.type !== "application/pdf") {
+    throw new ApiError(422, "INVALID_FILE_TYPE", "Only PDF files are allowed");
+  }
+
   // Determine next version number
   const [maxVersion] = await db
     .select({ maxVer: max(proposalDocuments.versionNum) })
@@ -176,7 +204,7 @@ app.openapi(uploadRoute, async (c) => {
   const nextVersion = (maxVersion?.maxVer ?? 0) + 1;
 
   // Upload to Supabase Storage
-  const storagePath = `proposals/${proposalId}/v${nextVersion}_${file.name}`;
+  const storagePath = `proposals/${proposalId}/v${nextVersion}_${Date.now()}_${sanitizeFilename(file.name)}`;
 
   const { error: uploadError } = await supabase.storage
     .from("documents")

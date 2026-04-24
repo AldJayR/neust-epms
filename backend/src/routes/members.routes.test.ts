@@ -14,9 +14,9 @@ import {
 } from "../../test/helpers.js";
 import app from "./members.routes.js";
 
-const PROPOSAL_ID = "eeeeeeee-5555-5555-5555-eeeeeeeeeeee";
-const MEMBER_ID = "ffffffff-8888-8888-8888-ffffffffffff";
-const TARGET_USER_ID = "99999999-9999-9999-9999-999999999999";
+const PROPOSAL_ID = "eeeeeeee-5555-4555-8555-eeeeeeeeeeee";
+const MEMBER_ID = "ffffffff-8888-4888-8888-ffffffffffff";
+const TARGET_USER_ID = "99999999-9999-4999-8999-999999999999";
 
 beforeEach(() => {
   setMockUser(MOCK_USERS.faculty);

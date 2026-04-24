@@ -44,16 +44,16 @@ const MessageSchema = z
   .openapi("MemberMessage");
 
 const ProposalParam = z.object({
-  proposalId: z.string().openapi({
+  proposalId: z.string().uuid().openapi({
     param: { name: "proposalId", in: "path" },
   }),
 });
 
 const MemberParam = z.object({
-  proposalId: z.string().openapi({
+  proposalId: z.string().uuid().openapi({
     param: { name: "proposalId", in: "path" },
   }),
-  memberId: z.string().openapi({
+  memberId: z.string().uuid().openapi({
     param: { name: "memberId", in: "path" },
   }),
 });

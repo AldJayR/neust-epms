@@ -8,7 +8,7 @@ import type { AuthUser } from "../src/lib/types.js";
 // ── Mock Users (all 4 roles) ──
 export const MOCK_USERS = {
   faculty: {
-    userId: "aaaaaaaa-1111-1111-1111-aaaaaaaaaaaa",
+    userId: "aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa",
     email: "faculty@neust.edu.ph",
     roleId: 4,
     roleName: "Faculty",
@@ -17,7 +17,7 @@ export const MOCK_USERS = {
   } satisfies AuthUser,
 
   retChair: {
-    userId: "bbbbbbbb-2222-2222-2222-bbbbbbbbbbbb",
+    userId: "bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb",
     email: "retchair@neust.edu.ph",
     roleId: 3,
     roleName: "RET Chair",
@@ -26,7 +26,7 @@ export const MOCK_USERS = {
   } satisfies AuthUser,
 
   director: {
-    userId: "cccccccc-3333-3333-3333-cccccccccccc",
+    userId: "cccccccc-3333-4333-8333-cccccccccccc",
     email: "director@neust.edu.ph",
     roleId: 2,
     roleName: "Director",
@@ -35,7 +35,7 @@ export const MOCK_USERS = {
   } satisfies AuthUser,
 
   superAdmin: {
-    userId: "dddddddd-4444-4444-4444-dddddddddddd",
+    userId: "dddddddd-4444-4444-8444-dddddddddddd",
     email: "admin@neust.edu.ph",
     roleId: 1,
     roleName: "Super Admin",
@@ -54,7 +54,7 @@ export function setMockUser(user: AuthUser): void {
 export function createMockProposal(overrides: Record<string, unknown> = {}) {
   const now = new Date();
   return {
-    proposalId: "eeeeeeee-5555-5555-5555-eeeeeeeeeeee",
+    proposalId: "eeeeeeee-5555-4555-8555-eeeeeeeeeeee",
     projectLeaderId: MOCK_USERS.faculty.userId,
     campusId: 1,
     departmentId: 1,
@@ -77,8 +77,8 @@ export function createMockProposal(overrides: Record<string, unknown> = {}) {
 export function createMockProject(overrides: Record<string, unknown> = {}) {
   const now = new Date();
   return {
-    projectId: "ffffffff-6666-6666-6666-ffffffffffff",
-    proposalId: "eeeeeeee-5555-5555-5555-eeeeeeeeeeee",
+    projectId: "ffffffff-6666-4666-8666-ffffffffffff",
+    proposalId: "eeeeeeee-5555-4555-8555-eeeeeeeeeeee",
     moaId: null,
     startDate: null,
     targetEnd: null,
@@ -93,7 +93,7 @@ export function createMockProject(overrides: Record<string, unknown> = {}) {
 export function createMockMoa(overrides: Record<string, unknown> = {}) {
   const now = new Date();
   return {
-    moaId: "11111111-7777-7777-7777-111111111111",
+    moaId: "11111111-7777-4777-8777-111111111111",
     partnerName: "Municipality of San Jose",
     partnerType: "LGU",
     storagePath: null,
