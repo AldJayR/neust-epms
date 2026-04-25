@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { motion } from 'motion/react'
 import { FieldGroup } from '../components/ui/field'
 import { Alert } from '../components/ui/alert'
 import { signupFn } from '../lib/auth.functions'
@@ -39,10 +40,11 @@ export const Route = createFileRoute('/register/account')({
 })
 
 function RegisterStepTwo() {
+  const navigate = useNavigate()
   const [serverError, setServerError] = useState<string | null>(null)
   const [isRegistered, setIsRegistered] = useState(false)
 
-  const form = useForm({
+  const form = useForm<z.infer<typeof registerStep2Schema>>({
     resolver: zodResolver(registerStep2Schema),
     mode: 'onBlur',
     defaultValues: {
@@ -53,57 +55,57 @@ function RegisterStepTwo() {
     },
   })
 
-  const onSubmit = form.handleSubmit(async (value) => {
-      setServerError(null)
+  async function onSubmit(data: z.infer<typeof registerStep2Schema>) {
+    setServerError(null)
 
-      // Read step 1 data from sessionStorage
-      const step1Raw = sessionStorage.getItem('register_step1')
+    // Read step 1 data from sessionStorage
+    const step1Raw = sessionStorage.getItem('register_step1')
 
-      if (!step1Raw) {
-        setServerError('Missing profile information. Please complete step 1 first.')
-        toast.error('Missing profile information', {
-          description: 'Please go back to step 1.',
-        })
-        return
-      }
-
-      const step1 = JSON.parse(step1Raw) as {
-        firstName: string
-        lastName: string
-        departmentId: string
-        campusId: string
-        academicRank: string
-      }
-
-      // Call the signup server function
-      const result = await signupFn({
-        data: {
-          email: value.email,
-          password: value.password,
-          firstName: step1.firstName,
-          lastName: step1.lastName,
-          departmentId: step1.departmentId,
-          campusId: step1.campusId,
-          academicRank: step1.academicRank,
-        },
+    if (!step1Raw) {
+      setServerError('Missing profile information. Please complete step 1 first.')
+      toast.error('Missing profile information', {
+        description: 'Please go back to step 1.',
       })
+      return
+    }
 
-      if (result.error) {
-        setServerError(result.message)
-        toast.error('Registration failed', { description: result.message })
-        return
-      }
+    const step1 = JSON.parse(step1Raw) as {
+      firstName: string
+      lastName: string
+      departmentId: string
+      campusId: string
+      academicRank: string
+    }
 
-      // Success — clean up sessionStorage
-      sessionStorage.removeItem('register_step1')
-      setIsRegistered(true)
-      toast.success('Account created!', { description: result.message })
-  })
+    // Call the signup server function
+    const result = await signupFn({
+      data: {
+        email: data.email,
+        password: data.password,
+        firstName: step1.firstName,
+        lastName: step1.lastName,
+        departmentId: step1.departmentId,
+        campusId: step1.campusId,
+        academicRank: step1.academicRank,
+      },
+    })
+
+    if (result.error) {
+      setServerError(result.message)
+      toast.error('Registration failed', { description: result.message })
+      return
+    }
+
+    // Success — clean up sessionStorage
+    sessionStorage.removeItem('register_step1')
+    setIsRegistered(true)
+    toast.success('Account created!', { description: result.message })
+  }
 
   // Show success state after registration
   if (isRegistered) {
     return (
-      <section className="w-full max-w-[480px] rounded-xl px-6 py-6 text-center">
+      <section className="w-full rounded-xl px-6 py-6 text-center">
         <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-green-100">
           <svg
             className="size-6 text-green-600"
@@ -137,7 +139,7 @@ function RegisterStepTwo() {
   }
 
   return (
-    <section className="w-full max-w-[480px] rounded-xl px-6 py-6">
+    <section className="w-full rounded-xl px-6 py-6">
       <header className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
@@ -146,8 +148,15 @@ function RegisterStepTwo() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <span className="size-2 rounded-[12px] bg-[#d9d9d9]" />
-            <span className="h-2 w-6 rounded-[12px] bg-[#14369c]" />
+            <motion.span
+              layoutId="reg-step-1"
+              className="size-2 cursor-pointer rounded-[12px] bg-[#d9d9d9] transition-colors hover:bg-zinc-400"
+              onClick={() => navigate({ to: '/register' })}
+            />
+            <motion.span
+              layoutId="reg-step-2"
+              className="h-2 w-6 rounded-[12px] bg-[#14369c]"
+            />
           </div>
         </div>
         <p className="text-sm leading-5 text-zinc-600">
@@ -161,14 +170,7 @@ function RegisterStepTwo() {
         </Alert>
       )}
 
-      <form
-        className="mt-6"
-        onSubmit={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          void onSubmit(e)
-        }}
-      >
+      <form className="mt-6" onSubmit={form.handleSubmit(onSubmit)}>
         <FieldGroup>
           <RHFTextField
             control={form.control}

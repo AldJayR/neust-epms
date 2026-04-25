@@ -26,7 +26,7 @@ function LoginPage() {
   const { redirect: redirectUrl } = Route.useSearch()
   const [serverError, setServerError] = useState<string | null>(null)
 
-  const form = useForm({
+  const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     mode: 'onBlur',
     defaultValues: {
@@ -35,23 +35,23 @@ function LoginPage() {
     },
   })
 
-  const onSubmit = form.handleSubmit(async (value) => {
-      setServerError(null)
+  async function onSubmit(data: z.infer<typeof loginSchema>) {
+    setServerError(null)
 
-      const result = await loginFn({ data: value })
+    const result = await loginFn({ data })
 
-      // If loginFn succeeds, it throws a redirect to /dashboard.
-      // If we reach here, it returned an error object.
-      if (result && result.error) {
-        setServerError(result.message)
-        toast.error('Login failed', { description: result.message })
-        return
-      }
+    // If loginFn succeeds, it throws a redirect to /dashboard.
+    // If we reach here, it returned an error object.
+    if (result && result.error) {
+      setServerError(result.message)
+      toast.error('Login failed', { description: result.message })
+      return
+    }
 
-      // Fallback: if the redirect didn't fire (shouldn't happen),
-      // navigate manually
-      navigate({ to: redirectUrl ?? '/dashboard' })
-  })
+    // Fallback: if the redirect didn't fire (shouldn't happen),
+    // navigate manually
+    navigate({ to: redirectUrl ?? '/dashboard' })
+  }
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8">
@@ -71,14 +71,7 @@ function LoginPage() {
           </Alert>
         )}
 
-        <form
-          className="mt-6"
-          onSubmit={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            void onSubmit(e)
-          }}
-        >
+        <form className="mt-6" onSubmit={form.handleSubmit(onSubmit)}>
           <FieldGroup>
             <RHFTextField
               control={form.control}
@@ -91,17 +84,16 @@ function LoginPage() {
               control={form.control}
               name="password"
               label="Password"
+              labelAction={
+                <a
+                  href="#"
+                  className="text-sm leading-5 text-black hover:text-black hover:underline"
+                >
+                  Forgot password?
+                </a>
+              }
             />
           </FieldGroup>
-
-          <div className="mt-2 flex justify-end">
-            <a
-              href="#"
-              className="text-sm leading-5 text-black hover:text-black hover:underline"
-            >
-              Forgot password?
-            </a>
-          </div>
 
           <div className="mt-7">
             <RHFSubmitButton

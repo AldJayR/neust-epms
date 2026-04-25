@@ -8,6 +8,7 @@ import {
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { motion, AnimatePresence } from 'motion/react'
 import { FieldGroup } from '../components/ui/field'
 import { RHFSelectField, RHFSubmitButton, RHFTextField } from '../components/rhf-auth-fields'
 
@@ -53,7 +54,18 @@ function RegisterRoute() {
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8">
-      {pathname !== '/register' ? <Outlet /> : <RegisterStepOneForm />}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={pathname}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
+          className="w-full max-w-[480px]"
+        >
+          {pathname !== '/register' ? <Outlet /> : <RegisterStepOneForm />}
+        </motion.div>
+      </AnimatePresence>
     </main>
   )
 }
@@ -61,26 +73,36 @@ function RegisterRoute() {
 function RegisterStepOneForm() {
   const navigate = useNavigate()
 
-  const form = useForm({
+  const form = useForm<z.infer<typeof registerStep1Schema>>({
     resolver: zodResolver(registerStep1Schema),
     mode: 'onBlur',
-    defaultValues: {
-      firstName: '',
-      lastName: '',
-      departmentId: '',
-      campusId: '',
-      academicRank: '',
-    },
+    defaultValues: (() => {
+      const saved = sessionStorage.getItem('register_step1')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch (e) {
+          console.error('Failed to parse saved registration data', e)
+        }
+      }
+      return {
+        firstName: '',
+        lastName: '',
+        departmentId: '',
+        campusId: '',
+        academicRank: '',
+      }
+    })(),
   })
 
-  const onSubmit = form.handleSubmit(async (value) => {
+  function onSubmit(data: z.infer<typeof registerStep1Schema>) {
     // Store step 1 data for step 2 to read on final submit
-    sessionStorage.setItem('register_step1', JSON.stringify(value))
+    sessionStorage.setItem('register_step1', JSON.stringify(data))
     navigate({ to: '/register/account' })
-  })
+  }
 
   return (
-    <section className="w-full max-w-[480px] rounded-xl px-6 py-6">
+    <section className="w-full rounded-xl px-6 py-6">
       <header className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
@@ -89,8 +111,14 @@ function RegisterStepOneForm() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <span className="h-2 w-6 rounded-[12px] bg-[#14369c]" />
-            <span className="size-2 rounded-[12px] bg-[#d9d9d9]" />
+            <motion.span
+              layoutId="reg-step-1"
+              className="h-2 w-6 rounded-[12px] bg-[#14369c]"
+            />
+            <motion.span
+              layoutId="reg-step-2"
+              className="size-2 rounded-[12px] bg-[#d9d9d9]"
+            />
           </div>
         </div>
         <p className="text-sm leading-5 text-zinc-600">
@@ -98,14 +126,7 @@ function RegisterStepOneForm() {
         </p>
       </header>
 
-      <form
-        className="mt-6"
-        onSubmit={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          void onSubmit(e)
-        }}
-      >
+      <form className="mt-6" onSubmit={form.handleSubmit(onSubmit)}>
         <FieldGroup>
           <div className="grid gap-7 sm:grid-cols-2">
             <RHFTextField control={form.control} name="firstName" label="First Name" />

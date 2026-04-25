@@ -5,6 +5,7 @@ import { Button } from '#/components/ui/button'
 import { Checkbox } from '#/components/ui/checkbox'
 import {
   Field,
+  FieldContent,
   FieldDescription,
   FieldError,
   FieldLabel,
@@ -58,21 +59,18 @@ export function RHFTextField<TFieldValues extends FieldValues>({
   const { field, fieldState } = useController({ control, name })
 
   return (
-    <Field data-invalid={fieldState.invalid || undefined}>
+    <Field data-invalid={fieldState.invalid}>
       <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
       <Input
+        {...field}
         id={field.name}
-        name={field.name}
         type={type}
         placeholder={placeholder}
-        value={(field.value as string | undefined) ?? ''}
-        onChange={(e) => field.onChange(e.target.value)}
-        onBlur={field.onBlur}
-        aria-invalid={fieldState.invalid || undefined}
+        aria-invalid={fieldState.invalid}
         className={cn(inputClassName, className)}
       />
-      {description && !fieldState.error && <FieldDescription>{description}</FieldDescription>}
-      {fieldState.error?.message && <FieldError>{fieldState.error.message}</FieldError>}
+      {description && !fieldState.invalid && <FieldDescription>{description}</FieldDescription>}
+      <FieldError errors={[fieldState.error]} />
     </Field>
   )
 }
@@ -82,27 +80,29 @@ export function RHFPasswordField<TFieldValues extends FieldValues>({
   name,
   label,
   description,
+  labelAction,
 }: {
   control: Control<TFieldValues>
   name: FieldPath<TFieldValues>
   label: string
   description?: string
+  labelAction?: React.ReactNode
 }) {
   const { field, fieldState } = useController({ control, name })
   const [showPassword, setShowPassword] = useState(false)
 
   return (
-    <Field data-invalid={fieldState.invalid || undefined}>
-      <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+    <Field data-invalid={fieldState.invalid}>
+      <div className="flex items-center justify-between">
+        <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+        {labelAction}
+      </div>
       <InputGroup className={inputClassName}>
         <InputGroupInput
+          {...field}
           id={field.name}
-          name={field.name}
           type={showPassword ? 'text' : 'password'}
-          value={(field.value as string | undefined) ?? ''}
-          onChange={(e) => field.onChange(e.target.value)}
-          onBlur={field.onBlur}
-          aria-invalid={fieldState.invalid || undefined}
+          aria-invalid={fieldState.invalid}
           className="text-black placeholder:text-zinc-500"
         />
         <InputGroupAddon align="inline-end">
@@ -118,8 +118,8 @@ export function RHFPasswordField<TFieldValues extends FieldValues>({
           </InputGroupButton>
         </InputGroupAddon>
       </InputGroup>
-      {description && !fieldState.error && <FieldDescription>{description}</FieldDescription>}
-      {fieldState.error?.message && <FieldError>{fieldState.error.message}</FieldError>}
+      {description && !fieldState.invalid && <FieldDescription>{description}</FieldDescription>}
+      <FieldError errors={[fieldState.error]} />
     </Field>
   )
 }
@@ -141,14 +141,15 @@ export function RHFSelectField<TFieldValues extends FieldValues>({
   const optionLabels = Object.fromEntries(options.map((option) => [option.value, option.label])) as Record<string, string>
 
   return (
-    <Field data-invalid={fieldState.invalid || undefined}>
+    <Field data-invalid={fieldState.invalid}>
       <FieldLabel>{label}</FieldLabel>
       <Select
+        name={field.name}
         value={typeof field.value === 'string' ? field.value : ''}
         onValueChange={(value) => field.onChange(value ?? '')}
       >
         <SelectTrigger
-          aria-invalid={fieldState.invalid || undefined}
+          aria-invalid={fieldState.invalid}
           onBlur={field.onBlur}
           className={cn('w-full', inputClassName)}
         >
@@ -166,7 +167,7 @@ export function RHFSelectField<TFieldValues extends FieldValues>({
           </SelectGroup>
         </SelectContent>
       </Select>
-      {fieldState.error?.message && <FieldError>{fieldState.error.message}</FieldError>}
+      <FieldError errors={[fieldState.error]} />
     </Field>
   )
 }
@@ -183,19 +184,22 @@ export function RHFCheckboxField<TFieldValues extends FieldValues>({
   const { field, fieldState } = useController({ control, name })
 
   return (
-    <Field orientation="horizontal" data-invalid={fieldState.invalid || undefined}>
+    <Field orientation="horizontal" data-invalid={fieldState.invalid}>
       <Checkbox
         id={field.name}
+        name={field.name}
         checked={field.value === true}
-        aria-invalid={fieldState.invalid || undefined}
+        aria-invalid={fieldState.invalid}
         onCheckedChange={(checked) => field.onChange(checked === true)}
         onBlur={field.onBlur}
         className="bg-white shadow-sm ring-1 ring-black/5 data-checked:ring-transparent"
       />
-      <FieldLabel htmlFor={field.name} className="font-normal">
-        {label}
-      </FieldLabel>
-      {fieldState.error?.message && <FieldError>{fieldState.error.message}</FieldError>}
+      <FieldContent>
+        <FieldLabel htmlFor={field.name} className="font-normal">
+          {label}
+        </FieldLabel>
+        <FieldError errors={[fieldState.error]} />
+      </FieldContent>
     </Field>
   )
 }
