@@ -1,0 +1,163 @@
+import {
+  createFileRoute,
+  useNavigate,
+  Link,
+  Outlet,
+  useRouterState,
+} from '@tanstack/react-router'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { FieldGroup } from '../components/ui/field'
+import { RHFSelectField, RHFSubmitButton, RHFTextField } from '../components/rhf-auth-fields'
+
+const registerStep1Schema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  departmentId: z.string().min(1, 'Please select a department'),
+  campusId: z.string().min(1, 'Please select a campus'),
+  academicRank: z.string().min(1, 'Please select your academic rank'),
+})
+
+const departmentOptions = [
+  { label: 'College of Engineering', value: 'engineering' },
+  { label: 'College of Education', value: 'education' },
+  { label: 'College of Arts and Sciences', value: 'arts-sciences' },
+]
+
+const campusOptions = [
+  { label: 'Main Campus', value: 'main' },
+  { label: 'Sumacab Campus', value: 'sumacab' },
+  { label: 'Gabaldon Campus', value: 'gabaldon' },
+]
+
+const rankOptions = [
+  { label: 'Instructor I', value: 'instructor-1' },
+  { label: 'Instructor II', value: 'instructor-2' },
+  { label: 'Instructor III', value: 'instructor-3' },
+  { label: 'Assistant Professor I', value: 'assistant-prof-1' },
+  { label: 'Assistant Professor II', value: 'assistant-prof-2' },
+  { label: 'Associate Professor I', value: 'associate-prof-1' },
+  { label: 'Associate Professor II', value: 'associate-prof-2' },
+  { label: 'Professor I', value: 'professor-1' },
+]
+
+export const Route = createFileRoute('/register')({
+  component: RegisterRoute,
+})
+
+function RegisterRoute() {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+
+  if (pathname !== '/register') {
+    return <Outlet />
+  }
+
+  return <RegisterStepOneForm />
+}
+
+function RegisterStepOneForm() {
+  const navigate = useNavigate()
+
+  const form = useForm({
+    resolver: zodResolver(registerStep1Schema),
+    mode: 'onBlur',
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      departmentId: '',
+      campusId: '',
+      academicRank: '',
+    },
+  })
+
+  const onSubmit = form.handleSubmit(async (value) => {
+      // Store step 1 data for step 2 to read on final submit
+      sessionStorage.setItem('register_step1', JSON.stringify(value))
+      navigate({ to: '/register/account' })
+  })
+
+  return (
+    <main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8">
+      <section className="w-full max-w-[480px] rounded-xl px-6 py-6">
+        <header className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base leading-6 font-semibold text-black">
+                Create your account
+              </h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-6 rounded-[12px] bg-[#14369c]" />
+              <span className="size-2 rounded-[12px] bg-[#d9d9d9]" />
+            </div>
+          </div>
+          <p className="text-sm leading-5 text-zinc-600">
+            Fill in your faculty profile details
+          </p>
+        </header>
+
+        <form
+          className="mt-6"
+          onSubmit={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            void onSubmit(e)
+          }}
+        >
+          <FieldGroup>
+            <div className="grid gap-7 sm:grid-cols-2">
+              <RHFTextField control={form.control} name="firstName" label="First Name" />
+              <RHFTextField control={form.control} name="lastName" label="Last Name" />
+            </div>
+
+            <div className="grid gap-7 sm:grid-cols-2">
+              <RHFSelectField
+                control={form.control}
+                name="departmentId"
+                label="Department"
+                placeholder="Select department"
+                options={departmentOptions}
+              />
+              <RHFSelectField
+                control={form.control}
+                name="campusId"
+                label="Campus"
+                placeholder="Select campus"
+                options={campusOptions}
+              />
+            </div>
+
+            <RHFSelectField
+              control={form.control}
+              name="academicRank"
+              label="Academic Rank"
+              placeholder="Select rank"
+              options={rankOptions}
+            />
+          </FieldGroup>
+
+          <div className="mt-7">
+            <RHFSubmitButton
+              label="Next"
+              isSubmitting={form.formState.isSubmitting}
+              className="h-9 w-full rounded-[10px] bg-[#14369c] text-sm font-medium text-[#fafafa] hover:bg-[#11308a]"
+            />
+          </div>
+        </form>
+
+        <p className="pt-4 text-center text-sm leading-5 text-zinc-600">
+          Already have an account?{' '}
+          <Link
+            to="/login"
+            className="text-black hover:text-black underline underline-offset-2"
+          >
+            Log in
+          </Link>
+        </p>
+      </section>
+    </main>
+  )
+}
