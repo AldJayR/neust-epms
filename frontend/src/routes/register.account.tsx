@@ -103,123 +103,119 @@ function RegisterStepTwo() {
   // Show success state after registration
   if (isRegistered) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8">
-        <section className="w-full max-w-[480px] rounded-xl px-6 py-6 text-center">
-          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-green-100">
-            <svg
-              className="size-6 text-green-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="2"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4.5 12.75l6 6 9-13.5"
-              />
-            </svg>
-          </div>
-          <h1 className="text-lg font-semibold text-card-foreground">
-            Account Created
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Your account has been created successfully. Please wait for an
-            administrator to activate your account before logging in.
-          </p>
-          <Link
-            to="/login"
-            className="mt-6 inline-block rounded-[10px] bg-[#14369c] px-6 py-2 text-sm font-medium text-white hover:bg-[#11308a]"
+      <section className="w-full max-w-[480px] rounded-xl px-6 py-6 text-center">
+        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-green-100">
+          <svg
+            className="size-6 text-green-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="2"
+            stroke="currentColor"
           >
-            Go to Login
-          </Link>
-        </section>
-      </main>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4.5 12.75l6 6 9-13.5"
+            />
+          </svg>
+        </div>
+        <h1 className="text-lg font-semibold text-card-foreground">
+          Account Created
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Your account has been created successfully. Please wait for an
+          administrator to activate your account before logging in.
+        </p>
+        <Link
+          to="/login"
+          className="mt-6 inline-block rounded-[10px] bg-[#14369c] px-6 py-2 text-sm font-medium text-white hover:bg-[#11308a]"
+        >
+          Go to Login
+        </Link>
+      </section>
     )
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8">
-      <section className="w-full max-w-[480px] rounded-xl px-6 py-6">
-        <header className="flex flex-col gap-2">
+    <section className="w-full max-w-[480px] rounded-xl px-6 py-6">
+      <header className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-base leading-6 font-semibold text-black">
+              Create your account
+            </h1>
+          </div>
           <div className="flex items-center gap-2">
-            <div className="min-w-0 flex-1">
-              <h1 className="text-base leading-6 font-semibold text-black">
-                Create your account
-              </h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="size-2 rounded-[12px] bg-[#d9d9d9]" />
-              <span className="h-2 w-6 rounded-[12px] bg-[#14369c]" />
-            </div>
+            <span className="size-2 rounded-[12px] bg-[#d9d9d9]" />
+            <span className="h-2 w-6 rounded-[12px] bg-[#14369c]" />
           </div>
-          <p className="text-sm leading-5 text-zinc-600">
-            Set up your login credentials
-          </p>
-        </header>
-
-        {serverError && (
-          <Alert variant="destructive" className="mt-4">
-            {serverError}
-          </Alert>
-        )}
-
-        <form
-          className="mt-6"
-          onSubmit={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            void onSubmit(e)
-          }}
-        >
-          <FieldGroup>
-            <RHFTextField
-              control={form.control}
-              name="email"
-              label="Email"
-              type="email"
-              placeholder="m@example.com"
-            />
-
-            <RHFPasswordField
-              control={form.control}
-              name="password"
-              label="Password"
-              description="At least 8 characters with one uppercase letter and one number"
-            />
-
-            <RHFPasswordField
-              control={form.control}
-              name="confirmPassword"
-              label="Confirm Password"
-            />
-
-            <RHFCheckboxField
-              control={form.control}
-              name="acceptTerms"
-              label="I accept the terms and conditions"
-            />
-          </FieldGroup>
-
-          <div className="mt-7">
-            <RHFSubmitButton
-              label="Register"
-              isSubmitting={form.formState.isSubmitting}
-              className="h-9 w-full rounded-[10px] bg-[#14369c] text-sm font-medium text-[#fafafa] hover:bg-[#11308a]"
-            />
-          </div>
-        </form>
-
-        <p className="pt-4 text-center text-sm leading-5 text-zinc-600">
-          Already have an account?{' '}
-          <Link
-            to="/login"
-            className="text-black hover:text-black underline underline-offset-2"
-          >
-            Log in
-          </Link>
+        </div>
+        <p className="text-sm leading-5 text-zinc-600">
+          Set up your login credentials
         </p>
-      </section>
-    </main>
+      </header>
+
+      {serverError && (
+        <Alert variant="destructive" className="mt-4">
+          {serverError}
+        </Alert>
+      )}
+
+      <form
+        className="mt-6"
+        onSubmit={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          void onSubmit(e)
+        }}
+      >
+        <FieldGroup>
+          <RHFTextField
+            control={form.control}
+            name="email"
+            label="Email"
+            type="email"
+            placeholder="m@example.com"
+          />
+
+          <RHFPasswordField
+            control={form.control}
+            name="password"
+            label="Password"
+            description="At least 8 characters with one uppercase letter and one number"
+          />
+
+          <RHFPasswordField
+            control={form.control}
+            name="confirmPassword"
+            label="Confirm Password"
+          />
+
+          <RHFCheckboxField
+            control={form.control}
+            name="acceptTerms"
+            label="I accept the terms and conditions"
+          />
+        </FieldGroup>
+
+        <div className="mt-7">
+          <RHFSubmitButton
+            label="Register"
+            isSubmitting={form.formState.isSubmitting}
+            className="h-9 w-full rounded-[10px] bg-[#14369c] text-sm font-medium text-[#fafafa] hover:bg-[#11308a]"
+          />
+        </div>
+      </form>
+
+      <p className="pt-4 text-center text-sm leading-5 text-zinc-600">
+        Already have an account?{' '}
+        <Link
+          to="/login"
+          className="text-black hover:text-black underline underline-offset-2"
+        >
+          Log in
+        </Link>
+      </p>
+    </section>
   )
 }

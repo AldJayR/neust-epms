@@ -72,7 +72,7 @@
   --sea-ink: #d7ece8;
   --sea-ink-soft: #afcdc8;
   --lagoon: #60d7cf;
-  --lagoon-deep: #8de5db;
+  --lagoon-deep: #5bb2ad;
   --palm: #6ec89a;
   --sand: #0f1a1e;
   --foam: #101d22;
@@ -357,5 +357,19 @@ a {
   }
   html {
     @apply font-sans;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--foreground);
+    -webkit-box-shadow: 0 0 0px 1000px transparent inset;
+    transition: background-color 5000s ease-in-out 0s;
   }
 }

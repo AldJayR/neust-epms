@@ -33,10 +33,10 @@ const inputClassName =
   'bg-white text-black placeholder:text-zinc-500 border-zinc-300 shadow-sm ring-1 ring-black/5 focus-visible:border-[#14369c] focus-visible:ring-[#14369c]/20'
 
 const selectContentClassName =
-  'bg-white text-black border-zinc-200 shadow-xl ring-1 ring-black/10 before:!bg-white **:data-[slot=select-item]:data-[highlighted]:!bg-zinc-100 **:data-[slot=select-item]:data-[highlighted]:!text-black **:data-[slot=select-item]:focus:!bg-zinc-100 **:data-[slot=select-item]:focus:!text-black'
+  'bg-white text-black border-zinc-200 shadow-xl ring-1 ring-black/10 before:!bg-white'
 
 const selectItemClassName =
-  'text-black hover:!bg-zinc-100 hover:!text-black focus:!bg-zinc-100 focus:!text-black data-[highlighted]:!bg-zinc-100 data-[highlighted]:!text-black'
+  'text-black data-[highlighted]:!bg-zinc-100 data-[highlighted]:!text-black'
 
 export function RHFTextField<TFieldValues extends FieldValues>({
   control,
@@ -111,7 +111,7 @@ export function RHFPasswordField<TFieldValues extends FieldValues>({
             variant="ghost"
             type="button"
             aria-label="Toggle password visibility"
-            className="text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
+            className="text-zinc-500 hover:!bg-black/5 hover:!text-zinc-700 dark:hover:!bg-black/5 dark:hover:!text-zinc-700 rounded-full transition-colors"
             onClick={() => setShowPassword((prev) => !prev)}
           >
             {showPassword ? <EyeOffIcon className="text-current" /> : <EyeIcon className="text-current" />}
@@ -190,6 +190,7 @@ export function RHFCheckboxField<TFieldValues extends FieldValues>({
         aria-invalid={fieldState.invalid || undefined}
         onCheckedChange={(checked) => field.onChange(checked === true)}
         onBlur={field.onBlur}
+        className="bg-white shadow-sm ring-1 ring-black/5 data-checked:ring-transparent"
       />
       <FieldLabel htmlFor={field.name} className="font-normal">
         {label}
