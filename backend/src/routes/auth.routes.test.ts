@@ -58,3 +58,76 @@ describe("POST /auth/users", () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe("POST /auth/register", () => {
+  it("should allow a user to register their own account", async () => {
+    const { createClient } = await import("@supabase/supabase-js");
+    const mockSupabase = createClient("", "");
+    vi.mocked(mockSupabase.auth.admin.createUser).mockResolvedValue({
+      data: { user: { id: "new-supabase-id" } as any },
+      error: null,
+    });
+
+    const facultyRole = { roleId: 4, roleName: "Faculty" };
+    const createdUser = { userId: "new-supabase-id", email: "new@neust.edu.ph" };
+    const fullProfile = {
+      userId: "new-supabase-id",
+      employeeId: "2024-001",
+      firstName: "John",
+      lastName: "Doe",
+      email: "new@neust.edu.ph",
+      roleName: "Faculty",
+      campusName: "Main",
+      isActive: false,
+    };
+
+    // 1. Check existing: empty
+    // 2. Fetch role: faculty
+    // 3. Fetch full profile after insert
+    vi.mocked(db.select)
+      .mockReturnValueOnce(mockSelectChain([]) as never) // Existing check
+      .mockReturnValueOnce(mockSelectChain([facultyRole]) as never) // Role check
+      .mockReturnValueOnce(mockSelectChain([fullProfile]) as never); // Full profile fetch
+
+    vi.mocked(db.insert).mockReturnValue(mockMutationChain([createdUser]) as never);
+
+    const res = await app.request("/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        employeeId: "2024-001",
+        firstName: "John",
+        lastName: "Doe",
+        email: "new@neust.edu.ph",
+        password: "Password123",
+        campusId: 1,
+      }),
+    });
+
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.email).toBe("new@neust.edu.ph");
+    expect(body.isActive).toBe(false);
+  });
+
+  it("should return 400 if user already exists", async () => {
+    vi.mocked(db.select).mockReturnValue(mockSelectChain([{ userId: "existing" }]) as never);
+
+    const res = await app.request("/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        employeeId: "2024-001",
+        firstName: "John",
+        lastName: "Doe",
+        email: "existing@neust.edu.ph",
+        password: "Password123",
+        campusId: 1,
+      }),
+    });
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe("USER_EXISTS");
+  });
+});

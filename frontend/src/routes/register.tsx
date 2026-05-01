@@ -13,6 +13,7 @@ import { FieldGroup } from '../components/ui/field'
 import { RHFSelectField, RHFSubmitButton, RHFTextField } from '../components/rhf-auth-fields'
 
 const registerStep1Schema = z.object({
+  employeeId: z.string().min(1, 'Employee ID is required'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   departmentId: z.string().min(1, 'Please select a department'),
@@ -21,15 +22,15 @@ const registerStep1Schema = z.object({
 })
 
 const departmentOptions = [
-  { label: 'College of Engineering', value: 'engineering' },
-  { label: 'College of Education', value: 'education' },
-  { label: 'College of Arts and Sciences', value: 'arts-sciences' },
+  { label: 'Management Information System (MIS)', value: '1' },
+  { label: 'College of Engineering', value: '2' },
+  { label: 'College of Education', value: '3' },
 ]
 
 const campusOptions = [
-  { label: 'Main Campus', value: 'main' },
-  { label: 'Sumacab Campus', value: 'sumacab' },
-  { label: 'Gabaldon Campus', value: 'gabaldon' },
+  { label: 'Cabanatuan City (Main)', value: '1' },
+  { label: 'Sumacab Campus', value: '2' },
+  { label: 'Gabaldon Campus', value: '3' },
 ]
 
 const rankOptions = [
@@ -86,6 +87,7 @@ function RegisterStepOneForm() {
         }
       }
       return {
+        employeeId: '',
         firstName: '',
         lastName: '',
         departmentId: '',
@@ -135,6 +137,8 @@ function RegisterStepOneForm() {
         }}
       >
         <FieldGroup>
+          <RHFTextField control={form.control} name="employeeId" label="Employee ID" placeholder="e.g. 2024-001" />
+          
           <div className="grid gap-7 sm:grid-cols-2">
             <RHFTextField control={form.control} name="firstName" label="First Name" />
             <RHFTextField control={form.control} name="lastName" label="Last Name" />

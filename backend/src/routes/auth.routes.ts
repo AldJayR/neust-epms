@@ -1,18 +1,21 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
+import { createClient } from "@supabase/supabase-js";
 import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
 import { roles } from "../db/schema/roles.js";
 import { campuses } from "../db/schema/campuses.js";
 import { departments } from "../db/schema/departments.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
-import { requireRole } from "../middleware/rbac.js";
+import { env } from "../env.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
+
+const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
 // ── Schemas ──
 const UserResponseSchema = z
@@ -31,6 +34,21 @@ const UserResponseSchema = z
     isActive: z.boolean(),
   })
   .openapi("UserResponse");
+
+const RegisterUserBodySchema = z
+  .object({
+    employeeId: z.string().min(1),
+    firstName: z.string().min(1),
+    middleName: z.string().optional(),
+    lastName: z.string().min(1),
+    nameSuffix: z.string().optional(),
+    academicRank: z.string().optional(),
+    email: z.string().email(),
+    password: z.string().min(8),
+    campusId: z.number().int().positive(),
+    departmentId: z.number().int().positive().optional(),
+  })
+  .openapi("RegisterUserBody");
 
 const CreateUserBodySchema = z
   .object({
@@ -73,7 +91,127 @@ const getMeRoute = createRoute({
   },
 });
 
-app.use("/auth/*", authMiddleware);
+// ── POST /auth/register (Public self-registration) ──
+const registerRoute = createRoute({
+  method: "post",
+  path: "/auth/register",
+  tags: ["Auth"],
+  summary: "Register a new faculty account",
+  request: {
+    body: {
+      content: { "application/json": { schema: RegisterUserBodySchema } },
+      required: true,
+    },
+  },
+  responses: {
+    201: {
+      content: { "application/json": { schema: UserResponseSchema } },
+      description: "User registered",
+    },
+    400: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Validation error or user already exists",
+    },
+  },
+});
+
+app.openapi(registerRoute, async (c) => {
+  const body = c.req.valid("json");
+
+  // 1. Check if user already exists in DB
+  const [existing] = await db
+    .select()
+    .from(users)
+    .where(or(eq(users.email, body.email), eq(users.employeeId, body.employeeId)))
+    .limit(1);
+
+  if (existing) {
+    throw new ApiError(400, "USER_EXISTS", "Email or Employee ID already registered");
+  }
+
+  // 2. Fetch Faculty role ID
+  const [facultyRole] = await db
+    .select()
+    .from(roles)
+    .where(eq(roles.roleName, ROLE_NAMES.FACULTY))
+    .limit(1);
+
+  if (!facultyRole) {
+    throw new ApiError(500, "CONFIG_ERROR", "Faculty role not found in system");
+  }
+
+  // 3. Create user in Supabase Auth (admin-side to skip email)
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    email: body.email,
+    password: body.password,
+    email_confirm: true, // Auto-confirm to skip email for now
+  });
+
+  if (authError || !authData.user) {
+    throw new ApiError(400, "AUTH_ERROR", authError?.message ?? "Failed to create auth user");
+  }
+
+  // 4. Create user in our DB
+  const [created] = await db
+    .insert(users)
+    .values({
+      userId: authData.user.id,
+      employeeId: body.employeeId,
+      firstName: body.firstName,
+      middleName: body.middleName ?? null,
+      lastName: body.lastName,
+      nameSuffix: body.nameSuffix ?? null,
+      academicRank: body.academicRank ?? null,
+      email: body.email,
+      roleId: facultyRole.roleId,
+      campusId: body.campusId,
+      departmentId: body.departmentId ?? null,
+      isActive: false, // Requires admin activation
+    })
+    .returning();
+
+  if (!created) {
+    // Cleanup Supabase if DB insert fails
+    await supabase.auth.admin.deleteUser(authData.user.id);
+    throw new ApiError(500, "INSERT_FAILED", "Failed to create user record");
+  }
+
+  await insertAuditLog({
+    userId: created.userId,
+    action: "Self-registered account",
+    tableAffected: "users",
+    ipAddress: c.req.header("x-forwarded-for") ?? null,
+  });
+
+  // Fetch full response
+  const [row] = await db
+    .select({
+      userId: users.userId,
+      employeeId: users.employeeId,
+      firstName: users.firstName,
+      middleName: users.middleName,
+      lastName: users.lastName,
+      nameSuffix: users.nameSuffix,
+      academicRank: users.academicRank,
+      email: users.email,
+      roleName: roles.roleName,
+      campusName: campuses.campusName,
+      departmentName: departments.departmentName,
+      isActive: users.isActive,
+    })
+    .from(users)
+    .innerJoin(roles, eq(users.roleId, roles.roleId))
+    .innerJoin(campuses, eq(users.campusId, campuses.campusId))
+    .leftJoin(departments, eq(users.departmentId, departments.departmentId))
+    .where(eq(users.userId, created.userId))
+    .limit(1);
+
+  return c.json(row!, 201);
+});
+
+// ── Protected Routes ──
+app.use("/auth/me", authMiddleware);
+app.use("/auth/users", authMiddleware);
 
 app.openapi(getMeRoute, async (c) => {
   const authUser = c.get("user");

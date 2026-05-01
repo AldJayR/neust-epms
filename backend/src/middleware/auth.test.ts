@@ -11,6 +11,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
 import { ApiError, createErrorResponse } from "../lib/errors.js";
+import { mockSelectChain } from "../../test/helpers.js";
 import type { AuthEnv } from "./auth.js";
 
 describe("authMiddleware", () => {
@@ -59,7 +60,13 @@ describe("authMiddleware", () => {
   });
 
   it("should return 401 when Supabase returns an error for the token", async () => {
-    // The global mock in setup.ts already returns { user: null, error: ... }
+    const { createClient } = await import("@supabase/supabase-js");
+    const mockSupabase = createClient("" , "");
+    vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
+      data: { user: null },
+      error: { message: "Invalid token" } as any,
+    });
+
     const res = await app.request("/test", {
       headers: { Authorization: "Bearer invalid-token" },
     });
@@ -67,5 +74,31 @@ describe("authMiddleware", () => {
     expect(res.status).toBe(401);
     const body = await res.json();
     expect(body.error.code).toBe("INVALID_TOKEN");
+  });
+
+  it("should return 403 when user is inactive", async () => {
+    const { createClient } = await import("@supabase/supabase-js");
+    const { db } = await import("../db/client.js");
+
+    const mockSupabase = createClient("" , "");
+    vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
+      data: { user: { id: "inactive-user-id" } as any },
+      error: null,
+    });
+
+    vi.mocked(db.select).mockReturnValue(mockSelectChain([{ 
+      userId: "inactive-user-id", 
+      isActive: false,
+      roleId: 4,
+      roleName: "Faculty"
+    }]) as any);
+
+    const res = await app.request("/test", {
+      headers: { Authorization: "Bearer valid-token" },
+    });
+
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.error.code).toBe("USER_INACTIVE");
   });
 });

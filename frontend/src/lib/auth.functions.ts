@@ -21,6 +21,7 @@ const loginSchema = z.object({
 const signupSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
+  employeeId: z.string().min(1),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   departmentId: z.string().min(1),
@@ -94,32 +95,31 @@ export const loginFn = createServerFn({ method: 'POST' })
 export const signupFn = createServerFn({ method: 'POST' })
   .inputValidator(signupSchema)
   .handler(async ({ data }) => {
-    // 1. Create auth user in Supabase
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
+    // Call our backend register endpoint
+    const response = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...data,
+        campusId: Number(data.campusId),
+        departmentId: data.departmentId ? Number(data.departmentId) : undefined,
+      }),
     })
 
-    if (authError || !authData.user) {
+    if (!response.ok) {
+      const errorBody = (await response.json()) as ApiErrorResponse
       return {
         error: true as const,
-        message: authError?.message ?? 'Failed to create account',
+        message: errorBody.error?.message ?? 'Registration failed',
       }
     }
 
-    // Note: After Supabase signup, the user needs to be provisioned
-    // in our backend by a Super Admin or Director (POST /auth/users).
-    // Faculty self-registration creates the Supabase auth user,
-    // but the backend profile must be provisioned separately.
-    //
-    // The user will see "account not provisioned" when they try to
-    // log in until an admin creates their profile.
+    const user = (await response.json()) as AuthUser
 
     return {
       error: false as const,
-      message:
-        'Account created! Please wait for an administrator to activate your account before logging in.',
-      userId: authData.user.id,
+      message: 'Registration successful! Please wait for an administrator to activate your account.',
+      userId: user.userId,
     }
   })
 

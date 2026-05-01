@@ -70,6 +70,7 @@ function RegisterStepTwo() {
     }
 
     const step1 = JSON.parse(step1Raw) as {
+      employeeId: string
       firstName: string
       lastName: string
       departmentId: string
@@ -82,6 +83,7 @@ function RegisterStepTwo() {
       data: {
         email: data.email,
         password: data.password,
+        employeeId: step1.employeeId,
         firstName: step1.firstName,
         lastName: step1.lastName,
         departmentId: step1.departmentId,

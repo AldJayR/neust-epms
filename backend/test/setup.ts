@@ -46,25 +46,34 @@ vi.mock("../src/lib/audit.js", () => ({
   insertAuditLog: vi.fn().mockResolvedValue(undefined),
 }));
 
-// ── Mock Supabase Auth (used in auth middleware) ──
-vi.mock("@supabase/supabase-js", () => ({
-  createClient: vi.fn(() => ({
-    auth: {
-      getUser: vi.fn().mockResolvedValue({
-        data: { user: null },
-        error: { message: "Not configured" },
+// ── Mock Supabase Auth ──
+const mockSupabase = {
+  auth: {
+    getUser: vi.fn().mockResolvedValue({
+      data: { user: null },
+      error: { message: "Not configured" },
+    }),
+    admin: {
+      createUser: vi.fn().mockResolvedValue({
+        data: { user: { id: "new-supabase-id" } },
+        error: null,
       }),
+      deleteUser: vi.fn().mockResolvedValue({ error: null }),
     },
-    storage: {
-      from: vi.fn(() => ({
-        upload: vi.fn().mockResolvedValue({ error: null }),
-        createSignedUrl: vi.fn().mockResolvedValue({
-          data: { signedUrl: "https://test.supabase.co/signed-url" },
-          error: null,
-        }),
-      })),
-    },
-  })),
+  },
+  storage: {
+    from: vi.fn(() => ({
+      upload: vi.fn().mockResolvedValue({ error: null }),
+      createSignedUrl: vi.fn().mockResolvedValue({
+        data: { signedUrl: "https://test.supabase.co/signed-url" },
+        error: null,
+      }),
+    })),
+  },
+};
+
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: vi.fn(() => mockSupabase),
 }));
 
 // ── Mock auth middleware (pass-through, injects __testMockUser) ──
