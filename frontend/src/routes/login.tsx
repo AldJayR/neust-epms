@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { useState } from 'react'
@@ -18,6 +18,11 @@ export const Route = createFileRoute('/login')({
   validateSearch: z.object({
     redirect: z.string().optional(),
   }),
+  beforeLoad: ({ context, search }) => {
+    if (context.auth.isAuthenticated) {
+      throw redirect({ to: search.redirect || '/dashboard' })
+    }
+  },
   component: LoginPage,
 })
 
@@ -48,7 +53,7 @@ function LoginPage() {
         return
       }
 
-      await navigate({ to: safeRedirectTarget })
+      await navigate({ to: safeRedirectTarget, replace: true })
     } catch (err) {
       console.error(err)
       toast.error('An unexpected error occurred')

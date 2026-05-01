@@ -4,6 +4,7 @@ import {
   Link,
   Outlet,
   useRouterState,
+  redirect,
 } from '@tanstack/react-router'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
@@ -45,6 +46,11 @@ const rankOptions = [
 ]
 
 export const Route = createFileRoute('/register')({
+  beforeLoad: ({ context }) => {
+    if (context.auth.isAuthenticated) {
+      throw redirect({ to: '/dashboard' })
+    }
+  },
   component: RegisterRoute,
 })
 

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { useState } from 'react'
@@ -36,6 +36,11 @@ const registerStep2Schema = z
   })
 
 export const Route = createFileRoute('/register/account')({
+  beforeLoad: ({ context }) => {
+    if (context.auth.isAuthenticated) {
+      throw redirect({ to: '/dashboard' })
+    }
+  },
   component: RegisterStepTwo,
 })
 
