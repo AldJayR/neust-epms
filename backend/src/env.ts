@@ -12,6 +12,8 @@ const envSchema = z.object({
   SENTRY_DSN: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM: z.string().optional(),
+  SUPABASE_USER_ID: z.string().uuid().optional(),
+  ADMIN_EMAIL: z.string().email().optional(),
   PORT: z.coerce.number().default(3000),
   NODE_ENV: z
     .enum(["development", "production", "test"])

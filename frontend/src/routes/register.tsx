@@ -126,7 +126,14 @@ function RegisterStepOneForm() {
         </p>
       </header>
 
-      <form className="mt-6" onSubmit={form.handleSubmit(onSubmit)}>
+      <form 
+        className="mt-6" 
+        method="POST"
+        onSubmit={(e) => {
+          e.preventDefault()
+          form.handleSubmit(onSubmit)(e)
+        }}
+      >
         <FieldGroup>
           <div className="grid gap-7 sm:grid-cols-2">
             <RHFTextField control={form.control} name="firstName" label="First Name" />

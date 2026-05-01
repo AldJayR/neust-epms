@@ -17,6 +17,7 @@ import storageRoutes from "./routes/storage.routes.js";
 import reportRoutes from "./routes/reports.routes.js";
 import auditRoutes from "./routes/audit.routes.js";
 import settingRoutes from "./routes/settings.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 // ── Create root app ──
 const app = new OpenAPIHono<AuthEnv>();
@@ -110,5 +111,6 @@ app.route("/api/v1", storageRoutes);
 app.route("/api/v1", reportRoutes);
 app.route("/api/v1", auditRoutes);
 app.route("/api/v1", settingRoutes);
+app.route("/api/v1", adminRoutes);
 
 export default app;

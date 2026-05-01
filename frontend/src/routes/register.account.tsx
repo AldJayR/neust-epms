@@ -170,7 +170,14 @@ function RegisterStepTwo() {
         </Alert>
       )}
 
-      <form className="mt-6" onSubmit={form.handleSubmit(onSubmit)}>
+      <form 
+        className="mt-6" 
+        method="POST"
+        onSubmit={(e) => {
+          e.preventDefault()
+          form.handleSubmit(onSubmit)(e)
+        }}
+      >
         <FieldGroup>
           <RHFTextField
             control={form.control}
