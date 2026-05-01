@@ -9,6 +9,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import appCss from '../styles.css?url'
+import robotoLatinWghtUrl from '@fontsource-variable/roboto/files/roboto-latin-wght-normal.woff2?url'
 
 import type { QueryClient } from '@tanstack/react-query'
 import type { AuthContext } from '../lib/auth'
@@ -19,7 +20,7 @@ interface MyRouterContext {
   auth: AuthContext
 }
 
-const THEME_INIT_SCRIPT = `(function(){try{var stored=window.localStorage.getItem('theme');var mode=(stored==='light'||stored==='dark'||stored==='auto')?stored:'auto';var prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;var resolved=mode==='auto'?(prefersDark?'dark':'light'):mode;var root=document.documentElement;root.classList.remove('light','dark');root.classList.add(resolved);if(mode==='auto'){root.removeAttribute('data-theme')}else{root.setAttribute('data-theme',mode)}root.style.colorScheme=resolved;}catch(e){}})();`
+const THEME_INIT_SCRIPT = `(function(){try{var root=document.documentElement;root.classList.remove('light','dark');root.classList.add('light');root.setAttribute('data-theme','light');root.style.colorScheme='light';window.localStorage.setItem('theme','light');}catch(e){}})();`
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => ({
@@ -37,6 +38,13 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     ],
     links: [
       {
+        rel: 'preload',
+        href: robotoLatinWghtUrl,
+        as: 'font',
+        type: 'font/woff2',
+        crossOrigin: 'anonymous',
+      },
+      {
         rel: 'stylesheet',
         href: appCss,
       },
@@ -52,6 +60,20 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
     }
   },
+  notFoundComponent: () => (
+    <div className="flex min-h-dvh flex-col items-center justify-center p-8 text-center">
+      <h1 className="text-4xl font-bold">404</h1>
+      <p className="mt-4 text-xl text-muted-foreground">
+        Oops! The page you're looking for doesn't exist.
+      </p>
+      <a
+        href="/"
+        className="mt-8 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+      >
+        Go home
+      </a>
+    </div>
+  ),
   shellComponent: RootDocument,
 })
 

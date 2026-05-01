@@ -24,6 +24,7 @@ export const Route = createFileRoute('/login')({
 function LoginPage() {
   const navigate = useNavigate()
   const { redirect: redirectUrl } = Route.useSearch()
+  const safeRedirectTarget = redirectUrl?.startsWith('/') ? redirectUrl : '/dashboard'
   const [serverError, setServerError] = useState<string | null>(null)
 
   const form = useForm<z.infer<typeof loginSchema>>({
@@ -38,19 +39,20 @@ function LoginPage() {
   async function onSubmit(data: z.infer<typeof loginSchema>) {
     setServerError(null)
 
-    const result = await loginFn({ data })
+    try {
+      const result = await loginFn({ data })
 
-    // If loginFn succeeds, it throws a redirect to /dashboard.
-    // If we reach here, it returned an error object.
-    if (result && result.error) {
-      setServerError(result.message)
-      toast.error('Login failed', { description: result.message })
-      return
+      if (result && result.error) {
+        setServerError(result.message)
+        toast.error('Login failed', { description: result.message })
+        return
+      }
+
+      await navigate({ to: safeRedirectTarget })
+    } catch (err) {
+      console.error(err)
+      toast.error('An unexpected error occurred')
     }
-
-    // Fallback: if the redirect didn't fire (shouldn't happen),
-    // navigate manually
-    navigate({ to: redirectUrl ?? '/dashboard' })
   }
 
   return (
@@ -71,7 +73,14 @@ function LoginPage() {
           </Alert>
         )}
 
-        <form className="mt-6" onSubmit={form.handleSubmit(onSubmit)}>
+        <form 
+          className="mt-6" 
+          method="POST"
+          onSubmit={(e) => {
+            e.preventDefault()
+            form.handleSubmit(onSubmit)(e)
+          }}
+        >
           <FieldGroup>
             <RHFTextField
               control={form.control}

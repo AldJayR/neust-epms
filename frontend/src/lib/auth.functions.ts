@@ -83,8 +83,10 @@ export const loginFn = createServerFn({ method: 'POST' })
       createdAt: Date.now(),
     })
 
-    // 4. Redirect to dashboard
-    throw redirect({ to: '/dashboard' })
+    // 4. Return success; client handles SPA navigation
+    return {
+      error: false as const,
+    }
   })
 
 // ── Signup ────────────────────────────────────────────────
