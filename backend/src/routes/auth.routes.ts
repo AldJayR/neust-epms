@@ -21,7 +21,6 @@ const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 const UserResponseSchema = z
   .object({
     userId: z.string(),
-    employeeId: z.string(),
     firstName: z.string(),
     middleName: z.string().nullable(),
     lastName: z.string(),
@@ -37,7 +36,6 @@ const UserResponseSchema = z
 
 const RegisterUserBodySchema = z
   .object({
-    employeeId: z.string().min(1),
     firstName: z.string().min(1),
     middleName: z.string().optional(),
     lastName: z.string().min(1),
@@ -52,7 +50,6 @@ const RegisterUserBodySchema = z
 
 const CreateUserBodySchema = z
   .object({
-    employeeId: z.string().min(1),
     firstName: z.string().min(1),
     middleName: z.string().optional(),
     lastName: z.string().min(1),
@@ -122,11 +119,11 @@ app.openapi(registerRoute, async (c) => {
   const [existing] = await db
     .select()
     .from(users)
-    .where(or(eq(users.email, body.email), eq(users.employeeId, body.employeeId)))
+    .where(eq(users.email, body.email))
     .limit(1);
 
   if (existing) {
-    throw new ApiError(400, "USER_EXISTS", "Email or Employee ID already registered");
+    throw new ApiError(400, "USER_EXISTS", "Email already registered");
   }
 
   // 2. Fetch Faculty role ID
@@ -156,7 +153,6 @@ app.openapi(registerRoute, async (c) => {
     .insert(users)
     .values({
       userId: authData.user.id,
-      employeeId: body.employeeId,
       firstName: body.firstName,
       middleName: body.middleName ?? null,
       lastName: body.lastName,
@@ -187,7 +183,6 @@ app.openapi(registerRoute, async (c) => {
   const [row] = await db
     .select({
       userId: users.userId,
-      employeeId: users.employeeId,
       firstName: users.firstName,
       middleName: users.middleName,
       lastName: users.lastName,
@@ -219,7 +214,6 @@ app.openapi(getMeRoute, async (c) => {
   const [row] = await db
     .select({
       userId: users.userId,
-      employeeId: users.employeeId,
       firstName: users.firstName,
       middleName: users.middleName,
       lastName: users.lastName,
@@ -297,7 +291,6 @@ app.openapi(
       .insert(users)
       .values({
         userId: body.supabaseUserId,
-        employeeId: body.employeeId,
         firstName: body.firstName,
         middleName: body.middleName ?? null,
         lastName: body.lastName,
@@ -325,7 +318,6 @@ app.openapi(
     const [row] = await db
       .select({
         userId: users.userId,
-        employeeId: users.employeeId,
         firstName: users.firstName,
         middleName: users.middleName,
         lastName: users.lastName,

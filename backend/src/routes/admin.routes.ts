@@ -19,7 +19,6 @@ installApiErrorHandler(app);
 const UserResponseSchema = z
   .object({
     userId: z.string(),
-    employeeId: z.string(),
     firstName: z.string(),
     middleName: z.string().nullable(),
     lastName: z.string(),
@@ -136,15 +135,13 @@ app.openapi(getUsersRoute, async (c) => {
     whereClause = or(
       ilike(users.firstName, `%${search}%`),
       ilike(users.lastName, `%${search}%`),
-      ilike(users.email, `%${search}%`),
-      ilike(users.employeeId, `%${search}%`),
+      ilike(users.email, `%${search}%`)
     );
   }
 
   const query = db
     .select({
       userId: users.userId,
-      employeeId: users.employeeId,
       firstName: users.firstName,
       middleName: users.middleName,
       lastName: users.lastName,

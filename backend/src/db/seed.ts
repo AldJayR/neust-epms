@@ -68,7 +68,6 @@ async function main() {
       roleId: superAdminRole.roleId,
       campusId: mainCampus.campusId,
       departmentId: misDept?.departmentId ?? null,
-      employeeId: 'ADMIN-001',
       firstName: 'System',
       lastName: 'Administrator',
       email: adminEmail,

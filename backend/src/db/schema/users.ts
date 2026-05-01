@@ -24,7 +24,6 @@ export const users = pgTable(
     departmentId: integer("department_id").references(
       () => departments.departmentId,
     ),
-    employeeId: varchar("employee_id", { length: 50 }).notNull().unique(),
     firstName: varchar("first_name", { length: 100 }).notNull(),
     middleName: varchar("middle_name", { length: 100 }),
     lastName: varchar("last_name", { length: 100 }).notNull(),

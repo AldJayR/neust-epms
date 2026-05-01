@@ -7,7 +7,7 @@ beforeEach(() => { setMockUser(MOCK_USERS.superAdmin); });
 
 describe("GET /auth/me", () => {
   it("should return the current user profile", async () => {
-    const profile = { userId: MOCK_USERS.superAdmin.userId, employeeId: "EMP-001", firstName: "Admin", middleName: null, lastName: "User", nameSuffix: null, academicRank: null, email: "admin@neust.edu.ph", roleName: "Super Admin", campusName: "Main", departmentName: null, isActive: true };
+    const profile = { userId: MOCK_USERS.superAdmin.userId, firstName: "Admin", middleName: null, lastName: "User", nameSuffix: null, academicRank: null, email: "admin@neust.edu.ph", roleName: "Super Admin", campusName: "Main", departmentName: null, isActive: true };
     vi.mocked(db.select).mockReturnValue(mockSelectChain([profile]) as never);
 
     const res = await app.request("/auth/me");
@@ -26,8 +26,8 @@ describe("GET /auth/me", () => {
 
 describe("POST /auth/users", () => {
   it("should allow Super Admin to provision a user", async () => {
-    const created = { userId: "new-user-id", employeeId: "EMP-002" };
-    const profile = { userId: "new-user-id", employeeId: "EMP-002", firstName: "New", middleName: null, lastName: "Faculty", nameSuffix: null, academicRank: "Instructor I", email: "new@neust.edu.ph", roleName: "Faculty", campusName: "Main", departmentName: "CICT", isActive: true };
+    const created = { userId: "new-user-id" };
+    const profile = { userId: "new-user-id", firstName: "New", middleName: null, lastName: "Faculty", nameSuffix: null, academicRank: "Instructor I", email: "new@neust.edu.ph", roleName: "Faculty", campusName: "Main", departmentName: "CICT", isActive: true };
 
     vi.mocked(db.insert).mockReturnValue(mockMutationChain([created]) as never);
     vi.mocked(db.select).mockReturnValue(mockSelectChain([profile]) as never);
@@ -36,7 +36,7 @@ describe("POST /auth/users", () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        employeeId: "EMP-002", firstName: "New", lastName: "Faculty",
+        firstName: "New", lastName: "Faculty",
         email: "new@neust.edu.ph", roleId: 4, campusId: 1, departmentId: 1,
         supabaseUserId: "new-user-id",
       }),
@@ -50,7 +50,7 @@ describe("POST /auth/users", () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        employeeId: "EMP-003", firstName: "Fail", lastName: "User",
+        firstName: "Fail", lastName: "User",
         email: "fail@neust.edu.ph", roleId: 4, campusId: 1,
         supabaseUserId: "fail-user-id",
       }),
@@ -72,7 +72,6 @@ describe("POST /auth/register", () => {
     const createdUser = { userId: "new-supabase-id", email: "new@neust.edu.ph" };
     const fullProfile = {
       userId: "new-supabase-id",
-      employeeId: "2024-001",
       firstName: "John",
       lastName: "Doe",
       email: "new@neust.edu.ph",
@@ -95,7 +94,6 @@ describe("POST /auth/register", () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        employeeId: "2024-001",
         firstName: "John",
         lastName: "Doe",
         email: "new@neust.edu.ph",
@@ -117,7 +115,6 @@ describe("POST /auth/register", () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        employeeId: "2024-001",
         firstName: "John",
         lastName: "Doe",
         email: "existing@neust.edu.ph",

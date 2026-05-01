@@ -12,7 +12,6 @@ export interface AdminStats {
 
 export interface UserResponse {
   userId: string
-  employeeId: string
   firstName: string
   middleName: string | null
   lastName: string
