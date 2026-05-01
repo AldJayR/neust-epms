@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, count, and, ilike, inArray, sql } from "drizzle-orm";
+import { eq, count, and, ilike, inArray, sql, or } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
 import { roles } from "../db/schema/roles.js";

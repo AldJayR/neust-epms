@@ -39,7 +39,7 @@ async function main() {
   const [misDept] = await db
     .insert(departments)
     .values({
-      campusId: mainCampus.campusId,
+      departmentCode: 'MIS',
       departmentName: 'Management Information System (MIS)',
     })
     .onConflictDoNothing()

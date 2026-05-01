@@ -9,14 +9,11 @@ export const departments = pgTable(
   "departments",
   {
     departmentId: serial("department_id").primaryKey(),
-    campusId: integer("campus_id")
+    departmentCode: varchar("department_code", { length: 50 })
       .notNull()
-      .references(() => campuses.campusId),
+      .unique(),
     departmentName: varchar("department_name", { length: 255 })
       .notNull()
       .unique(),
   },
-  (table) => ({
-    campusIdx: index("departments_campus_id_idx").on(table.campusId),
-  }),
 );

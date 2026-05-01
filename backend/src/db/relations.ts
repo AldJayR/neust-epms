@@ -27,18 +27,13 @@ export const rolesRelations = relations(roles, ({ many }) => ({
 // ── Campuses ──
 export const campusesRelations = relations(campuses, ({ many }) => ({
   users: many(users),
-  departments: many(departments),
   proposals: many(proposals),
 }));
 
 // ── Departments ──
 export const departmentsRelations = relations(
   departments,
-  ({ one, many }) => ({
-    campus: one(campuses, {
-      fields: [departments.campusId],
-      references: [campuses.campusId],
-    }),
+  ({ many }) => ({
     users: many(users),
     proposalDepartments: many(proposalDepartments),
     ledProposals: many(proposals),
