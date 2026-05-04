@@ -58,7 +58,7 @@ const ErrorSchema = z
 
 // ── Authentication & Authorization Middleware ──
 app.use("/admin/*", authMiddleware);
-app.use("/admin/*", requireRole([ROLE_NAMES.SUPER_ADMIN]));
+app.use("/admin/*", requireRole(ROLE_NAMES.SUPER_ADMIN));
 
 // ── GET /admin/stats ──
 const getAdminStatsRoute = createRoute({
