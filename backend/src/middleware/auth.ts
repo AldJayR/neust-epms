@@ -5,6 +5,8 @@ import { env } from "../env.js";
 import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
 import { roles } from "../db/schema/roles.js";
+import { campuses } from "../db/schema/campuses.js";
+import { departments } from "../db/schema/departments.js";
 import { authUserCache, cacheEnabled } from "../lib/cache.js";
 import { ApiError } from "../lib/errors.js";
 import type { AuthUser } from "../lib/types.js";
@@ -59,11 +61,20 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
       roleId: users.roleId,
       roleName: roles.roleName,
       campusId: users.campusId,
+      campusName: campuses.campusName,
       departmentId: users.departmentId,
+      departmentName: departments.departmentName,
+      firstName: users.firstName,
+      middleName: users.middleName,
+      lastName: users.lastName,
+      nameSuffix: users.nameSuffix,
+      academicRank: users.academicRank,
       isActive: users.isActive,
     })
     .from(users)
     .innerJoin(roles, eq(users.roleId, roles.roleId))
+    .innerJoin(campuses, eq(users.campusId, campuses.campusId))
+    .leftJoin(departments, eq(users.departmentId, departments.departmentId))
     .where(eq(users.userId, supabaseUser.id))
     .limit(1);
 
@@ -85,7 +96,15 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
     roleId: appUser.roleId,
     roleName: appUser.roleName,
     campusId: appUser.campusId,
+    campusName: appUser.campusName,
     departmentId: appUser.departmentId,
+    departmentName: appUser.departmentName,
+    firstName: appUser.firstName,
+    middleName: appUser.middleName,
+    lastName: appUser.lastName,
+    nameSuffix: appUser.nameSuffix,
+    academicRank: appUser.academicRank,
+    isActive: appUser.isActive,
   };
 
   if (cacheEnabled) {

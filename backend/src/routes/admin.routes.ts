@@ -84,11 +84,13 @@ const getAdminStatsRoute = createRoute({
 });
 
 app.openapi(getAdminStatsRoute, async (c) => {
-  const [allUsersCount] = await db.select({ value: count() }).from(users);
-  const [deactivatedCount] = await db
-    .select({ value: count() })
-    .from(users)
-    .where(eq(users.isActive, false));
+  const [allUsersCount, deactivatedCount] = await Promise.all([
+    db.select({ value: count() }).from(users),
+    db
+      .select({ value: count() })
+      .from(users)
+      .where(eq(users.isActive, false)),
+  ]);
 
   // "Pending Approval" logic can be specific. For now, let's assume it's 0 
   // or define a placeholder logic if we have a field for it.
@@ -139,34 +141,30 @@ app.openapi(getUsersRoute, async (c) => {
     );
   }
 
-  const query = db
-    .select({
-      userId: users.userId,
-      firstName: users.firstName,
-      middleName: users.middleName,
-      lastName: users.lastName,
-      nameSuffix: users.nameSuffix,
-      academicRank: users.academicRank,
-      email: users.email,
-      roleName: roles.roleName,
-      campusName: campuses.campusName,
-      departmentName: departments.departmentName,
-      isActive: users.isActive,
-    })
-    .from(users)
-    .innerJoin(roles, eq(users.roleId, roles.roleId))
-    .innerJoin(campuses, eq(users.campusId, campuses.campusId))
-    .leftJoin(departments, eq(users.departmentId, departments.departmentId))
-    .where(whereClause)
-    .limit(ps)
-    .offset(offset);
-
-  const [totalResult] = await db
-    .select({ value: count() })
-    .from(users)
-    .where(whereClause);
-
-  const rows = await query;
+  const [totalResult, rows] = await Promise.all([
+    db.select({ value: count() }).from(users).where(whereClause),
+    db
+      .select({
+        userId: users.userId,
+        firstName: users.firstName,
+        middleName: users.middleName,
+        lastName: users.lastName,
+        nameSuffix: users.nameSuffix,
+        academicRank: users.academicRank,
+        email: users.email,
+        roleName: roles.roleName,
+        campusName: campuses.campusName,
+        departmentName: departments.departmentName,
+        isActive: users.isActive,
+      })
+      .from(users)
+      .innerJoin(roles, eq(users.roleId, roles.roleId))
+      .innerJoin(campuses, eq(users.campusId, campuses.campusId))
+      .leftJoin(departments, eq(users.departmentId, departments.departmentId))
+      .where(whereClause)
+      .limit(ps)
+      .offset(offset),
+  ]);
 
   return c.json({
     users: rows,

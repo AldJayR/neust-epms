@@ -31,6 +31,9 @@ const UserResponseSchema = z
     campusName: z.string(),
     departmentName: z.string().nullable(),
     isActive: z.boolean(),
+    roleId: z.number().optional(),
+    campusId: z.number().optional(),
+    departmentId: z.number().nullable().optional(),
   })
   .openapi("UserResponse");
 
@@ -210,6 +213,23 @@ app.use("/auth/users", authMiddleware);
 
 app.openapi(getMeRoute, async (c) => {
   const authUser = c.get("user");
+
+  if (!authUser) {
+    throw new ApiError(
+      401,
+      "USER_NOT_FOUND",
+      "Authenticated user has no application profile",
+    );
+  }
+
+  if (
+    authUser.firstName &&
+    authUser.lastName &&
+    authUser.campusName &&
+    authUser.departmentName !== undefined
+  ) {
+    return c.json(authUser, 200);
+  }
 
   const [row] = await db
     .select({
