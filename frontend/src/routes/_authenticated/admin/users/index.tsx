@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { UsersPage } from "@/features/admin/users-page";
 import {
@@ -13,13 +13,25 @@ const usersSearchSchema = z.object({
 });
 
 export const Route = createFileRoute("/_authenticated/admin/users/")({
-	validateSearch: (search) => usersSearchSchema.parse(search),
+	beforeLoad: ({ context }) => {
+		if (context.auth.user?.roleName !== "Super Admin") {
+			throw redirect({
+				to: "/dashboard",
+				search: { page: 1, pageSize: 10 },
+			});
+		}
+	},
+	validateSearch: usersSearchSchema,
 	loaderDeps: ({ search }) => ({
 		page: search.page,
 		pageSize: search.pageSize,
 		search: search.search,
 	}),
 	loader: async ({ context, deps }) => {
+		if (context.auth.user?.roleName !== "Super Admin") {
+			return null;
+		}
+
 		await Promise.all([
 			context.queryClient.ensureQueryData(adminStatsQueryOptions()),
 			context.queryClient.ensureQueryData(
