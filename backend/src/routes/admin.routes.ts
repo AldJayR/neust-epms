@@ -114,6 +114,7 @@ const getUsersRoute = createRoute({
   request: {
     query: z.object({
       search: z.string().optional(),
+      isActive: z.string().optional(), // "true" or "false"
       page: z.string().optional().default("1"),
       pageSize: z.string().optional().default("10"),
     }),
@@ -127,22 +128,31 @@ const getUsersRoute = createRoute({
 });
 
 app.openapi(getUsersRoute, async (c) => {
-  const { search, page, pageSize } = c.req.valid("query");
+  const { search, isActive, page, pageSize } = c.req.valid("query");
   const p = parseInt(page);
   const ps = parseInt(pageSize);
   const offset = (p - 1) * ps;
 
-  let whereClause = undefined;
+  let searchClause = undefined;
   if (search) {
-    whereClause = or(
+    searchClause = or(
       ilike(users.firstName, `%${search}%`),
       ilike(users.lastName, `%${search}%`),
       ilike(users.email, `%${search}%`)
     );
   }
+  
+  let activeClause = undefined;
+  if (isActive === "true") {
+    activeClause = eq(users.isActive, true);
+  } else if (isActive === "false") {
+    activeClause = eq(users.isActive, false);
+  }
+  
+  const finalWhere = and(searchClause, activeClause);
 
   const [totalResult, rows] = await Promise.all([
-    db.select({ value: count() }).from(users).where(whereClause),
+    db.select({ value: count() }).from(users).where(finalWhere),
     db
       .select({
         userId: users.userId,
@@ -161,7 +171,7 @@ app.openapi(getUsersRoute, async (c) => {
       .innerJoin(roles, eq(users.roleId, roles.roleId))
       .innerJoin(campuses, eq(users.campusId, campuses.campusId))
       .leftJoin(departments, eq(users.departmentId, departments.departmentId))
-      .where(whereClause)
+      .where(finalWhere)
       .limit(ps)
       .offset(offset),
   ]);
@@ -219,6 +229,113 @@ app.openapi(bulkUpdateStatusRoute, async (c) => {
   return c.json({
     success: true,
     updatedCount: result.length,
+  }, 200);
+});
+
+// ── GET /admin/roles ──
+const getRolesRoute = createRoute({
+  method: "get",
+  path: "/admin/roles",
+  tags: ["Admin"],
+  summary: "Get all available roles",
+  security: [{ Bearer: [] }],
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.array(
+            z.object({
+              roleId: z.number(),
+              roleName: z.string(),
+            })
+          ),
+        },
+      },
+      description: "List of roles",
+    },
+  },
+});
+
+app.openapi(getRolesRoute, async (c) => {
+  const allRoles = await db.select().from(roles);
+  return c.json(allRoles, 200);
+});
+
+// ── PATCH /admin/users/approve ──
+const bulkApproveSchema = z.object({
+  users: z.array(
+    z.object({
+      userId: z.string(),
+      roleName: z.string(),
+    })
+  ),
+});
+
+const bulkApproveRoute = createRoute({
+  method: "patch",
+  path: "/admin/users/approve",
+  tags: ["Admin"],
+  summary: "Bulk approve users and assign roles",
+  security: [{ Bearer: [] }],
+  request: {
+    body: {
+      content: { "application/json": { schema: bulkApproveSchema } },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      content: { "application/json": { schema: z.object({ success: z.boolean(), updatedCount: z.number() }) } },
+      description: "Users approved",
+    },
+  },
+});
+
+app.openapi(bulkApproveRoute, async (c) => {
+  const authUser = c.get("user");
+  const { users: usersToApprove } = c.req.valid("json");
+
+  if (usersToApprove.length === 0) {
+    return c.json({ success: true, updatedCount: 0 }, 200);
+  }
+
+  // Fetch roles mapping to avoid N queries
+  const allRoles = await db.select().from(roles);
+  const roleMap = new Map(allRoles.map(r => [r.roleName, r.roleId]));
+
+  let updatedCount = 0;
+
+  // We perform updates in a transaction for atomicity
+  await db.transaction(async (tx) => {
+    for (const u of usersToApprove) {
+      const roleId = roleMap.get(u.roleName);
+      if (!roleId) continue;
+
+      const result = await tx
+        .update(users)
+        .set({ isActive: true, roleId, updatedAt: new Date() })
+        .where(eq(users.userId, u.userId))
+        .returning({ userId: users.userId });
+        
+      if (result.length > 0) updatedCount++;
+    }
+    
+    if (updatedCount > 0) {
+      await insertAuditLog(
+        {
+          userId: authUser.userId,
+          action: `Bulk approved ${updatedCount} users with assigned roles`,
+          tableAffected: "users",
+          ipAddress: c.req.header("x-forwarded-for") ?? null,
+        },
+        tx
+      );
+    }
+  });
+
+  return c.json({
+    success: true,
+    updatedCount,
   }, 200);
 });
 

@@ -43,6 +43,7 @@ import {
 	adminUsersQueryOptions,
 } from "@/lib/admin.functions";
 import { toast } from "sonner";
+import { BulkApproveDialog } from "./bulk-approve-dialog";
 
 interface UsersPageProps {
 	page: number;
@@ -115,16 +116,16 @@ export function UsersPage({
 	return (
 		<div className="flex flex-col gap-8">
 			<div className="flex items-center justify-between">
-				<h1 className="text-2xl font-semibold text-[#11215a]">
-					User Management
-				</h1>
-				<Button
-					className="bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white rounded-[10px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
-					disabled={updateStatusMutation.isPending}
-				>
-					<CheckCircle2 className="mr-2 h-4 w-4" />
-					Bulk approve
-				</Button>
+			  <h1 className="text-2xl font-semibold text-[#11215a]">User Management</h1>
+			  <BulkApproveDialog>
+			    <Button 
+			      className="bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white rounded-[10px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
+			      disabled={updateStatusMutation.isPending}
+			    >
+			      <CheckCircle2 className="mr-2 h-4 w-4" />
+			      Bulk approve
+			    </Button>
+			  </BulkApproveDialog>
 			</div>
 
 			<div className="grid gap-6 md:grid-cols-3">

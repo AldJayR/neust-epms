@@ -37,6 +37,7 @@ export interface AdminUsersQueryParams {
 	page: number;
 	pageSize: number;
 	search?: string;
+	isActive?: string;
 }
 
 export function adminStatsQueryOptions() {
@@ -51,12 +52,13 @@ export function adminUsersQueryOptions({
 	page,
 	pageSize,
 	search,
+	isActive,
 }: AdminUsersQueryParams) {
 	return queryOptions({
-		queryKey: ["admin", "users", page, pageSize, search ?? ""],
+		queryKey: ["admin", "users", page, pageSize, search ?? "", isActive ?? ""],
 		queryFn: () =>
 			getAdminUsersFn({
-				data: { page, pageSize, search },
+				data: { page, pageSize, search, isActive },
 			}),
 		staleTime: ADMIN_QUERY_STALE_TIME_MS,
 	});
@@ -94,7 +96,7 @@ export const getAdminStatsFn = createServerFn({ method: "GET" }).handler(
 
 export const getAdminUsersFn = createServerFn({ method: "GET" })
 	.inputValidator(
-		(d: { search?: string; page?: number; pageSize?: number }) => d,
+		(d: { search?: string; page?: number; pageSize?: number; isActive?: string }) => d,
 	)
 	.handler(async ({ data }) => {
 		const session = await useAppSession();
@@ -106,6 +108,7 @@ export const getAdminUsersFn = createServerFn({ method: "GET" })
 
 		const query = new URLSearchParams();
 		if (data.search) query.append("search", data.search);
+		if (data.isActive) query.append("isActive", data.isActive);
 		if (data.page) query.append("page", data.page.toString());
 		if (data.pageSize) query.append("pageSize", data.pageSize.toString());
 
@@ -156,6 +159,86 @@ export const bulkUpdateUserStatusFn = createServerFn({ method: "POST" })
 			const errorBody = (await response.json()) as ApiErrorResponse;
 			throw new Error(
 				errorBody.error?.message ?? "Failed to update user status",
+			);
+		}
+
+		return (await response.json()) as {
+			success: boolean;
+			updatedCount: number;
+		};
+	});
+
+// ── Get Roles ────────────────────────────────────────────
+
+export interface RoleResponse {
+	roleId: number;
+	roleName: string;
+}
+
+export const getRolesFn = createServerFn({ method: "GET" }).handler(
+	async () => {
+		const session = await useAppSession();
+		const { accessToken } = session.data;
+
+		if (!accessToken) {
+			throw new Error("Unauthorized");
+		}
+
+		const response = await fetch(`${API_BASE}/admin/roles`, {
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+		});
+
+		if (!response.ok) {
+			const errorBody = (await response.json()) as ApiErrorResponse;
+			throw new Error(errorBody.error?.message ?? "Failed to fetch roles");
+		}
+
+		return (await response.json()) as RoleResponse[];
+	},
+);
+
+export function rolesQueryOptions() {
+	return queryOptions({
+		queryKey: ["admin", "roles"],
+		queryFn: () => getRolesFn(),
+		staleTime: ADMIN_QUERY_STALE_TIME_MS,
+	});
+}
+
+// ── Bulk Approve Users ───────────────────────────────────
+
+interface BulkApproveInput {
+	users: {
+		userId: string;
+		roleName: string;
+	}[];
+}
+
+export const bulkApproveUsersFn = createServerFn({ method: "POST" })
+	.inputValidator((d: BulkApproveInput) => d)
+	.handler(async ({ data }) => {
+		const session = await useAppSession();
+		const { accessToken } = session.data;
+
+		if (!accessToken) {
+			throw new Error("Unauthorized");
+		}
+
+		const response = await fetch(`${API_BASE}/admin/users/approve`, {
+			method: "PATCH",
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(data),
+		});
+
+		if (!response.ok) {
+			const errorBody = (await response.json()) as ApiErrorResponse;
+			throw new Error(
+				errorBody.error?.message ?? "Failed to bulk approve users",
 			);
 		}
 
