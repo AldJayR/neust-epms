@@ -96,19 +96,19 @@ app.openapi(listRoute, async (c) => {
   const proposalConditions: SQL[] = [isNull(proposals.archivedAt)];
   
   if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
-    if (user.departmentId) {
+    if (user.departmentId !== null) {
       proposalConditions.push(
         or(
           eq(proposals.projectLeaderId, user.userId),
           eq(proposals.departmentId, user.departmentId)
-        )
+        )!
       );
     } else {
       proposalConditions.push(
         or(
           eq(proposals.projectLeaderId, user.userId),
           eq(proposals.campusId, user.campusId)
-        )
+        )!
       );
     }
   }

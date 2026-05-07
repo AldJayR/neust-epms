@@ -38,7 +38,15 @@ function createTestApp(allowedRoles: string[], userRole: string) {
       roleId: 1,
       roleName: userRole,
       campusId: 1,
+      campusName: "Cabanatuan City (Main)",
       departmentId: null,
+      departmentName: null,
+      firstName: "Test",
+      middleName: null,
+      lastName: "User",
+      nameSuffix: null,
+      academicRank: null,
+      isActive: true,
     });
     await next();
   });

@@ -136,19 +136,19 @@ app.openapi(listRoute, async (c) => {
   const whereConditions: SQL[] = [isNull(proposals.archivedAt)];
   
   if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
-    if (user.departmentId) {
+    if (user.departmentId !== null) {
       whereConditions.push(
         or(
           eq(proposals.projectLeaderId, user.userId),
           eq(proposals.departmentId, user.departmentId)
-        )
+        )!
       );
     } else {
       whereConditions.push(
         or(
           eq(proposals.projectLeaderId, user.userId),
           eq(proposals.campusId, user.campusId)
-        )
+        )!
       );
     }
   }
@@ -198,19 +198,19 @@ app.openapi(getRoute, async (c) => {
   const whereConditions: SQL[] = [eq(proposals.proposalId, id), isNull(proposals.archivedAt)];
 
   if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
-    if (user.departmentId) {
+    if (user.departmentId !== null) {
       whereConditions.push(
         or(
           eq(proposals.projectLeaderId, user.userId),
           eq(proposals.departmentId, user.departmentId)
-        )
+        )!
       );
     } else {
       whereConditions.push(
         or(
           eq(proposals.projectLeaderId, user.userId),
           eq(proposals.campusId, user.campusId)
-        )
+        )!
       );
     }
   }

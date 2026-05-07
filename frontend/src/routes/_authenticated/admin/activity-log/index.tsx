@@ -1,6 +1,15 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { z } from "zod";
+import { ActivityLogPage } from "@/features/admin/activity-log-page";
+
+const searchSchema = z.object({
+	page: z.number().int().min(1).catch(1),
+	limit: z.number().int().min(1).max(100).catch(10),
+	search: z.string().optional(),
+});
 
 export const Route = createFileRoute("/_authenticated/admin/activity-log/")({
+	validateSearch: (search) => searchSchema.parse(search),
 	beforeLoad: ({ context }) => {
 		if (context.auth.user?.roleName !== "Super Admin") {
 			throw redirect({
@@ -9,10 +18,30 @@ export const Route = createFileRoute("/_authenticated/admin/activity-log/")({
 			});
 		}
 	},
-	component: () => (
-		<div className="flex flex-col gap-4">
-			<h1 className="text-2xl font-semibold text-[#11215a]">Activity Log</h1>
-			<p className="text-muted-foreground">This page is under construction.</p>
-		</div>
-	),
+	component: ActivityLogComponent,
 });
+
+function ActivityLogComponent() {
+	const { page, limit, search } = Route.useSearch();
+	const navigate = useNavigate();
+
+	return (
+		<ActivityLogPage
+			page={page}
+			limit={limit}
+			search={search}
+			onSearch={(newSearch) =>
+				navigate({
+					to: ".",
+					search: (prev) => ({ ...prev, search: newSearch, page: 1 }),
+				})
+			}
+			onPageChange={(newPage) =>
+				navigate({
+					to: ".",
+					search: (prev) => ({ ...prev, page: newPage }),
+				})
+			}
+		/>
+	);
+}

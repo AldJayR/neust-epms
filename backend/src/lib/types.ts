@@ -124,13 +124,13 @@ export interface AuthUser {
   roleId: number;
   roleName: string;
   campusId: number;
-  campusName?: string;
+  campusName: string;
   departmentId: number | null;
-  departmentName?: string | null;
-  firstName?: string;
-  middleName?: string | null;
-  lastName?: string;
-  nameSuffix?: string | null;
-  academicRank?: string | null;
+  departmentName: string | null;
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+  nameSuffix: string | null;
+  academicRank: string | null;
   isActive: boolean;
 }

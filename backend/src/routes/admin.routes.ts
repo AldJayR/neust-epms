@@ -84,13 +84,11 @@ const getAdminStatsRoute = createRoute({
 });
 
 app.openapi(getAdminStatsRoute, async (c) => {
-  const [allUsersCount, deactivatedCount] = await Promise.all([
-    db.select({ value: count() }).from(users),
-    db
-      .select({ value: count() })
-      .from(users)
-      .where(eq(users.isActive, false)),
-  ]);
+  const allUsersCount = await db.select({ value: count() }).from(users);
+  const deactivatedCount = await db
+    .select({ value: count() })
+    .from(users)
+    .where(eq(users.isActive, false));
 
   // "Pending Approval" logic can be specific. For now, let's assume it's 0 
   // or define a placeholder logic if we have a field for it.
@@ -98,9 +96,9 @@ app.openapi(getAdminStatsRoute, async (c) => {
   // If we don't have a status field yet, we'll return 0 or implement a check.
   
   return c.json({
-    totalAccounts: Number(allUsersCount.value),
+    totalAccounts: Number(allUsersCount[0]?.value ?? 0),
     pendingApproval: 0, 
-    deactivated: Number(deactivatedCount.value),
+    deactivated: Number(deactivatedCount[0]?.value ?? 0),
   }, 200);
 });
 
@@ -151,34 +149,32 @@ app.openapi(getUsersRoute, async (c) => {
   
   const finalWhere = and(searchClause, activeClause);
 
-  const [totalResult, rows] = await Promise.all([
-    db.select({ value: count() }).from(users).where(finalWhere),
-    db
-      .select({
-        userId: users.userId,
-        firstName: users.firstName,
-        middleName: users.middleName,
-        lastName: users.lastName,
-        nameSuffix: users.nameSuffix,
-        academicRank: users.academicRank,
-        email: users.email,
-        roleName: roles.roleName,
-        campusName: campuses.campusName,
-        departmentName: departments.departmentName,
-        isActive: users.isActive,
-      })
-      .from(users)
-      .innerJoin(roles, eq(users.roleId, roles.roleId))
-      .innerJoin(campuses, eq(users.campusId, campuses.campusId))
-      .leftJoin(departments, eq(users.departmentId, departments.departmentId))
-      .where(finalWhere)
-      .limit(ps)
-      .offset(offset),
-  ]);
+  const totalResult = await db.select({ value: count() }).from(users).where(finalWhere);
+  const rows = await db
+    .select({
+      userId: users.userId,
+      firstName: users.firstName,
+      middleName: users.middleName,
+      lastName: users.lastName,
+      nameSuffix: users.nameSuffix,
+      academicRank: users.academicRank,
+      email: users.email,
+      roleName: roles.roleName,
+      campusName: campuses.campusName,
+      departmentName: departments.departmentName,
+      isActive: users.isActive,
+    })
+    .from(users)
+    .innerJoin(roles, eq(users.roleId, roles.roleId))
+    .innerJoin(campuses, eq(users.campusId, campuses.campusId))
+    .leftJoin(departments, eq(users.departmentId, departments.departmentId))
+    .where(finalWhere)
+    .limit(ps)
+    .offset(offset);
 
   return c.json({
     users: rows,
-    total: Number(totalResult.value),
+    total: Number(totalResult[0]?.value ?? 0),
     page: p,
     pageSize: ps,
   }, 200);

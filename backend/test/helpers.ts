@@ -13,7 +13,15 @@ export const MOCK_USERS = {
     roleId: 4,
     roleName: "Faculty",
     campusId: 1,
+    campusName: "Cabanatuan City (Main)",
     departmentId: 1,
+    departmentName: "Management Information System (MIS)",
+    firstName: "Faculty",
+    middleName: null,
+    lastName: "User",
+    nameSuffix: null,
+    academicRank: "Instructor",
+    isActive: true,
   } satisfies AuthUser,
 
   retChair: {
@@ -22,7 +30,15 @@ export const MOCK_USERS = {
     roleId: 3,
     roleName: "RET Chair",
     campusId: 1,
+    campusName: "Cabanatuan City (Main)",
     departmentId: 2,
+    departmentName: "Research and Extension",
+    firstName: "RET",
+    middleName: null,
+    lastName: "Chair",
+    nameSuffix: null,
+    academicRank: "Associate Professor",
+    isActive: true,
   } satisfies AuthUser,
 
   director: {
@@ -31,7 +47,15 @@ export const MOCK_USERS = {
     roleId: 2,
     roleName: "Director",
     campusId: 1,
+    campusName: "Cabanatuan City (Main)",
     departmentId: null,
+    departmentName: null,
+    firstName: "Director",
+    middleName: null,
+    lastName: "User",
+    nameSuffix: null,
+    academicRank: "Professor",
+    isActive: true,
   } satisfies AuthUser,
 
   superAdmin: {
@@ -40,7 +64,15 @@ export const MOCK_USERS = {
     roleId: 1,
     roleName: "Super Admin",
     campusId: 1,
+    campusName: "Cabanatuan City (Main)",
     departmentId: null,
+    departmentName: null,
+    firstName: "System",
+    middleName: null,
+    lastName: "Administrator",
+    nameSuffix: null,
+    academicRank: null,
+    isActive: true,
   } satisfies AuthUser,
 } as const;
 

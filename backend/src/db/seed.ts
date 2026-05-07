@@ -34,6 +34,10 @@ async function main() {
     })
     .returning()
 
+  if (!mainCampus) {
+    throw new Error('Main campus seed failed')
+  }
+
   // 3. Seed Main Department (e.g., MIS)
   console.log('Inserting MIS department...')
   const [misDept] = await db

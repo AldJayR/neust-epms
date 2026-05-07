@@ -10,8 +10,8 @@ export async function insertAuditLog(params: {
   action: string;
   tableAffected: string;
   ipAddress?: string | null;
-}): Promise<void> {
-  await db.insert(auditLogs).values({
+}, executor: Pick<typeof db, "insert"> = db): Promise<void> {
+  await executor.insert(auditLogs).values({
     userId: params.userId,
     action: params.action,
     tableAffected: params.tableAffected,

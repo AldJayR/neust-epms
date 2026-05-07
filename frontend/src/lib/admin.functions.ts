@@ -247,3 +247,103 @@ export const bulkApproveUsersFn = createServerFn({ method: "POST" })
 			updatedCount: number;
 		};
 	});
+
+// ── Audit Logs ───────────────────────────────────────────
+
+export interface AuditLog {
+	logId: string;
+	userId: string;
+	action: string;
+	tableAffected: string;
+	ipAddress: string | null;
+	createdAt: string;
+	actorName: string | null;
+	actorRole: string | null;
+}
+
+export interface AuditLogListResponse {
+	items: AuditLog[];
+	total: number;
+}
+
+export interface AuditStats {
+	totalActionsToday: number;
+	uniqueUsersActive: number;
+	accountChanges: number;
+	failedLogins: number;
+}
+
+export const getAuditLogsFn = createServerFn({ method: "GET" })
+	.inputValidator((d: { page: number; limit: number; search?: string }) => d)
+	.handler(async ({ data }) => {
+		const session = await useAppSession();
+		const { accessToken } = session.data;
+
+		if (!accessToken) {
+			throw new Error("Unauthorized");
+		}
+
+		const query = new URLSearchParams();
+		query.append("page", data.page.toString());
+		query.append("limit", data.limit.toString());
+		if (data.search) query.append("search", data.search);
+
+		const response = await fetch(`${API_BASE}/audit-logs?${query.toString()}`, {
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+		});
+
+		if (!response.ok) {
+			const errorBody = (await response.json()) as ApiErrorResponse;
+			throw new Error(errorBody.error?.message ?? "Failed to fetch audit logs");
+		}
+
+		return (await response.json()) as AuditLogListResponse;
+	});
+
+export const getAuditStatsFn = createServerFn({ method: "GET" }).handler(
+	async () => {
+		const session = await useAppSession();
+		const { accessToken } = session.data;
+
+		if (!accessToken) {
+			throw new Error("Unauthorized");
+		}
+
+		const response = await fetch(`${API_BASE}/audit-logs/stats`, {
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+		});
+
+		if (!response.ok) {
+			const errorBody = (await response.json()) as ApiErrorResponse;
+			throw new Error(
+				errorBody.error?.message ?? "Failed to fetch audit stats",
+			);
+		}
+
+		return (await response.json()) as AuditStats;
+	},
+);
+
+export function auditLogsQueryOptions(params: {
+	page: number;
+	limit: number;
+	search?: string;
+}) {
+	return queryOptions({
+		queryKey: ["admin", "audit-logs", params],
+		queryFn: () => getAuditLogsFn({ data: params }),
+		staleTime: 1000 * 30, // 30 seconds
+	});
+}
+
+export function auditStatsQueryOptions() {
+	return queryOptions({
+		queryKey: ["admin", "audit-stats"],
+		queryFn: () => getAuditStatsFn(),
+		staleTime: 1000 * 60, // 1 minute
+	});
+}

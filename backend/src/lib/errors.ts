@@ -6,6 +6,16 @@ type ErrorLikeApp = {
   ) => void;
 };
 
+type ErrorLike = {
+  name?: unknown;
+  message?: unknown;
+  status?: unknown;
+};
+
+function isErrorLike(err: unknown): err is ErrorLike {
+  return typeof err === "object" && err !== null;
+}
+
 /**
  * Structured API error that serializes cleanly to JSON.
  */
@@ -42,14 +52,21 @@ export function createErrorResponse(err: ApiError): ErrorResponse {
 
 export function installApiErrorHandler(app: ErrorLikeApp): void {
   app.onError((err, c) => {
-    if (err instanceof ApiError || err.name === "ApiError") {
+    if (
+      err instanceof ApiError ||
+      (isErrorLike(err) && err.name === "ApiError")
+    ) {
       return c.json(createErrorResponse(err as ApiError), (err as ApiError).status);
     }
 
-    if (err instanceof HTTPException || err.name === "HTTPException") {
-      const status = "status" in err && typeof err.status === "number" ? err.status : 500;
+    if (
+      err instanceof HTTPException ||
+      (isErrorLike(err) && err.name === "HTTPException")
+    ) {
+      const status = isErrorLike(err) && typeof err.status === "number" ? err.status : 500;
+      const message = isErrorLike(err) && typeof err.message === "string" ? err.message : "HTTP error";
       return c.json(
-        { error: { code: "HTTP_ERROR", message: err.message } },
+        { error: { code: "HTTP_ERROR", message } },
         status as never,
       );
     }
