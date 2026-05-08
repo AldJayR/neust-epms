@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import {
+  DialogClose,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -35,6 +36,7 @@ import {
   getRolesFn,
   bulkApproveUsersFn,
 } from '@/lib/admin.functions'
+import { XIcon } from 'lucide-react'
 
 interface BulkApproveDialogProps {
   children: React.ReactNode
@@ -156,20 +158,34 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger render={React.isValidElement(children) ? children : <span>{children}</span>} />
-      <DialogContent className="max-w-[720px] p-0 overflow-hidden gap-0 rounded-[10px] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]">
-        <div className="flex flex-col gap-6 p-8">
-          <DialogHeader className="flex flex-row items-center justify-between">
-            <DialogTitle className="text-xl font-bold text-[#0a0a0a] tracking-tight">
+      <DialogContent
+        showCloseButton={false}
+        className="h-[540px] w-[721px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)] overflow-hidden rounded-[10px] border border-[#e5e5e5] bg-white p-0 px-[5px] py-[6px] ring-0 shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]"
+      >
+        <div className="flex h-full flex-col gap-8 p-4">
+          <DialogHeader className="flex flex-row items-center justify-between gap-4">
+            <DialogTitle className="text-[20px] font-semibold leading-5 text-[#0a0a0a]">
               Bulk Approve
             </DialogTitle>
+            <DialogClose
+              render={
+                <button
+                  type="button"
+                  className="inline-flex h-4 w-4 items-center justify-center text-[#737373] transition-opacity hover:opacity-80"
+                />
+              }
+            >
+              <XIcon className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </DialogClose>
           </DialogHeader>
 
-          <div className="flex flex-col gap-6">
-            <div className="relative w-full max-w-[360px]">
+          <div className="flex min-h-0 flex-1 flex-col gap-4">
+            <div className="relative w-full max-w-[360px] shrink-0">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search users"
-                className="h-10 w-full rounded-lg border-[#e5e5e5] pl-10 focus-visible:ring-primary/20"
+                className="h-8 w-full rounded-md border-[#e5e5e5] bg-white pl-10 text-sm shadow-[0px_1px_1px_rgba(0,0,0,0.1)]"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value)
@@ -178,68 +194,78 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
               />
             </div>
 
-            <div className="rounded-xl border border-[#e5e5e5] bg-white overflow-hidden relative min-h-[360px]">
+            <div className="relative h-[285px] overflow-hidden rounded-md border border-[#e5e5e5] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
               {usersQuery.isFetching && (
-                <div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center backdrop-blur-[1px]">
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               )}
-              <Table>
-                <TableHeader className="bg-[#fafafa]">
+              <Table className="table-fixed">
+                <TableHeader className="bg-white">
                   <TableRow className="border-b-[#e5e5e5] hover:bg-transparent">
-                    <TableHead className="w-[60px] text-center py-4">
-                      <Checkbox 
+                    <TableHead className="w-[32px] px-2 text-center">
+                      <Checkbox
                         checked={allVisibleUsersSelected}
                         onCheckedChange={handleSelectAll}
                         aria-label="Select all"
                       />
                     </TableHead>
-                    <TableHead className="font-semibold text-[#0a0a0a] py-4">Name</TableHead>
-                    <TableHead className="font-semibold text-[#0a0a0a] text-center py-4">Department</TableHead>
-                    <TableHead className="font-semibold text-[#0a0a0a] text-right py-4 pr-6">Assign role</TableHead>
+                    <TableHead className="w-[232px] font-medium text-[#0a0a0a]">
+                      Name
+                    </TableHead>
+                    <TableHead className="w-[184px] text-center font-medium text-[#0a0a0a]">
+                      Department
+                    </TableHead>
+                    <TableHead className="w-[167px] pr-6 text-right font-medium text-[#0a0a0a]">
+                      Assign role
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {usersQuery.data?.users.map((user) => (
-                    <TableRow key={user.userId} className="border-b-[#e5e5e5] hover:bg-[#fcfcfc] transition-colors">
-                      <TableCell className="text-center py-4">
-                        <Checkbox 
+                    <TableRow
+                      key={user.userId}
+                      className="border-b-[#e5e5e5] transition-colors hover:bg-[#fcfcfc]"
+                    >
+                      <TableCell className="w-[32px] px-2">
+                        <Checkbox
                           checked={selectedUsers.has(user.userId)}
                           onCheckedChange={(checked) => handleSelectRow(user.userId, checked as boolean)}
                           aria-label={`Select ${user.firstName}`}
                         />
                       </TableCell>
-                      <TableCell className="py-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10 border border-[#e5e5e5]">
+                      <TableCell className="w-[232px]">
+                        <div className="flex items-center gap-[10px]">
+                          <Avatar className="h-9 w-9 border border-[#e5e5e5]">
                             <AvatarImage src="" />
-                            <AvatarFallback className="bg-primary/5 text-primary font-medium text-xs">
-                              {user.firstName[0]}{user.lastName[0]}
+                            <AvatarFallback className="bg-primary/5 text-xs font-medium text-primary">
+                              {user.firstName[0]}
+                              {user.lastName[0]}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-[#0a0a0a]">
+                          <div className="flex min-w-0 flex-col">
+                            <span className="truncate text-[14px] font-medium leading-5 text-[#0a0a0a]">
                               {user.firstName} {user.middleName ? `${user.middleName[0]}. ` : ''}{user.lastName}
                             </span>
-                            <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
+                            <span className="truncate text-[12px] leading-4 text-[#666]">
                               {user.campusName}
                             </span>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center text-sm text-[#404040] py-4">
+                      <TableCell className="w-[184px] text-center text-[14px] text-[#0a0a0a]">
                         {user.departmentName ?? '-'}
                       </TableCell>
-                      <TableCell className="text-right py-4 pr-6">
+                      <TableCell className="w-[167px] pr-6">
                         <div className="flex justify-end">
                           <Select
                             value={userRoles[user.userId]}
                             onValueChange={(val) => handleRoleChange(user.userId, val as string)}
                           >
-                            <SelectTrigger className="h-9 w-[160px] text-sm rounded-lg bg-white border-[#e5e5e5]">
+                            <SelectTrigger className="h-[25px] w-[139px] rounded-md border-[#e5e5e5] bg-white px-3 py-[2px] text-[14px] shadow-[0px_1px_1px_rgba(0,0,0,0.1)]">
                               <SelectValue placeholder="Select role" />
                             </SelectTrigger>
-                            <SelectContent className="rounded-lg shadow-lg">
+                            <SelectContent className="rounded-md shadow-lg">
                               {rolesQuery.data?.map((role) => (
                                 <SelectItem key={role.roleId} value={role.roleName} className="text-sm">
                                   {role.roleName}
@@ -253,7 +279,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
                   ))}
                   {!usersQuery.isFetching && usersQuery.data?.users.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="h-32 text-center text-muted-foreground italic">
+                      <TableCell colSpan={4} className="h-32 text-center italic text-muted-foreground">
                         No pending users found.
                       </TableCell>
                     </TableRow>
@@ -262,24 +288,25 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
               </Table>
             </div>
 
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">
-                <span className="text-[#0a0a0a] font-bold">{selectedUsers.size}</span> of <span className="text-[#0a0a0a] font-bold">{usersQuery.data?.total ?? 0}</span> row(s) selected
+            <div className="flex items-center justify-between pt-1">
+              <p className="text-[12px] font-medium leading-4 text-[#666]">
+                <span className="font-semibold text-[#0a0a0a]">{selectedUsers.size}</span> of{' '}
+                <span className="font-semibold text-[#0a0a0a]">{usersQuery.data?.total ?? 0}</span> row(s) selected.
               </p>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1">
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  className="text-xs font-semibold h-9 px-4 hover:bg-[#f5f5f5]"
+                  className="h-9 rounded-[10px] border-[#e5e5e5] bg-white px-4 text-[14px] font-medium text-[#0a0a0a] shadow-[0px_1px_1.5px_rgba(0,0,0,0.1)] hover:bg-white"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1 || usersQuery.isFetching}
                 >
                   Previous
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  className="text-xs font-semibold h-9 px-4 hover:bg-[#f5f5f5]"
+                  className="h-9 rounded-[10px] border-[#e5e5e5] bg-white px-4 text-[14px] font-medium text-[#0a0a0a] shadow-[0px_1px_1.5px_rgba(0,0,0,0.1)] hover:bg-white"
                   onClick={() => setPage((p) => p + 1)}
                   disabled={!usersQuery.data || (page * 5) >= usersQuery.data.total || usersQuery.isFetching}
                 >
@@ -287,23 +314,23 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
                 </Button>
               </div>
             </div>
+          </div>
 
-            <div className="flex justify-end pt-4 border-t border-[#f0f0f0] -mx-8 px-8">
-              <Button 
-                onClick={handleApprove}
-                disabled={selectedUsers.size === 0 || approveMutation.isPending}
-                className="bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white rounded-xl h-11 px-8 font-semibold shadow-md transition-all active:scale-[0.98]"
-              >
-                {approveMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Approving...
-                  </>
-                ) : (
-                  'Approve'
-                )}
-              </Button>
-            </div>
+          <div className="flex justify-end">
+            <Button
+              onClick={handleApprove}
+              disabled={selectedUsers.size === 0 || approveMutation.isPending}
+              className="h-9 rounded-[10px] bg-[#1e3b8a] px-[10px] text-[14px] font-medium shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] transition-all hover:bg-[#1e3b8a]/90 active:scale-[0.98]"
+            >
+              {approveMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Approving...
+                </>
+              ) : (
+                'Approve'
+              )}
+            </Button>
           </div>
         </div>
       </DialogContent>
