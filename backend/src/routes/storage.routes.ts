@@ -85,7 +85,7 @@ const PaginationQuery = z.object({
   }),
 });
 
-app.use("/*", authMiddleware);
+app.use("/proposals/*", authMiddleware);
 
 // ── GET /proposals/:proposalId/documents ──
 const listDocsRoute = createRoute({

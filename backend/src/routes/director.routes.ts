@@ -46,8 +46,8 @@ const DirectorDashboardSchema = z.object({
 	expiringMoas: z.array(MoaSchema),
 });
 
-app.use("/*", authMiddleware);
-app.use("/*", requireRole(ROLE_NAMES.SUPER_ADMIN, ROLE_NAMES.DIRECTOR));
+app.use("/director/*", authMiddleware);
+app.use("/director/*", requireRole(ROLE_NAMES.SUPER_ADMIN, ROLE_NAMES.DIRECTOR));
 
 function formatRelativeTime(date: Date, now: Date) {
 	const diffMs = now.getTime() - date.getTime();

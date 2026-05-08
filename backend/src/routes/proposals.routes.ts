@@ -110,7 +110,7 @@ const MessageSchema = z
   .openapi("ProposalMessage");
 
 // All proposal routes require auth
-app.use("/*", authMiddleware);
+app.use("/proposals/*", authMiddleware);
 
 // ── GET /proposals ──
 const listRoute = createRoute({

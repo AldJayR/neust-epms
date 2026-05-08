@@ -10,12 +10,12 @@ import {
 	PanelLeft,
 	Search,
 	Settings,
-	Square,
 	Users,
 } from "lucide-react";
 
 import { RoleSidebar, type RoleSidebarGroup } from "@/components/role-sidebar";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider, useSidebar } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 import { useQuery } from "@tanstack/react-query";
 import {
 	Bar,
@@ -101,19 +101,22 @@ function MetricCard({ label, value }: { label: string; value: string | number })
 }
 
 function DirectorHeader() {
+	const { toggleSidebar } = useSidebar();
+
 	return (
 		<header className="flex h-16 shrink-0 items-center justify-between border-b border-[#e5e5e5] bg-white px-4">
-			<div className="flex min-w-0 items-center gap-2">
+			<div className="flex flex-1 items-center gap-2">
 				<button
 					type="button"
-					className="inline-flex size-7 items-center justify-center rounded-full text-[#0a0a0a] transition-colors hover:bg-[#f5f5f5]"
+					onClick={toggleSidebar}
+					className="flex size-7 shrink-0 items-center justify-center rounded-full text-[#0a0a0a] transition-colors hover:bg-[#f5f5f5]"
 					aria-label="Toggle sidebar"
 				>
 					<PanelLeft className="size-4" />
 				</button>
-				<Square className="size-4 text-[#0a0a0a]" aria-hidden="true" />
-				<div className="relative w-[212px] shrink-0">
-					<Search className="pointer-events-none absolute left-2.5 top-2.5 size-4 text-[#737373]" />
+				<Separator orientation="vertical" className="mx-1 h-4 self-center" />
+				<div className="relative flex w-[212px] shrink-0 items-center">
+					<Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-[#737373]" />
 					<input
 						type="search"
 						placeholder="Type to search..."
@@ -121,13 +124,15 @@ function DirectorHeader() {
 					/>
 				</div>
 			</div>
-			<button
-				type="button"
-				className="inline-flex size-7 items-center justify-center rounded-full text-[#0a0a0a] transition-colors hover:bg-[#f5f5f5]"
-				aria-label="Notifications"
-			>
-				<Bell className="size-4" />
-			</button>
+			<div className="flex items-center gap-4">
+				<button
+					type="button"
+					className="flex size-7 shrink-0 items-center justify-center rounded-full text-[#0a0a0a] transition-colors hover:bg-[#f5f5f5]"
+					aria-label="Notifications"
+				>
+					<Bell className="size-4" />
+				</button>
+			</div>
 		</header>
 	);
 }
@@ -153,7 +158,7 @@ function ProjectsChartCard({
 				</button>
 			</div>
 			<div className="h-[298px] px-6 pb-6 pt-10">
-				<ResponsiveContainer width="100%" height="100%">
+				<ResponsiveContainer width="100%" height="100%" key="projects-chart">
 					<BarChart data={chartData} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
 						<CartesianGrid vertical={false} stroke="#ebebeb" />
 						<XAxis
@@ -193,7 +198,7 @@ function RecentActivitiesCard({
 			</div>
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 				{activities.map((activity, index) => (
-					<div key={activity.title} className="border-t border-[#ebebeb] p-4">
+					<div key={`${activity.title}-${index}`} className="border-t border-[#ebebeb] p-4">
 						<div className="flex flex-col gap-6">
 							<div className="flex flex-col gap-1">
 								<div className="flex items-center gap-1.5">
@@ -213,20 +218,26 @@ function RecentActivitiesCard({
 
 function ExpiringMoasCard({ moas }: { moas: { name: string; dueText: string }[] }) {
 	return (
-		<div className="h-[148px] overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+		<div className="h-[148px] flex flex-col overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex items-center justify-between px-4 py-2 text-[#666]">
 				<p className="text-[14px] font-medium leading-5">Expiring MOAs</p>
 				<button type="button" className="text-[12px] font-medium leading-4">View All</button>
 			</div>
 			<div className="flex flex-1 flex-col overflow-hidden">
-				{moas.map((moa) => (
-					<div key={`${moa.name}-${moa.dueText}`} className="border-t border-[#ebebeb] px-4 py-4">
-						<div className="flex items-center justify-between gap-4">
-							<p className="text-[14px] font-medium leading-5 text-[#0a0a0a]">{moa.name}</p>
-							<p className="text-[14px] leading-5 text-[#dc2626]">{moa.dueText}</p>
+				{moas.length > 0 ? (
+					moas.map((moa) => (
+						<div key={`${moa.name}-${moa.dueText}`} className="border-t border-[#ebebeb] px-4 py-4">
+							<div className="flex items-center justify-between gap-4">
+								<p className="text-[14px] font-medium leading-5 text-[#0a0a0a]">{moa.name}</p>
+								<p className="text-[14px] leading-5 text-[#dc2626]">{moa.dueText}</p>
+							</div>
 						</div>
+					))
+				) : (
+					<div className="flex flex-1 items-center justify-center border-t border-[#ebebeb] px-4 pb-2">
+						<p className="text-[14px] text-[#737373] italic">No MOAs expiring soon.</p>
 					</div>
-				))}
+				)}
 			</div>
 		</div>
 	);

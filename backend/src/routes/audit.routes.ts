@@ -57,8 +57,8 @@ const ErrorSchema = z
   })
   .openapi("AuditError");
 
-app.use("/*", authMiddleware);
-app.use("/*", requireRole(ROLE_NAMES.SUPER_ADMIN));
+app.use("/audit-logs/*", authMiddleware);
+app.use("/audit-logs/*", requireRole(ROLE_NAMES.SUPER_ADMIN));
 
 // ── GET /audit-logs/stats ──
 const statsRoute = createRoute({

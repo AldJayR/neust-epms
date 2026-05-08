@@ -1,10 +1,13 @@
-import { Link, type LinkProps } from "@tanstack/react-router";
-import { ChevronRight, LogOut, type LucideIcon } from "lucide-react";
+import { Link, type LinkProps, useNavigate } from "@tanstack/react-router";
+import { ChevronRight, LogOut, type LucideIcon, Loader2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { logoutFn } from "@/lib/auth.functions";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
@@ -24,7 +27,8 @@ import {
 } from "@/components/ui/sidebar";
 import type { AuthUser } from "@/lib/auth";
 import type { useRender } from "@base-ui/react/use-render";
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps, ReactNode, useState } from "react";
+import * as React from "react";
 
 export type RoleSidebarItem = {
 	title: string;
@@ -59,6 +63,23 @@ export function RoleSidebar({
 	const initials = user ? `${user.firstName[0]}${user.lastName[0]}` : "JD";
 	const fullName = user ? `${user.firstName} ${user.lastName}` : fallbackFullName;
 	const roleLabel = user ? user.roleName : fallbackRole;
+	
+	const logout = useServerFn(logoutFn);
+	const navigate = useNavigate();
+	const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+
+	const handleLogout = async () => {
+		try {
+			setIsLoggingOut(true);
+			await logout();
+			// logoutFn throws a redirect, but we'll navigate just in case
+			navigate({ to: "/login" });
+		} catch (error) {
+			console.error("Logout failed:", error);
+		} finally {
+			setIsLoggingOut(false);
+		}
+	};
 
 	return (
 		<Sidebar collapsible="icon" {...props}>
@@ -128,24 +149,30 @@ export function RoleSidebar({
 								align="end"
 								sideOffset={4}
 							>
-								<DropdownMenuLabel className="p-0 font-normal">
-									<div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-										<Avatar className="h-8 w-8 rounded-lg">
-											<AvatarImage src="" alt={fullName} />
-											<AvatarFallback className="rounded-lg">
-												{initials}
-											</AvatarFallback>
-										</Avatar>
-										<div className="grid flex-1 text-left text-sm leading-tight">
-											<span className="truncate font-semibold">{fullName}</span>
-											<span className="truncate text-xs">{roleLabel}</span>
+								<DropdownMenuGroup>
+									<DropdownMenuLabel className="p-0 font-normal">
+										<div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+											<Avatar className="h-8 w-8 rounded-lg">
+												<AvatarImage src="" alt={fullName} />
+												<AvatarFallback className="rounded-lg">
+													{initials}
+												</AvatarFallback>
+											</Avatar>
+											<div className="flex flex-col flex-1 text-left text-sm leading-tight">
+												<span className="truncate font-semibold">{fullName}</span>
+												<span className="truncate text-xs">{roleLabel}</span>
+											</div>
 										</div>
-									</div>
-								</DropdownMenuLabel>
+									</DropdownMenuLabel>
+								</DropdownMenuGroup>
 								<DropdownMenuSeparator />
-								<DropdownMenuItem>
-									<LogOut className="mr-2 size-4" />
-									Log out
+								<DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut}>
+									{isLoggingOut ? (
+										<Loader2 className="mr-2 size-4 animate-spin" />
+									) : (
+										<LogOut className="mr-2 size-4" />
+									)}
+									{isLoggingOut ? "Logging out..." : "Log out"}
 								</DropdownMenuItem>
 							</DropdownMenuContent>
 						</DropdownMenu>
