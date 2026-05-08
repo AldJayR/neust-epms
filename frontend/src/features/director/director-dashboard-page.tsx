@@ -17,6 +17,15 @@ import {
 import { RoleSidebar, type RoleSidebarGroup } from "@/components/role-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useQuery } from "@tanstack/react-query";
+import {
+	Bar,
+	BarChart,
+	CartesianGrid,
+	ResponsiveContainer,
+	Tooltip,
+	XAxis,
+	YAxis,
+} from "recharts";
 import { directorDashboardQueryOptions } from "@/lib/director.functions";
 import type { AuthUser } from "@/lib/auth";
 
@@ -82,7 +91,7 @@ const sidebarGroups: RoleSidebarGroup[] = [
 	},
 ];
 
-function MetricCard({ label, value }: { label: string; value: string }) {
+function MetricCard({ label, value }: { label: string; value: string | number }) {
 	return (
 		<div className="flex h-[104px] flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<p className="text-[14px] leading-4 text-[#666]">{label}</p>
@@ -128,8 +137,6 @@ function ProjectsChartCard({
 }: {
 	chartData: { label: string; value: number }[];
 }) {
-	const maxValue = Math.max(...chartData.map((entry) => entry.value), 1);
-
 	return (
 		<div className="h-[370px] overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex h-[72px] items-start justify-between border-b border-white px-6 pt-4 pb-3">
@@ -145,26 +152,29 @@ function ProjectsChartCard({
 					<ChevronsUpDown className="size-4 opacity-50" />
 				</button>
 			</div>
-			<div className="flex h-[298px] items-center justify-center px-6 pb-6 pt-10">
-				<div className="flex w-full max-w-[536px] flex-col gap-2">
-					<div className="relative h-[188px] w-full">
-						{[0, 47, 94, 141, 188].map((top) => (
-							<div key={top} className="absolute left-[-31px] right-0 h-px bg-[#ebebeb]" style={{ top }} />
-						))}
-						<div className="absolute inset-x-0 bottom-0 flex items-end justify-between">
-							{chartData.map((entry) => {
-								const height = (entry.value / maxValue) * 170.61;
-
-								return (
-									<div key={entry.label} className="flex w-[50px] flex-col items-center gap-2">
-										<div className="w-[50px] rounded-[4px] bg-[#14369c]" style={{ height }} />
-										<span className="text-[12px] leading-4 text-[#737373]">{entry.label}</span>
-									</div>
-								);
-							})}
-						</div>
-					</div>
-				</div>
+			<div className="h-[298px] px-6 pb-6 pt-10">
+				<ResponsiveContainer width="100%" height="100%">
+					<BarChart data={chartData} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
+						<CartesianGrid vertical={false} stroke="#ebebeb" />
+						<XAxis
+							dataKey="label"
+							axisLine={false}
+							tickLine={false}
+							tick={{ fill: "#737373", fontSize: 12 }}
+							dy={10}
+						/>
+						<YAxis
+							axisLine={false}
+							tickLine={false}
+							tick={{ fill: "#737373", fontSize: 12 }}
+						/>
+						<Tooltip
+							cursor={{ fill: "transparent" }}
+							contentStyle={{ borderRadius: "8px", border: "1px solid #ebebeb" }}
+						/>
+						<Bar dataKey="value" fill="#14369c" radius={[4, 4, 0, 0]} barSize={50} />
+					</BarChart>
+				</ResponsiveContainer>
 			</div>
 		</div>
 	);
@@ -265,7 +275,7 @@ export function DirectorDashboardPage({ user }: { user?: AuthUser | null }) {
 	return (
 		<SidebarProvider>
 			<RoleSidebar
-				headerRender={<Link to="/dashboard" />}
+				headerRender={<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />}
 				headerContent={
 					<>
 						<div className="flex aspect-square size-8 items-center justify-center">

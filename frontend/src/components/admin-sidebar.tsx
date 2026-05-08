@@ -2,10 +2,17 @@ import * as React from "react";
 import { Activity, Settings, Users } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 
-import { RoleSidebar, type RoleSidebarGroup } from "@/components/role-sidebar";
+import { RoleSidebar, type RoleSidebarGroup, type RoleSidebarItem } from "@/components/role-sidebar";
 import type { AuthUser } from "@/lib/auth";
 
-const navMain = [
+const navMain: {
+	title: string;
+	items: {
+		title: string;
+		url: RoleSidebarItem["href"];
+		icon: RoleSidebarItem["icon"];
+	}[];
+}[] = [
 	{
 		title: "Dashboard",
 		items: [
@@ -18,7 +25,7 @@ const navMain = [
 				title: "Activity Log",
 				url: "/admin/activity-log",
 				icon: Activity,
-		}: React.ComponentProps<typeof RoleSidebar>) {
+			},
 		],
 	},
 	{
@@ -35,7 +42,7 @@ const navMain = [
 
 export function AdminSidebar({
 	...props
-}: React.ComponentProps<typeof Sidebar>) {
+}: React.ComponentProps<typeof RoleSidebar>) {
 	const routerState = useRouterState();
 	const authenticatedMatch = routerState.matches.find(
 		(m) => m.routeId === "/_authenticated",
@@ -44,11 +51,6 @@ export function AdminSidebar({
 		? (authenticatedMatch.context as { user: AuthUser | null }).user
 		: null;
 
-	const initials = user ? `${user.firstName[0]}${user.lastName[0]}` : "JD";
-	const fullName = user
-		? `${user.firstName} ${user.lastName}`
-		: "Engr. J. Dela Cruz";
-	const emailOrRole = user ? user.roleName : "MIS Faculty";
 	const pathname = routerState.location.pathname;
 
 	const groups: RoleSidebarGroup[] = navMain.map((group) => ({
@@ -60,12 +62,13 @@ export function AdminSidebar({
 			active:
 				item.url === "/dashboard"
 					? pathname === "/dashboard"
-					: pathname === item.url || pathname.startsWith(`${item.url}/`),
+					: pathname === item.url || pathname.startsWith(`${item.url ?? ""}/`),
 		})),
 	}));
 
 	return (
 			<RoleSidebar
+				{...props}
 				headerRender={<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />}
 				headerContent={
 					<>
@@ -86,7 +89,6 @@ export function AdminSidebar({
 				user={user}
 				fallbackFullName="Engr. J. Dela Cruz"
 				fallbackRole="MIS Faculty"
-				{...props}
 			/>
 	);
 }

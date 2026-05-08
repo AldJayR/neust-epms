@@ -1,4 +1,3 @@
-import * as React from "react";
 import { Link, type LinkProps } from "@tanstack/react-router";
 import { ChevronRight, LogOut, type LucideIcon } from "lucide-react";
 
@@ -24,6 +23,7 @@ import {
 	SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import type { AuthUser } from "@/lib/auth";
+import type { useRender } from "@base-ui/react/use-render";
 import type { ComponentProps, ReactNode } from "react";
 
 export type RoleSidebarItem = {
@@ -39,21 +39,21 @@ export type RoleSidebarGroup = {
 };
 
 export interface RoleSidebarProps extends ComponentProps<typeof Sidebar> {
-	headerRender: ReactNode;
-	headerContent: ReactNode;
-	groups: RoleSidebarGroup[];
+	headerRender?: useRender.ComponentProps<"button">["render"];
+	headerContent?: ReactNode;
+	groups?: RoleSidebarGroup[];
 	user?: AuthUser | null;
-	fallbackFullName: string;
-	fallbackRole: string;
+	fallbackFullName?: string;
+	fallbackRole?: string;
 }
 
 export function RoleSidebar({
 	headerRender,
 	headerContent,
-	groups,
+	groups = [],
 	user,
-	fallbackFullName,
-	fallbackRole,
+	fallbackFullName = "JD",
+	fallbackRole = "User",
 	...props
 }: RoleSidebarProps) {
 	const initials = user ? `${user.firstName[0]}${user.lastName[0]}` : "JD";
