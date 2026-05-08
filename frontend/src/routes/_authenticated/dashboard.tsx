@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { AdminShell } from "@/features/admin/admin-shell";
 import { UsersPage } from "@/features/admin/users-page";
+import { DirectorDashboardPage } from "@/features/director/director-dashboard-page";
+import { directorDashboardQueryOptions } from "@/lib/director.functions";
 import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
@@ -21,20 +23,25 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 		search: search.search,
 	}),
 	loader: async ({ context, deps }) => {
-		if (context.auth.user?.roleName !== "Super Admin") {
+		if (context.auth.user?.roleName !== "Super Admin" && context.auth.user?.roleName !== "Director") {
 			return null;
 		}
 
-		await Promise.all([
-			context.queryClient.ensureQueryData(adminStatsQueryOptions()),
-			context.queryClient.ensureQueryData(
-				adminUsersQueryOptions({
-					page: deps.page,
-					pageSize: deps.pageSize,
-					search: deps.search,
-				}),
-			),
-		]);
+		if (context.auth.user?.roleName === "Super Admin") {
+			await Promise.all([
+				context.queryClient.ensureQueryData(adminStatsQueryOptions()),
+				context.queryClient.ensureQueryData(
+					adminUsersQueryOptions({
+						page: deps.page,
+						pageSize: deps.pageSize,
+						search: deps.search,
+					}),
+				),
+			]);
+			return null;
+		}
+
+		await context.queryClient.ensureQueryData(directorDashboardQueryOptions());
 	},
 	component: DashboardPage,
 });
@@ -68,6 +75,10 @@ function DashboardPage() {
 				/>
 			</AdminShell>
 		);
+	}
+
+	if (user.roleName === "Director") {
+		return <DirectorDashboardPage user={user} />;
 	}
 
 	return (
