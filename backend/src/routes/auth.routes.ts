@@ -222,50 +222,7 @@ app.use("/auth/users", authMiddleware);
 
 app.openapi(getMeRoute, async (c) => {
   const authUser = c.get("user");
-
-  if (!authUser) {
-    throw new ApiError(
-      401,
-      "USER_NOT_FOUND",
-      "Authenticated user has no application profile",
-    );
-  }
-
-  if (
-    authUser.firstName &&
-    authUser.lastName &&
-    authUser.campusName &&
-    authUser.departmentName !== undefined
-  ) {
-    return c.json(authUser, 200);
-  }
-
-  const [row] = await db
-    .select({
-      userId: users.userId,
-      firstName: users.firstName,
-      middleName: users.middleName,
-      lastName: users.lastName,
-      nameSuffix: users.nameSuffix,
-      academicRank: users.academicRank,
-      email: users.email,
-      roleName: roles.roleName,
-      campusName: campuses.campusName,
-      departmentName: departments.departmentName,
-      isActive: users.isActive,
-    })
-    .from(users)
-    .innerJoin(roles, eq(users.roleId, roles.roleId))
-    .innerJoin(campuses, eq(users.campusId, campuses.campusId))
-    .leftJoin(departments, eq(users.departmentId, departments.departmentId))
-    .where(eq(users.userId, authUser.userId))
-    .limit(1);
-
-  if (!row) {
-    throw new ApiError(401, "USER_NOT_FOUND", "User profile not found");
-  }
-
-  return c.json(row, 200);
+  return c.json(authUser, 200);
 });
 
 // ── POST /auth/users (Admin provisioning) ──

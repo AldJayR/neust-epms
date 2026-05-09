@@ -16,7 +16,7 @@ import type { sdgs } from "../db/schema/sdgs.js";
 import type { proposalSdgs } from "../db/schema/proposal-sdgs.js";
 import type { moas } from "../db/schema/moas.js";
 import type { projects } from "../db/schema/projects.js";
-import type { progressReports } from "../db/schema/progress-reports.js";
+import type { projectReports } from "../db/schema/project-reports.js";
 import type { auditLogs } from "../db/schema/audit-logs.js";
 import type { systemSettings } from "../db/schema/system-settings.js";
 
@@ -38,7 +38,7 @@ export type Sdg = InferSelectModel<typeof sdgs>;
 export type ProposalSdg = InferSelectModel<typeof proposalSdgs>;
 export type Moa = InferSelectModel<typeof moas>;
 export type Project = InferSelectModel<typeof projects>;
-export type ProgressReport = InferSelectModel<typeof progressReports>;
+export type ProjectReport = InferSelectModel<typeof projectReports>;
 export type AuditLog = InferSelectModel<typeof auditLogs>;
 export type SystemSetting = InferSelectModel<typeof systemSettings>;
 
@@ -60,7 +60,7 @@ export type NewSdg = InferInsertModel<typeof sdgs>;
 export type NewProposalSdg = InferInsertModel<typeof proposalSdgs>;
 export type NewMoa = InferInsertModel<typeof moas>;
 export type NewProject = InferInsertModel<typeof projects>;
-export type NewProgressReport = InferInsertModel<typeof progressReports>;
+export type NewProjectReport = InferInsertModel<typeof projectReports>;
 export type NewAuditLog = InferInsertModel<typeof auditLogs>;
 export type NewSystemSetting = InferInsertModel<typeof systemSettings>;
 

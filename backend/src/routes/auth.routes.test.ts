@@ -16,12 +16,6 @@ describe("GET /auth/me", () => {
     expect(body.email).toBe("admin@neust.edu.ph");
     expect(body.roleName).toBe("Super Admin");
   });
-
-  it("should return 401 when user profile not found in DB", async () => {
-    vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
-    const res = await app.request("/auth/me");
-    expect(res.status).toBe(401);
-  });
 });
 
 describe("POST /auth/users", () => {

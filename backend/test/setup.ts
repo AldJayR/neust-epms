@@ -12,7 +12,15 @@ import { vi } from "vitest";
   roleId: 4,
   roleName: "Faculty",
   campusId: 1,
+  campusName: "Cabanatuan City (Main)",
   departmentId: 1,
+  departmentName: "Management Information System (MIS)",
+  firstName: "Faculty",
+  middleName: null,
+  lastName: "User",
+  nameSuffix: null,
+  academicRank: "Instructor",
+  isActive: true,
 };
 
 // ── Mock the env module ──
@@ -36,7 +44,7 @@ vi.mock("../src/db/client.js", () => {
     insert: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
-    transaction: vi.fn(),
+    transaction: vi.fn((callback) => callback(mockDb)),
   };
   return { db: mockDb, pool: {} };
 });
@@ -50,8 +58,8 @@ vi.mock("../src/lib/audit.js", () => ({
 const mockSupabase = {
   auth: {
     getUser: vi.fn().mockResolvedValue({
-      data: { user: null },
-      error: { message: "Not configured" },
+      data: { user: { id: "test-user-id" } as any },
+      error: null,
     }),
     admin: {
       createUser: vi.fn().mockResolvedValue({
@@ -76,7 +84,7 @@ vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(() => mockSupabase),
 }));
 
-// ── Mock auth middleware (pass-through, injects __testMockUser) ──
+// ── Mock auth middleware (injects __testMockUser) ──
 vi.mock("../src/middleware/auth.js", () => ({
   authMiddleware: async (
     c: { set: (key: string, value: unknown) => void },

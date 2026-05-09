@@ -16,7 +16,7 @@ import { sdgs } from "./schema/sdgs.js";
 import { proposalSdgs } from "./schema/proposal-sdgs.js";
 import { moas } from "./schema/moas.js";
 import { projects } from "./schema/projects.js";
-import { progressReports } from "./schema/progress-reports.js";
+import { projectReports } from "./schema/project-reports.js";
 import { auditLogs } from "./schema/audit-logs.js";
 
 // ── Roles ──
@@ -55,7 +55,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   proposalMemberships: many(proposalMembers),
   proposalComments: many(proposalComments),
   proposalReviews: many(proposalReviews),
-  progressReports: many(progressReports),
+  projectReports: many(projectReports),
   auditLogs: many(auditLogs),
 }));
 
@@ -217,7 +217,7 @@ export const moasRelations = relations(moas, ({ many }) => ({
 }));
 
 // ── Projects ──
-export const projectsRelations = relations(projects, ({ one, many }) => ({
+export const projectsRelations = relations(projects, ({ many, one }) => ({
   proposal: one(proposals, {
     fields: [projects.proposalId],
     references: [proposals.proposalId],
@@ -226,19 +226,19 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     fields: [projects.moaId],
     references: [moas.moaId],
   }),
-  progressReports: many(progressReports),
+  projectReports: many(projectReports),
 }));
 
-// ── Progress Reports ──
-export const progressReportsRelations = relations(
-  progressReports,
+// ── Project Reports ──
+export const projectReportsRelations = relations(
+  projectReports,
   ({ one }) => ({
     project: one(projects, {
-      fields: [progressReports.projectId],
+      fields: [projectReports.projectId],
       references: [projects.projectId],
     }),
     submitter: one(users, {
-      fields: [progressReports.submittedBy],
+      fields: [projectReports.submittedById],
       references: [users.userId],
     }),
   }),

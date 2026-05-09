@@ -16,6 +16,6 @@ export { sdgs } from "./sdgs.js";
 export { proposalSdgs } from "./proposal-sdgs.js";
 export { moas } from "./moas.js";
 export { projects } from "./projects.js";
-export { progressReports } from "./progress-reports.js";
+export { projectReports } from "./project-reports.js";
 export { auditLogs } from "./audit-logs.js";
 export { systemSettings } from "./system-settings.js";

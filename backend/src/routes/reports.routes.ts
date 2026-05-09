@@ -1,7 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { progressReports } from "../db/schema/progress-reports.js";
+import { projectReports } from "../db/schema/project-reports.js";
 import { projects } from "../db/schema/projects.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { insertAuditLog } from "../lib/audit.js";
@@ -15,21 +15,23 @@ const ReportSchema = z
   .object({
     reportId: z.string(),
     projectId: z.string(),
-    submittedBy: z.string(),
+    submittedById: z.string(),
+    reportType: z.string(),
     storagePath: z.string().nullable(),
     remarks: z.string().nullable(),
     submittedAt: z.string(),
     archivedAt: z.string().nullable(),
   })
-  .openapi("ProgressReport");
+  .openapi("ProjectReport");
 
 const ReportListSchema = z
   .object({ items: z.array(ReportSchema), total: z.number() })
-  .openapi("ProgressReportList");
+  .openapi("ProjectReportList");
 
 const CreateReportSchema = z
   .object({
     projectId: z.string(),
+    reportType: z.string(),
     remarks: z.string().optional(),
     storagePath: z.string().optional(),
   })
@@ -65,7 +67,7 @@ const listRoute = createRoute({
   method: "get",
   path: "/reports",
   tags: ["Reports"],
-  summary: "List all non-archived progress reports",
+  summary: "List all non-archived project reports",
   security: [{ Bearer: [] }],
   request: { query: PaginationQuery },
   responses: {
@@ -82,9 +84,9 @@ app.openapi(listRoute, async (c) => {
 
   const rows = await db
     .select()
-    .from(progressReports)
-    .where(isNull(progressReports.archivedAt))
-    .orderBy(desc(progressReports.submittedAt))
+    .from(projectReports)
+    .where(isNull(projectReports.archivedAt))
+    .orderBy(desc(projectReports.submittedAt))
     .limit(limit)
     .offset(offset);
 
@@ -102,7 +104,7 @@ const createReportRoute = createRoute({
   method: "post",
   path: "/reports",
   tags: ["Reports"],
-  summary: "Submit a progress report for a project",
+  summary: "Submit a project report for a project",
   security: [{ Bearer: [] }],
   request: {
     body: {
@@ -140,10 +142,11 @@ app.openapi(createReportRoute, async (c) => {
   }
 
   const [created] = await db
-    .insert(progressReports)
+    .insert(projectReports)
     .values({
       projectId: body.projectId,
-      submittedBy: user.userId,
+      submittedById: user.userId,
+      reportType: body.reportType,
       remarks: body.remarks ?? null,
       storagePath: body.storagePath ?? null,
     })
@@ -155,8 +158,8 @@ app.openapi(createReportRoute, async (c) => {
 
   await insertAuditLog({
     userId: user.userId,
-    action: `Submitted progress report ${created.reportId} for project ${body.projectId}`,
-    tableAffected: "progress_reports",
+    action: `Submitted project report ${created.reportId} (${body.reportType}) for project ${body.projectId}`,
+    tableAffected: "project_reports",
     ipAddress: c.req.header("x-forwarded-for") ?? null,
   });
 
@@ -175,7 +178,7 @@ const archiveRoute = createRoute({
   method: "delete",
   path: "/reports/{id}",
   tags: ["Reports"],
-  summary: "Archive a progress report (soft delete)",
+  summary: "Archive a project report (soft delete)",
   security: [{ Bearer: [] }],
   request: { params: ParamId },
   responses: {
@@ -195,12 +198,12 @@ app.openapi(archiveRoute, async (c) => {
   const { id } = c.req.valid("param");
 
   const [updated] = await db
-    .update(progressReports)
+    .update(projectReports)
     .set({ archivedAt: new Date() })
     .where(
       and(
-        eq(progressReports.reportId, id),
-        isNull(progressReports.archivedAt),
+        eq(projectReports.reportId, id),
+        isNull(projectReports.archivedAt),
       ),
     )
     .returning();
@@ -211,8 +214,8 @@ app.openapi(archiveRoute, async (c) => {
 
   await insertAuditLog({
     userId: user.userId,
-    action: `Archived report ${id}`,
-    tableAffected: "progress_reports",
+    action: `Archived project report ${id}`,
+    tableAffected: "project_reports",
     ipAddress: c.req.header("x-forwarded-for") ?? null,
   });
 
