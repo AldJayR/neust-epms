@@ -427,7 +427,15 @@ app.openapi(updateRoute, async (c) => {
   const [updated] = await db
     .update(proposals)
     .set(updateValues)
-    .where(eq(proposals.proposalId, id))
+    .where(
+      and(
+        eq(proposals.proposalId, id),
+        or(
+          eq(proposals.currentStatus, PROPOSAL_STATUS.DRAFT),
+          eq(proposals.currentStatus, PROPOSAL_STATUS.RETURNED)
+        )
+      )
+    )
     .returning();
 
   if (!updated) {
@@ -494,13 +502,26 @@ app.openapi(submitRoute, async (c) => {
     throw new ApiError(403, "NOT_LEADER", "Only the project leader can submit");
   }
 
-  await db
+  const [updated] = await db
     .update(proposals)
     .set({
       currentStatus: PROPOSAL_STATUS.SUBMITTED,
       updatedAt: new Date(),
     })
-    .where(eq(proposals.proposalId, id));
+    .where(
+      and(
+        eq(proposals.proposalId, id),
+        or(
+          eq(proposals.currentStatus, PROPOSAL_STATUS.DRAFT),
+          eq(proposals.currentStatus, PROPOSAL_STATUS.RETURNED)
+        )
+      )
+    )
+    .returning();
+
+  if (!updated) {
+    throw new ApiError(400, "INVALID_STATE", "Proposal state changed since last read");
+  }
 
   await insertAuditLog({
     userId: user.userId,
@@ -631,14 +652,24 @@ app.openapi(reviewRoute, async (c) => {
       comments: body.comments ?? null,
     });
 
-    await tx
+    const [updated] = await tx
       .update(proposals)
       .set({
         currentStatus: newStatus,
         revisionNum: existing.revisionNum + revisionIncrement,
         updatedAt: new Date(),
       })
-      .where(eq(proposals.proposalId, id));
+      .where(
+        and(
+          eq(proposals.proposalId, id),
+          eq(proposals.currentStatus, existing.currentStatus)
+        )
+      )
+      .returning();
+
+    if (!updated) {
+      throw new ApiError(400, "INVALID_STATE", "Proposal state changed since last read");
+    }
   });
 
   await insertAuditLog({

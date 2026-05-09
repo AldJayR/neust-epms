@@ -141,71 +141,75 @@ app.openapi(addMemberRoute, async (c) => {
   const { proposalId } = c.req.valid("param");
   const body = c.req.valid("json");
 
-  // Verify proposal exists
-  const [proposal] = await db
-    .select()
-    .from(proposals)
-    .where(eq(proposals.proposalId, proposalId))
-    .limit(1);
+  const created = await db.transaction(async (tx) => {
+    // Verify proposal exists
+    const [proposal] = await tx
+      .select()
+      .from(proposals)
+      .where(eq(proposals.proposalId, proposalId))
+      .limit(1);
 
-  if (!proposal) {
-    throw new ApiError(404, "NOT_FOUND", "Proposal not found");
-  }
+    if (!proposal) {
+      throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+    }
 
-  // Only the project leader can add members
-  if (proposal.projectLeaderId !== authUser.userId) {
-    throw new ApiError(
-      403,
-      "NOT_LEADER",
-      "Only the project leader can add members",
-    );
-  }
+    // Only the project leader can add members
+    if (proposal.projectLeaderId !== authUser.userId) {
+      throw new ApiError(
+        403,
+        "NOT_LEADER",
+        "Only the project leader can add members",
+      );
+    }
 
-  // Verify target user exists
-  const [targetUser] = await db
-    .select()
-    .from(users)
-    .where(eq(users.userId, body.userId))
-    .limit(1);
+    // Verify target user exists
+    const [targetUser] = await tx
+      .select()
+      .from(users)
+      .where(eq(users.userId, body.userId))
+      .limit(1);
 
-  if (!targetUser) {
-    throw new ApiError(404, "USER_NOT_FOUND", "Target user not found");
-  }
+    if (!targetUser) {
+      throw new ApiError(404, "USER_NOT_FOUND", "Target user not found");
+    }
 
-  // Prevent duplicate membership
-  const [existingMember] = await db
-    .select()
-    .from(proposalMembers)
-    .where(
-      and(
-        eq(proposalMembers.proposalId, proposalId),
-        eq(proposalMembers.userId, body.userId),
-      ),
-    )
-    .limit(1);
+    // Prevent duplicate membership
+    const [existingMember] = await tx
+      .select()
+      .from(proposalMembers)
+      .where(
+        and(
+          eq(proposalMembers.proposalId, proposalId),
+          eq(proposalMembers.userId, body.userId),
+        ),
+      )
+      .limit(1);
 
-  if (existingMember) {
-    throw new ApiError(409, "DUPLICATE", "User is already a member");
-  }
+    if (existingMember) {
+      throw new ApiError(409, "DUPLICATE", "User is already a member");
+    }
 
-  const [created] = await db
-    .insert(proposalMembers)
-    .values({
-      proposalId,
-      userId: body.userId,
-      projectRole: body.projectRole,
-    })
-    .returning();
+    const [createdMember] = await tx
+      .insert(proposalMembers)
+      .values({
+        proposalId,
+        userId: body.userId,
+        projectRole: body.projectRole,
+      })
+      .returning();
 
-  if (!created) {
-    throw new ApiError(500, "INSERT_FAILED", "Failed to add member");
-  }
+    if (!createdMember) {
+      throw new ApiError(500, "INSERT_FAILED", "Failed to add member");
+    }
 
-  await insertAuditLog({
-    userId: authUser.userId,
-    action: `Added member ${body.userId} to proposal ${proposalId}`,
-    tableAffected: "proposal_members",
-    ipAddress: c.req.header("x-forwarded-for") ?? null,
+    await insertAuditLog({
+      userId: authUser.userId,
+      action: `Added member ${body.userId} to proposal ${proposalId}`,
+      tableAffected: "proposal_members",
+      ipAddress: c.req.header("x-forwarded-for") ?? null,
+    }, tx);
+
+    return createdMember;
   });
 
   return c.json(
@@ -238,44 +242,46 @@ app.openapi(removeMemberRoute, async (c) => {
   const authUser = c.get("user");
   const { proposalId, memberId } = c.req.valid("param");
 
-  // Verify proposal and leadership
-  const [proposal] = await db
-    .select()
-    .from(proposals)
-    .where(eq(proposals.proposalId, proposalId))
-    .limit(1);
+  await db.transaction(async (tx) => {
+    // Verify proposal and leadership
+    const [proposal] = await tx
+      .select()
+      .from(proposals)
+      .where(eq(proposals.proposalId, proposalId))
+      .limit(1);
 
-  if (!proposal) {
-    throw new ApiError(404, "NOT_FOUND", "Proposal not found");
-  }
+    if (!proposal) {
+      throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+    }
 
-  if (proposal.projectLeaderId !== authUser.userId) {
-    throw new ApiError(
-      403,
-      "NOT_LEADER",
-      "Only the project leader can remove members",
-    );
-  }
+    if (proposal.projectLeaderId !== authUser.userId) {
+      throw new ApiError(
+        403,
+        "NOT_LEADER",
+        "Only the project leader can remove members",
+      );
+    }
 
-  const [deleted] = await db
-    .delete(proposalMembers)
-    .where(
-      and(
-        eq(proposalMembers.memberId, memberId),
-        eq(proposalMembers.proposalId, proposalId),
-      ),
-    )
-    .returning();
+    const [deleted] = await tx
+      .delete(proposalMembers)
+      .where(
+        and(
+          eq(proposalMembers.memberId, memberId),
+          eq(proposalMembers.proposalId, proposalId),
+        ),
+      )
+      .returning();
 
-  if (!deleted) {
-    throw new ApiError(404, "MEMBER_NOT_FOUND", "Member not found");
-  }
+    if (!deleted) {
+      throw new ApiError(404, "MEMBER_NOT_FOUND", "Member not found");
+    }
 
-  await insertAuditLog({
-    userId: authUser.userId,
-    action: `Removed member ${memberId} from proposal ${proposalId}`,
-    tableAffected: "proposal_members",
-    ipAddress: c.req.header("x-forwarded-for") ?? null,
+    await insertAuditLog({
+      userId: authUser.userId,
+      action: `Removed member ${memberId} from proposal ${proposalId}`,
+      tableAffected: "proposal_members",
+      ipAddress: c.req.header("x-forwarded-for") ?? null,
+    }, tx);
   });
 
   return c.json({ message: "Member removed" }, 200);

@@ -152,35 +152,44 @@ app.openapi(registerRoute, async (c) => {
   }
 
   // 4. Create user in our DB
-  const [created] = await db
-    .insert(users)
-    .values({
-      userId: authData.user.id,
-      firstName: body.firstName,
-      middleName: body.middleName ?? null,
-      lastName: body.lastName,
-      nameSuffix: body.nameSuffix ?? null,
-      academicRank: body.academicRank ?? null,
-      email: body.email,
-      roleId: facultyRole.roleId,
-      campusId: body.campusId,
-      departmentId: body.departmentId ?? null,
-      isActive: false, // Requires admin activation
-    })
-    .returning();
+  let created;
+  try {
+    created = await db.transaction(async (tx) => {
+      const [userRow] = await tx
+        .insert(users)
+        .values({
+          userId: authData.user.id,
+          firstName: body.firstName,
+          middleName: body.middleName ?? null,
+          lastName: body.lastName,
+          nameSuffix: body.nameSuffix ?? null,
+          academicRank: body.academicRank ?? null,
+          email: body.email,
+          roleId: facultyRole.roleId,
+          campusId: body.campusId,
+          departmentId: body.departmentId ?? null,
+          isActive: false, // Requires admin activation
+        })
+        .returning();
 
-  if (!created) {
+      if (!userRow) {
+        throw new Error("INSERT_FAILED");
+      }
+
+      await insertAuditLog({
+        userId: userRow.userId,
+        action: "Self-registered account",
+        tableAffected: "users",
+        ipAddress: c.req.header("x-forwarded-for") ?? null,
+      }, tx);
+
+      return userRow;
+    });
+  } catch (err) {
     // Cleanup Supabase if DB insert fails
     await supabase.auth.admin.deleteUser(authData.user.id);
     throw new ApiError(500, "INSERT_FAILED", "Failed to create user record");
   }
-
-  await insertAuditLog({
-    userId: created.userId,
-    action: "Self-registered account",
-    tableAffected: "users",
-    ipAddress: c.req.header("x-forwarded-for") ?? null,
-  });
 
   // Fetch full response
   const [row] = await db
@@ -307,31 +316,35 @@ app.openapi(
 
     const body = c.req.valid("json");
 
-    const [created] = await db
-      .insert(users)
-      .values({
-        userId: body.supabaseUserId,
-        firstName: body.firstName,
-        middleName: body.middleName ?? null,
-        lastName: body.lastName,
-        nameSuffix: body.nameSuffix ?? null,
-        academicRank: body.academicRank ?? null,
-        email: body.email,
-        roleId: body.roleId,
-        campusId: body.campusId,
-        departmentId: body.departmentId ?? null,
-      })
-      .returning();
+    const created = await db.transaction(async (tx) => {
+      const [userRow] = await tx
+        .insert(users)
+        .values({
+          userId: body.supabaseUserId,
+          firstName: body.firstName,
+          middleName: body.middleName ?? null,
+          lastName: body.lastName,
+          nameSuffix: body.nameSuffix ?? null,
+          academicRank: body.academicRank ?? null,
+          email: body.email,
+          roleId: body.roleId,
+          campusId: body.campusId,
+          departmentId: body.departmentId ?? null,
+        })
+        .returning();
 
-    if (!created) {
-      throw new ApiError(500, "INSERT_FAILED", "Failed to create user");
-    }
+      if (!userRow) {
+        throw new ApiError(500, "INSERT_FAILED", "Failed to create user");
+      }
 
-    await insertAuditLog({
-      userId: authUser.userId,
-      action: `Created user ${created.userId}`,
-      tableAffected: "users",
-      ipAddress: c.req.header("x-forwarded-for") ?? null,
+      await insertAuditLog({
+        userId: authUser.userId,
+        action: `Created user ${userRow.userId}`,
+        tableAffected: "users",
+        ipAddress: c.req.header("x-forwarded-for") ?? null,
+      }, tx);
+
+      return userRow;
     });
 
     // Fetch the full response with joined role/campus/department names

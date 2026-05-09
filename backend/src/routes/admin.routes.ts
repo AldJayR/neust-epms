@@ -8,6 +8,7 @@ import { departments } from "../db/schema/departments.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
 import { insertAuditLog } from "../lib/audit.js";
+import { invalidateAuthUserCache } from "../lib/cache.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
 
@@ -215,6 +216,10 @@ app.openapi(bulkUpdateStatusRoute, async (c) => {
     .where(inArray(users.userId, userIds))
     .returning({ userId: users.userId });
 
+  if (result.length > 0) {
+    invalidateAuthUserCache(result.map((r) => r.userId));
+  }
+
   await insertAuditLog({
     userId: authUser.userId,
     action: `Bulk updated status of ${result.length} users to ${isActive ? 'Active' : 'Inactive'}`,
@@ -317,6 +322,7 @@ app.openapi(bulkApproveRoute, async (c) => {
     }
     
     if (updatedCount > 0) {
+      invalidateAuthUserCache(usersToApprove.map(u => u.userId));
       await insertAuditLog(
         {
           userId: authUser.userId,

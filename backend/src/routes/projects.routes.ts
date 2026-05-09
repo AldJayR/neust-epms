@@ -166,58 +166,62 @@ app.openapi(createProjectRoute, async (c) => {
   const user = c.get("user");
   const body = c.req.valid("json");
 
-  // Verify proposal is approved
-  const [proposal] = await db
-    .select()
-    .from(proposals)
-    .where(eq(proposals.proposalId, body.proposalId))
-    .limit(1);
+  const created = await db.transaction(async (tx) => {
+    // Verify proposal is approved
+    const [proposal] = await tx
+      .select()
+      .from(proposals)
+      .where(eq(proposals.proposalId, body.proposalId))
+      .limit(1);
 
-  if (!proposal) {
-    throw new ApiError(404, "NOT_FOUND", "Proposal not found");
-  }
+    if (!proposal) {
+      throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+    }
 
-  if (proposal.currentStatus !== PROPOSAL_STATUS.APPROVED) {
-    throw new ApiError(
-      400,
-      "NOT_APPROVED",
-      "Only approved proposals can become projects",
-    );
-  }
+    if (proposal.currentStatus !== PROPOSAL_STATUS.APPROVED) {
+      throw new ApiError(
+        400,
+        "NOT_APPROVED",
+        "Only approved proposals can become projects",
+      );
+    }
 
-  // Check if a project already exists for this proposal (1:1)
-  const [existing] = await db
-    .select()
-    .from(projects)
-    .where(eq(projects.proposalId, body.proposalId))
-    .limit(1);
+    // Check if a project already exists for this proposal (1:1)
+    const [existing] = await tx
+      .select()
+      .from(projects)
+      .where(eq(projects.proposalId, body.proposalId))
+      .limit(1);
 
-  if (existing) {
-    throw new ApiError(
-      409,
-      "DUPLICATE",
-      "A project already exists for this proposal",
-    );
-  }
+    if (existing) {
+      throw new ApiError(
+        409,
+        "DUPLICATE",
+        "A project already exists for this proposal",
+      );
+    }
 
-  const [created] = await db
-    .insert(projects)
-    .values({
-      proposalId: body.proposalId,
-      startDate: body.startDate ? new Date(body.startDate) : null,
-      targetEnd: body.targetEnd ? new Date(body.targetEnd) : null,
-    })
-    .returning();
+    const [createdProject] = await tx
+      .insert(projects)
+      .values({
+        proposalId: body.proposalId,
+        startDate: body.startDate ? new Date(body.startDate) : null,
+        targetEnd: body.targetEnd ? new Date(body.targetEnd) : null,
+      })
+      .returning();
 
-  if (!created) {
-    throw new ApiError(500, "INSERT_FAILED", "Failed to create project");
-  }
+    if (!createdProject) {
+      throw new ApiError(500, "INSERT_FAILED", "Failed to create project");
+    }
 
-  await insertAuditLog({
-    userId: user.userId,
-    action: `Created project ${created.projectId} from proposal ${body.proposalId}`,
-    tableAffected: "projects",
-    ipAddress: c.req.header("x-forwarded-for") ?? null,
+    await insertAuditLog({
+      userId: user.userId,
+      action: `Created project ${createdProject.projectId} from proposal ${body.proposalId}`,
+      tableAffected: "projects",
+      ipAddress: c.req.header("x-forwarded-for") ?? null,
+    }, tx);
+
+    return createdProject;
   });
 
   return c.json(
@@ -292,16 +296,18 @@ app.openapi(linkMoaRoute, async (c) => {
     throw new ApiError(400, "MOA_EXPIRED", "Cannot link an expired MOA");
   }
 
-  await db
-    .update(projects)
-    .set({ moaId: body.moaId, updatedAt: new Date() })
-    .where(eq(projects.projectId, id));
+  await db.transaction(async (tx) => {
+    await tx
+      .update(projects)
+      .set({ moaId: body.moaId, updatedAt: new Date() })
+      .where(eq(projects.projectId, id));
 
-  await insertAuditLog({
-    userId: user.userId,
-    action: `Linked MOA ${body.moaId} to project ${id}`,
-    tableAffected: "projects",
-    ipAddress: c.req.header("x-forwarded-for") ?? null,
+    await insertAuditLog({
+      userId: user.userId,
+      action: `Linked MOA ${body.moaId} to project ${id}`,
+      tableAffected: "projects",
+      ipAddress: c.req.header("x-forwarded-for") ?? null,
+    }, tx);
   });
 
   return c.json({ message: "MOA linked to project" }, 200);
@@ -392,16 +398,18 @@ app.openapi(transitionRoute, async (c) => {
     }
   }
 
-  await db
-    .update(projects)
-    .set({ projectStatus: body.status, updatedAt: new Date() })
-    .where(eq(projects.projectId, id));
+  await db.transaction(async (tx) => {
+    await tx
+      .update(projects)
+      .set({ projectStatus: body.status, updatedAt: new Date() })
+      .where(eq(projects.projectId, id));
 
-  await insertAuditLog({
-    userId: user.userId,
-    action: `Transitioned project ${id} to ${body.status}`,
-    tableAffected: "projects",
-    ipAddress: c.req.header("x-forwarded-for") ?? null,
+    await insertAuditLog({
+      userId: user.userId,
+      action: `Transitioned project ${id} to ${body.status}`,
+      tableAffected: "projects",
+      ipAddress: c.req.header("x-forwarded-for") ?? null,
+    }, tx);
   });
 
   return c.json(

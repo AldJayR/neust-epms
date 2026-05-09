@@ -14,6 +14,16 @@ export const authUserCache = new LRUCache<string, AuthUser>({
   updateAgeOnHas: false,
 });
 
+/**
+ * Manually invalidate the auth cache for specific user IDs.
+ * Use this when a user's role or active status is updated.
+ */
+export function invalidateAuthUserCache(userIds: string[]): void {
+  for (const id of userIds) {
+    authUserCache.delete(`auth:user:${id}`);
+  }
+}
+
 export interface SettingListItem {
   settingKey: string;
   settingValue: string | null;
