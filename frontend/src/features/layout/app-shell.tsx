@@ -4,19 +4,19 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AppSidebar } from "./app-sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Bell, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
-interface AdminShellProps {
+interface AppShellProps {
 	children: React.ReactNode;
 }
 
-export function AdminShell({ children }: AdminShellProps) {
+export function AppShell({ children }: AppShellProps) {
 	return (
 		<SidebarProvider>
-			<AdminSidebar />
+			<AppSidebar />
 			<SidebarInset className="bg-white">
 				<header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
 					<div className="flex flex-1 items-center gap-2">

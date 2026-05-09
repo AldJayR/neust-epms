@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { AdminShell } from "@/features/admin/admin-shell";
+import { AppShell } from "@/features/layout/app-shell";
 import { UsersPage } from "@/features/admin/users-page";
 import { DirectorDashboardPage } from "@/features/director/director-dashboard-page";
 import { directorDashboardQueryOptions } from "@/lib/director.functions";
@@ -28,20 +28,21 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 		}
 
 		if (context.auth.user?.roleName === "Super Admin") {
-			await Promise.all([
-				context.queryClient.ensureQueryData(adminStatsQueryOptions()),
-				context.queryClient.ensureQueryData(
-					adminUsersQueryOptions({
-						page: deps.page,
-						pageSize: deps.pageSize,
-						search: deps.search,
-					}),
-				),
-			]);
+			const statsPromise = context.queryClient.ensureQueryData(adminStatsQueryOptions());
+			const usersPromise = context.queryClient.ensureQueryData(
+				adminUsersQueryOptions({
+					page: deps.page,
+					pageSize: deps.pageSize,
+					search: deps.search,
+				}),
+			);
+			await Promise.all([statsPromise, usersPromise]);
 			return null;
 		}
 
+		// Director path
 		await context.queryClient.ensureQueryData(directorDashboardQueryOptions());
+		return null;
 	},
 	component: DashboardPage,
 });
@@ -65,7 +66,7 @@ function DashboardPage() {
 
 	if (user.roleName === "Super Admin") {
 		return (
-			<AdminShell>
+			<AppShell>
 				<UsersPage
 					page={page}
 					pageSize={pageSize}
@@ -73,12 +74,16 @@ function DashboardPage() {
 					onSearch={handleSearch}
 					onPageChange={handlePageChange}
 				/>
-			</AdminShell>
+			</AppShell>
 		);
 	}
 
 	if (user.roleName === "Director") {
-		return <DirectorDashboardPage user={user} />;
+		return (
+			<AppShell>
+				<DirectorDashboardPage user={user} />
+			</AppShell>
+		);
 	}
 
 	return (

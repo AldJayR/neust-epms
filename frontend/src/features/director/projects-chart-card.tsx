@@ -1,0 +1,60 @@
+import {
+	Bar,
+	BarChart,
+	CartesianGrid,
+	ResponsiveContainer,
+	Tooltip,
+	XAxis,
+	YAxis,
+} from "recharts";
+import { ChevronsUpDown } from "lucide-react";
+
+interface ProjectsChartCardProps {
+	chartData: { label: string; value: number }[];
+}
+
+export default function ProjectsChartCard({
+	chartData,
+}: ProjectsChartCardProps) {
+	return (
+		<div className="h-[370px] overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+			<div className="flex h-[72px] items-start justify-between border-b border-white px-6 pt-4 pb-3">
+				<div className="leading-tight">
+					<p className="text-[14px] font-semibold leading-5 text-[#0a0a0a]">Total Projects</p>
+					<p className="text-[14px] leading-5 text-[#666]">per college</p>
+				</div>
+				<button
+					type="button"
+					className="flex h-9 w-[200px] items-center justify-between rounded-md border border-[#e5e5e5] bg-white px-3 text-[14px] text-[#737373] shadow-[0px_1px_1px_rgba(0,0,0,0.1)]"
+				>
+					<span>Select campus...</span>
+					<ChevronsUpDown className="size-4 opacity-50" />
+				</button>
+			</div>
+			<div className="h-[298px] px-6 pb-6 pt-10">
+				<ResponsiveContainer width="100%" height="100%" key="projects-chart">
+					<BarChart data={chartData} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
+						<CartesianGrid vertical={false} stroke="#ebebeb" />
+						<XAxis
+							dataKey="label"
+							axisLine={false}
+							tickLine={false}
+							tick={{ fill: "#737373", fontSize: 12 }}
+							dy={10}
+						/>
+						<YAxis
+							axisLine={false}
+							tickLine={false}
+							tick={{ fill: "#737373", fontSize: 12 }}
+						/>
+						<Tooltip
+							cursor={{ fill: "transparent" }}
+							contentStyle={{ borderRadius: "8px", border: "1px solid #ebebeb" }}
+						/>
+						<Bar dataKey="value" fill="#14369c" radius={[4, 4, 0, 0]} barSize={50} />
+					</BarChart>
+				</ResponsiveContainer>
+			</div>
+		</div>
+	);
+}

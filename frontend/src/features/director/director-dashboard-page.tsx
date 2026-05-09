@@ -1,33 +1,10 @@
-import { Link } from "@tanstack/react-router";
-import {
-	Bell,
-	Building2,
-	ChartColumn,
-	ChevronsUpDown,
-	FileText,
-	FolderKanban,
-	LayoutGrid,
-	PanelLeft,
-	Search,
-	Settings,
-	Users,
-} from "lucide-react";
-
-import { RoleSidebar, type RoleSidebarGroup } from "@/components/role-sidebar";
-import { SidebarInset, SidebarProvider, useSidebar } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-	Bar,
-	BarChart,
-	CartesianGrid,
-	ResponsiveContainer,
-	Tooltip,
-	XAxis,
-	YAxis,
-} from "recharts";
 import { directorDashboardQueryOptions } from "@/lib/director.functions";
 import type { AuthUser } from "@/lib/auth";
+import { AppShell } from "../layout/app-shell";
+
+const ProjectsChartCard = React.lazy(() => import("./projects-chart-card"));
 
 const metricCards = [
 	{ label: "Total Projects", key: "totalProjects" as const },
@@ -37,30 +14,30 @@ const metricCards = [
 ];
 
 const projectChartData = [
-	{ label: "COA", value: 104.04 },
-	{ label: "COC", value: 170.61 },
-	{ label: "COE", value: 132.57 },
-	{ label: "CICT", value: 40.83 },
-	{ label: "CMBT", value: 116.91 },
-	{ label: "CPADM", value: 119.71 },
+	{ label: "COA", value: 104 },
+	{ label: "COC", value: 170 },
+	{ label: "COE", value: 132 },
+	{ label: "CICT", value: 40 },
+	{ label: "CMBT", value: 116 },
+	{ label: "CPADM", value: 119 },
 ];
 
 const recentActivities = [
 	{
 		title: "New Proposal Submitted",
-		description: "\u201cDigital Literacy Drive in Barangay Sumacab\u201d by CICT Dept.",
+		description: "“Digital Literacy Drive in Barangay Sumacab” by CICT Dept.",
 		time: "2 hours ago",
 		color: "bg-[#14369c]",
 	},
 	{
 		title: "Project Approved",
-		description: "\u201cCommunity Health Training\u201d has been approved by the Director.",
+		description: "“Community Health Training” has been approved by the Director.",
 		time: "Yesterday, 4:20pm",
 		color: "bg-[#16a34a]",
 	},
 	{
 		title: "Review Pending",
-		description: "Prof. Reyes updated the budget for \u201cSustainable Farming\u201d.",
+		description: "Prof. Reyes updated the budget for “Sustainable Farming”.",
 		time: "Yesterday, 2:46pm",
 		color: "bg-[#f59e0b]",
 	},
@@ -71,116 +48,11 @@ const expiringMoas = [
 	{ name: "LGU MOA", dueText: "Expires in 14 days" },
 ];
 
-const sidebarGroups: RoleSidebarGroup[] = [
-	{
-		title: "Dashboard",
-		items: [
-			{ title: "Overview", icon: LayoutGrid, active: true },
-			{ title: "Projects", icon: FolderKanban },
-			{ title: "Faculty", icon: Users },
-			{ title: "Departments", icon: Building2 },
-			{ title: "Memoranda of Agreements", icon: FileText },
-		],
-	},
-	{
-		title: "Management",
-		items: [
-			{ title: "Reports", icon: ChartColumn },
-			{ title: "Settings", icon: Settings },
-		],
-	},
-];
-
 function MetricCard({ label, value }: { label: string; value: string | number }) {
 	return (
 		<div className="flex h-[104px] flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<p className="text-[14px] leading-4 text-[#666]">{label}</p>
 			<p className="text-[36px] font-semibold leading-9 text-[#11215a]">{value}</p>
-		</div>
-	);
-}
-
-function DirectorHeader() {
-	const { toggleSidebar } = useSidebar();
-
-	return (
-		<header className="flex h-16 shrink-0 items-center justify-between border-b border-[#e5e5e5] bg-white px-4">
-			<div className="flex flex-1 items-center gap-2">
-				<button
-					type="button"
-					onClick={toggleSidebar}
-					className="flex size-7 shrink-0 items-center justify-center rounded-full text-[#0a0a0a] transition-colors hover:bg-[#f5f5f5]"
-					aria-label="Toggle sidebar"
-				>
-					<PanelLeft className="size-4" />
-				</button>
-				<Separator orientation="vertical" className="mx-1 h-4 self-center" />
-				<div className="relative flex w-[212px] shrink-0 items-center">
-					<Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-[#737373]" />
-					<input
-						type="search"
-						placeholder="Type to search..."
-						className="h-8 w-full rounded-md border border-[#e5e5e5] bg-white pl-8 pr-3 text-[14px] text-[#0a0a0a] shadow-[0px_1px_1px_rgba(0,0,0,0.1)] placeholder:text-[#737373] focus:outline-none"
-					/>
-				</div>
-			</div>
-			<div className="flex items-center gap-4">
-				<button
-					type="button"
-					className="flex size-7 shrink-0 items-center justify-center rounded-full text-[#0a0a0a] transition-colors hover:bg-[#f5f5f5]"
-					aria-label="Notifications"
-				>
-					<Bell className="size-4" />
-				</button>
-			</div>
-		</header>
-	);
-}
-
-function ProjectsChartCard({
-	chartData,
-}: {
-	chartData: { label: string; value: number }[];
-}) {
-	return (
-		<div className="h-[370px] overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-			<div className="flex h-[72px] items-start justify-between border-b border-white px-6 pt-4 pb-3">
-				<div className="leading-tight">
-					<p className="text-[14px] font-semibold leading-5 text-[#0a0a0a]">Total Projects</p>
-					<p className="text-[14px] leading-5 text-[#666]">per college</p>
-				</div>
-				<button
-					type="button"
-					className="flex h-9 w-[200px] items-center justify-between rounded-md border border-[#e5e5e5] bg-white px-3 text-[14px] text-[#737373] shadow-[0px_1px_1px_rgba(0,0,0,0.1)]"
-				>
-					<span>Select campus...</span>
-					<ChevronsUpDown className="size-4 opacity-50" />
-				</button>
-			</div>
-			<div className="h-[298px] px-6 pb-6 pt-10">
-				<ResponsiveContainer width="100%" height="100%" key="projects-chart">
-					<BarChart data={chartData} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
-						<CartesianGrid vertical={false} stroke="#ebebeb" />
-						<XAxis
-							dataKey="label"
-							axisLine={false}
-							tickLine={false}
-							tick={{ fill: "#737373", fontSize: 12 }}
-							dy={10}
-						/>
-						<YAxis
-							axisLine={false}
-							tickLine={false}
-							tick={{ fill: "#737373", fontSize: 12 }}
-						/>
-						<Tooltip
-							cursor={{ fill: "transparent" }}
-							contentStyle={{ borderRadius: "8px", border: "1px solid #ebebeb" }}
-						/>
-						<Bar dataKey="value" fill="#14369c" radius={[4, 4, 0, 0]} barSize={50} />
-					</BarChart>
-				</ResponsiveContainer>
-			</div>
 		</div>
 	);
 }
@@ -243,73 +115,44 @@ function ExpiringMoasCard({ moas }: { moas: { name: string; dueText: string }[] 
 	);
 }
 
-function DirectorMainContent() {
+function DirectorDashboardContent() {
 	const dashboardQuery = useQuery(directorDashboardQueryOptions());
 	const dashboard = dashboardQuery.data;
 	const metrics = dashboard?.metrics ?? {
-		totalProjects: 13,
-		ongoingProjects: 12,
-		underEvaluation: 182,
-		completed: 3,
+		totalProjects: 0,
+		ongoingProjects: 0,
+		underEvaluation: 0,
+		completed: 0,
 	};
 	const chartData = dashboard?.chartData ?? projectChartData;
 	const activities = dashboard?.recentActivities ?? recentActivities;
 	const moas = dashboard?.expiringMoas ?? expiringMoas;
 
 	return (
-		<main className="min-w-0 flex-1 overflow-auto bg-white">
-			<DirectorHeader />
-			<section className="px-6 py-6">
-				<div className="flex min-h-full flex-col gap-8">
-					<div>
-						<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
-							Welcome, Dr. Santos!
-						</h1>
-					</div>
-					<div className="grid gap-6 xl:grid-cols-4">
-						{metricCards.map((card) => (
-							<MetricCard key={card.label} label={card.label} value={metrics[card.key]} />
-						))}
-					</div>
-					<div className="grid gap-8 lg:grid-cols-[minmax(0,630px)_minmax(0,1fr)]">
-						<ProjectsChartCard chartData={chartData} />
-						<RecentActivitiesCard activities={activities} />
-					</div>
-					<ExpiringMoasCard moas={moas} />
+		<section className="px-6 py-6">
+			<div className="flex min-h-full flex-col gap-8">
+				<div>
+					<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
+						Welcome, Dr. Santos!
+					</h1>
 				</div>
-			</section>
-		</main>
+				<div className="grid gap-6 xl:grid-cols-4">
+					{metricCards.map((card) => (
+						<MetricCard key={card.label} label={card.label} value={metrics[card.key]} />
+					))}
+				</div>
+				<div className="grid gap-8 lg:grid-cols-[minmax(0,630px)_minmax(0,1fr)]">
+					<React.Suspense fallback={<div className="h-[370px] rounded-[12px] border border-[#ebebeb] bg-white animate-pulse" />}>
+						<ProjectsChartCard chartData={chartData} />
+					</React.Suspense>
+					<RecentActivitiesCard activities={activities} />
+				</div>
+				<ExpiringMoasCard moas={moas} />
+			</div>
+		</section>
 	);
 }
 
 export function DirectorDashboardPage({ user }: { user?: AuthUser | null }) {
-	return (
-		<SidebarProvider>
-			<RoleSidebar
-				headerRender={<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />}
-				headerContent={
-					<>
-						<div className="flex aspect-square size-8 items-center justify-center">
-							<img
-								src="https://www.figma.com/api/mcp/asset/f4d2e42a-b415-4ff3-b36f-5aa4acd0b8ad"
-								alt="NEUST Logo"
-								className="size-7"
-							/>
-						</div>
-						<div className="grid flex-1 text-left text-sm leading-tight">
-							<span className="truncate font-semibold text-[#0a0a0a]">NEUST</span>
-							<span className="truncate text-xs text-[#0a0a0a]">Extension Services</span>
-						</div>
-					</>
-				}
-				groups={sidebarGroups}
-				user={user ?? null}
-				fallbackFullName="Dr. A. Santos"
-				fallbackRole="Director"
-			/>
-			<SidebarInset className="bg-white">
-				<DirectorMainContent />
-			</SidebarInset>
-		</SidebarProvider>
-	);
+	return <DirectorDashboardContent />;
 }
