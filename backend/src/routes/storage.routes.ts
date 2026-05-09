@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { createClient } from "@supabase/supabase-js";
+import { randomUUID } from "node:crypto";
 import { eq, and, isNull, max } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { proposalDocuments } from "../db/schema/proposal-documents.js";
@@ -8,6 +9,7 @@ import { env } from "../env.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
+import { ROLE_NAMES, type AuthUser, type Proposal } from "../lib/types.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -26,6 +28,35 @@ function sanitizeFilename(fileName: string): string {
   const candidate = normalized.length > 0 ? normalized : fallback;
 
   return candidate.toLowerCase().endsWith(".pdf") ? candidate : `${candidate}.pdf`;
+}
+
+function canAccessProposalDocuments(user: AuthUser, proposal: Proposal): boolean {
+  if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
+    if (user.departmentId !== null) {
+      return (
+        proposal.projectLeaderId === user.userId ||
+        proposal.departmentId === user.departmentId
+      );
+    }
+
+    return proposal.projectLeaderId === user.userId || proposal.campusId === user.campusId;
+  }
+
+  return true;
+}
+
+function generateSecureStoragePath(
+  proposalId: string,
+  versionNum: number,
+  fileName: string,
+): string {
+  const sanitizedFilename = sanitizeFilename(fileName);
+  return `proposals/${proposalId}/v${versionNum}_${Date.now()}_${randomUUID()}_${sanitizedFilename}`;
+}
+
+function getClientIp(forwarded: string | null | undefined): string | null {
+  if (!forwarded) return null;
+  return forwarded.split(",")[0].trim();
 }
 
 // ── Schemas ──
@@ -100,13 +131,42 @@ const listDocsRoute = createRoute({
       content: { "application/json": { schema: DocumentListSchema } },
       description: "Document versions",
     },
+    403: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Forbidden",
+    },
+    404: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Proposal not found",
+    },
   },
 });
 
 app.openapi(listDocsRoute, async (c) => {
+  const user = c.get("user");
   const { proposalId } = c.req.valid("param");
   const { page, limit } = c.req.valid("query");
   const offset = (page - 1) * limit;
+
+  const [proposal] = await db
+    .select()
+    .from(proposals)
+    .where(
+      and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
+    )
+    .limit(1);
+
+  if (!proposal) {
+    throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+  }
+
+  if (!canAccessProposalDocuments(user, proposal)) {
+    throw new ApiError(
+      403,
+      "FORBIDDEN",
+      "You do not have access to documents for this proposal",
+    );
+  }
 
   const rows = await db
     .select()
@@ -147,6 +207,10 @@ const uploadRoute = createRoute({
       content: { "application/json": { schema: ErrorSchema } },
       description: "Proposal not found",
     },
+    403: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Forbidden",
+    },
     413: {
       content: { "application/json": { schema: ErrorSchema } },
       description: "File too large",
@@ -154,6 +218,10 @@ const uploadRoute = createRoute({
     422: {
       content: { "application/json": { schema: ErrorSchema } },
       description: "Invalid file type",
+    },
+    500: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Internal server error",
     },
   },
 });
@@ -173,6 +241,14 @@ app.openapi(uploadRoute, async (c) => {
 
   if (!proposal) {
     throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+  }
+
+  if (!canAccessProposalDocuments(user, proposal)) {
+    throw new ApiError(
+      403,
+      "FORBIDDEN",
+      "You do not have permission to upload documents for this proposal",
+    );
   }
 
   // Parse multipart form data
@@ -195,51 +271,64 @@ app.openapi(uploadRoute, async (c) => {
     throw new ApiError(422, "INVALID_FILE_TYPE", "Only PDF files are allowed");
   }
 
-  // Determine next version number
-  const [maxVersion] = await db
-    .select({ maxVer: max(proposalDocuments.versionNum) })
-    .from(proposalDocuments)
-    .where(eq(proposalDocuments.proposalId, proposalId));
+  let uploadedStoragePath: string | null = null;
 
-  const nextVersion = (maxVersion?.maxVer ?? 0) + 1;
+  const { doc, nextVersion } = await db.transaction(async (tx) => {
+    const [maxVersion] = await tx
+      .select({ maxVer: max(proposalDocuments.versionNum) })
+      .from(proposalDocuments)
+      .where(eq(proposalDocuments.proposalId, proposalId));
 
-  // Upload to Supabase Storage
-  const storagePath = `proposals/${proposalId}/v${nextVersion}_${Date.now()}_${sanitizeFilename(file.name)}`;
+    const nextVersion = (maxVersion?.maxVer ?? 0) + 1;
+    const storagePath = generateSecureStoragePath(proposalId, nextVersion, file.name);
 
-  const { error: uploadError } = await supabase.storage
-    .from("documents")
-    .upload(storagePath, file, {
-      contentType: file.type,
-      upsert: false,
-    });
+    const { error: uploadError } = await supabase.storage
+      .from("documents")
+      .upload(storagePath, file, {
+        contentType: file.type,
+        upsert: false,
+      });
 
-  if (uploadError) {
-    throw new ApiError(
-      400,
-      "UPLOAD_FAILED",
-      `Supabase storage upload failed: ${uploadError.message}`,
-    );
-  }
+    if (uploadError) {
+      throw new ApiError(
+        400,
+        "UPLOAD_FAILED",
+        `Supabase storage upload failed: ${uploadError.message}`,
+      );
+    }
 
-  // Record in DB
-  const [doc] = await db
-    .insert(proposalDocuments)
-    .values({
-      proposalId,
-      storagePath,
-      versionNum: nextVersion,
-    })
-    .returning();
+    uploadedStoragePath = storagePath;
 
-  if (!doc) {
-    throw new ApiError(500, "INSERT_FAILED", "Failed to record document");
-  }
+    const [doc] = await tx
+      .insert(proposalDocuments)
+      .values({
+        proposalId,
+        storagePath,
+        versionNum: nextVersion,
+      })
+      .returning();
+
+    if (!doc) {
+      throw new ApiError(500, "INSERT_FAILED", "Failed to record document");
+    }
+
+return { doc, nextVersion };
+  }).catch(async (error) => {
+    if (uploadedStoragePath) {
+      try {
+        await supabase.storage.from("documents").remove([uploadedStoragePath]);
+      } catch {
+        // Log but don't mask original error
+      }
+    }
+    throw error;
+  });
 
   await insertAuditLog({
     userId: user.userId,
     action: `Uploaded document v${nextVersion} for proposal ${proposalId}`,
     tableAffected: "proposal_documents",
-    ipAddress: c.req.header("x-forwarded-for") ?? null,
+    ipAddress: getClientIp(c.req.header("x-forwarded-for")),
   });
 
   return c.json(
@@ -269,11 +358,40 @@ const getUrlRoute = createRoute({
       content: { "application/json": { schema: ErrorSchema } },
       description: "Document not found",
     },
+    403: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Forbidden",
+    },
+    500: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Internal server error",
+    },
   },
 });
 
 app.openapi(getUrlRoute, async (c) => {
+  const user = c.get("user");
   const { proposalId, documentId } = c.req.valid("param");
+
+  const [proposal] = await db
+    .select()
+    .from(proposals)
+    .where(
+      and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
+    )
+    .limit(1);
+
+  if (!proposal) {
+    throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+  }
+
+  if (!canAccessProposalDocuments(user, proposal)) {
+    throw new ApiError(
+      403,
+      "FORBIDDEN",
+      "You do not have access to documents for this proposal",
+    );
+  }
 
   const [doc] = await db
     .select()
@@ -297,6 +415,13 @@ app.openapi(getUrlRoute, async (c) => {
   if (error || !data) {
     throw new ApiError(500, "URL_FAILED", "Failed to generate signed URL");
   }
+
+  await insertAuditLog({
+    userId: user.userId,
+    action: `Downloaded signed URL for document ${documentId} (proposal ${proposalId})`,
+    tableAffected: "proposal_documents",
+    ipAddress: getClientIp(c.req.header("x-forwarded-for")),
+  });
 
   return c.json({ url: data.signedUrl }, 200);
 });
