@@ -23,6 +23,16 @@ interface MyRouterContext {
 const THEME_INIT_SCRIPT = `(function(){try{var root=document.documentElement;root.classList.remove('light','dark');root.classList.add('light');root.setAttribute('data-theme','light');root.style.colorScheme='light';window.localStorage.setItem('theme','light');}catch(e){}})();`;
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
+	beforeLoad: async () => {
+		const user = await getCurrentUserFn();
+
+		return {
+			auth: {
+				user,
+				isAuthenticated: !!user,
+			},
+		};
+	},
 	head: () => ({
 		meta: [
 			{
@@ -50,19 +60,9 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			},
 		],
 	}),
-	beforeLoad: async () => {
-		const user = await getCurrentUserFn();
-
-		return {
-			auth: {
-				user,
-				isAuthenticated: !!user,
-			},
-		};
-	},
 	notFoundComponent: () => (
 		<div className="flex min-h-dvh flex-col items-center justify-center p-8 text-center">
-			<h1 className="text-4xl font-bold">404</h1>
+			<h1 className="text-4xl font-semibold">404</h1>
 			<p className="mt-4 text-xl text-muted-foreground">
 				Oops! The page you're looking for doesn't exist.
 			</p>

@@ -136,7 +136,7 @@ export const logoutFn = createServerFn({ method: "POST" }).handler(async () => {
 
 // ── Get Current User ──────────────────────────────────────
 
-export const getCurrentUserFn = createServerFn({ method: "GET" }).handler(
+export const getCurrentUserFn = createServerFn({ method: "POST" }).handler(
 	async () => {
 		const session = await useAppSession();
 		const { accessToken, userId, user, createdAt } = session.data;

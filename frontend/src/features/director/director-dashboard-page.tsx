@@ -66,20 +66,31 @@ function RecentActivitiesCard({
 		<div className="flex h-[370px] flex-col overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex items-center justify-between px-4 py-2 text-[#666]">
 				<p className="text-[14px] font-medium leading-5">Recent Activities</p>
-				<button type="button" className="text-[12px] font-medium leading-4">View All</button>
+				<button type="button" className="text-[12px] font-medium leading-4">
+					View All
+				</button>
 			</div>
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 				{activities.map((activity, index) => (
-					<div key={`${activity.title}-${index}`} className="border-t border-[#ebebeb] p-4">
+					<div key={`${activity.title}-${activity.time}`} className="border-t border-[#ebebeb] p-4">
 						<div className="flex flex-col gap-6">
 							<div className="flex flex-col gap-1">
 								<div className="flex items-center gap-1.5">
-									<span className={`size-2 shrink-0 rounded-full ${["bg-[#14369c]", "bg-[#16a34a]", "bg-[#f59e0b]"][index % 3]}`} aria-hidden="true" />
-									<p className="text-[14px] font-medium leading-5 text-[#0a0a0a]">{activity.title}</p>
+									<span
+										className={`size-2 shrink-0 rounded-full ${["bg-[#14369c]", "bg-[#16a34a]", "bg-[#f59e0b]"][index % 3]}`}
+										aria-hidden="true"
+									/>
+									<p className="text-[14px] font-medium leading-5 text-[#0a0a0a]">
+										{activity.title}
+									</p>
 								</div>
-								<p className="text-[12px] leading-[14px] text-[#666]">{activity.description}</p>
+								<p className="text-[12px] leading-[14px] text-[#666]">
+									{activity.description}
+								</p>
 							</div>
-							<p className="text-[12px] leading-[14px] text-[#666]">{activity.time}</p>
+							<p className="text-[12px] leading-[14px] text-[#666]">
+								{activity.time}
+							</p>
 						</div>
 					</div>
 				))}
@@ -88,26 +99,39 @@ function RecentActivitiesCard({
 	);
 }
 
-function ExpiringMoasCard({ moas }: { moas: { name: string; dueText: string }[] }) {
+function ExpiringMoasCard({
+	moas,
+}: { moas: { name: string; dueText: string }[] }) {
 	return (
-		<div className="h-[148px] flex flex-col overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+		<div className="flex h-[148px] flex-col overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex items-center justify-between px-4 py-2 text-[#666]">
 				<p className="text-[14px] font-medium leading-5">Expiring MOAs</p>
-				<button type="button" className="text-[12px] font-medium leading-4">View All</button>
+				<button type="button" className="text-[12px] font-medium leading-4">
+					View All
+				</button>
 			</div>
 			<div className="flex flex-1 flex-col overflow-hidden">
 				{moas.length > 0 ? (
 					moas.map((moa) => (
-						<div key={`${moa.name}-${moa.dueText}`} className="border-t border-[#ebebeb] px-4 py-4">
+						<div
+							key={`${moa.name}-${moa.dueText}`}
+							className="border-t border-[#ebebeb] p-4"
+						>
 							<div className="flex items-center justify-between gap-4">
-								<p className="text-[14px] font-medium leading-5 text-[#0a0a0a]">{moa.name}</p>
-								<p className="text-[14px] leading-5 text-[#dc2626]">{moa.dueText}</p>
+								<p className="text-[14px] font-medium leading-5 text-[#0a0a0a]">
+									{moa.name}
+								</p>
+								<p className="text-[14px] leading-5 text-[#dc2626]">
+									{moa.dueText}
+								</p>
 							</div>
 						</div>
 					))
 				) : (
 					<div className="flex flex-1 items-center justify-center border-t border-[#ebebeb] px-4 pb-2">
-						<p className="text-[14px] text-[#737373] italic">No MOAs expiring soon.</p>
+						<p className="text-[14px] text-[#737373] italic">
+							No MOAs expiring soon.
+						</p>
 					</div>
 				)}
 			</div>
@@ -129,7 +153,7 @@ function DirectorDashboardContent() {
 	const moas = dashboard?.expiringMoas ?? expiringMoas;
 
 	return (
-		<section className="px-6 py-6">
+		<section className="p-6">
 			<div className="flex min-h-full flex-col gap-8">
 				<div>
 					<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
@@ -138,11 +162,19 @@ function DirectorDashboardContent() {
 				</div>
 				<div className="grid gap-6 xl:grid-cols-4">
 					{metricCards.map((card) => (
-						<MetricCard key={card.label} label={card.label} value={metrics[card.key]} />
+						<MetricCard
+							key={card.label}
+							label={card.label}
+							value={metrics[card.key]}
+						/>
 					))}
 				</div>
 				<div className="grid gap-8 lg:grid-cols-[minmax(0,630px)_minmax(0,1fr)]">
-					<React.Suspense fallback={<div className="h-[370px] rounded-[12px] border border-[#ebebeb] bg-white animate-pulse" />}>
+					<React.Suspense
+						fallback={
+							<div className="h-[370px] animate-pulse rounded-[12px] border border-[#ebebeb] bg-white" />
+						}
+					>
 						<ProjectsChartCard chartData={chartData} />
 					</React.Suspense>
 					<RecentActivitiesCard activities={activities} />

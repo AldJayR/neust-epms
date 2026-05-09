@@ -1,13 +1,8 @@
-import {
-	Bar,
-	BarChart,
-	CartesianGrid,
-	ResponsiveContainer,
-	Tooltip,
-	XAxis,
-	YAxis,
-} from "recharts";
-import { ChevronsUpDown } from "lucide-react";
+import * as React from "react";
+import { ChevronsUpDown, Loader2 } from "lucide-react";
+import { ClientOnly } from "@tanstack/react-router";
+
+const ProjectsChart = React.lazy(() => import("./projects-chart"));
 
 interface ProjectsChartCardProps {
 	chartData: { label: string; value: number }[];
@@ -27,33 +22,28 @@ export default function ProjectsChartCard({
 					type="button"
 					className="flex h-9 w-[200px] items-center justify-between rounded-md border border-[#e5e5e5] bg-white px-3 text-[14px] text-[#737373] shadow-[0px_1px_1px_rgba(0,0,0,0.1)]"
 				>
-					<span>Select campus...</span>
+					<span>Select campus…</span>
 					<ChevronsUpDown className="size-4 opacity-50" />
 				</button>
 			</div>
 			<div className="h-[298px] px-6 pb-6 pt-10">
-				<ResponsiveContainer width="100%" height="100%" key="projects-chart">
-					<BarChart data={chartData} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
-						<CartesianGrid vertical={false} stroke="#ebebeb" />
-						<XAxis
-							dataKey="label"
-							axisLine={false}
-							tickLine={false}
-							tick={{ fill: "#737373", fontSize: 12 }}
-							dy={10}
-						/>
-						<YAxis
-							axisLine={false}
-							tickLine={false}
-							tick={{ fill: "#737373", fontSize: 12 }}
-						/>
-						<Tooltip
-							cursor={{ fill: "transparent" }}
-							contentStyle={{ borderRadius: "8px", border: "1px solid #ebebeb" }}
-						/>
-						<Bar dataKey="value" fill="#14369c" radius={[4, 4, 0, 0]} barSize={50} />
-					</BarChart>
-				</ResponsiveContainer>
+				<ClientOnly
+					fallback={
+						<div className="flex h-full items-center justify-center">
+							<Loader2 className="size-8 animate-spin text-[#14369c]/20" />
+						</div>
+					}
+				>
+					<React.Suspense
+						fallback={
+							<div className="flex h-full items-center justify-center">
+								<Loader2 className="size-8 animate-spin text-[#14369c]/20" />
+							</div>
+						}
+					>
+						<ProjectsChart chartData={chartData} />
+					</React.Suspense>
+				</ClientOnly>
 			</div>
 		</div>
 	);

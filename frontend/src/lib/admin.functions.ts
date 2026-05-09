@@ -1,10 +1,40 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { useAppSession } from "./session.server";
 import type { ApiErrorResponse } from "./auth";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 const ADMIN_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
+
+// ── Schemas ───────────────────────────────────────────────
+
+const adminUsersQueryParamsSchema = z.object({
+	page: z.number().optional(),
+	pageSize: z.number().optional(),
+	search: z.string().optional(),
+	isActive: z.string().optional(),
+});
+
+const bulkUpdateStatusSchema = z.object({
+	userIds: z.array(z.string()),
+	isActive: z.boolean(),
+});
+
+const bulkApproveSchema = z.object({
+	users: z.array(
+		z.object({
+			userId: z.string(),
+			roleName: z.string(),
+		}),
+	),
+});
+
+const auditLogsParamsSchema = z.object({
+	page: z.number(),
+	limit: z.number(),
+	search: z.string().optional(),
+});
 
 export interface AdminStats {
 	totalAccounts: number;
@@ -95,9 +125,7 @@ export const getAdminStatsFn = createServerFn({ method: "GET" }).handler(
 // ── Get Admin Users ──────────────────────────────────────
 
 export const getAdminUsersFn = createServerFn({ method: "GET" })
-	.inputValidator(
-		(d: { search?: string; page?: number; pageSize?: number; isActive?: string }) => d,
-	)
+	.inputValidator(adminUsersQueryParamsSchema)
 	.handler(async ({ data }) => {
 		const session = await useAppSession();
 		const { accessToken } = session.data;
@@ -137,7 +165,7 @@ interface BulkUpdateStatusInput {
 }
 
 export const bulkUpdateUserStatusFn = createServerFn({ method: "POST" })
-	.inputValidator((d: BulkUpdateStatusInput) => d)
+	.inputValidator(bulkUpdateStatusSchema)
 	.handler(async ({ data }) => {
 		const session = await useAppSession();
 		const { accessToken } = session.data;
@@ -217,7 +245,7 @@ interface BulkApproveInput {
 }
 
 export const bulkApproveUsersFn = createServerFn({ method: "POST" })
-	.inputValidator((d: BulkApproveInput) => d)
+	.inputValidator(bulkApproveSchema)
 	.handler(async ({ data }) => {
 		const session = await useAppSession();
 		const { accessToken } = session.data;
@@ -274,7 +302,7 @@ export interface AuditStats {
 }
 
 export const getAuditLogsFn = createServerFn({ method: "GET" })
-	.inputValidator((d: { page: number; limit: number; search?: string }) => d)
+	.inputValidator(auditLogsParamsSchema)
 	.handler(async ({ data }) => {
 		const session = await useAppSession();
 		const { accessToken } = session.data;

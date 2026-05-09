@@ -1,15 +1,7 @@
-import {
-	ChevronLeft,
-	ChevronRight,
-	EllipsisVertical,
-	Search,
-	Loader2,
-	CheckCircle2,
-	RotateCcw,
-	Filter,
-} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
+import * as React from "react";
+import { ClientOnly } from "@tanstack/react-router";
 
 import {
 	Table,
@@ -200,7 +192,9 @@ export function ProjectHubPage({
 										</TableCell>
 										<TableCell className="text-[#0a0a0a]">{project.college}</TableCell>
 										<TableCell className="text-[#0a0a0a]">
-											{format(new Date(project.dateSubmitted), "MMM dd, yyyy")}
+											<ClientOnly fallback="...">
+												{format(new Date(project.dateSubmitted), "MMM dd, yyyy")}
+											</ClientOnly>
 										</TableCell>
 										<TableCell>
 											<ProjectStatusBadge status={project.status} />

@@ -60,36 +60,38 @@ function LoginPage() {
 	async function onSubmit(data: z.infer<typeof loginSchema>) {
 		setServerError(null);
 
+		let result;
 		try {
-			const result = await loginFn({ data });
-
-			if (result && result.error) {
-				setServerError(result.message);
-				toast.error("Login failed", { description: result.message });
-				return;
-			}
-
-			if (
-				result?.user?.roleName === "Super Admin" &&
-				(safeRedirectTarget === "/dashboard" ||
-					safeRedirectTarget.startsWith("/admin/users"))
-			) {
-				await Promise.all([
-					queryClient.prefetchQuery(adminStatsQueryOptions()),
-					queryClient.prefetchQuery(
-						adminUsersQueryOptions({
-							page: 1,
-							pageSize: 10,
-						}),
-					),
-				]);
-			}
-
-			await navigate({ to: safeRedirectTarget, replace: true });
+			result = await loginFn({ data });
 		} catch (err) {
 			console.error(err);
 			toast.error("An unexpected error occurred");
+			return;
 		}
+
+		if (result && result.error) {
+			setServerError(result.message);
+			toast.error("Login failed", { description: result.message });
+			return;
+		}
+
+		if (
+			result?.user?.roleName === "Super Admin" &&
+			(safeRedirectTarget === "/dashboard" ||
+				safeRedirectTarget.startsWith("/admin/users"))
+		) {
+			await Promise.all([
+				queryClient.prefetchQuery(adminStatsQueryOptions()),
+				queryClient.prefetchQuery(
+					adminUsersQueryOptions({
+						page: 1,
+						pageSize: 10,
+					}),
+				),
+			]);
+		}
+
+		await navigate({ to: safeRedirectTarget, replace: true });
 	}
 
 	return (
@@ -113,10 +115,7 @@ function LoginPage() {
 				<form
 					className="mt-6"
 					method="POST"
-					onSubmit={(e) => {
-						e.preventDefault();
-						form.handleSubmit(onSubmit)(e);
-					}}
+					onSubmit={form.handleSubmit(onSubmit)}
 				>
 					<FieldGroup>
 						<RHFTextField
@@ -131,12 +130,12 @@ function LoginPage() {
 							name="password"
 							label="Password"
 							labelAction={
-								<a
-									href="#"
+								<Link
+									to="/login"
 									className="text-sm leading-5 text-black hover:text-black hover:underline"
 								>
 									Forgot password?
-								</a>
+								</Link>
 							}
 						/>
 					</FieldGroup>

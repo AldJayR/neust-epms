@@ -23,17 +23,17 @@ export function AppShell({ children }: AppShellProps) {
 						<SidebarTrigger className="-ml-1" />
 						<Separator orientation="vertical" className="mr-2 h-4" />
 						<div className="relative w-full max-w-[212px]">
-							<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+							<Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
 							<Input
 								type="search"
-								placeholder="Type to search..."
+								placeholder="Type to search…"
 								className="h-8 w-full rounded-lg bg-background pl-8 text-sm"
 							/>
 						</div>
 					</div>
 					<div className="flex items-center gap-4">
 						<button
-							className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted"
+							className="inline-flex size-8 items-center justify-center rounded-full hover:bg-muted"
 							type="button"
 						>
 							<Bell className="size-4 text-muted-foreground" />

@@ -69,7 +69,7 @@ function RegisterStepTwo() {
 		setServerError(null);
 
 		// Read step 1 data from sessionStorage
-		const step1Raw = sessionStorage.getItem("register_step1");
+		const step1Raw = sessionStorage.getItem("register_step1:v1");
 
 		if (!step1Raw) {
 			setServerError(
@@ -109,7 +109,7 @@ function RegisterStepTwo() {
 		}
 
 		// Success — clean up sessionStorage
-		sessionStorage.removeItem("register_step1");
+		sessionStorage.removeItem("register_step1:v1");
 		setIsRegistered(true);
 		toast.success("Account created!", { description: result.message });
 	}
@@ -117,7 +117,7 @@ function RegisterStepTwo() {
 	// Show success state after registration
 	if (isRegistered) {
 		return (
-			<section className="w-full rounded-xl px-6 py-6 text-center">
+			<section className="w-full rounded-xl p-6 text-center">
 				<div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-green-100">
 					<svg
 						className="size-6 text-green-600"
@@ -151,7 +151,7 @@ function RegisterStepTwo() {
 	}
 
 	return (
-		<section className="w-full rounded-xl px-6 py-6">
+		<section className="w-full rounded-xl p-6">
 			<header className="flex flex-col gap-2">
 				<div className="flex items-center gap-2">
 					<div className="min-w-0 flex-1">
@@ -185,10 +185,7 @@ function RegisterStepTwo() {
 			<form
 				className="mt-6"
 				method="POST"
-				onSubmit={(e) => {
-					e.preventDefault();
-					form.handleSubmit(onSubmit)(e);
-				}}
+				onSubmit={form.handleSubmit(onSubmit)}
 			>
 				<FieldGroup>
 					<RHFTextField

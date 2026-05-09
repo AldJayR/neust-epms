@@ -13,6 +13,7 @@ const usersSearchSchema = z.object({
 });
 
 export const Route = createFileRoute("/_authenticated/admin/users/")({
+	validateSearch: usersSearchSchema,
 	beforeLoad: ({ context }) => {
 		if (context.auth.user?.roleName !== "Super Admin") {
 			throw redirect({
@@ -21,7 +22,6 @@ export const Route = createFileRoute("/_authenticated/admin/users/")({
 			});
 		}
 	},
-	validateSearch: usersSearchSchema,
 	loaderDeps: ({ search }) => ({
 		page: search.page,
 		pageSize: search.pageSize,

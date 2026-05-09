@@ -86,7 +86,7 @@ function ProjectsIndexPage() {
 
 	return (
 		<div className="p-8">
-			<h1 className="text-2xl font-bold">Projects</h1>
+			<h1 className="text-2xl font-semibold">Projects</h1>
 			<p className="text-muted-foreground text-sm">Welcome to the projects page.</p>
 		</div>
 	);

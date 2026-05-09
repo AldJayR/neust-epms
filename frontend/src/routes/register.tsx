@@ -87,7 +87,7 @@ function RegisterStepOneForm() {
 		resolver: zodResolver(registerStep1Schema),
 		mode: "onBlur",
 		defaultValues: (() => {
-			const saved = sessionStorage.getItem("register_step1");
+			const saved = sessionStorage.getItem("register_step1:v1");
 			if (saved) {
 				try {
 					return JSON.parse(saved);
@@ -107,12 +107,12 @@ function RegisterStepOneForm() {
 
 	function onSubmit(data: z.infer<typeof registerStep1Schema>) {
 		// Store step 1 data for step 2 to read on final submit
-		sessionStorage.setItem("register_step1", JSON.stringify(data));
+		sessionStorage.setItem("register_step1:v1", JSON.stringify(data));
 		navigate({ to: "/register/account" });
 	}
 
 	return (
-		<section className="w-full rounded-xl px-6 py-6">
+		<section className="w-full rounded-xl p-6">
 			<header className="flex flex-col gap-2">
 				<div className="flex items-center gap-2">
 					<div className="min-w-0 flex-1">
@@ -139,10 +139,7 @@ function RegisterStepOneForm() {
 			<form
 				className="mt-6"
 				method="POST"
-				onSubmit={(e) => {
-					e.preventDefault();
-					form.handleSubmit(onSubmit)(e);
-				}}
+				onSubmit={form.handleSubmit(onSubmit)}
 			>
 				<FieldGroup>
 					<div className="grid gap-7 sm:grid-cols-2">

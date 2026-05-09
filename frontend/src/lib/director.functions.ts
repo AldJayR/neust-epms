@@ -1,11 +1,22 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 
 import type { ApiErrorResponse } from "./auth";
 import { useAppSession } from "./session.server";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 const DIRECTOR_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
+
+// ── Schemas ───────────────────────────────────────────────
+
+const projectHubParamsSchema = z.object({
+	page: z.number(),
+	limit: z.number(),
+	search: z.string().optional(),
+	college: z.string().optional(),
+	status: z.string().optional(),
+});
 
 export interface DirectorDashboardMetric {
 	totalProjects: number;
@@ -86,7 +97,7 @@ export const getDirectorDashboardFn = createServerFn({ method: "GET" }).handler(
 );
 
 export const getProjectHubFn = createServerFn({ method: "GET" })
-	.validator((params: ProjectHubParams) => params)
+	.inputValidator(projectHubParamsSchema)
 	.handler(async ({ data }) => {
 		const session = await useAppSession();
 		const { accessToken } = session.data;

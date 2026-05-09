@@ -32,6 +32,18 @@ import {
 	auditLogsQueryOptions,
 	auditStatsQueryOptions,
 } from "@/lib/admin.functions";
+import { ClientOnly } from "@tanstack/react-router";
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+	month: "short",
+	day: "numeric",
+});
+
+const timeFormatter = new Intl.DateTimeFormat("en-US", {
+	hour: "numeric",
+	minute: "2-digit",
+	hour12: true,
+});
 
 interface ActivityLogPageProps {
 	page: number;
@@ -101,17 +113,6 @@ export function ActivityLogPage({
 		// Placeholder for CSV export
 		console.log("Exporting to CSV...");
 	};
-
-	const dateFormatter = new Intl.DateTimeFormat("en-US", {
-		month: "short",
-		day: "numeric",
-	});
-
-	const timeFormatter = new Intl.DateTimeFormat("en-US", {
-		hour: "numeric",
-		minute: "2-digit",
-		hour12: true,
-	});
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -207,12 +208,14 @@ export function ActivityLogPage({
 									<TableRow key={log.logId} className="border-b-[#e5e5e5]">
 										<TableCell className="py-2.5">
 											<div className="flex flex-col">
-												<span className="text-sm text-[#0a0a0a]">
-													{dateFormatter.format(createdAt)}
-												</span>
-												<span className="text-xs text-[#666]">
-													{timeFormatter.format(createdAt)}
-												</span>
+												<ClientOnly fallback={<div className="flex flex-col"><span className="text-sm text-[#0a0a0a]">...</span><span className="text-xs text-[#666]">...</span></div>}>
+													<span className="text-sm text-[#0a0a0a]">
+														{dateFormatter.format(createdAt)}
+													</span>
+													<span className="text-xs text-[#666]">
+														{timeFormatter.format(createdAt)}
+													</span>
+												</ClientOnly>
 											</div>
 										</TableCell>
 										<TableCell className="py-2.5 text-sm text-[#0a0a0a] leading-normal">

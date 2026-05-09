@@ -51,10 +51,12 @@ export interface RoleSidebarProps extends ComponentProps<typeof Sidebar> {
 	fallbackRole?: string;
 }
 
+const EMPTY_GROUPS: RoleSidebarGroup[] = [];
+
 export function RoleSidebar({
 	headerRender,
 	headerContent,
-	groups = [],
+	groups = EMPTY_GROUPS,
 	user,
 	fallbackFullName = "JD",
 	fallbackRole = "User",
@@ -69,14 +71,14 @@ export function RoleSidebar({
 	const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
 	const handleLogout = async () => {
+		setIsLoggingOut(true);
 		try {
-			setIsLoggingOut(true);
 			await logout();
 			// logoutFn throws a redirect, but we'll navigate just in case
 			navigate({ to: "/login" });
+			setIsLoggingOut(false);
 		} catch (error) {
 			console.error("Logout failed:", error);
-		} finally {
 			setIsLoggingOut(false);
 		}
 	};
@@ -127,7 +129,7 @@ export function RoleSidebar({
 								render={<DropdownMenuTrigger />}
 								className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 							>
-								<Avatar className="h-8 w-8 rounded-lg">
+								<Avatar className="size-8 rounded-lg">
 									<AvatarImage src="" alt={fullName} />
 									<AvatarFallback className="rounded-lg">
 										{initials}
@@ -152,7 +154,7 @@ export function RoleSidebar({
 								<DropdownMenuGroup>
 									<DropdownMenuLabel className="p-0 font-normal">
 										<div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-											<Avatar className="h-8 w-8 rounded-lg">
+											<Avatar className="size-8 rounded-lg">
 												<AvatarImage src="" alt={fullName} />
 												<AvatarFallback className="rounded-lg">
 													{initials}

@@ -122,7 +122,7 @@ export function UsersPage({
 			      className="bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white rounded-[10px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
 			      disabled={updateStatusMutation.isPending}
 			    >
-			      <CheckCircle2 className="mr-2 h-4 w-4" />
+			      <CheckCircle2 className="mr-2 size-4" />
 			      Bulk approve
 			    </Button>
 			  </BulkApproveDialog>
@@ -134,7 +134,7 @@ export function UsersPage({
 						key={stat.label}
 						className="border-[#ebebeb] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] rounded-[12px]"
 					>
-						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
 							<CardTitle className="text-sm font-normal text-[#666]">
 								{stat.label}
 							</CardTitle>
@@ -153,7 +153,7 @@ export function UsersPage({
 					onSubmit={handleSearchSubmit}
 					className="relative w-full max-w-[352px]"
 				>
-					<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+					<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 					<Input
 						placeholder="Search users"
 						className="h-9 w-full rounded-lg border-[#e5e5e5] pl-9"
@@ -166,7 +166,7 @@ export function UsersPage({
 					size="icon"
 					className="h-9 w-9 rounded-lg border-[#e5e5e5]"
 				>
-					<Filter className="h-4 w-4" />
+					<Filter className="size-4" />
 				</Button>
 			</div>
 
@@ -234,10 +234,10 @@ export function UsersPage({
 									<TableCell>
 										<DropdownMenu>
 												<DropdownMenuTrigger
-												render={<Button variant="ghost" size="icon" className="h-8 w-8" />}
+												render={<Button variant="ghost" size="icon" className="size-8" />}
 												aria-label="Open user actions"
 												>
-												<MoreVertical className="h-4 w-4" />
+												<MoreVertical className="size-4" />
 											</DropdownMenuTrigger>
 											<DropdownMenuContent align="end">
 												<DropdownMenuItem>View Details</DropdownMenuItem>
@@ -335,7 +335,7 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
 				variant="outline"
 				className="h-[22px] gap-1 rounded-lg border-[#e5e5e5] px-2 font-medium text-[#737373] bg-white"
 			>
-				<CheckCircle2 className="h-3 w-3 text-[#10b981]" />
+				<CheckCircle2 className="size-3 text-[#10b981]" />
 				Active
 			</Badge>
 		);
@@ -346,7 +346,7 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
 			variant="outline"
 			className="h-[22px] gap-1 rounded-lg border-[#e5e5e5] px-2 font-medium text-[#737373] bg-white"
 		>
-			<XCircle className="h-3 w-3 text-[#ef4444]" />
+			<XCircle className="size-3 text-[#ef4444]" />
 			Deactivated
 		</Badge>
 	);
