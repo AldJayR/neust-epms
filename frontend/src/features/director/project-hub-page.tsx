@@ -1,6 +1,15 @@
+import {
+	ChevronLeft,
+	ChevronRight,
+	EllipsisVertical,
+	Search,
+	Loader2,
+	CheckCircle2,
+	RotateCcw,
+	Filter,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import * as React from "react";
 import { ClientOnly } from "@tanstack/react-router";
 
 import {
@@ -80,7 +89,6 @@ interface ProjectHubPageProps {
 }
 
 export function ProjectHubPage({
-	user,
 	page,
 	limit,
 	search,
@@ -117,7 +125,10 @@ export function ProjectHubPage({
 						/>
 					</div>
 					<div className="flex w-full items-center gap-4 sm:w-auto">
-						<Select value={college || "all"} onValueChange={(val) => onCollegeChange(val === "all" ? "" : val)}>
+						<Select
+							value={college || "all"}
+							onValueChange={(val: string | null) => onCollegeChange(val === "all" ? "" : (val ?? ""))}
+						>
 							<SelectTrigger className="h-9 w-full rounded-lg border-[#e5e5e5] bg-white shadow-sm sm:w-[180px]">
 								<div className="flex items-center gap-2">
 									<Filter className="size-4 text-[#737373]" />
@@ -132,7 +143,10 @@ export function ProjectHubPage({
 							</SelectContent>
 						</Select>
 
-						<Select value={status || "all"} onValueChange={(val) => onStatusChange(val === "all" ? "" : val)}>
+						<Select
+							value={status || "all"}
+							onValueChange={(val: string | null) => onStatusChange(val === "all" ? "" : (val ?? ""))}
+						>
 							<SelectTrigger className="h-9 w-full rounded-lg border-[#e5e5e5] bg-white shadow-sm sm:w-[180px]">
 								<div className="flex items-center gap-2">
 									<Filter className="size-4 text-[#737373]" />

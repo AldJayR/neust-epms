@@ -2,7 +2,6 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { directorDashboardQueryOptions } from "@/lib/director.functions";
 import type { AuthUser } from "@/lib/auth";
-import { AppShell } from "../layout/app-shell";
 
 const ProjectsChartCard = React.lazy(() => import("./projects-chart-card"));
 
@@ -185,6 +184,6 @@ function DirectorDashboardContent() {
 	);
 }
 
-export function DirectorDashboardPage({ user }: { user?: AuthUser | null }) {
+export function DirectorDashboardPage({ user: _user }: { user?: AuthUser | null }) {
 	return <DirectorDashboardContent />;
 }

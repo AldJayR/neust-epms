@@ -11,7 +11,8 @@ const projectsSearchSchema = z.object({
 	status: z.string().optional(),
 });
 
-export const Route = createFileRoute("/_authenticated/projects/")({
+// @ts-expect-error - Route ID not yet in generated tree
+export const Route = createFileRoute("/_authenticated/projects")({
 	validateSearch: (search) => projectsSearchSchema.parse(search),
 	loaderDeps: ({ search }) => ({
 		page: search.page,
@@ -39,8 +40,13 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 });
 
 function ProjectsIndexPage() {
-	const { user } = Route.useRouteContext();
-	const { page, limit, search, college, status } = Route.useSearch();
+	const context = Route.useRouteContext();
+	const user = context.auth.user;
+	// @ts-expect-error - Route ID not yet in generated tree
+	const { page, limit, search, college, status } = Route.useSearch({
+		// @ts-expect-error - Route ID not yet in generated tree
+		from: "/_authenticated/projects",
+	});
 	const navigate = Route.useNavigate();
 
 	const handleSearch = (newSearch: string) => {
@@ -67,10 +73,9 @@ function ProjectsIndexPage() {
 		});
 	};
 
-	if (user.roleName === "Director" || user.roleName === "Super Admin") {
+	if (user?.roleName === "Director" || user?.roleName === "Super Admin") {
 		return (
 			<ProjectHubPage
-				user={user}
 				page={page}
 				limit={limit}
 				search={search}

@@ -23,6 +23,7 @@ const navMain: {
 			},
 			{
 				title: "Projects",
+				// @ts-expect-error - Route ID not yet in generated tree
 				url: "/projects",
 				icon: FolderKanban,
 			},

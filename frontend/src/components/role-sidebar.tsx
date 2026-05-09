@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/sidebar";
 import type { AuthUser } from "@/lib/auth";
 import type { useRender } from "@base-ui/react/use-render";
-import type { ComponentProps, ReactNode, useState } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import * as React from "react";
 
 export type RoleSidebarItem = {

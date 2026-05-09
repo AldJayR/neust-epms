@@ -159,11 +159,6 @@ export const getAdminUsersFn = createServerFn({ method: "GET" })
 
 // ── Bulk Update User Status ──────────────────────────────
 
-interface BulkUpdateStatusInput {
-	userIds: string[];
-	isActive: boolean;
-}
-
 export const bulkUpdateUserStatusFn = createServerFn({ method: "POST" })
 	.inputValidator(bulkUpdateStatusSchema)
 	.handler(async ({ data }) => {
@@ -236,13 +231,6 @@ export function rolesQueryOptions() {
 }
 
 // ── Bulk Approve Users ───────────────────────────────────
-
-interface BulkApproveInput {
-	users: {
-		userId: string;
-		roleName: string;
-	}[];
-}
 
 export const bulkApproveUsersFn = createServerFn({ method: "POST" })
 	.inputValidator(bulkApproveSchema)
