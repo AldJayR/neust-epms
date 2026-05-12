@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { ProjectHubPage } from "@/features/director/project-hub-page";
 import { projectHubQueryOptions } from "@/lib/director.functions";
@@ -12,8 +12,16 @@ const projectsSearchSchema = z.object({
 });
 
 // @ts-expect-error - Route ID not yet in generated tree
-export const Route = createFileRoute("/_authenticated/projects")({
+export const Route = createFileRoute("/_authenticated/projects/")({
 	validateSearch: (search) => projectsSearchSchema.parse(search),
+	beforeLoad: ({ context }) => {
+		if (context.auth.user?.roleName === "Super Admin") {
+			throw redirect({
+				to: "/dashboard",
+				search: { page: 1, pageSize: 10 },
+			});
+		}
+	},
 	loaderDeps: ({ search }) => ({
 		page: search.page,
 		limit: search.limit,
@@ -34,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/projects")({
 				college: deps.college,
 				status: deps.status,
 			}),
-		);
+		)
 	},
 	component: ProjectsIndexPage,
 });
@@ -52,26 +60,26 @@ function ProjectsIndexPage() {
 	const handleSearch = (newSearch: string) => {
 		navigate({
 			search: (old) => ({ ...old, search: newSearch || undefined, page: 1 }),
-		});
-	};
+		})
+	}
 
 	const handleCollegeChange = (newCollege: string) => {
 		navigate({
 			search: (old) => ({ ...old, college: newCollege || undefined, page: 1 }),
-		});
-	};
+		})
+	}
 
 	const handleStatusChange = (newStatus: string) => {
 		navigate({
 			search: (old) => ({ ...old, status: newStatus || undefined, page: 1 }),
-		});
-	};
+		})
+	}
 
 	const handlePageChange = (newPage: number) => {
 		navigate({
 			search: (old) => ({ ...old, page: newPage }),
-		});
-	};
+		})
+	}
 
 	if (user?.roleName === "Director" || user?.roleName === "Super Admin") {
 		return (
@@ -86,7 +94,7 @@ function ProjectsIndexPage() {
 				onCollegeChange={handleCollegeChange}
 				onStatusChange={handleStatusChange}
 			/>
-		);
+		)
 	}
 
 	return (
@@ -94,5 +102,5 @@ function ProjectsIndexPage() {
 			<h1 className="text-2xl font-semibold">Projects</h1>
 			<p className="text-muted-foreground text-sm">Welcome to the projects page.</p>
 		</div>
-	);
+	)
 }

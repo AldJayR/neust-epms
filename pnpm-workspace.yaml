@@ -1,3 +1,7 @@
 packages:
   - 'frontend'
   - 'backend'
+allowBuilds:
+  '@sentry/cli': true
+  esbuild: true
+  msw: false

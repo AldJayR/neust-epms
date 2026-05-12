@@ -64,7 +64,7 @@ function DashboardPage() {
 		});
 	};
 
-	if (user.roleName === "Super Admin") {
+	if (user?.roleName === "Super Admin") {
 		return (
 			<AppShell>
 				<UsersPage
@@ -78,7 +78,7 @@ function DashboardPage() {
 		);
 	}
 
-	if (user.roleName === "Director") {
+	if (user?.roleName === "Director") {
 		return (
 			<AppShell>
 				<DirectorDashboardPage user={user} />

@@ -61,15 +61,17 @@ export function AppSidebar({
 
 	const groups: RoleSidebarGroup[] = navMain.map((group) => ({
 		title: group.title,
-		items: group.items.map((item) => ({
-			title: item.title,
-			href: item.url,
-			icon: item.icon,
-			active:
-				item.url === "/dashboard"
-					? pathname === "/dashboard"
-					: pathname === item.url || pathname.startsWith(`${item.url ?? ""}/`),
-		})),
+		items: group.items
+			.filter((item) => !(user?.roleName === "Super Admin" && item.title === "Projects"))
+			.map((item) => ({
+				title: item.title,
+				href: item.url,
+				icon: item.icon,
+				active:
+					item.url === "/dashboard"
+						? pathname === "/dashboard"
+						: pathname === item.url || pathname.startsWith(`${item.url ?? ""}/`),
+			})),
 	}));
 
 	return (

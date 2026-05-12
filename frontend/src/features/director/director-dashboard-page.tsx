@@ -152,7 +152,7 @@ function DirectorDashboardContent() {
 	const moas = dashboard?.expiringMoas ?? expiringMoas;
 
 	return (
-		<section className="p-6">
+		<section>
 			<div className="flex min-h-full flex-col gap-8">
 				<div>
 					<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
