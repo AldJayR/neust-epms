@@ -18,6 +18,22 @@ const projectHubParamsSchema = z.object({
 	status: z.string().optional(),
 });
 
+const moaRepositoryParamsSchema = z.object({
+	page: z.number(),
+	limit: z.number(),
+	search: z.string().optional(),
+	status: z.string().optional(),
+});
+
+const facultyDirectoryParamsSchema = z.object({
+	page: z.number(),
+	limit: z.number(),
+	search: z.string().optional(),
+	college: z.string().optional(),
+});
+
+// ── Interfaces ────────────────────────────────────────────
+
 export interface DirectorDashboardMetric {
 	totalProjects: number;
 	ongoingProjects: number;
@@ -72,6 +88,64 @@ export interface ProjectHubParams {
 	status?: string;
 }
 
+export interface MoaItem {
+	id: string;
+	partnerOrganization: string;
+	dateSigned: string;
+	daysToExpiry: number | string;
+	status: "Valid" | "Renewal Needed" | "Expired" | "Terminated";
+}
+
+export interface MoaRepositoryResponse {
+	items: MoaItem[];
+	total: number;
+	metrics: {
+		totalMoas: number;
+		expiringWithin90Days: number;
+		activePartnerships: number;
+	};
+}
+
+export interface MoaRepositoryParams {
+	page: number;
+	limit: number;
+	search?: string;
+	status?: string;
+}
+
+export interface FacultyInvolvement {
+	userId: string;
+	firstName: string;
+	lastName: string;
+	academicRank: string | null;
+	college: string | null;
+	leadProjects: number;
+	collaboratorProjects: number;
+	totalInvolvement: number;
+}
+
+export interface FacultyDirectoryResponse {
+	items: FacultyInvolvement[];
+	total: number;
+	metrics: {
+		totalActiveExtension: number;
+		averageProjectsPerFaculty: number;
+		mostActiveCollege: {
+			name: string;
+			contributors: number;
+		};
+	};
+}
+
+export interface FacultyDirectoryParams {
+	page: number;
+	limit: number;
+	search?: string;
+	college?: string;
+}
+
+// ── Server Functions ──────────────────────────────────────
+
 export const getDirectorDashboardFn = createServerFn({ method: "GET" }).handler(
 	async () => {
 		const session = await useAppSession();
@@ -89,7 +163,9 @@ export const getDirectorDashboardFn = createServerFn({ method: "GET" }).handler(
 
 		if (!response.ok) {
 			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(errorBody.error?.message ?? "Failed to fetch director dashboard");
+			throw new Error(
+				errorBody.error?.message ?? "Failed to fetch director dashboard",
+			);
 		}
 
 		return (await response.json()) as DirectorDashboardResponse;
@@ -115,19 +191,100 @@ export const getProjectHubFn = createServerFn({ method: "GET" })
 		if (data.college) query.append("college", data.college);
 		if (data.status) query.append("status", data.status);
 
-		const response = await fetch(`${API_BASE}/director/hub/projects?${query.toString()}`, {
-			headers: {
-				Authorization: `Bearer ${accessToken}`,
+		const response = await fetch(
+			`${API_BASE}/director/hub/projects?${query.toString()}`,
+			{
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
 			},
-		});
+		);
 
 		if (!response.ok) {
 			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(errorBody.error?.message ?? "Failed to fetch project hub");
+			throw new Error(
+				errorBody.error?.message ?? "Failed to fetch project hub",
+			);
 		}
 
 		return (await response.json()) as ProjectHubResponse;
 	});
+
+export const getMoaRepositoryFn = createServerFn({ method: "GET" })
+	.inputValidator(moaRepositoryParamsSchema)
+	.handler(async ({ data }) => {
+		const session = await useAppSession();
+		const { accessToken } = session.data;
+
+		if (!accessToken) {
+			throw new Error("Unauthorized");
+		}
+
+		const query = new URLSearchParams({
+			page: data.page.toString(),
+			limit: data.limit.toString(),
+		});
+
+		if (data.search) query.append("search", data.search);
+		if (data.status) query.append("status", data.status);
+
+		const response = await fetch(
+			`${API_BASE}/director/moas?${query.toString()}`,
+			{
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			},
+		);
+
+		if (!response.ok) {
+			const errorBody = (await response.json()) as ApiErrorResponse;
+			throw new Error(
+				errorBody.error?.message ?? "Failed to fetch MOA repository",
+			);
+		}
+
+		return (await response.json()) as MoaRepositoryResponse;
+	});
+
+export const getFacultyDirectoryFn = createServerFn({ method: "GET" })
+	.inputValidator(facultyDirectoryParamsSchema)
+	.handler(async ({ data }) => {
+		const session = await useAppSession();
+		const { accessToken } = session.data;
+
+		if (!accessToken) {
+			throw new Error("Unauthorized");
+		}
+
+		const query = new URLSearchParams({
+			page: data.page.toString(),
+			limit: data.limit.toString(),
+		});
+
+		if (data.search) query.append("search", data.search);
+		if (data.college) query.append("college", data.college);
+
+		const response = await fetch(
+			`${API_BASE}/director/faculty?${query.toString()}`,
+			{
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			},
+		);
+
+		if (!response.ok) {
+			const errorBody = (await response.json()) as ApiErrorResponse;
+			throw new Error(
+				errorBody.error?.message ?? "Failed to fetch faculty directory",
+			);
+		}
+
+		return (await response.json()) as FacultyDirectoryResponse;
+	});
+
+// ── Query Options ─────────────────────────────────────────
 
 export function directorDashboardQueryOptions() {
 	return queryOptions({
@@ -141,6 +298,22 @@ export function projectHubQueryOptions(params: ProjectHubParams) {
 	return queryOptions({
 		queryKey: ["director", "hub", "projects", params],
 		queryFn: () => getProjectHubFn({ data: params }),
+		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
+	});
+}
+
+export function moaRepositoryQueryOptions(params: MoaRepositoryParams) {
+	return queryOptions({
+		queryKey: ["director", "moas", params],
+		queryFn: () => getMoaRepositoryFn({ data: params }),
+		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
+	});
+}
+
+export function facultyDirectoryQueryOptions(params: FacultyDirectoryParams) {
+	return queryOptions({
+		queryKey: ["director", "faculty", params],
+		queryFn: () => getFacultyDirectoryFn({ data: params }),
 		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
 	});
 }

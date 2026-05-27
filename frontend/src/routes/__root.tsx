@@ -1,19 +1,16 @@
+import robotoLatinWghtUrl from "@fontsource-variable/roboto/files/roboto-latin-wght-normal.woff2?url";
+import { TanStackDevtools } from "@tanstack/react-devtools";
+import type { QueryClient } from "@tanstack/react-query";
 import {
+	createRootRouteWithContext,
 	HeadContent,
 	Scripts,
-	createRootRouteWithContext,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { TanStackDevtools } from "@tanstack/react-devtools";
-
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
-
-import appCss from "../styles.css?url";
-import robotoLatinWghtUrl from "@fontsource-variable/roboto/files/roboto-latin-wght-normal.woff2?url";
-
-import type { QueryClient } from "@tanstack/react-query";
 import type { AuthContext } from "../lib/auth";
 import { getCurrentUserFn } from "../lib/auth.functions";
+import appCss from "../styles.css?url";
 
 interface MyRouterContext {
 	queryClient: QueryClient;

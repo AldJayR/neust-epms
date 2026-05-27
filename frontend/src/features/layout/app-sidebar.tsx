@@ -1,18 +1,35 @@
-import * as React from "react";
-import { Activity, FolderKanban, Settings, Users } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
+import {
+	Activity,
+	BarChart3,
+	Building2,
+	FolderKanban,
+	LayoutDashboard,
+	Scroll,
+	Settings,
+	Users,
+} from "lucide-react";
+import type * as React from "react";
 
-import { RoleSidebar, type RoleSidebarGroup, type RoleSidebarItem } from "@/components/role-sidebar";
+import {
+	RoleSidebar,
+	type RoleSidebarGroup,
+	type RoleSidebarItem,
+} from "@/components/role-sidebar";
 import type { AuthUser } from "@/lib/auth";
 
-const navMain: {
+type NavItem = {
 	title: string;
-	items: {
-		title: string;
-		url: RoleSidebarItem["href"];
-		icon: RoleSidebarItem["icon"];
-	}[];
-}[] = [
+	url: RoleSidebarItem["href"];
+	icon: RoleSidebarItem["icon"];
+};
+
+type NavGroup = {
+	title: string;
+	items: NavItem[];
+};
+
+const adminNav: NavGroup[] = [
 	{
 		title: "Dashboard",
 		items: [
@@ -20,12 +37,6 @@ const navMain: {
 				title: "User Management",
 				url: "/dashboard",
 				icon: Users,
-			},
-			{
-				title: "Projects",
-				// @ts-expect-error - Route ID not yet in generated tree
-				url: "/projects",
-				icon: FolderKanban,
 			},
 			{
 				title: "Activity Log",
@@ -37,6 +48,56 @@ const navMain: {
 	{
 		title: "Management",
 		items: [
+			{
+				title: "Settings",
+				url: "/admin/settings",
+				icon: Settings,
+			},
+		],
+	},
+];
+
+const directorNav: NavGroup[] = [
+	{
+		title: "Dashboard",
+		items: [
+			{
+				title: "Overview",
+				url: "/dashboard",
+				icon: LayoutDashboard,
+			},
+			{
+				title: "Projects",
+				url: "/projects",
+				icon: FolderKanban,
+			},
+			{
+				title: "Faculty",
+				url: "/faculty",
+				icon: Users,
+			},
+			{
+				title: "Departments",
+				// @ts-expect-error - Route not yet generated in the route tree
+				url: "/departments",
+				icon: Building2,
+			},
+			{
+				title: "Memoranda of Agreements",
+				url: "/moas",
+				icon: Scroll,
+			},
+		],
+	},
+	{
+		title: "Management",
+		items: [
+			{
+				title: "Reports",
+				// @ts-expect-error - Route not yet generated in the route tree
+				url: "/reports",
+				icon: BarChart3,
+			},
 			{
 				title: "Settings",
 				url: "/admin/settings",
@@ -59,19 +120,19 @@ export function AppSidebar({
 
 	const pathname = routerState.location.pathname;
 
+	const navMain = user?.roleName === "Director" ? directorNav : adminNav;
+
 	const groups: RoleSidebarGroup[] = navMain.map((group) => ({
 		title: group.title,
-		items: group.items
-			.filter((item) => !(user?.roleName === "Super Admin" && item.title === "Projects"))
-			.map((item) => ({
-				title: item.title,
-				href: item.url,
-				icon: item.icon,
-				active:
-					item.url === "/dashboard"
-						? pathname === "/dashboard"
-						: pathname === item.url || pathname.startsWith(`${item.url ?? ""}/`),
-			})),
+		items: group.items.map((item) => ({
+			title: item.title,
+			href: item.url,
+			icon: item.icon,
+			active:
+				item.url === "/dashboard"
+					? pathname === "/dashboard"
+					: pathname === item.url || pathname.startsWith(`${item.url ?? ""}/`),
+		})),
 	}));
 
 	return (
@@ -89,14 +150,16 @@ export function AppSidebar({
 					</div>
 					<div className="grid flex-1 text-left text-sm leading-tight">
 						<span className="truncate font-semibold text-[#0a0a0a]">NEUST</span>
-						<span className="truncate text-xs text-[#0a0a0a]">Extension Services</span>
+						<span className="truncate text-xs text-[#0a0a0a]">
+							Extension Services
+						</span>
 					</div>
 				</>
 			}
 			groups={groups}
 			user={user}
-			fallbackFullName="Engr. J. Dela Cruz"
-			fallbackRole="MIS Faculty"
+			fallbackFullName="Dr. A. Santos"
+			fallbackRole="Director"
 		/>
 	);
 }

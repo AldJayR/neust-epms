@@ -1,7 +1,7 @@
-import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { directorDashboardQueryOptions } from "@/lib/director.functions";
+import * as React from "react";
 import type { AuthUser } from "@/lib/auth";
+import { directorDashboardQueryOptions } from "@/lib/director.functions";
 
 const ProjectsChartCard = React.lazy(() => import("./projects-chart-card"));
 
@@ -30,7 +30,8 @@ const recentActivities = [
 	},
 	{
 		title: "Project Approved",
-		description: "“Community Health Training” has been approved by the Director.",
+		description:
+			"“Community Health Training” has been approved by the Director.",
 		time: "Yesterday, 4:20pm",
 		color: "bg-[#16a34a]",
 	},
@@ -47,11 +48,19 @@ const expiringMoas = [
 	{ name: "LGU MOA", dueText: "Expires in 14 days" },
 ];
 
-function MetricCard({ label, value }: { label: string; value: string | number }) {
+function MetricCard({
+	label,
+	value,
+}: {
+	label: string;
+	value: string | number;
+}) {
 	return (
 		<div className="flex h-[104px] flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<p className="text-[14px] leading-4 text-[#666]">{label}</p>
-			<p className="text-[36px] font-semibold leading-9 text-[#11215a]">{value}</p>
+			<p className="text-[36px] font-semibold leading-9 text-[#11215a]">
+				{value}
+			</p>
 		</div>
 	);
 }
@@ -71,7 +80,10 @@ function RecentActivitiesCard({
 			</div>
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 				{activities.map((activity, index) => (
-					<div key={`${activity.title}-${activity.time}`} className="border-t border-[#ebebeb] p-4">
+					<div
+						key={`${activity.title}-${activity.time}`}
+						className="border-t border-[#ebebeb] p-4"
+					>
 						<div className="flex flex-col gap-6">
 							<div className="flex flex-col gap-1">
 								<div className="flex items-center gap-1.5">
@@ -100,7 +112,9 @@ function RecentActivitiesCard({
 
 function ExpiringMoasCard({
 	moas,
-}: { moas: { name: string; dueText: string }[] }) {
+}: {
+	moas: { name: string; dueText: string }[];
+}) {
 	return (
 		<div className="flex h-[148px] flex-col overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex items-center justify-between px-4 py-2 text-[#666]">
@@ -184,6 +198,10 @@ function DirectorDashboardContent() {
 	);
 }
 
-export function DirectorDashboardPage({ user: _user }: { user?: AuthUser | null }) {
+export function DirectorDashboardPage({
+	user: _user,
+}: {
+	user?: AuthUser | null;
+}) {
 	return <DirectorDashboardContent />;
 }

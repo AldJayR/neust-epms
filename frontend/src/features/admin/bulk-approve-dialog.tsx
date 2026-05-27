@@ -1,42 +1,40 @@
-import * as React from 'react'
-import { useServerFn } from '@tanstack/react-start'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2, Search } from 'lucide-react'
-import { toast } from 'sonner'
-
-import { Button } from '@/components/ui/button'
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Loader2, Search, XIcon } from "lucide-react";
+import * as React from "react";
+import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  DialogClose,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Checkbox } from '@/components/ui/checkbox'
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import {
-  getAdminUsersFn,
-  getRolesFn,
-  bulkApproveUsersFn,
-} from '@/lib/admin.functions'
-import { XIcon } from 'lucide-react'
+	bulkApproveUsersFn,
+	getAdminUsersFn,
+	getRolesFn,
+} from "@/lib/admin.functions";
 
 interface BulkApproveDialogProps {
 	children: React.ReactNode;
@@ -309,7 +307,9 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 														<div className="flex min-w-0 flex-col">
 															<span className="truncate text-[14px] font-medium leading-5 text-[#0a0a0a]">
 																{user.firstName}{" "}
-																{user.middleName ? `${user.middleName[0]}. ` : ""}{" "}
+																{user.middleName
+																	? `${user.middleName[0]}. `
+																	: ""}{" "}
 																{user.lastName}
 															</span>
 															<span className="truncate text-[12px] leading-4 text-[#666]">
@@ -380,7 +380,12 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 									variant="outline"
 									size="sm"
 									className="h-9 rounded-[10px] border-[#e5e5e5] bg-white px-4 text-[14px] font-medium text-[#0a0a0a] shadow-[0px_1px_1.5px_rgba(0,0,0,0.1)] hover:bg-white"
-									onClick={() => dispatch({ type: "SET_PAGE", payload: Math.max(1, page - 1) })}
+									onClick={() =>
+										dispatch({
+											type: "SET_PAGE",
+											payload: Math.max(1, page - 1),
+										})
+									}
 									disabled={page <= 1 || usersQuery.isFetching}
 								>
 									Previous
@@ -389,7 +394,9 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 									variant="outline"
 									size="sm"
 									className="h-9 rounded-[10px] border-[#e5e5e5] bg-white px-4 text-[14px] font-medium text-[#0a0a0a] shadow-[0px_1px_1.5px_rgba(0,0,0,0.1)] hover:bg-white"
-									onClick={() => dispatch({ type: "SET_PAGE", payload: page + 1 })}
+									onClick={() =>
+										dispatch({ type: "SET_PAGE", payload: page + 1 })
+									}
 									disabled={
 										!usersQuery.data ||
 										page * 5 >= usersQuery.data.total ||

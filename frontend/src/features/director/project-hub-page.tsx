@@ -1,17 +1,33 @@
+import { useQuery } from "@tanstack/react-query";
+import { ClientOnly } from "@tanstack/react-router";
+import { format } from "date-fns";
 import {
+	CheckCircle2,
 	ChevronLeft,
 	ChevronRight,
 	EllipsisVertical,
-	Search,
-	Loader2,
-	CheckCircle2,
-	RotateCcw,
 	Filter,
+	Loader2,
+	RotateCcw,
+	Search,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { ClientOnly } from "@tanstack/react-router";
-
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+	Pagination,
+	PaginationContent,
+	PaginationEllipsis,
+	PaginationItem,
+	PaginationLink,
+} from "@/components/ui/pagination";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	Table,
 	TableBody,
@@ -20,32 +36,17 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import {
-	Pagination,
-	PaginationContent,
-	PaginationEllipsis,
-	PaginationItem,
-	PaginationLink,
-} from "@/components/ui/pagination";
-import { Button } from "@/components/ui/button";
-
-import { projectHubQueryOptions } from "@/lib/director.functions";
 import type { AuthUser } from "@/lib/auth";
+import { projectHubQueryOptions } from "@/lib/director.functions";
 import { AppShell } from "../layout/app-shell";
 
 function ProjectStatusBadge({ status }: { status: string }) {
 	if (status === "Approved") {
 		return (
-			<Badge variant="secondary" className="flex w-fit items-center gap-1 border-[#e5e5e5] bg-white px-2 py-0.5 text-xs font-medium text-[#737373]">
+			<Badge
+				variant="secondary"
+				className="flex w-fit items-center gap-1 border-[#e5e5e5] bg-white px-2 py-0.5 text-xs font-medium text-[#737373]"
+			>
 				<CheckCircle2 className="size-3 text-green-500" />
 				Approved
 			</Badge>
@@ -53,7 +54,10 @@ function ProjectStatusBadge({ status }: { status: string }) {
 	}
 	if (status === "Submitted" || status === "Endorsed") {
 		return (
-			<Badge variant="secondary" className="flex w-fit items-center gap-1 border-[#e5e5e5] bg-white px-2 py-0.5 text-xs font-medium text-[#737373]">
+			<Badge
+				variant="secondary"
+				className="flex w-fit items-center gap-1 border-[#e5e5e5] bg-white px-2 py-0.5 text-xs font-medium text-[#737373]"
+			>
 				<Loader2 className="size-3 animate-spin" />
 				For Review
 			</Badge>
@@ -61,7 +65,10 @@ function ProjectStatusBadge({ status }: { status: string }) {
 	}
 	if (status === "Returned") {
 		return (
-			<Badge variant="secondary" className="flex w-fit items-center gap-1 border-[#e5e5e5] bg-white px-2 py-0.5 text-xs font-medium text-[#737373]">
+			<Badge
+				variant="secondary"
+				className="flex w-fit items-center gap-1 border-[#e5e5e5] bg-white px-2 py-0.5 text-xs font-medium text-[#737373]"
+			>
 				<RotateCcw className="size-3 text-orange-500" />
 				Needs Revision
 			</Badge>
@@ -111,7 +118,9 @@ export function ProjectHubPage({
 		<AppShell>
 			<div className="flex flex-col gap-8">
 				<div>
-					<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">Project Hub</h1>
+					<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
+						Project Hub
+					</h1>
 				</div>
 
 				<div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
@@ -127,7 +136,9 @@ export function ProjectHubPage({
 					<div className="flex w-full items-center gap-4 sm:w-auto">
 						<Select
 							value={college || "all"}
-							onValueChange={(val: string | null) => onCollegeChange(val === "all" ? "" : (val ?? ""))}
+							onValueChange={(val: string | null) =>
+								onCollegeChange(val === "all" ? "" : (val ?? ""))
+							}
 						>
 							<SelectTrigger className="h-9 w-full rounded-lg border-[#e5e5e5] bg-white shadow-sm sm:w-[180px]">
 								<div className="flex items-center gap-2">
@@ -145,7 +156,9 @@ export function ProjectHubPage({
 
 						<Select
 							value={status || "all"}
-							onValueChange={(val: string | null) => onStatusChange(val === "all" ? "" : (val ?? ""))}
+							onValueChange={(val: string | null) =>
+								onStatusChange(val === "all" ? "" : (val ?? ""))
+							}
 						>
 							<SelectTrigger className="h-9 w-full rounded-lg border-[#e5e5e5] bg-white shadow-sm sm:w-[180px]">
 								<div className="flex items-center gap-2">
@@ -169,11 +182,21 @@ export function ProjectHubPage({
 					<Table>
 						<TableHeader>
 							<TableRow className="border-[#ebebeb] hover:bg-transparent">
-								<TableHead className="w-[30%] font-medium text-[#666]">Project Title</TableHead>
-								<TableHead className="w-[20%] font-medium text-[#666]">Project Leader</TableHead>
-								<TableHead className="w-[15%] font-medium text-[#666]">College</TableHead>
-								<TableHead className="w-[15%] font-medium text-[#666]">Date Submitted</TableHead>
-								<TableHead className="w-[15%] font-medium text-[#666]">Status</TableHead>
+								<TableHead className="w-[30%] font-medium text-[#666]">
+									Project Title
+								</TableHead>
+								<TableHead className="w-[20%] font-medium text-[#666]">
+									Project Leader
+								</TableHead>
+								<TableHead className="w-[15%] font-medium text-[#666]">
+									College
+								</TableHead>
+								<TableHead className="w-[15%] font-medium text-[#666]">
+									Date Submitted
+								</TableHead>
+								<TableHead className="w-[15%] font-medium text-[#666]">
+									Status
+								</TableHead>
 								<TableHead className="w-[5%]"></TableHead>
 							</TableRow>
 						</TableHeader>
@@ -186,28 +209,46 @@ export function ProjectHubPage({
 								</TableRow>
 							) : items.length === 0 ? (
 								<TableRow>
-									<TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+									<TableCell
+										colSpan={6}
+										className="h-24 text-center text-muted-foreground"
+									>
 										No projects found.
 									</TableCell>
 								</TableRow>
 							) : (
 								items.map((project) => (
-									<TableRow key={project.id} className="border-[#ebebeb] py-2 hover:bg-[#fcfcfc]">
+									<TableRow
+										key={project.id}
+										className="border-[#ebebeb] py-2 hover:bg-[#fcfcfc]"
+									>
 										<TableCell className="font-bold text-[#0a0a0a]">
-											<div className="truncate max-w-[280px]" title={project.title}>
+											<div
+												className="truncate max-w-[280px]"
+												title={project.title}
+											>
 												{project.title}
 											</div>
 										</TableCell>
 										<TableCell>
 											<div className="flex flex-col">
-												<span className="text-[14px] text-[#0a0a0a]">{project.leaderName}</span>
-												<span className="text-[12px] text-[#666]">{project.leaderRank}</span>
+												<span className="text-[14px] text-[#0a0a0a]">
+													{project.leaderName}
+												</span>
+												<span className="text-[12px] text-[#666]">
+													{project.leaderRank}
+												</span>
 											</div>
 										</TableCell>
-										<TableCell className="text-[#0a0a0a]">{project.college}</TableCell>
+										<TableCell className="text-[#0a0a0a]">
+											{project.college}
+										</TableCell>
 										<TableCell className="text-[#0a0a0a]">
 											<ClientOnly fallback="...">
-												{format(new Date(project.dateSubmitted), "MMM dd, yyyy")}
+												{format(
+													new Date(project.dateSubmitted),
+													"MMM dd, yyyy",
+												)}
 											</ClientOnly>
 										</TableCell>
 										<TableCell>
@@ -227,9 +268,13 @@ export function ProjectHubPage({
 
 				<div className="flex flex-col items-center justify-between gap-4 border-t border-transparent pt-4 sm:flex-row">
 					<p className="text-xs text-[#666]">
-						Showing <span className="font-bold">{Math.min((page - 1) * limit + 1, total)}</span> to{" "}
-						<span className="font-bold">{Math.min(page * limit, total)}</span> of{" "}
-						<span className="font-bold">{total}</span> results
+						Showing{" "}
+						<span className="font-bold">
+							{Math.min((page - 1) * limit + 1, total)}
+						</span>{" "}
+						to{" "}
+						<span className="font-bold">{Math.min(page * limit, total)}</span>{" "}
+						of <span className="font-bold">{total}</span> results
 					</p>
 
 					{totalPages > 1 && (
@@ -247,10 +292,14 @@ export function ProjectHubPage({
 										<span>Previous</span>
 									</Button>
 								</PaginationItem>
-								
+
 								{[...Array(totalPages)].map((_, i) => {
 									const p = i + 1;
-									if (p === 1 || p === totalPages || (p >= page - 1 && p <= page + 1)) {
+									if (
+										p === 1 ||
+										p === totalPages ||
+										(p >= page - 1 && p <= page + 1)
+									) {
 										return (
 											<PaginationItem key={p}>
 												<PaginationLink

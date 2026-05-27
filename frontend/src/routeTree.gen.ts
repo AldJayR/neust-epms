@@ -18,6 +18,8 @@ import { Route as RegisterAccountRouteImport } from './routes/register.account'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects/index'
+import { Route as AuthenticatedMoasIndexRouteImport } from './routes/_authenticated/moas/index'
+import { Route as AuthenticatedFacultyIndexRouteImport } from './routes/_authenticated/faculty/index'
 import { Route as AuthenticatedAdminUsersIndexRouteImport } from './routes/_authenticated/admin/users/index'
 import { Route as AuthenticatedAdminSettingsIndexRouteImport } from './routes/_authenticated/admin/settings/index'
 import { Route as AuthenticatedAdminActivityLogIndexRouteImport } from './routes/_authenticated/admin/activity-log/index'
@@ -67,6 +69,17 @@ const AuthenticatedProjectsIndexRoute =
     path: '/projects/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedMoasIndexRoute = AuthenticatedMoasIndexRouteImport.update({
+  id: '/moas/',
+  path: '/moas/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedFacultyIndexRoute =
+  AuthenticatedFacultyIndexRouteImport.update({
+    id: '/faculty/',
+    path: '/faculty/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminUsersIndexRoute =
   AuthenticatedAdminUsersIndexRouteImport.update({
     id: '/users/',
@@ -94,6 +107,8 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/register/account': typeof RegisterAccountRoute
+  '/faculty/': typeof AuthenticatedFacultyIndexRoute
+  '/moas/': typeof AuthenticatedMoasIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/admin/activity-log/': typeof AuthenticatedAdminActivityLogIndexRoute
   '/admin/settings/': typeof AuthenticatedAdminSettingsIndexRoute
@@ -107,6 +122,8 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/register/account': typeof RegisterAccountRoute
   '/': typeof AuthenticatedIndexRoute
+  '/faculty': typeof AuthenticatedFacultyIndexRoute
+  '/moas': typeof AuthenticatedMoasIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/admin/activity-log': typeof AuthenticatedAdminActivityLogIndexRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsIndexRoute
@@ -122,6 +139,8 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/register/account': typeof RegisterAccountRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/faculty/': typeof AuthenticatedFacultyIndexRoute
+  '/_authenticated/moas/': typeof AuthenticatedMoasIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/_authenticated/admin/activity-log/': typeof AuthenticatedAdminActivityLogIndexRoute
   '/_authenticated/admin/settings/': typeof AuthenticatedAdminSettingsIndexRoute
@@ -137,6 +156,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/register/account'
+    | '/faculty/'
+    | '/moas/'
     | '/projects/'
     | '/admin/activity-log/'
     | '/admin/settings/'
@@ -150,6 +171,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/register/account'
     | '/'
+    | '/faculty'
+    | '/moas'
     | '/projects'
     | '/admin/activity-log'
     | '/admin/settings'
@@ -164,6 +187,8 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/register/account'
     | '/_authenticated/'
+    | '/_authenticated/faculty/'
+    | '/_authenticated/moas/'
     | '/_authenticated/projects/'
     | '/_authenticated/admin/activity-log/'
     | '/_authenticated/admin/settings/'
@@ -242,6 +267,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/moas/': {
+      id: '/_authenticated/moas/'
+      path: '/moas'
+      fullPath: '/moas/'
+      preLoaderRoute: typeof AuthenticatedMoasIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/faculty/': {
+      id: '/_authenticated/faculty/'
+      path: '/faculty'
+      fullPath: '/faculty/'
+      preLoaderRoute: typeof AuthenticatedFacultyIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/users/': {
       id: '/_authenticated/admin/users/'
       path: '/users'
@@ -286,6 +325,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedFacultyIndexRoute: typeof AuthenticatedFacultyIndexRoute
+  AuthenticatedMoasIndexRoute: typeof AuthenticatedMoasIndexRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
 }
 
@@ -293,6 +334,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedFacultyIndexRoute: AuthenticatedFacultyIndexRoute,
+  AuthenticatedMoasIndexRoute: AuthenticatedMoasIndexRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
 }
 

@@ -1,26 +1,26 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	createFileRoute,
 	Link,
-	useNavigate,
 	redirect,
+	useNavigate,
 } from "@tanstack/react-router";
-import { z } from "zod";
-import { toast } from "sonner";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { FieldGroup } from "../components/ui/field";
-import { Alert } from "../components/ui/alert";
-import { loginFn } from "../lib/auth.functions";
-import {
-	adminStatsQueryOptions,
-	adminUsersQueryOptions,
-} from "../lib/admin.functions";
+import { toast } from "sonner";
+import { z } from "zod";
 import {
 	RHFPasswordField,
 	RHFSubmitButton,
 	RHFTextField,
 } from "../components/rhf-auth-fields";
+import { Alert } from "../components/ui/alert";
+import { FieldGroup } from "../components/ui/field";
+import {
+	adminStatsQueryOptions,
+	adminUsersQueryOptions,
+} from "../lib/admin.functions";
+import { loginFn } from "../lib/auth.functions";
 
 const loginSchema = z.object({
 	email: z.string().email("Please enter a valid email address"),
@@ -69,7 +69,7 @@ function LoginPage() {
 			return;
 		}
 
-		if (result && result.error) {
+		if (result?.error) {
 			setServerError(result.message);
 			toast.error("Login failed", { description: result.message });
 			return;

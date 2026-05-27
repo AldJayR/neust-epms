@@ -11,7 +11,6 @@ const projectsSearchSchema = z.object({
 	status: z.string().optional(),
 });
 
-// @ts-expect-error - Route ID not yet in generated tree
 export const Route = createFileRoute("/_authenticated/projects/")({
 	validateSearch: (search) => projectsSearchSchema.parse(search),
 	beforeLoad: ({ context }) => {
@@ -30,7 +29,10 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 		status: search.status,
 	}),
 	loader: async ({ context, deps }) => {
-		if (context.auth.user?.roleName !== "Director" && context.auth.user?.roleName !== "Super Admin") {
+		if (
+			context.auth.user?.roleName !== "Director" &&
+			context.auth.user?.roleName !== "Super Admin"
+		) {
 			return null;
 		}
 
@@ -42,7 +44,7 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 				college: deps.college,
 				status: deps.status,
 			}),
-		)
+		);
 	},
 	component: ProjectsIndexPage,
 });
@@ -50,36 +52,32 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 function ProjectsIndexPage() {
 	const context = Route.useRouteContext();
 	const user = context.auth.user;
-	// @ts-expect-error - Route ID not yet in generated tree
-	const { page, limit, search, college, status } = Route.useSearch({
-		// @ts-expect-error - Route ID not yet in generated tree
-		from: "/_authenticated/projects",
-	});
+	const { page, limit, search, college, status } = Route.useSearch();
 	const navigate = Route.useNavigate();
 
 	const handleSearch = (newSearch: string) => {
 		navigate({
 			search: (old) => ({ ...old, search: newSearch || undefined, page: 1 }),
-		})
-	}
+		});
+	};
 
 	const handleCollegeChange = (newCollege: string) => {
 		navigate({
 			search: (old) => ({ ...old, college: newCollege || undefined, page: 1 }),
-		})
-	}
+		});
+	};
 
 	const handleStatusChange = (newStatus: string) => {
 		navigate({
 			search: (old) => ({ ...old, status: newStatus || undefined, page: 1 }),
-		})
-	}
+		});
+	};
 
 	const handlePageChange = (newPage: number) => {
 		navigate({
 			search: (old) => ({ ...old, page: newPage }),
-		})
-	}
+		});
+	};
 
 	if (user?.roleName === "Director" || user?.roleName === "Super Admin") {
 		return (
@@ -94,13 +92,15 @@ function ProjectsIndexPage() {
 				onCollegeChange={handleCollegeChange}
 				onStatusChange={handleStatusChange}
 			/>
-		)
+		);
 	}
 
 	return (
 		<div className="p-8">
 			<h1 className="text-2xl font-semibold">Projects</h1>
-			<p className="text-muted-foreground text-sm">Welcome to the projects page.</p>
+			<p className="text-muted-foreground text-sm">
+				Welcome to the projects page.
+			</p>
 		</div>
-	)
+	);
 }

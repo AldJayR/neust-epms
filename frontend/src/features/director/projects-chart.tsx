@@ -15,7 +15,10 @@ interface ProjectsChartProps {
 export default function ProjectsChart({ chartData }: ProjectsChartProps) {
 	return (
 		<ResponsiveContainer width="100%" height="100%" key="projects-chart">
-			<BarChart data={chartData} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
+			<BarChart
+				data={chartData}
+				margin={{ top: 0, right: 0, left: -30, bottom: 0 }}
+			>
 				<CartesianGrid vertical={false} stroke="#ebebeb" />
 				<XAxis
 					dataKey="label"
@@ -33,7 +36,12 @@ export default function ProjectsChart({ chartData }: ProjectsChartProps) {
 					cursor={{ fill: "transparent" }}
 					contentStyle={{ borderRadius: "8px", border: "1px solid #ebebeb" }}
 				/>
-				<Bar dataKey="value" fill="#14369c" radius={[4, 4, 0, 0]} barSize={50} />
+				<Bar
+					dataKey="value"
+					fill="#14369c"
+					radius={[4, 4, 0, 0]}
+					barSize={50}
+				/>
 			</BarChart>
 		</ResponsiveContainer>
 	);

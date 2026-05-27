@@ -1,20 +1,21 @@
-import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
+import { ClientOnly } from "@tanstack/react-router";
 import {
-	Search,
-	Download,
-	CircleCheck,
-	CloudUpload,
-	LogIn,
-	Settings,
-	UserCircle,
-	MoreVertical,
 	ChevronLeft,
 	ChevronRight,
-	Loader2,
+	CircleCheck,
+	CloudUpload,
+	Download,
 	Filter,
+	Loader2,
+	LogIn,
+	MoreVertical,
+	Search,
+	Settings,
+	UserCircle,
 } from "lucide-react";
-
+import * as React from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,13 +27,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import {
 	auditLogsQueryOptions,
 	auditStatsQueryOptions,
 } from "@/lib/admin.functions";
-import { ClientOnly } from "@tanstack/react-router";
+import { cn } from "@/lib/utils";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
 	month: "short",
@@ -202,13 +201,25 @@ export function ActivityLogPage({
 							</TableRow>
 						) : (
 							logsQuery.data?.items.map((log) => {
-								const typeInfo = getActionTypeInfo(log.action, log.tableAffected);
+								const typeInfo = getActionTypeInfo(
+									log.action,
+									log.tableAffected,
+								);
 								const createdAt = new Date(log.createdAt);
 								return (
 									<TableRow key={log.logId} className="border-b-[#e5e5e5]">
 										<TableCell className="py-2.5">
 											<div className="flex flex-col">
-												<ClientOnly fallback={<div className="flex flex-col"><span className="text-sm text-[#0a0a0a]">...</span><span className="text-xs text-[#666]">...</span></div>}>
+												<ClientOnly
+													fallback={
+														<div className="flex flex-col">
+															<span className="text-sm text-[#0a0a0a]">
+																...
+															</span>
+															<span className="text-xs text-[#666]">...</span>
+														</div>
+													}
+												>
 													<span className="text-sm text-[#0a0a0a]">
 														{dateFormatter.format(createdAt)}
 													</span>
@@ -259,7 +270,8 @@ export function ActivityLogPage({
 					<span className="font-bold">
 						{logsQuery.data ? logsQuery.data.items.length : 0}
 					</span>{" "}
-					of <span className="font-bold">{logsQuery.data?.total ?? 0}</span> results
+					of <span className="font-bold">{logsQuery.data?.total ?? 0}</span>{" "}
+					results
 				</p>
 				<div className="flex items-center gap-1">
 					<Button

@@ -1,13 +1,13 @@
+import { Bell, Search } from "lucide-react";
 import type React from "react";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
 	SidebarInset,
 	SidebarProvider,
 	SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
-import { Separator } from "@/components/ui/separator";
-import { Bell, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
 
 interface AppShellProps {
 	children: React.ReactNode;

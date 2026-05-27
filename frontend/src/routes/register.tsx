@@ -1,21 +1,21 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	createFileRoute,
-	useNavigate,
 	Link,
 	Outlet,
-	useRouterState,
 	redirect,
+	useNavigate,
+	useRouterState,
 } from "@tanstack/react-router";
-import { z } from "zod";
+import { AnimatePresence, motion } from "motion/react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { motion, AnimatePresence } from "motion/react";
-import { FieldGroup } from "../components/ui/field";
+import { z } from "zod";
 import {
 	RHFSelectField,
 	RHFSubmitButton,
 	RHFTextField,
 } from "../components/rhf-auth-fields";
+import { FieldGroup } from "../components/ui/field";
 
 const registerStep1Schema = z.object({
 	firstName: z.string().min(1, "First name is required"),

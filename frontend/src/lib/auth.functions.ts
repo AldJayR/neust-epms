@@ -2,12 +2,12 @@
 // Per file-separation skill: .functions.ts files wrap server-only logic
 // in createServerFn, so the build replaces them with RPC stubs on the client.
 
-import { createServerFn } from "@tanstack/react-start";
 import { redirect } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { ApiErrorResponse, AuthUser } from "./auth";
 import { useAppSession } from "./session.server";
 import { supabase } from "./supabase.server";
-import type { AuthUser, ApiErrorResponse } from "./auth";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 const USER_PROFILE_CACHE_TTL_MS = 1000 * 60 * 5;

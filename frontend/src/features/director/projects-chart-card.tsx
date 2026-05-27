@@ -1,6 +1,6 @@
-import * as React from "react";
-import { ChevronsUpDown, Loader2 } from "lucide-react";
 import { ClientOnly } from "@tanstack/react-router";
+import { ChevronsUpDown, Loader2 } from "lucide-react";
+import * as React from "react";
 
 const ProjectsChart = React.lazy(() => import("./projects-chart"));
 
@@ -15,7 +15,9 @@ export default function ProjectsChartCard({
 		<div className="h-[370px] overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex h-[72px] items-start justify-between border-b border-white px-6 pt-4 pb-3">
 				<div className="leading-tight">
-					<p className="text-[14px] font-semibold leading-5 text-[#0a0a0a]">Total Projects</p>
+					<p className="text-[14px] font-semibold leading-5 text-[#0a0a0a]">
+						Total Projects
+					</p>
 					<p className="text-[14px] leading-5 text-[#666]">per college</p>
 				</div>
 				<button

@@ -1,17 +1,33 @@
-import * as React from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	CheckCircle2,
+	Filter,
+	Loader2,
 	MoreVertical,
 	Search,
-	Filter,
-	CheckCircle2,
-	XCircle,
-	Loader2,
 	Users,
+	XCircle,
 } from "lucide-react";
-
+import * as React from "react";
+import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import {
 	Table,
@@ -21,28 +37,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-	DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import {
-	Empty,
-	EmptyDescription,
-	EmptyHeader,
-	EmptyMedia,
-	EmptyTitle,
-} from "@/components/ui/empty";
-import {
-	bulkUpdateUserStatusFn,
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
+	bulkUpdateUserStatusFn,
 } from "@/lib/admin.functions";
-import { toast } from "sonner";
 import { BulkApproveDialog } from "./bulk-approve-dialog";
 
 interface UsersPageProps {
@@ -68,7 +67,9 @@ export function UsersPage({
 
 	const statsQuery = useQuery(adminStatsQueryOptions());
 
-	const usersQuery = useQuery(adminUsersQueryOptions({ page, pageSize, search }));
+	const usersQuery = useQuery(
+		adminUsersQueryOptions({ page, pageSize, search }),
+	);
 
 	// ── Mutations ────────────────────────────────────────────
 
@@ -116,16 +117,18 @@ export function UsersPage({
 	return (
 		<div className="flex flex-col gap-8">
 			<div className="flex items-center justify-between">
-			  <h1 className="text-2xl font-semibold text-[#11215a]">User Management</h1>
-			  <BulkApproveDialog>
-			    <Button 
-			      className="bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white rounded-[10px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
-			      disabled={updateStatusMutation.isPending}
-			    >
-			      <CheckCircle2 className="mr-2 size-4" />
-			      Bulk approve
-			    </Button>
-			  </BulkApproveDialog>
+				<h1 className="text-2xl font-semibold text-[#11215a]">
+					User Management
+				</h1>
+				<BulkApproveDialog>
+					<Button
+						className="bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white rounded-[10px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
+						disabled={updateStatusMutation.isPending}
+					>
+						<CheckCircle2 className="mr-2 size-4" />
+						Bulk approve
+					</Button>
+				</BulkApproveDialog>
 			</div>
 
 			<div className="grid gap-6 md:grid-cols-3">
@@ -233,10 +236,16 @@ export function UsersPage({
 									</TableCell>
 									<TableCell>
 										<DropdownMenu>
-												<DropdownMenuTrigger
-												render={<Button variant="ghost" size="icon" className="size-8" />}
+											<DropdownMenuTrigger
+												render={
+													<Button
+														variant="ghost"
+														size="icon"
+														className="size-8"
+													/>
+												}
 												aria-label="Open user actions"
-												>
+											>
 												<MoreVertical className="size-4" />
 											</DropdownMenuTrigger>
 											<DropdownMenuContent align="end">

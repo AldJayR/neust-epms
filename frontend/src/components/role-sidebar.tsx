@@ -1,8 +1,9 @@
+import type { useRender } from "@base-ui/react/use-render";
 import { Link, type LinkProps, useNavigate } from "@tanstack/react-router";
-import { ChevronRight, LogOut, type LucideIcon, Loader2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { logoutFn } from "@/lib/auth.functions";
-
+import { ChevronRight, Loader2, LogOut, type LucideIcon } from "lucide-react";
+import type { ComponentProps, ReactNode } from "react";
+import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
@@ -17,18 +18,16 @@ import {
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
+	SidebarGroup,
+	SidebarGroupContent,
+	SidebarGroupLabel,
 	SidebarHeader,
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
-	SidebarGroup,
-	SidebarGroupContent,
-	SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import type { AuthUser } from "@/lib/auth";
-import type { useRender } from "@base-ui/react/use-render";
-import type { ComponentProps, ReactNode } from "react";
-import * as React from "react";
+import { logoutFn } from "@/lib/auth.functions";
 
 export type RoleSidebarItem = {
 	title: string;
@@ -63,9 +62,11 @@ export function RoleSidebar({
 	...props
 }: RoleSidebarProps) {
 	const initials = user ? `${user.firstName[0]}${user.lastName[0]}` : "JD";
-	const fullName = user ? `${user.firstName} ${user.lastName}` : fallbackFullName;
+	const fullName = user
+		? `${user.firstName} ${user.lastName}`
+		: fallbackFullName;
 	const roleLabel = user ? user.roleName : fallbackRole;
-	
+
 	const logout = useServerFn(logoutFn);
 	const navigate = useNavigate();
 	const [isLoggingOut, setIsLoggingOut] = React.useState(false);
@@ -161,14 +162,19 @@ export function RoleSidebar({
 												</AvatarFallback>
 											</Avatar>
 											<div className="flex flex-col flex-1 text-left text-sm leading-tight">
-												<span className="truncate font-semibold">{fullName}</span>
+												<span className="truncate font-semibold">
+													{fullName}
+												</span>
 												<span className="truncate text-xs">{roleLabel}</span>
 											</div>
 										</div>
 									</DropdownMenuLabel>
 								</DropdownMenuGroup>
 								<DropdownMenuSeparator />
-								<DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut}>
+								<DropdownMenuItem
+									onClick={handleLogout}
+									disabled={isLoggingOut}
+								>
 									{isLoggingOut ? (
 										<Loader2 className="mr-2 size-4 animate-spin" />
 									) : (

@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { AppShell } from "@/features/layout/app-shell";
 import { UsersPage } from "@/features/admin/users-page";
 import { DirectorDashboardPage } from "@/features/director/director-dashboard-page";
-import { directorDashboardQueryOptions } from "@/lib/director.functions";
+import { AppShell } from "@/features/layout/app-shell";
 import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
 } from "@/lib/admin.functions";
+import { directorDashboardQueryOptions } from "@/lib/director.functions";
 
 const dashboardSearchSchema = z.object({
 	page: z.number().optional().default(1),
@@ -23,12 +23,17 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 		search: search.search,
 	}),
 	loader: async ({ context, deps }) => {
-		if (context.auth.user?.roleName !== "Super Admin" && context.auth.user?.roleName !== "Director") {
+		if (
+			context.auth.user?.roleName !== "Super Admin" &&
+			context.auth.user?.roleName !== "Director"
+		) {
 			return null;
 		}
 
 		if (context.auth.user?.roleName === "Super Admin") {
-			const statsPromise = context.queryClient.ensureQueryData(adminStatsQueryOptions());
+			const statsPromise = context.queryClient.ensureQueryData(
+				adminStatsQueryOptions(),
+			);
 			const usersPromise = context.queryClient.ensureQueryData(
 				adminUsersQueryOptions({
 					page: deps.page,
@@ -89,7 +94,9 @@ function DashboardPage() {
 	return (
 		<main className="flex min-h-dvh items-center justify-center p-8">
 			<div className="text-center">
-				<h1 className="text-2xl font-semibold text-card-foreground">Dashboard</h1>
+				<h1 className="text-2xl font-semibold text-card-foreground">
+					Dashboard
+				</h1>
 				<p className="mt-2 text-muted-foreground">
 					Welcome! This page is under construction.
 				</p>

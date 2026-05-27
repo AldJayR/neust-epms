@@ -1,24 +1,24 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	createFileRoute,
 	Link,
-	useNavigate,
 	redirect,
+	useNavigate,
 } from "@tanstack/react-router";
-import { z } from "zod";
-import { toast } from "sonner";
+import { motion } from "motion/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { motion } from "motion/react";
-import { FieldGroup } from "../components/ui/field";
-import { Alert } from "../components/ui/alert";
-import { signupFn } from "../lib/auth.functions";
+import { toast } from "sonner";
+import { z } from "zod";
 import {
 	RHFCheckboxField,
 	RHFPasswordField,
 	RHFSubmitButton,
 	RHFTextField,
 } from "../components/rhf-auth-fields";
+import { Alert } from "../components/ui/alert";
+import { FieldGroup } from "../components/ui/field";
+import { signupFn } from "../lib/auth.functions";
 
 const registerStep2Schema = z
 	.object({
