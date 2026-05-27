@@ -56,7 +56,7 @@ function generateSecureStoragePath(
 
 function getClientIp(forwarded: string | null | undefined): string | null {
   if (!forwarded) return null;
-  return forwarded.split(",")[0].trim();
+  return forwarded.split(",")[0]?.trim() ?? null;
 }
 
 // ── Schemas ──

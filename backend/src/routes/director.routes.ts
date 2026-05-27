@@ -6,6 +6,9 @@ import { campuses } from "../db/schema/campuses.js";
 import { departments } from "../db/schema/departments.js";
 import { moas } from "../db/schema/moas.js";
 import { projects } from "../db/schema/projects.js";
+import { proposalDocuments } from "../db/schema/proposal-documents.js";
+import { proposalMembers } from "../db/schema/proposal-members.js";
+import { proposalReviews } from "../db/schema/proposal-reviews.js";
 import { proposals } from "../db/schema/proposals.js";
 import { roles } from "../db/schema/roles.js";
 import { users } from "../db/schema/users.js";
@@ -137,7 +140,7 @@ app.openapi(facultyDirectoryRoute, async (c) => {
   const { page, limit, search, college } = c.req.valid("query");
   const offset = (page - 1) * limit;
 
-  const whereConditions = [isNull(users.archivedAt), eq(roles.roleName, ROLE_NAMES.FACULTY)];
+  const whereConditions = [eq(users.isActive, true), eq(roles.roleName, ROLE_NAMES.FACULTY)];
 
   if (search) {
     whereConditions.push(
@@ -171,20 +174,23 @@ app.openapi(facultyDirectoryRoute, async (c) => {
 
   const items = await Promise.all(
     rows.map(async (row) => {
-      const [leadCount] = await db
-        .select({ value: count() })
-        .from(projects)
-        .where(and(eq(projects.projectLeaderId, row.userId), isNull(projects.archivedAt)));
-
-      // Note: Collaborator count would involve checking proposal_members
-      // For now, we'll return a placeholder or implement a basic count
-      const collaboratorCount = 0; 
+      const [[leadCount], [collabCount]] = await Promise.all([
+        db
+          .select({ value: count() })
+          .from(projects)
+          .innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+          .where(and(eq(proposals.projectLeaderId, row.userId), isNull(projects.archivedAt))),
+        db
+          .select({ value: count() })
+          .from(proposalMembers)
+          .where(eq(proposalMembers.userId, row.userId)),
+      ]);
 
       return {
         ...row,
         leadProjects: Number(leadCount?.value ?? 0),
-        collaboratorProjects: collaboratorCount,
-        totalInvolvement: Number(leadCount?.value ?? 0) + collaboratorCount,
+        collaboratorProjects: Number(collabCount?.value ?? 0),
+        totalInvolvement: Number(leadCount?.value ?? 0) + Number(collabCount?.value ?? 0),
       };
     }),
   );
@@ -193,22 +199,35 @@ app.openapi(facultyDirectoryRoute, async (c) => {
     .select({ value: count() })
     .from(users)
     .innerJoin(roles, eq(users.roleId, roles.roleId))
-    .where(isNull(users.archivedAt));
+    .where(eq(users.isActive, true));
 
   const [totalProjects] = await db
     .select({ value: count() })
     .from(projects)
     .where(isNull(projects.archivedAt));
 
+  const [mostActiveCollege] = await db
+    .select({
+      name: departments.departmentName,
+      contributors: count(),
+    })
+    .from(users)
+    .innerJoin(roles, eq(users.roleId, roles.roleId))
+    .innerJoin(departments, eq(users.departmentId, departments.departmentId))
+    .where(and(eq(users.isActive, true), eq(roles.roleName, ROLE_NAMES.FACULTY)))
+    .groupBy(departments.departmentName)
+    .orderBy(desc(count()))
+    .limit(1);
+
   return c.json({
     items,
     total: Number(totalResult[0]?.value ?? 0),
     metrics: {
-      totalActiveExtension: Number(totalFaculty[0]?.value ?? 0),
-      averageProjectsPerFaculty: Number(totalFaculty[0]?.value ? (Number(totalProjects[0]?.value) / Number(totalFaculty[0]?.value)).toFixed(1) : 0),
+      totalActiveExtension: Number(totalFaculty?.value ?? 0),
+      averageProjectsPerFaculty: Number(totalFaculty?.value ? (Number(totalProjects?.value) / Number(totalFaculty?.value)).toFixed(1) : 0),
       mostActiveCollege: {
-        name: "College of Agriculture", // Placeholder for actual aggregation
-        contributors: 142,
+        name: mostActiveCollege?.name ?? "N/A",
+        contributors: Number(mostActiveCollege?.contributors ?? 0),
       },
     },
   }, 200);
@@ -248,9 +267,41 @@ app.openapi(moaRepositoryRoute, async (c) => {
     whereConditions.push(ilike(moas.partnerName, `%${search}%`));
   }
 
-  // Note: Status filtering logic would go here if needed, 
-  // but for now we'll return all and let frontend handle it or implement basic mapping
-  // Real implementation would calculate status based on validUntil
+  if (status) {
+    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    switch (status) {
+      case "Valid":
+        whereConditions.push(
+          and(
+            eq(moas.isExpired, false),
+            sql`${moas.validUntil} > ${now}`,
+            sql`${moas.validUntil} > ${thirtyDaysFromNow}`,
+          )!,
+        );
+        break;
+      case "Renewal Needed":
+        whereConditions.push(
+          and(
+            eq(moas.isExpired, false),
+            sql`${moas.validUntil} > ${now}`,
+            sql`${moas.validUntil} <= ${thirtyDaysFromNow}`,
+          )!,
+        );
+        break;
+      case "Expired":
+        whereConditions.push(
+          or(
+            eq(moas.isExpired, true),
+            sql`${moas.validUntil} <= ${now}`,
+          )!,
+        );
+        break;
+      case "Terminated":
+        whereConditions.push(eq(moas.isExpired, true));
+        break;
+    }
+  }
 
   const query = db
     .select()
@@ -282,7 +333,9 @@ app.openapi(moaRepositoryRoute, async (c) => {
     const daysUntilExpiry = Math.ceil((r.validUntil.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
     
     let moaStatus: "Valid" | "Renewal Needed" | "Expired" | "Terminated" = "Valid";
-    if (r.validUntil < now) {
+    if (r.isExpired) {
+      moaStatus = "Terminated";
+    } else if (r.validUntil < now) {
       moaStatus = "Expired";
     } else if (daysUntilExpiry <= 30) {
       moaStatus = "Renewal Needed";
@@ -562,6 +615,220 @@ app.openapi(dashboardRoute, async (c) => {
     },
     200,
   );
+});
+
+// ── Project Details Endpoint ──
+
+const ProjectDetailsMemberSchema = z.object({
+  userId: z.string(),
+  name: z.string(),
+  role: z.string(),
+});
+
+const ProjectDetailsHistoryItemSchema = z.object({
+  id: z.string(),
+  version: z.string(),
+  status: z.string(),
+  actorName: z.string(),
+  date: z.string(),
+  comment: z.string().optional(),
+});
+
+const ProjectDetailsAttachmentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.string(),
+  url: z.string(),
+  version: z.string(),
+});
+
+const ProjectDetailsSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  status: z.string(),
+  version: z.string(),
+  metadata: z.object({
+    leader: z.object({
+      name: z.string(),
+    }),
+    department: z.string(),
+    duration: z.string(),
+    moaLinked: z.string(),
+    budget: z.object({
+      total: z.number(),
+      neust: z.number(),
+      partner: z.number(),
+    }),
+  }),
+  members: z.array(ProjectDetailsMemberSchema),
+  history: z.array(ProjectDetailsHistoryItemSchema),
+  attachments: z.array(ProjectDetailsAttachmentSchema),
+});
+
+const projectDetailsRoute = createRoute({
+  method: "get",
+  path: "/director/projects/{proposalId}",
+  tags: ["Director"],
+  summary: "Get project details by proposal ID",
+  security: [{ Bearer: [] }],
+  request: {
+    params: z.object({
+      proposalId: z.string().openapi({ param: { name: "proposalId", in: "path" } }),
+    }),
+  },
+  responses: {
+    200: {
+      content: { "application/json": { schema: ProjectDetailsSchema } },
+      description: "Project details",
+    },
+    404: {
+      description: "Project not found",
+    },
+  },
+});
+
+app.openapi(projectDetailsRoute, async (c) => {
+  const { proposalId } = c.req.valid("param");
+
+  const [row] = await db
+    .select({
+      proposalId: proposals.proposalId,
+      title: proposals.title,
+      currentStatus: proposals.currentStatus,
+      revisionNum: proposals.revisionNum,
+      budgetNeust: proposals.budgetNeust,
+      budgetPartner: proposals.budgetPartner,
+      leaderFirstName: users.firstName,
+      leaderLastName: users.lastName,
+      departmentName: departments.departmentName,
+      projectStatus: projects.projectStatus,
+      startDate: projects.startDate,
+      targetEnd: projects.targetEnd,
+      moaPartner: moas.partnerName,
+    })
+    .from(proposals)
+    .innerJoin(users, eq(proposals.projectLeaderId, users.userId))
+    .innerJoin(departments, eq(proposals.departmentId, departments.departmentId))
+    .leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
+    .leftJoin(moas, eq(projects.moaId, moas.moaId))
+    .where(eq(proposals.proposalId, proposalId));
+
+  if (!row) {
+    return c.json({ error: { message: "Project not found" } }, 404);
+  }
+
+  const [memberRows, documentRows, reviewRows] = await Promise.all([
+    db
+      .select({
+        userId: users.userId,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: proposalMembers.projectRole,
+      })
+      .from(proposalMembers)
+      .innerJoin(users, eq(proposalMembers.userId, users.userId))
+      .where(eq(proposalMembers.proposalId, proposalId)),
+
+    db
+      .select()
+      .from(proposalDocuments)
+      .where(eq(proposalDocuments.proposalId, proposalId))
+      .orderBy(desc(proposalDocuments.versionNum)),
+
+    db
+      .select({
+        reviewId: proposalReviews.reviewId,
+        decision: proposalReviews.decision,
+        comments: proposalReviews.comments,
+        reviewedAt: proposalReviews.reviewedAt,
+        reviewerFirstName: users.firstName,
+        reviewerLastName: users.lastName,
+      })
+      .from(proposalReviews)
+      .innerJoin(users, eq(proposalReviews.reviewerId, users.userId))
+      .where(eq(proposalReviews.proposalId, proposalId))
+      .orderBy(desc(proposalReviews.reviewedAt)),
+  ]);
+
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  let duration = "Not yet started";
+  if (row.startDate && row.targetEnd) {
+    duration = `${months[row.startDate.getMonth()]} ${row.startDate.getFullYear()} - ${months[row.targetEnd.getMonth()]} ${row.targetEnd.getFullYear()}`;
+  }
+
+  const budgetNeust = Number(row.budgetNeust ?? 0);
+  const budgetPartner = Number(row.budgetPartner ?? 0);
+
+  const members = memberRows.map((m) => ({
+    userId: m.userId,
+    name: `${m.firstName} ${m.lastName}`,
+    role: m.role,
+  }));
+
+  const history: Array<{
+    id: string;
+    version: string;
+    status: string;
+    actorName: string;
+    date: string;
+    comment?: string;
+  }> = [];
+
+  documentRows.forEach((doc) => {
+    history.push({
+      id: doc.documentId,
+      version: `v${doc.versionNum}`,
+      status: doc.versionNum === documentRows[0]?.versionNum ? "Current" : "Previous",
+      actorName: "System",
+      date: doc.uploadedAt.toISOString(),
+    });
+  });
+
+  reviewRows.forEach((review) => {
+    history.push({
+      id: review.reviewId,
+      version: `v${row.revisionNum}`,
+      status: review.decision === "Returned" ? "Returned" : review.decision === "Approved" ? "Approved" : review.decision,
+      actorName: `${review.reviewerFirstName} ${review.reviewerLastName}`,
+      date: review.reviewedAt.toISOString(),
+      ...(review.comments ? { comment: review.comments } : {}),
+    });
+  });
+
+  history.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const attachments = documentRows.map((doc) => ({
+    id: doc.documentId,
+    name: doc.storagePath.split("/").pop() || doc.storagePath,
+    type: (doc.storagePath.split(".").pop()?.toUpperCase()) || "FILE",
+    url: doc.storagePath,
+    version: `v${doc.versionNum}`,
+  }));
+
+  const status = row.projectStatus || row.currentStatus;
+
+  return c.json({
+    id: row.proposalId,
+    title: row.title,
+    status,
+    version: `v${row.revisionNum}`,
+    metadata: {
+      leader: {
+        name: `${row.leaderFirstName} ${row.leaderLastName}`,
+      },
+      department: row.departmentName,
+      duration,
+      moaLinked: row.moaPartner || "None",
+      budget: {
+        total: budgetNeust + budgetPartner,
+        neust: budgetNeust,
+        partner: budgetPartner,
+      },
+    },
+    members,
+    history,
+    attachments,
+  }, 200);
 });
 
 export default app;

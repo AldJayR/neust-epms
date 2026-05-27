@@ -93,6 +93,7 @@ interface ProjectHubPageProps {
 	onSearchChange: (search: string) => void;
 	onCollegeChange: (college: string) => void;
 	onStatusChange: (status: string) => void;
+	onProjectClick?: (projectId: string) => void;
 }
 
 export function ProjectHubPage({
@@ -105,6 +106,7 @@ export function ProjectHubPage({
 	onSearchChange,
 	onCollegeChange,
 	onStatusChange,
+	onProjectClick,
 }: ProjectHubPageProps) {
 	const { data, isLoading } = useQuery(
 		projectHubQueryOptions({ page, limit, search, college, status }),
@@ -220,7 +222,8 @@ export function ProjectHubPage({
 								items.map((project) => (
 									<TableRow
 										key={project.id}
-										className="border-[#ebebeb] py-2 hover:bg-[#fcfcfc]"
+										className="cursor-pointer border-[#ebebeb] py-2 hover:bg-[#fcfcfc]"
+										onClick={() => onProjectClick?.(project.id)}
 									>
 										<TableCell className="font-bold text-[#0a0a0a]">
 											<div

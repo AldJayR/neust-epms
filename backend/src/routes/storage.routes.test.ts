@@ -205,7 +205,7 @@ describe("POST /proposals/:proposalId/documents/upload", () => {
 
     expect(res.status).toBe(201);
 
-    const uploadPath = capturedInsertValues?.storagePath;
+    const uploadPath = (capturedInsertValues as Record<string, unknown> | null)?.["storagePath"];
     expect(typeof uploadPath).toBe("string");
     expect(uploadPath as string).toMatch(
       new RegExp(`^proposals/${PROPOSAL_ID}/v1_\\d+_[0-9a-f-]{36}_[A-Za-z0-9._-]+\\.pdf$`),

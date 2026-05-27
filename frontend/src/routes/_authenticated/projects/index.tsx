@@ -79,6 +79,13 @@ function ProjectsIndexPage() {
 		});
 	};
 
+	const handleProjectClick = (projectId: string) => {
+		navigate({
+			to: "/projects/$projectId",
+			params: { projectId },
+		});
+	};
+
 	if (user?.roleName === "Director" || user?.roleName === "Super Admin") {
 		return (
 			<ProjectHubPage
@@ -91,6 +98,7 @@ function ProjectsIndexPage() {
 				onSearchChange={handleSearch}
 				onCollegeChange={handleCollegeChange}
 				onStatusChange={handleStatusChange}
+				onProjectClick={handleProjectClick}
 			/>
 		);
 	}

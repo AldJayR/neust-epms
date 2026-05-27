@@ -144,6 +144,54 @@ export interface FacultyDirectoryParams {
 	college?: string;
 }
 
+export interface ProjectMember {
+	userId: string;
+	name: string;
+	role: string;
+	avatarUrl?: string;
+}
+
+export interface ProjectHistoryItem {
+	id: string;
+	version: string;
+	status: string;
+	actorName: string;
+	date: string;
+	comment?: string;
+}
+
+export interface ProjectAttachment {
+	id: string;
+	name: string;
+	type: string;
+	url: string;
+	version: string;
+}
+
+export interface ProjectDetailsResponse {
+	id: string;
+	title: string;
+	status: string;
+	version: string;
+	metadata: {
+		leader: {
+			name: string;
+			avatarUrl?: string;
+		};
+		department: string;
+		duration: string;
+		moaLinked: string;
+		budget: {
+			total: number;
+			neust: number;
+			partner: number;
+		};
+	};
+	members: ProjectMember[];
+	history: ProjectHistoryItem[];
+	attachments: ProjectAttachment[];
+}
+
 // ── Server Functions ──────────────────────────────────────
 
 export const getDirectorDashboardFn = createServerFn({ method: "GET" }).handler(
@@ -163,9 +211,7 @@ export const getDirectorDashboardFn = createServerFn({ method: "GET" }).handler(
 
 		if (!response.ok) {
 			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(
-				errorBody.error?.message ?? "Failed to fetch director dashboard",
-			);
+			throw new Error(errorBody.error?.message ?? "Failed to fetch director dashboard");
 		}
 
 		return (await response.json()) as DirectorDashboardResponse;
@@ -191,20 +237,15 @@ export const getProjectHubFn = createServerFn({ method: "GET" })
 		if (data.college) query.append("college", data.college);
 		if (data.status) query.append("status", data.status);
 
-		const response = await fetch(
-			`${API_BASE}/director/hub/projects?${query.toString()}`,
-			{
-				headers: {
-					Authorization: `Bearer ${accessToken}`,
-				},
+		const response = await fetch(`${API_BASE}/director/hub/projects?${query.toString()}`, {
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
 			},
-		);
+		});
 
 		if (!response.ok) {
 			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(
-				errorBody.error?.message ?? "Failed to fetch project hub",
-			);
+			throw new Error(errorBody.error?.message ?? "Failed to fetch project hub");
 		}
 
 		return (await response.json()) as ProjectHubResponse;
@@ -228,20 +269,15 @@ export const getMoaRepositoryFn = createServerFn({ method: "GET" })
 		if (data.search) query.append("search", data.search);
 		if (data.status) query.append("status", data.status);
 
-		const response = await fetch(
-			`${API_BASE}/director/moas?${query.toString()}`,
-			{
-				headers: {
-					Authorization: `Bearer ${accessToken}`,
-				},
+		const response = await fetch(`${API_BASE}/director/moas?${query.toString()}`, {
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
 			},
-		);
+		});
 
 		if (!response.ok) {
 			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(
-				errorBody.error?.message ?? "Failed to fetch MOA repository",
-			);
+			throw new Error(errorBody.error?.message ?? "Failed to fetch MOA repository");
 		}
 
 		return (await response.json()) as MoaRepositoryResponse;
@@ -265,23 +301,42 @@ export const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 		if (data.search) query.append("search", data.search);
 		if (data.college) query.append("college", data.college);
 
-		const response = await fetch(
-			`${API_BASE}/director/faculty?${query.toString()}`,
-			{
-				headers: {
-					Authorization: `Bearer ${accessToken}`,
-				},
+		const response = await fetch(`${API_BASE}/director/faculty?${query.toString()}`, {
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
 			},
-		);
+		});
 
 		if (!response.ok) {
 			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(
-				errorBody.error?.message ?? "Failed to fetch faculty directory",
-			);
+			throw new Error(errorBody.error?.message ?? "Failed to fetch faculty directory");
 		}
 
 		return (await response.json()) as FacultyDirectoryResponse;
+	});
+
+export const getProjectDetailsFn = createServerFn({ method: "GET" })
+	.inputValidator(z.string())
+	.handler(async ({ data: proposalId }) => {
+		const session = await useAppSession();
+		const { accessToken } = session.data;
+
+		if (!accessToken) {
+			throw new Error("Unauthorized");
+		}
+
+		const response = await fetch(`${API_BASE}/director/projects/${proposalId}`, {
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+		});
+
+		if (!response.ok) {
+			const errorBody = (await response.json()) as ApiErrorResponse;
+			throw new Error(errorBody.error?.message ?? "Failed to fetch project details");
+		}
+
+		return (await response.json()) as ProjectDetailsResponse;
 	});
 
 // ── Query Options ─────────────────────────────────────────
@@ -314,6 +369,14 @@ export function facultyDirectoryQueryOptions(params: FacultyDirectoryParams) {
 	return queryOptions({
 		queryKey: ["director", "faculty", params],
 		queryFn: () => getFacultyDirectoryFn({ data: params }),
+		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
+	});
+}
+
+export function projectDetailsQueryOptions(proposalId: string) {
+	return queryOptions({
+		queryKey: ["director", "proposals", proposalId],
+		queryFn: () => getProjectDetailsFn({ data: proposalId }),
 		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
 	});
 }
