@@ -1,8 +1,7 @@
-import * as React from "react";
+
 import {
 	FileText,
 	Download,
-	History,
 	ChevronRight,
 	Eye,
 	CheckCircle2,
@@ -17,11 +16,9 @@ import {
 	CardContent,
 	CardHeader,
 	CardTitle,
-	CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	Dialog,
@@ -45,7 +42,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 		return (
 			<AppShell>
 				<div className="flex h-[400px] items-center justify-center">
-					<div className="size-8 animate-spin rounded-full border-4 border-[#14369c] border-t-transparent" />
+					<div className="size-8 animate-spin rounded-full border-4 border-brand-primary border-t-transparent" />
 				</div>
 			</AppShell>
 		);
@@ -77,7 +74,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 							{data.title}
 						</h1>
 					</div>
-					<Button className="flex w-fit items-center gap-2 rounded-xl bg-[#14369c] px-6 py-6 text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]">
+					<Button className="flex w-fit items-center gap-2 rounded-xl bg-brand-primary px-6 py-6 text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]">
 						<Eye className="size-5" />
 						<span className="text-base font-semibold">Read Proposal Document</span>
 					</Button>
@@ -98,7 +95,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 										<div className="flex items-center gap-3">
 											<Avatar className="size-8 border border-[#ebebeb]">
 												<AvatarImage src={data.metadata.leader.avatarUrl} />
-												<AvatarFallback className="bg-[#14369c]/10 text-[#14369c] text-xs">
+								<AvatarFallback className="bg-brand-primary/10 text-brand-primary text-xs">
 													{data.metadata.leader.name.split(' ').map(n => n[0]).join('')}
 												</AvatarFallback>
 											</Avatar>
@@ -130,12 +127,11 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 									
 									{/* Team Members Trigger */}
 									<Dialog>
-										<DialogTrigger asChild>
-											<button className="flex w-full items-center justify-between px-6 py-5 transition-colors hover:bg-[#fcfcfc]">
-												<span className="text-[14px] font-medium text-[#666]">Project Team</span>
+										<DialogTrigger render={<button className="flex w-full items-center justify-between px-6 py-5 transition-colors hover:bg-[#fcfcfc]" />}>
+											<span className="text-[14px] font-medium text-[#666]">Project Team</span>
 												<div className="flex items-center gap-4">
 													<div className="flex -space-x-3">
-														{data.members.slice(0, 4).map((member, i) => (
+														{data.members.slice(0, 4).map((member) => (
 															<Avatar key={member.userId} className="size-9 border-2 border-white ring-1 ring-[#ebebeb]">
 																<AvatarImage src={member.avatarUrl} />
 																<AvatarFallback className="bg-gray-100 text-gray-600 text-[10px]">
@@ -149,9 +145,8 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 															</div>
 														)}
 													</div>
-													<ChevronRight className="size-5 text-[#999]" />
-												</div>
-											</button>
+												<ChevronRight className="size-5 text-[#999]" />
+											</div>
 										</DialogTrigger>
 										<DialogContent className="sm:max-w-[425px] rounded-3xl p-6">
 											<DialogHeader className="pb-4">
@@ -188,7 +183,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 								<div className="relative space-y-8 before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-[#ebebeb]">
 									{data.history.map((item, idx) => (
 										<div key={item.id} className="relative flex items-start gap-6 pl-10">
-											<div className={`absolute left-0 mt-1.5 size-[24px] rounded-full border-4 border-white shadow-sm ring-1 ring-[#ebebeb] ${idx === 0 ? 'bg-[#14369c]' : 'bg-white'}`} />
+								<div className={`absolute left-0 mt-1.5 size-[24px] rounded-full border-4 border-white shadow-sm ring-1 ring-[#ebebeb] ${idx === 0 ? 'bg-brand-primary' : 'bg-white'}`} />
 											<div className="flex flex-1 flex-col gap-2">
 												<div className="flex items-center justify-between">
 													<div className="flex items-center gap-3">
@@ -234,13 +229,13 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 							</CardHeader>
 							<CardContent className="p-4 flex flex-col gap-4">
 								{data.attachments.map((attachment) => (
-									<div key={attachment.id} className="group relative flex flex-col gap-3 rounded-2xl border border-[#ebebeb] bg-white p-4 transition-all hover:border-[#14369c]/30 hover:shadow-md">
+									<div key={attachment.id} className="group relative flex flex-col gap-3 rounded-2xl border border-[#ebebeb] bg-white p-4 transition-all hover:border-brand-primary/30 hover:shadow-md">
 										<div className="flex items-center gap-4">
 											<div className="flex size-12 items-center justify-center rounded-xl bg-red-50 text-red-500 ring-1 ring-red-100">
 												<FileText className="size-6" />
 											</div>
 											<div className="flex flex-1 flex-col overflow-hidden">
-												<span className="truncate text-[14px] font-bold text-[#0a0a0a] group-hover:text-[#14369c]">
+										<span className="truncate text-[14px] font-bold text-[#0a0a0a] group-hover:text-brand-primary">
 													{attachment.name}
 												</span>
 												<span className="text-[12px] text-[#999] uppercase font-bold">

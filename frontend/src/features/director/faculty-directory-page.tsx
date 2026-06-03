@@ -132,7 +132,7 @@ export function FacultyDirectoryPage({
 								A.Y. 2024-2025
 							</span>
 						</div>
-						<Button className="flex items-center gap-1.5 rounded-[10px] bg-[#14369c] px-4 py-2 text-[#fafafa] shadow-sm hover:bg-[#14369c]/90">
+						<Button className="flex items-center gap-1.5 rounded-[10px] bg-brand-primary px-4 py-2 text-[#fafafa] shadow-sm hover:bg-brand-primary-hover">
 							<Download className="size-4" />
 							<span className="text-[14px] font-medium">Export Report</span>
 						</Button>

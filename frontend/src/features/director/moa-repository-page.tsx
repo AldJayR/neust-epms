@@ -132,7 +132,7 @@ export function MoaRepositoryPage({
 					<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
 						Memoranda of Agreements
 					</h1>
-					<Button className="flex items-center gap-1.5 rounded-[10px] bg-[#1e3b8a] px-[10px] py-2 text-[#fafafa] shadow-sm hover:bg-[#1e3b8a]/90">
+					<Button className="flex items-center gap-1.5 rounded-[10px] bg-brand-primary px-[10px] py-2 text-[#fafafa] shadow-sm hover:bg-brand-primary-hover">
 						<Plus className="size-4" />
 						<span className="text-[14px] font-medium">Create MOA</span>
 					</Button>

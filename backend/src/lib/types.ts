@@ -112,10 +112,20 @@ export const PROJECT_STATUS = {
   APPROVED: "Approved",
   ONGOING: "Ongoing",
   COMPLETED: "Completed",
+  CLOSED: "Closed",
 } as const;
 
 export type ProjectStatus =
   (typeof PROJECT_STATUS)[keyof typeof PROJECT_STATUS];
+
+// ── Project report type values ──
+export const REPORT_TYPE = {
+  PROGRESS: "Progress",
+  FINAL_ACCOMPLISHMENT: "Final Accomplishment",
+  TERMINAL: "Terminal",
+} as const;
+
+export type ReportType = (typeof REPORT_TYPE)[keyof typeof REPORT_TYPE];
 
 // ── Auth context: attached to every authenticated request ──
 export interface AuthUser {

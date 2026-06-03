@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently -n api,web -c blue,green \"pnpm run dev --filter backend\" \"pnpm run dev --filter frontend\"",
+    "dev": "concurrently -n api,web -c blue,green \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\"",
+    "build": "concurrently -n api,web -c blue,green \"pnpm --filter backend build\" \"pnpm --filter frontend build\"",
+    "start": "concurrently -n api,web -c blue,green \"pnpm --filter backend start\" \"pnpm --filter frontend start\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

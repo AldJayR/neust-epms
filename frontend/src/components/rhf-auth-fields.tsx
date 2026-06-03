@@ -36,7 +36,7 @@ import { cn } from "#/lib/utils";
 type Option = { label: string; value: string };
 
 const inputClassName =
-	"bg-white text-black placeholder:text-zinc-500 border-zinc-300 shadow-sm ring-1 ring-black/5 focus-visible:border-[#14369c] focus-visible:ring-[#14369c]/20";
+	"bg-white text-black placeholder:text-zinc-500 border-zinc-300 shadow-sm ring-1 ring-black/5 focus-visible:border-brand-primary focus-visible:ring-brand-primary/20";
 
 const selectContentClassName =
 	"bg-white text-black border-zinc-200 shadow-xl ring-1 ring-black/10 before:!bg-white";

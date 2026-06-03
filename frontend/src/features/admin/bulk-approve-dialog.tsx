@@ -413,7 +413,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 						<Button
 							onClick={handleApprove}
 							disabled={selectedUsers.size === 0 || approveMutation.isPending}
-							className="h-9 rounded-[10px] bg-[#1e3b8a] px-[10px] text-[14px] font-medium shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] transition-all hover:bg-[#1e3b8a]/90 active:scale-[0.98]"
+							className="h-9 rounded-[10px] bg-brand-primary px-[10px] text-[14px] font-medium shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] transition-all hover:bg-brand-primary-hover active:scale-[0.98]"
 						>
 							{approveMutation.isPending ? (
 								<>

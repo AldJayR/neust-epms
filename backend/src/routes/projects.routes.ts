@@ -4,10 +4,16 @@ import { db } from "../db/client.js";
 import { projects } from "../db/schema/projects.js";
 import { proposals } from "../db/schema/proposals.js";
 import { moas } from "../db/schema/moas.js";
+import { projectReports } from "../db/schema/project-reports.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
-import { PROPOSAL_STATUS, PROJECT_STATUS, ROLE_NAMES } from "../lib/types.js";
+import {
+  PROPOSAL_STATUS,
+  PROJECT_STATUS,
+  REPORT_TYPE,
+  ROLE_NAMES,
+} from "../lib/types.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -416,6 +422,139 @@ app.openapi(transitionRoute, async (c) => {
     { message: `Project transitioned to ${body.status}` },
     200,
   );
+});
+
+// ── POST /projects/:id/close ──
+const closeProjectRoute = createRoute({
+  method: "post",
+  path: "/projects/{id}/close",
+  tags: ["Projects"],
+  summary: "Explicitly close a project (project leader only)",
+  description:
+    "Requires both a Final Accomplishment report and a Terminal report to be submitted.",
+  security: [{ Bearer: [] }],
+  request: { params: ParamId },
+  responses: {
+    200: {
+      content: { "application/json": { schema: MessageSchema } },
+      description: "Project closed",
+    },
+    400: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Validation error (missing reports or invalid state)",
+    },
+    403: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Forbidden (not project leader)",
+    },
+    404: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Not found",
+    },
+  },
+});
+
+app.openapi(closeProjectRoute, async (c) => {
+  const user = c.get("user");
+  const { id } = c.req.valid("param");
+
+  const [project] = await db
+    .select()
+    .from(projects)
+    .where(and(eq(projects.projectId, id), isNull(projects.archivedAt)))
+    .limit(1);
+
+  if (!project) {
+    throw new ApiError(404, "NOT_FOUND", "Project not found");
+  }
+
+  // Fetch the linked proposal to verify project leader
+  const [proposal] = await db
+    .select()
+    .from(proposals)
+    .where(eq(proposals.proposalId, project.proposalId))
+    .limit(1);
+
+  if (!proposal) {
+    throw new ApiError(404, "PROPOSAL_NOT_FOUND", "Linked proposal not found");
+  }
+
+  if (proposal.projectLeaderId !== user.userId) {
+    throw new ApiError(
+      403,
+      "NOT_PROJECT_LEADER",
+      "Only the project leader can close this project",
+    );
+  }
+
+  if (
+    project.projectStatus === PROJECT_STATUS.CLOSED ||
+    project.projectStatus === PROJECT_STATUS.COMPLETED
+  ) {
+    throw new ApiError(
+      400,
+      "ALREADY_CLOSED",
+      "Project is already closed or completed",
+    );
+  }
+
+  if (project.projectStatus !== PROJECT_STATUS.ONGOING) {
+    throw new ApiError(
+      400,
+      "INVALID_STATE",
+      "Only ongoing projects can be closed",
+    );
+  }
+
+  // Verify both required reports exist
+  const reports = await db
+    .select({ reportType: projectReports.reportType })
+    .from(projectReports)
+    .where(
+      and(
+        eq(projectReports.projectId, id),
+        isNull(projectReports.archivedAt),
+      ),
+    );
+
+  const hasFinalAccomplishment = reports.some(
+    (r) => r.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT,
+  );
+  const hasTerminal = reports.some(
+    (r) => r.reportType === REPORT_TYPE.TERMINAL,
+  );
+
+  if (!hasFinalAccomplishment) {
+    throw new ApiError(
+      400,
+      "MISSING_FINAL_ACCOMPLISHMENT_REPORT",
+      "A Final Accomplishment report must be submitted before closing",
+    );
+  }
+
+  if (!hasTerminal) {
+    throw new ApiError(
+      400,
+      "MISSING_TERMINAL_REPORT",
+      "A Terminal report must be submitted before closing",
+    );
+  }
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(projects)
+      .set({ projectStatus: PROJECT_STATUS.CLOSED, updatedAt: new Date() })
+      .where(eq(projects.projectId, id));
+
+    await insertAuditLog({
+      userId: user.userId,
+      action: `Closed project ${id}`,
+      tableAffected: "projects",
+      ipAddress: c.req.header("x-forwarded-for") ?? null,
+    }, tx);
+  });
+
+  return c.json({ message: "Project closed" }, 200);
 });
 
 export default app;

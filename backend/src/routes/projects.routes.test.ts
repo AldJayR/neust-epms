@@ -2,7 +2,8 @@
  * Integration tests for projects.routes.ts
  *
  * Tests project creation from approved proposals,
- * MOA linking, and state transitions (SYS-REQ-04.1).
+ * MOA linking, state transitions (SYS-REQ-04.1),
+ * and explicit project closure with required reports.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { db } from "../db/client.js";
@@ -181,5 +182,216 @@ describe("POST /projects/:id/transition", () => {
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error.code).toBe("INVALID_TRANSITION");
+  });
+});
+
+describe("POST /projects/:id/close", () => {
+  it("should close a project when leader has submitted both required reports", async () => {
+    setMockUser(MOCK_USERS.faculty);
+
+    const proposal = createMockProposal({
+      projectLeaderId: MOCK_USERS.faculty.userId,
+    });
+    const project = createMockProject({ projectStatus: "Ongoing" });
+    const reports = [
+      { reportType: "Final Accomplishment" },
+      { reportType: "Terminal" },
+    ];
+
+    // select 1: project, select 2: proposal, select 3: reports
+    let callCount = 0;
+    vi.mocked(db.select).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockSelectChain([project]) as never;
+      if (callCount === 2) return mockSelectChain([proposal]) as never;
+      return mockSelectChain(reports) as never;
+    });
+    vi.mocked(db.update).mockReturnValue(mockMutationChain([project]) as never);
+
+    const res = await app.request(
+      `/projects/${project.projectId}/close`,
+      { method: "POST" },
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.message).toBe("Project closed");
+  });
+
+  it("should reject close when Final Accomplishment report is missing", async () => {
+    setMockUser(MOCK_USERS.faculty);
+
+    const proposal = createMockProposal({
+      projectLeaderId: MOCK_USERS.faculty.userId,
+    });
+    const project = createMockProject({ projectStatus: "Ongoing" });
+    const reports = [{ reportType: "Terminal" }];
+
+    let callCount = 0;
+    vi.mocked(db.select).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockSelectChain([project]) as never;
+      if (callCount === 2) return mockSelectChain([proposal]) as never;
+      return mockSelectChain(reports) as never;
+    });
+
+    const res = await app.request(
+      `/projects/${project.projectId}/close`,
+      { method: "POST" },
+    );
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe("MISSING_FINAL_ACCOMPLISHMENT_REPORT");
+  });
+
+  it("should reject close when Terminal report is missing", async () => {
+    setMockUser(MOCK_USERS.faculty);
+
+    const proposal = createMockProposal({
+      projectLeaderId: MOCK_USERS.faculty.userId,
+    });
+    const project = createMockProject({ projectStatus: "Ongoing" });
+    const reports = [{ reportType: "Final Accomplishment" }];
+
+    let callCount = 0;
+    vi.mocked(db.select).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockSelectChain([project]) as never;
+      if (callCount === 2) return mockSelectChain([proposal]) as never;
+      return mockSelectChain(reports) as never;
+    });
+
+    const res = await app.request(
+      `/projects/${project.projectId}/close`,
+      { method: "POST" },
+    );
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe("MISSING_TERMINAL_REPORT");
+  });
+
+  it("should reject close when no reports exist", async () => {
+    setMockUser(MOCK_USERS.faculty);
+
+    const proposal = createMockProposal({
+      projectLeaderId: MOCK_USERS.faculty.userId,
+    });
+    const project = createMockProject({ projectStatus: "Ongoing" });
+
+    let callCount = 0;
+    vi.mocked(db.select).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockSelectChain([project]) as never;
+      if (callCount === 2) return mockSelectChain([proposal]) as never;
+      return mockSelectChain([]) as never;
+    });
+
+    const res = await app.request(
+      `/projects/${project.projectId}/close`,
+      { method: "POST" },
+    );
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe("MISSING_FINAL_ACCOMPLISHMENT_REPORT");
+  });
+
+  it("should reject close from non-leader user", async () => {
+    setMockUser(MOCK_USERS.retChair);
+
+    const proposal = createMockProposal({
+      projectLeaderId: MOCK_USERS.faculty.userId,
+    });
+    const project = createMockProject({ projectStatus: "Ongoing" });
+
+    vi.mocked(db.select).mockImplementation(() => {
+      return mockSelectChain([project]) as never;
+    });
+
+    const res = await app.request(
+      `/projects/${project.projectId}/close`,
+      { method: "POST" },
+    );
+
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.error.code).toBe("NOT_PROJECT_LEADER");
+  });
+
+  it("should reject close when project is already closed", async () => {
+    setMockUser(MOCK_USERS.faculty);
+
+    const proposal = createMockProposal({
+      projectLeaderId: MOCK_USERS.faculty.userId,
+    });
+    const project = createMockProject({ projectStatus: "Closed" });
+
+    let callCount = 0;
+    vi.mocked(db.select).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockSelectChain([project]) as never;
+      return mockSelectChain([proposal]) as never;
+    });
+
+    const res = await app.request(
+      `/projects/${project.projectId}/close`,
+      { method: "POST" },
+    );
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe("ALREADY_CLOSED");
+  });
+
+  it("should reject close when project is not Ongoing", async () => {
+    setMockUser(MOCK_USERS.faculty);
+
+    const proposal = createMockProposal({
+      projectLeaderId: MOCK_USERS.faculty.userId,
+    });
+    const project = createMockProject({ projectStatus: "Approved" });
+
+    let callCount = 0;
+    vi.mocked(db.select).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockSelectChain([project]) as never;
+      return mockSelectChain([proposal]) as never;
+    });
+
+    const res = await app.request(
+      `/projects/${project.projectId}/close`,
+      { method: "POST" },
+    );
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe("INVALID_STATE");
+  });
+
+  it("should reject close when project is already completed", async () => {
+    setMockUser(MOCK_USERS.faculty);
+
+    const proposal = createMockProposal({
+      projectLeaderId: MOCK_USERS.faculty.userId,
+    });
+    const project = createMockProject({ projectStatus: "Completed" });
+
+    let callCount = 0;
+    vi.mocked(db.select).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockSelectChain([project]) as never;
+      return mockSelectChain([proposal]) as never;
+    });
+
+    const res = await app.request(
+      `/projects/${project.projectId}/close`,
+      { method: "POST" },
+    );
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe("ALREADY_CLOSED");
   });
 });

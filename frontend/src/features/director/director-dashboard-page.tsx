@@ -26,7 +26,7 @@ const recentActivities = [
 		title: "New Proposal Submitted",
 		description: "“Digital Literacy Drive in Barangay Sumacab” by CICT Dept.",
 		time: "2 hours ago",
-		color: "bg-[#14369c]",
+		color: "bg-brand-primary",
 	},
 	{
 		title: "Project Approved",
@@ -88,7 +88,7 @@ function RecentActivitiesCard({
 							<div className="flex flex-col gap-1">
 								<div className="flex items-center gap-1.5">
 									<span
-										className={`size-2 shrink-0 rounded-full ${["bg-[#14369c]", "bg-[#16a34a]", "bg-[#f59e0b]"][index % 3]}`}
+									className={`size-2 shrink-0 rounded-full ${["bg-brand-primary", "bg-[#16a34a]", "bg-[#f59e0b]"][index % 3]}`}
 										aria-hidden="true"
 									/>
 									<p className="text-[14px] font-medium leading-5 text-[#0a0a0a]">

@@ -144,7 +144,7 @@ function LoginPage() {
 						<RHFSubmitButton
 							label="Login"
 							isSubmitting={form.formState.isSubmitting}
-							className="h-9 w-full rounded-[10px] bg-[#14369c] text-sm font-medium text-[#fafafa] hover:bg-[#11308a]"
+						className="h-9 w-full rounded-[10px] bg-brand-primary text-sm font-medium text-[#fafafa] hover:bg-brand-primary-hover"
 						/>
 					</div>
 				</form>

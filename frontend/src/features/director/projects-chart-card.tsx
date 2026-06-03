@@ -32,14 +32,14 @@ export default function ProjectsChartCard({
 				<ClientOnly
 					fallback={
 						<div className="flex h-full items-center justify-center">
-							<Loader2 className="size-8 animate-spin text-[#14369c]/20" />
+							<Loader2 className="size-8 animate-spin text-brand-primary/20" />
 						</div>
 					}
 				>
 					<React.Suspense
 						fallback={
 							<div className="flex h-full items-center justify-center">
-								<Loader2 className="size-8 animate-spin text-[#14369c]/20" />
+								<Loader2 className="size-8 animate-spin text-brand-primary/20" />
 							</div>
 						}
 					>

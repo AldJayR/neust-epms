@@ -122,7 +122,7 @@ export function UsersPage({
 				</h1>
 				<BulkApproveDialog>
 					<Button
-						className="bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white rounded-[10px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
+						className="bg-brand-primary hover:bg-brand-primary-hover text-white rounded-[10px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
 						disabled={updateStatusMutation.isPending}
 					>
 						<CheckCircle2 className="mr-2 size-4" />

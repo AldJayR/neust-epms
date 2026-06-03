@@ -38,7 +38,7 @@ export default function ProjectsChart({ chartData }: ProjectsChartProps) {
 				/>
 				<Bar
 					dataKey="value"
-					fill="#14369c"
+					fill="var(--brand-primary)"
 					radius={[4, 4, 0, 0]}
 					barSize={50}
 				/>

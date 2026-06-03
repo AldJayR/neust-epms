@@ -74,13 +74,14 @@ describe("REVIEW_DECISION", () => {
 });
 
 describe("PROJECT_STATUS", () => {
-  it("should define exactly 3 statuses", () => {
-    expect(Object.keys(PROJECT_STATUS)).toHaveLength(3);
+  it("should define exactly 4 statuses", () => {
+    expect(Object.keys(PROJECT_STATUS)).toHaveLength(4);
   });
 
   it("should follow the lifecycle order", () => {
     expect(PROJECT_STATUS.APPROVED).toBe("Approved");
     expect(PROJECT_STATUS.ONGOING).toBe("Ongoing");
     expect(PROJECT_STATUS.COMPLETED).toBe("Completed");
+    expect(PROJECT_STATUS.CLOSED).toBe("Closed");
   });
 });

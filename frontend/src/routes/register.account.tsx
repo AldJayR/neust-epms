@@ -142,7 +142,7 @@ function RegisterStepTwo() {
 				</p>
 				<Link
 					to="/login"
-					className="mt-6 inline-block rounded-[10px] bg-[#14369c] px-6 py-2 text-sm font-medium text-white hover:bg-[#11308a]"
+					className="mt-6 inline-block rounded-[10px] bg-brand-primary px-6 py-2 text-sm font-medium text-white hover:bg-brand-primary-hover"
 				>
 					Go to Login
 				</Link>
@@ -167,7 +167,7 @@ function RegisterStepTwo() {
 						/>
 						<motion.span
 							layoutId="reg-step-2"
-							className="h-2 w-6 rounded-[12px] bg-[#14369c]"
+						className="h-2 w-6 rounded-[12px] bg-brand-primary"
 						/>
 					</div>
 				</div>
@@ -220,7 +220,7 @@ function RegisterStepTwo() {
 					<RHFSubmitButton
 						label="Register"
 						isSubmitting={form.formState.isSubmitting}
-						className="h-9 w-full rounded-[10px] bg-[#14369c] text-sm font-medium text-[#fafafa] hover:bg-[#11308a]"
+						className="h-9 w-full rounded-[10px] bg-brand-primary text-sm font-medium text-[#fafafa] hover:bg-brand-primary-hover"
 					/>
 				</div>
 			</form>

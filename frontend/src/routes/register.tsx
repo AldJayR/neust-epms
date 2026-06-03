@@ -123,7 +123,7 @@ function RegisterStepOneForm() {
 					<div className="flex items-center gap-2">
 						<motion.span
 							layoutId="reg-step-1"
-							className="h-2 w-6 rounded-[12px] bg-[#14369c]"
+							className="h-2 w-6 rounded-[12px] bg-brand-primary"
 						/>
 						<motion.span
 							layoutId="reg-step-2"
@@ -185,7 +185,7 @@ function RegisterStepOneForm() {
 					<RHFSubmitButton
 						label="Next"
 						isSubmitting={form.formState.isSubmitting}
-						className="h-9 w-full rounded-[10px] bg-[#14369c] text-sm font-medium text-[#fafafa] hover:bg-[#11308a]"
+						className="h-9 w-full rounded-[10px] bg-brand-primary text-sm font-medium text-[#fafafa] hover:bg-brand-primary-hover"
 					/>
 				</div>
 			</form>
