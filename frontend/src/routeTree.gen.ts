@@ -17,6 +17,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as RegisterAccountRouteImport } from './routes/register.account'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports/index'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects/index'
 import { Route as AuthenticatedMoasIndexRouteImport } from './routes/_authenticated/moas/index'
 import { Route as AuthenticatedFacultyIndexRouteImport } from './routes/_authenticated/faculty/index'
@@ -65,6 +66,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedReportsIndexRoute =
+  AuthenticatedReportsIndexRouteImport.update({
+    id: '/reports/',
+    path: '/reports/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProjectsIndexRoute =
   AuthenticatedProjectsIndexRouteImport.update({
     id: '/projects/',
@@ -125,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/faculty/': typeof AuthenticatedFacultyIndexRoute
   '/moas/': typeof AuthenticatedMoasIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/reports/': typeof AuthenticatedReportsIndexRoute
   '/admin/activity-log/': typeof AuthenticatedAdminActivityLogIndexRoute
   '/admin/settings/': typeof AuthenticatedAdminSettingsIndexRoute
   '/admin/users/': typeof AuthenticatedAdminUsersIndexRoute
@@ -142,6 +150,7 @@ export interface FileRoutesByTo {
   '/faculty': typeof AuthenticatedFacultyIndexRoute
   '/moas': typeof AuthenticatedMoasIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
+  '/reports': typeof AuthenticatedReportsIndexRoute
   '/admin/activity-log': typeof AuthenticatedAdminActivityLogIndexRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsIndexRoute
   '/admin/users': typeof AuthenticatedAdminUsersIndexRoute
@@ -161,6 +170,7 @@ export interface FileRoutesById {
   '/_authenticated/faculty/': typeof AuthenticatedFacultyIndexRoute
   '/_authenticated/moas/': typeof AuthenticatedMoasIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
   '/_authenticated/admin/activity-log/': typeof AuthenticatedAdminActivityLogIndexRoute
   '/_authenticated/admin/settings/': typeof AuthenticatedAdminSettingsIndexRoute
   '/_authenticated/admin/users/': typeof AuthenticatedAdminUsersIndexRoute
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/faculty/'
     | '/moas/'
     | '/projects/'
+    | '/reports/'
     | '/admin/activity-log/'
     | '/admin/settings/'
     | '/admin/users/'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/faculty'
     | '/moas'
     | '/projects'
+    | '/reports'
     | '/admin/activity-log'
     | '/admin/settings'
     | '/admin/users'
@@ -215,6 +227,7 @@ export interface FileRouteTypes {
     | '/_authenticated/faculty/'
     | '/_authenticated/moas/'
     | '/_authenticated/projects/'
+    | '/_authenticated/reports/'
     | '/_authenticated/admin/activity-log/'
     | '/_authenticated/admin/settings/'
     | '/_authenticated/admin/users/'
@@ -284,6 +297,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/reports/': {
+      id: '/_authenticated/reports/'
+      path: '/reports'
+      fullPath: '/reports/'
+      preLoaderRoute: typeof AuthenticatedReportsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/projects/': {
@@ -369,6 +389,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFacultyIndexRoute: typeof AuthenticatedFacultyIndexRoute
   AuthenticatedMoasIndexRoute: typeof AuthenticatedMoasIndexRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
+  AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
   AuthenticatedProjectsProjectIdIndexRoute: typeof AuthenticatedProjectsProjectIdIndexRoute
 }
 
@@ -380,6 +401,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFacultyIndexRoute: AuthenticatedFacultyIndexRoute,
   AuthenticatedMoasIndexRoute: AuthenticatedMoasIndexRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
+  AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
   AuthenticatedProjectsProjectIdIndexRoute:
     AuthenticatedProjectsProjectIdIndexRoute,
 }

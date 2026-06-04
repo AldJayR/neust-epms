@@ -2,7 +2,6 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
 	Activity,
 	BarChart3,
-	Building2,
 	FolderKanban,
 	LayoutDashboard,
 	Scroll,
@@ -31,7 +30,7 @@ type NavGroup = {
 
 const adminNav: NavGroup[] = [
 	{
-		title: "Dashboard",
+		title: "Overview",
 		items: [
 			{
 				title: "User Management",
@@ -59,10 +58,10 @@ const adminNav: NavGroup[] = [
 
 const directorNav: NavGroup[] = [
 	{
-		title: "Dashboard",
+		title: "Overview",
 		items: [
 			{
-				title: "Overview",
+				title: "Dashboard",
 				url: "/dashboard",
 				icon: LayoutDashboard,
 			},
@@ -77,12 +76,6 @@ const directorNav: NavGroup[] = [
 				icon: Users,
 			},
 			{
-				title: "Departments",
-				// @ts-expect-error - Route not yet generated in the route tree
-				url: "/departments",
-				icon: Building2,
-			},
-			{
 				title: "Memoranda of Agreements",
 				url: "/moas",
 				icon: Scroll,
@@ -94,7 +87,6 @@ const directorNav: NavGroup[] = [
 		items: [
 			{
 				title: "Reports",
-				// @ts-expect-error - Route not yet generated in the route tree
 				url: "/reports",
 				icon: BarChart3,
 			},
