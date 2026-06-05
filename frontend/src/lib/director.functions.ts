@@ -357,6 +357,45 @@ export const getProjectDetailsFn = createServerFn({ method: "GET" })
 		return (await response.json()) as ProjectDetailsResponse;
 	});
 
+export const reviewProposalFn = createServerFn({ method: "POST" })
+	.inputValidator(
+		z.object({
+			proposalId: z.string(),
+			decision: z.enum(["Endorsed", "Approved", "Returned", "Rejected"]),
+			comments: z.string().optional(),
+		}),
+	)
+	.handler(async ({ data }) => {
+		const session = await useAppSession();
+		const { accessToken } = session.data;
+
+		if (!accessToken) {
+			throw new Error("Unauthorized");
+		}
+
+		const response = await fetch(
+			`${API_BASE}/proposals/${data.proposalId}/review`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${accessToken}`,
+				},
+				body: JSON.stringify({
+					decision: data.decision,
+					comments: data.comments,
+				}),
+			},
+		);
+
+		if (!response.ok) {
+			const errorBody = (await response.json()) as ApiErrorResponse;
+			throw new Error(errorBody.error?.message ?? "Failed to submit review");
+		}
+
+		return (await response.json()) as { message: string };
+	});
+
 export const getReportStatsFn = createServerFn({ method: "GET" }).handler(
 	async () => {
 		const session = await useAppSession();
