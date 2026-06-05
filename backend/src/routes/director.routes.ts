@@ -525,6 +525,7 @@ app.openapi(projectHubRoute, async (c) => {
 });
 
 app.openapi(dashboardRoute, async (c) => {
+  const user = c.get("user");
   const now = new Date();
   const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
@@ -562,7 +563,7 @@ app.openapi(dashboardRoute, async (c) => {
     })
     .from(auditLogs)
     .innerJoin(users, eq(auditLogs.userId, users.userId))
-    .leftJoin(roles, eq(users.roleId, roles.roleId))
+    .where(eq(auditLogs.userId, user.userId))
     .orderBy(desc(auditLogs.createdAt))
     .limit(3);
 

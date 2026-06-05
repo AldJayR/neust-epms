@@ -115,6 +115,7 @@ export function ProjectHubPage({
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
 	const totalPages = Math.ceil(total / limit);
+	const showTableHeader = items.length > 0 || (search ?? "").trim().length > 0 || (college ?? "").trim().length > 0 || (status ?? "").trim().length > 0;
 
 	return (
 		<AppShell>
@@ -182,6 +183,7 @@ export function ProjectHubPage({
 
 				<div className="rounded-lg border border-[#ebebeb] bg-white shadow-sm overflow-hidden min-h-[400px]">
 					<Table>
+						{showTableHeader && (
 						<TableHeader>
 							<TableRow className="border-[#ebebeb] hover:bg-transparent">
 								<TableHead className="w-[30%] font-medium text-[#666]">
@@ -202,6 +204,7 @@ export function ProjectHubPage({
 								<TableHead className="w-[5%]"></TableHead>
 							</TableRow>
 						</TableHeader>
+						)}
 						<TableBody>
 							{isLoading ? (
 								<TableRow>

@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { 
   Search, 
@@ -6,12 +7,14 @@ import {
   MoreVertical,
   ChevronLeft,
   ChevronRight,
-  Plus
+  Loader2,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+
+
 import {
   Table,
   TableBody,
@@ -20,22 +23,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { AppShell } from "../layout/app-shell";
 import { reportsQueryOptions } from "@/lib/director.functions";
 
 export function ReportsPage() {
+  const [search, setSearch] = useState("");
   const { data, isLoading, error } = useQuery(reportsQueryOptions());
 
   const reports = data?.items ?? [];
   const totalReports = data?.total ?? 0;
   const progressCount = reports.filter((r) => r.reportType === "Progress").length;
   const terminalCount = reports.filter((r) => r.reportType === "Terminal").length;
+
+  const showTableHeader = reports.length > 0 || search.trim().length > 0;
 
   const formatDate = (dateStr: string) => {
     try {
@@ -56,39 +56,25 @@ export function ReportsPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold text-[#11215a]">Reports</h1>
           <Button className="bg-[#1e3b8a] text-white hover:bg-[#1e3b8a]/90 rounded-[10px] gap-2">
-            <Plus className="size-4" />
+            <Download className="size-4" />
             Export Reports
           </Button>
         </div>
 
         {/* Metric Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="border-[#ebebeb] shadow-sm rounded-[12px]">
-            <CardContent className="p-4 space-y-4">
-              <p className="text-sm font-normal text-[#666]">Total Reports</p>
-              <p className="text-4xl font-semibold text-[#11215a]">{totalReports}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-[#ebebeb] shadow-sm rounded-[12px]">
-            <CardContent className="p-4 space-y-4">
-              <p className="text-sm font-normal text-[#666]">Progress Reports</p>
-              <p className="text-4xl font-semibold text-[#11215a]">{progressCount}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-[#ebebeb] shadow-sm rounded-[12px]">
-            <CardContent className="p-4 space-y-4">
-              <p className="text-sm font-normal text-[#666]">Terminal Reports</p>
-              <p className="text-4xl font-semibold text-[#11215a]">{terminalCount}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-[#ebebeb] shadow-sm rounded-[12px]">
-            <CardContent className="p-4 space-y-4">
-              <p className="text-sm font-normal text-[#666]">Report Types</p>
-              <p className="text-4xl font-semibold text-[#11215a]">
-                {new Set(reports.map((r) => r.reportType)).size}
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="flex h-[104px] flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+            <p className="text-[14px] leading-4 text-[#666]">Total Reports</p>
+            <p className="text-[36px] font-semibold leading-9 text-[#11215a]">{totalReports}</p>
+          </div>
+          <div className="flex h-[104px] flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+            <p className="text-[14px] leading-4 text-[#666]">Progress Reports</p>
+            <p className="text-[36px] font-semibold leading-9 text-[#11215a]">{progressCount}</p>
+          </div>
+          <div className="flex h-[104px] flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+            <p className="text-[14px] leading-4 text-[#666]">Terminal Reports</p>
+            <p className="text-[36px] font-semibold leading-9 text-[#11215a]">{terminalCount}</p>
+          </div>
         </div>
 
         {/* Search and Filters */}
@@ -98,6 +84,8 @@ export function ReportsPage() {
             <Input 
               placeholder="Search reports" 
               className="pl-9 h-9 border-[#e5e5e5] rounded-[8px]" 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <Button variant="outline" className="h-9 w-9 p-0 border-[#e5e5e5] rounded-[8px] shadow-sm">
@@ -106,45 +94,52 @@ export function ReportsPage() {
         </div>
 
         {/* Data Table */}
-        <Card className="border-[#ebebeb] shadow-sm rounded-[12px] overflow-hidden">
+        <div className="overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
           <Table>
-            <TableHeader className="bg-[#fcfcfc]">
-              <TableRow className="border-b border-[#ebebeb] hover:bg-transparent">
-                <TableHead className="text-[#666] font-medium h-10 px-4">Report ID</TableHead>
-                <TableHead className="text-[#666] font-medium h-10 px-4 text-center">Project ID</TableHead>
-                <TableHead className="text-[#666] font-medium h-10 px-4 text-center">Report Type</TableHead>
-                <TableHead className="text-[#666] font-medium h-10 px-4 text-center">Remarks</TableHead>
-                <TableHead className="text-[#666] font-medium h-10 px-4 text-center">Submitted</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="bg-white">
+            {showTableHeader && (
+              <TableHeader>
+                <TableRow className="border-b border-[#ebebeb] hover:bg-transparent">
+                  <TableHead className="px-4 py-2 text-[14px] font-medium text-[#666]">Project</TableHead>
+                  <TableHead className="px-4 py-2 text-[14px] font-medium text-[#666]">Leader</TableHead>
+                  <TableHead className="px-4 py-2 text-[14px] font-medium text-[#666]">Department</TableHead>
+                  <TableHead className="px-4 py-2 text-center text-[14px] font-medium text-[#666]">Report Type</TableHead>
+                  <TableHead className="px-4 py-2 text-center text-[14px] font-medium text-[#666]">Submitted</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+            )}
+            <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-[#666]">
-                    Loading reports...
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    <Loader2 className="mx-auto size-6 animate-spin text-[#11215a]" />
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-[#ce2c31]">
-                    Failed to load reports
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    Failed to load reports.
                   </TableCell>
                 </TableRow>
               ) : reports.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-[#666]">
-                    No reports found
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    No reports found.
                   </TableCell>
                 </TableRow>
               ) : (
                 reports.map((report) => (
-                  <TableRow key={report.reportId} className="border-b border-[#ebebeb] hover:bg-gray-50">
-                    <TableCell className="px-4 py-3 font-semibold text-[#0a0a0a] max-w-[200px]">
-                      {report.reportId.slice(0, 8)}...
+                  <TableRow key={report.reportId} className="border-b border-[#ebebeb] py-2 hover:bg-[#fcfcfc]">
+                    <TableCell className="px-4 py-3 font-bold text-[#0a0a0a]">
+                      <div className="truncate max-w-[280px]" title={report.project}>
+                        {report.project}
+                      </div>
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-[#0a0a0a] text-center">
-                      {report.projectId.slice(0, 8)}...
+                    <TableCell className="px-4 py-3 text-[14px] text-[#0a0a0a]">
+                      {report.leader}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-[14px] text-[#0a0a0a]">
+                      {report.department ?? "—"}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-center">
                       <Badge 
@@ -158,33 +153,20 @@ export function ReportsPage() {
                         {report.reportType}
                       </Badge>
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-[#0a0a0a] text-center max-w-[200px] truncate">
-                      {report.remarks ?? "—"}
-                    </TableCell>
-                    <TableCell className="px-4 py-3 text-[#0a0a0a] text-center">
-                      {formatDate(report.submittedAt)}
+                    <TableCell className="px-4 py-3 text-center text-[14px] text-[#0a0a0a]">
+                      {formatDate(report.submitted)}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger
-                          render={
-                            <Button variant="ghost" className="h-8 w-8 p-0" />
-                          }
-                        >
-                          <MoreVertical className="size-4" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Details</DropdownMenuItem>
-                          <DropdownMenuItem>Download Report</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button variant="ghost" size="icon" className="size-8 text-[#737373]">
+                        <MoreVertical className="size-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
               )}
             </TableBody>
           </Table>
-        </Card>
+        </div>
 
         {/* Pagination Controls */}
         <div className="flex items-center justify-between mt-2">

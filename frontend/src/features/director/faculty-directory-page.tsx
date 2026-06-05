@@ -117,6 +117,7 @@ export function FacultyDirectoryPage({
 		mostActiveCollege: { name: "...", contributors: 0 },
 	};
 	const totalPages = Math.ceil(total / limit);
+	const showTableHeader = items.length > 0 || (search ?? "").trim().length > 0 || (college ?? "").trim().length > 0;
 
 	return (
 		<AppShell>
@@ -190,6 +191,7 @@ export function FacultyDirectoryPage({
 
 				<div className="overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 					<Table>
+						{showTableHeader && (
 						<TableHeader>
 							<TableRow className="border-b border-[#ebebeb] hover:bg-transparent">
 								<TableHead className="w-[60px] px-4 py-2 text-center text-[14px] font-medium text-[#666]">
@@ -213,6 +215,7 @@ export function FacultyDirectoryPage({
 								<TableHead className="w-[50px]"></TableHead>
 							</TableRow>
 						</TableHeader>
+						)}
 						<TableBody>
 							{isLoading ? (
 								<TableRow>

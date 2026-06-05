@@ -195,11 +195,13 @@ export interface ProjectDetailsResponse {
 export interface ReportItem {
 	reportId: string;
 	projectId: string;
-	submittedById: string;
+	project: string;
+	leader: string;
+	department: string | null;
 	reportType: string;
-	storagePath: string;
+	submitted: string;
+	storagePath: string | null;
 	remarks: string | null;
-	submittedAt: string;
 	archivedAt: string | null;
 }
 

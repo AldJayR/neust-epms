@@ -1,8 +1,11 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, and, isNull, desc } from "drizzle-orm";
+import { eq, and, isNull, desc, count } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { projectReports } from "../db/schema/project-reports.js";
 import { projects } from "../db/schema/projects.js";
+import { proposals } from "../db/schema/proposals.js";
+import { users } from "../db/schema/users.js";
+import { departments } from "../db/schema/departments.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
@@ -15,11 +18,13 @@ const ReportSchema = z
   .object({
     reportId: z.string(),
     projectId: z.string(),
-    submittedById: z.string(),
+    project: z.string(),
+    leader: z.string(),
+    department: z.string().nullable(),
     reportType: z.string(),
+    submitted: z.string(),
     storagePath: z.string().nullable(),
     remarks: z.string().nullable(),
-    submittedAt: z.string(),
     archivedAt: z.string().nullable(),
   })
   .openapi("ProjectReport");
@@ -83,20 +88,49 @@ app.openapi(listRoute, async (c) => {
   const offset = (page - 1) * limit;
 
   const rows = await db
-    .select()
+    .select({
+      reportId: projectReports.reportId,
+      projectId: projectReports.projectId,
+      projectTitle: proposals.title,
+      leaderFirstName: users.firstName,
+      leaderLastName: users.lastName,
+      departmentName: departments.departmentName,
+      reportType: projectReports.reportType,
+      submittedAt: projectReports.submittedAt,
+      storagePath: projectReports.storagePath,
+      remarks: projectReports.remarks,
+      archivedAt: projectReports.archivedAt,
+    })
     .from(projectReports)
+    .innerJoin(projects, eq(projectReports.projectId, projects.projectId))
+    .innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+    .innerJoin(users, eq(proposals.projectLeaderId, users.userId))
+    .leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
     .where(isNull(projectReports.archivedAt))
     .orderBy(desc(projectReports.submittedAt))
     .limit(limit)
     .offset(offset);
 
+  const [totalRow] = await db
+    .select({ value: count() })
+    .from(projectReports)
+    .where(isNull(projectReports.archivedAt));
+  const total = totalRow?.value ?? 0;
+
   const items = rows.map((r) => ({
-    ...r,
-    submittedAt: r.submittedAt.toISOString(),
+    reportId: r.reportId,
+    projectId: r.projectId,
+    project: r.projectTitle,
+    leader: `${r.leaderFirstName} ${r.leaderLastName}`,
+    department: r.departmentName,
+    reportType: r.reportType,
+    submitted: r.submittedAt.toISOString(),
+    storagePath: r.storagePath,
+    remarks: r.remarks,
     archivedAt: r.archivedAt?.toISOString() ?? null,
   }));
 
-  return c.json({ items, total: items.length }, 200);
+  return c.json({ items, total }, 200);
 });
 
 // ── POST /reports ──
@@ -163,11 +197,44 @@ app.openapi(createReportRoute, async (c) => {
     ipAddress: c.req.header("x-forwarded-for") ?? null,
   });
 
+  const [enriched] = await db
+    .select({
+      reportId: projectReports.reportId,
+      projectId: projectReports.projectId,
+      projectTitle: proposals.title,
+      leaderFirstName: users.firstName,
+      leaderLastName: users.lastName,
+      departmentName: departments.departmentName,
+      reportType: projectReports.reportType,
+      submittedAt: projectReports.submittedAt,
+      storagePath: projectReports.storagePath,
+      remarks: projectReports.remarks,
+      archivedAt: projectReports.archivedAt,
+    })
+    .from(projectReports)
+    .innerJoin(projects, eq(projectReports.projectId, projects.projectId))
+    .innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+    .innerJoin(users, eq(proposals.projectLeaderId, users.userId))
+    .leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
+    .where(eq(projectReports.reportId, created.reportId))
+    .limit(1);
+
+  if (!enriched) {
+    throw new ApiError(500, "ENRICH_FAILED", "Failed to retrieve created report");
+  }
+
   return c.json(
     {
-      ...created,
-      submittedAt: created.submittedAt.toISOString(),
-      archivedAt: created.archivedAt?.toISOString() ?? null,
+      reportId: enriched.reportId,
+      projectId: enriched.projectId,
+      project: enriched.projectTitle,
+      leader: `${enriched.leaderFirstName} ${enriched.leaderLastName}`,
+      department: enriched.departmentName,
+      reportType: enriched.reportType,
+      submitted: enriched.submittedAt.toISOString(),
+      storagePath: enriched.storagePath,
+      remarks: enriched.remarks,
+      archivedAt: enriched.archivedAt?.toISOString() ?? null,
     },
     201,
   );
