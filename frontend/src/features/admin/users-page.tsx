@@ -42,6 +42,7 @@ import {
 	adminUsersQueryOptions,
 	bulkUpdateUserStatusFn,
 } from "@/lib/admin.functions";
+import { formatAcademicRank } from "@/lib/utils";
 import { BulkApproveDialog } from "./bulk-approve-dialog";
 
 interface UsersPageProps {
@@ -218,7 +219,7 @@ export function UsersPage({
 													{user.firstName} {user.lastName}
 												</span>
 												<span className="text-xs text-[#666]">
-													{user.academicRank ?? "Faculty"}
+													{formatAcademicRank(user.academicRank)}
 												</span>
 											</div>
 										</div>

@@ -135,7 +135,7 @@ export function AppSidebar({
 				<>
 					<div className="flex aspect-square size-8 items-center justify-center">
 						<img
-							src="https://www.figma.com/api/mcp/asset/90ecf408-1ada-46b9-91dc-9ebc2c099802"
+							src="/images/extension-services-logo.png"
 							alt="NEUST Logo"
 							className="size-7"
 						/>

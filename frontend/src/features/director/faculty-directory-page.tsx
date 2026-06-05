@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/table";
 import type { AuthUser } from "@/lib/auth";
 import { facultyDirectoryQueryOptions } from "@/lib/director.functions";
+import { formatAcademicRank } from "@/lib/utils";
 import { AppShell } from "../layout/app-shell";
 
 function MetricCard({
@@ -254,7 +255,7 @@ export function FacultyDirectoryPage({
 														{faculty.firstName} {faculty.lastName}
 													</span>
 													<span className="text-[12px] text-[#666]">
-														{faculty.academicRank ?? "Faculty"}
+														{formatAcademicRank(faculty.academicRank)}
 													</span>
 												</div>
 											</div>
