@@ -192,6 +192,22 @@ export interface ProjectDetailsResponse {
 	attachments: ProjectAttachment[];
 }
 
+export interface ReportItem {
+	reportId: string;
+	projectId: string;
+	submittedById: string;
+	reportType: string;
+	storagePath: string;
+	remarks: string | null;
+	submittedAt: string;
+	archivedAt: string | null;
+}
+
+export interface ReportsResponse {
+	items: ReportItem[];
+	total: number;
+}
+
 // ── Server Functions ──────────────────────────────────────
 
 export const getDirectorDashboardFn = createServerFn({ method: "GET" }).handler(
@@ -339,6 +355,30 @@ export const getProjectDetailsFn = createServerFn({ method: "GET" })
 		return (await response.json()) as ProjectDetailsResponse;
 	});
 
+export const getReportStatsFn = createServerFn({ method: "GET" }).handler(
+	async () => {
+		const session = await useAppSession();
+		const { accessToken } = session.data;
+
+		if (!accessToken) {
+			throw new Error("Unauthorized");
+		}
+
+		const response = await fetch(`${API_BASE}/reports?page=1&limit=100`, {
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+		});
+
+		if (!response.ok) {
+			const errorBody = (await response.json()) as ApiErrorResponse;
+			throw new Error(errorBody.error?.message ?? "Failed to fetch reports");
+		}
+
+		return (await response.json()) as ReportsResponse;
+	},
+);
+
 // ── Query Options ─────────────────────────────────────────
 
 export function directorDashboardQueryOptions() {
@@ -377,6 +417,14 @@ export function projectDetailsQueryOptions(proposalId: string) {
 	return queryOptions({
 		queryKey: ["director", "proposals", proposalId],
 		queryFn: () => getProjectDetailsFn({ data: proposalId }),
+		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
+	});
+}
+
+export function reportsQueryOptions() {
+	return queryOptions({
+		queryKey: ["director", "reports"],
+		queryFn: () => getReportStatsFn(),
 		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
 	});
 }

@@ -12,42 +12,6 @@ const metricCards = [
 	{ label: "Completed", key: "completed" as const },
 ];
 
-const projectChartData = [
-	{ label: "COA", value: 104 },
-	{ label: "COC", value: 170 },
-	{ label: "COE", value: 132 },
-	{ label: "CICT", value: 40 },
-	{ label: "CMBT", value: 116 },
-	{ label: "CPADM", value: 119 },
-];
-
-const recentActivities = [
-	{
-		title: "New Proposal Submitted",
-		description: "“Digital Literacy Drive in Barangay Sumacab” by CICT Dept.",
-		time: "2 hours ago",
-		color: "bg-brand-primary",
-	},
-	{
-		title: "Project Approved",
-		description:
-			"“Community Health Training” has been approved by the Director.",
-		time: "Yesterday, 4:20pm",
-		color: "bg-[#16a34a]",
-	},
-	{
-		title: "Review Pending",
-		description: "Prof. Reyes updated the budget for “Sustainable Farming”.",
-		time: "Yesterday, 2:46pm",
-		color: "bg-[#f59e0b]",
-	},
-];
-
-const expiringMoas = [
-	{ name: "LGU MOA", dueText: "Expires in 14 days" },
-	{ name: "LGU MOA", dueText: "Expires in 14 days" },
-];
-
 function MetricCard({
 	label,
 	value,
@@ -79,32 +43,40 @@ function RecentActivitiesCard({
 				</button>
 			</div>
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-				{activities.map((activity, index) => (
-					<div
-						key={`${activity.title}-${activity.time}`}
-						className="border-t border-[#ebebeb] p-4"
-					>
-						<div className="flex flex-col gap-6">
-							<div className="flex flex-col gap-1">
-								<div className="flex items-center gap-1.5">
-									<span
-									className={`size-2 shrink-0 rounded-full ${["bg-brand-primary", "bg-[#16a34a]", "bg-[#f59e0b]"][index % 3]}`}
-										aria-hidden="true"
-									/>
-									<p className="text-[14px] font-medium leading-5 text-[#0a0a0a]">
-										{activity.title}
+				{activities.length > 0 ? (
+					activities.map((activity, index) => (
+						<div
+							key={`${activity.title}-${activity.time}`}
+							className="border-t border-[#ebebeb] p-4"
+						>
+							<div className="flex flex-col gap-6">
+								<div className="flex flex-col gap-1">
+									<div className="flex items-center gap-1.5">
+										<span
+											className={`size-2 shrink-0 rounded-full ${["bg-brand-primary", "bg-[#16a34a]", "bg-[#f59e0b]"][index % 3]}`}
+											aria-hidden="true"
+										/>
+										<p className="text-[14px] font-medium leading-5 text-[#0a0a0a]">
+											{activity.title}
+										</p>
+									</div>
+									<p className="text-[12px] leading-[14px] text-[#666]">
+										{activity.description}
 									</p>
 								</div>
 								<p className="text-[12px] leading-[14px] text-[#666]">
-									{activity.description}
+									{activity.time}
 								</p>
 							</div>
-							<p className="text-[12px] leading-[14px] text-[#666]">
-								{activity.time}
-							</p>
 						</div>
+					))
+				) : (
+					<div className="flex flex-1 items-center justify-center px-4">
+						<p className="text-[14px] text-[#737373] italic">
+							No recent activities.
+						</p>
 					</div>
-				))}
+				)}
 			</div>
 		</div>
 	);
@@ -152,7 +124,7 @@ function ExpiringMoasCard({
 	);
 }
 
-function DirectorDashboardContent() {
+function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 	const dashboardQuery = useQuery(directorDashboardQueryOptions());
 	const dashboard = dashboardQuery.data;
 	const metrics = dashboard?.metrics ?? {
@@ -161,16 +133,16 @@ function DirectorDashboardContent() {
 		underEvaluation: 0,
 		completed: 0,
 	};
-	const chartData = dashboard?.chartData ?? projectChartData;
-	const activities = dashboard?.recentActivities ?? recentActivities;
-	const moas = dashboard?.expiringMoas ?? expiringMoas;
+	const chartData = dashboard?.chartData ?? [];
+	const activities = dashboard?.recentActivities ?? [];
+	const moas = dashboard?.expiringMoas ?? [];
 
 	return (
 		<section>
 			<div className="flex min-h-full flex-col gap-8">
 				<div>
 					<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
-						Welcome, Dr. Santos!
+						Welcome, {user?.firstName ? `${user.firstName}!` : "Director"}!
 					</h1>
 				</div>
 				<div className="grid gap-6 xl:grid-cols-4">
@@ -199,9 +171,9 @@ function DirectorDashboardContent() {
 }
 
 export function DirectorDashboardPage({
-	user: _user,
+	user,
 }: {
 	user?: AuthUser | null;
 }) {
-	return <DirectorDashboardContent />;
+	return <DirectorDashboardContent user={user} />;
 }

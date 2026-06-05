@@ -9,7 +9,7 @@ interface ProposalReviewPageProps {
 	proposalId: string;
 }
 
-export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
+export function ProposalReviewPage({ proposalId: _proposalId }: ProposalReviewPageProps) {
 	// Mock data to match Figma
 	const data = {
 		title: "Sustainable Urban Farming Initiative",
