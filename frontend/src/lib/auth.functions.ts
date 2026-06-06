@@ -134,6 +134,29 @@ export const logoutFn = createServerFn({ method: "POST" }).handler(async () => {
 	throw redirect({ to: "/login" });
 });
 
+// ── Public lookup data (no auth required) ─────────────────
+
+interface LookupItem {
+	id: number;
+	name: string;
+}
+
+export const getDepartmentsFn = createServerFn({ method: "GET" }).handler(
+	async () => {
+		const response = await fetch(`${API_BASE}/auth/departments`);
+		if (!response.ok) return [] as LookupItem[];
+		return (await response.json()) as LookupItem[];
+	},
+);
+
+export const getCampusesFn = createServerFn({ method: "GET" }).handler(
+	async () => {
+		const response = await fetch(`${API_BASE}/auth/campuses`);
+		if (!response.ok) return [] as LookupItem[];
+		return (await response.json()) as LookupItem[];
+	},
+);
+
 // ── Get Current User ──────────────────────────────────────
 
 export const getCurrentUserFn = createServerFn({ method: "POST" }).handler(

@@ -334,4 +334,60 @@ app.openapi(
   },
 );
 
+// ── GET /auth/departments ──
+const listDepartmentsRoute = createRoute({
+  method: "get",
+  path: "/auth/departments",
+  tags: ["Auth"],
+  summary: "List all departments (public)",
+  responses: {
+    200: {
+      description: "Department list",
+    },
+  },
+});
+
+app.openapi(listDepartmentsRoute, async (c) => {
+  const rows = await db
+    .select({
+      departmentId: departments.departmentId,
+      departmentName: departments.departmentName,
+    })
+    .from(departments)
+    .orderBy(departments.departmentName);
+
+  return c.json(
+    rows.map((r) => ({ id: r.departmentId, name: r.departmentName })),
+    200,
+  );
+});
+
+// ── GET /auth/campuses ──
+const listCampusesRoute = createRoute({
+  method: "get",
+  path: "/auth/campuses",
+  tags: ["Auth"],
+  summary: "List all campuses (public)",
+  responses: {
+    200: {
+      description: "Campus list",
+    },
+  },
+});
+
+app.openapi(listCampusesRoute, async (c) => {
+  const rows = await db
+    .select({
+      campusId: campuses.campusId,
+      campusName: campuses.campusName,
+    })
+    .from(campuses)
+    .orderBy(campuses.campusName);
+
+  return c.json(
+    rows.map((r) => ({ id: r.campusId, name: r.campusName })),
+    200,
+  );
+});
+
 export default app;

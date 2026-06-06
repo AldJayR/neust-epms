@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import {
 	createFileRoute,
 	Link,
@@ -16,6 +17,10 @@ import {
 	RHFTextField,
 } from "../components/rhf-auth-fields";
 import { FieldGroup } from "../components/ui/field";
+import {
+	getDepartmentsFn,
+	getCampusesFn,
+} from "../lib/auth.functions";
 
 const registerStep1Schema = z.object({
 	firstName: z.string().min(1, "First name is required"),
@@ -24,18 +29,6 @@ const registerStep1Schema = z.object({
 	campusId: z.string().min(1, "Please select a campus"),
 	academicRank: z.string().min(1, "Please select your academic rank"),
 });
-
-const departmentOptions = [
-	{ label: "Management Information System (MIS)", value: "1" },
-	{ label: "College of Engineering", value: "2" },
-	{ label: "College of Education", value: "3" },
-];
-
-const campusOptions = [
-	{ label: "Cabanatuan City (Main)", value: "1" },
-	{ label: "Sumacab Campus", value: "2" },
-	{ label: "Gabaldon Campus", value: "3" },
-];
 
 const rankOptions = [
 	{ label: "Instructor I", value: "instructor-1" },
@@ -53,6 +46,20 @@ export const Route = createFileRoute("/register")({
 		if (context.auth.isAuthenticated) {
 			throw redirect({ to: "/dashboard", search: { page: 1, pageSize: 10 } });
 		}
+	},
+	loader: async ({ context }) => {
+		await Promise.all([
+			context.queryClient.ensureQueryData({
+				queryKey: ["departments"],
+				queryFn: () => getDepartmentsFn(),
+				staleTime: Number.POSITIVE_INFINITY,
+			}),
+			context.queryClient.ensureQueryData({
+				queryKey: ["campuses"],
+				queryFn: () => getCampusesFn(),
+				staleTime: Number.POSITIVE_INFINITY,
+			}),
+		]);
 	},
 	component: RegisterRoute,
 });
@@ -82,6 +89,28 @@ function RegisterRoute() {
 
 function RegisterStepOneForm() {
 	const navigate = useNavigate();
+
+	const { data: departments = [], isLoading: loadingDepartments } = useQuery({
+		queryKey: ["departments"],
+		queryFn: () => getDepartmentsFn(),
+		staleTime: Number.POSITIVE_INFINITY,
+	});
+
+	const { data: campuses = [], isLoading: loadingCampuses } = useQuery({
+		queryKey: ["campuses"],
+		queryFn: () => getCampusesFn(),
+		staleTime: Number.POSITIVE_INFINITY,
+	});
+
+	const departmentOptions = departments.map((d) => ({
+		label: d.name,
+		value: String(d.id),
+	}));
+
+	const campusOptions = campuses.map((c) => ({
+		label: c.name,
+		value: String(c.id),
+	}));
 
 	const form = useForm<z.infer<typeof registerStep1Schema>>({
 		resolver: zodResolver(registerStep1Schema),
@@ -160,14 +189,20 @@ function RegisterStepOneForm() {
 							control={form.control}
 							name="departmentId"
 							label="Department"
-							placeholder="Select department"
+							placeholder={
+								loadingDepartments
+									? "Loading departments..."
+									: "Select department"
+							}
 							options={departmentOptions}
 						/>
 						<RHFSelectField
 							control={form.control}
 							name="campusId"
 							label="Campus"
-							placeholder="Select campus"
+							placeholder={
+								loadingCampuses ? "Loading campuses..." : "Select campus"
+							}
 							options={campusOptions}
 						/>
 					</div>
