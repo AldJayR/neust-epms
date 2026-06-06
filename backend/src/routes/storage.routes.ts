@@ -9,7 +9,7 @@ import { env } from "../env.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
-import { ROLE_NAMES, type AuthUser, type Proposal } from "../lib/types.js";
+import { ROLE_NAMES, type AuthUser } from "../lib/types.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -30,7 +30,10 @@ function sanitizeFilename(fileName: string): string {
   return candidate.toLowerCase().endsWith(".pdf") ? candidate : `${candidate}.pdf`;
 }
 
-function canAccessProposalDocuments(user: AuthUser, proposal: Proposal): boolean {
+function canAccessProposalDocuments(
+  user: AuthUser,
+  proposal: { projectLeaderId: string; departmentId: number; campusId: number },
+): boolean {
   if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
     if (user.departmentId !== null) {
       return (
@@ -74,7 +77,6 @@ const DocumentListSchema = z
       z.object({
         documentId: z.string(),
         proposalId: z.string(),
-        storagePath: z.string(),
         versionNum: z.number(),
         uploadedAt: z.string(),
       }),
@@ -149,7 +151,12 @@ app.openapi(listDocsRoute, async (c) => {
   const offset = (page - 1) * limit;
 
   const [proposal] = await db
-    .select()
+    .select({
+      proposalId: proposals.proposalId,
+      projectLeaderId: proposals.projectLeaderId,
+      departmentId: proposals.departmentId,
+      campusId: proposals.campusId,
+    })
     .from(proposals)
     .where(
       and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
@@ -169,7 +176,13 @@ app.openapi(listDocsRoute, async (c) => {
   }
 
   const rows = await db
-    .select()
+    .select({
+      documentId: proposalDocuments.documentId,
+      proposalId: proposalDocuments.proposalId,
+      storagePath: proposalDocuments.storagePath,
+      versionNum: proposalDocuments.versionNum,
+      uploadedAt: proposalDocuments.uploadedAt,
+    })
     .from(proposalDocuments)
     .where(eq(proposalDocuments.proposalId, proposalId))
     .orderBy(proposalDocuments.versionNum)
@@ -177,7 +190,9 @@ app.openapi(listDocsRoute, async (c) => {
     .offset(offset);
 
   const items = rows.map((r) => ({
-    ...r,
+    documentId: r.documentId,
+    proposalId: r.proposalId,
+    versionNum: r.versionNum,
     uploadedAt: r.uploadedAt.toISOString(),
   }));
 
@@ -232,7 +247,12 @@ app.openapi(uploadRoute, async (c) => {
 
   // Verify proposal exists
   const [proposal] = await db
-    .select()
+    .select({
+      proposalId: proposals.proposalId,
+      projectLeaderId: proposals.projectLeaderId,
+      departmentId: proposals.departmentId,
+      campusId: proposals.campusId,
+    })
     .from(proposals)
     .where(
       and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
@@ -374,7 +394,12 @@ app.openapi(getUrlRoute, async (c) => {
   const { proposalId, documentId } = c.req.valid("param");
 
   const [proposal] = await db
-    .select()
+    .select({
+      proposalId: proposals.proposalId,
+      projectLeaderId: proposals.projectLeaderId,
+      departmentId: proposals.departmentId,
+      campusId: proposals.campusId,
+    })
     .from(proposals)
     .where(
       and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
@@ -394,7 +419,10 @@ app.openapi(getUrlRoute, async (c) => {
   }
 
   const [doc] = await db
-    .select()
+    .select({
+      documentId: proposalDocuments.documentId,
+      storagePath: proposalDocuments.storagePath,
+    })
     .from(proposalDocuments)
     .where(
       and(

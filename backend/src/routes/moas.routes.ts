@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, and, isNull, desc } from "drizzle-orm";
+import { eq, and, isNull, desc, count } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
@@ -95,7 +95,18 @@ app.openapi(listRoute, async (c) => {
   const offset = (page - 1) * limit;
 
   const rows = await db
-    .select()
+    .select({
+      moaId: moas.moaId,
+      partnerName: moas.partnerName,
+      partnerType: moas.partnerType,
+      storagePath: moas.storagePath,
+      validFrom: moas.validFrom,
+      validUntil: moas.validUntil,
+      isExpired: moas.isExpired,
+      createdAt: moas.createdAt,
+      updatedAt: moas.updatedAt,
+      archivedAt: moas.archivedAt,
+    })
     .from(moas)
     .where(isNull(moas.archivedAt))
     .orderBy(desc(moas.validUntil))
@@ -111,7 +122,13 @@ app.openapi(listRoute, async (c) => {
     archivedAt: r.archivedAt?.toISOString() ?? null,
   }));
 
-  return c.json({ items, total: items.length }, 200);
+  const [totalResult] = await db
+    .select({ value: count() })
+    .from(moas)
+    .where(isNull(moas.archivedAt));
+  const total = Number(totalResult?.value ?? 0);
+
+  return c.json({ items, total }, 200);
 });
 
 // ── GET /moas/:id ──
@@ -138,7 +155,18 @@ app.openapi(getRoute, async (c) => {
   const { id } = c.req.valid("param");
 
   const [row] = await db
-    .select()
+    .select({
+      moaId: moas.moaId,
+      partnerName: moas.partnerName,
+      partnerType: moas.partnerType,
+      storagePath: moas.storagePath,
+      validFrom: moas.validFrom,
+      validUntil: moas.validUntil,
+      isExpired: moas.isExpired,
+      createdAt: moas.createdAt,
+      updatedAt: moas.updatedAt,
+      archivedAt: moas.archivedAt,
+    })
     .from(moas)
     .where(and(eq(moas.moaId, id), isNull(moas.archivedAt)))
     .limit(1);

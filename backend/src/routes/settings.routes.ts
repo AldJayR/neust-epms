@@ -82,7 +82,11 @@ app.openapi(listRoute, async (c) => {
   }
 
   const rows = await db
-    .select()
+    .select({
+      settingKey: systemSettings.settingKey,
+      settingValue: systemSettings.settingValue,
+      updatedAt: systemSettings.updatedAt,
+    })
     .from(systemSettings)
     .orderBy(systemSettings.settingKey)
     .limit(limit)

@@ -135,9 +135,9 @@ app.openapi(getUsersRoute, async (c) => {
   let searchClause = undefined;
   if (search) {
     searchClause = or(
-      ilike(users.firstName, `%${search}%`),
-      ilike(users.lastName, `%${search}%`),
-      ilike(users.email, `%${search}%`)
+      ilike(users.firstName, `${search}%`),
+      ilike(users.lastName, `${search}%`),
+      ilike(users.email, `${search}%`)
     );
   }
   
@@ -258,7 +258,7 @@ const getRolesRoute = createRoute({
 });
 
 app.openapi(getRolesRoute, async (c) => {
-  const allRoles = await db.select().from(roles);
+  const allRoles = await db.select({ roleId: roles.roleId, roleName: roles.roleName }).from(roles);
   return c.json(allRoles, 200);
 });
 

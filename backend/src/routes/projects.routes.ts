@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, and, isNull, or, inArray, type SQL } from "drizzle-orm";
+import { eq, and, isNull, or, inArray, count, type SQL } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { projects } from "../db/schema/projects.js";
 import { proposals } from "../db/schema/proposals.js";
@@ -125,7 +125,17 @@ app.openapi(listRoute, async (c) => {
     .where(and(...proposalConditions));
 
   const rows = await db
-    .select()
+    .select({
+      projectId: projects.projectId,
+      proposalId: projects.proposalId,
+      moaId: projects.moaId,
+      startDate: projects.startDate,
+      targetEnd: projects.targetEnd,
+      projectStatus: projects.projectStatus,
+      createdAt: projects.createdAt,
+      updatedAt: projects.updatedAt,
+      archivedAt: projects.archivedAt,
+    })
     .from(projects)
     .where(and(isNull(projects.archivedAt), inArray(projects.proposalId, allowedProposals)))
     .limit(limit)
@@ -140,7 +150,13 @@ app.openapi(listRoute, async (c) => {
     archivedAt: r.archivedAt?.toISOString() ?? null,
   }));
 
-  return c.json({ items, total: items.length }, 200);
+  const [totalResult] = await db
+    .select({ value: count() })
+    .from(projects)
+    .where(and(isNull(projects.archivedAt), inArray(projects.proposalId, allowedProposals)));
+  const total = Number(totalResult?.value ?? 0);
+
+  return c.json({ items, total }, 200);
 });
 
 // ── POST /projects ──
@@ -175,7 +191,7 @@ app.openapi(createProjectRoute, async (c) => {
   const created = await db.transaction(async (tx) => {
     // Verify proposal is approved
     const [proposal] = await tx
-      .select()
+      .select({ currentStatus: proposals.currentStatus })
       .from(proposals)
       .where(eq(proposals.proposalId, body.proposalId))
       .limit(1);
@@ -194,7 +210,7 @@ app.openapi(createProjectRoute, async (c) => {
 
     // Check if a project already exists for this proposal (1:1)
     const [existing] = await tx
-      .select()
+      .select({ projectId: projects.projectId })
       .from(projects)
       .where(eq(projects.proposalId, body.proposalId))
       .limit(1);
@@ -279,7 +295,7 @@ app.openapi(linkMoaRoute, async (c) => {
   const body = c.req.valid("json");
 
   const [project] = await db
-    .select()
+    .select({ projectId: projects.projectId, archivedAt: projects.archivedAt })
     .from(projects)
     .where(and(eq(projects.projectId, id), isNull(projects.archivedAt)))
     .limit(1);
@@ -289,7 +305,7 @@ app.openapi(linkMoaRoute, async (c) => {
   }
 
   const [moa] = await db
-    .select()
+    .select({ moaId: moas.moaId, isExpired: moas.isExpired, archivedAt: moas.archivedAt })
     .from(moas)
     .where(and(eq(moas.moaId, body.moaId), isNull(moas.archivedAt)))
     .limit(1);
@@ -351,7 +367,7 @@ app.openapi(transitionRoute, async (c) => {
   const body = c.req.valid("json");
 
   const [project] = await db
-    .select()
+    .select({ projectId: projects.projectId, projectStatus: projects.projectStatus, moaId: projects.moaId, archivedAt: projects.archivedAt })
     .from(projects)
     .where(and(eq(projects.projectId, id), isNull(projects.archivedAt)))
     .limit(1);
@@ -380,7 +396,7 @@ app.openapi(transitionRoute, async (c) => {
 
     // Verify linked MOA is not expired
     const [moa] = await db
-      .select()
+      .select({ moaId: moas.moaId, isExpired: moas.isExpired })
       .from(moas)
       .where(eq(moas.moaId, project.moaId))
       .limit(1);
@@ -459,7 +475,7 @@ app.openapi(closeProjectRoute, async (c) => {
   const { id } = c.req.valid("param");
 
   const [project] = await db
-    .select()
+    .select({ projectId: projects.projectId, projectStatus: projects.projectStatus, proposalId: projects.proposalId, archivedAt: projects.archivedAt })
     .from(projects)
     .where(and(eq(projects.projectId, id), isNull(projects.archivedAt)))
     .limit(1);
@@ -470,7 +486,7 @@ app.openapi(closeProjectRoute, async (c) => {
 
   // Fetch the linked proposal to verify project leader
   const [proposal] = await db
-    .select()
+    .select({ projectLeaderId: proposals.projectLeaderId })
     .from(proposals)
     .where(eq(proposals.proposalId, project.proposalId))
     .limit(1);

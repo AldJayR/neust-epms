@@ -164,7 +164,7 @@ app.openapi(createReportRoute, async (c) => {
 
   // Verify project exists
   const [project] = await db
-    .select()
+    .select({ projectId: projects.projectId })
     .from(projects)
     .where(
       and(eq(projects.projectId, body.projectId), isNull(projects.archivedAt)),

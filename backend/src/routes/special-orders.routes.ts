@@ -90,7 +90,17 @@ app.openapi(listRoute, async (c) => {
   const offset = (page - 1) * limit;
 
   const rows = await db
-    .select()
+    .select({
+      specialOrderId: specialOrders.specialOrderId,
+      memberId: specialOrders.memberId,
+      soNumber: specialOrders.soNumber,
+      storagePath: specialOrders.storagePath,
+      dateIssued: specialOrders.dateIssued,
+      status: specialOrders.status,
+      createdAt: specialOrders.createdAt,
+      updatedAt: specialOrders.updatedAt,
+      archivedAt: specialOrders.archivedAt,
+    })
     .from(specialOrders)
     .where(isNull(specialOrders.archivedAt))
     .limit(limit)
@@ -144,7 +154,7 @@ app.openapi(createRoute_, async (c) => {
 
   // EC-03: Verify the member exists (must be in proposal_members)
   const [member] = await db
-    .select()
+    .select({ memberId: proposalMembers.memberId })
     .from(proposalMembers)
     .where(eq(proposalMembers.memberId, body.memberId))
     .limit(1);

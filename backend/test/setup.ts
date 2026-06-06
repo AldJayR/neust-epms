@@ -44,6 +44,7 @@ vi.mock("../src/db/client.js", () => {
     insert: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    execute: vi.fn().mockResolvedValue([]),
     transaction: vi.fn((callback) => callback(mockDb)),
   };
   return { db: mockDb, pool: {} };

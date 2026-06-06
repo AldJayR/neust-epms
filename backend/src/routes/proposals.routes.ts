@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, and, isNull, desc, or, type SQL } from "drizzle-orm";
+import { eq, and, isNull, desc, or, count, type SQL } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { proposals } from "../db/schema/proposals.js";
 import { proposalDepartments } from "../db/schema/proposal-departments.js";
@@ -154,7 +154,7 @@ app.openapi(listRoute, async (c) => {
   }
 
   const rows = await db
-    .select()
+    .select({ proposalId: proposals.proposalId, projectLeaderId: proposals.projectLeaderId, campusId: proposals.campusId, departmentId: proposals.departmentId, title: proposals.title, bannerProgram: proposals.bannerProgram, projectLocale: proposals.projectLocale, extensionCategory: proposals.extensionCategory, extensionAgenda: proposals.extensionAgenda, budgetPartner: proposals.budgetPartner, budgetNeust: proposals.budgetNeust, currentStatus: proposals.currentStatus, revisionNum: proposals.revisionNum, createdAt: proposals.createdAt, updatedAt: proposals.updatedAt, archivedAt: proposals.archivedAt })
     .from(proposals)
     .where(and(...whereConditions))
     .orderBy(desc(proposals.createdAt))
@@ -168,7 +168,13 @@ app.openapi(listRoute, async (c) => {
     archivedAt: r.archivedAt?.toISOString() ?? null,
   }));
 
-  return c.json({ items, total: items.length }, 200);
+  const [totalResult] = await db
+    .select({ value: count() })
+    .from(proposals)
+    .where(and(...whereConditions));
+  const total = Number(totalResult?.value ?? 0);
+
+  return c.json({ items, total }, 200);
 });
 
 // ── GET /proposals/:id ──
@@ -216,7 +222,7 @@ app.openapi(getRoute, async (c) => {
   }
 
   const [row] = await db
-    .select()
+    .select({ proposalId: proposals.proposalId, projectLeaderId: proposals.projectLeaderId, campusId: proposals.campusId, departmentId: proposals.departmentId, title: proposals.title, bannerProgram: proposals.bannerProgram, projectLocale: proposals.projectLocale, extensionCategory: proposals.extensionCategory, extensionAgenda: proposals.extensionAgenda, budgetPartner: proposals.budgetPartner, budgetNeust: proposals.budgetNeust, currentStatus: proposals.currentStatus, revisionNum: proposals.revisionNum, createdAt: proposals.createdAt, updatedAt: proposals.updatedAt, archivedAt: proposals.archivedAt })
     .from(proposals)
     .where(and(...whereConditions))
     .limit(1);
@@ -373,7 +379,7 @@ app.openapi(updateRoute, async (c) => {
   const body = c.req.valid("json");
 
   const [existing] = await db
-    .select()
+    .select({ proposalId: proposals.proposalId, currentStatus: proposals.currentStatus, projectLeaderId: proposals.projectLeaderId, revisionNum: proposals.revisionNum })
     .from(proposals)
     .where(and(eq(proposals.proposalId, id), isNull(proposals.archivedAt)))
     .limit(1);
@@ -478,7 +484,7 @@ app.openapi(submitRoute, async (c) => {
   const { id } = c.req.valid("param");
 
   const [existing] = await db
-    .select()
+    .select({ proposalId: proposals.proposalId, currentStatus: proposals.currentStatus, projectLeaderId: proposals.projectLeaderId })
     .from(proposals)
     .where(and(eq(proposals.proposalId, id), isNull(proposals.archivedAt)))
     .limit(1);
@@ -571,7 +577,7 @@ app.openapi(reviewRoute, async (c) => {
   const body = c.req.valid("json");
 
   const [existing] = await db
-    .select()
+    .select({ proposalId: proposals.proposalId, projectLeaderId: proposals.projectLeaderId, currentStatus: proposals.currentStatus, revisionNum: proposals.revisionNum })
     .from(proposals)
     .where(and(eq(proposals.proposalId, id), isNull(proposals.archivedAt)))
     .limit(1);
@@ -707,7 +713,7 @@ app.openapi(archiveRoute, async (c) => {
   const { id } = c.req.valid("param");
 
   const [existing] = await db
-    .select()
+    .select({ proposalId: proposals.proposalId })
     .from(proposals)
     .where(and(eq(proposals.proposalId, id), isNull(proposals.archivedAt)))
     .limit(1);

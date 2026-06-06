@@ -50,8 +50,10 @@ async function main() {
     .returning()
 
   // 4. Seed Super Admin User
-  // Note: Replace SUPABASE_USER_ID with an actual ID from your Supabase Auth users table if available
-  const supabaseUserId = process.env.SUPABASE_USER_ID || '00000000-0000-0000-0000-000000000000'
+  if (!process.env.SUPABASE_USER_ID) {
+    throw new Error("SUPABASE_USER_ID must be set for seeding");
+  }
+  const supabaseUserId = process.env.SUPABASE_USER_ID
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@neust.edu.ph'
 
   const [superAdminRole] = await db

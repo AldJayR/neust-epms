@@ -25,7 +25,9 @@ beforeEach(() => {
 describe("GET /proposals", () => {
   it("should return a list of proposals", async () => {
     const mockProposal = createMockProposal();
-    vi.mocked(db.select).mockReturnValue(mockSelectChain([mockProposal]) as never);
+    vi.mocked(db.select)
+      .mockReturnValueOnce(mockSelectChain([mockProposal]) as never) // items
+      .mockReturnValueOnce(mockSelectChain([{ value: 1 }]) as never); // count
 
     const res = await app.request("/proposals");
     expect(res.status).toBe(200);

@@ -168,7 +168,7 @@ app.openapi(registerRoute, async (c) => {
 
   // 1. Check if user already exists in DB
   const [existing] = await db
-    .select()
+    .select({ userId: users.userId })
     .from(users)
     .where(eq(users.email, body.email))
     .limit(1);
@@ -189,7 +189,7 @@ app.openapi(registerRoute, async (c) => {
 
   // 3. Fetch Faculty role ID
   const [facultyRole] = await db
-    .select()
+    .select({ roleId: roles.roleId })
     .from(roles)
     .where(eq(roles.roleName, ROLE_NAMES.FACULTY))
     .limit(1);

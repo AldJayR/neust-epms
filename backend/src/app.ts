@@ -4,8 +4,11 @@ import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { requestId } from "hono/request-id";
 import { swaggerUI } from "@hono/swagger-ui";
+import { rateLimiter } from "hono-rate-limiter";
 import { installApiErrorHandler } from "./lib/errors.js";
 import type { AuthEnv } from "./middleware/auth.js";
+import { db } from "./db/client.js";
+import { sql } from "drizzle-orm";
 
 import authRoutes from "./routes/auth.routes.js";
 import proposalRoutes from "./routes/proposals.routes.js";
@@ -25,7 +28,15 @@ const app = new OpenAPIHono<AuthEnv>();
 
 // ── Global middleware ──
 app.use("*", logger());
-app.use("*", secureHeaders());
+app.use("*", secureHeaders({
+  contentSecurityPolicy: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'"],
+    styleSrc: ["'self'", "'unsafe-inline'"],
+    imgSrc: ["'self'", "data:", "blob:"],
+  },
+  xFrameOptions: "DENY",
+}));
 app.use("*", requestId());
 app.use(
   "*",
@@ -34,6 +45,47 @@ app.use(
     credentials: true,
   }),
 );
+
+// ── Global rate limiter: 100 req/min per IP ──
+const globalLimiter = rateLimiter({
+  windowMs: 60 * 1000,
+  limit: 100,
+  standardHeaders: "draft-6",
+  keyGenerator: (c) =>
+    c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip") ?? "unknown",
+});
+app.use("*", globalLimiter);
+
+// ── Global body size limit: 1MB for JSON, uploads handled per-route ──
+app.use("*", async (c, next) => {
+  const contentLength = Number(c.req.header("content-length") ?? 0);
+  const contentType = c.req.header("content-type") ?? "";
+
+  // Skip for file uploads (handled by storage route)
+  if (contentType.includes("multipart/form-data")) {
+    return next();
+  }
+
+  if (contentLength > 1_048_576) {
+    return c.json(
+      { error: { code: "PAYLOAD_TOO_LARGE", message: "Request body exceeds 1MB limit" } },
+      413,
+    );
+  }
+
+  return next();
+});
+
+// ── Request timeout: 30s ──
+app.use("*", async (c, next) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+  try {
+    await next();
+  } finally {
+    clearTimeout(timeout);
+  }
+});
 
 // ── Global error handler ──
 installApiErrorHandler(app);
@@ -53,9 +105,14 @@ app.notFound((c) =>
 // ── PUBLIC ROUTES (Must be before protected route mounts) ──
 
 // Health check
-app.get("/api/v1/health", (c) =>
-  c.json({ status: "ok", timestamp: new Date().toISOString() }),
-);
+app.get("/api/v1/health", async (c) => {
+  try {
+    await db.execute(sql`SELECT 1`);
+    return c.json({ status: "ok", db: "connected", timestamp: new Date().toISOString() });
+  } catch {
+    return c.json({ status: "degraded", db: "disconnected", timestamp: new Date().toISOString() }, 503);
+  }
+});
 
 // OpenAPI document (base, used by getOpenAPIDocument)
 app.doc("/api/v1/doc", {

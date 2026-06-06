@@ -91,7 +91,7 @@ app.openapi(listMembersRoute, async (c) => {
   const offset = (page - 1) * limit;
 
   const rows = await db
-    .select()
+    .select({ memberId: proposalMembers.memberId, proposalId: proposalMembers.proposalId, userId: proposalMembers.userId, projectRole: proposalMembers.projectRole, addedAt: proposalMembers.addedAt })
     .from(proposalMembers)
     .where(eq(proposalMembers.proposalId, proposalId))
     .orderBy(proposalMembers.addedAt)
@@ -144,7 +144,7 @@ app.openapi(addMemberRoute, async (c) => {
   const created = await db.transaction(async (tx) => {
     // Verify proposal exists
     const [proposal] = await tx
-      .select()
+      .select({ projectLeaderId: proposals.projectLeaderId })
       .from(proposals)
       .where(eq(proposals.proposalId, proposalId))
       .limit(1);
@@ -164,7 +164,7 @@ app.openapi(addMemberRoute, async (c) => {
 
     // Verify target user exists
     const [targetUser] = await tx
-      .select()
+      .select({ userId: users.userId })
       .from(users)
       .where(eq(users.userId, body.userId))
       .limit(1);
@@ -175,7 +175,7 @@ app.openapi(addMemberRoute, async (c) => {
 
     // Prevent duplicate membership
     const [existingMember] = await tx
-      .select()
+      .select({ memberId: proposalMembers.memberId })
       .from(proposalMembers)
       .where(
         and(
@@ -245,7 +245,7 @@ app.openapi(removeMemberRoute, async (c) => {
   await db.transaction(async (tx) => {
     // Verify proposal and leadership
     const [proposal] = await tx
-      .select()
+      .select({ projectLeaderId: proposals.projectLeaderId })
       .from(proposals)
       .where(eq(proposals.proposalId, proposalId))
       .limit(1);

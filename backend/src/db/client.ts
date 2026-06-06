@@ -9,6 +9,8 @@ const pool = new pg.Pool({
   max: env.DB_POOL_MAX,
   idleTimeoutMillis: env.DB_IDLE_TIMEOUT_MS,
   connectionTimeoutMillis: env.DB_CONNECTION_TIMEOUT_MS,
+  statement_timeout: 30000,
+  idle_in_transaction_session_timeout: 30000,
 });
 
 export const db = drizzle(pool, {

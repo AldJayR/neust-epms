@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { and, count, desc, eq, isNull, or, sql, ilike } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, or, sql, ilike } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { auditLogs } from "../db/schema/audit-logs.js";
 import { campuses } from "../db/schema/campuses.js";
@@ -145,8 +145,8 @@ app.openapi(facultyDirectoryRoute, async (c) => {
   if (search) {
     whereConditions.push(
       or(
-        ilike(users.firstName, `%${search}%`),
-        ilike(users.lastName, `%${search}%`),
+        ilike(users.firstName, `${search}%`),
+        ilike(users.lastName, `${search}%`),
       )!,
     );
   }
@@ -172,28 +172,41 @@ app.openapi(facultyDirectoryRoute, async (c) => {
   const rows = await facultyQuery.limit(limit).offset(offset);
   const totalResult = await db.select({ value: count() }).from(users).innerJoin(roles, eq(users.roleId, roles.roleId)).where(and(...whereConditions));
 
-  const items = await Promise.all(
-    rows.map(async (row) => {
-      const [[leadCount], [collabCount]] = await Promise.all([
-        db
-          .select({ value: count() })
-          .from(projects)
-          .innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-          .where(and(eq(proposals.projectLeaderId, row.userId), isNull(projects.archivedAt))),
-        db
-          .select({ value: count() })
-          .from(proposalMembers)
-          .where(eq(proposalMembers.userId, row.userId)),
-      ]);
+  const userIds = rows.map((r) => r.userId);
 
-      return {
-        ...row,
-        leadProjects: Number(leadCount?.value ?? 0),
-        collaboratorProjects: Number(collabCount?.value ?? 0),
-        totalInvolvement: Number(leadCount?.value ?? 0) + Number(collabCount?.value ?? 0),
-      };
-    }),
-  );
+  const [leadCounts, collabCounts] = await Promise.all([
+    db
+      .select({
+        userId: proposals.projectLeaderId,
+        value: count(),
+      })
+      .from(projects)
+      .innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+      .where(and(inArray(proposals.projectLeaderId, userIds), isNull(projects.archivedAt)))
+      .groupBy(proposals.projectLeaderId),
+    db
+      .select({
+        userId: proposalMembers.userId,
+        value: count(),
+      })
+      .from(proposalMembers)
+      .where(inArray(proposalMembers.userId, userIds))
+      .groupBy(proposalMembers.userId),
+  ]);
+
+  const leadMap = new Map(leadCounts.map((r) => [r.userId, Number(r.value ?? 0)]));
+  const collabMap = new Map(collabCounts.map((r) => [r.userId, Number(r.value ?? 0)]));
+
+  const items = rows.map((row) => {
+    const leadProjects = leadMap.get(row.userId) ?? 0;
+    const collaboratorProjects = collabMap.get(row.userId) ?? 0;
+    return {
+      ...row,
+      leadProjects,
+      collaboratorProjects,
+      totalInvolvement: leadProjects + collaboratorProjects,
+    };
+  });
 
   const [totalFaculty] = await db
     .select({ value: count() })
@@ -264,7 +277,7 @@ app.openapi(moaRepositoryRoute, async (c) => {
   const whereConditions = [isNull(moas.archivedAt)];
 
   if (search) {
-    whereConditions.push(ilike(moas.partnerName, `%${search}%`));
+    whereConditions.push(ilike(moas.partnerName, `${search}%`));
   }
 
   if (status) {
@@ -304,7 +317,13 @@ app.openapi(moaRepositoryRoute, async (c) => {
   }
 
   const query = db
-    .select()
+    .select({
+      moaId: moas.moaId,
+      partnerName: moas.partnerName,
+      validFrom: moas.validFrom,
+      validUntil: moas.validUntil,
+      isExpired: moas.isExpired,
+    })
     .from(moas)
     .where(and(...whereConditions))
     .orderBy(desc(moas.validUntil));
@@ -462,9 +481,9 @@ app.openapi(projectHubRoute, async (c) => {
   if (search) {
     whereConditions.push(
       or(
-        ilike(proposals.title, `%${search}%`),
-        ilike(users.firstName, `%${search}%`),
-        ilike(users.lastName, `%${search}%`),
+        ilike(proposals.title, `${search}%`),
+        ilike(users.firstName, `${search}%`),
+        ilike(users.lastName, `${search}%`),
       )!,
     );
   }
@@ -731,7 +750,12 @@ app.openapi(projectDetailsRoute, async (c) => {
       .where(eq(proposalMembers.proposalId, proposalId)),
 
     db
-      .select()
+      .select({
+        documentId: proposalDocuments.documentId,
+        versionNum: proposalDocuments.versionNum,
+        storagePath: proposalDocuments.storagePath,
+        uploadedAt: proposalDocuments.uploadedAt,
+      })
       .from(proposalDocuments)
       .where(eq(proposalDocuments.proposalId, proposalId))
       .orderBy(desc(proposalDocuments.versionNum)),

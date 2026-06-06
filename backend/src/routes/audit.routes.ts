@@ -126,10 +126,10 @@ app.openapi(listRoute, async (c) => {
   let whereClause = undefined;
   if (search) {
     whereClause = or(
-      ilike(auditLogs.action, `%${search}%`),
-      ilike(users.firstName, `%${search}%`),
-      ilike(users.lastName, `%${search}%`),
-      ilike(users.email, `%${search}%`)
+      ilike(auditLogs.action, `${search}%`),
+      ilike(users.firstName, `${search}%`),
+      ilike(users.lastName, `${search}%`),
+      ilike(users.email, `${search}%`)
     );
   }
 
