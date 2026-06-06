@@ -158,12 +158,13 @@ export function UsersPage({
 					className="relative w-full max-w-[352px]"
 				>
 					<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-					<Input
-						placeholder="Search users"
-						className="h-9 w-full rounded-lg border-[#e5e5e5] pl-9"
-						value={searchInput}
-						onChange={(e) => setSearchInput(e.target.value)}
-					/>
+						<Input
+							placeholder="Search users"
+							aria-label="Search users"
+							className="h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-none placeholder:text-[#737373]"
+							value={searchInput}
+							onChange={(e) => setSearchInput(e.target.value)}
+						/>
 				</form>
 				<Button
 					variant="outline"
@@ -181,7 +182,7 @@ export function UsersPage({
 					</div>
 				)}
 				{hasUsers || isLoading ? (
-					<Table>
+					<Table aria-label="User management">
 						<TableHeader className="bg-white">
 							<TableRow className="hover:bg-transparent">
 								<TableHead className="w-[320px] font-medium text-[#666]">
@@ -208,7 +209,7 @@ export function UsersPage({
 									<TableCell className="py-4">
 										<div className="flex items-center gap-3">
 											<Avatar className="h-9 w-9">
-												<AvatarImage src="" />
+												<AvatarImage src="" alt={`${user.firstName} ${user.lastName}`} />
 												<AvatarFallback className="bg-primary/10 text-primary font-medium">
 													{user.firstName[0]}
 													{user.lastName[0]}

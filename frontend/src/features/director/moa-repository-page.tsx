@@ -155,6 +155,7 @@ export function MoaRepositoryPage({
 						<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#737373]" />
 						<Input
 							placeholder="Search MOAs"
+							aria-label="Search MOAs"
 							className="h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-none placeholder:text-[#737373]"
 							value={search}
 							onChange={(e) => onSearchChange(e.target.value)}
@@ -164,6 +165,7 @@ export function MoaRepositoryPage({
 						variant="outline"
 						size="icon"
 						className="h-9 w-9 border-[#e5e5e5] bg-white shadow-sm"
+						aria-label="Filter MOAs"
 					>
 						<SlidersHorizontal className="size-4 text-[#0a0a0a]" />
 					</Button>
@@ -171,7 +173,7 @@ export function MoaRepositoryPage({
 
 				<div className="overflow-hidden rounded-[12px] border border-[#ebebeb] bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 					<div className="bg-white">
-						<Table>
+						<Table aria-label="Memoranda of Agreements">
 							<TableHeader>
 								<TableRow className="border-b border-[#ebebeb] hover:bg-transparent">
 									<TableHead className="w-[320px] px-4 py-2 text-[14px] font-medium text-[#666]">
@@ -193,7 +195,7 @@ export function MoaRepositoryPage({
 								{isLoading ? (
 									<TableRow>
 										<TableCell colSpan={5} className="h-24 text-center">
-											<Loader2 className="mx-auto size-6 animate-spin text-[#11215a]" />
+											<Loader2 className="mx-auto size-6 animate-spin text-[#11215a]" role="status" aria-label="Loading MOAs" />
 										</TableCell>
 									</TableRow>
 								) : items.length === 0 ? (
@@ -229,7 +231,7 @@ export function MoaRepositoryPage({
 												</div>
 											</TableCell>
 											<TableCell className="px-4 py-3 text-right">
-												<Button variant="ghost" size="icon" className="size-8">
+												<Button variant="ghost" size="icon" className="size-8" aria-label="More actions for MOA">
 													<EllipsisVertical className="size-4 text-[#737373]" />
 												</Button>
 											</TableCell>

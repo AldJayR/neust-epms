@@ -230,7 +230,8 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 							render={
 								<button
 									type="button"
-									className="inline-flex h-4 w-4 items-center justify-center text-[#737373] transition-opacity hover:opacity-80"
+									aria-label="Close"
+									className="inline-flex h-4 w-4 items-center justify-center text-[#737373] transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 								/>
 							}
 						>
@@ -244,6 +245,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 							<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 							<Input
 								placeholder="Search users"
+								aria-label="Search pending users"
 								className="h-8 w-full rounded-md border-[#e5e5e5] bg-white pl-10 text-sm shadow-[0px_1px_1px_rgba(0,0,0,0.1)]"
 								value={search}
 								onChange={(e) => {
@@ -259,7 +261,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 								</div>
 							)}
 							<div className="h-full overflow-auto">
-								<Table>
+								<Table aria-label="Pending users for approval">
 									<TableHeader className="sticky top-0 z-20 bg-white">
 										<TableRow className="border-b-[#e5e5e5] hover:bg-transparent">
 											<TableHead className="w-[50px] px-4 text-center">
@@ -298,7 +300,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 												<TableCell>
 													<div className="flex items-center gap-[10px]">
 														<Avatar className="size-9 border border-[#e5e5e5]">
-															<AvatarImage src="" />
+															<AvatarImage src="" alt={`${user.firstName} ${user.lastName}`} />
 															<AvatarFallback className="bg-primary/5 text-xs font-medium text-primary">
 																{user.firstName[0]}
 																{user.lastName[0]}

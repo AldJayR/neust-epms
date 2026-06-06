@@ -163,6 +163,7 @@ export function FacultyDirectoryPage({
 						<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#737373]" />
 						<Input
 							placeholder="Search by project title or faculty name..."
+							aria-label="Search faculty directory"
 							className="h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-none placeholder:text-[#737373]"
 							value={search}
 							onChange={(e) => onSearchChange(e.target.value)}
@@ -191,7 +192,7 @@ export function FacultyDirectoryPage({
 				</div>
 
 				<div className="overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-					<Table>
+					<Table aria-label="Faculty directory">
 						{showTableHeader && (
 						<TableHeader>
 							<TableRow className="border-b border-[#ebebeb] hover:bg-transparent">
@@ -221,7 +222,7 @@ export function FacultyDirectoryPage({
 							{isLoading ? (
 								<TableRow>
 									<TableCell colSpan={7} className="h-24 text-center">
-										<Loader2 className="mx-auto size-6 animate-spin text-[#11215a]" />
+										<Loader2 className="mx-auto size-6 animate-spin text-[#11215a]" role="status" aria-label="Loading faculty data" />
 									</TableCell>
 								</TableRow>
 							) : items.length === 0 ? (
@@ -277,6 +278,7 @@ export function FacultyDirectoryPage({
 												variant="ghost"
 												size="icon"
 												className="size-8 text-[#737373]"
+												aria-label="More actions for faculty member"
 											>
 												<EllipsisVertical className="size-4" />
 											</Button>

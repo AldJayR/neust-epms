@@ -41,8 +41,8 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 	if (isLoading) {
 		return (
 			<AppShell>
-				<div className="flex h-[400px] items-center justify-center">
-					<div className="size-8 animate-spin rounded-full border-4 border-brand-primary border-t-transparent" />
+			<div className="flex h-[400px] items-center justify-center">
+					<div className="size-8 animate-spin rounded-full border-4 border-brand-primary border-t-transparent" role="status" aria-label="Loading project details" />
 				</div>
 			</AppShell>
 		);
@@ -94,7 +94,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 										<span className="text-[14px] font-medium text-[#666]">Project Leader</span>
 										<div className="flex items-center gap-3">
 											<Avatar className="size-8 border border-[#ebebeb]">
-												<AvatarImage src={data.metadata.leader.avatarUrl} />
+												<AvatarImage src={data.metadata.leader.avatarUrl} alt={data.metadata.leader.name} />
 								<AvatarFallback className="bg-brand-primary/10 text-brand-primary text-xs">
 													{data.metadata.leader.name.split(' ').map(n => n[0]).join('')}
 												</AvatarFallback>
@@ -133,7 +133,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 													<div className="flex -space-x-3">
 														{data.members.slice(0, 4).map((member) => (
 															<Avatar key={member.userId} className="size-9 border-2 border-white ring-1 ring-[#ebebeb]">
-																<AvatarImage src={member.avatarUrl} />
+																<AvatarImage src={member.avatarUrl} alt={member.name} />
 																<AvatarFallback className="bg-gray-100 text-gray-600 text-[10px]">
 																	{member.name.split(' ').map(n => n[0]).join('')}
 																</AvatarFallback>
@@ -156,7 +156,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 												{data.members.map((member) => (
 													<div key={member.userId} className="flex items-center gap-4 p-3 rounded-2xl transition-colors hover:bg-gray-50">
 														<Avatar className="size-11 border border-[#ebebeb]">
-															<AvatarImage src={member.avatarUrl} />
+															<AvatarImage src={member.avatarUrl} alt={member.name} />
 															<AvatarFallback className="bg-gray-100 text-gray-600">
 																<User className="size-5" />
 															</AvatarFallback>
@@ -196,7 +196,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 															{item.status}
 														</Badge>
 													</div>
-													<span className="text-[12px] font-medium text-[#999]">{format(new Date(item.date), "MMM dd, yyyy · hh:mm a")}</span>
+													<span className="text-[12px] font-medium text-[#767676]">{format(new Date(item.date), "MMM dd, yyyy · hh:mm a")}</span>
 												</div>
 												<p className="text-sm font-medium text-[#444]">
 													{item.status === 'Returned' ? 'Returned by Technical Panel' : `Uploaded by ${item.actorName}`}
@@ -238,7 +238,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 										<span className="truncate text-[14px] font-bold text-[#0a0a0a] group-hover:text-brand-primary">
 													{attachment.name}
 												</span>
-												<span className="text-[12px] text-[#999] uppercase font-bold">
+												<span className="text-[12px] text-[#767676] uppercase font-bold">
 													{attachment.type} · v{attachment.version}
 												</span>
 											</div>

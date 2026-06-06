@@ -83,19 +83,20 @@ export function ReportsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input 
               placeholder="Search reports" 
+              aria-label="Search reports"
               className="pl-9 h-9 border-[#e5e5e5] rounded-[8px]" 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <Button variant="outline" className="h-9 w-9 p-0 border-[#e5e5e5] rounded-[8px] shadow-sm">
+          <Button variant="outline" className="h-9 w-9 p-0 border-[#e5e5e5] rounded-[8px] shadow-sm" aria-label="Filter reports">
             <SlidersHorizontal className="size-4" />
           </Button>
         </div>
 
         {/* Data Table */}
         <div className="overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-          <Table>
+          <Table aria-label="Reports">
             {showTableHeader && (
               <TableHeader>
                 <TableRow className="border-b border-[#ebebeb] hover:bg-transparent">
@@ -112,7 +113,7 @@ export function ReportsPage() {
               {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">
-                    <Loader2 className="mx-auto size-6 animate-spin text-[#11215a]" />
+                    <Loader2 className="mx-auto size-6 animate-spin text-[#11215a]" role="status" aria-label="Loading reports" />
                   </TableCell>
                 </TableRow>
               ) : error ? (
@@ -157,7 +158,7 @@ export function ReportsPage() {
                       {formatDate(report.submitted)}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-right">
-                      <Button variant="ghost" size="icon" className="size-8 text-[#737373]">
+                      <Button variant="ghost" size="icon" className="size-8 text-[#737373]" aria-label="More actions for report">
                         <MoreVertical className="size-4" />
                       </Button>
                     </TableCell>

@@ -125,6 +125,7 @@ function RegisterStepTwo() {
 						viewBox="0 0 24 24"
 						strokeWidth="2"
 						stroke="currentColor"
+						aria-hidden="true"
 					>
 						<path
 							strokeLinecap="round"
@@ -164,6 +165,15 @@ function RegisterStepTwo() {
 							layoutId="reg-step-1"
 							className="size-2 cursor-pointer rounded-[12px] bg-[#d9d9d9] transition-colors hover:bg-zinc-400"
 							onClick={() => navigate({ to: "/register" })}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									navigate({ to: "/register" });
+								}
+							}}
+							role="button"
+							tabIndex={0}
+							aria-label="Go to step 1"
 						/>
 						<motion.span
 							layoutId="reg-step-2"

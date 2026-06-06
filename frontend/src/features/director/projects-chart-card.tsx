@@ -22,7 +22,7 @@ export default function ProjectsChartCard({
 				</div>
 				<button
 					type="button"
-					className="flex h-9 w-[200px] items-center justify-between rounded-md border border-[#e5e5e5] bg-white px-3 text-[14px] text-[#737373] shadow-[0px_1px_1px_rgba(0,0,0,0.1)]"
+					className="flex h-9 w-[200px] items-center justify-between rounded-md border border-[#e5e5e5] bg-white px-3 text-[14px] text-[#737373] shadow-[0px_1px_1px_rgba(0,0,0,0.1)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					<span>Select campus…</span>
 					<ChevronsUpDown className="size-4 opacity-50" />

@@ -253,11 +253,19 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 														? data.attachments[0]?.id === file.id
 														: activeAttachmentId === file.id);
 												return (
-													<div
-														key={file.id}
-														onClick={() => setActiveAttachmentId(file.id)}
-														className={`px-3 py-2 rounded-[5px] flex flex-col gap-0.5 cursor-pointer ${isActive ? "bg-[#caf1f6]" : "bg-transparent hover:bg-gray-50"}`}
-													>
+												<div
+													key={file.id}
+													onClick={() => setActiveAttachmentId(file.id)}
+													onKeyDown={(e) => {
+														if (e.key === "Enter" || e.key === " ") {
+															e.preventDefault();
+															setActiveAttachmentId(file.id);
+														}
+													}}
+													role="button"
+													tabIndex={0}
+													className={`px-3 py-2 rounded-[5px] flex flex-col gap-0.5 cursor-pointer ${isActive ? "bg-[#caf1f6]" : "bg-transparent hover:bg-gray-50"}`}
+												>
 														<span
 															className={`text-[12px] font-semibold ${isActive ? "text-[#0d74ce]" : "text-black"}`}
 														>

@@ -150,6 +150,7 @@ export function ActivityLogPage({
 					<Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
 					<Input
 						placeholder="Search by users or email"
+						aria-label="Search activity log"
 						className="pl-9 h-9 border-[#e5e5e5] rounded-[8px]"
 						value={searchInput}
 						onChange={(e) => setSearchInput(e.target.value)}
@@ -159,13 +160,14 @@ export function ActivityLogPage({
 					variant="outline"
 					size="icon"
 					className="h-9 w-9 border-[#e5e5e5] rounded-[8px] shadow-sm"
+					aria-label="Filter activity log"
 				>
 					<Filter className="size-4" />
 				</Button>
 			</div>
 
 			<div className="border border-[#ebebeb] rounded-[12px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden bg-white">
-				<Table>
+				<Table aria-label="Activity log">
 					<TableHeader className="bg-white">
 						<TableRow className="border-b-[#ebebeb] hover:bg-transparent">
 							<TableHead className="w-[140px] font-medium text-[#666] text-sm py-2.5">
@@ -187,7 +189,7 @@ export function ActivityLogPage({
 						{logsQuery.isLoading ? (
 							<TableRow>
 								<TableCell colSpan={5} className="h-32 text-center">
-									<Loader2 className="size-8 animate-spin mx-auto text-primary/20" />
+									<Loader2 className="size-8 animate-spin mx-auto text-primary/20" role="status" aria-label="Loading activity log" />
 								</TableCell>
 							</TableRow>
 						) : logsQuery.data?.items.length === 0 ? (
@@ -252,7 +254,7 @@ export function ActivityLogPage({
 											</Badge>
 										</TableCell>
 										<TableCell className="py-2.5 text-center">
-											<Button variant="ghost" size="icon" className="size-8">
+											<Button variant="ghost" size="icon" className="size-8" aria-label="More actions for log entry">
 												<MoreVertical className="size-4" />
 											</Button>
 										</TableCell>

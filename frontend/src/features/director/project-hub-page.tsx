@@ -131,6 +131,7 @@ export function ProjectHubPage({
 						<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#737373]" />
 						<Input
 							placeholder="Search by project title or faculty name..."
+							aria-label="Search projects"
 							className="h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-sm"
 							value={search}
 							onChange={(e) => onSearchChange(e.target.value)}
@@ -182,7 +183,7 @@ export function ProjectHubPage({
 				</div>
 
 				<div className="rounded-lg border border-[#ebebeb] bg-white shadow-sm overflow-hidden min-h-[400px]">
-					<Table>
+					<Table aria-label="Projects">
 						{showTableHeader && (
 						<TableHeader>
 							<TableRow className="border-[#ebebeb] hover:bg-transparent">
@@ -209,7 +210,7 @@ export function ProjectHubPage({
 							{isLoading ? (
 								<TableRow>
 									<TableCell colSpan={6} className="h-24 text-center">
-										<Loader2 className="mx-auto size-6 animate-spin text-[#11215a]" />
+										<Loader2 className="mx-auto size-6 animate-spin text-[#11215a]" role="status" aria-label="Loading projects" />
 									</TableCell>
 								</TableRow>
 							) : items.length === 0 ? (
@@ -261,7 +262,7 @@ export function ProjectHubPage({
 											<ProjectStatusBadge status={project.status} />
 										</TableCell>
 										<TableCell className="text-right">
-											<Button variant="ghost" size="icon" className="size-8">
+											<Button variant="ghost" size="icon" className="size-8" aria-label="More actions for project">
 												<EllipsisVertical className="size-4 text-[#737373]" />
 											</Button>
 										</TableCell>
