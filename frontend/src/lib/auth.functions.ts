@@ -157,6 +157,24 @@ export const getCampusesFn = createServerFn({ method: "GET" }).handler(
 	},
 );
 
+// ── Password breach check ──
+
+export const checkPasswordFn = createServerFn({ method: "POST" })
+	.inputValidator(z.object({ password: z.string().min(1) }))
+	.handler(async ({ data }) => {
+		const response = await fetch(`${API_BASE}/auth/check-password`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(data),
+		});
+
+		if (!response.ok) {
+			return { compromised: false };
+		}
+
+		return (await response.json()) as { compromised: boolean };
+	});
+
 // ── Get Current User ──────────────────────────────────────
 
 export const getCurrentUserFn = createServerFn({ method: "POST" }).handler(

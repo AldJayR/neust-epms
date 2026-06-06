@@ -88,12 +88,14 @@ export function RHFPasswordField<TFieldValues extends FieldValues>({
 	label,
 	description,
 	labelAction,
+	onBlur: onBlurProp,
 }: {
 	control: Control<TFieldValues>;
 	name: FieldPath<TFieldValues>;
 	label: string;
 	description?: string;
 	labelAction?: React.ReactNode;
+	onBlur?: () => void;
 }) {
 	const { field, fieldState } = useController({ control, name });
 	const [showPassword, setShowPassword] = useState(false);
@@ -111,6 +113,10 @@ export function RHFPasswordField<TFieldValues extends FieldValues>({
 					type={showPassword ? "text" : "password"}
 					aria-invalid={fieldState.invalid}
 					className="text-black placeholder:text-zinc-500"
+					onBlur={() => {
+						field.onBlur();
+						onBlurProp?.();
+					}}
 				/>
 				<InputGroupAddon align="inline-end">
 					<InputGroupButton

@@ -18,16 +18,14 @@ import {
 } from "../components/rhf-auth-fields";
 import { Alert } from "../components/ui/alert";
 import { FieldGroup } from "../components/ui/field";
-import { signupFn } from "../lib/auth.functions";
+import { checkPasswordFn, signupFn } from "../lib/auth.functions";
 
-const registerStep2Schema = z
+	const registerStep2Schema = z
 	.object({
 		email: z.string().email("Please enter a valid email address"),
 		password: z
 			.string()
-			.min(8, "Password must be at least 8 characters")
-			.regex(/[A-Z]/, "Must contain at least one uppercase letter")
-			.regex(/[0-9]/, "Must contain at least one number"),
+			.min(8, "Password must be at least 8 characters"),
 		confirmPassword: z.string().min(1, "Please confirm your password"),
 		acceptTerms: z.boolean(),
 	})
@@ -53,6 +51,7 @@ function RegisterStepTwo() {
 	const navigate = useNavigate();
 	const [serverError, setServerError] = useState<string | null>(null);
 	const [isRegistered, setIsRegistered] = useState(false);
+	const [passwordChecking, setPasswordChecking] = useState(false);
 
 	const form = useForm<z.infer<typeof registerStep2Schema>>({
 		resolver: zodResolver(registerStep2Schema),
@@ -64,6 +63,23 @@ function RegisterStepTwo() {
 			acceptTerms: false,
 		},
 	});
+
+	async function handlePasswordBlur(password: string) {
+		if (password.length < 8) return;
+		setPasswordChecking(true);
+		try {
+			const result = await checkPasswordFn({ data: { password } });
+			if (result.compromised) {
+				form.setError("password", {
+					type: "manual",
+					message:
+						"This password has been exposed in a data breach. Please choose a different one.",
+				});
+			}
+		} finally {
+			setPasswordChecking(false);
+		}
+	}
 
 	async function onSubmit(data: z.infer<typeof registerStep2Schema>) {
 		setServerError(null);
@@ -210,7 +226,12 @@ function RegisterStepTwo() {
 						control={form.control}
 						name="password"
 						label="Password"
-						description="At least 8 characters with one uppercase letter and one number"
+						description={
+							passwordChecking
+								? "Checking password..."
+								: "At least 8 characters"
+						}
+						onBlur={() => handlePasswordBlur(form.getValues("password"))}
 					/>
 
 					<RHFPasswordField

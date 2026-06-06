@@ -23,7 +23,7 @@ export class ApiError extends HTTPException {
   public readonly code: string;
 
   constructor(
-    status: 400 | 401 | 403 | 404 | 409 | 413 | 422 | 500,
+    status: 400 | 401 | 403 | 404 | 409 | 413 | 422 | 429 | 500,
     code: string,
     message: string,
   ) {

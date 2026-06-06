@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { eq, or } from "drizzle-orm";
 import { createClient } from "@supabase/supabase-js";
+import { rateLimiter } from "hono-rate-limiter";
 import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
 import { roles } from "../db/schema/roles.js";
@@ -10,6 +11,7 @@ import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { env } from "../env.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
+import { isPasswordCompromised } from "../lib/password-check.js";
 import { ROLE_NAMES } from "../lib/types.js";
 
 const app = new OpenAPIHono<AuthEnv>();
@@ -72,6 +74,40 @@ const ErrorSchema = z
   })
   .openapi("Error");
 
+// ── POST /auth/check-password (Public) ──
+const checkPasswordRoute = createRoute({
+  method: "post",
+  path: "/auth/check-password",
+  tags: ["Auth"],
+  summary: "Check if a password has been compromised",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({ password: z.string().min(1) }).openapi("CheckPasswordBody"),
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({ compromised: z.boolean() }).openapi("CheckPasswordResponse"),
+        },
+      },
+      description: "Result of compromised password check",
+    },
+  },
+});
+
+app.openapi(checkPasswordRoute, async (c) => {
+  const { password } = c.req.valid("json");
+  const compromised = await isPasswordCompromised(password);
+  return c.json({ compromised }, 200);
+});
+
 // ── GET /auth/me ──
 const getMeRoute = createRoute({
   method: "get",
@@ -88,6 +124,16 @@ const getMeRoute = createRoute({
       content: { "application/json": { schema: ErrorSchema } },
       description: "Unauthorized",
     },
+  },
+});
+
+// ── Rate limit: 5 registration attempts per 15 minutes per IP ──
+const registerLimiter = rateLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: "draft-6",
+  keyGenerator: (c) => {
+    return c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip") ?? "unknown";
   },
 });
 
@@ -115,6 +161,8 @@ const registerRoute = createRoute({
   },
 });
 
+app.use("/auth/register", registerLimiter);
+
 app.openapi(registerRoute, async (c) => {
   const body = c.req.valid("json");
 
@@ -129,7 +177,17 @@ app.openapi(registerRoute, async (c) => {
     throw new ApiError(400, "USER_EXISTS", "Email already registered");
   }
 
-  // 2. Fetch Faculty role ID
+  // 2. Check if password has been compromised
+  const compromised = await isPasswordCompromised(body.password);
+  if (compromised) {
+    throw new ApiError(
+      400,
+      "COMPROMISED_PASSWORD",
+      "This password has appeared in a known data breach. Please choose a different one.",
+    );
+  }
+
+  // 3. Fetch Faculty role ID
   const [facultyRole] = await db
     .select()
     .from(roles)
@@ -140,7 +198,7 @@ app.openapi(registerRoute, async (c) => {
     throw new ApiError(500, "CONFIG_ERROR", "Faculty role not found in system");
   }
 
-  // 3. Create user in Supabase Auth (admin-side to skip email)
+  // 4. Create user in Supabase Auth (admin-side to skip email)
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email: body.email,
     password: body.password,
@@ -151,7 +209,7 @@ app.openapi(registerRoute, async (c) => {
     throw new ApiError(400, "AUTH_ERROR", authError?.message ?? "Failed to create auth user");
   }
 
-  // 4. Create user in our DB
+  // 5. Create user in our DB
   let created;
   try {
     created = await db.transaction(async (tx) => {
