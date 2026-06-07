@@ -82,12 +82,7 @@ function LoginPage() {
 		) {
 			await Promise.all([
 				queryClient.prefetchQuery(adminStatsQueryOptions()),
-				queryClient.prefetchQuery(
-					adminUsersQueryOptions({
-						page: 1,
-						pageSize: 10,
-					}),
-				),
+				queryClient.prefetchQuery(adminUsersQueryOptions({})),
 			]);
 		}
 

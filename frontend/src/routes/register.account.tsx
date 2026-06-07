@@ -41,7 +41,7 @@ import { checkPasswordFn, signupFn } from "../lib/auth.functions";
 export const Route = createFileRoute("/register/account")({
 	beforeLoad: ({ context }) => {
 		if (context.auth.isAuthenticated) {
-			throw redirect({ to: "/dashboard", search: { page: 1, pageSize: 10 } });
+			throw redirect({ to: "/dashboard" });
 		}
 	},
 	component: RegisterStepTwo,

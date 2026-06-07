@@ -10,16 +10,12 @@ import {
 import { directorDashboardQueryOptions } from "@/lib/director.functions";
 
 const dashboardSearchSchema = z.object({
-	page: z.number().optional().default(1),
-	pageSize: z.number().optional().default(10),
 	search: z.string().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
 	validateSearch: (search) => dashboardSearchSchema.parse(search),
 	loaderDeps: ({ search }) => ({
-		page: search.page,
-		pageSize: search.pageSize,
 		search: search.search,
 	}),
 	loader: async ({ context, deps }) => {
@@ -36,8 +32,6 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 			);
 			const usersPromise = context.queryClient.ensureQueryData(
 				adminUsersQueryOptions({
-					page: deps.page,
-					pageSize: deps.pageSize,
 					search: deps.search,
 				}),
 			);
@@ -54,18 +48,12 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
 	const { user } = Route.useRouteContext();
-	const { page, pageSize, search } = Route.useSearch();
+	const { search } = Route.useSearch();
 	const navigate = Route.useNavigate();
 
 	const handleSearch = (newSearch: string | undefined) => {
 		navigate({
-			search: (old) => ({ ...old, search: newSearch, page: 1 }),
-		});
-	};
-
-	const handlePageChange = (newPage: number) => {
-		navigate({
-			search: (old) => ({ ...old, page: newPage }),
+			search: (old) => ({ ...old, search: newSearch }),
 		});
 	};
 
@@ -73,11 +61,8 @@ function DashboardPage() {
 		return (
 			<AppShell>
 				<UsersPage
-					page={page}
-					pageSize={pageSize}
 					search={search}
 					onSearch={handleSearch}
-					onPageChange={handlePageChange}
 				/>
 			</AppShell>
 		);

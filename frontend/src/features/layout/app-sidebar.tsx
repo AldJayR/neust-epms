@@ -130,7 +130,7 @@ export function AppSidebar({
 	return (
 		<RoleSidebar
 			{...props}
-			headerRender={<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />}
+			headerRender={<Link to="/dashboard" />}
 			headerContent={
 				<>
 					<div className="flex aspect-square size-8 items-center justify-center">

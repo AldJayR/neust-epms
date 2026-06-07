@@ -397,7 +397,7 @@ export const getReportStatsFn = createServerFn({ method: "GET" }).handler(
 			throw new Error("Unauthorized");
 		}
 
-		const response = await fetch(`${API_BASE}/reports?limit=100`, {
+		const response = await fetch(`${API_BASE}/reports`, {
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
 			},
