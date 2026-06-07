@@ -10,6 +10,7 @@ import {
 	Search,
 	TrendingUp,
 } from "lucide-react";
+import * as React from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,8 @@ import type { AuthUser } from "@/lib/auth";
 import { facultyDirectoryQueryOptions } from "@/lib/director.functions";
 import { formatAcademicRank } from "@/lib/utils";
 import { AppShell } from "../layout/app-shell";
+
+const PAGE_SIZE = 50;
 
 function MetricCard({
 	label,
@@ -88,26 +91,25 @@ function MetricCard({
 
 interface FacultyDirectoryPageProps {
 	user?: AuthUser | null;
-	page: number;
-	limit: number;
 	search?: string;
 	college?: string;
-	onPageChange: (page: number) => void;
 	onSearchChange: (search: string) => void;
 	onCollegeChange: (college: string) => void;
 }
 
 export function FacultyDirectoryPage({
-	page,
-	limit,
 	search,
 	college,
-	onPageChange,
 	onSearchChange,
 	onCollegeChange,
 }: FacultyDirectoryPageProps) {
+	const [currentPage, setCurrentPage] = React.useState(1);
+	const [cursorCache, setCursorCache] = React.useState<Map<number, string | undefined>>(new Map());
+
+	const cursor = cursorCache.get(currentPage);
+
 	const { data, isLoading } = useQuery(
-		facultyDirectoryQueryOptions({ page, limit, search, college }),
+		facultyDirectoryQueryOptions({ cursor, search, college }),
 	);
 
 	const items = data?.items ?? [];
@@ -117,8 +119,26 @@ export function FacultyDirectoryPage({
 		averageProjectsPerFaculty: 0,
 		mostActiveCollege: { name: "...", contributors: 0 },
 	};
-	const totalPages = Math.ceil(total / limit);
+	const totalPages = Math.ceil(total / PAGE_SIZE);
 	const showTableHeader = items.length > 0 || (search ?? "").trim().length > 0 || (college ?? "").trim().length > 0;
+
+	React.useEffect(() => {
+		if (data?.nextCursor) {
+			setCursorCache(prev => new Map(prev).set(currentPage + 1, data.nextCursor ?? undefined));
+		}
+	}, [data?.nextCursor, currentPage]);
+
+	const handleSearchChange = (value: string) => {
+		setCurrentPage(1);
+		setCursorCache(new Map());
+		onSearchChange(value);
+	};
+
+	const handleCollegeChange = (value: string) => {
+		setCurrentPage(1);
+		setCursorCache(new Map());
+		onCollegeChange(value);
+	};
 
 	return (
 		<AppShell>
@@ -166,13 +186,13 @@ export function FacultyDirectoryPage({
 							aria-label="Search faculty directory"
 							className="h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-none placeholder:text-[#737373]"
 							value={search}
-							onChange={(e) => onSearchChange(e.target.value)}
+							onChange={(e) => handleSearchChange(e.target.value)}
 						/>
 					</div>
 					<Select
 						value={college || "all"}
 						onValueChange={(val) =>
-							onCollegeChange(val === "all" ? "" : val || "")
+							handleCollegeChange(val === "all" ? "" : val || "")
 						}
 					>
 						<SelectTrigger className="h-9 w-[180px] rounded-lg border border-[#e5e5e5] bg-white shadow-sm text-[#737373]">
@@ -241,7 +261,7 @@ export function FacultyDirectoryPage({
 										className="border-b border-[#ebebeb] py-2 hover:bg-[#fcfcfc]"
 									>
 										<TableCell className="px-4 py-3 text-center text-[14px] font-bold text-[#0a0a0a]">
-											{(page - 1) * limit + index + 1}
+											{(currentPage - 1) * PAGE_SIZE + index + 1}
 										</TableCell>
 										<TableCell className="px-4 py-3">
 											<div className="flex items-center gap-3">
@@ -292,9 +312,9 @@ export function FacultyDirectoryPage({
 
 				<div className="flex items-center justify-between pt-4">
 					<p className="text-[12px] text-[#666]">
-						Showing <span className="font-bold">{(page - 1) * limit + 1}</span>{" "}
+						Showing <span className="font-bold">{(currentPage - 1) * PAGE_SIZE + 1}</span>{" "}
 						to{" "}
-						<span className="font-bold">{Math.min(page * limit, total)}</span>{" "}
+						<span className="font-bold">{Math.min(currentPage * PAGE_SIZE, total)}</span>{" "}
 						of <span className="font-bold">{total.toLocaleString()}</span>{" "}
 						results
 					</p>
@@ -305,8 +325,10 @@ export function FacultyDirectoryPage({
 								variant="ghost"
 								size="sm"
 								className="gap-1 text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
-								onClick={() => onPageChange(page - 1)}
-								disabled={page <= 1}
+								onClick={() => {
+									if (currentPage > 1) setCurrentPage(currentPage - 1);
+								}}
+								disabled={currentPage <= 1}
 							>
 								<ChevronLeft className="size-4" />
 								<span>Previous</span>
@@ -317,16 +339,16 @@ export function FacultyDirectoryPage({
 								if (
 									p === 1 ||
 									p === totalPages ||
-									(p >= page - 1 && p <= page + 1)
+									(p >= currentPage - 1 && p <= currentPage + 1)
 								) {
 									return (
 										<Button
 											key={p}
-											variant={page === p ? "outline" : "ghost"}
+											variant={currentPage === p ? "outline" : "ghost"}
 											size="icon"
-											onClick={() => onPageChange(p)}
+											onClick={() => setCurrentPage(p)}
 											className={
-												page === p
+												currentPage === p
 													? "size-9 border-[#e5e5e5] bg-white text-[14px] font-medium text-[#0a0a0a] shadow-sm"
 													: "size-9 text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
 											}
@@ -342,8 +364,10 @@ export function FacultyDirectoryPage({
 								variant="ghost"
 								size="sm"
 								className="gap-1 text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
-								onClick={() => onPageChange(page + 1)}
-								disabled={page >= totalPages}
+								onClick={() => {
+									if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+								}}
+								disabled={currentPage >= totalPages}
 							>
 								<span>Next</span>
 								<ChevronRight className="size-4" />

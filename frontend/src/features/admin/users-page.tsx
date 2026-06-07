@@ -46,31 +46,43 @@ import { formatAcademicRank } from "@/lib/utils";
 import { BulkApproveDialog } from "./bulk-approve-dialog";
 
 interface UsersPageProps {
-	page: number;
-	pageSize: number;
 	search?: string;
 	onSearch: (search: string | undefined) => void;
-	onPageChange: (page: number) => void;
 }
 
 export function UsersPage({
-	page,
-	pageSize,
 	search,
 	onSearch,
-	onPageChange,
 }: UsersPageProps) {
+	const [currentPage, setCurrentPage] = React.useState(1);
+	const [cursorCache, setCursorCache] = React.useState<Map<number, string | undefined>>(new Map());
+	const PAGE_SIZE = 50;
 	const queryClient = useQueryClient();
 
 	const [searchInput, setSearchInput] = React.useState(search ?? "");
 
 	// ── Queries ──────────────────────────────────────────────
 
+	const cursor = cursorCache.get(currentPage);
+
 	const statsQuery = useQuery(adminStatsQueryOptions());
 
 	const usersQuery = useQuery(
-		adminUsersQueryOptions({ page, pageSize, search }),
+		adminUsersQueryOptions({ cursor, search }),
 	);
+
+	React.useEffect(() => {
+		if (usersQuery.data?.nextCursor) {
+			setCursorCache(prev => new Map(prev).set(currentPage + 1, usersQuery.data?.nextCursor ?? undefined));
+		}
+	}, [usersQuery.data?.nextCursor, currentPage]);
+
+	const handleSearchSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		setCurrentPage(1);
+		setCursorCache(new Map());
+		onSearch(searchInput || undefined);
+	};
 
 	// ── Mutations ────────────────────────────────────────────
 
@@ -90,10 +102,7 @@ export function UsersPage({
 
 	// ── Handlers ─────────────────────────────────────────────
 
-	const handleSearchSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		onSearch(searchInput || undefined);
-	};
+
 
 	const stats = [
 		{
@@ -308,8 +317,10 @@ export function UsersPage({
 						variant="ghost"
 						size="sm"
 						className="h-9 gap-1 px-3 font-medium"
-						onClick={() => onPageChange(Math.max(1, page - 1))}
-						disabled={page <= 1 || isLoading}
+						onClick={() => {
+							if (currentPage > 1) setCurrentPage(currentPage - 1);
+						}}
+						disabled={currentPage <= 1 || isLoading}
 					>
 						Previous
 					</Button>
@@ -318,16 +329,20 @@ export function UsersPage({
 						size="icon"
 						className="h-9 w-9 bg-white font-medium border-[#e5e5e5]"
 					>
-						{page}
+						{currentPage}
 					</Button>
 					<Button
 						variant="ghost"
 						size="sm"
 						className="h-9 gap-1 px-3 font-medium"
-						onClick={() => onPageChange(page + 1)}
+						onClick={() => {
+							if (usersQuery.data && currentPage * PAGE_SIZE < usersQuery.data.total) {
+								setCurrentPage(currentPage + 1);
+							}
+						}}
 						disabled={
 							!usersQuery.data ||
-							page * pageSize >= usersQuery.data.total ||
+							currentPage * PAGE_SIZE >= usersQuery.data.total ||
 							isLoading
 						}
 					>

@@ -45,27 +45,34 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
 });
 
 interface ActivityLogPageProps {
-	page: number;
-	limit: number;
 	search?: string;
 	onSearch: (search: string | undefined) => void;
-	onPageChange: (page: number) => void;
 }
 
 export function ActivityLogPage({
-	page,
-	limit,
 	search,
 	onSearch,
-	onPageChange,
 }: ActivityLogPageProps) {
+	const [currentPage, setCurrentPage] = React.useState(1);
+	const [cursorCache, setCursorCache] = React.useState<Map<number, string | undefined>>(new Map());
+	const PAGE_SIZE = 50;
 	const [searchInput, setSearchInput] = React.useState(search ?? "");
 
+	const cursor = cursorCache.get(currentPage);
+
 	const statsQuery = useQuery(auditStatsQueryOptions());
-	const logsQuery = useQuery(auditLogsQueryOptions({ page, limit, search }));
+	const logsQuery = useQuery(auditLogsQueryOptions({ cursor, search }));
+
+	React.useEffect(() => {
+		if (logsQuery.data?.nextCursor) {
+			setCursorCache(prev => new Map(prev).set(currentPage + 1, logsQuery.data?.nextCursor ?? undefined));
+		}
+	}, [logsQuery.data?.nextCursor, currentPage]);
 
 	const handleSearchSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
+		setCurrentPage(1);
+		setCursorCache(new Map());
 		onSearch(searchInput || undefined);
 	};
 
@@ -280,8 +287,10 @@ export function ActivityLogPage({
 						variant="ghost"
 						size="sm"
 						className="gap-1 h-9 px-3 text-[#0a0a0a] font-medium"
-						disabled={page === 1}
-						onClick={() => onPageChange(page - 1)}
+						disabled={currentPage === 1}
+						onClick={() => {
+							if (currentPage > 1) setCurrentPage(currentPage - 1);
+						}}
 					>
 						<ChevronLeft className="size-4" />
 						<span>Previous</span>
@@ -289,13 +298,13 @@ export function ActivityLogPage({
 					{[1, 2, 3].map((p) => (
 						<Button
 							key={p}
-							variant={page === p ? "outline" : "ghost"}
+							variant={currentPage === p ? "outline" : "ghost"}
 							size="icon"
 							className={cn(
 								"size-9 rounded-[8px]",
-								page === p && "border-[#e5e5e5] shadow-sm",
+								currentPage === p && "border-[#e5e5e5] shadow-sm",
 							)}
-							onClick={() => onPageChange(p)}
+							onClick={() => setCurrentPage(p)}
 						>
 							{p}
 						</Button>
@@ -307,9 +316,13 @@ export function ActivityLogPage({
 						variant="ghost"
 						size="sm"
 						className="gap-1 h-9 px-3 text-[#0a0a0a] font-medium"
-						onClick={() => onPageChange(page + 1)}
+						onClick={() => {
+							if (logsQuery.data && currentPage * PAGE_SIZE < logsQuery.data.total) {
+								setCurrentPage(currentPage + 1);
+							}
+						}}
 						disabled={
-							logsQuery.data ? page * limit >= logsQuery.data.total : true
+							logsQuery.data ? currentPage * PAGE_SIZE >= logsQuery.data.total : true
 						}
 					>
 						<span>Next</span>
