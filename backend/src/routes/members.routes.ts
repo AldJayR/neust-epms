@@ -90,22 +90,24 @@ app.openapi(listMembersRoute, async (c) => {
   const { proposalId } = c.req.valid("param");
   const { limit, cursor } = c.req.valid("query");
 
-  const whereConditions = [eq(proposalMembers.proposalId, proposalId)];
+  const baseConditions = [eq(proposalMembers.proposalId, proposalId)];
+
+  const cursorConditions = [...baseConditions];
   if (cursor) {
-    whereConditions.push(gt(proposalMembers.addedAt, new Date(cursor)));
+    cursorConditions.push(gt(proposalMembers.addedAt, new Date(cursor)));
   }
 
   const rows = await db
     .select({ memberId: proposalMembers.memberId, proposalId: proposalMembers.proposalId, userId: proposalMembers.userId, projectRole: proposalMembers.projectRole, addedAt: proposalMembers.addedAt })
     .from(proposalMembers)
-    .where(and(...whereConditions))
+    .where(and(...cursorConditions))
     .orderBy(proposalMembers.addedAt)
     .limit(limit + 1);
 
   const [totalResult] = await db
     .select({ value: count() })
     .from(proposalMembers)
-    .where(and(...whereConditions));
+    .where(and(...baseConditions));
 
   const { items: rawItems, nextCursor } = paginateResults(rows, limit, "addedAt");
 

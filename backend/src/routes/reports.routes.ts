@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, and, isNull, desc, count } from "drizzle-orm";
+import { eq, and, isNull, lt, desc, count } from "drizzle-orm";
+import { paginateResults } from "../lib/pagination.js";
 import { db } from "../db/client.js";
 import { projectReports } from "../db/schema/project-reports.js";
 import { projects } from "../db/schema/projects.js";
@@ -30,7 +31,7 @@ const ReportSchema = z
   .openapi("ProjectReport");
 
 const ReportListSchema = z
-  .object({ items: z.array(ReportSchema), total: z.number() })
+  .object({ items: z.array(ReportSchema), total: z.number(), nextCursor: z.string().nullable() })
   .openapi("ProjectReportList");
 
 const CreateReportSchema = z
@@ -57,11 +58,11 @@ const ParamId = z.object({
 });
 
 const PaginationQuery = z.object({
-  page: z.coerce.number().int().min(1).default(1).openapi({
-    param: { name: "page", in: "query" },
-  }),
   limit: z.coerce.number().int().min(1).max(100).default(50).openapi({
     param: { name: "limit", in: "query" },
+  }),
+  cursor: z.string().optional().openapi({
+    param: { name: "cursor", in: "query" },
   }),
 });
 
@@ -84,8 +85,14 @@ const listRoute = createRoute({
 });
 
 app.openapi(listRoute, async (c) => {
-  const { page, limit } = c.req.valid("query");
-  const offset = (page - 1) * limit;
+  const { limit, cursor } = c.req.valid("query");
+
+  const baseConditions = [isNull(projectReports.archivedAt)];
+
+  const cursorConditions = [...baseConditions];
+  if (cursor) {
+    cursorConditions.push(lt(projectReports.submittedAt, new Date(cursor)));
+  }
 
   const rows = await db
     .select({
@@ -106,18 +113,19 @@ app.openapi(listRoute, async (c) => {
     .innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
     .innerJoin(users, eq(proposals.projectLeaderId, users.userId))
     .leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
-    .where(isNull(projectReports.archivedAt))
+    .where(and(...cursorConditions))
     .orderBy(desc(projectReports.submittedAt))
-    .limit(limit)
-    .offset(offset);
+    .limit(limit + 1);
+
+  const { items: rawItems, nextCursor } = paginateResults(rows, limit, "submittedAt");
 
   const [totalRow] = await db
     .select({ value: count() })
     .from(projectReports)
-    .where(isNull(projectReports.archivedAt));
+    .where(and(...baseConditions));
   const total = totalRow?.value ?? 0;
 
-  const items = rows.map((r) => ({
+  const items = rawItems.map((r) => ({
     reportId: r.reportId,
     projectId: r.projectId,
     project: r.projectTitle,
@@ -130,7 +138,7 @@ app.openapi(listRoute, async (c) => {
     archivedAt: r.archivedAt?.toISOString() ?? null,
   }));
 
-  return c.json({ items, total }, 200);
+  return c.json({ items, total, nextCursor }, 200);
 });
 
 // ── POST /reports ──

@@ -177,9 +177,11 @@ app.openapi(listDocsRoute, async (c) => {
     );
   }
 
-  const whereConditions = [eq(proposalDocuments.proposalId, proposalId)];
+  const baseConditions = [eq(proposalDocuments.proposalId, proposalId)];
+
+  const cursorConditions = [...baseConditions];
   if (cursor) {
-    whereConditions.push(lt(proposalDocuments.versionNum, parseInt(cursor)));
+    cursorConditions.push(lt(proposalDocuments.versionNum, parseInt(cursor)));
   }
 
   const rows = await db
@@ -191,14 +193,14 @@ app.openapi(listDocsRoute, async (c) => {
       uploadedAt: proposalDocuments.uploadedAt,
     })
     .from(proposalDocuments)
-    .where(and(...whereConditions))
+    .where(and(...cursorConditions))
     .orderBy(proposalDocuments.versionNum)
     .limit(limit + 1);
 
   const [totalResult] = await db
     .select({ value: count() })
     .from(proposalDocuments)
-    .where(and(...whereConditions));
+    .where(and(...baseConditions));
 
   const { items: rawItems, nextCursor } = paginateResults(rows, limit, "versionNum");
 

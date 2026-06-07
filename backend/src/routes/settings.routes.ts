@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { count, eq, and, lt } from "drizzle-orm";
+import { count, eq, and, lt, type SQL } from "drizzle-orm";
 import { paginateResults } from "../lib/pagination.js";
 import { db } from "../db/client.js";
 import { systemSettings } from "../db/schema/system-settings.js";
@@ -81,9 +81,10 @@ app.openapi(listRoute, async (c) => {
     }
   }
 
-  const whereConditions = [];
+  const baseConditions: SQL[] = [];
+  const cursorConditions = [...baseConditions];
   if (cursor) {
-    whereConditions.push(lt(systemSettings.settingKey, cursor));
+    cursorConditions.push(lt(systemSettings.settingKey, cursor));
   }
 
   const rows = await db
@@ -93,14 +94,14 @@ app.openapi(listRoute, async (c) => {
       updatedAt: systemSettings.updatedAt,
     })
     .from(systemSettings)
-    .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+    .where(cursorConditions.length > 0 ? and(...cursorConditions) : undefined)
     .orderBy(systemSettings.settingKey)
     .limit(limit + 1);
 
   const [totalResult] = await db
     .select({ value: count() })
     .from(systemSettings)
-    .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
+    .where(baseConditions.length > 0 ? and(...baseConditions) : undefined);
 
   const hasMore = rows.length > limit;
   const items = hasMore ? rows.slice(0, limit) : rows;

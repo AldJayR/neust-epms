@@ -89,9 +89,11 @@ const listRoute = createRoute({
 app.openapi(listRoute, async (c) => {
   const { limit, cursor } = c.req.valid("query");
 
-  const whereConditions = [isNull(specialOrders.archivedAt)];
+  const baseConditions = [isNull(specialOrders.archivedAt)];
+
+  const cursorConditions = [...baseConditions];
   if (cursor) {
-    whereConditions.push(lt(specialOrders.createdAt, new Date(cursor)));
+    cursorConditions.push(lt(specialOrders.createdAt, new Date(cursor)));
   }
 
   const rows = await db
@@ -107,14 +109,14 @@ app.openapi(listRoute, async (c) => {
       archivedAt: specialOrders.archivedAt,
     })
     .from(specialOrders)
-    .where(and(...whereConditions))
+    .where(and(...cursorConditions))
     .orderBy(desc(specialOrders.createdAt))
     .limit(limit + 1);
 
   const [totalResult] = await db
     .select({ value: count() })
     .from(specialOrders)
-    .where(and(...whereConditions));
+    .where(and(...baseConditions));
 
   const { items: rawItems, nextCursor } = paginateResults(rows, limit, "createdAt");
 

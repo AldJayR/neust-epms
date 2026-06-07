@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, and, isNull, desc, or, count, type SQL } from "drizzle-orm";
+import { eq, and, isNull, lt, desc, or, count, type SQL } from "drizzle-orm";
+import { paginateResults } from "../lib/pagination.js";
 import { db } from "../db/client.js";
 import { proposals } from "../db/schema/proposals.js";
 import { proposalDepartments } from "../db/schema/proposal-departments.js";
@@ -42,7 +43,7 @@ const ProposalSchema = z
   .openapi("Proposal");
 
 const ProposalListSchema = z
-  .object({ items: z.array(ProposalSchema), total: z.number() })
+  .object({ items: z.array(ProposalSchema), total: z.number(), nextCursor: z.string().nullable() })
   .openapi("ProposalList");
 
 const CreateProposalSchema = z
@@ -91,11 +92,11 @@ const ParamId = z.object({
 });
 
 const PaginationQuery = z.object({
-  page: z.coerce.number().int().min(1).default(1).openapi({
-    param: { name: "page", in: "query" },
-  }),
   limit: z.coerce.number().int().min(1).max(100).default(50).openapi({
     param: { name: "limit", in: "query" },
+  }),
+  cursor: z.string().optional().openapi({
+    param: { name: "cursor", in: "query" },
   }),
 });
 
@@ -130,21 +131,20 @@ const listRoute = createRoute({
 
 app.openapi(listRoute, async (c) => {
   const user = c.get("user");
-  const { page, limit } = c.req.valid("query");
-  const offset = (page - 1) * limit;
+  const { limit, cursor } = c.req.valid("query");
 
-  const whereConditions: SQL[] = [isNull(proposals.archivedAt)];
+  const baseConditions: SQL[] = [isNull(proposals.archivedAt)];
   
   if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
     if (user.departmentId !== null) {
-      whereConditions.push(
+      baseConditions.push(
         or(
           eq(proposals.projectLeaderId, user.userId),
           eq(proposals.departmentId, user.departmentId)
         )!
       );
     } else {
-      whereConditions.push(
+      baseConditions.push(
         or(
           eq(proposals.projectLeaderId, user.userId),
           eq(proposals.campusId, user.campusId)
@@ -153,15 +153,21 @@ app.openapi(listRoute, async (c) => {
     }
   }
 
+  const cursorConditions = [...baseConditions];
+  if (cursor) {
+    cursorConditions.push(lt(proposals.createdAt, new Date(cursor)));
+  }
+
   const rows = await db
     .select({ proposalId: proposals.proposalId, projectLeaderId: proposals.projectLeaderId, campusId: proposals.campusId, departmentId: proposals.departmentId, title: proposals.title, bannerProgram: proposals.bannerProgram, projectLocale: proposals.projectLocale, extensionCategory: proposals.extensionCategory, extensionAgenda: proposals.extensionAgenda, budgetPartner: proposals.budgetPartner, budgetNeust: proposals.budgetNeust, currentStatus: proposals.currentStatus, revisionNum: proposals.revisionNum, createdAt: proposals.createdAt, updatedAt: proposals.updatedAt, archivedAt: proposals.archivedAt })
     .from(proposals)
-    .where(and(...whereConditions))
+    .where(and(...cursorConditions))
     .orderBy(desc(proposals.createdAt))
-    .limit(limit)
-    .offset(offset);
+    .limit(limit + 1);
 
-  const items = rows.map((r) => ({
+  const { items: rawItems, nextCursor } = paginateResults(rows, limit, "createdAt");
+
+  const items = rawItems.map((r) => ({
     ...r,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
@@ -171,10 +177,10 @@ app.openapi(listRoute, async (c) => {
   const [totalResult] = await db
     .select({ value: count() })
     .from(proposals)
-    .where(and(...whereConditions));
+    .where(and(...baseConditions));
   const total = Number(totalResult?.value ?? 0);
 
-  return c.json({ items, total }, 200);
+  return c.json({ items, total, nextCursor }, 200);
 });
 
 // ── GET /proposals/:id ──

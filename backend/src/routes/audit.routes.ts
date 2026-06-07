@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { desc, eq, count, sql, and, or, ilike } from "drizzle-orm";
+import { desc, eq, count, sql, and, or, ilike, lt, type SQL } from "drizzle-orm";
+import { paginateResults } from "../lib/pagination.js";
 import { db } from "../db/client.js";
 import { auditLogs } from "../db/schema/audit-logs.js";
 import { users } from "../db/schema/users.js";
@@ -27,7 +28,7 @@ const AuditLogSchema = z
   .openapi("AuditLog");
 
 const AuditLogListSchema = z
-  .object({ items: z.array(AuditLogSchema), total: z.number() })
+  .object({ items: z.array(AuditLogSchema), total: z.number(), nextCursor: z.string().nullable() })
   .openapi("AuditLogList");
 
 const AuditStatsSchema = z
@@ -40,11 +41,11 @@ const AuditStatsSchema = z
   .openapi("AuditStats");
 
 const PaginationQuery = z.object({
-  page: z.coerce.number().int().min(1).default(1).openapi({
-    param: { name: "page", in: "query" },
-  }),
   limit: z.coerce.number().int().min(1).max(100).default(50).openapi({
     param: { name: "limit", in: "query" },
+  }),
+  cursor: z.string().optional().openapi({
+    param: { name: "cursor", in: "query" },
   }),
   search: z.string().optional().openapi({
     param: { name: "search", in: "query" },
@@ -120,24 +121,30 @@ const listRoute = createRoute({
 });
 
 app.openapi(listRoute, async (c) => {
-  const { page, limit, search } = c.req.valid("query");
-  const offset = (page - 1) * limit;
+  const { limit, cursor, search } = c.req.valid("query");
 
-  let whereClause = undefined;
+  const baseConditions: SQL[] = [];
   if (search) {
-    whereClause = or(
-      ilike(auditLogs.action, `${search}%`),
-      ilike(users.firstName, `${search}%`),
-      ilike(users.lastName, `${search}%`),
-      ilike(users.email, `${search}%`)
+    baseConditions.push(
+      or(
+        ilike(auditLogs.action, `${search}%`),
+        ilike(users.firstName, `${search}%`),
+        ilike(users.lastName, `${search}%`),
+        ilike(users.email, `${search}%`)
+      )!
     );
+  }
+
+  const cursorConditions = [...baseConditions];
+  if (cursor) {
+    cursorConditions.push(lt(auditLogs.createdAt, new Date(cursor)));
   }
 
   const [totalResult, rows] = await Promise.all([
     db.select({ value: count() })
       .from(auditLogs)
       .leftJoin(users, eq(auditLogs.userId, users.userId))
-      .where(whereClause),
+      .where(baseConditions.length > 0 ? and(...baseConditions) : undefined),
     db
       .select({
         logId: auditLogs.logId,
@@ -152,18 +159,19 @@ app.openapi(listRoute, async (c) => {
       .from(auditLogs)
       .leftJoin(users, eq(auditLogs.userId, users.userId))
       .leftJoin(roles, eq(users.roleId, roles.roleId))
-      .where(whereClause)
+      .where(cursorConditions.length > 0 ? and(...cursorConditions) : undefined)
       .orderBy(desc(auditLogs.createdAt))
-      .limit(limit)
-      .offset(offset),
+      .limit(limit + 1),
   ]);
 
-  const items = rows.map((r) => ({
+  const { items: rawItems, nextCursor } = paginateResults(rows, limit, "createdAt");
+
+  const items = rawItems.map((r) => ({
     ...r,
     createdAt: r.createdAt.toISOString(),
   }));
 
-  return c.json({ items, total: Number(totalResult[0]?.value ?? 0) }, 200);
+  return c.json({ items, total: Number(totalResult[0]?.value ?? 0), nextCursor }, 200);
 });
 
 export default app;

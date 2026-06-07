@@ -486,7 +486,7 @@ const projectHubRoute = createRoute({
 app.openapi(projectHubRoute, async (c) => {
   const { limit, cursor, search, college, status } = c.req.valid("query");
 
-  const whereConditions: SQL[] = [
+  const baseConditions: SQL[] = [
     isNull(proposals.archivedAt),
     or(
       eq(proposals.currentStatus, PROPOSAL_STATUS.ENDORSED),
@@ -497,7 +497,7 @@ app.openapi(projectHubRoute, async (c) => {
   ];
 
   if (search) {
-    whereConditions.push(
+    baseConditions.push(
       or(
         ilike(proposals.title, `${search}%`),
         ilike(users.firstName, `${search}%`),
@@ -507,19 +507,20 @@ app.openapi(projectHubRoute, async (c) => {
   }
 
   if (college) {
-    whereConditions.push(eq(departments.departmentName, college));
+    baseConditions.push(eq(departments.departmentName, college));
   }
 
   if (status) {
     if (Object.values(PROJECT_STATUS).includes(status as any)) {
-      whereConditions.push(eq(projects.projectStatus, status));
+      baseConditions.push(eq(projects.projectStatus, status));
     } else {
-      whereConditions.push(eq(proposals.currentStatus, status));
+      baseConditions.push(eq(proposals.currentStatus, status));
     }
   }
 
+  const cursorConditions = [...baseConditions];
   if (cursor) {
-    whereConditions.push(lt(proposals.createdAt, new Date(cursor)));
+    cursorConditions.push(lt(proposals.createdAt, new Date(cursor)));
   }
 
   const query = db
@@ -538,7 +539,7 @@ app.openapi(projectHubRoute, async (c) => {
     .innerJoin(users, eq(proposals.projectLeaderId, users.userId))
     .leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
     .leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
-    .where(and(...whereConditions))
+    .where(and(...cursorConditions))
     .orderBy(desc(proposals.createdAt));
 
   const rows = await query.limit(limit + 1);
@@ -548,7 +549,7 @@ app.openapi(projectHubRoute, async (c) => {
     .innerJoin(users, eq(proposals.projectLeaderId, users.userId))
     .leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
     .leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
-    .where(and(...whereConditions));
+    .where(and(...baseConditions));
 
   const { items, nextCursor } = paginateResults(rows, limit, "dateSubmitted");
 

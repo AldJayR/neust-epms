@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, and, isNull, desc, count } from "drizzle-orm";
+import { eq, and, isNull, lt, desc, count } from "drizzle-orm";
+import { paginateResults } from "../lib/pagination.js";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
@@ -28,7 +29,7 @@ const MoaSchema = z
   .openapi("Moa");
 
 const MoaListSchema = z
-  .object({ items: z.array(MoaSchema), total: z.number() })
+  .object({ items: z.array(MoaSchema), total: z.number(), nextCursor: z.string().nullable() })
   .openapi("MoaList");
 
 const CreateMoaSchema = z
@@ -64,11 +65,11 @@ const ParamId = z.object({
 });
 
 const PaginationQuery = z.object({
-  page: z.coerce.number().int().min(1).default(1).openapi({
-    param: { name: "page", in: "query" },
-  }),
   limit: z.coerce.number().int().min(1).max(100).default(50).openapi({
     param: { name: "limit", in: "query" },
+  }),
+  cursor: z.string().optional().openapi({
+    param: { name: "cursor", in: "query" },
   }),
 });
 
@@ -91,8 +92,14 @@ const listRoute = createRoute({
 });
 
 app.openapi(listRoute, async (c) => {
-  const { page, limit } = c.req.valid("query");
-  const offset = (page - 1) * limit;
+  const { limit, cursor } = c.req.valid("query");
+
+  const baseConditions = [isNull(moas.archivedAt)];
+
+  const cursorConditions = [...baseConditions];
+  if (cursor) {
+    cursorConditions.push(lt(moas.validUntil, new Date(cursor)));
+  }
 
   const rows = await db
     .select({
@@ -108,12 +115,13 @@ app.openapi(listRoute, async (c) => {
       archivedAt: moas.archivedAt,
     })
     .from(moas)
-    .where(isNull(moas.archivedAt))
+    .where(and(...cursorConditions))
     .orderBy(desc(moas.validUntil))
-    .limit(limit)
-    .offset(offset);
+    .limit(limit + 1);
 
-  const items = rows.map((r) => ({
+  const { items: rawItems, nextCursor } = paginateResults(rows, limit, "validUntil");
+
+  const items = rawItems.map((r) => ({
     ...r,
     validFrom: r.validFrom.toISOString(),
     validUntil: r.validUntil.toISOString(),
@@ -125,10 +133,10 @@ app.openapi(listRoute, async (c) => {
   const [totalResult] = await db
     .select({ value: count() })
     .from(moas)
-    .where(isNull(moas.archivedAt));
+    .where(and(...baseConditions));
   const total = Number(totalResult?.value ?? 0);
 
-  return c.json({ items, total }, 200);
+  return c.json({ items, total, nextCursor }, 200);
 });
 
 // ── GET /moas/:id ──
