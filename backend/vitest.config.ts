@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  test: {
+	test: {
     // Test file patterns
     include: ["src/**/*.test.ts", "test/**/*.test.ts"],
     exclude: ["**/node_modules/**", "**/dist/**"],
@@ -36,12 +36,9 @@ export default defineConfig({
     clearMocks: true,
     restoreMocks: true,
 
-    // Run tests in sequence to avoid DB connection conflicts
-    pool: "forks",
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
-  },
+		// Run tests in sequence to avoid DB connection conflicts
+		pool: "forks",
+		maxWorkers: 1,
+		isolate: false,
+	},
 });

@@ -181,7 +181,7 @@ function RegisterStepTwo() {
 							layoutId="reg-step-1"
 							className="size-2 cursor-pointer rounded-[12px] bg-[#d9d9d9] transition-colors hover:bg-zinc-400"
 							onClick={() => navigate({ to: "/register" })}
-							onKeyDown={(e) => {
+							onKeyDown={(e: React.KeyboardEvent<HTMLSpanElement>) => {
 								if (e.key === "Enter" || e.key === " ") {
 									e.preventDefault();
 									navigate({ to: "/register" });
