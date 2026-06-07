@@ -13,7 +13,6 @@ import {
 	SlidersHorizontal,
 	XCircle,
 } from "lucide-react";
-import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,8 +34,6 @@ import {
 import type { AuthUser } from "@/lib/auth";
 import { moaRepositoryQueryOptions } from "@/lib/director.functions";
 import { AppShell } from "../layout/app-shell";
-
-const PAGE_SIZE = 50;
 
 function MoaStatusBadge({ status }: { status: string }) {
 	if (status === "Valid") {
@@ -99,23 +96,24 @@ function MetricCard({
 
 interface MoaRepositoryPageProps {
 	user?: AuthUser | null;
+	page: number;
+	limit: number;
 	search?: string;
 	status?: string;
+	onPageChange: (page: number) => void;
 	onSearchChange: (search: string) => void;
 }
 
 export function MoaRepositoryPage({
+	page,
+	limit,
 	search,
 	status,
+	onPageChange,
 	onSearchChange,
 }: MoaRepositoryPageProps) {
-	const [currentPage, setCurrentPage] = React.useState(1);
-	const [cursorCache, setCursorCache] = React.useState<Map<number, string | undefined>>(new Map());
-
-	const cursor = cursorCache.get(currentPage);
-
 	const { data, isLoading } = useQuery(
-		moaRepositoryQueryOptions({ cursor, search, status }),
+		moaRepositoryQueryOptions({ page, limit, search, status }),
 	);
 
 	const items = data?.items ?? [];
@@ -125,19 +123,7 @@ export function MoaRepositoryPage({
 		expiringWithin90Days: 0,
 		activePartnerships: 0,
 	};
-	const totalPages = Math.ceil(total / PAGE_SIZE);
-
-	React.useEffect(() => {
-		if (data?.nextCursor) {
-			setCursorCache(prev => new Map(prev).set(currentPage + 1, data.nextCursor ?? undefined));
-		}
-	}, [data?.nextCursor, currentPage]);
-
-	const handleSearchChange = (value: string) => {
-		setCurrentPage(1);
-		setCursorCache(new Map());
-		onSearchChange(value);
-	};
+	const totalPages = Math.ceil(total / limit);
 
 	return (
 		<AppShell>
@@ -172,7 +158,7 @@ export function MoaRepositoryPage({
 							aria-label="Search MOAs"
 							className="h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-none placeholder:text-[#737373]"
 							value={search}
-							onChange={(e) => handleSearchChange(e.target.value)}
+							onChange={(e) => onSearchChange(e.target.value)}
 						/>
 					</div>
 					<Button
@@ -271,58 +257,73 @@ export function MoaRepositoryPage({
 										variant="ghost"
 										size="sm"
 										className="gap-1 pl-2.5 text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
-										onClick={() => {
-											if (currentPage > 1) setCurrentPage(currentPage - 1);
-										}}
-										disabled={currentPage <= 1}
+										onClick={() => onPageChange(page - 1)}
+										disabled={page <= 1}
 									>
 										<ChevronLeft className="size-4" />
 										<span>Previous</span>
 									</Button>
 								</PaginationItem>
 
-								{[...Array(totalPages)].map((_, i) => {
-								const p = i + 1;
-								if (
-									p === 1 ||
-									p === totalPages ||
-									(p >= currentPage - 1 && p <= currentPage + 1)
-								) {
-									return (
-										<PaginationItem key={p}>
-											<PaginationLink
-												isActive={currentPage === p}
-												onClick={() => setCurrentPage(p)}
-												className={
-													currentPage === p
-														? "border-[#e5e5e5] bg-white text-[14px] font-medium text-[#0a0a0a] shadow-sm"
-														: "border-transparent text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
-												}
-											>
-												{p}
-											</PaginationLink>
-										</PaginationItem>
-									);
-								}
-								if (p === currentPage - 2 || p === currentPage + 2) {
-									return (
-										<PaginationItem key={p}>
-											<PaginationEllipsis />
-										</PaginationItem>
-									);
-								}
-								return null;
-							})}
+								<PaginationItem>
+									<PaginationLink
+										isActive={page === 1}
+										onClick={() => onPageChange(1)}
+										className={
+											page === 1
+												? "border-[#e5e5e5] bg-white text-[14px] font-medium text-[#0a0a0a] shadow-sm"
+												: "border-transparent text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
+										}
+									>
+										1
+									</PaginationLink>
+								</PaginationItem>
+
+								{totalPages > 1 && (
+									<PaginationItem>
+										<PaginationLink
+											isActive={page === 2}
+											onClick={() => onPageChange(2)}
+											className={
+												page === 2
+													? "border-[#e5e5e5] bg-white text-[14px] font-medium text-[#0a0a0a] shadow-sm"
+													: "border-transparent text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
+											}
+										>
+											2
+										</PaginationLink>
+									</PaginationItem>
+								)}
+
+								{totalPages > 2 && (
+									<PaginationItem>
+										<PaginationLink
+											isActive={page === 3}
+											onClick={() => onPageChange(3)}
+											className={
+												page === 3
+													? "border-[#e5e5e5] bg-white text-[14px] font-medium text-[#0a0a0a] shadow-sm"
+													: "border-transparent text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
+											}
+										>
+											3
+										</PaginationLink>
+									</PaginationItem>
+								)}
+
+								{totalPages > 3 && (
+									<PaginationItem>
+										<PaginationEllipsis />
+									</PaginationItem>
+								)}
 
 								<PaginationItem>
 									<Button
 										variant="ghost"
 										size="sm"
 										className="gap-1 pr-2.5 text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
-										onClick={() => {
-											if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-										}}
-										disabled={currentPage >= totalPages}
+										onClick={() => onPageChange(page + 1)}
+										disabled={page >= totalPages}
 									>
 										<span>Next</span>
 										<ChevronRight className="size-4" />

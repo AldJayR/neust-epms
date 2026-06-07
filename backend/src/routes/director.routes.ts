@@ -1,6 +1,5 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { and, count, desc, eq, inArray, isNull, or, sql, ilike, lt, type SQL } from "drizzle-orm";
-import { paginateResults } from "../lib/pagination.js";
+import { and, count, desc, eq, inArray, isNull, or, sql, ilike } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { auditLogs } from "../db/schema/audit-logs.js";
 import { campuses } from "../db/schema/campuses.js";
@@ -39,13 +38,12 @@ const HubProjectListSchema = z
   .object({
     items: z.array(HubProjectSchema),
     total: z.number(),
-    nextCursor: z.string().nullable(),
   })
   .openapi("HubProjectList");
 
 const HubQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1).openapi({ param: { name: "page", in: "query" } }),
   limit: z.coerce.number().int().min(1).max(100).default(10).openapi({ param: { name: "limit", in: "query" } }),
-  cursor: z.string().optional().openapi({ param: { name: "cursor", in: "query" } }),
   search: z.string().optional().openapi({ param: { name: "search", in: "query" } }),
   college: z.string().optional().openapi({ param: { name: "college", in: "query" } }),
   status: z.string().optional().openapi({ param: { name: "status", in: "query" } }),
@@ -85,7 +83,6 @@ const MoaRepositoryItemSchema = z.object({
 const MoaRepositorySchema = z.object({
   items: z.array(MoaRepositoryItemSchema),
   total: z.number(),
-  nextCursor: z.string().nullable(),
   metrics: z.object({
     totalMoas: z.number(),
     expiringWithin90Days: z.number(),
@@ -107,7 +104,6 @@ const FacultyInvolvementSchema = z.object({
 const FacultyDirectorySchema = z.object({
   items: z.array(FacultyInvolvementSchema),
   total: z.number(),
-  nextCursor: z.string().nullable(),
   metrics: z.object({
     totalActiveExtension: z.number(),
     averageProjectsPerFaculty: z.number(),
@@ -126,8 +122,8 @@ const facultyDirectoryRoute = createRoute({
   security: [{ Bearer: [] }],
   request: {
     query: z.object({
+      page: z.coerce.number().int().min(1).default(1).openapi({ param: { name: "page", in: "query" } }),
       limit: z.coerce.number().int().min(1).max(100).default(10).openapi({ param: { name: "limit", in: "query" } }),
-      cursor: z.string().optional().openapi({ param: { name: "cursor", in: "query" } }),
       search: z.string().optional().openapi({ param: { name: "search", in: "query" } }),
       college: z.string().optional().openapi({ param: { name: "college", in: "query" } }),
     }),
@@ -141,9 +137,10 @@ const facultyDirectoryRoute = createRoute({
 });
 
 app.openapi(facultyDirectoryRoute, async (c) => {
-  const { limit, cursor, search, college } = c.req.valid("query");
+  const { page, limit, search, college } = c.req.valid("query");
+  const offset = (page - 1) * limit;
 
-  const whereConditions: SQL[] = [eq(users.isActive, true), eq(roles.roleName, ROLE_NAMES.FACULTY)];
+  const whereConditions = [eq(users.isActive, true), eq(roles.roleName, ROLE_NAMES.FACULTY)];
 
   if (search) {
     whereConditions.push(
@@ -156,10 +153,6 @@ app.openapi(facultyDirectoryRoute, async (c) => {
 
   if (college) {
     whereConditions.push(eq(departments.departmentName, college));
-  }
-
-  if (cursor) {
-    whereConditions.push(lt(users.lastName, cursor));
   }
 
   const facultyQuery = db
@@ -176,15 +169,10 @@ app.openapi(facultyDirectoryRoute, async (c) => {
     .where(and(...whereConditions))
     .orderBy(users.lastName);
 
-  const rows = await facultyQuery.limit(limit + 1);
+  const rows = await facultyQuery.limit(limit).offset(offset);
   const totalResult = await db.select({ value: count() }).from(users).innerJoin(roles, eq(users.roleId, roles.roleId)).where(and(...whereConditions));
 
-  const hasMore = rows.length > limit;
-  const slicedRows = hasMore ? rows.slice(0, limit) : rows;
-  const lastRow = slicedRows[slicedRows.length - 1];
-  const nextCursor = hasMore && lastRow ? lastRow.lastName : null;
-
-  const userIds = slicedRows.map((r) => r.userId);
+  const userIds = rows.map((r) => r.userId);
 
   const [leadCounts, collabCounts] = await Promise.all([
     db
@@ -209,7 +197,7 @@ app.openapi(facultyDirectoryRoute, async (c) => {
   const leadMap = new Map(leadCounts.map((r) => [r.userId, Number(r.value ?? 0)]));
   const collabMap = new Map(collabCounts.map((r) => [r.userId, Number(r.value ?? 0)]));
 
-  const items = slicedRows.map((row) => {
+  const items = rows.map((row) => {
     const leadProjects = leadMap.get(row.userId) ?? 0;
     const collaboratorProjects = collabMap.get(row.userId) ?? 0;
     return {
@@ -247,7 +235,6 @@ app.openapi(facultyDirectoryRoute, async (c) => {
   return c.json({
     items,
     total: Number(totalResult[0]?.value ?? 0),
-    nextCursor,
     metrics: {
       totalActiveExtension: Number(totalFaculty?.value ?? 0),
       averageProjectsPerFaculty: Number(totalFaculty?.value ? (Number(totalProjects?.value) / Number(totalFaculty?.value)).toFixed(1) : 0),
@@ -267,8 +254,8 @@ const moaRepositoryRoute = createRoute({
   security: [{ Bearer: [] }],
   request: {
     query: z.object({
+      page: z.coerce.number().int().min(1).default(1).openapi({ param: { name: "page", in: "query" } }),
       limit: z.coerce.number().int().min(1).max(100).default(10).openapi({ param: { name: "limit", in: "query" } }),
-      cursor: z.string().optional().openapi({ param: { name: "cursor", in: "query" } }),
       search: z.string().optional().openapi({ param: { name: "search", in: "query" } }),
       status: z.string().optional().openapi({ param: { name: "status", in: "query" } }),
     }),
@@ -282,11 +269,12 @@ const moaRepositoryRoute = createRoute({
 });
 
 app.openapi(moaRepositoryRoute, async (c) => {
-  const { limit, cursor, search, status } = c.req.valid("query");
+  const { page, limit, search, status } = c.req.valid("query");
+  const offset = (page - 1) * limit;
   const now = new Date();
   const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
-  const whereConditions: SQL[] = [isNull(moas.archivedAt)];
+  const whereConditions = [isNull(moas.archivedAt)];
 
   if (search) {
     whereConditions.push(ilike(moas.partnerName, `${search}%`));
@@ -328,10 +316,6 @@ app.openapi(moaRepositoryRoute, async (c) => {
     }
   }
 
-  if (cursor) {
-    whereConditions.push(lt(moas.validUntil, new Date(cursor)));
-  }
-
   const query = db
     .select({
       moaId: moas.moaId,
@@ -344,10 +328,8 @@ app.openapi(moaRepositoryRoute, async (c) => {
     .where(and(...whereConditions))
     .orderBy(desc(moas.validUntil));
 
-  const rows = await query.limit(limit + 1);
+  const rows = await query.limit(limit).offset(offset);
   const totalResult = await db.select({ value: count() }).from(moas).where(and(...whereConditions));
-
-  const { items, nextCursor } = paginateResults(rows, limit, "validUntil");
 
   const [totalMoasCount, expiringSoonCount, activeCount] = await Promise.all([
     db.select({ value: count() }).from(moas).where(isNull(moas.archivedAt)),
@@ -366,7 +348,7 @@ app.openapi(moaRepositoryRoute, async (c) => {
     ),
   ]);
 
-  const mappedItems = items.map((r) => {
+  const items = rows.map((r) => {
     const daysUntilExpiry = Math.ceil((r.validUntil.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
     
     let moaStatus: "Valid" | "Renewal Needed" | "Expired" | "Terminated" = "Valid";
@@ -388,9 +370,8 @@ app.openapi(moaRepositoryRoute, async (c) => {
   });
 
   return c.json({
-    items: mappedItems,
+    items,
     total: Number(totalResult[0]?.value ?? 0),
-    nextCursor,
     metrics: {
       totalMoas: Number(totalMoasCount[0]?.value ?? 0),
       expiringWithin90Days: Number(expiringSoonCount[0]?.value ?? 0),
@@ -484,20 +465,21 @@ const projectHubRoute = createRoute({
 });
 
 app.openapi(projectHubRoute, async (c) => {
-  const { limit, cursor, search, college, status } = c.req.valid("query");
+  const { page, limit, search, college, status } = c.req.valid("query");
+  const offset = (page - 1) * limit;
 
-  const baseConditions: SQL[] = [
+  const whereConditions = [
     isNull(proposals.archivedAt),
     or(
       eq(proposals.currentStatus, PROPOSAL_STATUS.ENDORSED),
       eq(proposals.currentStatus, PROPOSAL_STATUS.APPROVED),
       eq(proposals.currentStatus, PROPOSAL_STATUS.RETURNED),
       eq(proposals.currentStatus, PROPOSAL_STATUS.REJECTED),
-    )!,
+    ),
   ];
 
   if (search) {
-    baseConditions.push(
+    whereConditions.push(
       or(
         ilike(proposals.title, `${search}%`),
         ilike(users.firstName, `${search}%`),
@@ -507,20 +489,15 @@ app.openapi(projectHubRoute, async (c) => {
   }
 
   if (college) {
-    baseConditions.push(eq(departments.departmentName, college));
+    whereConditions.push(eq(departments.departmentName, college));
   }
 
   if (status) {
     if (Object.values(PROJECT_STATUS).includes(status as any)) {
-      baseConditions.push(eq(projects.projectStatus, status));
+      whereConditions.push(eq(projects.projectStatus, status));
     } else {
-      baseConditions.push(eq(proposals.currentStatus, status));
+      whereConditions.push(eq(proposals.currentStatus, status));
     }
-  }
-
-  const cursorConditions = [...baseConditions];
-  if (cursor) {
-    cursorConditions.push(lt(proposals.createdAt, new Date(cursor)));
   }
 
   const query = db
@@ -539,21 +516,20 @@ app.openapi(projectHubRoute, async (c) => {
     .innerJoin(users, eq(proposals.projectLeaderId, users.userId))
     .leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
     .leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
-    .where(and(...cursorConditions))
+    .where(and(...whereConditions))
     .orderBy(desc(proposals.createdAt));
 
-  const rows = await query.limit(limit + 1);
   const totalResult = await db
     .select({ value: count() })
     .from(proposals)
     .innerJoin(users, eq(proposals.projectLeaderId, users.userId))
     .leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
     .leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
-    .where(and(...baseConditions));
+    .where(and(...whereConditions));
 
-  const { items, nextCursor } = paginateResults(rows, limit, "dateSubmitted");
+  const rows = await query.limit(limit).offset(offset);
 
-  const mappedItems = items.map((r) => ({
+  const items = rows.map((r) => ({
     id: r.id,
     title: r.title,
     leaderName: `${r.leaderFirstName} ${r.leaderLastName}`,
@@ -564,7 +540,7 @@ app.openapi(projectHubRoute, async (c) => {
     type: (r.projectStatus ? "Project" : "Proposal") as "Project" | "Proposal",
   }));
 
-  return c.json({ items: mappedItems, total: Number(totalResult[0]?.value ?? 0), nextCursor }, 200);
+  return c.json({ items, total: Number(totalResult[0]?.value ?? 0) }, 200);
 });
 
 app.openapi(dashboardRoute, async (c) => {

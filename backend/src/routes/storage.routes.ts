@@ -1,8 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
-import { count, eq, and, isNull, lt, max } from "drizzle-orm";
-import { paginateResults } from "../lib/pagination.js";
+import { eq, and, isNull, max } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { proposalDocuments } from "../db/schema/proposal-documents.js";
 import { proposals } from "../db/schema/proposals.js";
@@ -82,8 +81,6 @@ const DocumentListSchema = z
         uploadedAt: z.string(),
       }),
     ),
-    total: z.number(),
-    nextCursor: z.string().nullable(),
   })
   .openapi("DocumentList");
 
@@ -113,11 +110,11 @@ const DocumentParam = z.object({
 });
 
 const PaginationQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1).openapi({
+    param: { name: "page", in: "query" },
+  }),
   limit: z.coerce.number().int().min(1).max(100).default(50).openapi({
     param: { name: "limit", in: "query" },
-  }),
-  cursor: z.string().optional().openapi({
-    param: { name: "cursor", in: "query" },
   }),
 });
 
@@ -150,7 +147,8 @@ const listDocsRoute = createRoute({
 app.openapi(listDocsRoute, async (c) => {
   const user = c.get("user");
   const { proposalId } = c.req.valid("param");
-  const { limit, cursor } = c.req.valid("query");
+  const { page, limit } = c.req.valid("query");
+  const offset = (page - 1) * limit;
 
   const [proposal] = await db
     .select({
@@ -177,13 +175,6 @@ app.openapi(listDocsRoute, async (c) => {
     );
   }
 
-  const baseConditions = [eq(proposalDocuments.proposalId, proposalId)];
-
-  const cursorConditions = [...baseConditions];
-  if (cursor) {
-    cursorConditions.push(lt(proposalDocuments.versionNum, parseInt(cursor)));
-  }
-
   const rows = await db
     .select({
       documentId: proposalDocuments.documentId,
@@ -193,25 +184,19 @@ app.openapi(listDocsRoute, async (c) => {
       uploadedAt: proposalDocuments.uploadedAt,
     })
     .from(proposalDocuments)
-    .where(and(...cursorConditions))
+    .where(eq(proposalDocuments.proposalId, proposalId))
     .orderBy(proposalDocuments.versionNum)
-    .limit(limit + 1);
+    .limit(limit)
+    .offset(offset);
 
-  const [totalResult] = await db
-    .select({ value: count() })
-    .from(proposalDocuments)
-    .where(and(...baseConditions));
-
-  const { items: rawItems, nextCursor } = paginateResults(rows, limit, "versionNum");
-
-  const items = rawItems.map((r) => ({
+  const items = rows.map((r) => ({
     documentId: r.documentId,
     proposalId: r.proposalId,
     versionNum: r.versionNum,
     uploadedAt: r.uploadedAt.toISOString(),
   }));
 
-  return c.json({ items, total: Number(totalResult?.value ?? 0), nextCursor }, 200);
+  return c.json({ items }, 200);
 });
 
 // ── POST /proposals/:proposalId/documents/upload ──

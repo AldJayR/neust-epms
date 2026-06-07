@@ -11,7 +11,6 @@ import {
 	RotateCcw,
 	Search,
 } from "lucide-react";
-import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,8 +39,6 @@ import {
 import type { AuthUser } from "@/lib/auth";
 import { projectHubQueryOptions } from "@/lib/director.functions";
 import { AppShell } from "../layout/app-shell";
-
-const PAGE_SIZE = 50;
 
 function ProjectStatusBadge({ status }: { status: string }) {
 	if (status === "Approved") {
@@ -87,9 +84,12 @@ function ProjectStatusBadge({ status }: { status: string }) {
 
 interface ProjectHubPageProps {
 	user?: AuthUser | null;
+	page: number;
+	limit: number;
 	search?: string;
 	college?: string;
 	status?: string;
+	onPageChange: (page: number) => void;
 	onSearchChange: (search: string) => void;
 	onCollegeChange: (college: string) => void;
 	onStatusChange: (status: string) => void;
@@ -97,51 +97,25 @@ interface ProjectHubPageProps {
 }
 
 export function ProjectHubPage({
+	page,
+	limit,
 	search,
 	college,
 	status,
+	onPageChange,
 	onSearchChange,
 	onCollegeChange,
 	onStatusChange,
 	onProjectClick,
 }: ProjectHubPageProps) {
-	const [currentPage, setCurrentPage] = React.useState(1);
-	const [cursorCache, setCursorCache] = React.useState<Map<number, string | undefined>>(new Map());
-
-	const cursor = cursorCache.get(currentPage);
-
 	const { data, isLoading } = useQuery(
-		projectHubQueryOptions({ cursor, search, college, status }),
+		projectHubQueryOptions({ page, limit, search, college, status }),
 	);
 
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
-	const totalPages = Math.ceil(total / PAGE_SIZE);
+	const totalPages = Math.ceil(total / limit);
 	const showTableHeader = items.length > 0 || (search ?? "").trim().length > 0 || (college ?? "").trim().length > 0 || (status ?? "").trim().length > 0;
-
-	React.useEffect(() => {
-		if (data?.nextCursor) {
-			setCursorCache(prev => new Map(prev).set(currentPage + 1, data.nextCursor ?? undefined));
-		}
-	}, [data?.nextCursor, currentPage]);
-
-	const handleSearchChange = (value: string) => {
-		setCurrentPage(1);
-		setCursorCache(new Map());
-		onSearchChange(value);
-	};
-
-	const handleCollegeChange = (value: string) => {
-		setCurrentPage(1);
-		setCursorCache(new Map());
-		onCollegeChange(value);
-	};
-
-	const handleStatusChange = (value: string) => {
-		setCurrentPage(1);
-		setCursorCache(new Map());
-		onStatusChange(value);
-	};
 
 	return (
 		<AppShell>
@@ -160,14 +134,14 @@ export function ProjectHubPage({
 							aria-label="Search projects"
 							className="h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-sm"
 							value={search}
-							onChange={(e) => handleSearchChange(e.target.value)}
+							onChange={(e) => onSearchChange(e.target.value)}
 						/>
 					</div>
 					<div className="flex w-full items-center gap-4 sm:w-auto">
 						<Select
 							value={college || "all"}
 							onValueChange={(val: string | null) =>
-								handleCollegeChange(val === "all" ? "" : (val ?? ""))
+								onCollegeChange(val === "all" ? "" : (val ?? ""))
 							}
 						>
 							<SelectTrigger className="h-9 w-full rounded-lg border-[#e5e5e5] bg-white shadow-sm sm:w-[180px]">
@@ -187,7 +161,7 @@ export function ProjectHubPage({
 						<Select
 							value={status || "all"}
 							onValueChange={(val: string | null) =>
-								handleStatusChange(val === "all" ? "" : (val ?? ""))
+								onStatusChange(val === "all" ? "" : (val ?? ""))
 							}
 						>
 							<SelectTrigger className="h-9 w-full rounded-lg border-[#e5e5e5] bg-white shadow-sm sm:w-[180px]">
@@ -303,10 +277,10 @@ export function ProjectHubPage({
 					<p className="text-xs text-[#666]">
 						Showing{" "}
 						<span className="font-bold">
-							{Math.min((currentPage - 1) * PAGE_SIZE + 1, total)}
+							{Math.min((page - 1) * limit + 1, total)}
 						</span>{" "}
 						to{" "}
-						<span className="font-bold">{Math.min(currentPage * PAGE_SIZE, total)}</span>{" "}
+						<span className="font-bold">{Math.min(page * limit, total)}</span>{" "}
 						of <span className="font-bold">{total}</span> results
 					</p>
 
@@ -318,10 +292,8 @@ export function ProjectHubPage({
 										variant="ghost"
 										size="sm"
 										className="gap-1 pl-2.5 text-[#0a0a0a] hover:bg-transparent"
-										onClick={() => {
-											if (currentPage > 1) setCurrentPage(currentPage - 1);
-										}}
-										disabled={currentPage <= 1}
+										onClick={() => onPageChange(page - 1)}
+										disabled={page <= 1}
 									>
 										<ChevronLeft className="size-4" />
 										<span>Previous</span>
@@ -333,15 +305,15 @@ export function ProjectHubPage({
 									if (
 										p === 1 ||
 										p === totalPages ||
-										(p >= currentPage - 1 && p <= currentPage + 1)
+										(p >= page - 1 && p <= page + 1)
 									) {
 										return (
 											<PaginationItem key={p}>
 												<PaginationLink
-													isActive={currentPage === p}
-													onClick={() => setCurrentPage(p)}
+													isActive={page === p}
+													onClick={() => onPageChange(p)}
 													className={
-														currentPage === p
+														page === p
 															? "border-[#e5e5e5] bg-white text-[#0a0a0a] shadow-sm"
 															: "border-transparent text-[#0a0a0a] hover:bg-transparent"
 													}
@@ -351,7 +323,7 @@ export function ProjectHubPage({
 											</PaginationItem>
 										);
 									}
-									if (p === currentPage - 2 || p === currentPage + 2) {
+									if (p === page - 2 || p === page + 2) {
 										return (
 											<PaginationItem key={p}>
 												<PaginationEllipsis />
@@ -366,10 +338,8 @@ export function ProjectHubPage({
 										variant="ghost"
 										size="sm"
 										className="gap-1 pr-2.5 text-[#0a0a0a] hover:bg-transparent"
-										onClick={() => {
-											if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-										}}
-										disabled={currentPage >= totalPages}
+										onClick={() => onPageChange(page + 1)}
+										disabled={page >= totalPages}
 									>
 										<span>Next</span>
 										<ChevronRight className="size-4" />

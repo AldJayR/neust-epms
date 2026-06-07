@@ -1,6 +1,5 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { count, eq, and, isNull, lt, desc } from "drizzle-orm";
-import { paginateResults } from "../lib/pagination.js";
+import { eq, and, isNull } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { specialOrders } from "../db/schema/special-orders.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
@@ -27,7 +26,7 @@ const SpecialOrderSchema = z
   .openapi("SpecialOrder");
 
 const SpecialOrderListSchema = z
-  .object({ items: z.array(SpecialOrderSchema), total: z.number(), nextCursor: z.string().nullable() })
+  .object({ items: z.array(SpecialOrderSchema) })
   .openapi("SpecialOrderList");
 
 const CreateSpecialOrderSchema = z
@@ -60,11 +59,11 @@ const ParamId = z.object({
 });
 
 const PaginationQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1).openapi({
+    param: { name: "page", in: "query" },
+  }),
   limit: z.coerce.number().int().min(1).max(100).default(50).openapi({
     param: { name: "limit", in: "query" },
-  }),
-  cursor: z.string().optional().openapi({
-    param: { name: "cursor", in: "query" },
   }),
 });
 
@@ -87,14 +86,8 @@ const listRoute = createRoute({
 });
 
 app.openapi(listRoute, async (c) => {
-  const { limit, cursor } = c.req.valid("query");
-
-  const baseConditions = [isNull(specialOrders.archivedAt)];
-
-  const cursorConditions = [...baseConditions];
-  if (cursor) {
-    cursorConditions.push(lt(specialOrders.createdAt, new Date(cursor)));
-  }
+  const { page, limit } = c.req.valid("query");
+  const offset = (page - 1) * limit;
 
   const rows = await db
     .select({
@@ -109,18 +102,11 @@ app.openapi(listRoute, async (c) => {
       archivedAt: specialOrders.archivedAt,
     })
     .from(specialOrders)
-    .where(and(...cursorConditions))
-    .orderBy(desc(specialOrders.createdAt))
-    .limit(limit + 1);
+    .where(isNull(specialOrders.archivedAt))
+    .limit(limit)
+    .offset(offset);
 
-  const [totalResult] = await db
-    .select({ value: count() })
-    .from(specialOrders)
-    .where(and(...baseConditions));
-
-  const { items: rawItems, nextCursor } = paginateResults(rows, limit, "createdAt");
-
-  const items = rawItems.map((r) => ({
+  const items = rows.map((r) => ({
     ...r,
     dateIssued: r.dateIssued?.toISOString() ?? null,
     createdAt: r.createdAt.toISOString(),
@@ -128,7 +114,7 @@ app.openapi(listRoute, async (c) => {
     archivedAt: r.archivedAt?.toISOString() ?? null,
   }));
 
-  return c.json({ items, total: Number(totalResult?.value ?? 0), nextCursor }, 200);
+  return c.json({ items }, 200);
 });
 
 // ── POST /special-orders ──

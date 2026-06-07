@@ -10,7 +10,8 @@ const ADMIN_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
 // ── Schemas ───────────────────────────────────────────────
 
 const adminUsersQueryParamsSchema = z.object({
-	cursor: z.string().optional(),
+	page: z.number().optional(),
+	pageSize: z.number().optional(),
 	search: z.string().optional(),
 	isActive: z.string().optional(),
 });
@@ -30,7 +31,8 @@ const bulkApproveSchema = z.object({
 });
 
 const auditLogsParamsSchema = z.object({
-	cursor: z.string().optional(),
+	page: z.number(),
+	limit: z.number(),
 	search: z.string().optional(),
 });
 
@@ -57,11 +59,13 @@ export interface UserResponse {
 export interface UsersListResponse {
 	users: UserResponse[];
 	total: number;
-	nextCursor: string | null;
+	page: number;
+	pageSize: number;
 }
 
 export interface AdminUsersQueryParams {
-	cursor?: string;
+	page: number;
+	pageSize: number;
 	search?: string;
 	isActive?: string;
 }
@@ -75,15 +79,16 @@ export function adminStatsQueryOptions() {
 }
 
 export function adminUsersQueryOptions({
-	cursor,
+	page,
+	pageSize,
 	search,
 	isActive,
 }: AdminUsersQueryParams) {
 	return queryOptions({
-		queryKey: ["admin", "users", { cursor, search, isActive }],
+		queryKey: ["admin", "users", page, pageSize, search ?? "", isActive ?? ""],
 		queryFn: () =>
 			getAdminUsersFn({
-				data: { cursor, search, isActive },
+				data: { page, pageSize, search, isActive },
 			}),
 		staleTime: ADMIN_QUERY_STALE_TIME_MS,
 	});
@@ -130,10 +135,10 @@ export const getAdminUsersFn = createServerFn({ method: "GET" })
 		}
 
 		const query = new URLSearchParams();
-		query.append("limit", "50");
-		if (data.cursor) query.append("cursor", data.cursor);
 		if (data.search) query.append("search", data.search);
 		if (data.isActive) query.append("isActive", data.isActive);
+		if (data.page) query.append("page", data.page.toString());
+		if (data.pageSize) query.append("pageSize", data.pageSize.toString());
 
 		const response = await fetch(
 			`${API_BASE}/admin/users?${query.toString()}`,
@@ -275,7 +280,6 @@ export interface AuditLog {
 export interface AuditLogListResponse {
 	items: AuditLog[];
 	total: number;
-	nextCursor: string | null;
 }
 
 export interface AuditStats {
@@ -296,8 +300,8 @@ export const getAuditLogsFn = createServerFn({ method: "GET" })
 		}
 
 		const query = new URLSearchParams();
-		query.append("limit", "50");
-		if (data.cursor) query.append("cursor", data.cursor);
+		query.append("page", data.page.toString());
+		query.append("limit", data.limit.toString());
 		if (data.search) query.append("search", data.search);
 
 		const response = await fetch(`${API_BASE}/audit-logs?${query.toString()}`, {
@@ -341,7 +345,8 @@ export const getAuditStatsFn = createServerFn({ method: "GET" }).handler(
 );
 
 export function auditLogsQueryOptions(params: {
-	cursor?: string;
+	page: number;
+	limit: number;
 	search?: string;
 }) {
 	return queryOptions({

@@ -4,6 +4,8 @@ import { ProjectHubPage } from "@/features/director/project-hub-page";
 import { projectHubQueryOptions } from "@/lib/director.functions";
 
 const projectsSearchSchema = z.object({
+	page: z.number().optional().default(1),
+	limit: z.number().optional().default(10),
 	search: z.string().optional(),
 	college: z.string().optional(),
 	status: z.string().optional(),
@@ -13,10 +15,15 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 	validateSearch: (search) => projectsSearchSchema.parse(search),
 	beforeLoad: ({ context }) => {
 		if (context.auth.user?.roleName === "Super Admin") {
-			throw redirect({ to: "/dashboard" });
+			throw redirect({
+				to: "/dashboard",
+				search: { page: 1, pageSize: 10 },
+			});
 		}
 	},
 	loaderDeps: ({ search }) => ({
+		page: search.page,
+		limit: search.limit,
 		search: search.search,
 		college: search.college,
 		status: search.status,
@@ -31,6 +38,8 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 
 		await context.queryClient.ensureQueryData(
 			projectHubQueryOptions({
+				page: deps.page,
+				limit: deps.limit,
 				search: deps.search,
 				college: deps.college,
 				status: deps.status,
@@ -43,24 +52,30 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 function ProjectsIndexPage() {
 	const context = Route.useRouteContext();
 	const user = context.auth.user;
-	const { search, college, status } = Route.useSearch();
+	const { page, limit, search, college, status } = Route.useSearch();
 	const navigate = Route.useNavigate();
 
 	const handleSearch = (newSearch: string) => {
 		navigate({
-			search: (old) => ({ ...old, search: newSearch || undefined }),
+			search: (old) => ({ ...old, search: newSearch || undefined, page: 1 }),
 		});
 	};
 
 	const handleCollegeChange = (newCollege: string) => {
 		navigate({
-			search: (old) => ({ ...old, college: newCollege || undefined }),
+			search: (old) => ({ ...old, college: newCollege || undefined, page: 1 }),
 		});
 	};
 
 	const handleStatusChange = (newStatus: string) => {
 		navigate({
-			search: (old) => ({ ...old, status: newStatus || undefined }),
+			search: (old) => ({ ...old, status: newStatus || undefined, page: 1 }),
+		});
+	};
+
+	const handlePageChange = (newPage: number) => {
+		navigate({
+			search: (old) => ({ ...old, page: newPage }),
 		});
 	};
 
@@ -74,9 +89,12 @@ function ProjectsIndexPage() {
 	if (user?.roleName === "Director" || user?.roleName === "Super Admin") {
 		return (
 			<ProjectHubPage
+				page={page}
+				limit={limit}
 				search={search}
 				college={college}
 				status={status}
+				onPageChange={handlePageChange}
 				onSearchChange={handleSearch}
 				onCollegeChange={handleCollegeChange}
 				onStatusChange={handleStatusChange}

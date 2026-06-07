@@ -44,7 +44,7 @@ const rankOptions = [
 export const Route = createFileRoute("/register")({
 	beforeLoad: ({ context }) => {
 		if (context.auth.isAuthenticated) {
-			throw redirect({ to: "/dashboard" });
+			throw redirect({ to: "/dashboard", search: { page: 1, pageSize: 10 } });
 		}
 	},
 	loader: async ({ context }) => {

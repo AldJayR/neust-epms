@@ -11,20 +11,23 @@ const DIRECTOR_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
 // ── Schemas ───────────────────────────────────────────────
 
 const projectHubParamsSchema = z.object({
-	cursor: z.string().optional(),
+	page: z.number(),
+	limit: z.number(),
 	search: z.string().optional(),
 	college: z.string().optional(),
 	status: z.string().optional(),
 });
 
 const moaRepositoryParamsSchema = z.object({
-	cursor: z.string().optional(),
+	page: z.number(),
+	limit: z.number(),
 	search: z.string().optional(),
 	status: z.string().optional(),
 });
 
 const facultyDirectoryParamsSchema = z.object({
-	cursor: z.string().optional(),
+	page: z.number(),
+	limit: z.number(),
 	search: z.string().optional(),
 	college: z.string().optional(),
 });
@@ -75,11 +78,11 @@ export interface HubProject {
 export interface ProjectHubResponse {
 	items: HubProject[];
 	total: number;
-	nextCursor: string | null;
 }
 
 export interface ProjectHubParams {
-	cursor?: string;
+	page: number;
+	limit: number;
 	search?: string;
 	college?: string;
 	status?: string;
@@ -96,7 +99,6 @@ export interface MoaItem {
 export interface MoaRepositoryResponse {
 	items: MoaItem[];
 	total: number;
-	nextCursor: string | null;
 	metrics: {
 		totalMoas: number;
 		expiringWithin90Days: number;
@@ -105,7 +107,8 @@ export interface MoaRepositoryResponse {
 }
 
 export interface MoaRepositoryParams {
-	cursor?: string;
+	page: number;
+	limit: number;
 	search?: string;
 	status?: string;
 }
@@ -124,7 +127,6 @@ export interface FacultyInvolvement {
 export interface FacultyDirectoryResponse {
 	items: FacultyInvolvement[];
 	total: number;
-	nextCursor: string | null;
 	metrics: {
 		totalActiveExtension: number;
 		averageProjectsPerFaculty: number;
@@ -136,7 +138,8 @@ export interface FacultyDirectoryResponse {
 }
 
 export interface FacultyDirectoryParams {
-	cursor?: string;
+	page: number;
+	limit: number;
 	search?: string;
 	college?: string;
 }
@@ -205,7 +208,6 @@ export interface ReportItem {
 export interface ReportsResponse {
 	items: ReportItem[];
 	total: number;
-	nextCursor: string | null;
 }
 
 // ── Server Functions ──────────────────────────────────────
@@ -244,9 +246,11 @@ export const getProjectHubFn = createServerFn({ method: "GET" })
 			throw new Error("Unauthorized");
 		}
 
-		const query = new URLSearchParams();
-		query.append("limit", "50");
-		if (data.cursor) query.append("cursor", data.cursor);
+		const query = new URLSearchParams({
+			page: data.page.toString(),
+			limit: data.limit.toString(),
+		});
+
 		if (data.search) query.append("search", data.search);
 		if (data.college) query.append("college", data.college);
 		if (data.status) query.append("status", data.status);
@@ -275,9 +279,11 @@ export const getMoaRepositoryFn = createServerFn({ method: "GET" })
 			throw new Error("Unauthorized");
 		}
 
-		const query = new URLSearchParams();
-		query.append("limit", "50");
-		if (data.cursor) query.append("cursor", data.cursor);
+		const query = new URLSearchParams({
+			page: data.page.toString(),
+			limit: data.limit.toString(),
+		});
+
 		if (data.search) query.append("search", data.search);
 		if (data.status) query.append("status", data.status);
 
@@ -305,9 +311,11 @@ export const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 			throw new Error("Unauthorized");
 		}
 
-		const query = new URLSearchParams();
-		query.append("limit", "50");
-		if (data.cursor) query.append("cursor", data.cursor);
+		const query = new URLSearchParams({
+			page: data.page.toString(),
+			limit: data.limit.toString(),
+		});
+
 		if (data.search) query.append("search", data.search);
 		if (data.college) query.append("college", data.college);
 
@@ -397,7 +405,7 @@ export const getReportStatsFn = createServerFn({ method: "GET" }).handler(
 			throw new Error("Unauthorized");
 		}
 
-		const response = await fetch(`${API_BASE}/reports`, {
+		const response = await fetch(`${API_BASE}/reports?page=1&limit=100`, {
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
 			},
