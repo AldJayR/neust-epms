@@ -80,7 +80,7 @@ export function adminUsersQueryOptions({
 	isActive,
 }: AdminUsersQueryParams) {
 	return queryOptions({
-		queryKey: ["admin", "users", cursor ?? "", search ?? "", isActive ?? ""],
+		queryKey: ["admin", "users", { cursor, search, isActive }],
 		queryFn: () =>
 			getAdminUsersFn({
 				data: { cursor, search, isActive },

@@ -63,6 +63,9 @@ export function ActivityLogPage({
 	const statsQuery = useQuery(auditStatsQueryOptions());
 	const logsQuery = useQuery(auditLogsQueryOptions({ cursor, search }));
 
+	const total = logsQuery.data?.total ?? 0;
+	const totalPages = Math.ceil(total / PAGE_SIZE);
+
 	React.useEffect(() => {
 		if (logsQuery.data?.nextCursor) {
 			setCursorCache(prev => new Map(prev).set(currentPage + 1, logsQuery.data?.nextCursor ?? undefined));
@@ -295,20 +298,23 @@ export function ActivityLogPage({
 						<ChevronLeft className="size-4" />
 						<span>Previous</span>
 					</Button>
-					{[1, 2, 3].map((p) => (
-						<Button
-							key={p}
-							variant={currentPage === p ? "outline" : "ghost"}
-							size="icon"
-							className={cn(
-								"size-9 rounded-[8px]",
-								currentPage === p && "border-[#e5e5e5] shadow-sm",
-							)}
-							onClick={() => setCurrentPage(p)}
-						>
-							{p}
-						</Button>
-					))}
+					{[...Array(totalPages)].map((_, i) => {
+						const p = i + 1;
+						return (
+							<Button
+								key={p}
+								variant={currentPage === p ? "outline" : "ghost"}
+								size="icon"
+								className={cn(
+									"size-9 rounded-[8px]",
+									currentPage === p && "border-[#e5e5e5] shadow-sm",
+								)}
+								onClick={() => setCurrentPage(p)}
+							>
+								{p}
+							</Button>
+						);
+					})}
 					<div className="px-2 text-muted-foreground">
 						<MoreVertical className="size-4 rotate-90" />
 					</div>
