@@ -27,12 +27,8 @@ export const moas = pgTable(
     archivedAt: timestamp("archived_at", { withTimezone: true }),
   },
   (table) => ({
-    validUntilIdx: index("moas_valid_until_idx").on(table.validUntil),
     activeIdx: index("moas_active_idx")
       .on(table.validUntil)
-      .where(sql`${table.archivedAt} IS NULL`),
-    notExpiredIdx: index("moas_not_expired_idx")
-      .on(table.isExpired)
       .where(sql`${table.archivedAt} IS NULL`),
   }),
 );

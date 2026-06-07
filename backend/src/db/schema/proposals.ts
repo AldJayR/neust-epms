@@ -7,7 +7,6 @@ import {
   timestamp,
   index,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
 import { users } from "./users.js";
 import { campuses } from "./campuses.js";
 import { departments } from "./departments.js";
@@ -64,8 +63,5 @@ export const proposals = pgTable(
     campusIdx: index("proposals_campus_id_idx").on(table.campusId),
     departmentIdx: index("proposals_department_id_idx").on(table.departmentId),
     statusIdx: index("proposals_status_idx").on(table.currentStatus),
-    activeStatusIdx: index("proposals_active_status_idx")
-      .on(table.currentStatus)
-      .where(sql`${table.archivedAt} IS NULL`),
   }),
 );

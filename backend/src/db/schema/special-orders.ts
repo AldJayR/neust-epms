@@ -5,7 +5,6 @@ import {
   timestamp,
   index,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
 import { proposalMembers } from "./proposal-members.js";
 
 /**
@@ -33,8 +32,5 @@ export const specialOrders = pgTable(
   },
   (table) => ({
     memberIdx: index("so_member_id_idx").on(table.memberId),
-    activeStatusIdx: index("so_active_status_idx")
-      .on(table.status)
-      .where(sql`${table.archivedAt} IS NULL`),
   }),
 );

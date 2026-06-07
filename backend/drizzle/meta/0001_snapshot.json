@@ -1,5 +1,5 @@
 {
-  "id": "3c4a12cd-d1df-4f41-bf73-71a572da40a1",
+  "id": "3ea9e689-7f64-408f-9d40-04bae023cbc9",
   "prevId": "362b87d2-5367-439e-b2e3-b69fd0b55d95",
   "version": "7",
   "dialect": "postgresql",
@@ -310,42 +310,11 @@
         }
       },
       "indexes": {
-        "moas_valid_until_idx": {
-          "name": "moas_valid_until_idx",
-          "columns": [
-            {
-              "expression": "valid_until",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "moas_active_idx": {
           "name": "moas_active_idx",
           "columns": [
             {
               "expression": "valid_until",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"moas\".\"archived_at\" IS NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "moas_not_expired_idx": {
-          "name": "moas_not_expired_idx",
-          "columns": [
-            {
-              "expression": "is_expired",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -577,22 +546,6 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "projects_active_status_idx": {
-          "name": "projects_active_status_idx",
-          "columns": [
-            {
-              "expression": "project_status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"projects\".\"archived_at\" IS NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1524,22 +1477,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "proposals_active_status_idx": {
-          "name": "proposals_active_status_idx",
-          "columns": [
-            {
-              "expression": "current_status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"proposals\".\"archived_at\" IS NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -1736,22 +1673,6 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "so_active_status_idx": {
-          "name": "so_active_status_idx",
-          "columns": [
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"special_orders\".\"archived_at\" IS NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
