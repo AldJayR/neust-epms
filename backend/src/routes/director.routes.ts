@@ -572,10 +572,15 @@ app.openapi(dashboardRoute, async (c) => {
   const now = new Date();
   const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
-  const [totalProjectsResult, ongoingProjectsResult, completedProjectsResult, underEvaluationResult] = await Promise.all([
-    db.select({ value: count() }).from(projects).where(isNull(projects.archivedAt)),
-    db.select({ value: count() }).from(projects).where(and(isNull(projects.archivedAt), eq(projects.projectStatus, PROJECT_STATUS.ONGOING))),
-    db.select({ value: count() }).from(projects).where(and(isNull(projects.archivedAt), eq(projects.projectStatus, PROJECT_STATUS.COMPLETED))),
+  const [projectMetrics, underEvaluationResult] = await Promise.all([
+    db
+      .select({
+        total: sql<number>`count(*)`,
+        ongoing: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.ONGOING})`,
+        completed: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.COMPLETED})`,
+      })
+      .from(projects)
+      .where(isNull(projects.archivedAt)),
     db.select({ value: count() }).from(proposals).where(
       and(
         isNull(proposals.archivedAt),
@@ -629,10 +634,10 @@ app.openapi(dashboardRoute, async (c) => {
   return c.json(
     {
       metrics: {
-        totalProjects: Number(totalProjectsResult[0]?.value ?? 0),
-        ongoingProjects: Number(ongoingProjectsResult[0]?.value ?? 0),
+        totalProjects: Number(projectMetrics[0]?.total ?? 0),
+        ongoingProjects: Number(projectMetrics[0]?.ongoing ?? 0),
         underEvaluation: Number(underEvaluationResult[0]?.value ?? 0),
-        completed: Number(completedProjectsResult[0]?.value ?? 0),
+        completed: Number(projectMetrics[0]?.completed ?? 0),
       },
       chartData: chartRows
         .map((row) => ({ label: row.label, value: Number(row.value ?? 0) }))
