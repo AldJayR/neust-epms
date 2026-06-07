@@ -22,8 +22,9 @@ CREATE TABLE "campuses" (
 --> statement-breakpoint
 CREATE TABLE "departments" (
 	"department_id" serial PRIMARY KEY NOT NULL,
-	"campus_id" integer NOT NULL,
+	"department_code" varchar(50) NOT NULL,
 	"department_name" varchar(255) NOT NULL,
+	CONSTRAINT "departments_department_code_unique" UNIQUE("department_code"),
 	CONSTRAINT "departments_department_name_unique" UNIQUE("department_name")
 );
 --> statement-breakpoint
@@ -40,10 +41,11 @@ CREATE TABLE "moas" (
 	"archived_at" timestamp with time zone
 );
 --> statement-breakpoint
-CREATE TABLE "progress_reports" (
+CREATE TABLE "project_reports" (
 	"report_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"project_id" uuid NOT NULL,
-	"submitted_by" uuid NOT NULL,
+	"submitted_by_id" uuid NOT NULL,
+	"report_type" varchar(100) NOT NULL,
 	"storage_path" varchar(500),
 	"remarks" text,
 	"submitted_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -174,7 +176,6 @@ CREATE TABLE "users" (
 	"role_id" integer NOT NULL,
 	"campus_id" integer NOT NULL,
 	"department_id" integer,
-	"employee_id" varchar(50) NOT NULL,
 	"first_name" varchar(100) NOT NULL,
 	"middle_name" varchar(100),
 	"last_name" varchar(100) NOT NULL,
@@ -184,14 +185,12 @@ CREATE TABLE "users" (
 	"is_active" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "users_employee_id_unique" UNIQUE("employee_id"),
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "departments" ADD CONSTRAINT "departments_campus_id_campuses_campus_id_fk" FOREIGN KEY ("campus_id") REFERENCES "public"."campuses"("campus_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "progress_reports" ADD CONSTRAINT "progress_reports_project_id_projects_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("project_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "progress_reports" ADD CONSTRAINT "progress_reports_submitted_by_users_user_id_fk" FOREIGN KEY ("submitted_by") REFERENCES "public"."users"("user_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "project_reports" ADD CONSTRAINT "project_reports_project_id_projects_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("project_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "project_reports" ADD CONSTRAINT "project_reports_submitted_by_id_users_user_id_fk" FOREIGN KEY ("submitted_by_id") REFERENCES "public"."users"("user_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "projects" ADD CONSTRAINT "projects_proposal_id_proposals_proposal_id_fk" FOREIGN KEY ("proposal_id") REFERENCES "public"."proposals"("proposal_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "projects" ADD CONSTRAINT "projects_moa_id_moas_moa_id_fk" FOREIGN KEY ("moa_id") REFERENCES "public"."moas"("moa_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "proposal_beneficiaries" ADD CONSTRAINT "proposal_beneficiaries_proposal_id_proposals_proposal_id_fk" FOREIGN KEY ("proposal_id") REFERENCES "public"."proposals"("proposal_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -217,9 +216,9 @@ ALTER TABLE "users" ADD CONSTRAINT "users_campus_id_campuses_campus_id_fk" FOREI
 ALTER TABLE "users" ADD CONSTRAINT "users_department_id_departments_department_id_fk" FOREIGN KEY ("department_id") REFERENCES "public"."departments"("department_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "al_user_id_idx" ON "audit_logs" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "al_created_at_idx" ON "audit_logs" USING btree ("created_at");--> statement-breakpoint
-CREATE INDEX "departments_campus_id_idx" ON "departments" USING btree ("campus_id");--> statement-breakpoint
-CREATE INDEX "pr_project_id_idx" ON "progress_reports" USING btree ("project_id");--> statement-breakpoint
-CREATE INDEX "pr_submitted_by_idx" ON "progress_reports" USING btree ("submitted_by");--> statement-breakpoint
+CREATE INDEX "al_user_created_idx" ON "audit_logs" USING btree ("user_id","created_at");--> statement-breakpoint
+CREATE INDEX "project_reports_project_id_idx" ON "project_reports" USING btree ("project_id");--> statement-breakpoint
+CREATE INDEX "project_reports_submitted_by_id_idx" ON "project_reports" USING btree ("submitted_by_id");--> statement-breakpoint
 CREATE INDEX "projects_moa_id_idx" ON "projects" USING btree ("moa_id");--> statement-breakpoint
 CREATE INDEX "proposal_beneficiaries_proposal_id_idx" ON "proposal_beneficiaries" USING btree ("proposal_id");--> statement-breakpoint
 CREATE INDEX "proposal_beneficiaries_sector_id_idx" ON "proposal_beneficiaries" USING btree ("sector_id");--> statement-breakpoint

@@ -1,5 +1,5 @@
 {
-  "id": "54c79faf-8c77-4ae2-885c-49e63d30e4cf",
+  "id": "362b87d2-5367-439e-b2e3-b69fd0b55d95",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -66,6 +66,27 @@
         "al_created_at_idx": {
           "name": "al_created_at_idx",
           "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "al_user_created_idx": {
+          "name": "al_user_created_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "created_at",
               "isExpression": false,
@@ -183,9 +204,9 @@
           "primaryKey": true,
           "notNull": true
         },
-        "campus_id": {
-          "name": "campus_id",
-          "type": "integer",
+        "department_code": {
+          "name": "department_code",
+          "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true
         },
@@ -196,40 +217,17 @@
           "notNull": true
         }
       },
-      "indexes": {
-        "departments_campus_id_idx": {
-          "name": "departments_campus_id_idx",
-          "columns": [
-            {
-              "expression": "campus_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "departments_campus_id_campuses_campus_id_fk": {
-          "name": "departments_campus_id_campuses_campus_id_fk",
-          "tableFrom": "departments",
-          "tableTo": "campuses",
-          "columnsFrom": [
-            "campus_id"
-          ],
-          "columnsTo": [
-            "campus_id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
+        "departments_department_code_unique": {
+          "name": "departments_department_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "department_code"
+          ]
+        },
         "departments_department_name_unique": {
           "name": "departments_department_name_unique",
           "nullsNotDistinct": false,
@@ -319,8 +317,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.progress_reports": {
-      "name": "progress_reports",
+    "public.project_reports": {
+      "name": "project_reports",
       "schema": "",
       "columns": {
         "report_id": {
@@ -336,9 +334,15 @@
           "primaryKey": false,
           "notNull": true
         },
-        "submitted_by": {
-          "name": "submitted_by",
+        "submitted_by_id": {
+          "name": "submitted_by_id",
           "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "report_type": {
+          "name": "report_type",
+          "type": "varchar(100)",
           "primaryKey": false,
           "notNull": true
         },
@@ -369,8 +373,8 @@
         }
       },
       "indexes": {
-        "pr_project_id_idx": {
-          "name": "pr_project_id_idx",
+        "project_reports_project_id_idx": {
+          "name": "project_reports_project_id_idx",
           "columns": [
             {
               "expression": "project_id",
@@ -384,11 +388,11 @@
           "method": "btree",
           "with": {}
         },
-        "pr_submitted_by_idx": {
-          "name": "pr_submitted_by_idx",
+        "project_reports_submitted_by_id_idx": {
+          "name": "project_reports_submitted_by_id_idx",
           "columns": [
             {
-              "expression": "submitted_by",
+              "expression": "submitted_by_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -401,9 +405,9 @@
         }
       },
       "foreignKeys": {
-        "progress_reports_project_id_projects_project_id_fk": {
-          "name": "progress_reports_project_id_projects_project_id_fk",
-          "tableFrom": "progress_reports",
+        "project_reports_project_id_projects_project_id_fk": {
+          "name": "project_reports_project_id_projects_project_id_fk",
+          "tableFrom": "project_reports",
           "tableTo": "projects",
           "columnsFrom": [
             "project_id"
@@ -414,12 +418,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "progress_reports_submitted_by_users_user_id_fk": {
-          "name": "progress_reports_submitted_by_users_user_id_fk",
-          "tableFrom": "progress_reports",
+        "project_reports_submitted_by_id_users_user_id_fk": {
+          "name": "project_reports_submitted_by_id_users_user_id_fk",
+          "tableFrom": "project_reports",
           "tableTo": "users",
           "columnsFrom": [
-            "submitted_by"
+            "submitted_by_id"
           ],
           "columnsTo": [
             "user_id"
@@ -1731,12 +1735,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "employee_id": {
-          "name": "employee_id",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true
-        },
         "first_name": {
           "name": "first_name",
           "type": "varchar(100)",
@@ -1885,13 +1883,6 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "users_employee_id_unique": {
-          "name": "users_employee_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "employee_id"
-          ]
-        },
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
