@@ -6,6 +6,7 @@ import {
   index,
   unique,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { proposals } from "./proposals.js";
 import { moas } from "./moas.js";
 
@@ -37,5 +38,8 @@ export const projects = pgTable(
   (table) => ({
     proposalUnique: unique("projects_proposal_id_unique").on(table.proposalId),
     moaIdx: index("projects_moa_id_idx").on(table.moaId),
+    activeStatusIdx: index("projects_active_status_idx")
+      .on(table.projectStatus)
+      .where(sql`${table.archivedAt} IS NULL`),
   }),
 );

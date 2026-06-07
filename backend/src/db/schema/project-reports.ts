@@ -6,6 +6,7 @@ import {
   timestamp,
   index,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { projects } from "./projects.js";
 import { users } from "./users.js";
 
@@ -32,5 +33,8 @@ export const projectReports = pgTable(
     submittedByIdIdx: index("project_reports_submitted_by_id_idx").on(
       table.submittedById,
     ),
+    activeProjectIdx: index("project_reports_active_project_idx")
+      .on(table.projectId)
+      .where(sql`${table.archivedAt} IS NULL`),
   }),
 );
