@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, and } from "drizzle-orm";
+import { count, eq, and, gt } from "drizzle-orm";
+import { paginateResults } from "../lib/pagination.js";
 import { db } from "../db/client.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposals } from "../db/schema/proposals.js";
@@ -23,7 +24,7 @@ const MemberSchema = z
   .openapi("ProposalMember");
 
 const MemberListSchema = z
-  .object({ items: z.array(MemberSchema) })
+  .object({ items: z.array(MemberSchema), total: z.number(), nextCursor: z.string().nullable() })
   .openapi("ProposalMemberList");
 
 const AddMemberSchema = z
@@ -59,11 +60,11 @@ const MemberParam = z.object({
 });
 
 const PaginationQuery = z.object({
-  page: z.coerce.number().int().min(1).default(1).openapi({
-    param: { name: "page", in: "query" },
-  }),
   limit: z.coerce.number().int().min(1).max(100).default(50).openapi({
     param: { name: "limit", in: "query" },
+  }),
+  cursor: z.string().optional().openapi({
+    param: { name: "cursor", in: "query" },
   }),
 });
 
@@ -87,23 +88,33 @@ const listMembersRoute = createRoute({
 
 app.openapi(listMembersRoute, async (c) => {
   const { proposalId } = c.req.valid("param");
-  const { page, limit } = c.req.valid("query");
-  const offset = (page - 1) * limit;
+  const { limit, cursor } = c.req.valid("query");
+
+  const whereConditions = [eq(proposalMembers.proposalId, proposalId)];
+  if (cursor) {
+    whereConditions.push(gt(proposalMembers.addedAt, new Date(cursor)));
+  }
 
   const rows = await db
     .select({ memberId: proposalMembers.memberId, proposalId: proposalMembers.proposalId, userId: proposalMembers.userId, projectRole: proposalMembers.projectRole, addedAt: proposalMembers.addedAt })
     .from(proposalMembers)
-    .where(eq(proposalMembers.proposalId, proposalId))
+    .where(and(...whereConditions))
     .orderBy(proposalMembers.addedAt)
-    .limit(limit)
-    .offset(offset);
+    .limit(limit + 1);
 
-  const items = rows.map((r) => ({
+  const [totalResult] = await db
+    .select({ value: count() })
+    .from(proposalMembers)
+    .where(and(...whereConditions));
+
+  const { items: rawItems, nextCursor } = paginateResults(rows, limit, "addedAt");
+
+  const items = rawItems.map((r) => ({
     ...r,
     addedAt: r.addedAt.toISOString(),
   }));
 
-  return c.json({ items }, 200);
+  return c.json({ items, total: Number(totalResult?.value ?? 0), nextCursor }, 200);
 });
 
 // ── POST /proposals/:proposalId/members ──

@@ -32,6 +32,8 @@ export interface SettingListItem {
 
 export interface SettingListCacheValue {
   items: SettingListItem[];
+  total: number;
+  nextCursor: string | null;
 }
 
 // Settings cache is short-lived and cleared on every settings update.

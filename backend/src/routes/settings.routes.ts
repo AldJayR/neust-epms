@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq } from "drizzle-orm";
+import { count, eq, and, lt } from "drizzle-orm";
+import { paginateResults } from "../lib/pagination.js";
 import { db } from "../db/client.js";
 import { systemSettings } from "../db/schema/system-settings.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
@@ -26,7 +27,7 @@ const SettingSchema = z
   .openapi("SystemSetting");
 
 const SettingListSchema = z
-  .object({ items: z.array(SettingSchema) })
+  .object({ items: z.array(SettingSchema), total: z.number(), nextCursor: z.string().nullable() })
   .openapi("SystemSettingList");
 
 const UpsertSettingSchema = z
@@ -43,11 +44,11 @@ const ErrorSchema = z
   .openapi("SettingError");
 
 const PaginationQuery = z.object({
-  page: z.coerce.number().int().min(1).default(1).openapi({
-    param: { name: "page", in: "query" },
-  }),
   limit: z.coerce.number().int().min(1).max(100).default(50).openapi({
     param: { name: "limit", in: "query" },
+  }),
+  cursor: z.string().optional().openapi({
+    param: { name: "cursor", in: "query" },
   }),
 });
 
@@ -70,15 +71,19 @@ const listRoute = createRoute({
 });
 
 app.openapi(listRoute, async (c) => {
-  const { page, limit } = c.req.valid("query");
-  const offset = (page - 1) * limit;
-  const cacheKey = `settings:list:${page}:${limit}`;
+  const { limit, cursor } = c.req.valid("query");
+  const cacheKey = `settings:list:${limit}:${cursor ?? ""}`;
 
   if (cacheEnabled) {
     const cached = settingsListCache.get(cacheKey);
     if (cached) {
       return c.json(cached, 200);
     }
+  }
+
+  const whereConditions = [];
+  if (cursor) {
+    whereConditions.push(lt(systemSettings.settingKey, cursor));
   }
 
   const rows = await db
@@ -88,14 +93,26 @@ app.openapi(listRoute, async (c) => {
       updatedAt: systemSettings.updatedAt,
     })
     .from(systemSettings)
+    .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
     .orderBy(systemSettings.settingKey)
-    .limit(limit)
-    .offset(offset);
-  const items = rows.map((r) => ({
+    .limit(limit + 1);
+
+  const [totalResult] = await db
+    .select({ value: count() })
+    .from(systemSettings)
+    .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
+
+  const hasMore = rows.length > limit;
+  const items = hasMore ? rows.slice(0, limit) : rows;
+  const lastItem = items[items.length - 1];
+  const nextCursor = hasMore && lastItem ? lastItem.settingKey : null;
+
+  const mappedItems = items.map((r) => ({
     ...r,
     updatedAt: r.updatedAt.toISOString(),
   }));
-  const payload: SettingListCacheValue = { items };
+
+  const payload: SettingListCacheValue = { items: mappedItems, total: Number(totalResult?.value ?? 0), nextCursor };
 
   if (cacheEnabled) {
     settingsListCache.set(cacheKey, payload);
