@@ -18,6 +18,8 @@ import { moas } from "./schema/moas.js";
 import { partners } from "./schema/partners.js";
 import { projects } from "./schema/projects.js";
 import { projectReports } from "./schema/project-reports.js";
+import { projectReportingSchedules } from "./schema/project-reporting-schedules.js";
+import { projectReportingDates } from "./schema/project-reporting-dates.js";
 import { auditLogs } from "./schema/audit-logs.js";
 
 // ── Roles ──
@@ -232,6 +234,7 @@ export const projectsRelations = relations(projects, ({ many, one }) => ({
     references: [moas.moaId],
   }),
   projectReports: many(projectReports),
+  reportingSchedules: many(projectReportingSchedules),
 }));
 
 // ── Project Reports ──
@@ -245,6 +248,29 @@ export const projectReportsRelations = relations(
     submitter: one(users, {
       fields: [projectReports.submittedById],
       references: [users.userId],
+    }),
+  }),
+);
+
+// ── Project Reporting Schedules ──
+export const projectReportingSchedulesRelations = relations(
+  projectReportingSchedules,
+  ({ one, many }) => ({
+    project: one(projects, {
+      fields: [projectReportingSchedules.projectId],
+      references: [projects.projectId],
+    }),
+    dates: many(projectReportingDates),
+  }),
+);
+
+// ── Project Reporting Dates ──
+export const projectReportingDatesRelations = relations(
+  projectReportingDates,
+  ({ one }) => ({
+    schedule: one(projectReportingSchedules, {
+      fields: [projectReportingDates.scheduleId],
+      references: [projectReportingSchedules.scheduleId],
     }),
   }),
 );

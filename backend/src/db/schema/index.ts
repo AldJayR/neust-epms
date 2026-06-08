@@ -18,6 +18,8 @@ export { partners } from "./partners.js";
 export { moas } from "./moas.js";
 export { projects } from "./projects.js";
 export { projectReports } from "./project-reports.js";
+export { projectReportingSchedules } from "./project-reporting-schedules.js";
+export { projectReportingDates } from "./project-reporting-dates.js";
 export { auditLogs } from "./audit-logs.js";
 export { systemSettings } from "./system-settings.js";
 export { passwordResetTokens } from "./password-reset-tokens.js";
