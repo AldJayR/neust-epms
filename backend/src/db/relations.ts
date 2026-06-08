@@ -15,6 +15,7 @@ import { proposalBeneficiaries } from "./schema/proposal-beneficiaries.js";
 import { sdgs } from "./schema/sdgs.js";
 import { proposalSdgs } from "./schema/proposal-sdgs.js";
 import { moas } from "./schema/moas.js";
+import { partners } from "./schema/partners.js";
 import { projects } from "./schema/projects.js";
 import { projectReports } from "./schema/project-reports.js";
 import { auditLogs } from "./schema/audit-logs.js";
@@ -51,7 +52,6 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.departmentId],
     references: [departments.departmentId],
   }),
-  ledProposals: many(proposals),
   proposalMemberships: many(proposalMembers),
   proposalComments: many(proposalComments),
   proposalReviews: many(proposalReviews),
@@ -61,10 +61,6 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 
 // ── Proposals ──
 export const proposalsRelations = relations(proposals, ({ one, many }) => ({
-  projectLeader: one(users, {
-    fields: [proposals.projectLeaderId],
-    references: [users.userId],
-  }),
   campus: one(campuses, {
     fields: [proposals.campusId],
     references: [campuses.campusId],
@@ -211,8 +207,17 @@ export const proposalSdgsRelations = relations(proposalSdgs, ({ one }) => ({
   }),
 }));
 
+// ── Partners ──
+export const partnersRelations = relations(partners, ({ many }) => ({
+  moas: many(moas),
+}));
+
 // ── MOAs ──
-export const moasRelations = relations(moas, ({ many }) => ({
+export const moasRelations = relations(moas, ({ one, many }) => ({
+  partner: one(partners, {
+    fields: [moas.partnerId],
+    references: [partners.partnerId],
+  }),
   projects: many(projects),
 }));
 

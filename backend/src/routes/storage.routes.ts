@@ -32,17 +32,14 @@ function sanitizeFilename(fileName: string): string {
 
 function canAccessProposalDocuments(
   user: AuthUser,
-  proposal: { projectLeaderId: string; departmentId: number; campusId: number },
+  proposal: { departmentId: number; campusId: number },
 ): boolean {
   if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
     if (user.departmentId !== null) {
-      return (
-        proposal.projectLeaderId === user.userId ||
-        proposal.departmentId === user.departmentId
-      );
+      return proposal.departmentId === user.departmentId;
     }
 
-    return proposal.projectLeaderId === user.userId || proposal.campusId === user.campusId;
+    return proposal.campusId === user.campusId;
   }
 
   return true;
@@ -153,7 +150,6 @@ app.openapi(listDocsRoute, async (c) => {
   const [proposal] = await db
     .select({
       proposalId: proposals.proposalId,
-      projectLeaderId: proposals.projectLeaderId,
       departmentId: proposals.departmentId,
       campusId: proposals.campusId,
     })
@@ -249,7 +245,6 @@ app.openapi(uploadRoute, async (c) => {
   const [proposal] = await db
     .select({
       proposalId: proposals.proposalId,
-      projectLeaderId: proposals.projectLeaderId,
       departmentId: proposals.departmentId,
       campusId: proposals.campusId,
     })
@@ -396,7 +391,6 @@ app.openapi(getUrlRoute, async (c) => {
   const [proposal] = await db
     .select({
       proposalId: proposals.proposalId,
-      projectLeaderId: proposals.projectLeaderId,
       departmentId: proposals.departmentId,
       campusId: proposals.campusId,
     })

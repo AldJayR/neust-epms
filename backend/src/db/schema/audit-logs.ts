@@ -2,6 +2,7 @@ import {
   pgTable,
   uuid,
   varchar,
+  jsonb,
   timestamp,
   index,
 } from "drizzle-orm/pg-core";
@@ -16,6 +17,8 @@ export const auditLogs = pgTable(
       .references(() => users.userId),
     action: varchar("action", { length: 255 }).notNull(),
     tableAffected: varchar("table_affected", { length: 100 }).notNull(),
+    oldValue: jsonb("old_value"),
+    newValue: jsonb("new_value"),
     ipAddress: varchar("ip_address", { length: 45 }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

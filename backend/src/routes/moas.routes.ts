@@ -2,6 +2,7 @@ import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { eq, and, isNull, desc, count } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
+import { partners } from "../db/schema/partners.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
 import { insertAuditLog } from "../lib/audit.js";
@@ -15,12 +16,10 @@ installApiErrorHandler(app);
 const MoaSchema = z
   .object({
     moaId: z.string(),
-    partnerName: z.string(),
-    partnerType: z.string(),
+    partnerId: z.string(),
     storagePath: z.string().nullable(),
     validFrom: z.string(),
     validUntil: z.string(),
-    isExpired: z.boolean(),
     createdAt: z.string(),
     updatedAt: z.string(),
     archivedAt: z.string().nullable(),
@@ -33,8 +32,7 @@ const MoaListSchema = z
 
 const CreateMoaSchema = z
   .object({
-    partnerName: z.string().min(1),
-    partnerType: z.string().min(1),
+    partnerId: z.string().uuid(),
     validFrom: z.string().datetime(),
     validUntil: z.string().datetime(),
   })
@@ -42,8 +40,7 @@ const CreateMoaSchema = z
 
 const UpdateMoaSchema = z
   .object({
-    partnerName: z.string().min(1).optional(),
-    partnerType: z.string().min(1).optional(),
+    partnerId: z.string().uuid().optional(),
     validFrom: z.string().datetime().optional(),
     validUntil: z.string().datetime().optional(),
   })
@@ -97,12 +94,10 @@ app.openapi(listRoute, async (c) => {
   const rows = await db
     .select({
       moaId: moas.moaId,
-      partnerName: moas.partnerName,
-      partnerType: moas.partnerType,
+      partnerId: moas.partnerId,
       storagePath: moas.storagePath,
       validFrom: moas.validFrom,
       validUntil: moas.validUntil,
-      isExpired: moas.isExpired,
       createdAt: moas.createdAt,
       updatedAt: moas.updatedAt,
       archivedAt: moas.archivedAt,
@@ -157,12 +152,10 @@ app.openapi(getRoute, async (c) => {
   const [row] = await db
     .select({
       moaId: moas.moaId,
-      partnerName: moas.partnerName,
-      partnerType: moas.partnerType,
+      partnerId: moas.partnerId,
       storagePath: moas.storagePath,
       validFrom: moas.validFrom,
       validUntil: moas.validUntil,
-      isExpired: moas.isExpired,
       createdAt: moas.createdAt,
       updatedAt: moas.updatedAt,
       archivedAt: moas.archivedAt,
@@ -228,14 +221,23 @@ app.openapi(createMoaRoute, async (c) => {
     );
   }
 
+  // Verify partner exists
+  const [partner] = await db
+    .select({ partnerId: partners.partnerId })
+    .from(partners)
+    .where(eq(partners.partnerId, body.partnerId))
+    .limit(1);
+
+  if (!partner) {
+    throw new ApiError(404, "PARTNER_NOT_FOUND", "Partner not found");
+  }
+
   const [created] = await db
     .insert(moas)
     .values({
-      partnerName: body.partnerName,
-      partnerType: body.partnerType,
+      partnerId: body.partnerId,
       validFrom,
       validUntil,
-      isExpired: validUntil < new Date(),
     })
     .returning();
 
@@ -294,10 +296,19 @@ app.openapi(updateRoute, async (c) => {
   const body = c.req.valid("json");
 
   const setValues: Record<string, Date | string> = { updatedAt: new Date() };
-  if (body.partnerName !== undefined)
-    setValues["partnerName"] = body.partnerName;
-  if (body.partnerType !== undefined)
-    setValues["partnerType"] = body.partnerType;
+  if (body.partnerId !== undefined) {
+    // Verify partner exists
+    const [partner] = await db
+      .select({ partnerId: partners.partnerId })
+      .from(partners)
+      .where(eq(partners.partnerId, body.partnerId))
+      .limit(1);
+
+    if (!partner) {
+      throw new ApiError(404, "PARTNER_NOT_FOUND", "Partner not found");
+    }
+    setValues["partnerId"] = body.partnerId;
+  }
   if (body.validFrom !== undefined)
     setValues["validFrom"] = new Date(body.validFrom);
   if (body.validUntil !== undefined)

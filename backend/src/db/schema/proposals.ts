@@ -4,10 +4,10 @@ import {
   integer,
   varchar,
   numeric,
+  boolean,
   timestamp,
   index,
 } from "drizzle-orm/pg-core";
-import { users } from "./users.js";
 import { campuses } from "./campuses.js";
 import { departments } from "./departments.js";
 
@@ -22,9 +22,6 @@ export const proposals = pgTable(
   "proposals",
   {
     proposalId: uuid("proposal_id").primaryKey().defaultRandom(),
-    projectLeaderId: uuid("project_leader_id")
-      .notNull()
-      .references(() => users.userId),
     campusId: integer("campus_id")
       .notNull()
       .references(() => campuses.campusId),
@@ -37,7 +34,6 @@ export const proposals = pgTable(
     extensionCategory: varchar("extension_category", {
       length: 100,
     }).notNull(),
-    extensionAgenda: varchar("extension_agenda", { length: 255 }).notNull(),
     budgetPartner: numeric("budget_partner", {
       precision: 14,
       scale: 2,
@@ -46,9 +42,10 @@ export const proposals = pgTable(
       precision: 14,
       scale: 2,
     }).default("0"),
-    currentStatus: varchar("current_status", { length: 50 })
+    status: varchar("status", { length: 50 })
       .notNull()
       .default("Draft"),
+    bypassedRetChair: boolean("bypassed_ret_chair").notNull().default(false),
     revisionNum: integer("revision_num").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -59,9 +56,8 @@ export const proposals = pgTable(
     archivedAt: timestamp("archived_at", { withTimezone: true }),
   },
   (table) => ({
-    leaderIdx: index("proposals_leader_id_idx").on(table.projectLeaderId),
     campusIdx: index("proposals_campus_id_idx").on(table.campusId),
     departmentIdx: index("proposals_department_id_idx").on(table.departmentId),
-    statusIdx: index("proposals_status_idx").on(table.currentStatus),
+    statusIdx: index("proposals_status_idx").on(table.status),
   }),
 );

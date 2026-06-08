@@ -1,14 +1,17 @@
 import cron from "node-cron";
-import { and, lte, eq, isNull } from "drizzle-orm";
+import { and, eq, lte, isNull } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
+import { partners } from "../db/schema/partners.js";
 import { env } from "../env.js";
 
 /**
  * SYS-REQ-04.2: Scheduled background process that evaluates MOA expiration dates
- * against the system clock and marks expired MOAs.
+ * against the system clock and sends notifications for expired MOAs.
  *
  * Runs every day at 01:00 AM.
+ * Note: `isExpired` column removed; expiration is now computed dynamically
+ * by comparing `validUntil` against the current time.
  */
 export function startMoaExpirationCron(): void {
   cron.schedule("0 1 * * *", async () => {
@@ -19,30 +22,29 @@ export function startMoaExpirationCron(): void {
     try {
       const now = new Date();
 
-      // Mark expired MOAs in one statement and return changed rows for notification.
+      // Find MOAs that have expired (validUntil <= now) and are not archived
       const expiredMoas = await db
-        .update(moas)
-        .set({ isExpired: true, updatedAt: now })
+        .select({
+          moaId: moas.moaId,
+          partnerName: partners.partnerName,
+          validUntil: moas.validUntil,
+        })
+        .from(moas)
+        .innerJoin(partners, eq(moas.partnerId, partners.partnerId))
         .where(
           and(
-            eq(moas.isExpired, false),
             lte(moas.validUntil, now),
             isNull(moas.archivedAt),
           ),
-        )
-        .returning({
-          moaId: moas.moaId,
-          partnerName: moas.partnerName,
-          validUntil: moas.validUntil,
-        });
+        );
 
       if (expiredMoas.length === 0) {
-        console.log("[CRON] No newly expired MOAs found.");
+        console.log("[CRON] No expired MOAs found.");
         return;
       }
 
       console.log(
-        `[CRON] Marked ${expiredMoas.length} MOA(s) as expired.`,
+        `[CRON] Found ${expiredMoas.length} expired MOA(s).`,
       );
 
       // Dispatch email notifications if Resend is configured

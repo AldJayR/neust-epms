@@ -17,11 +17,14 @@ describe("GET /moas", () => {
 
 describe("POST /moas", () => {
   it("should create a MOA with valid dates", async () => {
-    vi.mocked(db.insert).mockReturnValue(mockMutationChain([createMockMoa()]) as never);
+    // Mock partner lookup
+    vi.mocked(db.select)
+      .mockReturnValueOnce(mockSelectChain([{ partnerId: "22222222-8888-4888-8888-222222222222" }]) as never)
+      .mockReturnValueOnce(mockMutationChain([createMockMoa()]) as never);
     const res = await app.request("/moas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ partnerName: "Test", partnerType: "LGU", validFrom: "2025-01-01T00:00:00.000Z", validUntil: "2027-12-31T00:00:00.000Z" }),
+      body: JSON.stringify({ partnerId: "22222222-8888-4888-8888-222222222222", validFrom: "2025-01-01T00:00:00.000Z", validUntil: "2027-12-31T00:00:00.000Z" }),
     });
     expect(res.status).toBe(201);
   });
@@ -30,7 +33,7 @@ describe("POST /moas", () => {
     const res = await app.request("/moas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ partnerName: "Test", partnerType: "NGO", validFrom: "2027-01-01T00:00:00.000Z", validUntil: "2025-01-01T00:00:00.000Z" }),
+      body: JSON.stringify({ partnerId: "22222222-8888-4888-8888-222222222222", validFrom: "2027-01-01T00:00:00.000Z", validUntil: "2025-01-01T00:00:00.000Z" }),
     });
     expect(res.status).toBe(400);
     const body = await res.json();

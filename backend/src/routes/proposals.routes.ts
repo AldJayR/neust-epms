@@ -2,6 +2,7 @@ import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { eq, and, isNull, desc, or, count, type SQL } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { proposals } from "../db/schema/proposals.js";
+import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposalDepartments } from "../db/schema/proposal-departments.js";
 import { proposalBeneficiaries } from "../db/schema/proposal-beneficiaries.js";
 import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
@@ -16,24 +17,40 @@ import {
   REVIEW_DECISION,
 } from "../lib/types.js";
 
+const PROJECT_LEADER_ROLE = "Project Leader";
+
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
+
+async function isProjectLeader(proposalId: string, userId: string): Promise<boolean> {
+  const [member] = await db
+    .select({ memberId: proposalMembers.memberId })
+    .from(proposalMembers)
+    .where(
+      and(
+        eq(proposalMembers.proposalId, proposalId),
+        eq(proposalMembers.userId, userId),
+        eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE),
+      ),
+    )
+    .limit(1);
+  return !!member;
+}
 
 // ── Schemas ──
 const ProposalSchema = z
   .object({
     proposalId: z.string().uuid(),
-    projectLeaderId: z.string().uuid(),
     campusId: z.number(),
     departmentId: z.number(),
     title: z.string(),
     bannerProgram: z.string(),
     projectLocale: z.string(),
     extensionCategory: z.string(),
-    extensionAgenda: z.string(),
     budgetPartner: z.string().nullable(),
     budgetNeust: z.string().nullable(),
-    currentStatus: z.string(),
+    status: z.string(),
+    bypassedRetChair: z.boolean(),
     revisionNum: z.number(),
     createdAt: z.string(),
     updatedAt: z.string(),
@@ -53,7 +70,6 @@ const CreateProposalSchema = z
     bannerProgram: z.string().min(1),
     projectLocale: z.string().min(1),
     extensionCategory: z.string().min(1),
-    extensionAgenda: z.string().min(1),
     budgetPartner: z.coerce.number().nonnegative().finite().optional(),
     budgetNeust: z.coerce.number().nonnegative().finite().optional(),
     departmentIds: z.array(z.number().int().positive()).optional(),
@@ -68,7 +84,6 @@ const UpdateProposalSchema = z
     bannerProgram: z.string().min(1).optional(),
     projectLocale: z.string().min(1).optional(),
     extensionCategory: z.string().min(1).optional(),
-    extensionAgenda: z.string().min(1).optional(),
     budgetPartner: z.coerce.number().nonnegative().finite().optional(),
     budgetNeust: z.coerce.number().nonnegative().finite().optional(),
   })
@@ -137,24 +152,14 @@ app.openapi(listRoute, async (c) => {
   
   if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
     if (user.departmentId !== null) {
-      whereConditions.push(
-        or(
-          eq(proposals.projectLeaderId, user.userId),
-          eq(proposals.departmentId, user.departmentId)
-        )!
-      );
+      whereConditions.push(eq(proposals.departmentId, user.departmentId));
     } else {
-      whereConditions.push(
-        or(
-          eq(proposals.projectLeaderId, user.userId),
-          eq(proposals.campusId, user.campusId)
-        )!
-      );
+      whereConditions.push(eq(proposals.campusId, user.campusId));
     }
   }
 
   const rows = await db
-    .select({ proposalId: proposals.proposalId, projectLeaderId: proposals.projectLeaderId, campusId: proposals.campusId, departmentId: proposals.departmentId, title: proposals.title, bannerProgram: proposals.bannerProgram, projectLocale: proposals.projectLocale, extensionCategory: proposals.extensionCategory, extensionAgenda: proposals.extensionAgenda, budgetPartner: proposals.budgetPartner, budgetNeust: proposals.budgetNeust, currentStatus: proposals.currentStatus, revisionNum: proposals.revisionNum, createdAt: proposals.createdAt, updatedAt: proposals.updatedAt, archivedAt: proposals.archivedAt })
+    .select({ proposalId: proposals.proposalId, campusId: proposals.campusId, departmentId: proposals.departmentId, title: proposals.title, bannerProgram: proposals.bannerProgram, projectLocale: proposals.projectLocale, extensionCategory: proposals.extensionCategory, budgetPartner: proposals.budgetPartner, budgetNeust: proposals.budgetNeust, status: proposals.status, bypassedRetChair: proposals.bypassedRetChair, revisionNum: proposals.revisionNum, createdAt: proposals.createdAt, updatedAt: proposals.updatedAt, archivedAt: proposals.archivedAt })
     .from(proposals)
     .where(and(...whereConditions))
     .orderBy(desc(proposals.createdAt))
@@ -205,24 +210,14 @@ app.openapi(getRoute, async (c) => {
 
   if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
     if (user.departmentId !== null) {
-      whereConditions.push(
-        or(
-          eq(proposals.projectLeaderId, user.userId),
-          eq(proposals.departmentId, user.departmentId)
-        )!
-      );
+      whereConditions.push(eq(proposals.departmentId, user.departmentId));
     } else {
-      whereConditions.push(
-        or(
-          eq(proposals.projectLeaderId, user.userId),
-          eq(proposals.campusId, user.campusId)
-        )!
-      );
+      whereConditions.push(eq(proposals.campusId, user.campusId));
     }
   }
 
   const [row] = await db
-    .select({ proposalId: proposals.proposalId, projectLeaderId: proposals.projectLeaderId, campusId: proposals.campusId, departmentId: proposals.departmentId, title: proposals.title, bannerProgram: proposals.bannerProgram, projectLocale: proposals.projectLocale, extensionCategory: proposals.extensionCategory, extensionAgenda: proposals.extensionAgenda, budgetPartner: proposals.budgetPartner, budgetNeust: proposals.budgetNeust, currentStatus: proposals.currentStatus, revisionNum: proposals.revisionNum, createdAt: proposals.createdAt, updatedAt: proposals.updatedAt, archivedAt: proposals.archivedAt })
+    .select({ proposalId: proposals.proposalId, campusId: proposals.campusId, departmentId: proposals.departmentId, title: proposals.title, bannerProgram: proposals.bannerProgram, projectLocale: proposals.projectLocale, extensionCategory: proposals.extensionCategory, budgetPartner: proposals.budgetPartner, budgetNeust: proposals.budgetNeust, status: proposals.status, bypassedRetChair: proposals.bypassedRetChair, revisionNum: proposals.revisionNum, createdAt: proposals.createdAt, updatedAt: proposals.updatedAt, archivedAt: proposals.archivedAt })
     .from(proposals)
     .where(and(...whereConditions))
     .limit(1);
@@ -275,14 +270,12 @@ app.openapi(createProposalRoute, async (c) => {
     const [proposal] = await tx
       .insert(proposals)
       .values({
-        projectLeaderId: user.userId,
         campusId: body.campusId,
         departmentId: body.departmentId,
         title: body.title,
         bannerProgram: body.bannerProgram,
         projectLocale: body.projectLocale,
         extensionCategory: body.extensionCategory,
-        extensionAgenda: body.extensionAgenda,
         budgetPartner: (body.budgetPartner ?? 0).toFixed(2),
         budgetNeust: (body.budgetNeust ?? 0).toFixed(2),
       })
@@ -291,6 +284,13 @@ app.openapi(createProposalRoute, async (c) => {
     if (!proposal) {
       throw new ApiError(500, "INSERT_FAILED", "Failed to create proposal");
     }
+
+    // Auto-add creator as Project Leader
+    await tx.insert(proposalMembers).values({
+      proposalId: proposal.proposalId,
+      userId: user.userId,
+      projectRole: PROJECT_LEADER_ROLE,
+    });
 
     // Insert collaborating departments
     if (body.departmentIds && body.departmentIds.length > 0) {
@@ -348,7 +348,7 @@ const updateRoute = createRoute({
   method: "patch",
   path: "/proposals/{id}",
   tags: ["Proposals"],
-  summary: "Update a proposal (Draft or Returned only)",
+  summary: "Update a proposal (Draft or Returned only, project leader only)",
   security: [{ Bearer: [] }],
   request: {
     params: ParamId,
@@ -366,6 +366,10 @@ const updateRoute = createRoute({
       content: { "application/json": { schema: ErrorSchema } },
       description: "Validation error",
     },
+    403: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Not project leader",
+    },
     404: {
       content: { "application/json": { schema: ErrorSchema } },
       description: "Not found",
@@ -379,7 +383,7 @@ app.openapi(updateRoute, async (c) => {
   const body = c.req.valid("json");
 
   const [existing] = await db
-    .select({ proposalId: proposals.proposalId, currentStatus: proposals.currentStatus, projectLeaderId: proposals.projectLeaderId, revisionNum: proposals.revisionNum })
+    .select({ proposalId: proposals.proposalId, status: proposals.status, revisionNum: proposals.revisionNum })
     .from(proposals)
     .where(and(eq(proposals.proposalId, id), isNull(proposals.archivedAt)))
     .limit(1);
@@ -389,8 +393,8 @@ app.openapi(updateRoute, async (c) => {
   }
 
   if (
-    existing.currentStatus !== PROPOSAL_STATUS.DRAFT &&
-    existing.currentStatus !== PROPOSAL_STATUS.RETURNED
+    existing.status !== PROPOSAL_STATUS.DRAFT &&
+    existing.status !== PROPOSAL_STATUS.RETURNED
   ) {
     throw new ApiError(
       400,
@@ -399,7 +403,7 @@ app.openapi(updateRoute, async (c) => {
     );
   }
 
-  if (existing.projectLeaderId !== user.userId) {
+  if (!(await isProjectLeader(id, user.userId))) {
     throw new ApiError(
       403,
       "NOT_LEADER",
@@ -418,9 +422,6 @@ app.openapi(updateRoute, async (c) => {
     ...(body.extensionCategory !== undefined
       ? { extensionCategory: body.extensionCategory }
       : {}),
-    ...(body.extensionAgenda !== undefined
-      ? { extensionAgenda: body.extensionAgenda }
-      : {}),
     ...(body.budgetPartner !== undefined
       ? { budgetPartner: body.budgetPartner.toFixed(2) }
       : {}),
@@ -437,8 +438,8 @@ app.openapi(updateRoute, async (c) => {
       and(
         eq(proposals.proposalId, id),
         or(
-          eq(proposals.currentStatus, PROPOSAL_STATUS.DRAFT),
-          eq(proposals.currentStatus, PROPOSAL_STATUS.RETURNED)
+          eq(proposals.status, PROPOSAL_STATUS.DRAFT),
+          eq(proposals.status, PROPOSAL_STATUS.RETURNED)
         )
       )
     )
@@ -464,7 +465,7 @@ const submitRoute = createRoute({
   method: "post",
   path: "/proposals/{id}/submit",
   tags: ["Proposals"],
-  summary: "Submit a draft proposal for endorsement",
+  summary: "Submit a draft proposal for endorsement (project leader only)",
   security: [{ Bearer: [] }],
   request: { params: ParamId },
   responses: {
@@ -476,6 +477,10 @@ const submitRoute = createRoute({
       content: { "application/json": { schema: ErrorSchema } },
       description: "Invalid state transition",
     },
+    403: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Not project leader",
+    },
   },
 });
 
@@ -484,7 +489,7 @@ app.openapi(submitRoute, async (c) => {
   const { id } = c.req.valid("param");
 
   const [existing] = await db
-    .select({ proposalId: proposals.proposalId, currentStatus: proposals.currentStatus, projectLeaderId: proposals.projectLeaderId })
+    .select({ proposalId: proposals.proposalId, status: proposals.status })
     .from(proposals)
     .where(and(eq(proposals.proposalId, id), isNull(proposals.archivedAt)))
     .limit(1);
@@ -494,8 +499,8 @@ app.openapi(submitRoute, async (c) => {
   }
 
   if (
-    existing.currentStatus !== PROPOSAL_STATUS.DRAFT &&
-    existing.currentStatus !== PROPOSAL_STATUS.RETURNED
+    existing.status !== PROPOSAL_STATUS.DRAFT &&
+    existing.status !== PROPOSAL_STATUS.RETURNED
   ) {
     throw new ApiError(
       400,
@@ -504,22 +509,22 @@ app.openapi(submitRoute, async (c) => {
     );
   }
 
-  if (existing.projectLeaderId !== user.userId) {
+  if (!(await isProjectLeader(id, user.userId))) {
     throw new ApiError(403, "NOT_LEADER", "Only the project leader can submit");
   }
 
   const [updated] = await db
     .update(proposals)
     .set({
-      currentStatus: PROPOSAL_STATUS.SUBMITTED,
+      status: PROPOSAL_STATUS.SUBMITTED,
       updatedAt: new Date(),
     })
     .where(
       and(
         eq(proposals.proposalId, id),
         or(
-          eq(proposals.currentStatus, PROPOSAL_STATUS.DRAFT),
-          eq(proposals.currentStatus, PROPOSAL_STATUS.RETURNED)
+          eq(proposals.status, PROPOSAL_STATUS.DRAFT),
+          eq(proposals.status, PROPOSAL_STATUS.RETURNED)
         )
       )
     )
@@ -577,7 +582,7 @@ app.openapi(reviewRoute, async (c) => {
   const body = c.req.valid("json");
 
   const [existing] = await db
-    .select({ proposalId: proposals.proposalId, projectLeaderId: proposals.projectLeaderId, currentStatus: proposals.currentStatus, revisionNum: proposals.revisionNum })
+    .select({ proposalId: proposals.proposalId, status: proposals.status, revisionNum: proposals.revisionNum })
     .from(proposals)
     .where(and(eq(proposals.proposalId, id), isNull(proposals.archivedAt)))
     .limit(1);
@@ -587,7 +592,7 @@ app.openapi(reviewRoute, async (c) => {
   }
 
   // EC-01: Conflict of interest — reviewer cannot be the project leader
-  if (existing.projectLeaderId === user.userId) {
+  if (await isProjectLeader(id, user.userId)) {
     throw new ApiError(
       403,
       "CONFLICT_OF_INTEREST",
@@ -601,7 +606,7 @@ app.openapi(reviewRoute, async (c) => {
 
   if (
     user.roleName === ROLE_NAMES.RET_CHAIR &&
-    existing.currentStatus === PROPOSAL_STATUS.SUBMITTED
+    existing.status === PROPOSAL_STATUS.SUBMITTED
   ) {
     reviewStage = REVIEW_STAGE.ENDORSEMENT;
     if (body.decision === REVIEW_DECISION.ENDORSED) {
@@ -619,7 +624,7 @@ app.openapi(reviewRoute, async (c) => {
     }
   } else if (
     user.roleName === ROLE_NAMES.DIRECTOR &&
-    existing.currentStatus === PROPOSAL_STATUS.ENDORSED
+    existing.status === PROPOSAL_STATUS.ENDORSED
   ) {
     // SYS-REQ-02.3: Director can only approve after endorsement
     reviewStage = REVIEW_STAGE.APPROVAL;
@@ -661,14 +666,14 @@ app.openapi(reviewRoute, async (c) => {
     const [updated] = await tx
       .update(proposals)
       .set({
-        currentStatus: newStatus,
+        status: newStatus,
         revisionNum: existing.revisionNum + revisionIncrement,
         updatedAt: new Date(),
       })
       .where(
         and(
           eq(proposals.proposalId, id),
-          eq(proposals.currentStatus, existing.currentStatus)
+          eq(proposals.status, existing.status)
         )
       )
       .returning();

@@ -5,6 +5,7 @@ import { auditLogs } from "../db/schema/audit-logs.js";
 import { campuses } from "../db/schema/campuses.js";
 import { departments } from "../db/schema/departments.js";
 import { moas } from "../db/schema/moas.js";
+import { partners } from "../db/schema/partners.js";
 import { projects } from "../db/schema/projects.js";
 import { proposalDocuments } from "../db/schema/proposal-documents.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
@@ -77,7 +78,7 @@ const MoaRepositoryItemSchema = z.object({
   partnerOrganization: z.string(),
   dateSigned: z.string(),
   daysToExpiry: z.union([z.number(), z.string()]),
-  status: z.enum(["Valid", "Renewal Needed", "Expired", "Terminated"]),
+  status: z.enum(["Valid", "Renewal Needed", "Expired"]),
 });
 
 const MoaRepositorySchema = z.object({
@@ -177,20 +178,21 @@ app.openapi(facultyDirectoryRoute, async (c) => {
   const [leadCounts, collabCounts] = await Promise.all([
     db
       .select({
-        userId: proposals.projectLeaderId,
+        userId: proposalMembers.userId,
         value: count(),
       })
       .from(projects)
       .innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-      .where(and(inArray(proposals.projectLeaderId, userIds), isNull(projects.archivedAt)))
-      .groupBy(proposals.projectLeaderId),
+      .innerJoin(proposalMembers, eq(proposals.proposalId, proposalMembers.proposalId))
+      .where(and(inArray(proposalMembers.userId, userIds), isNull(projects.archivedAt), eq(proposalMembers.projectRole, "Project Leader")))
+      .groupBy(proposalMembers.userId),
     db
       .select({
         userId: proposalMembers.userId,
         value: count(),
       })
       .from(proposalMembers)
-      .where(inArray(proposalMembers.userId, userIds))
+      .where(and(inArray(proposalMembers.userId, userIds), eq(proposalMembers.projectRole, "Project Leader")))
       .groupBy(proposalMembers.userId),
   ]);
 
@@ -277,7 +279,7 @@ app.openapi(moaRepositoryRoute, async (c) => {
   const whereConditions = [isNull(moas.archivedAt)];
 
   if (search) {
-    whereConditions.push(ilike(moas.partnerName, `${search}%`));
+    whereConditions.push(ilike(partners.partnerName, `${search}%`));
   }
 
   if (status) {
@@ -287,7 +289,6 @@ app.openapi(moaRepositoryRoute, async (c) => {
       case "Valid":
         whereConditions.push(
           and(
-            eq(moas.isExpired, false),
             sql`${moas.validUntil} > ${now}`,
             sql`${moas.validUntil} > ${thirtyDaysFromNow}`,
           )!,
@@ -296,22 +297,13 @@ app.openapi(moaRepositoryRoute, async (c) => {
       case "Renewal Needed":
         whereConditions.push(
           and(
-            eq(moas.isExpired, false),
             sql`${moas.validUntil} > ${now}`,
             sql`${moas.validUntil} <= ${thirtyDaysFromNow}`,
           )!,
         );
         break;
       case "Expired":
-        whereConditions.push(
-          or(
-            eq(moas.isExpired, true),
-            sql`${moas.validUntil} <= ${now}`,
-          )!,
-        );
-        break;
-      case "Terminated":
-        whereConditions.push(eq(moas.isExpired, true));
+        whereConditions.push(sql`${moas.validUntil} <= ${now}`);
         break;
     }
   }
@@ -319,17 +311,17 @@ app.openapi(moaRepositoryRoute, async (c) => {
   const query = db
     .select({
       moaId: moas.moaId,
-      partnerName: moas.partnerName,
+      partnerName: partners.partnerName,
       validFrom: moas.validFrom,
       validUntil: moas.validUntil,
-      isExpired: moas.isExpired,
     })
     .from(moas)
+    .innerJoin(partners, eq(moas.partnerId, partners.partnerId))
     .where(and(...whereConditions))
     .orderBy(desc(moas.validUntil));
 
   const rows = await query.limit(limit).offset(offset);
-  const totalResult = await db.select({ value: count() }).from(moas).where(and(...whereConditions));
+  const totalResult = await db.select({ value: count() }).from(moas).innerJoin(partners, eq(moas.partnerId, partners.partnerId)).where(and(...whereConditions));
 
   const [totalMoasCount, expiringSoonCount, activeCount] = await Promise.all([
     db.select({ value: count() }).from(moas).where(isNull(moas.archivedAt)),
@@ -351,10 +343,8 @@ app.openapi(moaRepositoryRoute, async (c) => {
   const items = rows.map((r) => {
     const daysUntilExpiry = Math.ceil((r.validUntil.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
     
-    let moaStatus: "Valid" | "Renewal Needed" | "Expired" | "Terminated" = "Valid";
-    if (r.isExpired) {
-      moaStatus = "Terminated";
-    } else if (r.validUntil < now) {
+    let moaStatus: "Valid" | "Renewal Needed" | "Expired" = "Valid";
+    if (r.validUntil < now) {
       moaStatus = "Expired";
     } else if (daysUntilExpiry <= 30) {
       moaStatus = "Renewal Needed";
@@ -471,10 +461,10 @@ app.openapi(projectHubRoute, async (c) => {
   const whereConditions = [
     isNull(proposals.archivedAt),
     or(
-      eq(proposals.currentStatus, PROPOSAL_STATUS.ENDORSED),
-      eq(proposals.currentStatus, PROPOSAL_STATUS.APPROVED),
-      eq(proposals.currentStatus, PROPOSAL_STATUS.RETURNED),
-      eq(proposals.currentStatus, PROPOSAL_STATUS.REJECTED),
+      eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
+      eq(proposals.status, PROPOSAL_STATUS.APPROVED),
+      eq(proposals.status, PROPOSAL_STATUS.RETURNED),
+      eq(proposals.status, PROPOSAL_STATUS.REJECTED),
     ),
   ];
 
@@ -496,9 +486,18 @@ app.openapi(projectHubRoute, async (c) => {
     if (Object.values(PROJECT_STATUS).includes(status as any)) {
       whereConditions.push(eq(projects.projectStatus, status));
     } else {
-      whereConditions.push(eq(proposals.currentStatus, status));
+      whereConditions.push(eq(proposals.status, status));
     }
   }
+
+  const leaderMembersSubquery = db
+    .select({
+      proposalId: proposalMembers.proposalId,
+      userId: proposalMembers.userId,
+    })
+    .from(proposalMembers)
+    .where(eq(proposalMembers.projectRole, "Project Leader"))
+    .as("leader_members");
 
   const query = db
     .select({
@@ -509,11 +508,12 @@ app.openapi(projectHubRoute, async (c) => {
       leaderRank: users.academicRank,
       college: departments.departmentName,
       dateSubmitted: proposals.createdAt,
-      proposalStatus: proposals.currentStatus,
+      proposalStatus: proposals.status,
       projectStatus: projects.projectStatus,
     })
     .from(proposals)
-    .innerJoin(users, eq(proposals.projectLeaderId, users.userId))
+    .innerJoin(leaderMembersSubquery, eq(proposals.proposalId, leaderMembersSubquery.proposalId))
+    .innerJoin(users, eq(leaderMembersSubquery.userId, users.userId))
     .leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
     .leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
     .where(and(...whereConditions))
@@ -522,7 +522,8 @@ app.openapi(projectHubRoute, async (c) => {
   const totalResult = await db
     .select({ value: count() })
     .from(proposals)
-    .innerJoin(users, eq(proposals.projectLeaderId, users.userId))
+    .innerJoin(leaderMembersSubquery, eq(proposals.proposalId, leaderMembersSubquery.proposalId))
+    .innerJoin(users, eq(leaderMembersSubquery.userId, users.userId))
     .leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
     .leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
     .where(and(...whereConditions));
@@ -561,8 +562,8 @@ app.openapi(dashboardRoute, async (c) => {
       and(
         isNull(proposals.archivedAt),
         or(
-          eq(proposals.currentStatus, PROPOSAL_STATUS.SUBMITTED),
-          eq(proposals.currentStatus, PROPOSAL_STATUS.ENDORSED),
+          eq(proposals.status, PROPOSAL_STATUS.SUBMITTED),
+          eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
         ),
       ),
     ),
@@ -593,10 +594,11 @@ app.openapi(dashboardRoute, async (c) => {
 
   const expiringMoaRows = await db
     .select({
-      partnerName: moas.partnerName,
+      partnerName: partners.partnerName,
       validUntil: moas.validUntil,
     })
     .from(moas)
+    .innerJoin(partners, eq(moas.partnerId, partners.partnerId))
     .where(
       and(
         isNull(moas.archivedAt),
@@ -715,11 +717,20 @@ const projectDetailsRoute = createRoute({
 app.openapi(projectDetailsRoute, async (c) => {
   const { proposalId } = c.req.valid("param");
 
+  const leaderMembers = db
+    .select({
+      proposalId: proposalMembers.proposalId,
+      userId: proposalMembers.userId,
+    })
+    .from(proposalMembers)
+    .where(eq(proposalMembers.projectRole, "Project Leader"))
+    .as("leader_members");
+
   const [row] = await db
     .select({
       proposalId: proposals.proposalId,
       title: proposals.title,
-      currentStatus: proposals.currentStatus,
+      status: proposals.status,
       revisionNum: proposals.revisionNum,
       budgetNeust: proposals.budgetNeust,
       budgetPartner: proposals.budgetPartner,
@@ -729,13 +740,15 @@ app.openapi(projectDetailsRoute, async (c) => {
       projectStatus: projects.projectStatus,
       startDate: projects.startDate,
       targetEnd: projects.targetEnd,
-      moaPartner: moas.partnerName,
+      moaPartner: partners.partnerName,
     })
     .from(proposals)
-    .innerJoin(users, eq(proposals.projectLeaderId, users.userId))
+    .innerJoin(leaderMembers, eq(proposals.proposalId, leaderMembers.proposalId))
+    .innerJoin(users, eq(leaderMembers.userId, users.userId))
     .innerJoin(departments, eq(proposals.departmentId, departments.departmentId))
     .leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
     .leftJoin(moas, eq(projects.moaId, moas.moaId))
+    .leftJoin(partners, eq(moas.partnerId, partners.partnerId))
     .where(eq(proposals.proposalId, proposalId));
 
   if (!row) {
@@ -835,7 +848,7 @@ app.openapi(projectDetailsRoute, async (c) => {
     version: `v${doc.versionNum}`,
   }));
 
-  const status = row.projectStatus || row.currentStatus;
+  const status = row.projectStatus || row.status;
 
   return c.json({
     id: row.proposalId,
@@ -844,7 +857,7 @@ app.openapi(projectDetailsRoute, async (c) => {
     version: `v${row.revisionNum}`,
     metadata: {
       leader: {
-        name: `${row.leaderFirstName} ${row.leaderLastName}`,
+        name: "N/A",
       },
       department: row.departmentName,
       duration,

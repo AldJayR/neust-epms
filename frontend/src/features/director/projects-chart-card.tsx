@@ -33,7 +33,7 @@ export default function ProjectsChartCard({
 					</p>
 					<p className="text-[14px] leading-5 text-[#666]">per college</p>
 				</div>
-				<Select value={selectedCampus} onValueChange={onCampusChange} modal={false}>
+				<Select value={selectedCampus} onValueChange={(v) => { if (v) onCampusChange(v); }} modal={false}>
 					<SelectTrigger className="h-9 w-[200px] rounded-md border border-[#e5e5e5] bg-white px-3 text-[14px] text-[#737373] shadow-[0px_1px_1px_rgba(0,0,0,0.1)]">
 						<SelectValue placeholder="Select campus..." />
 					</SelectTrigger>

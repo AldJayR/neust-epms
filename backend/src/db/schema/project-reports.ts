@@ -23,6 +23,8 @@ export const projectReports = pgTable(
     reportType: varchar("report_type", { length: 100 }).notNull(),
     storagePath: varchar("storage_path", { length: 500 }),
     remarks: text("remarks"),
+    periodStart: timestamp("period_start", { withTimezone: true }),
+    periodEnd: timestamp("period_end", { withTimezone: true }),
     submittedAt: timestamp("submitted_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

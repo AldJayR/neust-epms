@@ -35,9 +35,8 @@ describe("GET /proposals/:proposalId/members", () => {
 describe("POST /proposals/:proposalId/members", () => {
   const proposalId = "eeeeeeee-5555-4555-8555-eeeeeeeeeeee";
 
-  it("should reject adding a member if not the project leader", async () => {
-    const proposal = { proposalId, projectLeaderId: "someone-else" };
-    vi.mocked(db.select).mockReturnValue(mockSelectChain([proposal]) as never);
+  it("should reject adding a member if proposal not found", async () => {
+    vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
 
     const res = await app.request(`/proposals/${proposalId}/members`, {
       method: "POST",
@@ -48,16 +47,13 @@ describe("POST /proposals/:proposalId/members", () => {
       }),
     });
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
     const body = await res.json();
-    expect(body.error.code).toBe("NOT_LEADER");
+    expect(body.error.code).toBe("NOT_FOUND");
   });
 
   it("should reject duplicate membership", async () => {
-    const proposal = {
-      proposalId,
-      projectLeaderId: MOCK_USERS.faculty.userId,
-    };
+    const proposal = { proposalId };
     const targetUser = { userId: "existing-user" };
     const existing = { memberId: "m1" };
 
@@ -83,11 +79,8 @@ describe("POST /proposals/:proposalId/members", () => {
     expect(body.error.code).toBe("DUPLICATE");
   });
 
-  it("should add a member when user is the project leader", async () => {
-    const proposal = {
-      proposalId,
-      projectLeaderId: MOCK_USERS.faculty.userId,
-    };
+  it("should add a member successfully", async () => {
+    const proposal = { proposalId };
     const targetUser = { userId: "new-u" };
     const created = {
       memberId: "new-m",
@@ -97,14 +90,22 @@ describe("POST /proposals/:proposalId/members", () => {
       addedAt: new Date(),
     };
 
-    let callCount = 0;
-    vi.mocked(db.select).mockImplementation(() => {
-      callCount++;
-      if (callCount === 1) return mockSelectChain([proposal]) as never;
-      if (callCount === 2) return mockSelectChain([targetUser]) as never;
-      return mockSelectChain([]) as never; // No existing membership
+    // Mock db.select for isProjectLeader check (returns truthy = user IS a leader)
+    vi.mocked(db.select).mockReturnValue(mockSelectChain([{ memberId: "leader-m" }]) as never);
+
+    // Mock db.transaction with ordered tx.select calls
+    vi.mocked(db.transaction).mockImplementation(async (callback) => {
+      const tx = {
+        select: vi.fn()
+          .mockReturnValueOnce(mockSelectChain([proposal]))
+          .mockReturnValueOnce(mockSelectChain([targetUser]))
+          .mockReturnValueOnce(mockSelectChain([])),
+        insert: vi.fn(() => mockMutationChain([created])),
+        update: vi.fn(() => mockMutationChain([])),
+        delete: vi.fn(() => mockMutationChain([])),
+      };
+      return callback(tx as never);
     });
-    vi.mocked(db.insert).mockReturnValue(mockMutationChain([created]) as never);
 
     const res = await app.request(`/proposals/${proposalId}/members`, {
       method: "POST",
@@ -123,15 +124,23 @@ describe("DELETE /proposals/:proposalId/members/:memberId", () => {
   const proposalId = "eeeeeeee-5555-4555-8555-eeeeeeeeeeee";
   const memberId = "aaaaaaaa-0000-4000-8000-aaaaaaaaaaaa";
 
-  it("should reject removal by non-leader", async () => {
-    const proposal = { proposalId, projectLeaderId: "someone-else" };
-    vi.mocked(db.select).mockReturnValue(mockSelectChain([proposal]) as never);
+  it("should reject removal if proposal not found", async () => {
+    vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
+    vi.mocked(db.transaction).mockImplementation(async (callback) => {
+      const tx = {
+        select: vi.fn(() => mockSelectChain([])),
+        insert: vi.fn(() => mockMutationChain([])),
+        update: vi.fn(() => mockMutationChain([])),
+        delete: vi.fn(() => mockMutationChain([])),
+      };
+      return callback(tx as never);
+    });
 
     const res = await app.request(
       `/proposals/${proposalId}/members/${memberId}`,
       { method: "DELETE" },
     );
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 });

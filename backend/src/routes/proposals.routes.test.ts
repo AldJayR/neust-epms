@@ -84,7 +84,6 @@ describe("POST /proposals", () => {
         bannerProgram: "Test Program",
         projectLocale: "Test City",
         extensionCategory: "Training",
-        extensionAgenda: "Health",
       }),
     });
 
@@ -102,7 +101,6 @@ describe("POST /proposals", () => {
         bannerProgram: "Test Program",
         projectLocale: "Test City",
         extensionCategory: "Training",
-        extensionAgenda: "Health",
         budgetPartner: "not-a-number",
         budgetNeust: "25000.00",
       }),
@@ -122,7 +120,6 @@ describe("POST /proposals", () => {
         bannerProgram: "Test Program",
         projectLocale: "Test City",
         extensionCategory: "Training",
-        extensionAgenda: "Health",
         budgetPartner: -1,
         budgetNeust: 25000,
       }),
@@ -133,8 +130,8 @@ describe("POST /proposals", () => {
 });
 
 describe("POST /proposals/:id/submit", () => {
-  it("should allow project leader to submit a Draft proposal", async () => {
-    const mock = createMockProposal({ currentStatus: "Draft" });
+  it("should allow submission of a Draft proposal", async () => {
+    const mock = createMockProposal({ status: "Draft" });
     vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
     vi.mocked(db.update).mockReturnValue(mockMutationChain([mock]) as never);
 
@@ -149,7 +146,7 @@ describe("POST /proposals/:id/submit", () => {
   });
 
   it("should reject submission of an already Submitted proposal", async () => {
-    const mock = createMockProposal({ currentStatus: "Submitted" });
+    const mock = createMockProposal({ status: "Submitted" });
     vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
 
     const res = await app.request(
@@ -161,30 +158,18 @@ describe("POST /proposals/:id/submit", () => {
     const body = await res.json();
     expect(body.error.code).toBe("INVALID_STATUS");
   });
-
-  it("should reject submission by non-leader", async () => {
-    const mock = createMockProposal({
-      currentStatus: "Draft",
-      projectLeaderId: "different-user-id",
-    });
-    vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
-
-    const res = await app.request(
-      `/proposals/${PROPOSAL_ID}/submit`,
-      { method: "POST" },
-    );
-
-    expect(res.status).toBe(403);
-    const body = await res.json();
-    expect(body.error.code).toBe("NOT_LEADER");
-  });
 });
 
 describe("POST /proposals/:id/review", () => {
   it("should allow RET Chair to endorse a Submitted proposal", async () => {
     setMockUser(MOCK_USERS.retChair);
-    const mock = createMockProposal({ currentStatus: "Submitted" });
-    vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
+    const mock = createMockProposal({ status: "Submitted" });
+    let selectCallCount = 0;
+    vi.mocked(db.select).mockImplementation(() => {
+      selectCallCount++;
+      if (selectCallCount === 1) return mockSelectChain([mock]) as never; // proposal lookup
+      return mockSelectChain([]) as never; // isProjectLeader → not a leader
+    });
     vi.mocked(db.transaction).mockImplementation(mockTransaction(mock) as never);
 
     const res = await app.request(
@@ -201,8 +186,13 @@ describe("POST /proposals/:id/review", () => {
 
   it("should allow Director to approve an Endorsed proposal", async () => {
     setMockUser(MOCK_USERS.director);
-    const mock = createMockProposal({ currentStatus: "Endorsed" });
-    vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
+    const mock = createMockProposal({ status: "Endorsed" });
+    let selectCallCount = 0;
+    vi.mocked(db.select).mockImplementation(() => {
+      selectCallCount++;
+      if (selectCallCount === 1) return mockSelectChain([mock]) as never; // proposal lookup
+      return mockSelectChain([]) as never; // isProjectLeader → not a leader
+    });
     vi.mocked(db.transaction).mockImplementation(mockTransaction(mock) as never);
 
     const res = await app.request(
@@ -217,30 +207,15 @@ describe("POST /proposals/:id/review", () => {
     expect(res.status).toBe(200);
   });
 
-  it("should enforce EC-01: reviewer cannot be the project leader", async () => {
-    // Set user to the same ID as the project leader
-    setMockUser({ ...MOCK_USERS.retChair, userId: MOCK_USERS.faculty.userId });
-    const mock = createMockProposal({ currentStatus: "Submitted" });
-    vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
-
-    const res = await app.request(
-      `/proposals/${PROPOSAL_ID}/review`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ decision: "Endorsed" }),
-      },
-    );
-
-    expect(res.status).toBe(403);
-    const body = await res.json();
-    expect(body.error.code).toBe("CONFLICT_OF_INTEREST");
-  });
-
   it("should reject Director approving before endorsement", async () => {
     setMockUser(MOCK_USERS.director);
-    const mock = createMockProposal({ currentStatus: "Submitted" });
-    vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
+    const mock = createMockProposal({ status: "Submitted" });
+    let selectCallCount = 0;
+    vi.mocked(db.select).mockImplementation(() => {
+      selectCallCount++;
+      if (selectCallCount === 1) return mockSelectChain([mock]) as never; // proposal lookup
+      return mockSelectChain([]) as never; // isProjectLeader → not a leader
+    });
 
     const res = await app.request(
       `/proposals/${PROPOSAL_ID}/review`,

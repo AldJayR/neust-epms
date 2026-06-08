@@ -3,21 +3,21 @@ import {
   uuid,
   varchar,
   timestamp,
-  boolean,
   index,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import { partners } from "./partners.js";
 
 export const moas = pgTable(
   "moas",
   {
     moaId: uuid("moa_id").primaryKey().defaultRandom(),
-    partnerName: varchar("partner_name", { length: 255 }).notNull(),
-    partnerType: varchar("partner_type", { length: 100 }).notNull(),
+    partnerId: uuid("partner_id")
+      .notNull()
+      .references(() => partners.partnerId),
     storagePath: varchar("storage_path", { length: 500 }),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull(),
     validUntil: timestamp("valid_until", { withTimezone: true }).notNull(),
-    isExpired: boolean("is_expired").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -27,6 +27,7 @@ export const moas = pgTable(
     archivedAt: timestamp("archived_at", { withTimezone: true }),
   },
   (table) => ({
+    partnerIdx: index("moas_partner_id_idx").on(table.partnerId),
     activeIdx: index("moas_active_idx")
       .on(table.validUntil)
       .where(sql`${table.archivedAt} IS NULL`),

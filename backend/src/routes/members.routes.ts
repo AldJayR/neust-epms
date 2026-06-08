@@ -8,8 +8,25 @@ import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 
+const PROJECT_LEADER_ROLE = "Project Leader";
+
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
+
+async function isProjectLeader(proposalId: string, userId: string): Promise<boolean> {
+  const [member] = await db
+    .select({ memberId: proposalMembers.memberId })
+    .from(proposalMembers)
+    .where(
+      and(
+        eq(proposalMembers.proposalId, proposalId),
+        eq(proposalMembers.userId, userId),
+        eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE),
+      ),
+    )
+    .limit(1);
+  return !!member;
+}
 
 // ── Schemas ──
 const MemberSchema = z
@@ -111,7 +128,7 @@ const addMemberRoute = createRoute({
   method: "post",
   path: "/proposals/{proposalId}/members",
   tags: ["Members"],
-  summary: "Add a member to a proposal",
+  summary: "Add a member to a proposal (project leader only)",
   security: [{ Bearer: [] }],
   request: {
     params: ProposalParam,
@@ -129,6 +146,10 @@ const addMemberRoute = createRoute({
       content: { "application/json": { schema: ErrorSchema } },
       description: "Validation error",
     },
+    403: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Not project leader",
+    },
     404: {
       content: { "application/json": { schema: ErrorSchema } },
       description: "Proposal or user not found",
@@ -144,7 +165,7 @@ app.openapi(addMemberRoute, async (c) => {
   const created = await db.transaction(async (tx) => {
     // Verify proposal exists
     const [proposal] = await tx
-      .select({ projectLeaderId: proposals.projectLeaderId })
+      .select({ proposalId: proposals.proposalId })
       .from(proposals)
       .where(eq(proposals.proposalId, proposalId))
       .limit(1);
@@ -154,7 +175,7 @@ app.openapi(addMemberRoute, async (c) => {
     }
 
     // Only the project leader can add members
-    if (proposal.projectLeaderId !== authUser.userId) {
+    if (!(await isProjectLeader(proposalId, authUser.userId))) {
       throw new ApiError(
         403,
         "NOT_LEADER",
@@ -223,13 +244,17 @@ const removeMemberRoute = createRoute({
   method: "delete",
   path: "/proposals/{proposalId}/members/{memberId}",
   tags: ["Members"],
-  summary: "Remove a member from a proposal",
+  summary: "Remove a member from a proposal (project leader only)",
   security: [{ Bearer: [] }],
   request: { params: MemberParam },
   responses: {
     200: {
       content: { "application/json": { schema: MessageSchema } },
       description: "Member removed",
+    },
+    403: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Not project leader",
     },
     404: {
       content: { "application/json": { schema: ErrorSchema } },
@@ -243,9 +268,9 @@ app.openapi(removeMemberRoute, async (c) => {
   const { proposalId, memberId } = c.req.valid("param");
 
   await db.transaction(async (tx) => {
-    // Verify proposal and leadership
+    // Verify proposal exists
     const [proposal] = await tx
-      .select({ projectLeaderId: proposals.projectLeaderId })
+      .select({ proposalId: proposals.proposalId })
       .from(proposals)
       .where(eq(proposals.proposalId, proposalId))
       .limit(1);
@@ -254,7 +279,8 @@ app.openapi(removeMemberRoute, async (c) => {
       throw new ApiError(404, "NOT_FOUND", "Proposal not found");
     }
 
-    if (proposal.projectLeaderId !== authUser.userId) {
+    // Only the project leader can remove members
+    if (!(await isProjectLeader(proposalId, authUser.userId))) {
       throw new ApiError(
         403,
         "NOT_LEADER",

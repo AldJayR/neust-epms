@@ -31,7 +31,6 @@ describe("GET /proposals/:proposalId/documents", () => {
   it("should return 403 when user lacks authorization for document list", async () => {
     const restrictedProposal = createMockProposal({
       proposalId: PROPOSAL_ID,
-      projectLeaderId: "ffffffff-ffff-4fff-8fff-ffffffffffff",
       departmentId: 99,
       campusId: 99,
     });
@@ -73,7 +72,6 @@ describe("GET /proposals/:proposalId/documents/:documentId/url", () => {
   it("should return 403 when user lacks authorization for document access", async () => {
     const restrictedProposal = createMockProposal({
       proposalId: PROPOSAL_ID,
-      projectLeaderId: "ffffffff-ffff-4fff-8fff-ffffffffffff",
       departmentId: 99,
       campusId: 99,
     });
@@ -152,7 +150,6 @@ describe("POST /proposals/:proposalId/documents/upload", () => {
   it("should return 403 when user lacks authorization for upload", async () => {
     const restrictedProposal = createMockProposal({
       proposalId: PROPOSAL_ID,
-      projectLeaderId: "ffffffff-ffff-4fff-8fff-ffffffffffff",
       departmentId: 99,
       campusId: 99,
     });

@@ -3,6 +3,7 @@ import {
   uuid,
   integer,
   varchar,
+  text,
   boolean,
   timestamp,
   index,
@@ -30,6 +31,7 @@ export const users = pgTable(
     nameSuffix: varchar("name_suffix", { length: 20 }),
     academicRank: varchar("academic_rank", { length: 100 }),
     email: varchar("email", { length: 255 }).notNull().unique(),
+    avatarUrl: text("avatar_url"),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

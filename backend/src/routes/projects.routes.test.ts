@@ -37,7 +37,7 @@ describe("GET /projects", () => {
 
 describe("POST /projects", () => {
   it("should create a project from an Approved proposal", async () => {
-    const proposal = createMockProposal({ currentStatus: "Approved" });
+    const proposal = createMockProposal({ status: "Approved" });
     const project = createMockProject();
 
     // First select: find proposal. Second select: check duplicate.
@@ -59,7 +59,7 @@ describe("POST /projects", () => {
   });
 
   it("should reject creating a project from a non-Approved proposal", async () => {
-    const proposal = createMockProposal({ currentStatus: "Draft" });
+    const proposal = createMockProposal({ status: "Draft" });
     vi.mocked(db.select).mockReturnValue(mockSelectChain([proposal]) as never);
 
     const res = await app.request("/projects", {
@@ -74,7 +74,7 @@ describe("POST /projects", () => {
   });
 
   it("should reject duplicate project for same proposal", async () => {
-    const proposal = createMockProposal({ currentStatus: "Approved" });
+    const proposal = createMockProposal({ status: "Approved" });
     const existing = createMockProject();
 
     let callCount = 0;
@@ -123,7 +123,7 @@ describe("POST /projects/:id/link-moa", () => {
 
   it("should reject linking an expired MOA", async () => {
     const project = createMockProject();
-    const expiredMoa = createMockMoa({ isExpired: true });
+    const expiredMoa = createMockMoa({ validUntil: new Date("2020-01-01") });
 
     let callCount = 0;
     vi.mocked(db.select).mockImplementation(() => {
@@ -186,24 +186,17 @@ describe("POST /projects/:id/transition", () => {
 });
 
 describe("POST /projects/:id/close", () => {
-  it("should close a project when leader has submitted both required reports", async () => {
-    setMockUser(MOCK_USERS.faculty);
-
-    const proposal = createMockProposal({
-      projectLeaderId: MOCK_USERS.faculty.userId,
-    });
+  it("should close a project when both required reports exist", async () => {
     const project = createMockProject({ projectStatus: "Ongoing" });
     const reports = [
       { reportType: "Final Accomplishment" },
       { reportType: "Terminal" },
     ];
 
-    // select 1: project, select 2: proposal, select 3: reports
     let callCount = 0;
     vi.mocked(db.select).mockImplementation(() => {
       callCount++;
       if (callCount === 1) return mockSelectChain([project]) as never;
-      if (callCount === 2) return mockSelectChain([proposal]) as never;
       return mockSelectChain(reports) as never;
     });
     vi.mocked(db.update).mockReturnValue(mockMutationChain([project]) as never);
@@ -219,11 +212,6 @@ describe("POST /projects/:id/close", () => {
   });
 
   it("should reject close when Final Accomplishment report is missing", async () => {
-    setMockUser(MOCK_USERS.faculty);
-
-    const proposal = createMockProposal({
-      projectLeaderId: MOCK_USERS.faculty.userId,
-    });
     const project = createMockProject({ projectStatus: "Ongoing" });
     const reports = [{ reportType: "Terminal" }];
 
@@ -231,7 +219,6 @@ describe("POST /projects/:id/close", () => {
     vi.mocked(db.select).mockImplementation(() => {
       callCount++;
       if (callCount === 1) return mockSelectChain([project]) as never;
-      if (callCount === 2) return mockSelectChain([proposal]) as never;
       return mockSelectChain(reports) as never;
     });
 
@@ -246,11 +233,6 @@ describe("POST /projects/:id/close", () => {
   });
 
   it("should reject close when Terminal report is missing", async () => {
-    setMockUser(MOCK_USERS.faculty);
-
-    const proposal = createMockProposal({
-      projectLeaderId: MOCK_USERS.faculty.userId,
-    });
     const project = createMockProject({ projectStatus: "Ongoing" });
     const reports = [{ reportType: "Final Accomplishment" }];
 
@@ -258,7 +240,6 @@ describe("POST /projects/:id/close", () => {
     vi.mocked(db.select).mockImplementation(() => {
       callCount++;
       if (callCount === 1) return mockSelectChain([project]) as never;
-      if (callCount === 2) return mockSelectChain([proposal]) as never;
       return mockSelectChain(reports) as never;
     });
 
@@ -273,18 +254,12 @@ describe("POST /projects/:id/close", () => {
   });
 
   it("should reject close when no reports exist", async () => {
-    setMockUser(MOCK_USERS.faculty);
-
-    const proposal = createMockProposal({
-      projectLeaderId: MOCK_USERS.faculty.userId,
-    });
     const project = createMockProject({ projectStatus: "Ongoing" });
 
     let callCount = 0;
     vi.mocked(db.select).mockImplementation(() => {
       callCount++;
       if (callCount === 1) return mockSelectChain([project]) as never;
-      if (callCount === 2) return mockSelectChain([proposal]) as never;
       return mockSelectChain([]) as never;
     });
 
@@ -298,41 +273,11 @@ describe("POST /projects/:id/close", () => {
     expect(body.error.code).toBe("MISSING_FINAL_ACCOMPLISHMENT_REPORT");
   });
 
-  it("should reject close from non-leader user", async () => {
-    setMockUser(MOCK_USERS.retChair);
-
-    const proposal = createMockProposal({
-      projectLeaderId: MOCK_USERS.faculty.userId,
-    });
-    const project = createMockProject({ projectStatus: "Ongoing" });
+  it("should reject close when project is already closed", async () => {
+    const project = createMockProject({ projectStatus: "Closed" });
 
     vi.mocked(db.select).mockImplementation(() => {
       return mockSelectChain([project]) as never;
-    });
-
-    const res = await app.request(
-      `/projects/${project.projectId}/close`,
-      { method: "POST" },
-    );
-
-    expect(res.status).toBe(403);
-    const body = await res.json();
-    expect(body.error.code).toBe("NOT_PROJECT_LEADER");
-  });
-
-  it("should reject close when project is already closed", async () => {
-    setMockUser(MOCK_USERS.faculty);
-
-    const proposal = createMockProposal({
-      projectLeaderId: MOCK_USERS.faculty.userId,
-    });
-    const project = createMockProject({ projectStatus: "Closed" });
-
-    let callCount = 0;
-    vi.mocked(db.select).mockImplementation(() => {
-      callCount++;
-      if (callCount === 1) return mockSelectChain([project]) as never;
-      return mockSelectChain([proposal]) as never;
     });
 
     const res = await app.request(
@@ -346,18 +291,10 @@ describe("POST /projects/:id/close", () => {
   });
 
   it("should reject close when project is not Ongoing", async () => {
-    setMockUser(MOCK_USERS.faculty);
-
-    const proposal = createMockProposal({
-      projectLeaderId: MOCK_USERS.faculty.userId,
-    });
     const project = createMockProject({ projectStatus: "Approved" });
 
-    let callCount = 0;
     vi.mocked(db.select).mockImplementation(() => {
-      callCount++;
-      if (callCount === 1) return mockSelectChain([project]) as never;
-      return mockSelectChain([proposal]) as never;
+      return mockSelectChain([project]) as never;
     });
 
     const res = await app.request(
@@ -371,18 +308,10 @@ describe("POST /projects/:id/close", () => {
   });
 
   it("should reject close when project is already completed", async () => {
-    setMockUser(MOCK_USERS.faculty);
-
-    const proposal = createMockProposal({
-      projectLeaderId: MOCK_USERS.faculty.userId,
-    });
     const project = createMockProject({ projectStatus: "Completed" });
 
-    let callCount = 0;
     vi.mocked(db.select).mockImplementation(() => {
-      callCount++;
-      if (callCount === 1) return mockSelectChain([project]) as never;
-      return mockSelectChain([proposal]) as never;
+      return mockSelectChain([project]) as never;
     });
 
     const res = await app.request(

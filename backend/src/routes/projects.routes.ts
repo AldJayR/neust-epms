@@ -26,6 +26,7 @@ const ProjectSchema = z
     moaId: z.string().uuid().nullable(),
     startDate: z.string().nullable(),
     targetEnd: z.string().nullable(),
+    actualEndDate: z.string().nullable(),
     projectStatus: z.string(),
     createdAt: z.string(),
     updatedAt: z.string(),
@@ -103,19 +104,9 @@ app.openapi(listRoute, async (c) => {
   
   if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
     if (user.departmentId !== null) {
-      proposalConditions.push(
-        or(
-          eq(proposals.projectLeaderId, user.userId),
-          eq(proposals.departmentId, user.departmentId)
-        )!
-      );
+      proposalConditions.push(eq(proposals.departmentId, user.departmentId));
     } else {
-      proposalConditions.push(
-        or(
-          eq(proposals.projectLeaderId, user.userId),
-          eq(proposals.campusId, user.campusId)
-        )!
-      );
+      proposalConditions.push(eq(proposals.campusId, user.campusId));
     }
   }
 
@@ -131,6 +122,7 @@ app.openapi(listRoute, async (c) => {
       moaId: projects.moaId,
       startDate: projects.startDate,
       targetEnd: projects.targetEnd,
+      actualEndDate: projects.actualEndDate,
       projectStatus: projects.projectStatus,
       createdAt: projects.createdAt,
       updatedAt: projects.updatedAt,
@@ -145,6 +137,7 @@ app.openapi(listRoute, async (c) => {
     ...r,
     startDate: r.startDate?.toISOString() ?? null,
     targetEnd: r.targetEnd?.toISOString() ?? null,
+    actualEndDate: r.actualEndDate?.toISOString() ?? null,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
     archivedAt: r.archivedAt?.toISOString() ?? null,
@@ -191,7 +184,7 @@ app.openapi(createProjectRoute, async (c) => {
   const created = await db.transaction(async (tx) => {
     // Verify proposal is approved
     const [proposal] = await tx
-      .select({ currentStatus: proposals.currentStatus })
+      .select({ status: proposals.status })
       .from(proposals)
       .where(eq(proposals.proposalId, body.proposalId))
       .limit(1);
@@ -200,7 +193,7 @@ app.openapi(createProjectRoute, async (c) => {
       throw new ApiError(404, "NOT_FOUND", "Proposal not found");
     }
 
-    if (proposal.currentStatus !== PROPOSAL_STATUS.APPROVED) {
+    if (proposal.status !== PROPOSAL_STATUS.APPROVED) {
       throw new ApiError(
         400,
         "NOT_APPROVED",
@@ -251,6 +244,7 @@ app.openapi(createProjectRoute, async (c) => {
       ...created,
       startDate: created.startDate?.toISOString() ?? null,
       targetEnd: created.targetEnd?.toISOString() ?? null,
+      actualEndDate: created.actualEndDate?.toISOString() ?? null,
       createdAt: created.createdAt.toISOString(),
       updatedAt: created.updatedAt.toISOString(),
       archivedAt: created.archivedAt?.toISOString() ?? null,
@@ -305,7 +299,7 @@ app.openapi(linkMoaRoute, async (c) => {
   }
 
   const [moa] = await db
-    .select({ moaId: moas.moaId, isExpired: moas.isExpired, archivedAt: moas.archivedAt })
+    .select({ moaId: moas.moaId, validUntil: moas.validUntil, archivedAt: moas.archivedAt })
     .from(moas)
     .where(and(eq(moas.moaId, body.moaId), isNull(moas.archivedAt)))
     .limit(1);
@@ -314,7 +308,7 @@ app.openapi(linkMoaRoute, async (c) => {
     throw new ApiError(404, "MOA_NOT_FOUND", "MOA not found");
   }
 
-  if (moa.isExpired) {
+  if (moa.validUntil < new Date()) {
     throw new ApiError(400, "MOA_EXPIRED", "Cannot link an expired MOA");
   }
 
@@ -396,12 +390,12 @@ app.openapi(transitionRoute, async (c) => {
 
     // Verify linked MOA is not expired
     const [moa] = await db
-      .select({ moaId: moas.moaId, isExpired: moas.isExpired })
+      .select({ moaId: moas.moaId, validUntil: moas.validUntil })
       .from(moas)
       .where(eq(moas.moaId, project.moaId))
       .limit(1);
 
-    if (!moa || moa.isExpired) {
+    if (!moa || moa.validUntil < new Date()) {
       throw new ApiError(
         400,
         "MOA_EXPIRED",
@@ -482,25 +476,6 @@ app.openapi(closeProjectRoute, async (c) => {
 
   if (!project) {
     throw new ApiError(404, "NOT_FOUND", "Project not found");
-  }
-
-  // Fetch the linked proposal to verify project leader
-  const [proposal] = await db
-    .select({ projectLeaderId: proposals.projectLeaderId })
-    .from(proposals)
-    .where(eq(proposals.proposalId, project.proposalId))
-    .limit(1);
-
-  if (!proposal) {
-    throw new ApiError(404, "PROPOSAL_NOT_FOUND", "Linked proposal not found");
-  }
-
-  if (proposal.projectLeaderId !== user.userId) {
-    throw new ApiError(
-      403,
-      "NOT_PROJECT_LEADER",
-      "Only the project leader can close this project",
-    );
   }
 
   if (

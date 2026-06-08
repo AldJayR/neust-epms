@@ -25,6 +25,8 @@ const ReportSchema = z
     submitted: z.string(),
     storagePath: z.string().nullable(),
     remarks: z.string().nullable(),
+    periodStart: z.string().nullable(),
+    periodEnd: z.string().nullable(),
     archivedAt: z.string().nullable(),
   })
   .openapi("ProjectReport");
@@ -39,6 +41,8 @@ const CreateReportSchema = z
     reportType: z.string(),
     remarks: z.string().optional(),
     storagePath: z.string().optional(),
+    periodStart: z.string().datetime().optional(),
+    periodEnd: z.string().datetime().optional(),
   })
   .openapi("CreateReport");
 
@@ -99,12 +103,14 @@ app.openapi(listRoute, async (c) => {
       submittedAt: projectReports.submittedAt,
       storagePath: projectReports.storagePath,
       remarks: projectReports.remarks,
+      periodStart: projectReports.periodStart,
+      periodEnd: projectReports.periodEnd,
       archivedAt: projectReports.archivedAt,
     })
     .from(projectReports)
     .innerJoin(projects, eq(projectReports.projectId, projects.projectId))
     .innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-    .innerJoin(users, eq(proposals.projectLeaderId, users.userId))
+    .innerJoin(users, eq(projectReports.submittedById, users.userId))
     .leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
     .where(isNull(projectReports.archivedAt))
     .orderBy(desc(projectReports.submittedAt))
@@ -127,6 +133,8 @@ app.openapi(listRoute, async (c) => {
     submitted: r.submittedAt.toISOString(),
     storagePath: r.storagePath,
     remarks: r.remarks,
+    periodStart: r.periodStart?.toISOString() ?? null,
+    periodEnd: r.periodEnd?.toISOString() ?? null,
     archivedAt: r.archivedAt?.toISOString() ?? null,
   }));
 
@@ -183,6 +191,8 @@ app.openapi(createReportRoute, async (c) => {
       reportType: body.reportType,
       remarks: body.remarks ?? null,
       storagePath: body.storagePath ?? null,
+      periodStart: body.periodStart ? new Date(body.periodStart) : null,
+      periodEnd: body.periodEnd ? new Date(body.periodEnd) : null,
     })
     .returning();
 
@@ -209,12 +219,14 @@ app.openapi(createReportRoute, async (c) => {
       submittedAt: projectReports.submittedAt,
       storagePath: projectReports.storagePath,
       remarks: projectReports.remarks,
+      periodStart: projectReports.periodStart,
+      periodEnd: projectReports.periodEnd,
       archivedAt: projectReports.archivedAt,
     })
     .from(projectReports)
     .innerJoin(projects, eq(projectReports.projectId, projects.projectId))
     .innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-    .innerJoin(users, eq(proposals.projectLeaderId, users.userId))
+    .innerJoin(users, eq(projectReports.submittedById, users.userId))
     .leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
     .where(eq(projectReports.reportId, created.reportId))
     .limit(1);
@@ -234,6 +246,8 @@ app.openapi(createReportRoute, async (c) => {
       submitted: enriched.submittedAt.toISOString(),
       storagePath: enriched.storagePath,
       remarks: enriched.remarks,
+      periodStart: enriched.periodStart?.toISOString() ?? null,
+      periodEnd: enriched.periodEnd?.toISOString() ?? null,
       archivedAt: enriched.archivedAt?.toISOString() ?? null,
     },
     201,
