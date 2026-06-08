@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 import type { AuthUser } from "@/lib/auth";
+import { getCampusesFn } from "@/lib/auth.functions";
 import { directorDashboardQueryOptions } from "@/lib/director.functions";
 
 const ProjectsChartCard = React.lazy(() => import("./projects-chart-card"));
@@ -125,15 +126,27 @@ function ExpiringMoasCard({
 }
 
 function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
+	const [selectedCampus, setSelectedCampus] = React.useState("Sumacab Campus");
+
 	const dashboardQuery = useQuery(directorDashboardQueryOptions());
+	const campusesQuery = useQuery({
+		queryKey: ["campuses"],
+		queryFn: () => getCampusesFn(),
+	});
+
 	const dashboard = dashboardQuery.data;
+	const campuses = campusesQuery.data ?? [];
 	const metrics = dashboard?.metrics ?? {
 		totalProjects: 0,
 		ongoingProjects: 0,
 		underEvaluation: 0,
 		completed: 0,
 	};
-	const chartData = dashboard?.chartData ?? [];
+	const allChartData = dashboard?.chartData ?? [];
+	const chartData =
+		!selectedCampus
+			? allChartData
+			: allChartData.filter((point) => point.label === selectedCampus);
 	const activities = dashboard?.recentActivities ?? [];
 	const moas = dashboard?.expiringMoas ?? [];
 
@@ -160,7 +173,12 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 							<div className="h-[370px] animate-pulse rounded-[12px] border border-[#ebebeb] bg-white" />
 						}
 					>
-						<ProjectsChartCard chartData={chartData} />
+						<ProjectsChartCard
+							chartData={chartData}
+							campuses={campuses}
+							selectedCampus={selectedCampus}
+							onCampusChange={setSelectedCampus}
+						/>
 					</React.Suspense>
 					<RecentActivitiesCard activities={activities} />
 				</div>

@@ -17,7 +17,6 @@ import {
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
 	Table,
@@ -88,6 +87,23 @@ export function ActivityLogPage({
 		},
 	];
 
+	function StatCard({
+		label,
+		value,
+	}: {
+		label: string;
+		value: string | number;
+	}) {
+		return (
+			<div className="flex h-[104px] flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+				<p className="text-[14px] leading-4 text-[#666]">{label}</p>
+				<p className="text-[36px] font-semibold leading-9 text-[#11215a]">
+					{value}
+				</p>
+			</div>
+		);
+	}
+
 	const getActionTypeInfo = (action: string, table: string) => {
 		const lowerAction = action.toLowerCase();
 		if (lowerAction.includes("approved proposal")) {
@@ -128,17 +144,11 @@ export function ActivityLogPage({
 
 			<div className="grid gap-6 md:grid-cols-4">
 				{stats.map((stat) => (
-					<Card
+					<StatCard
 						key={stat.label}
-						className="border-[#ebebeb] rounded-[12px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden"
-					>
-						<CardContent className="p-4 flex flex-col gap-4">
-							<p className="text-sm text-[#666] leading-none">{stat.label}</p>
-							<p className="text-4xl font-semibold text-[#11215a] leading-tight">
-								{stat.value}
-							</p>
-						</CardContent>
-					</Card>
+						label={stat.label}
+						value={stat.value}
+					/>
 				))}
 			</div>
 

@@ -1,15 +1,28 @@
 import { ClientOnly } from "@tanstack/react-router";
-import { ChevronsUpDown, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import * as React from "react";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 
 const ProjectsChart = React.lazy(() => import("./projects-chart"));
 
 interface ProjectsChartCardProps {
 	chartData: { label: string; value: number }[];
+	campuses: { id: number; name: string }[];
+	selectedCampus: string;
+	onCampusChange: (campus: string) => void;
 }
 
 export default function ProjectsChartCard({
 	chartData,
+	campuses,
+	selectedCampus,
+	onCampusChange,
 }: ProjectsChartCardProps) {
 	return (
 		<div className="h-[370px] overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
@@ -20,13 +33,18 @@ export default function ProjectsChartCard({
 					</p>
 					<p className="text-[14px] leading-5 text-[#666]">per college</p>
 				</div>
-				<button
-					type="button"
-					className="flex h-9 w-[200px] items-center justify-between rounded-md border border-[#e5e5e5] bg-white px-3 text-[14px] text-[#737373] shadow-[0px_1px_1px_rgba(0,0,0,0.1)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-				>
-					<span>Select campus…</span>
-					<ChevronsUpDown className="size-4 opacity-50" />
-				</button>
+				<Select value={selectedCampus} onValueChange={onCampusChange} modal={false}>
+					<SelectTrigger className="h-9 w-[200px] rounded-md border border-[#e5e5e5] bg-white px-3 text-[14px] text-[#737373] shadow-[0px_1px_1px_rgba(0,0,0,0.1)]">
+						<SelectValue placeholder="Select campus..." />
+					</SelectTrigger>
+					<SelectContent side="bottom" sideOffset={8} align="start" alignItemWithTrigger={false}>
+						{campuses.map((campus) => (
+							<SelectItem key={campus.id} value={campus.name}>
+								{campus.name}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 			</div>
 			<div className="h-[298px] px-6 pb-6 pt-10">
 				<ClientOnly

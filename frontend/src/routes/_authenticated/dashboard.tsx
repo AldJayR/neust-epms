@@ -69,6 +69,14 @@ function DashboardPage() {
 		});
 	};
 
+	if (!user) {
+		return (
+			<main className="flex min-h-dvh items-center justify-center p-8">
+				<p className="text-sm text-muted-foreground">Loading dashboard...</p>
+			</main>
+		);
+	}
+
 	if (user?.roleName === "Super Admin") {
 		return (
 			<AppShell>
