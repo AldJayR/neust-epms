@@ -15,7 +15,7 @@ import { roles } from "../db/schema/roles.js";
 import { users } from "../db/schema/users.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
-import { installApiErrorHandler } from "../lib/errors.js";
+import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { PROPOSAL_STATUS, PROJECT_STATUS, ROLE_NAMES } from "../lib/types.js";
 
 const app = new OpenAPIHono<AuthEnv>();
@@ -378,7 +378,38 @@ const DirectorDashboardSchema = z.object({
 });
 
 app.use("/director/*", authMiddleware);
-app.use("/director/*", requireRole(ROLE_NAMES.SUPER_ADMIN, ROLE_NAMES.DIRECTOR));
+app.use("/director/*", async (c, next) => {
+  const user = c.get("user");
+  const path = c.req.path;
+
+  // Match /director/projects/{proposalId} (uuid)
+  const isProjectDetails = /\/director\/projects\/[a-f0-9-]{36}$/i.test(path);
+
+  if (isProjectDetails) {
+    if (
+      user.roleName === ROLE_NAMES.SUPER_ADMIN ||
+      user.roleName === ROLE_NAMES.DIRECTOR ||
+      user.roleName === ROLE_NAMES.RET_CHAIR
+    ) {
+      await next();
+      return;
+    }
+  } else {
+    if (
+      user.roleName === ROLE_NAMES.SUPER_ADMIN ||
+      user.roleName === ROLE_NAMES.DIRECTOR
+    ) {
+      await next();
+      return;
+    }
+  }
+
+  throw new ApiError(
+    403,
+    "FORBIDDEN",
+    `This action requires one of: ${isProjectDetails ? "Super Admin, Director, RET Chair" : "Super Admin, Director"}`
+  );
+});
 
 function formatRelativeTime(date: Date, now: Date) {
   const diffMs = now.getTime() - date.getTime();
@@ -729,6 +760,8 @@ app.openapi(projectDetailsRoute, async (c) => {
   const [row] = await db
     .select({
       proposalId: proposals.proposalId,
+      campusId: proposals.campusId,
+      departmentId: proposals.departmentId,
       title: proposals.title,
       status: proposals.status,
       revisionNum: proposals.revisionNum,
@@ -753,6 +786,27 @@ app.openapi(projectDetailsRoute, async (c) => {
 
   if (!row) {
     return c.json({ error: { message: "Project not found" } }, 404);
+  }
+
+  // Security check for RET Chair
+  const user = c.get("user");
+  if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+    const [userCampus] = await db
+      .select({ isMainCampus: campuses.isMainCampus })
+      .from(campuses)
+      .where(eq(campuses.campusId, user.campusId))
+      .limit(1);
+    const isMainCampus = userCampus?.isMainCampus ?? false;
+
+    if (isMainCampus && user.departmentId !== null) {
+      if (row.departmentId !== user.departmentId) {
+        throw new ApiError(403, "FORBIDDEN", "You do not have access to this proposal");
+      }
+    } else {
+      if (row.campusId !== user.campusId) {
+        throw new ApiError(403, "FORBIDDEN", "You do not have access to this proposal");
+      }
+    }
   }
 
   const [memberRows, documentRows, reviewRows] = await Promise.all([

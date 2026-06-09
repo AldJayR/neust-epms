@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, and, isNull, desc, or, count, type SQL } from "drizzle-orm";
+import { eq, and, isNull, desc, or, count, ilike, type SQL } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { proposals } from "../db/schema/proposals.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
@@ -7,6 +7,9 @@ import { proposalDepartments } from "../db/schema/proposal-departments.js";
 import { proposalBeneficiaries } from "../db/schema/proposal-beneficiaries.js";
 import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
 import { proposalReviews } from "../db/schema/proposal-reviews.js";
+import { campuses } from "../db/schema/campuses.js";
+import { users } from "../db/schema/users.js";
+import { departments } from "../db/schema/departments.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
@@ -42,7 +45,7 @@ const ProposalSchema = z
   .object({
     proposalId: z.string().uuid(),
     campusId: z.number(),
-    departmentId: z.number(),
+    departmentId: z.number().nullable(),
     title: z.string(),
     bannerProgram: z.string(),
     projectLocale: z.string(),
@@ -55,12 +58,23 @@ const ProposalSchema = z
     createdAt: z.string(),
     updatedAt: z.string(),
     archivedAt: z.string().nullable(),
+    leaderFirstName: z.string().nullable().optional(),
+    leaderLastName: z.string().nullable().optional(),
+    leaderAcademicRank: z.string().nullable().optional(),
   })
   .openapi("Proposal");
 
 const ProposalListSchema = z
   .object({ items: z.array(ProposalSchema), total: z.number() })
   .openapi("ProposalList");
+
+const RETDashboardStatsSchema = z
+  .object({
+    pendingReview: z.number(),
+    approvedProjects: z.number(),
+    deniedProjects: z.number(),
+  })
+  .openapi("RETDashboardStats");
 
 const CreateProposalSchema = z
   .object({
@@ -112,6 +126,9 @@ const PaginationQuery = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50).openapi({
     param: { name: "limit", in: "query" },
   }),
+  search: z.string().optional().openapi({
+    param: { name: "search", in: "query" },
+  }),
 });
 
 const ErrorSchema = z
@@ -145,13 +162,23 @@ const listRoute = createRoute({
 
 app.openapi(listRoute, async (c) => {
   const user = c.get("user");
-  const { page, limit } = c.req.valid("query");
+  const { page, limit, search } = c.req.valid("query");
   const offset = (page - 1) * limit;
 
   const whereConditions: SQL[] = [isNull(proposals.archivedAt)];
+
+  if (search) {
+    whereConditions.push(ilike(proposals.title, `%${search}%`));
+  }
   
-  if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
+  if (user.roleName === ROLE_NAMES.FACULTY) {
     if (user.departmentId !== null) {
+      whereConditions.push(eq(proposals.departmentId, user.departmentId));
+    } else {
+      whereConditions.push(eq(proposals.campusId, user.campusId));
+    }
+  } else if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+    if (user.isMainCampus && user.departmentId !== null) {
       whereConditions.push(eq(proposals.departmentId, user.departmentId));
     } else {
       whereConditions.push(eq(proposals.campusId, user.campusId));
@@ -159,8 +186,35 @@ app.openapi(listRoute, async (c) => {
   }
 
   const rows = await db
-    .select({ proposalId: proposals.proposalId, campusId: proposals.campusId, departmentId: proposals.departmentId, title: proposals.title, bannerProgram: proposals.bannerProgram, projectLocale: proposals.projectLocale, extensionCategory: proposals.extensionCategory, budgetPartner: proposals.budgetPartner, budgetNeust: proposals.budgetNeust, status: proposals.status, bypassedRetChair: proposals.bypassedRetChair, revisionNum: proposals.revisionNum, createdAt: proposals.createdAt, updatedAt: proposals.updatedAt, archivedAt: proposals.archivedAt })
+    .select({
+      proposalId: proposals.proposalId,
+      campusId: proposals.campusId,
+      departmentId: proposals.departmentId,
+      title: proposals.title,
+      bannerProgram: proposals.bannerProgram,
+      projectLocale: proposals.projectLocale,
+      extensionCategory: proposals.extensionCategory,
+      budgetPartner: proposals.budgetPartner,
+      budgetNeust: proposals.budgetNeust,
+      status: proposals.status,
+      bypassedRetChair: proposals.bypassedRetChair,
+      revisionNum: proposals.revisionNum,
+      createdAt: proposals.createdAt,
+      updatedAt: proposals.updatedAt,
+      archivedAt: proposals.archivedAt,
+      leaderFirstName: users.firstName,
+      leaderLastName: users.lastName,
+      leaderAcademicRank: users.academicRank,
+    })
     .from(proposals)
+    .leftJoin(
+      proposalMembers,
+      and(
+        eq(proposals.proposalId, proposalMembers.proposalId),
+        eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE),
+      ),
+    )
+    .leftJoin(users, eq(proposalMembers.userId, users.userId))
     .where(and(...whereConditions))
     .orderBy(desc(proposals.createdAt))
     .limit(limit)
@@ -180,6 +234,60 @@ app.openapi(listRoute, async (c) => {
   const total = Number(totalResult?.value ?? 0);
 
   return c.json({ items, total }, 200);
+});
+
+// ── GET /proposals/ret/dashboard-stats ──
+const retStatsRoute = createRoute({
+  method: "get",
+  path: "/proposals/ret/dashboard-stats",
+  tags: ["Proposals"],
+  summary: "Get dashboard stats for RET Chair",
+  security: [{ Bearer: [] }],
+  responses: {
+    200: {
+      content: { "application/json": { schema: RETDashboardStatsSchema } },
+      description: "RET Chair dashboard stats",
+    },
+  },
+});
+
+app.openapi(retStatsRoute, async (c) => {
+  const user = c.get("user");
+
+  if (user.roleName !== ROLE_NAMES.RET_CHAIR) {
+    throw new ApiError(403, "FORBIDDEN", "Only RET Chair can access these stats");
+  }
+
+  const whereConditions: SQL[] = [isNull(proposals.archivedAt)];
+  if (user.isMainCampus && user.departmentId !== null) {
+    whereConditions.push(eq(proposals.departmentId, user.departmentId));
+  } else {
+    whereConditions.push(eq(proposals.campusId, user.campusId));
+  }
+
+  const [pending] = await db
+    .select({ value: count() })
+    .from(proposals)
+    .where(and(...whereConditions, eq(proposals.status, PROPOSAL_STATUS.SUBMITTED)));
+
+  const [approved] = await db
+    .select({ value: count() })
+    .from(proposals)
+    .where(and(...whereConditions, eq(proposals.status, PROPOSAL_STATUS.APPROVED)));
+
+  const [denied] = await db
+    .select({ value: count() })
+    .from(proposals)
+    .where(and(...whereConditions, eq(proposals.status, PROPOSAL_STATUS.REJECTED)));
+
+  return c.json(
+    {
+      pendingReview: Number(pending?.value ?? 0),
+      approvedProjects: Number(approved?.value ?? 0),
+      deniedProjects: Number(denied?.value ?? 0),
+    },
+    200,
+  );
 });
 
 // ── GET /proposals/:id ──
@@ -208,8 +316,14 @@ app.openapi(getRoute, async (c) => {
 
   const whereConditions: SQL[] = [eq(proposals.proposalId, id), isNull(proposals.archivedAt)];
 
-  if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
+  if (user.roleName === ROLE_NAMES.FACULTY) {
     if (user.departmentId !== null) {
+      whereConditions.push(eq(proposals.departmentId, user.departmentId));
+    } else {
+      whereConditions.push(eq(proposals.campusId, user.campusId));
+    }
+  } else if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+    if (user.isMainCampus && user.departmentId !== null) {
       whereConditions.push(eq(proposals.departmentId, user.departmentId));
     } else {
       whereConditions.push(eq(proposals.campusId, user.campusId));

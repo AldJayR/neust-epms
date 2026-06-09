@@ -47,6 +47,7 @@ function createTestApp(allowedRoles: string[], userRole: string) {
       nameSuffix: null,
       academicRank: null,
       isActive: true,
+      isMainCampus: true,
     });
     await next();
   });

@@ -15,6 +15,13 @@
       "when": 1780825136985,
       "tag": "0001_purple_butterfly",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780924744802,
+      "tag": "0002_open_living_tribunal",
+      "breakpoints": true
     }
   ]
 }

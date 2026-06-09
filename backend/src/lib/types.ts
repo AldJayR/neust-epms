@@ -135,6 +135,7 @@ export interface AuthUser {
   roleName: string;
   campusId: number;
   campusName: string;
+  isMainCampus: boolean;
   departmentId: number | null;
   departmentName: string | null;
   firstName: string;

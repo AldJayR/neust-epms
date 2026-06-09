@@ -22,6 +22,7 @@ export const MOCK_USERS = {
     nameSuffix: null,
     academicRank: "Instructor",
     isActive: true,
+    isMainCampus: true,
   } satisfies AuthUser,
 
   retChair: {
@@ -39,6 +40,7 @@ export const MOCK_USERS = {
     nameSuffix: null,
     academicRank: "Associate Professor",
     isActive: true,
+    isMainCampus: true,
   } satisfies AuthUser,
 
   director: {
@@ -56,6 +58,7 @@ export const MOCK_USERS = {
     nameSuffix: null,
     academicRank: "Professor",
     isActive: true,
+    isMainCampus: true,
   } satisfies AuthUser,
 
   superAdmin: {
@@ -73,6 +76,7 @@ export const MOCK_USERS = {
     nameSuffix: null,
     academicRank: null,
     isActive: true,
+    isMainCampus: true,
   } satisfies AuthUser,
 } as const;
 

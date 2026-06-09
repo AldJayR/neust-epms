@@ -99,6 +99,44 @@ const directorNav: NavGroup[] = [
 	},
 ];
 
+const retNav: NavGroup[] = [
+	{
+		title: "Overview",
+		items: [
+			{
+				title: "Dashboard",
+				url: "/dashboard",
+				icon: LayoutDashboard,
+			},
+			{
+				title: "Faculty Directory",
+				url: "/faculty",
+				icon: Users,
+			},
+			{
+				title: "Memoranda of Agreements",
+				url: "/moas",
+				icon: Scroll,
+			},
+			{
+				title: "Reports",
+				url: "/reports",
+				icon: BarChart3,
+			},
+		],
+	},
+	{
+		title: "Management",
+		items: [
+			{
+				title: "Settings",
+				url: "/admin/settings",
+				icon: Settings,
+			},
+		],
+	},
+];
+
 export function AppSidebar({
 	...props
 }: React.ComponentProps<typeof RoleSidebar>) {
@@ -112,7 +150,12 @@ export function AppSidebar({
 
 	const pathname = routerState.location.pathname;
 
-	const navMain = user?.roleName === "Director" ? directorNav : adminNav;
+	let navMain = adminNav;
+	if (user?.roleName === "Director") {
+		navMain = directorNav;
+	} else if (user?.roleName === "RET Chair") {
+		navMain = retNav;
+	}
 
 	const groups: RoleSidebarGroup[] = navMain.map((group) => ({
 		title: group.title,
