@@ -34,11 +34,17 @@ function canAccessProposalDocuments(
   user: AuthUser,
   proposal: { departmentId: number; campusId: number },
 ): boolean {
-  if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
+  if (user.roleName === ROLE_NAMES.FACULTY) {
     if (user.departmentId !== null) {
       return proposal.departmentId === user.departmentId;
     }
+    return proposal.campusId === user.campusId;
+  }
 
+  if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+    if (user.isMainCampus && user.departmentId !== null) {
+      return proposal.departmentId === user.departmentId;
+    }
     return proposal.campusId === user.campusId;
   }
 
