@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/moas/")({
 		if (
 			context.auth.user?.roleName !== "Director" &&
 			context.auth.user?.roleName !== "Super Admin" &&
-			context.auth.user?.roleName !== "Ret Chair"
+			context.auth.user?.roleName !== "RET Chair"
 		) {
 			throw redirect({
 				to: "/dashboard",

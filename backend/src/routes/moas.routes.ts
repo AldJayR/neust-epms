@@ -208,6 +208,18 @@ const createMoaRoute = createRoute({
 
 app.openapi(createMoaRoute, async (c) => {
   const user = c.get("user");
+
+  if (
+    user.roleName !== ROLE_NAMES.SUPER_ADMIN &&
+    user.roleName !== ROLE_NAMES.DIRECTOR
+  ) {
+    throw new ApiError(
+      403,
+      "FORBIDDEN",
+      "This action requires one of: Super Admin, Director",
+    );
+  }
+
   const body = c.req.valid("json");
 
   const validFrom = new Date(body.validFrom);
@@ -292,6 +304,19 @@ const updateRoute = createRoute({
 });
 
 app.openapi(updateRoute, async (c) => {
+  const user = c.get("user");
+
+  if (
+    user.roleName !== ROLE_NAMES.SUPER_ADMIN &&
+    user.roleName !== ROLE_NAMES.DIRECTOR
+  ) {
+    throw new ApiError(
+      403,
+      "FORBIDDEN",
+      "This action requires one of: Super Admin, Director",
+    );
+  }
+
   const { id } = c.req.valid("param");
   const body = c.req.valid("json");
 
