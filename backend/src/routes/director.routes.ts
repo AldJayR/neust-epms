@@ -141,7 +141,16 @@ app.openapi(facultyDirectoryRoute, async (c) => {
   const { page, limit, search, college } = c.req.valid("query");
   const offset = (page - 1) * limit;
 
+  const user = c.get("user");
   const whereConditions = [eq(users.isActive, true), eq(roles.roleName, ROLE_NAMES.FACULTY)];
+
+  if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+    if (user.isMainCampus && user.departmentId !== null) {
+      whereConditions.push(eq(users.departmentId, user.departmentId));
+    } else {
+      whereConditions.push(eq(users.campusId, user.campusId));
+    }
+  }
 
   if (search) {
     whereConditions.push(
@@ -210,17 +219,33 @@ app.openapi(facultyDirectoryRoute, async (c) => {
     };
   });
 
+  const totalFacultyConditions = [eq(users.isActive, true), eq(roles.roleName, ROLE_NAMES.FACULTY)];
+  if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+    if (user.isMainCampus && user.departmentId !== null) {
+      totalFacultyConditions.push(eq(users.departmentId, user.departmentId));
+    } else {
+      totalFacultyConditions.push(eq(users.campusId, user.campusId));
+    }
+  }
   const [totalFaculty] = await db
     .select({ value: count() })
     .from(users)
     .innerJoin(roles, eq(users.roleId, roles.roleId))
-    .where(eq(users.isActive, true));
+    .where(and(...totalFacultyConditions));
 
   const [totalProjects] = await db
     .select({ value: count() })
     .from(projects)
     .where(isNull(projects.archivedAt));
 
+  const mostActiveCollegeConditions = [eq(users.isActive, true), eq(roles.roleName, ROLE_NAMES.FACULTY)];
+  if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+    if (user.isMainCampus && user.departmentId !== null) {
+      mostActiveCollegeConditions.push(eq(users.departmentId, user.departmentId));
+    } else {
+      mostActiveCollegeConditions.push(eq(users.campusId, user.campusId));
+    }
+  }
   const [mostActiveCollege] = await db
     .select({
       name: departments.departmentName,
@@ -229,7 +254,7 @@ app.openapi(facultyDirectoryRoute, async (c) => {
     .from(users)
     .innerJoin(roles, eq(users.roleId, roles.roleId))
     .innerJoin(departments, eq(users.departmentId, departments.departmentId))
-    .where(and(eq(users.isActive, true), eq(roles.roleName, ROLE_NAMES.FACULTY)))
+    .where(and(...mostActiveCollegeConditions))
     .groupBy(departments.departmentName)
     .orderBy(desc(count()))
     .limit(1);
