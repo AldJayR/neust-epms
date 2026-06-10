@@ -857,12 +857,7 @@ app.openapi(projectDetailsRoute, async (c) => {
   // Security check for RET Chair
   const user = c.get("user");
   if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-    const [userCampus] = await db
-      .select({ isMainCampus: campuses.isMainCampus })
-      .from(campuses)
-      .where(eq(campuses.campusId, user.campusId))
-      .limit(1);
-    const isMainCampus = userCampus?.isMainCampus ?? false;
+    const isMainCampus = user.isMainCampus;
 
     if (isMainCampus && user.departmentId !== null) {
       if (row.departmentId !== user.departmentId) {
