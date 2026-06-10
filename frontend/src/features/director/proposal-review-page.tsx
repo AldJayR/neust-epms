@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Download, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { AppShell } from "../layout/app-shell";
 import {
 	projectDetailsQueryOptions,
 	reviewProposalFn,
 } from "@/lib/dashboard.functions";
+import { AppShell } from "../layout/app-shell";
 
 interface ProposalReviewPageProps {
 	proposalId: string;
@@ -249,18 +249,19 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 														? data.attachments[0]?.id === file.id
 														: activeAttachmentId === file.id;
 												return (
-													<div
+													<button
 														key={file.id}
-														onClick={() => setActiveAttachmentId(file.id)}
+														type="button"
+														onClick={() => {
+															setActiveAttachmentId(file.id);
+														}}
 														onKeyDown={(e) => {
 															if (e.key === "Enter" || e.key === " ") {
 																e.preventDefault();
 																setActiveAttachmentId(file.id);
 															}
 														}}
-														role="button"
-														tabIndex={0}
-														className={`px-3 py-2 rounded-[5px] flex flex-col gap-0.5 cursor-pointer ${isActive ? "bg-[#caf1f6]" : "bg-transparent hover:bg-gray-50"}`}
+														className={`w-full px-3 py-2 rounded-[5px] flex flex-col gap-0.5 cursor-pointer text-left ${isActive ? "bg-[#caf1f6]" : "bg-transparent hover:bg-gray-50"}`}
 													>
 														<span
 															className={`text-[12px] font-semibold ${isActive ? "text-[#0d74ce]" : "text-black"}`}
@@ -270,7 +271,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 														<span className="text-[11px] text-[#737373]">
 															{file.version} {isActive && "· Currently Viewing"}
 														</span>
-													</div>
+													</button>
 												);
 											})}
 										</div>

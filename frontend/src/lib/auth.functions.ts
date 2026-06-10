@@ -34,6 +34,8 @@ const signupSchema = z.object({
 export const loginFn = createServerFn({ method: "POST" })
 	.inputValidator(loginSchema)
 	.handler(async ({ data }) => {
+		const session = await useAppSession();
+
 		// 1. Authenticate with Supabase
 		const { data: authData, error: authError } =
 			await supabase.auth.signInWithPassword({
@@ -75,7 +77,6 @@ export const loginFn = createServerFn({ method: "POST" })
 		}
 
 		// 3. Store tokens in encrypted httpOnly session
-		const session = await useAppSession();
 		await session.update({
 			accessToken: authData.session.access_token,
 			refreshToken: authData.session.refresh_token,

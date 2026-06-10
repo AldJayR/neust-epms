@@ -20,6 +20,7 @@ import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
 } from "../lib/admin.functions";
+import type { AuthUser } from "../lib/auth";
 import { loginFn } from "../lib/auth.functions";
 
 const loginSchema = z.object({
@@ -60,7 +61,10 @@ function LoginPage() {
 	async function onSubmit(data: z.infer<typeof loginSchema>) {
 		setServerError(null);
 
-		let result;
+		let result:
+			| { error: true; message: string }
+			| { error: false; user: AuthUser }
+			| undefined;
 		try {
 			result = await loginFn({ data });
 		} catch (err) {

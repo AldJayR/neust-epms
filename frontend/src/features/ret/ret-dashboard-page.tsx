@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 import {
 	CircleCheck,
 	EllipsisVertical,
@@ -39,7 +40,6 @@ import {
 	retProposalsQueryOptions,
 } from "@/lib/ret.functions";
 import { formatAcademicRank } from "@/lib/utils";
-import { format } from "date-fns";
 
 interface RETDashboardPageProps {
 	user: AuthUser;

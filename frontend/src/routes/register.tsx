@@ -17,7 +17,7 @@ import {
 	RHFTextField,
 } from "../components/rhf-auth-fields";
 import { FieldGroup } from "../components/ui/field";
-import { getDepartmentsFn, getCampusesFn } from "../lib/auth.functions";
+import { getCampusesFn, getDepartmentsFn } from "../lib/auth.functions";
 
 const registerStep1Schema = z.object({
 	firstName: z.string().min(1, "First name is required"),

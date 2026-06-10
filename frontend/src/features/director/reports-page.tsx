@@ -1,17 +1,17 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-	Search,
-	SlidersHorizontal,
-	MoreVertical,
 	ChevronLeft,
 	ChevronRight,
-	Loader2,
 	Download,
+	Loader2,
+	MoreVertical,
+	Search,
+	SlidersHorizontal,
 } from "lucide-react";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 
 import {
 	Table,
@@ -21,8 +21,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { AppShell } from "../layout/app-shell";
 import { reportsQueryOptions } from "@/lib/dashboard.functions";
+import { AppShell } from "../layout/app-shell";
 
 export function ReportsPage() {
 	const [search, setSearch] = useState("");

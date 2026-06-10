@@ -1,19 +1,18 @@
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 import {
-	FileText,
-	Download,
-	ChevronRight,
-	Eye,
 	CheckCircle2,
+	ChevronRight,
+	Download,
+	Eye,
+	FileText,
 	RotateCcw,
 	User,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -166,7 +165,10 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 									<Dialog>
 										<DialogTrigger
 											render={
-												<button className="flex w-full items-center justify-between px-6 py-5 transition-colors hover:bg-[#fcfcfc]" />
+												<button
+													type="button"
+													className="flex w-full items-center justify-between px-6 py-5 transition-colors hover:bg-[#fcfcfc]"
+												/>
 											}
 										>
 											<span className="text-[14px] font-medium text-[#666]">

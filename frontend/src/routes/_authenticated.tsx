@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import type { AuthUser } from "../lib/auth.js";
 
 export const Route = createFileRoute("/_authenticated")({
 	beforeLoad: ({ context, location }) => {
@@ -11,7 +12,7 @@ export const Route = createFileRoute("/_authenticated")({
 
 		// Pass the authenticated user down to all child routes
 		return {
-			user: context.auth.user!,
+			user: context.auth.user as AuthUser,
 		};
 	},
 	component: () => <Outlet />,
