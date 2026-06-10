@@ -696,7 +696,7 @@ app.openapi(reviewRoute, async (c) => {
   const body = c.req.valid("json");
 
   const [existing] = await db
-    .select({ proposalId: proposals.proposalId, status: proposals.status, revisionNum: proposals.revisionNum })
+    .select({ proposalId: proposals.proposalId, status: proposals.status, revisionNum: proposals.revisionNum, campusId: proposals.campusId, departmentId: proposals.departmentId })
     .from(proposals)
     .where(and(eq(proposals.proposalId, id), isNull(proposals.archivedAt)))
     .limit(1);
@@ -712,6 +712,27 @@ app.openapi(reviewRoute, async (c) => {
       "CONFLICT_OF_INTEREST",
       "You cannot review your own proposal (EC-01)",
     );
+  }
+
+  // Scope check: RET Chair can only review proposals within their scope
+  if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+    if (user.isMainCampus && user.departmentId !== null) {
+      if (existing.departmentId !== user.departmentId) {
+        throw new ApiError(
+          403,
+          "FORBIDDEN",
+          "You can only review proposals from your department",
+        );
+      }
+    } else {
+      if (existing.campusId !== user.campusId) {
+        throw new ApiError(
+          403,
+          "FORBIDDEN",
+          "You can only review proposals from your campus",
+        );
+      }
+    }
   }
 
   // Determine the review stage and validate role/status
