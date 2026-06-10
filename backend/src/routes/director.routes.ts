@@ -581,6 +581,25 @@ app.openapi(dashboardRoute, async (c) => {
   const now = new Date();
   const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
+  const projectMetricsConditions = [isNull(projects.archivedAt)];
+  const underEvalConditions = [
+    isNull(proposals.archivedAt),
+    or(
+      eq(proposals.status, PROPOSAL_STATUS.SUBMITTED),
+      eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
+    ),
+  ];
+
+  if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+    if (user.isMainCampus && user.departmentId !== null) {
+      projectMetricsConditions.push(eq(proposals.departmentId, user.departmentId));
+      underEvalConditions.push(eq(proposals.departmentId, user.departmentId));
+    } else {
+      projectMetricsConditions.push(eq(proposals.campusId, user.campusId));
+      underEvalConditions.push(eq(proposals.campusId, user.campusId));
+    }
+  }
+
   const [projectMetrics, underEvaluationResult] = await Promise.all([
     db
       .select({
@@ -589,17 +608,19 @@ app.openapi(dashboardRoute, async (c) => {
         completed: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.COMPLETED})`,
       })
       .from(projects)
-      .where(isNull(projects.archivedAt)),
-    db.select({ value: count() }).from(proposals).where(
-      and(
-        isNull(proposals.archivedAt),
-        or(
-          eq(proposals.status, PROPOSAL_STATUS.SUBMITTED),
-          eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
-        ),
-      ),
-    ),
+      .innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+      .where(and(...projectMetricsConditions)),
+    db.select({ value: count() }).from(proposals).where(and(...underEvalConditions)),
   ]);
+
+  const chartConditions = [isNull(proposals.archivedAt)];
+  if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+    if (user.isMainCampus && user.departmentId !== null) {
+      chartConditions.push(eq(proposals.departmentId, user.departmentId));
+    } else {
+      chartConditions.push(eq(proposals.campusId, user.campusId));
+    }
+  }
 
   const chartRows = await db
     .select({
@@ -608,7 +629,7 @@ app.openapi(dashboardRoute, async (c) => {
     })
     .from(proposals)
     .innerJoin(campuses, eq(proposals.campusId, campuses.campusId))
-    .where(isNull(proposals.archivedAt))
+    .where(and(...chartConditions))
     .groupBy(campuses.campusName);
 
   const recentLogRows = await db
@@ -624,6 +645,20 @@ app.openapi(dashboardRoute, async (c) => {
     .orderBy(desc(auditLogs.createdAt))
     .limit(3);
 
+  const expiringMoaConditions = [
+    isNull(moas.archivedAt),
+    sql`${moas.validUntil} > ${now}`,
+    sql`${moas.validUntil} <= ${twoWeeksFromNow}`,
+  ];
+
+  if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+    if (user.isMainCampus && user.departmentId !== null) {
+      expiringMoaConditions.push(eq(proposals.departmentId, user.departmentId));
+    } else {
+      expiringMoaConditions.push(eq(proposals.campusId, user.campusId));
+    }
+  }
+
   const expiringMoaRows = await db
     .select({
       partnerName: partners.partnerName,
@@ -631,13 +666,9 @@ app.openapi(dashboardRoute, async (c) => {
     })
     .from(moas)
     .innerJoin(partners, eq(moas.partnerId, partners.partnerId))
-    .where(
-      and(
-        isNull(moas.archivedAt),
-        sql`${moas.validUntil} > ${now}`,
-        sql`${moas.validUntil} <= ${twoWeeksFromNow}`,
-      ),
-    )
+    .innerJoin(projects, eq(moas.moaId, projects.moaId))
+    .innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+    .where(and(...expiringMoaConditions))
     .orderBy(moas.validUntil)
     .limit(2);
 
