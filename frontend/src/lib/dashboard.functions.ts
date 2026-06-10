@@ -424,7 +424,7 @@ export const getReportStatsFn = createServerFn({ method: "GET" }).handler(
 
 export function directorDashboardQueryOptions() {
 	return queryOptions({
-		queryKey: ["director", "dashboard"],
+		queryKey: ["dashboard", "stats"],
 		queryFn: () => getDirectorDashboardFn(),
 		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
 	});
@@ -432,7 +432,7 @@ export function directorDashboardQueryOptions() {
 
 export function projectHubQueryOptions(params: ProjectHubParams) {
 	return queryOptions({
-		queryKey: ["director", "hub", "projects", params],
+		queryKey: ["dashboard", "hub", "projects", params],
 		queryFn: () => getProjectHubFn({ data: params }),
 		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
 	});
@@ -440,7 +440,7 @@ export function projectHubQueryOptions(params: ProjectHubParams) {
 
 export function moaRepositoryQueryOptions(params: MoaRepositoryParams) {
 	return queryOptions({
-		queryKey: ["director", "moas", params],
+		queryKey: ["dashboard", "moas", params],
 		queryFn: () => getMoaRepositoryFn({ data: params }),
 		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
 	});
@@ -448,7 +448,7 @@ export function moaRepositoryQueryOptions(params: MoaRepositoryParams) {
 
 export function facultyDirectoryQueryOptions(params: FacultyDirectoryParams) {
 	return queryOptions({
-		queryKey: ["director", "faculty", params],
+		queryKey: ["dashboard", "faculty", params],
 		queryFn: () => getFacultyDirectoryFn({ data: params }),
 		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
 	});
@@ -456,7 +456,7 @@ export function facultyDirectoryQueryOptions(params: FacultyDirectoryParams) {
 
 export function projectDetailsQueryOptions(proposalId: string) {
 	return queryOptions({
-		queryKey: ["director", "proposals", proposalId],
+		queryKey: ["dashboard", "proposals", proposalId],
 		queryFn: () => getProjectDetailsFn({ data: proposalId }),
 		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
 	});
@@ -464,7 +464,7 @@ export function projectDetailsQueryOptions(proposalId: string) {
 
 export function reportsQueryOptions() {
 	return queryOptions({
-		queryKey: ["director", "reports"],
+		queryKey: ["dashboard", "reports"],
 		queryFn: () => getReportStatsFn(),
 		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
 	});

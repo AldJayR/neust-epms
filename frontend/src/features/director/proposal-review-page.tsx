@@ -29,7 +29,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		}) => reviewProposalFn({ data: input }),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
-				queryKey: ["director", "proposals", proposalId],
+				queryKey: ["dashboard", "proposals", proposalId],
 			});
 		},
 	});
