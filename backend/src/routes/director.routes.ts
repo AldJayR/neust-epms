@@ -9,6 +9,7 @@ import {
 	isNull,
 	or,
 	sql,
+	type SQL,
 } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { auditLogs } from "../db/schema/audit-logs.js";
@@ -193,7 +194,7 @@ app.openapi(facultyDirectoryRoute, async (c) => {
 	const offset = (page - 1) * limit;
 
 	const user = c.get("user");
-	const whereConditions = [
+	const whereConditions: (SQL | undefined)[] = [
 		eq(users.isActive, true),
 		eq(roles.roleName, ROLE_NAMES.FACULTY),
 	];
@@ -411,7 +412,7 @@ app.openapi(moaRepositoryRoute, async (c) => {
 	const now = new Date();
 	const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
-	const whereConditions = [isNull(moas.archivedAt)];
+	const whereConditions: (SQL | undefined)[] = [isNull(moas.archivedAt)];
 
 	if (search) {
 		whereConditions.push(ilike(partners.partnerName, `${search}%`));
