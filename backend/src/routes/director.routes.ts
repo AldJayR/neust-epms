@@ -489,6 +489,7 @@ const projectHubRoute = createRoute({
 app.openapi(projectHubRoute, async (c) => {
   const { page, limit, search, college, status } = c.req.valid("query");
   const offset = (page - 1) * limit;
+  const user = c.get("user");
 
   const whereConditions = [
     isNull(proposals.archivedAt),
@@ -499,6 +500,14 @@ app.openapi(projectHubRoute, async (c) => {
       eq(proposals.status, PROPOSAL_STATUS.REJECTED),
     ),
   ];
+
+  if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+    if (user.isMainCampus && user.departmentId !== null) {
+      whereConditions.push(eq(proposals.departmentId, user.departmentId));
+    } else {
+      whereConditions.push(eq(proposals.campusId, user.campusId));
+    }
+  }
 
   if (search) {
     whereConditions.push(
