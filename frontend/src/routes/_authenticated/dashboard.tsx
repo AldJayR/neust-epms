@@ -8,7 +8,7 @@ import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
 } from "@/lib/admin.functions";
-import { directorDashboardQueryOptions } from "@/lib/director.functions";
+import { directorDashboardQueryOptions } from "@/lib/dashboard.functions";
 import {
 	retDashboardStatsQueryOptions,
 	retProposalsQueryOptions,

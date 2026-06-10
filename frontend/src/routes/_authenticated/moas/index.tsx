@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { MoaRepositoryPage } from "@/features/director/moa-repository-page";
-import { moaRepositoryQueryOptions } from "@/lib/director.functions";
+import { moaRepositoryQueryOptions } from "@/lib/dashboard.functions";
 
 const moasSearchSchema = z.object({
 	page: z.number().optional().default(1),

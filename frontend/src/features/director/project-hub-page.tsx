@@ -37,7 +37,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { AuthUser } from "@/lib/auth";
-import { projectHubQueryOptions } from "@/lib/director.functions";
+import { projectHubQueryOptions } from "@/lib/dashboard.functions";
 import { AppShell } from "../layout/app-shell";
 
 function ProjectStatusBadge({ status }: { status: string }) {

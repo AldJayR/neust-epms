@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { FacultyDirectoryPage } from "@/features/director/faculty-directory-page";
-import { facultyDirectoryQueryOptions } from "@/lib/director.functions";
+import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
 
 const facultySearchSchema = z.object({
 	page: z.number().optional().default(1),

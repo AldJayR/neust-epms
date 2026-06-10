@@ -28,7 +28,7 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 
-import { projectDetailsQueryOptions } from "@/lib/director.functions";
+import { projectDetailsQueryOptions } from "@/lib/dashboard.functions";
 import { AppShell } from "../layout/app-shell";
 
 interface ProjectDetailsPageProps {

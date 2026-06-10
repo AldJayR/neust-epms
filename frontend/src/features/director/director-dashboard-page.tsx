@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 import type { AuthUser } from "@/lib/auth";
 import { getCampusesFn } from "@/lib/auth.functions";
-import { directorDashboardQueryOptions } from "@/lib/director.functions";
+import { directorDashboardQueryOptions } from "@/lib/dashboard.functions";
 
 const ProjectsChartCard = React.lazy(() => import("./projects-chart-card"));
 

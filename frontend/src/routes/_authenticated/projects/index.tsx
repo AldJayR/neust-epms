@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { ProjectHubPage } from "@/features/director/project-hub-page";
-import { projectHubQueryOptions } from "@/lib/director.functions";
+import { projectHubQueryOptions } from "@/lib/dashboard.functions";
 
 const projectsSearchSchema = z.object({
 	page: z.number().optional().default(1),

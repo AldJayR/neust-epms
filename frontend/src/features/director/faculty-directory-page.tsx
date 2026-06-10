@@ -29,7 +29,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { AuthUser } from "@/lib/auth";
-import { facultyDirectoryQueryOptions } from "@/lib/director.functions";
+import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
 import { AppShell } from "../layout/app-shell";
 

@@ -9,7 +9,7 @@ import { AppShell } from "../layout/app-shell";
 import {
 	projectDetailsQueryOptions,
 	reviewProposalFn,
-} from "@/lib/director.functions";
+} from "@/lib/dashboard.functions";
 
 interface ProposalReviewPageProps {
 	proposalId: string;

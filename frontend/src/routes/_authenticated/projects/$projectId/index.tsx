@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ProjectDetailsPage } from "@/features/director/project-details-page";
-import { projectDetailsQueryOptions } from "@/lib/director.functions";
+import { projectDetailsQueryOptions } from "@/lib/dashboard.functions";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId/")({
 	loader: async ({ context, params }) => {

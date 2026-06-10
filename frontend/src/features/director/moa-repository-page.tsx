@@ -32,7 +32,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { AuthUser } from "@/lib/auth";
-import { moaRepositoryQueryOptions } from "@/lib/director.functions";
+import { moaRepositoryQueryOptions } from "@/lib/dashboard.functions";
 import { AppShell } from "../layout/app-shell";
 
 function MoaStatusBadge({ status }: { status: string }) {

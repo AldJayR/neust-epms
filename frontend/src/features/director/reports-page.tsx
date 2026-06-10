@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AppShell } from "../layout/app-shell";
-import { reportsQueryOptions } from "@/lib/director.functions";
+import { reportsQueryOptions } from "@/lib/dashboard.functions";
 
 export function ReportsPage() {
   const [search, setSearch] = useState("");
