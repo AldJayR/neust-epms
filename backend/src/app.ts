@@ -28,63 +28,71 @@ const app = new OpenAPIHono<AuthEnv>();
 
 // ── Global middleware ──
 app.use("*", logger());
-app.use("*", secureHeaders({
-  contentSecurityPolicy: {
-    defaultSrc: ["'self'"],
-    scriptSrc: ["'self'"],
-    styleSrc: ["'self'", "'unsafe-inline'"],
-    imgSrc: ["'self'", "data:", "blob:"],
-  },
-  xFrameOptions: "DENY",
-}));
+app.use(
+	"*",
+	secureHeaders({
+		contentSecurityPolicy: {
+			defaultSrc: ["'self'"],
+			scriptSrc: ["'self'"],
+			styleSrc: ["'self'", "'unsafe-inline'"],
+			imgSrc: ["'self'", "data:", "blob:"],
+		},
+		xFrameOptions: "DENY",
+	}),
+);
 app.use("*", requestId());
 app.use(
-  "*",
-  cors({
-    origin: ["http://localhost:3001", "http://localhost:5173"],
-    credentials: true,
-  }),
+	"*",
+	cors({
+		origin: ["http://localhost:3001", "http://localhost:5173"],
+		credentials: true,
+	}),
 );
 
 // ── Global rate limiter: 100 req/min per IP ──
 const globalLimiter = rateLimiter({
-  windowMs: 60 * 1000,
-  limit: 100,
-  standardHeaders: "draft-6",
-  keyGenerator: (c) =>
-    c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip") ?? "unknown",
+	windowMs: 60 * 1000,
+	limit: 100,
+	standardHeaders: "draft-6",
+	keyGenerator: (c) =>
+		c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip") ?? "unknown",
 });
 app.use("*", globalLimiter);
 
 // ── Global body size limit: 1MB for JSON, uploads handled per-route ──
 app.use("*", async (c, next) => {
-  const contentLength = Number(c.req.header("content-length") ?? 0);
-  const contentType = c.req.header("content-type") ?? "";
+	const contentLength = Number(c.req.header("content-length") ?? 0);
+	const contentType = c.req.header("content-type") ?? "";
 
-  // Skip for file uploads (handled by storage route)
-  if (contentType.includes("multipart/form-data")) {
-    return next();
-  }
+	// Skip for file uploads (handled by storage route)
+	if (contentType.includes("multipart/form-data")) {
+		return next();
+	}
 
-  if (contentLength > 1_048_576) {
-    return c.json(
-      { error: { code: "PAYLOAD_TOO_LARGE", message: "Request body exceeds 1MB limit" } },
-      413,
-    );
-  }
+	if (contentLength > 1_048_576) {
+		return c.json(
+			{
+				error: {
+					code: "PAYLOAD_TOO_LARGE",
+					message: "Request body exceeds 1MB limit",
+				},
+			},
+			413,
+		);
+	}
 
-  return next();
+	return next();
 });
 
 // ── Request timeout: 30s ──
 app.use("*", async (c, next) => {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30_000);
-  try {
-    await next();
-  } finally {
-    clearTimeout(timeout);
-  }
+	const controller = new AbortController();
+	const timeout = setTimeout(() => controller.abort(), 30_000);
+	try {
+		await next();
+	} finally {
+		clearTimeout(timeout);
+	}
 });
 
 // ── Global error handler ──
@@ -92,67 +100,81 @@ installApiErrorHandler(app);
 
 // ── Not found handler ──
 app.notFound((c) =>
-  c.req.path.startsWith("/api/v1")
-    ? c.json(
-        {
-          error: { code: "MISSING_TOKEN", message: "Authorization header is required" },
-        },
-        401,
-      )
-    : c.json({ error: { code: "NOT_FOUND", message: "Route not found" } }, 404),
+	c.req.path.startsWith("/api/v1")
+		? c.json(
+				{
+					error: {
+						code: "MISSING_TOKEN",
+						message: "Authorization header is required",
+					},
+				},
+				401,
+			)
+		: c.json({ error: { code: "NOT_FOUND", message: "Route not found" } }, 404),
 );
 
 // ── PUBLIC ROUTES (Must be before protected route mounts) ──
 
 // Health check
 app.get("/api/v1/health", async (c) => {
-  try {
-    await db.execute(sql`SELECT 1`);
-    return c.json({ status: "ok", db: "connected", timestamp: new Date().toISOString() });
-  } catch {
-    return c.json({ status: "degraded", db: "disconnected", timestamp: new Date().toISOString() }, 503);
-  }
+	try {
+		await db.execute(sql`SELECT 1`);
+		return c.json({
+			status: "ok",
+			db: "connected",
+			timestamp: new Date().toISOString(),
+		});
+	} catch {
+		return c.json(
+			{
+				status: "degraded",
+				db: "disconnected",
+				timestamp: new Date().toISOString(),
+			},
+			503,
+		);
+	}
 });
 
 // OpenAPI document (base, used by getOpenAPIDocument)
 app.doc("/api/v1/doc", {
-  openapi: "3.0.0",
-  info: {
-    title: "NEUST Extension Services Project Management System API",
-    version: "1.0.0",
-    description:
-      "RESTful API for the Web-Based Extension Services Project Management System for NEUST",
-  },
+	openapi: "3.0.0",
+	info: {
+		title: "NEUST Extension Services Project Management System API",
+		version: "1.0.0",
+		description:
+			"RESTful API for the Web-Based Extension Services Project Management System for NEUST",
+	},
 });
 
 // Enriched spec with security schemes
 app.get("/api/v1/openapi.json", (c) => {
-  const baseDoc = app.getOpenAPIDocument({
-    openapi: "3.0.0",
-    info: {
-      title: "NEUST Extension Services Project Management System API",
-      version: "1.0.0",
-      description:
-        "RESTful API for the Web-Based Extension Services Project Management System for NEUST",
-    },
-  });
+	const baseDoc = app.getOpenAPIDocument({
+		openapi: "3.0.0",
+		info: {
+			title: "NEUST Extension Services Project Management System API",
+			version: "1.0.0",
+			description:
+				"RESTful API for the Web-Based Extension Services Project Management System for NEUST",
+		},
+	});
 
-  const enriched = {
-    ...baseDoc,
-    components: {
-      ...(baseDoc.components ?? {}),
-      securitySchemes: {
-        Bearer: {
-          type: "http" as const,
-          scheme: "bearer",
-          bearerFormat: "JWT",
-          description: "Supabase JWT token",
-        },
-      },
-    },
-  };
+	const enriched = {
+		...baseDoc,
+		components: {
+			...(baseDoc.components ?? {}),
+			securitySchemes: {
+				Bearer: {
+					type: "http" as const,
+					scheme: "bearer",
+					bearerFormat: "JWT",
+					description: "Supabase JWT token",
+				},
+			},
+		},
+	};
 
-  return c.json(enriched);
+	return c.json(enriched);
 });
 
 // Swagger UI

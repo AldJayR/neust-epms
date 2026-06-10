@@ -21,257 +21,271 @@ const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
 // ── Schemas ──
 const UserResponseSchema = z
-  .object({
-    userId: z.string(),
-    firstName: z.string(),
-    middleName: z.string().nullable(),
-    lastName: z.string(),
-    nameSuffix: z.string().nullable(),
-    academicRank: z.string().nullable(),
-    email: z.string().email(),
-    roleName: z.string(),
-    campusName: z.string(),
-    departmentName: z.string().nullable(),
-    isActive: z.boolean(),
-    roleId: z.number().optional(),
-    campusId: z.number().optional(),
-    departmentId: z.number().nullable().optional(),
-  })
-  .openapi("UserResponse");
+	.object({
+		userId: z.string(),
+		firstName: z.string(),
+		middleName: z.string().nullable(),
+		lastName: z.string(),
+		nameSuffix: z.string().nullable(),
+		academicRank: z.string().nullable(),
+		email: z.string().email(),
+		roleName: z.string(),
+		campusName: z.string(),
+		departmentName: z.string().nullable(),
+		isActive: z.boolean(),
+		roleId: z.number().optional(),
+		campusId: z.number().optional(),
+		departmentId: z.number().nullable().optional(),
+	})
+	.openapi("UserResponse");
 
 const RegisterUserBodySchema = z
-  .object({
-    firstName: z.string().min(1),
-    middleName: z.string().optional(),
-    lastName: z.string().min(1),
-    nameSuffix: z.string().optional(),
-    academicRank: z.string().optional(),
-    email: z.string().email(),
-    password: z.string().min(8),
-    campusId: z.number().int().positive(),
-    departmentId: z.number().int().positive().optional(),
-  })
-  .openapi("RegisterUserBody");
+	.object({
+		firstName: z.string().min(1),
+		middleName: z.string().optional(),
+		lastName: z.string().min(1),
+		nameSuffix: z.string().optional(),
+		academicRank: z.string().optional(),
+		email: z.string().email(),
+		password: z.string().min(8),
+		campusId: z.number().int().positive(),
+		departmentId: z.number().int().positive().optional(),
+	})
+	.openapi("RegisterUserBody");
 
 const CreateUserBodySchema = z
-  .object({
-    firstName: z.string().min(1),
-    middleName: z.string().optional(),
-    lastName: z.string().min(1),
-    nameSuffix: z.string().optional(),
-    academicRank: z.string().optional(),
-    email: z.string().email(),
-    roleId: z.number().int().positive(),
-    campusId: z.number().int().positive(),
-    departmentId: z.number().int().positive().optional(),
-    supabaseUserId: z.string(),
-  })
-  .openapi("CreateUserBody");
+	.object({
+		firstName: z.string().min(1),
+		middleName: z.string().optional(),
+		lastName: z.string().min(1),
+		nameSuffix: z.string().optional(),
+		academicRank: z.string().optional(),
+		email: z.string().email(),
+		roleId: z.number().int().positive(),
+		campusId: z.number().int().positive(),
+		departmentId: z.number().int().positive().optional(),
+		supabaseUserId: z.string(),
+	})
+	.openapi("CreateUserBody");
 
 const ErrorSchema = z
-  .object({
-    error: z.object({ code: z.string(), message: z.string() }),
-  })
-  .openapi("Error");
+	.object({
+		error: z.object({ code: z.string(), message: z.string() }),
+	})
+	.openapi("Error");
 
 // ── POST /auth/check-password (Public) ──
 const checkPasswordRoute = createRoute({
-  method: "post",
-  path: "/auth/check-password",
-  tags: ["Auth"],
-  summary: "Check if a password has been compromised",
-  request: {
-    body: {
-      content: {
-        "application/json": {
-          schema: z.object({ password: z.string().min(1) }).openapi("CheckPasswordBody"),
-        },
-      },
-      required: true,
-    },
-  },
-  responses: {
-    200: {
-      content: {
-        "application/json": {
-          schema: z.object({ compromised: z.boolean() }).openapi("CheckPasswordResponse"),
-        },
-      },
-      description: "Result of compromised password check",
-    },
-  },
+	method: "post",
+	path: "/auth/check-password",
+	tags: ["Auth"],
+	summary: "Check if a password has been compromised",
+	request: {
+		body: {
+			content: {
+				"application/json": {
+					schema: z
+						.object({ password: z.string().min(1) })
+						.openapi("CheckPasswordBody"),
+				},
+			},
+			required: true,
+		},
+	},
+	responses: {
+		200: {
+			content: {
+				"application/json": {
+					schema: z
+						.object({ compromised: z.boolean() })
+						.openapi("CheckPasswordResponse"),
+				},
+			},
+			description: "Result of compromised password check",
+		},
+	},
 });
 
 app.openapi(checkPasswordRoute, async (c) => {
-  const { password } = c.req.valid("json");
-  const compromised = await isPasswordCompromised(password);
-  return c.json({ compromised }, 200);
+	const { password } = c.req.valid("json");
+	const compromised = await isPasswordCompromised(password);
+	return c.json({ compromised }, 200);
 });
 
 // ── GET /auth/me ──
 const getMeRoute = createRoute({
-  method: "get",
-  path: "/auth/me",
-  tags: ["Auth"],
-  summary: "Get the currently authenticated user profile",
-  security: [{ Bearer: [] }],
-  responses: {
-    200: {
-      content: { "application/json": { schema: UserResponseSchema } },
-      description: "Current user profile",
-    },
-    401: {
-      content: { "application/json": { schema: ErrorSchema } },
-      description: "Unauthorized",
-    },
-  },
+	method: "get",
+	path: "/auth/me",
+	tags: ["Auth"],
+	summary: "Get the currently authenticated user profile",
+	security: [{ Bearer: [] }],
+	responses: {
+		200: {
+			content: { "application/json": { schema: UserResponseSchema } },
+			description: "Current user profile",
+		},
+		401: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Unauthorized",
+		},
+	},
 });
 
 // ── Rate limit: 5 registration attempts per 15 minutes per IP ──
 const registerLimiter = rateLimiter({
-  windowMs: 15 * 60 * 1000,
-  limit: 5,
-  standardHeaders: "draft-6",
-  keyGenerator: (c) => {
-    return c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip") ?? "unknown";
-  },
+	windowMs: 15 * 60 * 1000,
+	limit: 5,
+	standardHeaders: "draft-6",
+	keyGenerator: (c) => {
+		return (
+			c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip") ?? "unknown"
+		);
+	},
 });
 
 // ── POST /auth/register (Public self-registration) ──
 const registerRoute = createRoute({
-  method: "post",
-  path: "/auth/register",
-  tags: ["Auth"],
-  summary: "Register a new faculty account",
-  request: {
-    body: {
-      content: { "application/json": { schema: RegisterUserBodySchema } },
-      required: true,
-    },
-  },
-  responses: {
-    201: {
-      content: { "application/json": { schema: UserResponseSchema } },
-      description: "User registered",
-    },
-    400: {
-      content: { "application/json": { schema: ErrorSchema } },
-      description: "Validation error or user already exists",
-    },
-  },
+	method: "post",
+	path: "/auth/register",
+	tags: ["Auth"],
+	summary: "Register a new faculty account",
+	request: {
+		body: {
+			content: { "application/json": { schema: RegisterUserBodySchema } },
+			required: true,
+		},
+	},
+	responses: {
+		201: {
+			content: { "application/json": { schema: UserResponseSchema } },
+			description: "User registered",
+		},
+		400: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Validation error or user already exists",
+		},
+	},
 });
 
 app.use("/auth/register", registerLimiter);
 
 app.openapi(registerRoute, async (c) => {
-  const body = c.req.valid("json");
+	const body = c.req.valid("json");
 
-  // 1. Check if user already exists in DB
-  const [existing] = await db
-    .select({ userId: users.userId })
-    .from(users)
-    .where(eq(users.email, body.email))
-    .limit(1);
+	// 1. Check if user already exists in DB
+	const [existing] = await db
+		.select({ userId: users.userId })
+		.from(users)
+		.where(eq(users.email, body.email))
+		.limit(1);
 
-  if (existing) {
-    throw new ApiError(400, "USER_EXISTS", "Email already registered");
-  }
+	if (existing) {
+		throw new ApiError(400, "USER_EXISTS", "Email already registered");
+	}
 
-  // 2. Check if password has been compromised
-  const compromised = await isPasswordCompromised(body.password);
-  if (compromised) {
-    throw new ApiError(
-      400,
-      "COMPROMISED_PASSWORD",
-      "This password has appeared in a known data breach. Please choose a different one.",
-    );
-  }
+	// 2. Check if password has been compromised
+	const compromised = await isPasswordCompromised(body.password);
+	if (compromised) {
+		throw new ApiError(
+			400,
+			"COMPROMISED_PASSWORD",
+			"This password has appeared in a known data breach. Please choose a different one.",
+		);
+	}
 
-  // 3. Fetch Faculty role ID
-  const [facultyRole] = await db
-    .select({ roleId: roles.roleId })
-    .from(roles)
-    .where(eq(roles.roleName, ROLE_NAMES.FACULTY))
-    .limit(1);
+	// 3. Fetch Faculty role ID
+	const [facultyRole] = await db
+		.select({ roleId: roles.roleId })
+		.from(roles)
+		.where(eq(roles.roleName, ROLE_NAMES.FACULTY))
+		.limit(1);
 
-  if (!facultyRole) {
-    throw new ApiError(500, "CONFIG_ERROR", "Faculty role not found in system");
-  }
+	if (!facultyRole) {
+		throw new ApiError(500, "CONFIG_ERROR", "Faculty role not found in system");
+	}
 
-  // 4. Create user in Supabase Auth (admin-side to skip email)
-  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-    email: body.email,
-    password: body.password,
-    email_confirm: true, // Auto-confirm to skip email for now
-  });
+	// 4. Create user in Supabase Auth (admin-side to skip email)
+	const { data: authData, error: authError } =
+		await supabase.auth.admin.createUser({
+			email: body.email,
+			password: body.password,
+			email_confirm: true, // Auto-confirm to skip email for now
+		});
 
-  if (authError || !authData.user) {
-    throw new ApiError(400, "AUTH_ERROR", authError?.message ?? "Failed to create auth user");
-  }
+	if (authError || !authData.user) {
+		throw new ApiError(
+			400,
+			"AUTH_ERROR",
+			authError?.message ?? "Failed to create auth user",
+		);
+	}
 
-  // 5. Create user in our DB
-  let created;
-  try {
-    created = await db.transaction(async (tx) => {
-      const [userRow] = await tx
-        .insert(users)
-        .values({
-          userId: authData.user.id,
-          firstName: body.firstName,
-          middleName: body.middleName ?? null,
-          lastName: body.lastName,
-          nameSuffix: body.nameSuffix ?? null,
-          academicRank: body.academicRank ?? null,
-          email: body.email,
-          roleId: facultyRole.roleId,
-          campusId: body.campusId,
-          departmentId: body.departmentId ?? null,
-          isActive: false, // Requires admin activation
-        })
-        .returning();
+	// 5. Create user in our DB
+	let created;
+	try {
+		created = await db.transaction(async (tx) => {
+			const [userRow] = await tx
+				.insert(users)
+				.values({
+					userId: authData.user.id,
+					firstName: body.firstName,
+					middleName: body.middleName ?? null,
+					lastName: body.lastName,
+					nameSuffix: body.nameSuffix ?? null,
+					academicRank: body.academicRank ?? null,
+					email: body.email,
+					roleId: facultyRole.roleId,
+					campusId: body.campusId,
+					departmentId: body.departmentId ?? null,
+					isActive: false, // Requires admin activation
+				})
+				.returning();
 
-      if (!userRow) {
-        throw new Error("INSERT_FAILED");
-      }
+			if (!userRow) {
+				throw new Error("INSERT_FAILED");
+			}
 
-      await insertAuditLog({
-        userId: userRow.userId,
-        action: "Self-registered account",
-        tableAffected: "users",
-        ipAddress: c.req.header("x-forwarded-for") ?? null,
-      }, tx);
+			await insertAuditLog(
+				{
+					userId: userRow.userId,
+					action: "Self-registered account",
+					tableAffected: "users",
+					ipAddress: c.req.header("x-forwarded-for") ?? null,
+				},
+				tx,
+			);
 
-      return userRow;
-    });
-  } catch (err) {
-    // Cleanup Supabase if DB insert fails
-    await supabase.auth.admin.deleteUser(authData.user.id);
-    throw new ApiError(500, "INSERT_FAILED", "Failed to create user record");
-  }
+			return userRow;
+		});
+	} catch (err) {
+		// Cleanup Supabase if DB insert fails
+		await supabase.auth.admin.deleteUser(authData.user.id);
+		throw new ApiError(500, "INSERT_FAILED", "Failed to create user record");
+	}
 
-  // Fetch full response
-  const [row] = await db
-    .select({
-      userId: users.userId,
-      firstName: users.firstName,
-      middleName: users.middleName,
-      lastName: users.lastName,
-      nameSuffix: users.nameSuffix,
-      academicRank: users.academicRank,
-      email: users.email,
-      roleName: roles.roleName,
-      campusName: campuses.campusName,
-      departmentName: departments.departmentName,
-      isActive: users.isActive,
-    })
-    .from(users)
-    .innerJoin(roles, eq(users.roleId, roles.roleId))
-    .innerJoin(campuses, eq(users.campusId, campuses.campusId))
-    .leftJoin(departments, eq(users.departmentId, departments.departmentId))
-    .where(eq(users.userId, created.userId))
-    .limit(1);
+	// Fetch full response
+	const [row] = await db
+		.select({
+			userId: users.userId,
+			firstName: users.firstName,
+			middleName: users.middleName,
+			lastName: users.lastName,
+			nameSuffix: users.nameSuffix,
+			academicRank: users.academicRank,
+			email: users.email,
+			roleName: roles.roleName,
+			campusName: campuses.campusName,
+			departmentName: departments.departmentName,
+			isActive: users.isActive,
+		})
+		.from(users)
+		.innerJoin(roles, eq(users.roleId, roles.roleId))
+		.innerJoin(campuses, eq(users.campusId, campuses.campusId))
+		.leftJoin(departments, eq(users.departmentId, departments.departmentId))
+		.where(eq(users.userId, created.userId))
+		.limit(1);
 
-  return c.json(row!, 201);
+	return c.json(row!, 201);
 });
 
 // ── Protected Routes ──
@@ -279,173 +293,173 @@ app.use("/auth/me", authMiddleware);
 app.use("/auth/users", authMiddleware);
 
 app.openapi(getMeRoute, async (c) => {
-  const authUser = c.get("user");
-  return c.json(authUser, 200);
+	const authUser = c.get("user");
+	return c.json(authUser, 200);
 });
 
 // ── POST /auth/users (Admin provisioning) ──
 const createUserRoute = createRoute({
-  method: "post",
-  path: "/auth/users",
-  tags: ["Auth"],
-  summary: "Provision a new user (Super Admin / Director only)",
-  security: [{ Bearer: [] }],
-  request: {
-    body: {
-      content: { "application/json": { schema: CreateUserBodySchema } },
-      required: true,
-    },
-  },
-  responses: {
-    201: {
-      content: { "application/json": { schema: UserResponseSchema } },
-      description: "User created",
-    },
-    400: {
-      content: { "application/json": { schema: ErrorSchema } },
-      description: "Validation error",
-    },
-    403: {
-      content: { "application/json": { schema: ErrorSchema } },
-      description: "Forbidden",
-    },
-  },
+	method: "post",
+	path: "/auth/users",
+	tags: ["Auth"],
+	summary: "Provision a new user (Super Admin / Director only)",
+	security: [{ Bearer: [] }],
+	request: {
+		body: {
+			content: { "application/json": { schema: CreateUserBodySchema } },
+			required: true,
+		},
+	},
+	responses: {
+		201: {
+			content: { "application/json": { schema: UserResponseSchema } },
+			description: "User created",
+		},
+		400: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Validation error",
+		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Forbidden",
+		},
+	},
 });
 
-app.openapi(
-  createUserRoute,
-  async (c) => {
-    const authUser = c.get("user");
+app.openapi(createUserRoute, async (c) => {
+	const authUser = c.get("user");
 
-    // SYS-REQ-01.2: Director and Super Admin accounts require manual provisioning
-    if (
-      authUser.roleName !== ROLE_NAMES.SUPER_ADMIN &&
-      authUser.roleName !== ROLE_NAMES.DIRECTOR
-    ) {
-      throw new ApiError(
-        403,
-        "FORBIDDEN",
-        "Only Super Admin or Director can provision users",
-      );
-    }
+	// SYS-REQ-01.2: Director and Super Admin accounts require manual provisioning
+	if (
+		authUser.roleName !== ROLE_NAMES.SUPER_ADMIN &&
+		authUser.roleName !== ROLE_NAMES.DIRECTOR
+	) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"Only Super Admin or Director can provision users",
+		);
+	}
 
-    const body = c.req.valid("json");
+	const body = c.req.valid("json");
 
-    const created = await db.transaction(async (tx) => {
-      const [userRow] = await tx
-        .insert(users)
-        .values({
-          userId: body.supabaseUserId,
-          firstName: body.firstName,
-          middleName: body.middleName ?? null,
-          lastName: body.lastName,
-          nameSuffix: body.nameSuffix ?? null,
-          academicRank: body.academicRank ?? null,
-          email: body.email,
-          roleId: body.roleId,
-          campusId: body.campusId,
-          departmentId: body.departmentId ?? null,
-        })
-        .returning();
+	const created = await db.transaction(async (tx) => {
+		const [userRow] = await tx
+			.insert(users)
+			.values({
+				userId: body.supabaseUserId,
+				firstName: body.firstName,
+				middleName: body.middleName ?? null,
+				lastName: body.lastName,
+				nameSuffix: body.nameSuffix ?? null,
+				academicRank: body.academicRank ?? null,
+				email: body.email,
+				roleId: body.roleId,
+				campusId: body.campusId,
+				departmentId: body.departmentId ?? null,
+			})
+			.returning();
 
-      if (!userRow) {
-        throw new ApiError(500, "INSERT_FAILED", "Failed to create user");
-      }
+		if (!userRow) {
+			throw new ApiError(500, "INSERT_FAILED", "Failed to create user");
+		}
 
-      await insertAuditLog({
-        userId: authUser.userId,
-        action: `Created user ${userRow.userId}`,
-        tableAffected: "users",
-        ipAddress: c.req.header("x-forwarded-for") ?? null,
-      }, tx);
+		await insertAuditLog(
+			{
+				userId: authUser.userId,
+				action: `Created user ${userRow.userId}`,
+				tableAffected: "users",
+				ipAddress: c.req.header("x-forwarded-for") ?? null,
+			},
+			tx,
+		);
 
-      return userRow;
-    });
+		return userRow;
+	});
 
-    // Fetch the full response with joined role/campus/department names
-    const [row] = await db
-      .select({
-        userId: users.userId,
-        firstName: users.firstName,
-        middleName: users.middleName,
-        lastName: users.lastName,
-        nameSuffix: users.nameSuffix,
-        academicRank: users.academicRank,
-        email: users.email,
-        roleName: roles.roleName,
-        campusName: campuses.campusName,
-        departmentName: departments.departmentName,
-        isActive: users.isActive,
-      })
-      .from(users)
-      .innerJoin(roles, eq(users.roleId, roles.roleId))
-      .innerJoin(campuses, eq(users.campusId, campuses.campusId))
-      .leftJoin(departments, eq(users.departmentId, departments.departmentId))
-      .where(eq(users.userId, created.userId))
-      .limit(1);
+	// Fetch the full response with joined role/campus/department names
+	const [row] = await db
+		.select({
+			userId: users.userId,
+			firstName: users.firstName,
+			middleName: users.middleName,
+			lastName: users.lastName,
+			nameSuffix: users.nameSuffix,
+			academicRank: users.academicRank,
+			email: users.email,
+			roleName: roles.roleName,
+			campusName: campuses.campusName,
+			departmentName: departments.departmentName,
+			isActive: users.isActive,
+		})
+		.from(users)
+		.innerJoin(roles, eq(users.roleId, roles.roleId))
+		.innerJoin(campuses, eq(users.campusId, campuses.campusId))
+		.leftJoin(departments, eq(users.departmentId, departments.departmentId))
+		.where(eq(users.userId, created.userId))
+		.limit(1);
 
-    if (!row) {
-      throw new ApiError(500, "FETCH_FAILED", "Failed to fetch created user");
-    }
+	if (!row) {
+		throw new ApiError(500, "FETCH_FAILED", "Failed to fetch created user");
+	}
 
-    return c.json(row, 201);
-  },
-);
+	return c.json(row, 201);
+});
 
 // ── GET /auth/departments ──
 const listDepartmentsRoute = createRoute({
-  method: "get",
-  path: "/auth/departments",
-  tags: ["Auth"],
-  summary: "List all departments (public)",
-  responses: {
-    200: {
-      description: "Department list",
-    },
-  },
+	method: "get",
+	path: "/auth/departments",
+	tags: ["Auth"],
+	summary: "List all departments (public)",
+	responses: {
+		200: {
+			description: "Department list",
+		},
+	},
 });
 
 app.openapi(listDepartmentsRoute, async (c) => {
-  const rows = await db
-    .select({
-      departmentId: departments.departmentId,
-      departmentName: departments.departmentName,
-    })
-    .from(departments)
-    .orderBy(departments.departmentName);
+	const rows = await db
+		.select({
+			departmentId: departments.departmentId,
+			departmentName: departments.departmentName,
+		})
+		.from(departments)
+		.orderBy(departments.departmentName);
 
-  return c.json(
-    rows.map((r) => ({ id: r.departmentId, name: r.departmentName })),
-    200,
-  );
+	return c.json(
+		rows.map((r) => ({ id: r.departmentId, name: r.departmentName })),
+		200,
+	);
 });
 
 // ── GET /auth/campuses ──
 const listCampusesRoute = createRoute({
-  method: "get",
-  path: "/auth/campuses",
-  tags: ["Auth"],
-  summary: "List all campuses (public)",
-  responses: {
-    200: {
-      description: "Campus list",
-    },
-  },
+	method: "get",
+	path: "/auth/campuses",
+	tags: ["Auth"],
+	summary: "List all campuses (public)",
+	responses: {
+		200: {
+			description: "Campus list",
+		},
+	},
 });
 
 app.openapi(listCampusesRoute, async (c) => {
-  const rows = await db
-    .select({
-      campusId: campuses.campusId,
-      campusName: campuses.campusName,
-    })
-    .from(campuses)
-    .orderBy(campuses.campusName);
+	const rows = await db
+		.select({
+			campusId: campuses.campusId,
+			campusName: campuses.campusName,
+		})
+		.from(campuses)
+		.orderBy(campuses.campusName);
 
-  return c.json(
-    rows.map((r) => ({ id: r.campusId, name: r.campusName })),
-    200,
-  );
+	return c.json(
+		rows.map((r) => ({ id: r.campusId, name: r.campusName })),
+		200,
+	);
 });
 
 export default app;

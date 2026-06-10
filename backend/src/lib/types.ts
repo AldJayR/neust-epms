@@ -33,7 +33,9 @@ export type ProposalDocument = InferSelectModel<typeof proposalDocuments>;
 export type ProposalComment = InferSelectModel<typeof proposalComments>;
 export type ProposalReview = InferSelectModel<typeof proposalReviews>;
 export type BeneficiarySector = InferSelectModel<typeof beneficiarySectors>;
-export type ProposalBeneficiary = InferSelectModel<typeof proposalBeneficiaries>;
+export type ProposalBeneficiary = InferSelectModel<
+	typeof proposalBeneficiaries
+>;
 export type Sdg = InferSelectModel<typeof sdgs>;
 export type ProposalSdg = InferSelectModel<typeof proposalSdgs>;
 export type Moa = InferSelectModel<typeof moas>;
@@ -48,14 +50,18 @@ export type NewCampus = InferInsertModel<typeof campuses>;
 export type NewDepartment = InferInsertModel<typeof departments>;
 export type NewUser = InferInsertModel<typeof users>;
 export type NewProposal = InferInsertModel<typeof proposals>;
-export type NewProposalDepartment = InferInsertModel<typeof proposalDepartments>;
+export type NewProposalDepartment = InferInsertModel<
+	typeof proposalDepartments
+>;
 export type NewProposalMember = InferInsertModel<typeof proposalMembers>;
 export type NewSpecialOrder = InferInsertModel<typeof specialOrders>;
 export type NewProposalDocument = InferInsertModel<typeof proposalDocuments>;
 export type NewProposalComment = InferInsertModel<typeof proposalComments>;
 export type NewProposalReview = InferInsertModel<typeof proposalReviews>;
 export type NewBeneficiarySector = InferInsertModel<typeof beneficiarySectors>;
-export type NewProposalBeneficiary = InferInsertModel<typeof proposalBeneficiaries>;
+export type NewProposalBeneficiary = InferInsertModel<
+	typeof proposalBeneficiaries
+>;
 export type NewSdg = InferInsertModel<typeof sdgs>;
 export type NewProposalSdg = InferInsertModel<typeof proposalSdgs>;
 export type NewMoa = InferInsertModel<typeof moas>;
@@ -66,82 +72,81 @@ export type NewSystemSetting = InferInsertModel<typeof systemSettings>;
 
 // ── RBAC role names ──
 export const ROLE_NAMES = {
-  SUPER_ADMIN: "Super Admin",
-  DIRECTOR: "Director",
-  RET_CHAIR: "RET Chair",
-  FACULTY: "Faculty",
+	SUPER_ADMIN: "Super Admin",
+	DIRECTOR: "Director",
+	RET_CHAIR: "RET Chair",
+	FACULTY: "Faculty",
 } as const;
 
 export type RoleName = (typeof ROLE_NAMES)[keyof typeof ROLE_NAMES];
 
 // ── Proposal status values ──
 export const PROPOSAL_STATUS = {
-  DRAFT: "Draft",
-  SUBMITTED: "Submitted",
-  ENDORSED: "Endorsed",
-  APPROVED: "Approved",
-  RETURNED: "Returned",
-  REJECTED: "Rejected",
+	DRAFT: "Draft",
+	SUBMITTED: "Submitted",
+	ENDORSED: "Endorsed",
+	APPROVED: "Approved",
+	RETURNED: "Returned",
+	REJECTED: "Rejected",
 } as const;
 
 export type ProposalStatus =
-  (typeof PROPOSAL_STATUS)[keyof typeof PROPOSAL_STATUS];
+	(typeof PROPOSAL_STATUS)[keyof typeof PROPOSAL_STATUS];
 
 // ── Review stage values ──
 export const REVIEW_STAGE = {
-  ENDORSEMENT: "Endorsement",
-  APPROVAL: "Approval",
+	ENDORSEMENT: "Endorsement",
+	APPROVAL: "Approval",
 } as const;
 
-export type ReviewStage =
-  (typeof REVIEW_STAGE)[keyof typeof REVIEW_STAGE];
+export type ReviewStage = (typeof REVIEW_STAGE)[keyof typeof REVIEW_STAGE];
 
 // ── Review decision values ──
 export const REVIEW_DECISION = {
-  ENDORSED: "Endorsed",
-  APPROVED: "Approved",
-  RETURNED: "Returned",
-  REJECTED: "Rejected",
+	ENDORSED: "Endorsed",
+	APPROVED: "Approved",
+	RETURNED: "Returned",
+	REJECTED: "Rejected",
 } as const;
 
 export type ReviewDecision =
-  (typeof REVIEW_DECISION)[keyof typeof REVIEW_DECISION];
+	(typeof REVIEW_DECISION)[keyof typeof REVIEW_DECISION];
 
 // ── Project status values ──
 export const PROJECT_STATUS = {
-  APPROVED: "Approved",
-  ONGOING: "Ongoing",
-  COMPLETED: "Completed",
-  CLOSED: "Closed",
+	APPROVED: "Approved",
+	ONGOING: "Ongoing",
+	COMPLETED: "Completed",
+	CLOSED: "Closed",
 } as const;
 
 export type ProjectStatus =
-  (typeof PROJECT_STATUS)[keyof typeof PROJECT_STATUS];
+	(typeof PROJECT_STATUS)[keyof typeof PROJECT_STATUS];
 
 // ── Project report type values ──
 export const REPORT_TYPE = {
-  PROGRESS: "Progress",
-  FINAL_ACCOMPLISHMENT: "Final Accomplishment",
-  TERMINAL: "Terminal",
+	PROGRESS: "Progress",
+	FINAL_ACCOMPLISHMENT: "Final Accomplishment",
+	TERMINAL: "Terminal",
 } as const;
 
 export type ReportType = (typeof REPORT_TYPE)[keyof typeof REPORT_TYPE];
 
 // ── Auth context: attached to every authenticated request ──
 export interface AuthUser {
-  userId: string;
-  email: string;
-  roleId: number;
-  roleName: string;
-  campusId: number;
-  campusName: string;
-  isMainCampus: boolean;
-  departmentId: number | null;
-  departmentName: string | null;
-  firstName: string;
-  middleName: string | null;
-  lastName: string;
-  nameSuffix: string | null;
-  academicRank: string | null;
-  isActive: boolean;
+	userId: string;
+	email: string;
+	roleId: number;
+	roleName: string;
+	campusId: number;
+	campusName: string;
+	isMainCampus: boolean;
+	departmentId: number | null;
+	departmentName: string | null;
+	firstName: string;
+	middleName: string | null;
+	lastName: string;
+	nameSuffix: string | null;
+	academicRank: string | null;
+	isActive: boolean;
 }

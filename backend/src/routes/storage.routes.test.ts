@@ -1,211 +1,262 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { db } from "../db/client.js";
 import {
-  setMockUser,
-  MOCK_USERS,
-  createMockProposal,
-  mockSelectChain,
+	setMockUser,
+	MOCK_USERS,
+	createMockProposal,
+	mockSelectChain,
 } from "../../test/helpers.js";
 import app from "./storage.routes.js";
 
 const PROPOSAL_ID = "eeeeeeee-5555-4555-8555-eeeeeeeeeeee";
 const DOC_ID = "dddddddd-8888-4888-8888-dddddddddddd";
 
-beforeEach(() => { setMockUser(MOCK_USERS.faculty); });
+beforeEach(() => {
+	setMockUser(MOCK_USERS.faculty);
+});
 
 describe("GET /proposals/:proposalId/documents", () => {
-  it("should return document versions for a proposal", async () => {
-    const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
-    const doc = { documentId: DOC_ID, proposalId: PROPOSAL_ID, storagePath: "proposals/test/v1.pdf", versionNum: 1, uploadedAt: new Date() };
-    vi.mocked(db.select)
-      .mockReturnValueOnce(mockSelectChain([proposal]) as never)
-      .mockReturnValueOnce(mockSelectChain([doc]) as never);
+	it("should return document versions for a proposal", async () => {
+		const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
+		const doc = {
+			documentId: DOC_ID,
+			proposalId: PROPOSAL_ID,
+			storagePath: "proposals/test/v1.pdf",
+			versionNum: 1,
+			uploadedAt: new Date(),
+		};
+		vi.mocked(db.select)
+			.mockReturnValueOnce(mockSelectChain([proposal]) as never)
+			.mockReturnValueOnce(mockSelectChain([doc]) as never);
 
-    const res = await app.request(`/proposals/${PROPOSAL_ID}/documents`);
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.items).toHaveLength(1);
-    expect(body.items[0].versionNum).toBe(1);
-  });
+		const res = await app.request(`/proposals/${PROPOSAL_ID}/documents`);
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.items).toHaveLength(1);
+		expect(body.items[0].versionNum).toBe(1);
+	});
 
-  it("should return 403 when user lacks authorization for document list", async () => {
-    const restrictedProposal = createMockProposal({
-      proposalId: PROPOSAL_ID,
-      departmentId: 99,
-      campusId: 99,
-    });
-    vi.mocked(db.select).mockReturnValueOnce(
-      mockSelectChain([restrictedProposal]) as never,
-    );
+	it("should return 403 when user lacks authorization for document list", async () => {
+		const restrictedProposal = createMockProposal({
+			proposalId: PROPOSAL_ID,
+			departmentId: 99,
+			campusId: 99,
+		});
+		vi.mocked(db.select).mockReturnValueOnce(
+			mockSelectChain([restrictedProposal]) as never,
+		);
 
-    const res = await app.request(`/proposals/${PROPOSAL_ID}/documents`);
-    expect(res.status).toBe(403);
-    const body = await res.json();
-    expect(body.error.code).toBe("FORBIDDEN");
-  });
+		const res = await app.request(`/proposals/${PROPOSAL_ID}/documents`);
+		expect(res.status).toBe(403);
+		const body = await res.json();
+		expect(body.error.code).toBe("FORBIDDEN");
+	});
 });
 
 describe("GET /proposals/:proposalId/documents/:documentId/url", () => {
-  it("should return 404 when document not found", async () => {
-    const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
-    vi.mocked(db.select)
-      .mockReturnValueOnce(mockSelectChain([proposal]) as never)
-      .mockReturnValueOnce(mockSelectChain([]) as never);
+	it("should return 404 when document not found", async () => {
+		const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
+		vi.mocked(db.select)
+			.mockReturnValueOnce(mockSelectChain([proposal]) as never)
+			.mockReturnValueOnce(mockSelectChain([]) as never);
 
-    const res = await app.request(`/proposals/${PROPOSAL_ID}/documents/${DOC_ID}/url`);
-    expect(res.status).toBe(404);
-  });
+		const res = await app.request(
+			`/proposals/${PROPOSAL_ID}/documents/${DOC_ID}/url`,
+		);
+		expect(res.status).toBe(404);
+	});
 
-  it("should return a signed URL when document exists", async () => {
-    const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
-    const doc = { documentId: DOC_ID, proposalId: PROPOSAL_ID, storagePath: "proposals/test/v1.pdf", versionNum: 1, uploadedAt: new Date() };
-    vi.mocked(db.select)
-      .mockReturnValueOnce(mockSelectChain([proposal]) as never)
-      .mockReturnValueOnce(mockSelectChain([doc]) as never);
+	it("should return a signed URL when document exists", async () => {
+		const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
+		const doc = {
+			documentId: DOC_ID,
+			proposalId: PROPOSAL_ID,
+			storagePath: "proposals/test/v1.pdf",
+			versionNum: 1,
+			uploadedAt: new Date(),
+		};
+		vi.mocked(db.select)
+			.mockReturnValueOnce(mockSelectChain([proposal]) as never)
+			.mockReturnValueOnce(mockSelectChain([doc]) as never);
 
-    const res = await app.request(`/proposals/${PROPOSAL_ID}/documents/${DOC_ID}/url`);
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.url).toContain("signed-url");
-  });
+		const res = await app.request(
+			`/proposals/${PROPOSAL_ID}/documents/${DOC_ID}/url`,
+		);
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.url).toContain("signed-url");
+	});
 
-  it("should return 403 when user lacks authorization for document access", async () => {
-    const restrictedProposal = createMockProposal({
-      proposalId: PROPOSAL_ID,
-      departmentId: 99,
-      campusId: 99,
-    });
+	it("should return 403 when user lacks authorization for document access", async () => {
+		const restrictedProposal = createMockProposal({
+			proposalId: PROPOSAL_ID,
+			departmentId: 99,
+			campusId: 99,
+		});
 
-    vi.mocked(db.select).mockReturnValueOnce(
-      mockSelectChain([restrictedProposal]) as never,
-    );
+		vi.mocked(db.select).mockReturnValueOnce(
+			mockSelectChain([restrictedProposal]) as never,
+		);
 
-    const res = await app.request(`/proposals/${PROPOSAL_ID}/documents/${DOC_ID}/url`);
-    expect(res.status).toBe(403);
-    const body = await res.json();
-    expect(body.error.code).toBe("FORBIDDEN");
-  });
+		const res = await app.request(
+			`/proposals/${PROPOSAL_ID}/documents/${DOC_ID}/url`,
+		);
+		expect(res.status).toBe(403);
+		const body = await res.json();
+		expect(body.error.code).toBe("FORBIDDEN");
+	});
 });
 
 describe("POST /proposals/:proposalId/documents/upload", () => {
-  it("should reject empty files", async () => {
-    const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
-    vi.mocked(db.select).mockReturnValue(mockSelectChain([proposal]) as never);
+	it("should reject empty files", async () => {
+		const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([proposal]) as never);
 
-    const formData = new FormData();
-    formData.set(
-      "file",
-      new File([new Uint8Array(0)], "empty.pdf", { type: "application/pdf" }),
-    );
+		const formData = new FormData();
+		formData.set(
+			"file",
+			new File([new Uint8Array(0)], "empty.pdf", { type: "application/pdf" }),
+		);
 
-    const res = await app.request(`/proposals/${PROPOSAL_ID}/documents/upload`, {
-      method: "POST",
-      body: formData,
-    });
+		const res = await app.request(
+			`/proposals/${PROPOSAL_ID}/documents/upload`,
+			{
+				method: "POST",
+				body: formData,
+			},
+		);
 
-    expect(res.status).toBe(422);
-    const body = await res.json();
-    expect(body.error.code).toBe("EMPTY_FILE");
-  });
+		expect(res.status).toBe(422);
+		const body = await res.json();
+		expect(body.error.code).toBe("EMPTY_FILE");
+	});
 
-  it("should reject oversized files", async () => {
-    const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
-    vi.mocked(db.select).mockReturnValue(mockSelectChain([proposal]) as never);
+	it("should reject oversized files", async () => {
+		const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([proposal]) as never);
 
-    const formData = new FormData();
-    formData.set(
-      "file",
-      new File([new Uint8Array(10 * 1024 * 1024 + 1)], "large.pdf", {
-        type: "application/pdf",
-      }),
-    );
+		const formData = new FormData();
+		formData.set(
+			"file",
+			new File([new Uint8Array(10 * 1024 * 1024 + 1)], "large.pdf", {
+				type: "application/pdf",
+			}),
+		);
 
-    const res = await app.request(`/proposals/${PROPOSAL_ID}/documents/upload`, {
-      method: "POST",
-      body: formData,
-    });
+		const res = await app.request(
+			`/proposals/${PROPOSAL_ID}/documents/upload`,
+			{
+				method: "POST",
+				body: formData,
+			},
+		);
 
-    expect(res.status).toBe(413);
-    const body = await res.json();
-    expect(body.error.code).toBe("FILE_TOO_LARGE");
-  });
+		expect(res.status).toBe(413);
+		const body = await res.json();
+		expect(body.error.code).toBe("FILE_TOO_LARGE");
+	});
 
-  it("should reject non-PDF files", async () => {
-    const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
-    vi.mocked(db.select).mockReturnValue(mockSelectChain([proposal]) as never);
+	it("should reject non-PDF files", async () => {
+		const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([proposal]) as never);
 
-    const formData = new FormData();
-    formData.set("file", new File(["hello"], "note.txt", { type: "text/plain" }));
+		const formData = new FormData();
+		formData.set(
+			"file",
+			new File(["hello"], "note.txt", { type: "text/plain" }),
+		);
 
-    const res = await app.request(`/proposals/${PROPOSAL_ID}/documents/upload`, {
-      method: "POST",
-      body: formData,
-    });
+		const res = await app.request(
+			`/proposals/${PROPOSAL_ID}/documents/upload`,
+			{
+				method: "POST",
+				body: formData,
+			},
+		);
 
-    expect(res.status).toBe(422);
-    const body = await res.json();
-    expect(body.error.code).toBe("INVALID_FILE_TYPE");
-  });
+		expect(res.status).toBe(422);
+		const body = await res.json();
+		expect(body.error.code).toBe("INVALID_FILE_TYPE");
+	});
 
-  it("should return 403 when user lacks authorization for upload", async () => {
-    const restrictedProposal = createMockProposal({
-      proposalId: PROPOSAL_ID,
-      departmentId: 99,
-      campusId: 99,
-    });
-    vi.mocked(db.select).mockReturnValue(mockSelectChain([restrictedProposal]) as never);
+	it("should return 403 when user lacks authorization for upload", async () => {
+		const restrictedProposal = createMockProposal({
+			proposalId: PROPOSAL_ID,
+			departmentId: 99,
+			campusId: 99,
+		});
+		vi.mocked(db.select).mockReturnValue(
+			mockSelectChain([restrictedProposal]) as never,
+		);
 
-    const formData = new FormData();
-    formData.set("file", new File(["dummy"], "proposal.pdf", { type: "application/pdf" }));
+		const formData = new FormData();
+		formData.set(
+			"file",
+			new File(["dummy"], "proposal.pdf", { type: "application/pdf" }),
+		);
 
-    const res = await app.request(`/proposals/${PROPOSAL_ID}/documents/upload`, {
-      method: "POST",
-      body: formData,
-    });
+		const res = await app.request(
+			`/proposals/${PROPOSAL_ID}/documents/upload`,
+			{
+				method: "POST",
+				body: formData,
+			},
+		);
 
-    expect(res.status).toBe(403);
-    const body = await res.json();
-    expect(body.error.code).toBe("FORBIDDEN");
-  });
+		expect(res.status).toBe(403);
+		const body = await res.json();
+		expect(body.error.code).toBe("FORBIDDEN");
+	});
 
-  it("should include random uuid segment in generated storage path", async () => {
-    const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
-    vi.mocked(db.select)
-      .mockReturnValueOnce(mockSelectChain([proposal]) as never)
-      .mockReturnValueOnce(mockSelectChain([{ maxVer: 0 }]) as never);
+	it("should include random uuid segment in generated storage path", async () => {
+		const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
+		vi.mocked(db.select)
+			.mockReturnValueOnce(mockSelectChain([proposal]) as never)
+			.mockReturnValueOnce(mockSelectChain([{ maxVer: 0 }]) as never);
 
-    const inserted = {
-      documentId: DOC_ID,
-      proposalId: PROPOSAL_ID,
-      storagePath: "proposals/test/v1.pdf",
-      versionNum: 1,
-      uploadedAt: new Date(),
-    };
-    let capturedInsertValues: Record<string, unknown> | null = null;
-    const insertChain: Record<string, unknown> = {};
-    insertChain.values = vi.fn((values: Record<string, unknown>) => {
-      capturedInsertValues = values;
-      return insertChain;
-    });
-    insertChain.returning = vi.fn(() => insertChain);
-    insertChain.then = (resolve: (value: unknown[]) => void) => resolve([inserted]);
+		const inserted = {
+			documentId: DOC_ID,
+			proposalId: PROPOSAL_ID,
+			storagePath: "proposals/test/v1.pdf",
+			versionNum: 1,
+			uploadedAt: new Date(),
+		};
+		let capturedInsertValues: Record<string, unknown> | null = null;
+		const insertChain: Record<string, unknown> = {};
+		insertChain.values = vi.fn((values: Record<string, unknown>) => {
+			capturedInsertValues = values;
+			return insertChain;
+		});
+		insertChain.returning = vi.fn(() => insertChain);
+		insertChain.then = (resolve: (value: unknown[]) => void) =>
+			resolve([inserted]);
 
-    vi.mocked(db.insert).mockReturnValue(insertChain as never);
+		vi.mocked(db.insert).mockReturnValue(insertChain as never);
 
-    const formData = new FormData();
-    formData.set("file", new File(["dummy"], "Proposal File.pdf", { type: "application/pdf" }));
+		const formData = new FormData();
+		formData.set(
+			"file",
+			new File(["dummy"], "Proposal File.pdf", { type: "application/pdf" }),
+		);
 
-    const res = await app.request(`/proposals/${PROPOSAL_ID}/documents/upload`, {
-      method: "POST",
-      body: formData,
-    });
+		const res = await app.request(
+			`/proposals/${PROPOSAL_ID}/documents/upload`,
+			{
+				method: "POST",
+				body: formData,
+			},
+		);
 
-    expect(res.status).toBe(201);
+		expect(res.status).toBe(201);
 
-    const uploadPath = (capturedInsertValues as Record<string, unknown> | null)?.["storagePath"];
-    expect(typeof uploadPath).toBe("string");
-    expect(uploadPath as string).toMatch(
-      new RegExp(`^proposals/${PROPOSAL_ID}/v1_\\d+_[0-9a-f-]{36}_[A-Za-z0-9._-]+\\.pdf$`),
-    );
-  });
+		const uploadPath = (
+			capturedInsertValues as Record<string, unknown> | null
+		)?.["storagePath"];
+		expect(typeof uploadPath).toBe("string");
+		expect(uploadPath as string).toMatch(
+			new RegExp(
+				`^proposals/${PROPOSAL_ID}/v1_\\d+_[0-9a-f-]{36}_[A-Za-z0-9._-]+\\.pdf$`,
+			),
+		);
+	});
 });

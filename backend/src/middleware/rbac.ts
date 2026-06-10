@@ -12,17 +12,17 @@ import type { AuthEnv } from "./auth.js";
  * ```
  */
 export function requireRole(...allowedRoles: string[]) {
-  return createMiddleware<AuthEnv>(async (c, next) => {
-    const user = c.get("user");
+	return createMiddleware<AuthEnv>(async (c, next) => {
+		const user = c.get("user");
 
-    if (!allowedRoles.includes(user.roleName)) {
-      throw new ApiError(
-        403,
-        "FORBIDDEN",
-        `This action requires one of: ${allowedRoles.join(", ")}`,
-      );
-    }
+		if (!allowedRoles.includes(user.roleName)) {
+			throw new ApiError(
+				403,
+				"FORBIDDEN",
+				`This action requires one of: ${allowedRoles.join(", ")}`,
+			);
+		}
 
-    await next();
-  });
+		await next();
+	});
 }

@@ -5,16 +5,16 @@ import * as schema from "./schema/index.js";
 import * as relations from "./relations.js";
 
 const pool = new pg.Pool({
-  connectionString: env.DATABASE_URL,
-  max: env.DB_POOL_MAX,
-  idleTimeoutMillis: env.DB_IDLE_TIMEOUT_MS,
-  connectionTimeoutMillis: env.DB_CONNECTION_TIMEOUT_MS,
-  statement_timeout: 30000,
-  idle_in_transaction_session_timeout: 30000,
+	connectionString: env.DATABASE_URL,
+	max: env.DB_POOL_MAX,
+	idleTimeoutMillis: env.DB_IDLE_TIMEOUT_MS,
+	connectionTimeoutMillis: env.DB_CONNECTION_TIMEOUT_MS,
+	statement_timeout: 30000,
+	idle_in_transaction_session_timeout: 30000,
 });
 
 export const db = drizzle(pool, {
-  schema: { ...schema, ...relations },
+	schema: { ...schema, ...relations },
 });
 
 export { pool };

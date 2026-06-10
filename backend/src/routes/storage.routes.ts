@@ -18,440 +18,470 @@ const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 function sanitizeFilename(fileName: string): string {
-  const normalized = fileName
-    .normalize("NFKD")
-    .replace(/[^a-zA-Z0-9._-]/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_+|_+$/g, "");
+	const normalized = fileName
+		.normalize("NFKD")
+		.replace(/[^a-zA-Z0-9._-]/g, "_")
+		.replace(/_+/g, "_")
+		.replace(/^_+|_+$/g, "");
 
-  const fallback = "document.pdf";
-  const candidate = normalized.length > 0 ? normalized : fallback;
+	const fallback = "document.pdf";
+	const candidate = normalized.length > 0 ? normalized : fallback;
 
-  return candidate.toLowerCase().endsWith(".pdf") ? candidate : `${candidate}.pdf`;
+	return candidate.toLowerCase().endsWith(".pdf")
+		? candidate
+		: `${candidate}.pdf`;
 }
 
 function canAccessProposalDocuments(
-  user: AuthUser,
-  proposal: { departmentId: number; campusId: number },
+	user: AuthUser,
+	proposal: { departmentId: number; campusId: number },
 ): boolean {
-  if (user.roleName === ROLE_NAMES.FACULTY) {
-    if (user.departmentId !== null) {
-      return proposal.departmentId === user.departmentId;
-    }
-    return proposal.campusId === user.campusId;
-  }
+	if (user.roleName === ROLE_NAMES.FACULTY) {
+		if (user.departmentId !== null) {
+			return proposal.departmentId === user.departmentId;
+		}
+		return proposal.campusId === user.campusId;
+	}
 
-  if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-    if (user.isMainCampus && user.departmentId !== null) {
-      return proposal.departmentId === user.departmentId;
-    }
-    return proposal.campusId === user.campusId;
-  }
+	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+		if (user.isMainCampus && user.departmentId !== null) {
+			return proposal.departmentId === user.departmentId;
+		}
+		return proposal.campusId === user.campusId;
+	}
 
-  return true;
+	return true;
 }
 
 function generateSecureStoragePath(
-  proposalId: string,
-  versionNum: number,
-  fileName: string,
+	proposalId: string,
+	versionNum: number,
+	fileName: string,
 ): string {
-  const sanitizedFilename = sanitizeFilename(fileName);
-  return `proposals/${proposalId}/v${versionNum}_${Date.now()}_${randomUUID()}_${sanitizedFilename}`;
+	const sanitizedFilename = sanitizeFilename(fileName);
+	return `proposals/${proposalId}/v${versionNum}_${Date.now()}_${randomUUID()}_${sanitizedFilename}`;
 }
 
 function getClientIp(forwarded: string | null | undefined): string | null {
-  if (!forwarded) return null;
-  return forwarded.split(",")[0]?.trim() ?? null;
+	if (!forwarded) return null;
+	return forwarded.split(",")[0]?.trim() ?? null;
 }
 
 // ── Schemas ──
 const UploadResponseSchema = z
-  .object({
-    documentId: z.string(),
-    storagePath: z.string(),
-    versionNum: z.number(),
-  })
-  .openapi("UploadResponse");
+	.object({
+		documentId: z.string(),
+		storagePath: z.string(),
+		versionNum: z.number(),
+	})
+	.openapi("UploadResponse");
 
 const DocumentListSchema = z
-  .object({
-    items: z.array(
-      z.object({
-        documentId: z.string(),
-        proposalId: z.string(),
-        versionNum: z.number(),
-        uploadedAt: z.string(),
-      }),
-    ),
-  })
-  .openapi("DocumentList");
+	.object({
+		items: z.array(
+			z.object({
+				documentId: z.string(),
+				proposalId: z.string(),
+				versionNum: z.number(),
+				uploadedAt: z.string(),
+			}),
+		),
+	})
+	.openapi("DocumentList");
 
 const PresignedUrlSchema = z
-  .object({ url: z.string().url() })
-  .openapi("PresignedUrl");
+	.object({ url: z.string().url() })
+	.openapi("PresignedUrl");
 
 const ErrorSchema = z
-  .object({
-    error: z.object({ code: z.string(), message: z.string() }),
-  })
-  .openapi("StorageError");
+	.object({
+		error: z.object({ code: z.string(), message: z.string() }),
+	})
+	.openapi("StorageError");
 
 const ProposalParam = z.object({
-  proposalId: z.string().uuid().openapi({
-    param: { name: "proposalId", in: "path" },
-  }),
+	proposalId: z
+		.string()
+		.uuid()
+		.openapi({
+			param: { name: "proposalId", in: "path" },
+		}),
 });
 
 const DocumentParam = z.object({
-  proposalId: z.string().uuid().openapi({
-    param: { name: "proposalId", in: "path" },
-  }),
-  documentId: z.string().uuid().openapi({
-    param: { name: "documentId", in: "path" },
-  }),
+	proposalId: z
+		.string()
+		.uuid()
+		.openapi({
+			param: { name: "proposalId", in: "path" },
+		}),
+	documentId: z
+		.string()
+		.uuid()
+		.openapi({
+			param: { name: "documentId", in: "path" },
+		}),
 });
 
 const PaginationQuery = z.object({
-  page: z.coerce.number().int().min(1).default(1).openapi({
-    param: { name: "page", in: "query" },
-  }),
-  limit: z.coerce.number().int().min(1).max(100).default(50).openapi({
-    param: { name: "limit", in: "query" },
-  }),
+	page: z.coerce
+		.number()
+		.int()
+		.min(1)
+		.default(1)
+		.openapi({
+			param: { name: "page", in: "query" },
+		}),
+	limit: z.coerce
+		.number()
+		.int()
+		.min(1)
+		.max(100)
+		.default(50)
+		.openapi({
+			param: { name: "limit", in: "query" },
+		}),
 });
 
 app.use("/proposals/*", authMiddleware);
 
 // ── GET /proposals/:proposalId/documents ──
 const listDocsRoute = createRoute({
-  method: "get",
-  path: "/proposals/{proposalId}/documents",
-  tags: ["Storage"],
-  summary: "List all document versions for a proposal (EC-04)",
-  security: [{ Bearer: [] }],
-  request: { params: ProposalParam, query: PaginationQuery },
-  responses: {
-    200: {
-      content: { "application/json": { schema: DocumentListSchema } },
-      description: "Document versions",
-    },
-    403: {
-      content: { "application/json": { schema: ErrorSchema } },
-      description: "Forbidden",
-    },
-    404: {
-      content: { "application/json": { schema: ErrorSchema } },
-      description: "Proposal not found",
-    },
-  },
+	method: "get",
+	path: "/proposals/{proposalId}/documents",
+	tags: ["Storage"],
+	summary: "List all document versions for a proposal (EC-04)",
+	security: [{ Bearer: [] }],
+	request: { params: ProposalParam, query: PaginationQuery },
+	responses: {
+		200: {
+			content: { "application/json": { schema: DocumentListSchema } },
+			description: "Document versions",
+		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Forbidden",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Proposal not found",
+		},
+	},
 });
 
 app.openapi(listDocsRoute, async (c) => {
-  const user = c.get("user");
-  const { proposalId } = c.req.valid("param");
-  const { page, limit } = c.req.valid("query");
-  const offset = (page - 1) * limit;
+	const user = c.get("user");
+	const { proposalId } = c.req.valid("param");
+	const { page, limit } = c.req.valid("query");
+	const offset = (page - 1) * limit;
 
-  const [proposal] = await db
-    .select({
-      proposalId: proposals.proposalId,
-      departmentId: proposals.departmentId,
-      campusId: proposals.campusId,
-    })
-    .from(proposals)
-    .where(
-      and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
-    )
-    .limit(1);
+	const [proposal] = await db
+		.select({
+			proposalId: proposals.proposalId,
+			departmentId: proposals.departmentId,
+			campusId: proposals.campusId,
+		})
+		.from(proposals)
+		.where(
+			and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
+		)
+		.limit(1);
 
-  if (!proposal) {
-    throw new ApiError(404, "NOT_FOUND", "Proposal not found");
-  }
+	if (!proposal) {
+		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+	}
 
-  if (!canAccessProposalDocuments(user, proposal)) {
-    throw new ApiError(
-      403,
-      "FORBIDDEN",
-      "You do not have access to documents for this proposal",
-    );
-  }
+	if (!canAccessProposalDocuments(user, proposal)) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You do not have access to documents for this proposal",
+		);
+	}
 
-  const rows = await db
-    .select({
-      documentId: proposalDocuments.documentId,
-      proposalId: proposalDocuments.proposalId,
-      storagePath: proposalDocuments.storagePath,
-      versionNum: proposalDocuments.versionNum,
-      uploadedAt: proposalDocuments.uploadedAt,
-    })
-    .from(proposalDocuments)
-    .where(eq(proposalDocuments.proposalId, proposalId))
-    .orderBy(proposalDocuments.versionNum)
-    .limit(limit)
-    .offset(offset);
+	const rows = await db
+		.select({
+			documentId: proposalDocuments.documentId,
+			proposalId: proposalDocuments.proposalId,
+			storagePath: proposalDocuments.storagePath,
+			versionNum: proposalDocuments.versionNum,
+			uploadedAt: proposalDocuments.uploadedAt,
+		})
+		.from(proposalDocuments)
+		.where(eq(proposalDocuments.proposalId, proposalId))
+		.orderBy(proposalDocuments.versionNum)
+		.limit(limit)
+		.offset(offset);
 
-  const items = rows.map((r) => ({
-    documentId: r.documentId,
-    proposalId: r.proposalId,
-    versionNum: r.versionNum,
-    uploadedAt: r.uploadedAt.toISOString(),
-  }));
+	const items = rows.map((r) => ({
+		documentId: r.documentId,
+		proposalId: r.proposalId,
+		versionNum: r.versionNum,
+		uploadedAt: r.uploadedAt.toISOString(),
+	}));
 
-  return c.json({ items }, 200);
+	return c.json({ items }, 200);
 });
 
 // ── POST /proposals/:proposalId/documents/upload ──
 const uploadRoute = createRoute({
-  method: "post",
-  path: "/proposals/{proposalId}/documents/upload",
-  tags: ["Storage"],
-  summary: "Upload a new proposal document version via backend proxy",
-  description:
-    "Proxies file upload to Supabase Storage. EC-04: new uploads increment version_num.",
-  security: [{ Bearer: [] }],
-  request: { params: ProposalParam },
-  responses: {
-    201: {
-      content: { "application/json": { schema: UploadResponseSchema } },
-      description: "Document uploaded",
-    },
-    400: {
-      content: { "application/json": { schema: ErrorSchema } },
-      description: "Upload failed",
-    },
-    404: {
-      content: { "application/json": { schema: ErrorSchema } },
-      description: "Proposal not found",
-    },
-    403: {
-      content: { "application/json": { schema: ErrorSchema } },
-      description: "Forbidden",
-    },
-    413: {
-      content: { "application/json": { schema: ErrorSchema } },
-      description: "File too large",
-    },
-    422: {
-      content: { "application/json": { schema: ErrorSchema } },
-      description: "Invalid file type",
-    },
-    500: {
-      content: { "application/json": { schema: ErrorSchema } },
-      description: "Internal server error",
-    },
-  },
+	method: "post",
+	path: "/proposals/{proposalId}/documents/upload",
+	tags: ["Storage"],
+	summary: "Upload a new proposal document version via backend proxy",
+	description:
+		"Proxies file upload to Supabase Storage. EC-04: new uploads increment version_num.",
+	security: [{ Bearer: [] }],
+	request: { params: ProposalParam },
+	responses: {
+		201: {
+			content: { "application/json": { schema: UploadResponseSchema } },
+			description: "Document uploaded",
+		},
+		400: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Upload failed",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Proposal not found",
+		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Forbidden",
+		},
+		413: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "File too large",
+		},
+		422: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid file type",
+		},
+		500: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Internal server error",
+		},
+	},
 });
 
 app.openapi(uploadRoute, async (c) => {
-  const user = c.get("user");
-  const { proposalId } = c.req.valid("param");
+	const user = c.get("user");
+	const { proposalId } = c.req.valid("param");
 
-  // Verify proposal exists
-  const [proposal] = await db
-    .select({
-      proposalId: proposals.proposalId,
-      departmentId: proposals.departmentId,
-      campusId: proposals.campusId,
-    })
-    .from(proposals)
-    .where(
-      and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
-    )
-    .limit(1);
+	// Verify proposal exists
+	const [proposal] = await db
+		.select({
+			proposalId: proposals.proposalId,
+			departmentId: proposals.departmentId,
+			campusId: proposals.campusId,
+		})
+		.from(proposals)
+		.where(
+			and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
+		)
+		.limit(1);
 
-  if (!proposal) {
-    throw new ApiError(404, "NOT_FOUND", "Proposal not found");
-  }
+	if (!proposal) {
+		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+	}
 
-  if (!canAccessProposalDocuments(user, proposal)) {
-    throw new ApiError(
-      403,
-      "FORBIDDEN",
-      "You do not have permission to upload documents for this proposal",
-    );
-  }
+	if (!canAccessProposalDocuments(user, proposal)) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You do not have permission to upload documents for this proposal",
+		);
+	}
 
-  // Parse multipart form data
-  const formData = await c.req.formData();
-  const file = formData.get("file");
+	// Parse multipart form data
+	const formData = await c.req.formData();
+	const file = formData.get("file");
 
-  if (!(file instanceof File)) {
-    throw new ApiError(400, "NO_FILE", "A PDF file is required");
-  }
+	if (!(file instanceof File)) {
+		throw new ApiError(400, "NO_FILE", "A PDF file is required");
+	}
 
-  if (file.size <= 0) {
-    throw new ApiError(422, "EMPTY_FILE", "Uploaded file cannot be empty");
-  }
+	if (file.size <= 0) {
+		throw new ApiError(422, "EMPTY_FILE", "Uploaded file cannot be empty");
+	}
 
-  if (file.size > MAX_UPLOAD_BYTES) {
-    throw new ApiError(413, "FILE_TOO_LARGE", "File exceeds 10MB limit");
-  }
+	if (file.size > MAX_UPLOAD_BYTES) {
+		throw new ApiError(413, "FILE_TOO_LARGE", "File exceeds 10MB limit");
+	}
 
-  if (file.type !== "application/pdf") {
-    throw new ApiError(422, "INVALID_FILE_TYPE", "Only PDF files are allowed");
-  }
+	if (file.type !== "application/pdf") {
+		throw new ApiError(422, "INVALID_FILE_TYPE", "Only PDF files are allowed");
+	}
 
-  let uploadedStoragePath: string | null = null;
+	let uploadedStoragePath: string | null = null;
 
-  const { doc, nextVersion } = await db.transaction(async (tx) => {
-    const [maxVersion] = await tx
-      .select({ maxVer: max(proposalDocuments.versionNum) })
-      .from(proposalDocuments)
-      .where(eq(proposalDocuments.proposalId, proposalId));
+	const { doc, nextVersion } = await db
+		.transaction(async (tx) => {
+			const [maxVersion] = await tx
+				.select({ maxVer: max(proposalDocuments.versionNum) })
+				.from(proposalDocuments)
+				.where(eq(proposalDocuments.proposalId, proposalId));
 
-    const nextVersion = (maxVersion?.maxVer ?? 0) + 1;
-    const storagePath = generateSecureStoragePath(proposalId, nextVersion, file.name);
+			const nextVersion = (maxVersion?.maxVer ?? 0) + 1;
+			const storagePath = generateSecureStoragePath(
+				proposalId,
+				nextVersion,
+				file.name,
+			);
 
-    const { error: uploadError } = await supabase.storage
-      .from("documents")
-      .upload(storagePath, file, {
-        contentType: file.type,
-        upsert: false,
-      });
+			const { error: uploadError } = await supabase.storage
+				.from("documents")
+				.upload(storagePath, file, {
+					contentType: file.type,
+					upsert: false,
+				});
 
-    if (uploadError) {
-      throw new ApiError(
-        400,
-        "UPLOAD_FAILED",
-        `Supabase storage upload failed: ${uploadError.message}`,
-      );
-    }
+			if (uploadError) {
+				throw new ApiError(
+					400,
+					"UPLOAD_FAILED",
+					`Supabase storage upload failed: ${uploadError.message}`,
+				);
+			}
 
-    uploadedStoragePath = storagePath;
+			uploadedStoragePath = storagePath;
 
-    const [doc] = await tx
-      .insert(proposalDocuments)
-      .values({
-        proposalId,
-        storagePath,
-        versionNum: nextVersion,
-      })
-      .returning();
+			const [doc] = await tx
+				.insert(proposalDocuments)
+				.values({
+					proposalId,
+					storagePath,
+					versionNum: nextVersion,
+				})
+				.returning();
 
-    if (!doc) {
-      throw new ApiError(500, "INSERT_FAILED", "Failed to record document");
-    }
+			if (!doc) {
+				throw new ApiError(500, "INSERT_FAILED", "Failed to record document");
+			}
 
-return { doc, nextVersion };
-  }).catch(async (error) => {
-    if (uploadedStoragePath) {
-      try {
-        await supabase.storage.from("documents").remove([uploadedStoragePath]);
-      } catch {
-        // Log but don't mask original error
-      }
-    }
-    throw error;
-  });
+			return { doc, nextVersion };
+		})
+		.catch(async (error) => {
+			if (uploadedStoragePath) {
+				try {
+					await supabase.storage
+						.from("documents")
+						.remove([uploadedStoragePath]);
+				} catch {
+					// Log but don't mask original error
+				}
+			}
+			throw error;
+		});
 
-  await insertAuditLog({
-    userId: user.userId,
-    action: `Uploaded document v${nextVersion} for proposal ${proposalId}`,
-    tableAffected: "proposal_documents",
-    ipAddress: getClientIp(c.req.header("x-forwarded-for")),
-  });
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Uploaded document v${nextVersion} for proposal ${proposalId}`,
+		tableAffected: "proposal_documents",
+		ipAddress: getClientIp(c.req.header("x-forwarded-for")),
+	});
 
-  return c.json(
-    {
-      documentId: doc.documentId,
-      storagePath: doc.storagePath,
-      versionNum: doc.versionNum,
-    },
-    201,
-  );
+	return c.json(
+		{
+			documentId: doc.documentId,
+			storagePath: doc.storagePath,
+			versionNum: doc.versionNum,
+		},
+		201,
+	);
 });
 
 // ── GET /proposals/:proposalId/documents/:documentId/url ──
 const getUrlRoute = createRoute({
-  method: "get",
-  path: "/proposals/{proposalId}/documents/{documentId}/url",
-  tags: ["Storage"],
-  summary: "Get a signed download URL for a document",
-  security: [{ Bearer: [] }],
-  request: { params: DocumentParam },
-  responses: {
-    200: {
-      content: { "application/json": { schema: PresignedUrlSchema } },
-      description: "Signed URL",
-    },
-    404: {
-      content: { "application/json": { schema: ErrorSchema } },
-      description: "Document not found",
-    },
-    403: {
-      content: { "application/json": { schema: ErrorSchema } },
-      description: "Forbidden",
-    },
-    500: {
-      content: { "application/json": { schema: ErrorSchema } },
-      description: "Internal server error",
-    },
-  },
+	method: "get",
+	path: "/proposals/{proposalId}/documents/{documentId}/url",
+	tags: ["Storage"],
+	summary: "Get a signed download URL for a document",
+	security: [{ Bearer: [] }],
+	request: { params: DocumentParam },
+	responses: {
+		200: {
+			content: { "application/json": { schema: PresignedUrlSchema } },
+			description: "Signed URL",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Document not found",
+		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Forbidden",
+		},
+		500: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Internal server error",
+		},
+	},
 });
 
 app.openapi(getUrlRoute, async (c) => {
-  const user = c.get("user");
-  const { proposalId, documentId } = c.req.valid("param");
+	const user = c.get("user");
+	const { proposalId, documentId } = c.req.valid("param");
 
-  const [proposal] = await db
-    .select({
-      proposalId: proposals.proposalId,
-      departmentId: proposals.departmentId,
-      campusId: proposals.campusId,
-    })
-    .from(proposals)
-    .where(
-      and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
-    )
-    .limit(1);
+	const [proposal] = await db
+		.select({
+			proposalId: proposals.proposalId,
+			departmentId: proposals.departmentId,
+			campusId: proposals.campusId,
+		})
+		.from(proposals)
+		.where(
+			and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
+		)
+		.limit(1);
 
-  if (!proposal) {
-    throw new ApiError(404, "NOT_FOUND", "Proposal not found");
-  }
+	if (!proposal) {
+		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+	}
 
-  if (!canAccessProposalDocuments(user, proposal)) {
-    throw new ApiError(
-      403,
-      "FORBIDDEN",
-      "You do not have access to documents for this proposal",
-    );
-  }
+	if (!canAccessProposalDocuments(user, proposal)) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You do not have access to documents for this proposal",
+		);
+	}
 
-  const [doc] = await db
-    .select({
-      documentId: proposalDocuments.documentId,
-      storagePath: proposalDocuments.storagePath,
-    })
-    .from(proposalDocuments)
-    .where(
-      and(
-        eq(proposalDocuments.documentId, documentId),
-        eq(proposalDocuments.proposalId, proposalId),
-      ),
-    )
-    .limit(1);
+	const [doc] = await db
+		.select({
+			documentId: proposalDocuments.documentId,
+			storagePath: proposalDocuments.storagePath,
+		})
+		.from(proposalDocuments)
+		.where(
+			and(
+				eq(proposalDocuments.documentId, documentId),
+				eq(proposalDocuments.proposalId, proposalId),
+			),
+		)
+		.limit(1);
 
-  if (!doc) {
-    throw new ApiError(404, "NOT_FOUND", "Document not found");
-  }
+	if (!doc) {
+		throw new ApiError(404, "NOT_FOUND", "Document not found");
+	}
 
-  const { data, error } = await supabase.storage
-    .from("documents")
-    .createSignedUrl(doc.storagePath, 3600);
+	const { data, error } = await supabase.storage
+		.from("documents")
+		.createSignedUrl(doc.storagePath, 3600);
 
-  if (error || !data) {
-    throw new ApiError(500, "URL_FAILED", "Failed to generate signed URL");
-  }
+	if (error || !data) {
+		throw new ApiError(500, "URL_FAILED", "Failed to generate signed URL");
+	}
 
-  await insertAuditLog({
-    userId: user.userId,
-    action: `Downloaded signed URL for document ${documentId} (proposal ${proposalId})`,
-    tableAffected: "proposal_documents",
-    ipAddress: getClientIp(c.req.header("x-forwarded-for")),
-  });
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Downloaded signed URL for document ${documentId} (proposal ${proposalId})`,
+		tableAffected: "proposal_documents",
+		ipAddress: getClientIp(c.req.header("x-forwarded-for")),
+	});
 
-  return c.json({ url: data.signedUrl }, 200);
+	return c.json({ url: data.signedUrl }, 200);
 });
 
 export default app;

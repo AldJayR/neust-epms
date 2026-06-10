@@ -14,10 +14,13 @@ export async function isPasswordCompromised(
 	const prefix = hash.slice(0, 5);
 	const suffix = hash.slice(5);
 
-	const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
-		headers: { AddPadding: "no" },
-		signal: AbortSignal.timeout(3000),
-	});
+	const response = await fetch(
+		`https://api.pwnedpasswords.com/range/${prefix}`,
+		{
+			headers: { AddPadding: "no" },
+			signal: AbortSignal.timeout(3000),
+		},
+	);
 
 	if (!response.ok) {
 		// HIBP API unreachable — fail open (don't block registration)

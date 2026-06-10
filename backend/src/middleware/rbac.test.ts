@@ -17,90 +17,93 @@ import type { AuthEnv } from "./auth.js";
  * Includes an onError handler so thrown ApiErrors return JSON.
  */
 function createTestApp(allowedRoles: string[], userRole: string) {
-  const app = new Hono<AuthEnv>();
+	const app = new Hono<AuthEnv>();
 
-  // Mirror the real app's error handler
-  app.onError((err, c) => {
-    if (err instanceof ApiError || err.name === "ApiError") {
-      return c.json(createErrorResponse(err as ApiError), (err as ApiError).status);
-    }
-    return c.json(
-      { error: { code: "INTERNAL_ERROR", message: err.message } },
-      500,
-    );
-  });
+	// Mirror the real app's error handler
+	app.onError((err, c) => {
+		if (err instanceof ApiError || err.name === "ApiError") {
+			return c.json(
+				createErrorResponse(err as ApiError),
+				(err as ApiError).status,
+			);
+		}
+		return c.json(
+			{ error: { code: "INTERNAL_ERROR", message: err.message } },
+			500,
+		);
+	});
 
-  // Simulate what authMiddleware does — inject user into context
-  app.use("*", async (c, next) => {
-    c.set("user", {
-      userId: "test-user-id",
-      email: "test@neust.edu.ph",
-      roleId: 1,
-      roleName: userRole,
-      campusId: 1,
-      campusName: "Cabanatuan City (Main)",
-      departmentId: null,
-      departmentName: null,
-      firstName: "Test",
-      middleName: null,
-      lastName: "User",
-      nameSuffix: null,
-      academicRank: null,
-      isActive: true,
-      isMainCampus: true,
-    });
-    await next();
-  });
+	// Simulate what authMiddleware does — inject user into context
+	app.use("*", async (c, next) => {
+		c.set("user", {
+			userId: "test-user-id",
+			email: "test@neust.edu.ph",
+			roleId: 1,
+			roleName: userRole,
+			campusId: 1,
+			campusName: "Cabanatuan City (Main)",
+			departmentId: null,
+			departmentName: null,
+			firstName: "Test",
+			middleName: null,
+			lastName: "User",
+			nameSuffix: null,
+			academicRank: null,
+			isActive: true,
+			isMainCampus: true,
+		});
+		await next();
+	});
 
-  // Apply the RBAC middleware
-  app.get("/protected", requireRole(...allowedRoles), (c) =>
-    c.json({ message: "Access granted" }),
-  );
+	// Apply the RBAC middleware
+	app.get("/protected", requireRole(...allowedRoles), (c) =>
+		c.json({ message: "Access granted" }),
+	);
 
-  return app;
+	return app;
 }
 
 describe("requireRole middleware", () => {
-  it("should allow access when the user has an allowed role", async () => {
-    const app = createTestApp(["Super Admin", "Director"], "Director");
-    const res = await app.request("/protected");
+	it("should allow access when the user has an allowed role", async () => {
+		const app = createTestApp(["Super Admin", "Director"], "Director");
+		const res = await app.request("/protected");
 
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.message).toBe("Access granted");
-  });
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.message).toBe("Access granted");
+	});
 
-  it("should return 403 when the user role is not in the allowed list", async () => {
-    const app = createTestApp(["Super Admin"], "Faculty");
-    const res = await app.request("/protected");
+	it("should return 403 when the user role is not in the allowed list", async () => {
+		const app = createTestApp(["Super Admin"], "Faculty");
+		const res = await app.request("/protected");
 
-    expect(res.status).toBe(403);
-  });
+		expect(res.status).toBe(403);
+	});
 
-  it("should allow access when multiple roles are permitted and user matches one", async () => {
-    const app = createTestApp(
-      ["Super Admin", "Director", "RET Chair"],
-      "RET Chair",
-    );
-    const res = await app.request("/protected");
+	it("should allow access when multiple roles are permitted and user matches one", async () => {
+		const app = createTestApp(
+			["Super Admin", "Director", "RET Chair"],
+			"RET Chair",
+		);
+		const res = await app.request("/protected");
 
-    expect(res.status).toBe(200);
-  });
+		expect(res.status).toBe(200);
+	});
 
-  it("should reject even Director if only Super Admin is allowed", async () => {
-    const app = createTestApp(["Super Admin"], "Director");
-    const res = await app.request("/protected");
+	it("should reject even Director if only Super Admin is allowed", async () => {
+		const app = createTestApp(["Super Admin"], "Director");
+		const res = await app.request("/protected");
 
-    expect(res.status).toBe(403);
-  });
+		expect(res.status).toBe(403);
+	});
 
-  it("should include allowed roles in the error message", async () => {
-    const app = createTestApp(["Super Admin", "Director"], "Faculty");
-    const res = await app.request("/protected");
-    const body = await res.json();
+	it("should include allowed roles in the error message", async () => {
+		const app = createTestApp(["Super Admin", "Director"], "Faculty");
+		const res = await app.request("/protected");
+		const body = await res.json();
 
-    expect(body.error.code).toBe("FORBIDDEN");
-    expect(body.error.message).toContain("Super Admin");
-    expect(body.error.message).toContain("Director");
-  });
+		expect(body.error.code).toBe("FORBIDDEN");
+		expect(body.error.message).toContain("Super Admin");
+		expect(body.error.message).toContain("Director");
+	});
 });
