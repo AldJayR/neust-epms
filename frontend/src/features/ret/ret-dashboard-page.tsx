@@ -11,7 +11,6 @@ import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -90,6 +89,7 @@ export function RETDashboardPage({
 	const proposals = proposalsQuery.data?.items ?? [];
 	const total = proposalsQuery.data?.total ?? 0;
 	const isLoading = proposalsQuery.isLoading || statsQuery.isLoading;
+	const showTableHeader = proposals.length > 0 || (search ?? "").trim().length > 0;
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -109,26 +109,20 @@ export function RETDashboardPage({
 				</Button>
 			</div>
 
-			{/* Stats Cards */}
-			<div className="grid gap-6 md:grid-cols-3">
-				{stats.map((stat) => (
-					<Card
-						key={stat.label}
-						className="border-[#ebebeb] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] rounded-[12px] h-[104px]"
-					>
-						<CardHeader className="p-4 pb-0">
-							<CardTitle className="text-sm font-normal text-[#666]">
-								{stat.label}
-							</CardTitle>
-						</CardHeader>
-						<CardContent className="p-4 pt-4">
-							<div className="text-4xl font-semibold text-[#11215a] leading-[36px]">
-								{typeof stat.value === "number" && stat.value < 10 ? `0${stat.value}` : stat.value}
-							</div>
-						</CardContent>
-					</Card>
-				))}
-			</div>
+		{/* Stats Cards */}
+		<div className="grid gap-6 md:grid-cols-3">
+			{stats.map((stat) => (
+				<div
+					key={stat.label}
+					className="flex h-[104px] flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]"
+				>
+					<p className="text-[14px] leading-4 text-[#666]">{stat.label}</p>
+					<p className="text-[36px] font-semibold leading-9 text-[#11215a]">
+						{stat.value}
+					</p>
+				</div>
+			))}
+		</div>
 
 			{/* Filters */}
 			<div className="flex items-center justify-between gap-4">
@@ -169,6 +163,7 @@ export function RETDashboardPage({
 					</div>
 				)}
 				<Table>
+					{showTableHeader && (
 					<TableHeader className="bg-white border-b-[#ebebeb]">
 						<TableRow className="hover:bg-transparent h-10">
 							<TableHead className="w-[352px] font-medium text-[#666] px-4">
@@ -186,6 +181,7 @@ export function RETDashboardPage({
 							<TableHead className="w-[50px]"></TableHead>
 						</TableRow>
 					</TableHeader>
+					)}
 					<TableBody>
 						{proposals.map((proposal) => (
 							<TableRow
