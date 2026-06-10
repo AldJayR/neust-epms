@@ -1,5 +1,4 @@
-import { pgTable, serial, integer, varchar, index } from "drizzle-orm/pg-core";
-import { campuses } from "./campuses.js";
+import { pgTable, serial, varchar } from "drizzle-orm/pg-core";
 
 /**
  * Departments table (e.g., CICT, Criminology, Engineering).

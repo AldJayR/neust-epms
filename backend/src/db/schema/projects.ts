@@ -1,13 +1,13 @@
 import {
-	pgTable,
-	uuid,
-	timestamp,
-	varchar,
 	index,
+	pgTable,
+	timestamp,
 	unique,
+	uuid,
+	varchar,
 } from "drizzle-orm/pg-core";
-import { proposals } from "./proposals.js";
 import { moas } from "./moas.js";
+import { proposals } from "./proposals.js";
 
 /**
  * Projects — 1:1 with proposals.

@@ -1,13 +1,12 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, and, isNull, desc, count } from "drizzle-orm";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { and, count, desc, eq, isNull } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
 import { partners } from "../db/schema/partners.js";
-import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
-import { requireRole } from "../middleware/rbac.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
+import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -52,7 +51,7 @@ const ErrorSchema = z
 	})
 	.openapi("MoaError");
 
-const MessageSchema = z.object({ message: z.string() }).openapi("MoaMessage");
+const _MessageSchema = z.object({ message: z.string() }).openapi("MoaMessage");
 
 const ParamId = z.object({
 	id: z
@@ -344,12 +343,12 @@ app.openapi(updateRoute, async (c) => {
 		if (!partner) {
 			throw new ApiError(404, "PARTNER_NOT_FOUND", "Partner not found");
 		}
-		setValues["partnerId"] = body.partnerId;
+		setValues.partnerId = body.partnerId;
 	}
 	if (body.validFrom !== undefined)
-		setValues["validFrom"] = new Date(body.validFrom);
+		setValues.validFrom = new Date(body.validFrom);
 	if (body.validUntil !== undefined)
-		setValues["validUntil"] = new Date(body.validUntil);
+		setValues.validUntil = new Date(body.validUntil);
 
 	const [updated] = await db
 		.update(moas)

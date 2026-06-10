@@ -1,16 +1,16 @@
 import {
-	pgTable,
-	uuid,
-	integer,
-	varchar,
-	text,
 	boolean,
-	timestamp,
 	index,
+	integer,
+	pgTable,
+	text,
+	timestamp,
+	uuid,
+	varchar,
 } from "drizzle-orm/pg-core";
-import { roles } from "./roles.js";
 import { campuses } from "./campuses.js";
 import { departments } from "./departments.js";
+import { roles } from "./roles.js";
 
 export const users = pgTable(
 	"users",

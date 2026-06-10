@@ -1,24 +1,22 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, and, isNull, desc, or, count, ilike, type SQL } from "drizzle-orm";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { and, count, desc, eq, ilike, isNull, or, type SQL } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { proposals } from "../db/schema/proposals.js";
-import { proposalMembers } from "../db/schema/proposal-members.js";
-import { proposalDepartments } from "../db/schema/proposal-departments.js";
 import { proposalBeneficiaries } from "../db/schema/proposal-beneficiaries.js";
-import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
+import { proposalDepartments } from "../db/schema/proposal-departments.js";
+import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposalReviews } from "../db/schema/proposal-reviews.js";
-import { campuses } from "../db/schema/campuses.js";
+import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
+import { proposals } from "../db/schema/proposals.js";
 import { users } from "../db/schema/users.js";
-import { departments } from "../db/schema/departments.js";
-import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import {
-	ROLE_NAMES,
 	PROPOSAL_STATUS,
-	REVIEW_STAGE,
 	REVIEW_DECISION,
+	REVIEW_STAGE,
+	ROLE_NAMES,
 } from "../lib/types.js";
+import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
 const PROJECT_LEADER_ROLE = "Project Leader";
 

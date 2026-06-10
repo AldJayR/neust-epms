@@ -1,26 +1,26 @@
 import { relations } from "drizzle-orm";
-import { roles } from "./schema/roles.js";
+import { auditLogs } from "./schema/audit-logs.js";
+import { beneficiarySectors } from "./schema/beneficiary-sectors.js";
 import { campuses } from "./schema/campuses.js";
 import { departments } from "./schema/departments.js";
-import { users } from "./schema/users.js";
-import { proposals } from "./schema/proposals.js";
-import { proposalDepartments } from "./schema/proposal-departments.js";
-import { proposalMembers } from "./schema/proposal-members.js";
-import { specialOrders } from "./schema/special-orders.js";
-import { proposalDocuments } from "./schema/proposal-documents.js";
-import { proposalComments } from "./schema/proposal-comments.js";
-import { proposalReviews } from "./schema/proposal-reviews.js";
-import { beneficiarySectors } from "./schema/beneficiary-sectors.js";
-import { proposalBeneficiaries } from "./schema/proposal-beneficiaries.js";
-import { sdgs } from "./schema/sdgs.js";
-import { proposalSdgs } from "./schema/proposal-sdgs.js";
 import { moas } from "./schema/moas.js";
 import { partners } from "./schema/partners.js";
-import { projects } from "./schema/projects.js";
-import { projectReports } from "./schema/project-reports.js";
-import { projectReportingSchedules } from "./schema/project-reporting-schedules.js";
 import { projectReportingDates } from "./schema/project-reporting-dates.js";
-import { auditLogs } from "./schema/audit-logs.js";
+import { projectReportingSchedules } from "./schema/project-reporting-schedules.js";
+import { projectReports } from "./schema/project-reports.js";
+import { projects } from "./schema/projects.js";
+import { proposalBeneficiaries } from "./schema/proposal-beneficiaries.js";
+import { proposalComments } from "./schema/proposal-comments.js";
+import { proposalDepartments } from "./schema/proposal-departments.js";
+import { proposalDocuments } from "./schema/proposal-documents.js";
+import { proposalMembers } from "./schema/proposal-members.js";
+import { proposalReviews } from "./schema/proposal-reviews.js";
+import { proposalSdgs } from "./schema/proposal-sdgs.js";
+import { proposals } from "./schema/proposals.js";
+import { roles } from "./schema/roles.js";
+import { sdgs } from "./schema/sdgs.js";
+import { specialOrders } from "./schema/special-orders.js";
+import { users } from "./schema/users.js";
 
 // ── Roles ──
 export const rolesRelations = relations(roles, ({ many }) => ({

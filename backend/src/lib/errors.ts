@@ -2,7 +2,10 @@ import { HTTPException } from "hono/http-exception";
 
 type ErrorLikeApp = {
 	onError: (
-		handler: (err: unknown, c: any) => Response | Promise<Response>,
+		handler: (
+			err: unknown,
+			c: { json: (data: unknown, status: number) => Response },
+		) => Response | Promise<Response>,
 	) => void;
 };
 

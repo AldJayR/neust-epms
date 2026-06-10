@@ -1,4 +1,4 @@
-import { pgTable, uuid, boolean, timestamp, index } from "drizzle-orm/pg-core";
+import { boolean, index, pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
 import { projectReportingSchedules } from "./project-reporting-schedules.js";
 
 export const projectReportingDates = pgTable(

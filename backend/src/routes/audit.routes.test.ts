@@ -4,7 +4,6 @@ import {
 	setMockUser,
 	MOCK_USERS,
 	mockSelectChain,
-	mockMutationChain,
 } from "../../test/helpers.js";
 import app from "./audit.routes.js";
 

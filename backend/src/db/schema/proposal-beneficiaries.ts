@@ -1,6 +1,6 @@
-import { pgTable, uuid, integer, index, primaryKey } from "drizzle-orm/pg-core";
-import { proposals } from "./proposals.js";
+import { index, integer, pgTable, primaryKey, uuid } from "drizzle-orm/pg-core";
 import { beneficiarySectors } from "./beneficiary-sectors.js";
+import { proposals } from "./proposals.js";
 
 /**
  * Junction table: proposals ↔ beneficiary_sectors (many-to-many).

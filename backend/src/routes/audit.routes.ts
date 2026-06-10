@@ -1,13 +1,13 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { desc, eq, count, sql, and, or, ilike } from "drizzle-orm";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { and, count, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { auditLogs } from "../db/schema/audit-logs.js";
-import { users } from "../db/schema/users.js";
 import { roles } from "../db/schema/roles.js";
-import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
-import { requireRole } from "../middleware/rbac.js";
+import { users } from "../db/schema/users.js";
 import { installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
+import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
+import { requireRole } from "../middleware/rbac.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -160,7 +160,7 @@ app.openapi(listRoute, async (c) => {
 	const { page, limit, search } = c.req.valid("query");
 	const offset = (page - 1) * limit;
 
-	let whereClause = undefined;
+	let whereClause: SQL | undefined;
 	if (search) {
 		whereClause = or(
 			ilike(auditLogs.action, `${search}%`),

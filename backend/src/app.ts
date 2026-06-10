@@ -1,27 +1,26 @@
+import { swaggerUI } from "@hono/swagger-ui";
 import { OpenAPIHono } from "@hono/zod-openapi";
+import { sql } from "drizzle-orm";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import { secureHeaders } from "hono/secure-headers";
 import { requestId } from "hono/request-id";
-import { swaggerUI } from "@hono/swagger-ui";
+import { secureHeaders } from "hono/secure-headers";
 import { rateLimiter } from "hono-rate-limiter";
+import { db } from "./db/client.js";
 import { installApiErrorHandler } from "./lib/errors.js";
 import type { AuthEnv } from "./middleware/auth.js";
-import { db } from "./db/client.js";
-import { sql } from "drizzle-orm";
-
+import adminRoutes from "./routes/admin.routes.js";
+import auditRoutes from "./routes/audit.routes.js";
 import authRoutes from "./routes/auth.routes.js";
-import proposalRoutes from "./routes/proposals.routes.js";
+import directorRoutes from "./routes/director.routes.js";
 import memberRoutes from "./routes/members.routes.js";
-import specialOrderRoutes from "./routes/special-orders.routes.js";
 import moaRoutes from "./routes/moas.routes.js";
 import projectRoutes from "./routes/projects.routes.js";
-import storageRoutes from "./routes/storage.routes.js";
+import proposalRoutes from "./routes/proposals.routes.js";
 import reportRoutes from "./routes/reports.routes.js";
-import auditRoutes from "./routes/audit.routes.js";
 import settingRoutes from "./routes/settings.routes.js";
-import adminRoutes from "./routes/admin.routes.js";
-import directorRoutes from "./routes/director.routes.js";
+import specialOrderRoutes from "./routes/special-orders.routes.js";
+import storageRoutes from "./routes/storage.routes.js";
 
 // ── Create root app ──
 const app = new OpenAPIHono<AuthEnv>();
@@ -85,7 +84,7 @@ app.use("*", async (c, next) => {
 });
 
 // ── Request timeout: 30s ──
-app.use("*", async (c, next) => {
+app.use("*", async (_c, next) => {
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), 30_000);
 	try {

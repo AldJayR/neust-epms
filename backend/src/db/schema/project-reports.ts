@@ -1,12 +1,12 @@
+import { sql } from "drizzle-orm";
 import {
+	index,
 	pgTable,
-	uuid,
-	varchar,
 	text,
 	timestamp,
-	index,
+	uuid,
+	varchar,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
 import { projects } from "./projects.js";
 import { users } from "./users.js";
 

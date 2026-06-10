@@ -1,4 +1,4 @@
-import { pgTable, uuid, integer, index, primaryKey } from "drizzle-orm/pg-core";
+import { index, integer, pgTable, primaryKey, uuid } from "drizzle-orm/pg-core";
 import { proposals } from "./proposals.js";
 import { sdgs } from "./sdgs.js";
 

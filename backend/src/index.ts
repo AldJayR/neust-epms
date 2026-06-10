@@ -1,8 +1,8 @@
 import { serve } from "@hono/node-server";
 import * as Sentry from "@sentry/node";
-import { env } from "./env.js";
 import app from "./app.js";
 import { startMoaExpirationCron } from "./cron/moa-expiration.js";
+import { env } from "./env.js";
 
 // ── Sentry initialization ──
 if (env.SENTRY_DSN) {

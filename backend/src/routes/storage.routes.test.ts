@@ -251,7 +251,7 @@ describe("POST /proposals/:proposalId/documents/upload", () => {
 
 		const uploadPath = (
 			capturedInsertValues as Record<string, unknown> | null
-		)?.["storagePath"];
+		)?.storagePath;
 		expect(typeof uploadPath).toBe("string");
 		expect(uploadPath as string).toMatch(
 			new RegExp(

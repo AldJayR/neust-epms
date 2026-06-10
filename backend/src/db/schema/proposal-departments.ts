@@ -1,13 +1,13 @@
 import {
-	pgTable,
-	uuid,
-	integer,
-	timestamp,
 	index,
+	integer,
+	pgTable,
 	primaryKey,
+	timestamp,
+	uuid,
 } from "drizzle-orm/pg-core";
-import { proposals } from "./proposals.js";
 import { departments } from "./departments.js";
+import { proposals } from "./proposals.js";
 
 /**
  * Junction table: proposals ↔ departments (many-to-many).

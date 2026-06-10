@@ -1,13 +1,13 @@
 import {
-	pgTable,
-	uuid,
-	text,
-	jsonb,
-	timestamp,
 	index,
+	jsonb,
+	pgTable,
+	text,
+	timestamp,
+	uuid,
 } from "drizzle-orm/pg-core";
-import { proposals } from "./proposals.js";
 import { proposalDocuments } from "./proposal-documents.js";
+import { proposals } from "./proposals.js";
 import { users } from "./users.js";
 
 /** Spatial annotation coordinate stored in JSONB */

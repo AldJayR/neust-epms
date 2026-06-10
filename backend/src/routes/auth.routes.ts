@@ -1,18 +1,18 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, or } from "drizzle-orm";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { createClient } from "@supabase/supabase-js";
+import { eq } from "drizzle-orm";
 import { rateLimiter } from "hono-rate-limiter";
 import { db } from "../db/client.js";
-import { users } from "../db/schema/users.js";
-import { roles } from "../db/schema/roles.js";
 import { campuses } from "../db/schema/campuses.js";
 import { departments } from "../db/schema/departments.js";
-import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
+import { roles } from "../db/schema/roles.js";
+import { users } from "../db/schema/users.js";
 import { env } from "../env.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { isPasswordCompromised } from "../lib/password-check.js";
 import { ROLE_NAMES } from "../lib/types.js";
+import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -221,7 +221,7 @@ app.openapi(registerRoute, async (c) => {
 	}
 
 	// 5. Create user in our DB
-	let created;
+	let created: { userId: string } | undefined;
 	try {
 		created = await db.transaction(async (tx) => {
 			const [userRow] = await tx
@@ -257,7 +257,7 @@ app.openapi(registerRoute, async (c) => {
 
 			return userRow;
 		});
-	} catch (err) {
+	} catch (_err) {
 		// Cleanup Supabase if DB insert fails
 		await supabase.auth.admin.deleteUser(authData.user.id);
 		throw new ApiError(500, "INSERT_FAILED", "Failed to create user record");
@@ -285,7 +285,15 @@ app.openapi(registerRoute, async (c) => {
 		.where(eq(users.userId, created.userId))
 		.limit(1);
 
-	return c.json(row!, 201);
+	if (!row) {
+		throw new ApiError(
+			500,
+			"REGISTRATION_FAILED",
+			"User created but profile could not be loaded",
+		);
+	}
+
+	return c.json(row, 201);
 });
 
 // ── Protected Routes ──

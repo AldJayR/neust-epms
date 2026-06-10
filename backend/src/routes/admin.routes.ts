@@ -1,16 +1,16 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, count, and, ilike, inArray, sql, or } from "drizzle-orm";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { and, count, eq, ilike, inArray, or, type SQL } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { users } from "../db/schema/users.js";
-import { roles } from "../db/schema/roles.js";
 import { campuses } from "../db/schema/campuses.js";
 import { departments } from "../db/schema/departments.js";
-import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
-import { requireRole } from "../middleware/rbac.js";
+import { roles } from "../db/schema/roles.js";
+import { users } from "../db/schema/users.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { invalidateAuthUserCache } from "../lib/cache.js";
-import { ApiError, installApiErrorHandler } from "../lib/errors.js";
+import { installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
+import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
+import { requireRole } from "../middleware/rbac.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -131,11 +131,11 @@ const getUsersRoute = createRoute({
 
 app.openapi(getUsersRoute, async (c) => {
 	const { search, isActive, page, pageSize } = c.req.valid("query");
-	const p = parseInt(page);
-	const ps = parseInt(pageSize);
+	const p = parseInt(page, 10);
+	const ps = parseInt(pageSize, 10);
 	const offset = (p - 1) * ps;
 
-	let searchClause = undefined;
+	let searchClause: SQL | undefined;
 	if (search) {
 		searchClause = or(
 			ilike(users.firstName, `${search}%`),
@@ -144,7 +144,7 @@ app.openapi(getUsersRoute, async (c) => {
 		);
 	}
 
-	let activeClause = undefined;
+	let activeClause: SQL | undefined;
 	if (isActive === "true") {
 		activeClause = eq(users.isActive, true);
 	} else if (isActive === "false") {

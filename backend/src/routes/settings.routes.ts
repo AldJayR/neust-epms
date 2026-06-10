@@ -1,17 +1,15 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq } from "drizzle-orm";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { db } from "../db/client.js";
 import { systemSettings } from "../db/schema/system-settings.js";
-import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
-import { requireRole } from "../middleware/rbac.js";
 import { insertAuditLog } from "../lib/audit.js";
 import {
 	cacheEnabled,
-	settingsListCache,
 	type SettingListCacheValue,
+	settingsListCache,
 } from "../lib/cache.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
+import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);

@@ -1,14 +1,14 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import {
 	and,
 	count,
 	desc,
 	eq,
+	ilike,
 	inArray,
 	isNull,
 	or,
 	sql,
-	ilike,
 } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { auditLogs } from "../db/schema/audit-logs.js";
@@ -23,10 +23,14 @@ import { proposalReviews } from "../db/schema/proposal-reviews.js";
 import { proposals } from "../db/schema/proposals.js";
 import { roles } from "../db/schema/roles.js";
 import { users } from "../db/schema/users.js";
-import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
-import { requireRole } from "../middleware/rbac.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
-import { PROPOSAL_STATUS, PROJECT_STATUS, ROLE_NAMES } from "../lib/types.js";
+import {
+	PROJECT_STATUS,
+	PROPOSAL_STATUS,
+	type ProjectStatus,
+	ROLE_NAMES,
+} from "../lib/types.js";
+import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -207,7 +211,7 @@ app.openapi(facultyDirectoryRoute, async (c) => {
 			or(
 				ilike(users.firstName, `${search}%`),
 				ilike(users.lastName, `${search}%`),
-			)!,
+			),
 		);
 	}
 
@@ -424,7 +428,7 @@ app.openapi(moaRepositoryRoute, async (c) => {
 					and(
 						sql`${moas.validUntil} > ${now}`,
 						sql`${moas.validUntil} > ${thirtyDaysFromNow}`,
-					)!,
+					),
 				);
 				break;
 			case "Renewal Needed":
@@ -432,7 +436,7 @@ app.openapi(moaRepositoryRoute, async (c) => {
 					and(
 						sql`${moas.validUntil} > ${now}`,
 						sql`${moas.validUntil} <= ${thirtyDaysFromNow}`,
-					)!,
+					),
 				);
 				break;
 			case "Expired":
@@ -662,7 +666,7 @@ app.openapi(projectHubRoute, async (c) => {
 				ilike(proposals.title, `${search}%`),
 				ilike(users.firstName, `${search}%`),
 				ilike(users.lastName, `${search}%`),
-			)!,
+			),
 		);
 	}
 
@@ -671,7 +675,7 @@ app.openapi(projectHubRoute, async (c) => {
 	}
 
 	if (status) {
-		if (Object.values(PROJECT_STATUS).includes(status as any)) {
+		if (Object.values(PROJECT_STATUS).includes(status as ProjectStatus)) {
 			whereConditions.push(eq(projects.projectStatus, status));
 		} else {
 			whereConditions.push(eq(proposals.status, status));

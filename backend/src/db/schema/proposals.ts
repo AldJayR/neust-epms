@@ -1,12 +1,12 @@
 import {
-	pgTable,
-	uuid,
-	integer,
-	varchar,
-	numeric,
 	boolean,
-	timestamp,
 	index,
+	integer,
+	numeric,
+	pgTable,
+	timestamp,
+	uuid,
+	varchar,
 } from "drizzle-orm/pg-core";
 import { campuses } from "./campuses.js";
 import { departments } from "./departments.js";

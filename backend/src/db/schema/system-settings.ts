@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
 
 export const systemSettings = pgTable("system_settings", {
 	settingKey: varchar("setting_key", { length: 100 }).primaryKey(),

@@ -1,11 +1,11 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, and, isNull } from "drizzle-orm";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { specialOrders } from "../db/schema/special-orders.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
-import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
+import { specialOrders } from "../db/schema/special-orders.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
+import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -50,7 +50,7 @@ const ErrorSchema = z
 	})
 	.openapi("SOError");
 
-const MessageSchema = z.object({ message: z.string() }).openapi("SOMessage");
+const _MessageSchema = z.object({ message: z.string() }).openapi("SOMessage");
 
 const ParamId = z.object({
 	id: z

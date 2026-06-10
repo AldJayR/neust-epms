@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, varchar } from "drizzle-orm/pg-core";
+import { integer, pgTable, serial, varchar } from "drizzle-orm/pg-core";
 
 /**
  * UN Sustainable Development Goals lookup table (17 goals).

@@ -1,12 +1,12 @@
-import { createMiddleware } from "hono/factory";
 import { createClient } from "@supabase/supabase-js";
 import { eq } from "drizzle-orm";
-import { env } from "../env.js";
+import { createMiddleware } from "hono/factory";
 import { db } from "../db/client.js";
-import { users } from "../db/schema/users.js";
-import { roles } from "../db/schema/roles.js";
 import { campuses } from "../db/schema/campuses.js";
 import { departments } from "../db/schema/departments.js";
+import { roles } from "../db/schema/roles.js";
+import { users } from "../db/schema/users.js";
+import { env } from "../env.js";
 import { authUserCache, cacheEnabled } from "../lib/cache.js";
 import { ApiError } from "../lib/errors.js";
 import type { AuthUser } from "../lib/types.js";

@@ -1,10 +1,10 @@
 import {
+	index,
 	pgTable,
-	uuid,
-	varchar,
 	text,
 	timestamp,
-	index,
+	uuid,
+	varchar,
 } from "drizzle-orm/pg-core";
 import { proposals } from "./proposals.js";
 import { users } from "./users.js";
