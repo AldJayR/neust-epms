@@ -300,7 +300,10 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 												<TableCell>
 													<div className="flex items-center gap-[10px]">
 														<Avatar className="size-9 border border-[#e5e5e5]">
-															<AvatarImage src="" alt={`${user.firstName} ${user.lastName}`} />
+															<AvatarImage
+																src=""
+																alt={`${user.firstName} ${user.lastName}`}
+															/>
 															<AvatarFallback className="bg-primary/5 text-xs font-medium text-primary">
 																{user.firstName[0]}
 																{user.lastName[0]}

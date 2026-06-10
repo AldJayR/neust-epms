@@ -99,7 +99,7 @@ export const getRETProposalsFn = createServerFn({ method: "GET" })
 		url.searchParams.set("limit", data.limit.toString());
 		if (data.search) url.searchParams.set("search", data.search);
 		// Note: Backend might need to support status filter in /proposals if we want it
-		
+
 		const response = await fetch(url.toString(), {
 			headers: {
 				Authorization: `Bearer ${accessToken}`,

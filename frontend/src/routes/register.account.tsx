@@ -20,12 +20,10 @@ import { Alert } from "../components/ui/alert";
 import { FieldGroup } from "../components/ui/field";
 import { checkPasswordFn, signupFn } from "../lib/auth.functions";
 
-	const registerStep2Schema = z
+const registerStep2Schema = z
 	.object({
 		email: z.string().email("Please enter a valid email address"),
-		password: z
-			.string()
-			.min(8, "Password must be at least 8 characters"),
+		password: z.string().min(8, "Password must be at least 8 characters"),
 		confirmPassword: z.string().min(1, "Please confirm your password"),
 		acceptTerms: z.boolean(),
 	})
@@ -193,7 +191,7 @@ function RegisterStepTwo() {
 						/>
 						<motion.span
 							layoutId="reg-step-2"
-						className="h-2 w-6 rounded-[12px] bg-brand-primary"
+							className="h-2 w-6 rounded-[12px] bg-brand-primary"
 						/>
 					</div>
 				</div>

@@ -39,7 +39,10 @@ function RecentActivitiesCard({
 		<div className="flex h-[370px] flex-col overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex items-center justify-between px-4 py-2 text-[#666]">
 				<p className="text-[14px] font-medium leading-5">Recent Activities</p>
-				<button type="button" className="text-[12px] font-medium leading-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm">
+				<button
+					type="button"
+					className="text-[12px] font-medium leading-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm"
+				>
 					View All
 				</button>
 			</div>
@@ -92,7 +95,10 @@ function ExpiringMoasCard({
 		<div className="flex h-[148px] flex-col overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex items-center justify-between px-4 py-2 text-[#666]">
 				<p className="text-[14px] font-medium leading-5">Expiring MOAs</p>
-				<button type="button" className="text-[12px] font-medium leading-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm">
+				<button
+					type="button"
+					className="text-[12px] font-medium leading-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm"
+				>
 					View All
 				</button>
 			</div>
@@ -143,10 +149,9 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 		completed: 0,
 	};
 	const allChartData = dashboard?.chartData ?? [];
-	const chartData =
-		!selectedCampus
-			? allChartData
-			: allChartData.filter((point) => point.label === selectedCampus);
+	const chartData = !selectedCampus
+		? allChartData
+		: allChartData.filter((point) => point.label === selectedCampus);
 	const activities = dashboard?.recentActivities ?? [];
 	const moas = dashboard?.expiringMoas ?? [];
 
@@ -188,10 +193,6 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 	);
 }
 
-export function DirectorDashboardPage({
-	user,
-}: {
-	user?: AuthUser | null;
-}) {
+export function DirectorDashboardPage({ user }: { user?: AuthUser | null }) {
 	return <DirectorDashboardContent user={user} />;
 }

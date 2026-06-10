@@ -115,7 +115,11 @@ export function ProjectHubPage({
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
 	const totalPages = Math.ceil(total / limit);
-	const showTableHeader = items.length > 0 || (search ?? "").trim().length > 0 || (college ?? "").trim().length > 0 || (status ?? "").trim().length > 0;
+	const showTableHeader =
+		items.length > 0 ||
+		(search ?? "").trim().length > 0 ||
+		(college ?? "").trim().length > 0 ||
+		(status ?? "").trim().length > 0;
 
 	return (
 		<AppShell>
@@ -185,32 +189,36 @@ export function ProjectHubPage({
 				<div className="rounded-lg border border-[#ebebeb] bg-white shadow-sm overflow-hidden min-h-[400px]">
 					<Table aria-label="Projects">
 						{showTableHeader && (
-						<TableHeader>
-							<TableRow className="border-[#ebebeb] hover:bg-transparent">
-								<TableHead className="w-[30%] font-medium text-[#666]">
-									Project Title
-								</TableHead>
-								<TableHead className="w-[20%] font-medium text-[#666]">
-									Project Leader
-								</TableHead>
-								<TableHead className="w-[15%] font-medium text-[#666]">
-									College
-								</TableHead>
-								<TableHead className="w-[15%] font-medium text-[#666]">
-									Date Submitted
-								</TableHead>
-								<TableHead className="w-[15%] font-medium text-[#666]">
-									Status
-								</TableHead>
-								<TableHead className="w-[5%]"></TableHead>
-							</TableRow>
-						</TableHeader>
+							<TableHeader>
+								<TableRow className="border-[#ebebeb] hover:bg-transparent">
+									<TableHead className="w-[30%] font-medium text-[#666]">
+										Project Title
+									</TableHead>
+									<TableHead className="w-[20%] font-medium text-[#666]">
+										Project Leader
+									</TableHead>
+									<TableHead className="w-[15%] font-medium text-[#666]">
+										College
+									</TableHead>
+									<TableHead className="w-[15%] font-medium text-[#666]">
+										Date Submitted
+									</TableHead>
+									<TableHead className="w-[15%] font-medium text-[#666]">
+										Status
+									</TableHead>
+									<TableHead className="w-[5%]"></TableHead>
+								</TableRow>
+							</TableHeader>
 						)}
 						<TableBody>
 							{isLoading ? (
 								<TableRow>
 									<TableCell colSpan={6} className="h-24 text-center">
-										<Loader2 className="mx-auto size-6 animate-spin text-[#11215a]" role="status" aria-label="Loading projects" />
+										<Loader2
+											className="mx-auto size-6 animate-spin text-[#11215a]"
+											role="status"
+											aria-label="Loading projects"
+										/>
 									</TableCell>
 								</TableRow>
 							) : items.length === 0 ? (
@@ -262,7 +270,12 @@ export function ProjectHubPage({
 											<ProjectStatusBadge status={project.status} />
 										</TableCell>
 										<TableCell className="text-right">
-											<Button variant="ghost" size="icon" className="size-8" aria-label="More actions for project">
+											<Button
+												variant="ghost"
+												size="icon"
+												className="size-8"
+												aria-label="More actions for project"
+											>
 												<EllipsisVertical className="size-4 text-[#737373]" />
 											</Button>
 										</TableCell>

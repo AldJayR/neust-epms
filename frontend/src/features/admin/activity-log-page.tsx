@@ -144,11 +144,7 @@ export function ActivityLogPage({
 
 			<div className="grid gap-6 md:grid-cols-4">
 				{stats.map((stat) => (
-					<StatCard
-						key={stat.label}
-						label={stat.label}
-						value={stat.value}
-					/>
+					<StatCard key={stat.label} label={stat.label} value={stat.value} />
 				))}
 			</div>
 
@@ -199,7 +195,11 @@ export function ActivityLogPage({
 						{logsQuery.isLoading ? (
 							<TableRow>
 								<TableCell colSpan={5} className="h-32 text-center">
-									<Loader2 className="size-8 animate-spin mx-auto text-primary/20" role="status" aria-label="Loading activity log" />
+									<Loader2
+										className="size-8 animate-spin mx-auto text-primary/20"
+										role="status"
+										aria-label="Loading activity log"
+									/>
 								</TableCell>
 							</TableRow>
 						) : logsQuery.data?.items.length === 0 ? (
@@ -264,7 +264,12 @@ export function ActivityLogPage({
 											</Badge>
 										</TableCell>
 										<TableCell className="py-2.5 text-center">
-											<Button variant="ghost" size="icon" className="size-8" aria-label="More actions for log entry">
+											<Button
+												variant="ghost"
+												size="icon"
+												className="size-8"
+												aria-label="More actions for log entry"
+											>
 												<MoreVertical className="size-4" />
 											</Button>
 										</TableCell>

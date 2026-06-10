@@ -198,7 +198,11 @@ export function MoaRepositoryPage({
 								{isLoading ? (
 									<TableRow>
 										<TableCell colSpan={5} className="h-24 text-center">
-											<Loader2 className="mx-auto size-6 animate-spin text-[#11215a]" role="status" aria-label="Loading MOAs" />
+											<Loader2
+												className="mx-auto size-6 animate-spin text-[#11215a]"
+												role="status"
+												aria-label="Loading MOAs"
+											/>
 										</TableCell>
 									</TableRow>
 								) : items.length === 0 ? (
@@ -234,7 +238,12 @@ export function MoaRepositoryPage({
 												</div>
 											</TableCell>
 											<TableCell className="px-4 py-3 text-right">
-												<Button variant="ghost" size="icon" className="size-8" aria-label="More actions for MOA">
+												<Button
+													variant="ghost"
+													size="icon"
+													className="size-8"
+													aria-label="More actions for MOA"
+												>
 													<EllipsisVertical className="size-4 text-[#737373]" />
 												</Button>
 											</TableCell>

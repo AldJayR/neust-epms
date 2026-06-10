@@ -38,8 +38,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		null,
 	);
 
-	const formatBudget = (value: number) =>
-		`P${value.toLocaleString("en-PH")}`;
+	const formatBudget = (value: number) => `P${value.toLocaleString("en-PH")}`;
 
 	const formatReviewDate = (dateStr: string) => {
 		try {
@@ -67,8 +66,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		data?.status === "Endorsed" || data?.status === "Submitted";
 
 	const handleApprove = () => {
-		const decision =
-			data?.status === "Endorsed" ? "Approved" : "Endorsed";
+		const decision = data?.status === "Endorsed" ? "Approved" : "Endorsed";
 		reviewMutation.mutate({
 			proposalId,
 			decision,
@@ -91,7 +89,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-4">
 						<h1 className="text-2xl font-semibold text-[#11215a] tracking-tight">
-							{isLoading ? "Loading..." : data?.title ?? "Proposal"}
+							{isLoading ? "Loading..." : (data?.title ?? "Proposal")}
 						</h1>
 						{data?.status && (
 							<Badge
@@ -103,11 +101,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 						)}
 					</div>
 					{currentDoc && (
-						<a
-							href={currentDoc.url}
-							target="_blank"
-							rel="noopener noreferrer"
-						>
+						<a href={currentDoc.url} target="_blank" rel="noopener noreferrer">
 							<Button className="bg-[#14369c] text-white hover:bg-[#14369c]/90 rounded-[10px] h-9 px-4 gap-2 text-sm font-medium">
 								<Download className="size-4" />
 								Download
@@ -177,7 +171,9 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 											</span>
 										</div>
 										<div className="flex justify-between items-center text-[14px]">
-											<span className="text-[#737373] font-medium">Duration</span>
+											<span className="text-[#737373] font-medium">
+												Duration
+											</span>
 											<span className="text-black font-medium">
 												{data.metadata.duration}
 											</span>
@@ -249,31 +245,30 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 										<div className="space-y-1">
 											{data.attachments.map((file) => {
 												const isActive =
-													(activeAttachmentId === null
+													activeAttachmentId === null
 														? data.attachments[0]?.id === file.id
-														: activeAttachmentId === file.id);
+														: activeAttachmentId === file.id;
 												return (
-												<div
-													key={file.id}
-													onClick={() => setActiveAttachmentId(file.id)}
-													onKeyDown={(e) => {
-														if (e.key === "Enter" || e.key === " ") {
-															e.preventDefault();
-															setActiveAttachmentId(file.id);
-														}
-													}}
-													role="button"
-													tabIndex={0}
-													className={`px-3 py-2 rounded-[5px] flex flex-col gap-0.5 cursor-pointer ${isActive ? "bg-[#caf1f6]" : "bg-transparent hover:bg-gray-50"}`}
-												>
+													<div
+														key={file.id}
+														onClick={() => setActiveAttachmentId(file.id)}
+														onKeyDown={(e) => {
+															if (e.key === "Enter" || e.key === " ") {
+																e.preventDefault();
+																setActiveAttachmentId(file.id);
+															}
+														}}
+														role="button"
+														tabIndex={0}
+														className={`px-3 py-2 rounded-[5px] flex flex-col gap-0.5 cursor-pointer ${isActive ? "bg-[#caf1f6]" : "bg-transparent hover:bg-gray-50"}`}
+													>
 														<span
 															className={`text-[12px] font-semibold ${isActive ? "text-[#0d74ce]" : "text-black"}`}
 														>
 															{file.name}
 														</span>
 														<span className="text-[11px] text-[#737373]">
-															{file.version}{" "}
-															{isActive && "· Currently Viewing"}
+															{file.version} {isActive && "· Currently Viewing"}
 														</span>
 													</div>
 												);

@@ -48,7 +48,10 @@ export function AppShell({ children }: AppShellProps) {
 						</button>
 					</div>
 				</header>
-				<div id="main-content" className="flex flex-1 flex-col gap-4 p-4 lg:px-8 lg:py-6">
+				<div
+					id="main-content"
+					className="flex flex-1 flex-col gap-4 p-4 lg:px-8 lg:py-6"
+				>
 					{children}
 				</div>
 			</SidebarInset>

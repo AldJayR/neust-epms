@@ -89,7 +89,8 @@ export function RETDashboardPage({
 	const proposals = proposalsQuery.data?.items ?? [];
 	const total = proposalsQuery.data?.total ?? 0;
 	const isLoading = proposalsQuery.isLoading || statsQuery.isLoading;
-	const showTableHeader = proposals.length > 0 || (search ?? "").trim().length > 0;
+	const showTableHeader =
+		proposals.length > 0 || (search ?? "").trim().length > 0;
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -109,20 +110,20 @@ export function RETDashboardPage({
 				</Button>
 			</div>
 
-		{/* Stats Cards */}
-		<div className="grid gap-6 md:grid-cols-3">
-			{stats.map((stat) => (
-				<div
-					key={stat.label}
-					className="flex h-[104px] flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]"
-				>
-					<p className="text-[14px] leading-4 text-[#666]">{stat.label}</p>
-					<p className="text-[36px] font-semibold leading-9 text-[#11215a]">
-						{stat.value}
-					</p>
-				</div>
-			))}
-		</div>
+			{/* Stats Cards */}
+			<div className="grid gap-6 md:grid-cols-3">
+				{stats.map((stat) => (
+					<div
+						key={stat.label}
+						className="flex h-[104px] flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]"
+					>
+						<p className="text-[14px] leading-4 text-[#666]">{stat.label}</p>
+						<p className="text-[36px] font-semibold leading-9 text-[#11215a]">
+							{stat.value}
+						</p>
+					</div>
+				))}
+			</div>
 
 			{/* Filters */}
 			<div className="flex items-center justify-between gap-4">
@@ -140,7 +141,12 @@ export function RETDashboardPage({
 					/>
 				</form>
 				<div className="flex items-center gap-2">
-					<Select value={statusFilter} onValueChange={(v) => { if (v) setStatusFilter(v); }}>
+					<Select
+						value={statusFilter}
+						onValueChange={(v) => {
+							if (v) setStatusFilter(v);
+						}}
+					>
 						<SelectTrigger className="h-9 w-[180px] rounded-lg border-[#e5e5e5] bg-white text-[#737373] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1)]">
 							<Filter className="mr-2 size-4 text-[#737373]" />
 							<SelectValue placeholder="All Statuses" />
@@ -164,23 +170,23 @@ export function RETDashboardPage({
 				)}
 				<Table>
 					{showTableHeader && (
-					<TableHeader className="bg-white border-b-[#ebebeb]">
-						<TableRow className="hover:bg-transparent h-10">
-							<TableHead className="w-[352px] font-medium text-[#666] px-4">
-								Project Title
-							</TableHead>
-							<TableHead className="w-[228px] font-medium text-[#666] px-4">
-								Project Leader
-							</TableHead>
-							<TableHead className="w-[134px] font-medium text-[#666] px-4">
-								Date Submitted
-							</TableHead>
-							<TableHead className="w-[188px] font-medium text-[#666] px-4">
-								Status
-							</TableHead>
-							<TableHead className="w-[50px]"></TableHead>
-						</TableRow>
-					</TableHeader>
+						<TableHeader className="bg-white border-b-[#ebebeb]">
+							<TableRow className="hover:bg-transparent h-10">
+								<TableHead className="w-[352px] font-medium text-[#666] px-4">
+									Project Title
+								</TableHead>
+								<TableHead className="w-[228px] font-medium text-[#666] px-4">
+									Project Leader
+								</TableHead>
+								<TableHead className="w-[134px] font-medium text-[#666] px-4">
+									Date Submitted
+								</TableHead>
+								<TableHead className="w-[188px] font-medium text-[#666] px-4">
+									Status
+								</TableHead>
+								<TableHead className="w-[50px]"></TableHead>
+							</TableRow>
+						</TableHeader>
 					)}
 					<TableBody>
 						{proposals.map((proposal) => (
@@ -207,7 +213,9 @@ export function RETDashboardPage({
 												{proposal.leaderFirstName} {proposal.leaderLastName}
 											</span>
 											<span className="text-xs text-[#666] leading-[14px]">
-												{formatAcademicRank(proposal.leaderAcademicRank ?? null)}
+												{formatAcademicRank(
+													proposal.leaderAcademicRank ?? null,
+												)}
 											</span>
 										</div>
 									</div>
@@ -244,7 +252,9 @@ export function RETDashboardPage({
 				</Table>
 				{proposals.length === 0 && !isLoading && (
 					<div className="flex min-h-[400px] items-center justify-center bg-white px-6">
-						<p className="text-sm text-muted-foreground italic">No proposals found.</p>
+						<p className="text-sm text-muted-foreground italic">
+							No proposals found.
+						</p>
 					</div>
 				)}
 			</div>
@@ -277,7 +287,9 @@ export function RETDashboardPage({
 						size="sm"
 						className="h-9 gap-1 px-3 font-medium text-sm text-[#0a0a0a]"
 						onClick={() => onPageChange(page + 1)}
-						disabled={!proposalsQuery.data || page * pageSize >= total || isLoading}
+						disabled={
+							!proposalsQuery.data || page * pageSize >= total || isLoading
+						}
 					>
 						Next
 					</Button>
