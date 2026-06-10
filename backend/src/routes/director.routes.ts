@@ -394,10 +394,11 @@ app.use("/director/*", async (c, next) => {
       await next();
       return;
     }
-  } else {
+	} else {
     if (
       user.roleName === ROLE_NAMES.SUPER_ADMIN ||
-      user.roleName === ROLE_NAMES.DIRECTOR
+      user.roleName === ROLE_NAMES.DIRECTOR ||
+      user.roleName === ROLE_NAMES.RET_CHAIR
     ) {
       await next();
       return;
@@ -407,7 +408,7 @@ app.use("/director/*", async (c, next) => {
   throw new ApiError(
     403,
     "FORBIDDEN",
-    `This action requires one of: ${isProjectDetails ? "Super Admin, Director, RET Chair" : "Super Admin, Director"}`
+    `This action requires one of: ${isProjectDetails ? "Super Admin, Director, RET Chair" : "Super Admin, Director, RET Chair"}`
   );
 });
 
