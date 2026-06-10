@@ -4,11 +4,18 @@
 export interface AuthUser {
 	userId: string;
 	email: string;
+	roleId: number;
 	roleName: string;
-	firstName: string;
-	lastName: string;
+	campusId: number;
 	campusName: string;
+	isMainCampus: boolean;
+	departmentId: number | null;
 	departmentName: string | null;
+	firstName: string;
+	middleName: string | null;
+	lastName: string;
+	nameSuffix: string | null;
+	academicRank: string | null;
 	isActive: boolean;
 }
 
