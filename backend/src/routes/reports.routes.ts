@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, and, isNull, desc, count } from "drizzle-orm";
+import { eq, and, isNull, desc, count, type SQL } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { projectReports } from "../db/schema/project-reports.js";
 import { projects } from "../db/schema/projects.js";
@@ -8,6 +8,7 @@ import { users } from "../db/schema/users.js";
 import { departments } from "../db/schema/departments.js";
 import { authMiddleware, type AuthEnv } from "../middleware/auth.js";
 import { insertAuditLog } from "../lib/audit.js";
+import { ROLE_NAMES } from "../lib/types.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 
 const app = new OpenAPIHono<AuthEnv>();
@@ -88,8 +89,25 @@ const listRoute = createRoute({
 });
 
 app.openapi(listRoute, async (c) => {
+  const user = c.get("user");
   const { page, limit } = c.req.valid("query");
   const offset = (page - 1) * limit;
+
+  const whereConditions: SQL[] = [isNull(projectReports.archivedAt)];
+
+  if (user.roleName === ROLE_NAMES.FACULTY) {
+    if (user.departmentId !== null) {
+      whereConditions.push(eq(proposals.departmentId, user.departmentId));
+    } else {
+      whereConditions.push(eq(proposals.campusId, user.campusId));
+    }
+  } else if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+    if (user.isMainCampus && user.departmentId !== null) {
+      whereConditions.push(eq(proposals.departmentId, user.departmentId));
+    } else {
+      whereConditions.push(eq(proposals.campusId, user.campusId));
+    }
+  }
 
   const rows = await db
     .select({
@@ -112,7 +130,7 @@ app.openapi(listRoute, async (c) => {
     .innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
     .innerJoin(users, eq(projectReports.submittedById, users.userId))
     .leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
-    .where(isNull(projectReports.archivedAt))
+    .where(and(...whereConditions))
     .orderBy(desc(projectReports.submittedAt))
     .limit(limit)
     .offset(offset);
@@ -120,7 +138,9 @@ app.openapi(listRoute, async (c) => {
   const [totalRow] = await db
     .select({ value: count() })
     .from(projectReports)
-    .where(isNull(projectReports.archivedAt));
+    .innerJoin(projects, eq(projectReports.projectId, projects.projectId))
+    .innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+    .where(and(...whereConditions));
   const total = totalRow?.value ?? 0;
 
   const items = rows.map((r) => ({
