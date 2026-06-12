@@ -9,6 +9,7 @@ import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
 import { proposals } from "../db/schema/proposals.js";
 import { users } from "../db/schema/users.js";
 import { insertAuditLog } from "../lib/audit.js";
+import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import {
 	PROPOSAL_STATUS,
@@ -203,6 +204,15 @@ app.openapi(listRoute, async (c) => {
 		}
 	}
 
+	const leaderSubquery = db
+		.select({
+			proposalId: proposalMembers.proposalId,
+			userId: proposalMembers.userId,
+		})
+		.from(proposalMembers)
+		.where(eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE))
+		.as("leader_members");
+
 	const rows = await db
 		.select({
 			proposalId: proposals.proposalId,
@@ -225,14 +235,8 @@ app.openapi(listRoute, async (c) => {
 			leaderAcademicRank: users.academicRank,
 		})
 		.from(proposals)
-		.leftJoin(
-			proposalMembers,
-			and(
-				eq(proposals.proposalId, proposalMembers.proposalId),
-				eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE),
-			),
-		)
-		.leftJoin(users, eq(proposalMembers.userId, users.userId))
+		.leftJoin(leaderSubquery, eq(proposals.proposalId, leaderSubquery.proposalId))
+		.leftJoin(users, eq(leaderSubquery.userId, users.userId))
 		.where(and(...whereConditions))
 		.orderBy(desc(proposals.createdAt))
 		.limit(limit)
@@ -287,32 +291,17 @@ app.openapi(retStatsRoute, async (c) => {
 		whereConditions.push(eq(proposals.campusId, user.campusId));
 	}
 
-	const [pending] = await db
-		.select({ value: count() })
-		.from(proposals)
-		.where(
-			and(...whereConditions, eq(proposals.status, PROPOSAL_STATUS.SUBMITTED)),
-		);
-
-	const [approved] = await db
-		.select({ value: count() })
-		.from(proposals)
-		.where(
-			and(...whereConditions, eq(proposals.status, PROPOSAL_STATUS.APPROVED)),
-		);
-
-	const [denied] = await db
-		.select({ value: count() })
-		.from(proposals)
-		.where(
-			and(...whereConditions, eq(proposals.status, PROPOSAL_STATUS.REJECTED)),
-		);
+	const [pending, approved, denied] = await Promise.all([
+		db.select({ value: count() }).from(proposals).where(and(...whereConditions, eq(proposals.status, PROPOSAL_STATUS.SUBMITTED))),
+		db.select({ value: count() }).from(proposals).where(and(...whereConditions, eq(proposals.status, PROPOSAL_STATUS.APPROVED))),
+		db.select({ value: count() }).from(proposals).where(and(...whereConditions, eq(proposals.status, PROPOSAL_STATUS.REJECTED))),
+	]);
 
 	return c.json(
 		{
-			pendingReview: Number(pending?.value ?? 0),
-			approvedProjects: Number(approved?.value ?? 0),
-			deniedProjects: Number(denied?.value ?? 0),
+			pendingReview: Number(pending[0]?.value ?? 0),
+			approvedProjects: Number(approved[0]?.value ?? 0),
+			deniedProjects: Number(denied[0]?.value ?? 0),
 		},
 		200,
 	);
@@ -491,7 +480,7 @@ app.openapi(createProposalRoute, async (c) => {
 		userId: user.userId,
 		action: `Created proposal ${created.proposalId}`,
 		tableAffected: "proposals",
-		ipAddress: c.req.header("x-forwarded-for") ?? null,
+		ipAddress: getClientIp(c),
 	});
 
 	return c.json(
@@ -708,7 +697,7 @@ app.openapi(submitRoute, async (c) => {
 		userId: user.userId,
 		action: `Submitted proposal ${id}`,
 		tableAffected: "proposals",
-		ipAddress: c.req.header("x-forwarded-for") ?? null,
+		ipAddress: getClientIp(c),
 	});
 
 	return c.json({ message: "Proposal submitted for endorsement" }, 200);
@@ -887,7 +876,7 @@ app.openapi(reviewRoute, async (c) => {
 		userId: user.userId,
 		action: `Reviewed proposal ${id}: ${body.decision}`,
 		tableAffected: "proposal_reviews",
-		ipAddress: c.req.header("x-forwarded-for") ?? null,
+		ipAddress: getClientIp(c),
 	});
 
 	return c.json({ message: `Proposal ${body.decision.toLowerCase()}` }, 200);
@@ -906,6 +895,10 @@ const archiveRoute = createRoute({
 			content: { "application/json": { schema: MessageSchema } },
 			description: "Proposal archived",
 		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Not authorized to archive this proposal",
+		},
 		404: {
 			content: { "application/json": { schema: ErrorSchema } },
 			description: "Not found",
@@ -918,13 +911,43 @@ app.openapi(archiveRoute, async (c) => {
 	const { id } = c.req.valid("param");
 
 	const [existing] = await db
-		.select({ proposalId: proposals.proposalId })
+		.select({
+			proposalId: proposals.proposalId,
+			departmentId: proposals.departmentId,
+			campusId: proposals.campusId,
+		})
 		.from(proposals)
 		.where(and(eq(proposals.proposalId, id), isNull(proposals.archivedAt)))
 		.limit(1);
 
 	if (!existing) {
 		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+	}
+
+	// Authorization: Super Admin / Director may archive anything;
+	// RET Chair only within their department/campus scope;
+	// everyone else must be the project leader of this proposal.
+	let allowed =
+		user.roleName === ROLE_NAMES.SUPER_ADMIN ||
+		user.roleName === ROLE_NAMES.DIRECTOR;
+
+	if (!allowed && user.roleName === ROLE_NAMES.RET_CHAIR) {
+		allowed =
+			user.isMainCampus && user.departmentId !== null
+				? existing.departmentId === user.departmentId
+				: existing.campusId === user.campusId;
+	}
+
+	if (!allowed) {
+		allowed = await isProjectLeader(id, user.userId);
+	}
+
+	if (!allowed) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You do not have permission to archive this proposal",
+		);
 	}
 
 	await db
@@ -936,7 +959,7 @@ app.openapi(archiveRoute, async (c) => {
 		userId: user.userId,
 		action: `Archived proposal ${id}`,
 		tableAffected: "proposals",
-		ipAddress: c.req.header("x-forwarded-for") ?? null,
+		ipAddress: getClientIp(c),
 	});
 
 	return c.json({ message: "Proposal archived" }, 200);

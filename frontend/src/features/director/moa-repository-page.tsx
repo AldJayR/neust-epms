@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClientOnly } from "@tanstack/react-router";
 import { format } from "date-fns";
+import { useCallback, useRef, useState } from "react";
 import {
 	AlertCircle,
 	CheckCircle2,
@@ -117,6 +118,16 @@ export function MoaRepositoryPage({
 		moaRepositoryQueryOptions({ page, limit, search, status }),
 	);
 
+	const [localSearch, setLocalSearch] = useState(search ?? "");
+	const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+	const debouncedSearch = useCallback(
+		(value: string) => {
+			if (debounceRef.current) clearTimeout(debounceRef.current);
+			debounceRef.current = setTimeout(() => onSearchChange(value), 300);
+		},
+		[onSearchChange],
+	);
+
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
 	const metrics = data?.metrics ?? {
@@ -160,8 +171,11 @@ export function MoaRepositoryPage({
 							placeholder="Search MOAs"
 							aria-label="Search MOAs"
 							className="h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-none placeholder:text-[#737373]"
-							value={search}
-							onChange={(e) => onSearchChange(e.target.value)}
+							value={localSearch}
+							onChange={(e) => {
+								setLocalSearch(e.target.value);
+								debouncedSearch(e.target.value);
+							}}
 						/>
 					</div>
 					<Button

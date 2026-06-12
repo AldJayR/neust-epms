@@ -14,6 +14,12 @@ const envSchema = z.object({
 	RESEND_FROM: z.string().optional(),
 	SUPABASE_USER_ID: z.string().uuid().optional(),
 	ADMIN_EMAIL: z.string().email().optional(),
+	// Only trust x-forwarded-for / x-real-ip when behind a trusted reverse proxy
+	TRUST_PROXY: z
+		.string()
+		.optional()
+		.default("false")
+		.transform((v) => v === "true"),
 	PORT: z.coerce.number().default(3000),
 	NODE_ENV: z
 		.enum(["development", "production", "test"])

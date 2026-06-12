@@ -7,7 +7,8 @@ import { roles } from "../db/schema/roles.js";
 import { users } from "../db/schema/users.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { invalidateAuthUserCache } from "../lib/cache.js";
-import { installApiErrorHandler } from "../lib/errors.js";
+import { getClientIp } from "../lib/client-ip.js";
+import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
@@ -117,8 +118,8 @@ const getUsersRoute = createRoute({
 		query: z.object({
 			search: z.string().optional(),
 			isActive: z.string().optional(), // "true" or "false"
-			page: z.string().optional().default("1"),
-			pageSize: z.string().optional().default("10"),
+			page: z.coerce.number().int().min(1).default(1),
+			pageSize: z.coerce.number().int().min(1).max(100).default(10),
 		}),
 	},
 	responses: {
@@ -131,8 +132,8 @@ const getUsersRoute = createRoute({
 
 app.openapi(getUsersRoute, async (c) => {
 	const { search, isActive, page, pageSize } = c.req.valid("query");
-	const p = parseInt(page, 10);
-	const ps = parseInt(pageSize, 10);
+	const p = page;
+	const ps = pageSize;
 	const offset = (p - 1) * ps;
 
 	let searchClause: SQL | undefined;
@@ -219,6 +220,11 @@ app.openapi(bulkUpdateStatusRoute, async (c) => {
 	const authUser = c.get("user");
 	const { userIds, isActive } = c.req.valid("json");
 
+	// Prevent self-deactivation
+	if (isActive === false && userIds.includes(authUser.userId)) {
+		throw new ApiError(403, "FORBIDDEN", "You cannot deactivate your own account");
+	}
+
 	if (userIds.length === 0) {
 		return c.json({ success: true, updatedCount: 0 }, 200);
 	}
@@ -237,7 +243,7 @@ app.openapi(bulkUpdateStatusRoute, async (c) => {
 		userId: authUser.userId,
 		action: `Bulk updated status of ${result.length} users to ${isActive ? "Active" : "Inactive"}`,
 		tableAffected: "users",
-		ipAddress: c.req.header("x-forwarded-for") ?? null,
+		ipAddress: getClientIp(c),
 	});
 
 	return c.json(
@@ -330,18 +336,19 @@ app.openapi(bulkApproveRoute, async (c) => {
 
 	// We perform updates in a transaction for atomicity
 	await db.transaction(async (tx) => {
-		for (const u of usersToApprove) {
-			const roleId = roleMap.get(u.roleName);
-			if (!roleId) continue;
-
-			const result = await tx
-				.update(users)
-				.set({ isActive: true, roleId, updatedAt: new Date() })
-				.where(eq(users.userId, u.userId))
-				.returning({ userId: users.userId });
-
-			if (result.length > 0) updatedCount++;
-		}
+		const results = await Promise.all(
+			usersToApprove.map(async (u) => {
+				const roleId = roleMap.get(u.roleName);
+				if (!roleId) return null;
+				const result = await tx
+					.update(users)
+					.set({ isActive: true, roleId, updatedAt: new Date() })
+					.where(eq(users.userId, u.userId))
+					.returning({ userId: users.userId });
+				return result.length > 0 ? result[0] : null;
+			})
+		);
+		updatedCount = results.filter(Boolean).length;
 
 		if (updatedCount > 0) {
 			invalidateAuthUserCache(usersToApprove.map((u) => u.userId));
@@ -350,7 +357,7 @@ app.openapi(bulkApproveRoute, async (c) => {
 					userId: authUser.userId,
 					action: `Bulk approved ${updatedCount} users with assigned roles`,
 					tableAffected: "users",
-					ipAddress: c.req.header("x-forwarded-for") ?? null,
+					ipAddress: getClientIp(c),
 				},
 				tx,
 			);

@@ -20,6 +20,16 @@ export interface SessionData {
 	createdAt?: number;
 }
 
+// Fail fast in production: a predictable session secret would make
+// every session cookie forgeable.
+const sessionSecret = process.env.SESSION_SECRET;
+
+if (!sessionSecret && process.env.NODE_ENV === "production") {
+	throw new Error(
+		"SESSION_SECRET environment variable must be set in production",
+	);
+}
+
 /**
  * Returns the encrypted httpOnly cookie session.
  *
@@ -32,8 +42,7 @@ export interface SessionData {
 export function useAppSession() {
 	return useSession<SessionData>({
 		password:
-			process.env.SESSION_SECRET ??
-			"at-least-32-characters-long-secret-for-dev-only!",
+			sessionSecret ?? "at-least-32-characters-long-secret-for-dev-only!",
 		cookie: {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === "production",

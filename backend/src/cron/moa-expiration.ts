@@ -1,4 +1,4 @@
-import { and, eq, isNull, lte } from "drizzle-orm";
+import { and, eq, isNull, lte, sql } from "drizzle-orm";
 import cron from "node-cron";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
@@ -21,8 +21,9 @@ export function startMoaExpirationCron(): void {
 
 		try {
 			const now = new Date();
+			const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-			// Find MOAs that have expired (validUntil <= now) and are not archived
+			// Find MOAs that expired in the last 24h and are not archived
 			const expiredMoas = await db
 				.select({
 					moaId: moas.moaId,
@@ -31,7 +32,11 @@ export function startMoaExpirationCron(): void {
 				})
 				.from(moas)
 				.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
-				.where(and(lte(moas.validUntil, now), isNull(moas.archivedAt)));
+				.where(and(
+					lte(moas.validUntil, now),
+					sql`${moas.validUntil} > ${twentyFourHoursAgo}`,
+					isNull(moas.archivedAt),
+				));
 
 			if (expiredMoas.length === 0) {
 				console.log("[CRON] No expired MOAs found.");
@@ -66,14 +71,12 @@ async function sendExpirationEmails(
 		const { Resend } = await import("resend");
 		const resend = new Resend(env.RESEND_API_KEY);
 
-		for (const moa of expiredMoas) {
-			await resend.emails.send({
-				from: env.RESEND_FROM ?? "noreply@neust.edu.ph",
-				to: env.RESEND_FROM ?? "admin@neust.edu.ph",
-				subject: `MOA Expired: ${moa.partnerName}`,
-				text: `The MOA with ${moa.partnerName} (ID: ${moa.moaId}) expired on ${moa.validUntil.toISOString()}.`,
-			});
-		}
+		await Promise.all(expiredMoas.map(moa => resend.emails.send({
+			from: env.RESEND_FROM ?? "noreply@neust.edu.ph",
+			to: env.ADMIN_EMAIL ?? "admin@neust.edu.ph",
+			subject: `MOA Expired: ${moa.partnerName}`,
+			text: `The MOA with ${moa.partnerName} (ID: ${moa.moaId}) expired on ${moa.validUntil.toISOString()}.`,
+		})));
 
 		console.log(
 			`[CRON] Sent ${expiredMoas.length} expiration email(s) via Resend.`,

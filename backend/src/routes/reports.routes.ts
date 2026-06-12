@@ -7,6 +7,7 @@ import { projects } from "../db/schema/projects.js";
 import { proposals } from "../db/schema/proposals.js";
 import { users } from "../db/schema/users.js";
 import { insertAuditLog } from "../lib/audit.js";
+import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
@@ -238,7 +239,7 @@ app.openapi(createReportRoute, async (c) => {
 		userId: user.userId,
 		action: `Submitted project report ${created.reportId} (${body.reportType}) for project ${body.projectId}`,
 		tableAffected: "project_reports",
-		ipAddress: c.req.header("x-forwarded-for") ?? null,
+		ipAddress: getClientIp(c),
 	});
 
 	const [enriched] = await db
@@ -305,6 +306,10 @@ const archiveRoute = createRoute({
 			content: { "application/json": { schema: MessageSchema } },
 			description: "Report archived",
 		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Not authorized to archive this report",
+		},
 		404: {
 			content: { "application/json": { schema: ErrorSchema } },
 			description: "Not found",
@@ -315,6 +320,48 @@ const archiveRoute = createRoute({
 app.openapi(archiveRoute, async (c) => {
 	const user = c.get("user");
 	const { id } = c.req.valid("param");
+
+	const [report] = await db
+		.select({
+			reportId: projectReports.reportId,
+			submittedById: projectReports.submittedById,
+			departmentId: proposals.departmentId,
+			campusId: proposals.campusId,
+		})
+		.from(projectReports)
+		.innerJoin(projects, eq(projectReports.projectId, projects.projectId))
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+		.where(
+			and(eq(projectReports.reportId, id), isNull(projectReports.archivedAt)),
+		)
+		.limit(1);
+
+	if (!report) {
+		throw new ApiError(404, "NOT_FOUND", "Report not found");
+	}
+
+	// Authorization: Super Admin / Director may archive anything;
+	// RET Chair only within their department/campus scope;
+	// everyone else must be the original submitter.
+	let allowed =
+		user.roleName === ROLE_NAMES.SUPER_ADMIN ||
+		user.roleName === ROLE_NAMES.DIRECTOR ||
+		report.submittedById === user.userId;
+
+	if (!allowed && user.roleName === ROLE_NAMES.RET_CHAIR) {
+		allowed =
+			user.isMainCampus && user.departmentId !== null
+				? report.departmentId === user.departmentId
+				: report.campusId === user.campusId;
+	}
+
+	if (!allowed) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You do not have permission to archive this report",
+		);
+	}
 
 	const [updated] = await db
 		.update(projectReports)
@@ -332,7 +379,7 @@ app.openapi(archiveRoute, async (c) => {
 		userId: user.userId,
 		action: `Archived project report ${id}`,
 		tableAffected: "project_reports",
-		ipAddress: c.req.header("x-forwarded-for") ?? null,
+		ipAddress: getClientIp(c),
 	});
 
 	return c.json({ message: "Report archived" }, 200);

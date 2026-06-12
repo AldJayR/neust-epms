@@ -6,6 +6,7 @@ import { db } from "../db/client.js";
 import { proposalDocuments } from "../db/schema/proposal-documents.js";
 import { proposals } from "../db/schema/proposals.js";
 import { env } from "../env.js";
+import { getClientIp as getTrustedClientIp } from "../lib/client-ip.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { type AuthUser, ROLE_NAMES } from "../lib/types.js";
@@ -60,11 +61,6 @@ function generateSecureStoragePath(
 ): string {
 	const sanitizedFilename = sanitizeFilename(fileName);
 	return `proposals/${proposalId}/v${versionNum}_${Date.now()}_${randomUUID()}_${sanitizedFilename}`;
-}
-
-function getClientIp(forwarded: string | null | undefined): string | null {
-	if (!forwarded) return null;
-	return forwarded.split(",")[0]?.trim() ?? null;
 }
 
 // ── Schemas ──
@@ -314,72 +310,58 @@ app.openapi(uploadRoute, async (c) => {
 		throw new ApiError(422, "INVALID_FILE_TYPE", "Only PDF files are allowed");
 	}
 
-	let uploadedStoragePath: string | null = null;
+	// 1. Determine next version (short transaction for consistency)
+	const nextVersion = await db.transaction(async (tx) => {
+		const [maxVersion] = await tx
+			.select({ maxVer: max(proposalDocuments.versionNum) })
+			.from(proposalDocuments)
+			.where(eq(proposalDocuments.proposalId, proposalId));
+		return (maxVersion?.maxVer ?? 0) + 1;
+	});
 
-	const { doc, nextVersion } = await db
-		.transaction(async (tx) => {
-			const [maxVersion] = await tx
-				.select({ maxVer: max(proposalDocuments.versionNum) })
-				.from(proposalDocuments)
-				.where(eq(proposalDocuments.proposalId, proposalId));
+	const storagePath = generateSecureStoragePath(proposalId, nextVersion, file.name);
 
-			const nextVersion = (maxVersion?.maxVer ?? 0) + 1;
-			const storagePath = generateSecureStoragePath(
-				proposalId,
-				nextVersion,
-				file.name,
-			);
-
-			const { error: uploadError } = await supabase.storage
-				.from("documents")
-				.upload(storagePath, file, {
-					contentType: file.type,
-					upsert: false,
-				});
-
-			if (uploadError) {
-				throw new ApiError(
-					400,
-					"UPLOAD_FAILED",
-					`Supabase storage upload failed: ${uploadError.message}`,
-				);
-			}
-
-			uploadedStoragePath = storagePath;
-
-			const [doc] = await tx
-				.insert(proposalDocuments)
-				.values({
-					proposalId,
-					storagePath,
-					versionNum: nextVersion,
-				})
-				.returning();
-
-			if (!doc) {
-				throw new ApiError(500, "INSERT_FAILED", "Failed to record document");
-			}
-
-			return { doc, nextVersion };
-		})
-		.catch(async (error) => {
-			if (uploadedStoragePath) {
-				try {
-					await supabase.storage
-						.from("documents")
-						.remove([uploadedStoragePath]);
-				} catch {
-					// Log but don't mask original error
-				}
-			}
-			throw error;
+	// 2. Upload to Supabase Storage (outside transaction)
+	const { error: uploadError } = await supabase.storage
+		.from("documents")
+		.upload(storagePath, file, {
+			contentType: file.type,
+			upsert: false,
 		});
+
+	if (uploadError) {
+		throw new ApiError(400, "UPLOAD_FAILED", `Supabase storage upload failed: ${uploadError.message}`);
+	}
+
+	// 3. Insert DB record
+	let doc;
+	try {
+		const [inserted] = await db
+			.insert(proposalDocuments)
+			.values({
+				proposalId,
+				storagePath,
+				versionNum: nextVersion,
+			})
+			.returning();
+
+		if (!inserted) {
+			throw new ApiError(500, "INSERT_FAILED", "Failed to record document");
+		}
+		doc = inserted;
+	} catch (error) {
+		// Compensate: delete uploaded file
+		try {
+			await supabase.storage.from("documents").remove([storagePath]);
+		} catch {}
+		throw error;
+	}
 
 	await insertAuditLog({
 		userId: user.userId,
 		action: `Uploaded document v${nextVersion} for proposal ${proposalId}`,
 		tableAffected: "proposal_documents",
-		ipAddress: getClientIp(c.req.header("x-forwarded-for")),
+		ipAddress: getTrustedClientIp(c),
 	});
 
 	return c.json(
@@ -478,7 +460,7 @@ app.openapi(getUrlRoute, async (c) => {
 		userId: user.userId,
 		action: `Downloaded signed URL for document ${documentId} (proposal ${proposalId})`,
 		tableAffected: "proposal_documents",
-		ipAddress: getClientIp(c.req.header("x-forwarded-for")),
+		ipAddress: getTrustedClientIp(c),
 	});
 
 	return c.json({ url: data.signedUrl }, 200);

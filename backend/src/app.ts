@@ -7,6 +7,7 @@ import { requestId } from "hono/request-id";
 import { secureHeaders } from "hono/secure-headers";
 import { rateLimiter } from "hono-rate-limiter";
 import { db } from "./db/client.js";
+import { getClientIp } from "./lib/client-ip.js";
 import { installApiErrorHandler } from "./lib/errors.js";
 import type { AuthEnv } from "./middleware/auth.js";
 import adminRoutes from "./routes/admin.routes.js";
@@ -49,12 +50,13 @@ app.use(
 );
 
 // ── Global rate limiter: 100 req/min per IP ──
+// Keyed by the connection address unless TRUST_PROXY=true, so clients
+// cannot bypass the limit by spoofing forwarding headers.
 const globalLimiter = rateLimiter({
 	windowMs: 60 * 1000,
 	limit: 100,
 	standardHeaders: "draft-6",
-	keyGenerator: (c) =>
-		c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip") ?? "unknown",
+	keyGenerator: (c) => getClientIp(c),
 });
 app.use("*", globalLimiter);
 
@@ -85,12 +87,27 @@ app.use("*", async (c, next) => {
 
 // ── Request timeout: 30s ──
 app.use("*", async (_c, next) => {
-	const controller = new AbortController();
-	const timeout = setTimeout(() => controller.abort(), 30_000);
+	const timeout = AbortSignal.timeout(30_000);
 	try {
-		await next();
-	} finally {
-		clearTimeout(timeout);
+		await Promise.race([
+			next(),
+			new Promise<never>((_, reject) => {
+				timeout.addEventListener("abort", () => reject(new Error("Request timeout")));
+			}),
+		]);
+	} catch (error) {
+		if (error instanceof Error && error.message === "Request timeout") {
+			return _c.json(
+				{
+					error: {
+						code: "REQUEST_TIMEOUT",
+						message: "Request exceeded 30s timeout",
+					},
+				},
+				408,
+			);
+		}
+		throw error;
 	}
 });
 
@@ -98,18 +115,10 @@ app.use("*", async (_c, next) => {
 installApiErrorHandler(app);
 
 // ── Not found handler ──
+// Unknown routes are an honest 404. Authentication failures (401) are
+// raised by authMiddleware on protected routes, never synthesized here.
 app.notFound((c) =>
-	c.req.path.startsWith("/api/v1")
-		? c.json(
-				{
-					error: {
-						code: "MISSING_TOKEN",
-						message: "Authorization header is required",
-					},
-				},
-				401,
-			)
-		: c.json({ error: { code: "NOT_FOUND", message: "Route not found" } }, 404),
+	c.json({ error: { code: "NOT_FOUND", message: "Route not found" } }, 404),
 );
 
 // ── PUBLIC ROUTES (Must be before protected route mounts) ──

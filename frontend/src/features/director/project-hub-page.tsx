@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClientOnly } from "@tanstack/react-router";
 import { format } from "date-fns";
+import { useCallback, useRef, useState } from "react";
 import {
 	CheckCircle2,
 	ChevronLeft,
@@ -112,6 +113,16 @@ export function ProjectHubPage({
 		projectHubQueryOptions({ page, limit, search, college, status }),
 	);
 
+	const [localSearch, setLocalSearch] = useState(search ?? "");
+	const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+	const debouncedSearch = useCallback(
+		(value: string) => {
+			if (debounceRef.current) clearTimeout(debounceRef.current);
+			debounceRef.current = setTimeout(() => onSearchChange(value), 300);
+		},
+		[onSearchChange],
+	);
+
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
 	const totalPages = Math.ceil(total / limit);
@@ -137,8 +148,11 @@ export function ProjectHubPage({
 							placeholder="Search by project title or faculty name..."
 							aria-label="Search projects"
 							className="h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-sm"
-							value={search}
-							onChange={(e) => onSearchChange(e.target.value)}
+							value={localSearch}
+							onChange={(e) => {
+								setLocalSearch(e.target.value);
+								debouncedSearch(e.target.value);
+							}}
 						/>
 					</div>
 					<div className="flex w-full items-center gap-4 sm:w-auto">

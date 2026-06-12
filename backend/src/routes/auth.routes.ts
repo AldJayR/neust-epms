@@ -9,6 +9,7 @@ import { roles } from "../db/schema/roles.js";
 import { users } from "../db/schema/users.js";
 import { env } from "../env.js";
 import { insertAuditLog } from "../lib/audit.js";
+import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { isPasswordCompromised } from "../lib/password-check.js";
 import { ROLE_NAMES } from "../lib/types.js";
@@ -64,7 +65,7 @@ const CreateUserBodySchema = z
 		roleId: z.number().int().positive(),
 		campusId: z.number().int().positive(),
 		departmentId: z.number().int().positive().optional(),
-		supabaseUserId: z.string(),
+		supabaseUserId: z.string().uuid(),
 	})
 	.openapi("CreateUserBody");
 
@@ -132,15 +133,13 @@ const getMeRoute = createRoute({
 });
 
 // ── Rate limit: 5 registration attempts per 15 minutes per IP ──
+// Keyed by the connection address unless TRUST_PROXY=true, so clients
+// cannot bypass the limit by spoofing forwarding headers.
 const registerLimiter = rateLimiter({
 	windowMs: 15 * 60 * 1000,
 	limit: 5,
 	standardHeaders: "draft-6",
-	keyGenerator: (c) => {
-		return (
-			c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip") ?? "unknown"
-		);
-	},
+	keyGenerator: (c) => getClientIp(c),
 });
 
 // ── POST /auth/register (Public self-registration) ──
@@ -246,14 +245,14 @@ app.openapi(registerRoute, async (c) => {
 			}
 
 			await insertAuditLog(
-				{
-					userId: userRow.userId,
-					action: "Self-registered account",
-					tableAffected: "users",
-					ipAddress: c.req.header("x-forwarded-for") ?? null,
-				},
-				tx,
-			);
+			{
+				userId: userRow.userId,
+				action: "Self-registered account",
+				tableAffected: "users",
+				ipAddress: getClientIp(c),
+			},
+			tx,
+		);
 
 			return userRow;
 		});
@@ -351,6 +350,41 @@ app.openapi(createUserRoute, async (c) => {
 
 	const body = c.req.valid("json");
 
+	// Resolve the requested role and prevent privilege escalation:
+	// a Director must not be able to provision a Super Admin account.
+	const [requestedRole] = await db
+		.select({ roleId: roles.roleId, roleName: roles.roleName })
+		.from(roles)
+		.where(eq(roles.roleId, body.roleId))
+		.limit(1);
+
+	if (!requestedRole) {
+		throw new ApiError(400, "INVALID_ROLE", "Requested role does not exist");
+	}
+
+	if (
+		authUser.roleName !== ROLE_NAMES.SUPER_ADMIN &&
+		requestedRole.roleName === ROLE_NAMES.SUPER_ADMIN
+	) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"Only a Super Admin can provision Super Admin accounts",
+		);
+	}
+
+	// Verify the Supabase Auth user actually exists before linking it
+	const { data: supabaseUser, error: supabaseError } =
+		await supabase.auth.admin.getUserById(body.supabaseUserId);
+
+	if (supabaseError || !supabaseUser?.user) {
+		throw new ApiError(
+			400,
+			"INVALID_SUPABASE_USER",
+			"supabaseUserId does not match an existing Supabase Auth user",
+		);
+	}
+
 	const created = await db.transaction(async (tx) => {
 		const [userRow] = await tx
 			.insert(users)
@@ -373,14 +407,14 @@ app.openapi(createUserRoute, async (c) => {
 		}
 
 		await insertAuditLog(
-			{
-				userId: authUser.userId,
-				action: `Created user ${userRow.userId}`,
-				tableAffected: "users",
-				ipAddress: c.req.header("x-forwarded-for") ?? null,
-			},
-			tx,
-		);
+		{
+			userId: authUser.userId,
+			action: `Created user ${userRow.userId}`,
+			tableAffected: "users",
+			ipAddress: getClientIp(c),
+		},
+		tx,
+	);
 
 		return userRow;
 	});

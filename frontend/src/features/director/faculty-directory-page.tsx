@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useCallback, useRef, useState } from "react";
 import {
 	Calendar,
 	ChevronLeft,
@@ -110,6 +111,16 @@ export function FacultyDirectoryPage({
 		facultyDirectoryQueryOptions({ page, limit, search, college }),
 	);
 
+	const [localSearch, setLocalSearch] = useState(search ?? "");
+	const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+	const debouncedSearch = useCallback(
+		(value: string) => {
+			if (debounceRef.current) clearTimeout(debounceRef.current);
+			debounceRef.current = setTimeout(() => onSearchChange(value), 300);
+		},
+		[onSearchChange],
+	);
+
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
 	const metrics = data?.metrics ?? {
@@ -168,8 +179,11 @@ export function FacultyDirectoryPage({
 							placeholder="Search by project title or faculty name..."
 							aria-label="Search faculty directory"
 							className="h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-none placeholder:text-[#737373]"
-							value={search}
-							onChange={(e) => onSearchChange(e.target.value)}
+							value={localSearch}
+							onChange={(e) => {
+								setLocalSearch(e.target.value);
+								debouncedSearch(e.target.value);
+							}}
 						/>
 					</div>
 					<Select

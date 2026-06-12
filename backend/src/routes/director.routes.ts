@@ -32,9 +32,19 @@ import {
 	ROLE_NAMES,
 } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
+import { requireRole } from "../middleware/rbac.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
+
+// ── Authentication & Authorization ──
+// MUST be registered before any route handler below: in Hono, middleware
+// registered after a handler does not apply to it.
+app.use("/director/*", authMiddleware);
+app.use(
+	"/director/*",
+	requireRole(ROLE_NAMES.SUPER_ADMIN, ROLE_NAMES.DIRECTOR, ROLE_NAMES.RET_CHAIR),
+);
 
 // ── Schemas ──
 const HubProjectSchema = z
@@ -243,6 +253,78 @@ app.openapi(facultyDirectoryRoute, async (c) => {
 
 	const userIds = rows.map((r) => r.userId);
 
+	const totalFacultyConditions = [
+		eq(users.isActive, true),
+		eq(roles.roleName, ROLE_NAMES.FACULTY),
+	];
+	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+		if (user.isMainCampus && user.departmentId !== null) {
+			totalFacultyConditions.push(eq(users.departmentId, user.departmentId));
+		} else {
+			totalFacultyConditions.push(eq(users.campusId, user.campusId));
+		}
+	}
+
+	const mostActiveCollegeConditions = [
+		eq(users.isActive, true),
+		eq(roles.roleName, ROLE_NAMES.FACULTY),
+	];
+	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+		if (user.isMainCampus && user.departmentId !== null) {
+			mostActiveCollegeConditions.push(
+				eq(users.departmentId, user.departmentId),
+			);
+		} else {
+			mostActiveCollegeConditions.push(eq(users.campusId, user.campusId));
+		}
+	}
+
+	const [totalFaculty, totalProjects, mostActiveCollege] = await Promise.all([
+		db
+			.select({ value: count() })
+			.from(users)
+			.innerJoin(roles, eq(users.roleId, roles.roleId))
+			.where(and(...totalFacultyConditions)),
+		db
+			.select({ value: count() })
+			.from(projects)
+			.where(isNull(projects.archivedAt)),
+		db
+			.select({
+				name: departments.departmentName,
+				contributors: count(),
+			})
+			.from(users)
+			.innerJoin(roles, eq(users.roleId, roles.roleId))
+			.innerJoin(departments, eq(users.departmentId, departments.departmentId))
+			.where(and(...mostActiveCollegeConditions))
+			.groupBy(departments.departmentName)
+			.orderBy(desc(count()))
+			.limit(1),
+	]);
+
+	const totalFacultyRow = totalFaculty[0];
+	const totalProjectsRow = totalProjects[0];
+	const mostActiveCollegeRow = mostActiveCollege[0];
+
+	if (userIds.length === 0) {
+		return c.json(
+			{
+				items: [],
+				total: Number(totalResult[0]?.value ?? 0),
+				metrics: {
+					totalActiveExtension: Number(totalFacultyRow?.value ?? 0),
+					averageProjectsPerFaculty: 0,
+					mostActiveCollege: {
+						name: mostActiveCollegeRow?.name ?? "N/A",
+						contributors: Number(mostActiveCollegeRow?.contributors ?? 0),
+					},
+				},
+			},
+			200,
+		);
+	}
+
 	const [leadCounts, collabCounts] = await Promise.all([
 		db
 			.select({
@@ -272,7 +354,7 @@ app.openapi(facultyDirectoryRoute, async (c) => {
 			.where(
 				and(
 					inArray(proposalMembers.userId, userIds),
-					eq(proposalMembers.projectRole, "Project Leader"),
+					sql`${proposalMembers.projectRole} != 'Project Leader'`,
 				),
 			)
 			.groupBy(proposalMembers.userId),
@@ -296,70 +378,22 @@ app.openapi(facultyDirectoryRoute, async (c) => {
 		};
 	});
 
-	const totalFacultyConditions = [
-		eq(users.isActive, true),
-		eq(roles.roleName, ROLE_NAMES.FACULTY),
-	];
-	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		if (user.isMainCampus && user.departmentId !== null) {
-			totalFacultyConditions.push(eq(users.departmentId, user.departmentId));
-		} else {
-			totalFacultyConditions.push(eq(users.campusId, user.campusId));
-		}
-	}
-	const [totalFaculty] = await db
-		.select({ value: count() })
-		.from(users)
-		.innerJoin(roles, eq(users.roleId, roles.roleId))
-		.where(and(...totalFacultyConditions));
-
-	const [totalProjects] = await db
-		.select({ value: count() })
-		.from(projects)
-		.where(isNull(projects.archivedAt));
-
-	const mostActiveCollegeConditions = [
-		eq(users.isActive, true),
-		eq(roles.roleName, ROLE_NAMES.FACULTY),
-	];
-	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		if (user.isMainCampus && user.departmentId !== null) {
-			mostActiveCollegeConditions.push(
-				eq(users.departmentId, user.departmentId),
-			);
-		} else {
-			mostActiveCollegeConditions.push(eq(users.campusId, user.campusId));
-		}
-	}
-	const [mostActiveCollege] = await db
-		.select({
-			name: departments.departmentName,
-			contributors: count(),
-		})
-		.from(users)
-		.innerJoin(roles, eq(users.roleId, roles.roleId))
-		.innerJoin(departments, eq(users.departmentId, departments.departmentId))
-		.where(and(...mostActiveCollegeConditions))
-		.groupBy(departments.departmentName)
-		.orderBy(desc(count()))
-		.limit(1);
-
 	return c.json(
 		{
 			items,
 			total: Number(totalResult[0]?.value ?? 0),
 			metrics: {
-				totalActiveExtension: Number(totalFaculty?.value ?? 0),
+				totalActiveExtension: Number(totalFacultyRow?.value ?? 0),
 				averageProjectsPerFaculty: Number(
-					totalFaculty?.value
+					totalFacultyRow?.value
 						? (
-								Number(totalProjects?.value) / Number(totalFaculty?.value)
+								Number(totalProjectsRow?.value) / Number(totalFacultyRow?.value)
 							).toFixed(1)
 						: 0,
 				),
 				mostActiveCollege: {
-					name: mostActiveCollege?.name ?? "N/A",
-					contributors: Number(mostActiveCollege?.contributors ?? 0),
+					name: mostActiveCollegeRow?.name ?? "N/A",
+					contributors: Number(mostActiveCollegeRow?.contributors ?? 0),
 				},
 			},
 		},
@@ -523,41 +557,6 @@ const DirectorDashboardSchema = z.object({
 	chartData: z.array(ChartPointSchema),
 	recentActivities: z.array(ActivitySchema),
 	expiringMoas: z.array(MoaSchema),
-});
-
-app.use("/director/*", authMiddleware);
-app.use("/director/*", async (c, next) => {
-	const user = c.get("user");
-	const path = c.req.path;
-
-	// Match /director/projects/{proposalId} (uuid)
-	const isProjectDetails = /\/director\/projects\/[a-f0-9-]{36}$/i.test(path);
-
-	if (isProjectDetails) {
-		if (
-			user.roleName === ROLE_NAMES.SUPER_ADMIN ||
-			user.roleName === ROLE_NAMES.DIRECTOR ||
-			user.roleName === ROLE_NAMES.RET_CHAIR
-		) {
-			await next();
-			return;
-		}
-	} else {
-		if (
-			user.roleName === ROLE_NAMES.SUPER_ADMIN ||
-			user.roleName === ROLE_NAMES.DIRECTOR ||
-			user.roleName === ROLE_NAMES.RET_CHAIR
-		) {
-			await next();
-			return;
-		}
-	}
-
-	throw new ApiError(
-		403,
-		"FORBIDDEN",
-		`This action requires one of: ${isProjectDetails ? "Super Admin, Director, RET Chair" : "Super Admin, Director, RET Chair"}`,
-	);
 });
 
 function formatRelativeTime(date: Date, now: Date) {
@@ -1150,7 +1149,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 			version: `v${row.revisionNum}`,
 			metadata: {
 				leader: {
-					name: "N/A",
+					name: `${row.leaderFirstName ?? "N/A"} ${row.leaderLastName ?? "N/A"}`.trim(),
 				},
 				department: row.departmentName,
 				duration,

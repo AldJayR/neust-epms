@@ -203,7 +203,40 @@ export const getCurrentUserFn = createServerFn({ method: "POST" }).handler(
 		});
 
 		if (!meResponse.ok) {
-			// Token expired or user deactivated — clear session
+			// Token may be expired — try refresh before clearing session
+			if (session.data.refreshToken) {
+				try {
+					const { data: refreshData, error: refreshError } =
+						await supabase.auth.refreshSession({
+							refresh_token: session.data.refreshToken,
+						});
+
+					if (!refreshError && refreshData.session) {
+						// Retry with new token
+						const retryResponse = await fetch(`${API_BASE}/auth/me`, {
+							headers: {
+								Authorization: `Bearer ${refreshData.session.access_token}`,
+							},
+						});
+
+						if (retryResponse.ok) {
+							const currentUser = (await retryResponse.json()) as AuthUser;
+							await session.update({
+								accessToken: refreshData.session.access_token,
+								refreshToken: refreshData.session.refresh_token,
+								userId: currentUser.userId,
+								email: currentUser.email,
+								user: currentUser,
+								createdAt: Date.now(),
+							});
+							return currentUser;
+						}
+					}
+				} catch {
+					// Refresh failed, fall through to clear session
+				}
+			}
+			// Token expired and refresh failed — clear session
 			await session.clear();
 			return null;
 		}
@@ -212,6 +245,7 @@ export const getCurrentUserFn = createServerFn({ method: "POST" }).handler(
 
 		await session.update({
 			accessToken,
+			refreshToken: session.data.refreshToken,
 			userId,
 			email: currentUser.email,
 			user: currentUser,
