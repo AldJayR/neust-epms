@@ -119,6 +119,7 @@ export interface FacultyInvolvement {
 	lastName: string;
 	academicRank: string | null;
 	college: string | null;
+	isActive: boolean;
 	leadProjects: number;
 	collaboratorProjects: number;
 	totalInvolvement: number;

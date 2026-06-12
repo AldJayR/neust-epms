@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { FacultyDirectoryPage } from "@/features/director/faculty-directory-page";
+import { RetFacultyDirectoryPage } from "@/features/ret/faculty-directory-page";
 import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
 
 const facultySearchSchema = z.object({
@@ -15,7 +16,8 @@ export const Route = createFileRoute("/_authenticated/faculty/")({
 	beforeLoad: ({ context }) => {
 		if (
 			context.auth.user?.roleName !== "Director" &&
-			context.auth.user?.roleName !== "Super Admin"
+			context.auth.user?.roleName !== "Super Admin" &&
+			context.auth.user?.roleName !== "RET Chair"
 		) {
 			throw redirect({
 				to: "/dashboard",
@@ -64,6 +66,19 @@ function FacultyIndexPage() {
 			search: (old) => ({ ...old, page: newPage }),
 		});
 	};
+
+	if (user?.roleName === "RET Chair") {
+		return (
+			<RetFacultyDirectoryPage
+				user={user}
+				page={page}
+				limit={limit}
+				search={search}
+				onPageChange={handlePageChange}
+				onSearchChange={handleSearch}
+			/>
+		);
+	}
 
 	return (
 		<FacultyDirectoryPage
