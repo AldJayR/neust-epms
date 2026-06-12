@@ -10,7 +10,7 @@ import { getClientIp as getTrustedClientIp } from "../lib/client-ip.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { type AuthUser, ROLE_NAMES } from "../lib/types.js";
-import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
+import type { AuthEnv } from "../middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -139,7 +139,7 @@ const PaginationQuery = z.object({
 		}),
 });
 
-app.use("/proposals/*", authMiddleware);
+// Auth for /proposals/* is registered once at the root app (see app.ts).
 
 // ── GET /proposals/:proposalId/documents ──
 const listDocsRoute = createRoute({

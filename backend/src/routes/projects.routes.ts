@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, count, eq, inArray, isNull, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, type SQL } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
 import { projectReports } from "../db/schema/project-reports.js";
@@ -14,6 +14,7 @@ import {
 	ROLE_NAMES,
 } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
+import { requireRole } from "../middleware/rbac.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -91,6 +92,21 @@ const PaginationQuery = z.object({
 
 app.use("/projects/*", authMiddleware);
 
+// Project lifecycle mutations are Director-only.
+// GET /projects remains accessible to all authenticated roles (scoped per-role
+// in the handler). These run after authMiddleware, so c.var.user is populated.
+const directorOnly = requireRole(ROLE_NAMES.DIRECTOR);
+app.use("/projects", async (c, next) => {
+	// Only guard the POST (create); GET passes through.
+	if (c.req.method === "POST") {
+		return directorOnly(c, next);
+	}
+	return next();
+});
+app.use("/projects/:id/link-moa", directorOnly);
+app.use("/projects/:id/transition", directorOnly);
+app.use("/projects/:id/close", directorOnly);
+
 // ── GET /projects ──
 const listRoute = createRoute({
 	method: "get",
@@ -153,6 +169,7 @@ app.openapi(listRoute, async (c) => {
 				inArray(projects.proposalId, allowedProposals),
 			),
 		)
+		.orderBy(desc(projects.createdAt))
 		.limit(limit)
 		.offset(offset);
 
@@ -482,7 +499,7 @@ const closeProjectRoute = createRoute({
 	method: "post",
 	path: "/projects/{id}/close",
 	tags: ["Projects"],
-	summary: "Explicitly close a project (project leader only)",
+	summary: "Explicitly close a project (Director only)",
 	description:
 		"Requires both a Final Accomplishment report and a Terminal report to be submitted.",
 	security: [{ Bearer: [] }],
@@ -498,7 +515,7 @@ const closeProjectRoute = createRoute({
 		},
 		403: {
 			content: { "application/json": { schema: ErrorSchema } },
-			description: "Forbidden (not project leader)",
+			description: "Forbidden (Director only)",
 		},
 		404: {
 			content: { "application/json": { schema: ErrorSchema } },

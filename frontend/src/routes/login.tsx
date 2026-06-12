@@ -34,7 +34,12 @@ export const Route = createFileRoute("/login")({
 	}),
 	beforeLoad: ({ context, search }) => {
 		if (context.auth.isAuthenticated) {
-			throw redirect({ to: search.redirect || "/dashboard" });
+			// Only allow relative, single-slash paths to avoid open redirects.
+			const target =
+				search.redirect?.startsWith("/") && !search.redirect.startsWith("//")
+					? search.redirect
+					: "/dashboard";
+			throw redirect({ to: target });
 		}
 	},
 	component: LoginPage,
@@ -44,9 +49,10 @@ function LoginPage() {
 	const navigate = useNavigate();
 	const { queryClient } = Route.useRouteContext();
 	const { redirect: redirectUrl } = Route.useSearch();
-	const safeRedirectTarget = redirectUrl?.startsWith("/")
-		? redirectUrl
-		: "/dashboard";
+	const safeRedirectTarget =
+		redirectUrl?.startsWith("/") && !redirectUrl.startsWith("//")
+			? redirectUrl
+			: "/dashboard";
 	const [serverError, setServerError] = useState<string | null>(null);
 
 	const form = useForm<z.infer<typeof loginSchema>>({

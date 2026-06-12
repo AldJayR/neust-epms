@@ -424,6 +424,36 @@ export const reviewProposalFn = createServerFn({ method: "POST" })
 		return (await response.json()) as { message: string };
 	});
 
+const reportsListParamsSchema = z.object({
+	page: z.number(),
+	limit: z.number(),
+	search: z.string().optional(),
+});
+
+export const getReportsListFn = createServerFn({ method: "GET" })
+	.inputValidator(reportsListParamsSchema)
+	.handler(async ({ data }) => {
+		const session = await useAppSession();
+		const { accessToken } = session.data;
+		if (!accessToken) throw new Error("Unauthorized");
+
+		const searchParams = new URLSearchParams({
+			page: String(data.page),
+			limit: String(data.limit),
+		});
+		if (data.search) searchParams.set("search", data.search);
+
+		const response = await fetch(
+			`${API_BASE}/reports?${searchParams.toString()}`,
+			{ headers: { Authorization: `Bearer ${accessToken}` } },
+		);
+		if (!response.ok) {
+			const errorBody = (await response.json()) as ApiErrorResponse;
+			throw new Error(errorBody.error?.message ?? "Failed to fetch reports");
+		}
+		return (await response.json()) as ReportsResponse;
+	});
+
 export const getReportStatsFn = createServerFn({ method: "GET" }).handler(
 	async () => {
 		const session = await useAppSession();
@@ -505,27 +535,7 @@ export function reportsListQueryOptions(params: {
 }) {
 	return queryOptions({
 		queryKey: ["dashboard", "reports", "list", params],
-		queryFn: async () => {
-			const session = await useAppSession();
-			const { accessToken } = session.data;
-			if (!accessToken) throw new Error("Unauthorized");
-
-			const searchParams = new URLSearchParams({
-				page: String(params.page),
-				limit: String(params.limit),
-			});
-			if (params.search) searchParams.set("search", params.search);
-
-			const response = await fetch(
-				`${API_BASE}/reports?${searchParams.toString()}`,
-				{ headers: { Authorization: `Bearer ${accessToken}` } },
-			);
-			if (!response.ok) {
-				const errorBody = (await response.json()) as ApiErrorResponse;
-				throw new Error(errorBody.error?.message ?? "Failed to fetch reports");
-			}
-			return (await response.json()) as ReportsResponse;
-		},
+		queryFn: () => getReportsListFn({ data: params }),
 		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
 	});
 }

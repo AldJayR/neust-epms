@@ -4,12 +4,13 @@ import { db } from "../db/client.js";
 import { departments } from "../db/schema/departments.js";
 import { projectReports } from "../db/schema/project-reports.js";
 import { projects } from "../db/schema/projects.js";
+import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposals } from "../db/schema/proposals.js";
 import { users } from "../db/schema/users.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
-import { ROLE_NAMES } from "../lib/types.js";
+import { REPORT_TYPE, ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
@@ -39,10 +40,13 @@ const ReportListSchema = z
 
 const CreateReportSchema = z
 	.object({
-		projectId: z.string(),
-		reportType: z.string(),
+		projectId: z.string().uuid(),
+		reportType: z.enum([
+			REPORT_TYPE.PROGRESS,
+			REPORT_TYPE.FINAL_ACCOMPLISHMENT,
+			REPORT_TYPE.TERMINAL,
+		]),
 		remarks: z.string().optional(),
-		storagePath: z.string().optional(),
 		periodStart: z.string().datetime().optional(),
 		periodEnd: z.string().datetime().optional(),
 	})
@@ -93,7 +97,8 @@ const PaginationQuery = z.object({
 		}),
 });
 
-app.use("/*", authMiddleware);
+app.use("/reports/*", authMiddleware);
+app.use("/reports", authMiddleware);
 
 // ── GET /reports ──
 const listRoute = createRoute({
@@ -269,6 +274,10 @@ const createReportRoute = createRoute({
 			content: { "application/json": { schema: ReportSchema } },
 			description: "Report created",
 		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Not a project member",
+		},
 		404: {
 			content: { "application/json": { schema: ErrorSchema } },
 			description: "Project not found",
@@ -280,9 +289,12 @@ app.openapi(createReportRoute, async (c) => {
 	const user = c.get("user");
 	const body = c.req.valid("json");
 
-	// Verify project exists
+	// Verify project exists and resolve its proposal for the membership check.
 	const [project] = await db
-		.select({ projectId: projects.projectId })
+		.select({
+			projectId: projects.projectId,
+			proposalId: projects.proposalId,
+		})
 		.from(projects)
 		.where(
 			and(eq(projects.projectId, body.projectId), isNull(projects.archivedAt)),
@@ -293,6 +305,27 @@ app.openapi(createReportRoute, async (c) => {
 		throw new ApiError(404, "NOT_FOUND", "Project not found");
 	}
 
+	// Only members of the project's proposal (leader or collaborator) may submit
+	// reports for it.
+	const [membership] = await db
+		.select({ memberId: proposalMembers.memberId })
+		.from(proposalMembers)
+		.where(
+			and(
+				eq(proposalMembers.proposalId, project.proposalId),
+				eq(proposalMembers.userId, user.userId),
+			),
+		)
+		.limit(1);
+
+	if (!membership) {
+		throw new ApiError(
+			403,
+			"NOT_MEMBER",
+			"Only project members can submit reports for this project",
+		);
+	}
+
 	const [created] = await db
 		.insert(projectReports)
 		.values({
@@ -300,7 +333,7 @@ app.openapi(createReportRoute, async (c) => {
 			submittedById: user.userId,
 			reportType: body.reportType,
 			remarks: body.remarks ?? null,
-			storagePath: body.storagePath ?? null,
+			storagePath: null,
 			periodStart: body.periodStart ? new Date(body.periodStart) : null,
 			periodEnd: body.periodEnd ? new Date(body.periodEnd) : null,
 		})

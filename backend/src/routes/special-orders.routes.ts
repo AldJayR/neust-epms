@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
 import { specialOrders } from "../db/schema/special-orders.js";
@@ -79,7 +79,8 @@ const PaginationQuery = z.object({
 		}),
 });
 
-app.use("/*", authMiddleware);
+app.use("/special-orders/*", authMiddleware);
+app.use("/special-orders", authMiddleware);
 
 // ── GET /special-orders ──
 const listRoute = createRoute({
@@ -115,6 +116,7 @@ app.openapi(listRoute, async (c) => {
 		})
 		.from(specialOrders)
 		.where(isNull(specialOrders.archivedAt))
+		.orderBy(desc(specialOrders.createdAt))
 		.limit(limit)
 		.offset(offset);
 

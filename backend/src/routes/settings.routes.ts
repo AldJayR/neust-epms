@@ -60,7 +60,8 @@ const PaginationQuery = z.object({
 		}),
 });
 
-app.use("/*", authMiddleware);
+app.use("/settings/*", authMiddleware);
+app.use("/settings", authMiddleware);
 
 // ── GET /settings ──
 const listRoute = createRoute({

@@ -9,7 +9,7 @@ import { rateLimiter } from "hono-rate-limiter";
 import { db } from "./db/client.js";
 import { getClientIp } from "./lib/client-ip.js";
 import { installApiErrorHandler } from "./lib/errors.js";
-import type { AuthEnv } from "./middleware/auth.js";
+import { type AuthEnv, authMiddleware } from "./middleware/auth.js";
 import adminRoutes from "./routes/admin.routes.js";
 import auditRoutes from "./routes/audit.routes.js";
 import authRoutes from "./routes/auth.routes.js";
@@ -189,6 +189,14 @@ app.get("/api/v1/openapi.json", (c) => {
 app.get("/api/v1/swagger", swaggerUI({ url: "/api/v1/openapi.json" }));
 
 // ── PROTECTED MOUNT POINTS ──
+
+// Shared auth for all /proposals/* routes. The proposals, members, and storage
+// sub-apps all serve paths under /proposals, so registering authMiddleware once
+// here guarantees exactly one Supabase token validation per request instead of
+// each sub-app re-registering its own wildcard auth (which previously ran
+// authMiddleware multiple times per proposal request).
+app.use("/api/v1/proposals/*", authMiddleware);
+
 app.route("/api/v1", authRoutes);
 app.route("/api/v1", proposalRoutes);
 app.route("/api/v1", memberRoutes);

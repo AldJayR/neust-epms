@@ -17,7 +17,7 @@ import {
 	REVIEW_STAGE,
 	ROLE_NAMES,
 } from "../lib/types.js";
-import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
+import type { AuthEnv } from "../middleware/auth.js";
 
 const PROJECT_LEADER_ROLE = "Project Leader";
 
@@ -160,8 +160,7 @@ const MessageSchema = z
 	.object({ message: z.string() })
 	.openapi("ProposalMessage");
 
-// All proposal routes require auth
-app.use("/proposals/*", authMiddleware);
+// Auth for /proposals/* is registered once at the root app (see app.ts).
 
 // ── GET /proposals ──
 const listRoute = createRoute({

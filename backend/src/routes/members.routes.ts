@@ -6,7 +6,7 @@ import { proposals } from "../db/schema/proposals.js";
 import { users } from "../db/schema/users.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
-import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
+import type { AuthEnv } from "../middleware/auth.js";
 
 const PROJECT_LEADER_ROLE = "Project Leader";
 
@@ -107,7 +107,7 @@ const PaginationQuery = z.object({
 		}),
 });
 
-app.use("/*", authMiddleware);
+// Auth for /proposals/* is registered once at the root app (see app.ts).
 
 // ── GET /proposals/:proposalId/members ──
 const listMembersRoute = createRoute({

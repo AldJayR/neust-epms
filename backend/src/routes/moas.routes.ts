@@ -3,13 +3,46 @@ import { and, count, desc, eq, isNull } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
 import { partners } from "../db/schema/partners.js";
+import { projects } from "../db/schema/projects.js";
+import { proposalMembers } from "../db/schema/proposal-members.js";
 import { insertAuditLog } from "../lib/audit.js";
+import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
-import { ROLE_NAMES } from "../lib/types.js";
+import { type AuthUser, ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
+
+// MOA management is restricted to RET Chair and Director (Super Admin is not
+// involved in MOA management per product decision).
+function canManageMoas(user: AuthUser): boolean {
+	return (
+		user.roleName === ROLE_NAMES.RET_CHAIR ||
+		user.roleName === ROLE_NAMES.DIRECTOR
+	);
+}
+
+/**
+ * Whether the user is a member (any project role) of a proposal whose project
+ * is linked to the given MOA. Lets project leaders/members see the single MOA
+ * their project depends on, without granting access to the full repository.
+ */
+async function isMoaLinkedToUserProject(
+	moaId: string,
+	userId: string,
+): Promise<boolean> {
+	const [row] = await db
+		.select({ memberId: proposalMembers.memberId })
+		.from(projects)
+		.innerJoin(
+			proposalMembers,
+			eq(projects.proposalId, proposalMembers.proposalId),
+		)
+		.where(and(eq(projects.moaId, moaId), eq(proposalMembers.userId, userId)))
+		.limit(1);
+	return !!row;
+}
 
 // ── Schemas ──
 const MoaSchema = z
@@ -80,14 +113,15 @@ const PaginationQuery = z.object({
 		}),
 });
 
-app.use("/*", authMiddleware);
+app.use("/moas/*", authMiddleware);
+app.use("/moas", authMiddleware);
 
 // ── GET /moas ──
 const listRoute = createRoute({
 	method: "get",
 	path: "/moas",
 	tags: ["MOAs"],
-	summary: "List all non-archived MOAs",
+	summary: "List all non-archived MOAs (RET Chair / Director only)",
 	security: [{ Bearer: [] }],
 	request: { query: PaginationQuery },
 	responses: {
@@ -95,10 +129,24 @@ const listRoute = createRoute({
 			content: { "application/json": { schema: MoaListSchema } },
 			description: "List of MOAs",
 		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Forbidden",
+		},
 	},
 });
 
 app.openapi(listRoute, async (c) => {
+	const user = c.get("user");
+
+	if (!canManageMoas(user)) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"Only RET Chair or Director can view the MOA repository",
+		);
+	}
+
 	const { page, limit } = c.req.valid("query");
 	const offset = (page - 1) * limit;
 
@@ -150,6 +198,10 @@ const getRoute = createRoute({
 			content: { "application/json": { schema: MoaSchema } },
 			description: "MOA detail",
 		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Forbidden",
+		},
 		404: {
 			content: { "application/json": { schema: ErrorSchema } },
 			description: "Not found",
@@ -158,7 +210,21 @@ const getRoute = createRoute({
 });
 
 app.openapi(getRoute, async (c) => {
+	const user = c.get("user");
 	const { id } = c.req.valid("param");
+
+	// RET Chair / Director can view any MOA. Other roles (e.g. project leaders
+	// and members) may only view the MOA their own project is linked to.
+	if (!canManageMoas(user)) {
+		const linked = await isMoaLinkedToUserProject(id, user.userId);
+		if (!linked) {
+			throw new ApiError(
+				403,
+				"FORBIDDEN",
+				"You do not have access to this MOA",
+			);
+		}
+	}
 
 	const [row] = await db
 		.select({
@@ -272,7 +338,7 @@ app.openapi(createMoaRoute, async (c) => {
 		userId: user.userId,
 		action: `Created MOA ${created.moaId}`,
 		tableAffected: "moas",
-		ipAddress: c.req.header("x-forwarded-for") ?? null,
+		ipAddress: getClientIp(c),
 	});
 
 	return c.json(
@@ -307,6 +373,10 @@ const updateRoute = createRoute({
 			content: { "application/json": { schema: MoaSchema } },
 			description: "MOA updated",
 		},
+		400: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Validation error",
+		},
 		404: {
 			content: { "application/json": { schema: ErrorSchema } },
 			description: "Not found",
@@ -330,6 +400,36 @@ app.openapi(updateRoute, async (c) => {
 
 	const { id } = c.req.valid("param");
 	const body = c.req.valid("json");
+
+	// Load existing dates so we can validate the resulting range even when the
+	// request only updates one bound.
+	const [existing] = await db
+		.select({
+			validFrom: moas.validFrom,
+			validUntil: moas.validUntil,
+		})
+		.from(moas)
+		.where(and(eq(moas.moaId, id), isNull(moas.archivedAt)))
+		.limit(1);
+
+	if (!existing) {
+		throw new ApiError(404, "NOT_FOUND", "MOA not found");
+	}
+
+	const nextValidFrom =
+		body.validFrom !== undefined ? new Date(body.validFrom) : existing.validFrom;
+	const nextValidUntil =
+		body.validUntil !== undefined
+			? new Date(body.validUntil)
+			: existing.validUntil;
+
+	if (nextValidUntil <= nextValidFrom) {
+		throw new ApiError(
+			400,
+			"INVALID_DATES",
+			"validUntil must be after validFrom",
+		);
+	}
 
 	const setValues: Record<string, Date | string> = { updatedAt: new Date() };
 	if (body.partnerId !== undefined) {
