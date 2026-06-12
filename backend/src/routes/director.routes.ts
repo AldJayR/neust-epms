@@ -8,8 +8,8 @@ import {
 	inArray,
 	isNull,
 	or,
-	sql,
 	type SQL,
+	sql,
 } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { auditLogs } from "../db/schema/audit-logs.js";
@@ -43,7 +43,11 @@ installApiErrorHandler(app);
 app.use("/director/*", authMiddleware);
 app.use(
 	"/director/*",
-	requireRole(ROLE_NAMES.SUPER_ADMIN, ROLE_NAMES.DIRECTOR, ROLE_NAMES.RET_CHAIR),
+	requireRole(
+		ROLE_NAMES.SUPER_ADMIN,
+		ROLE_NAMES.DIRECTOR,
+		ROLE_NAMES.RET_CHAIR,
+	),
 );
 
 // ── Schemas ──
@@ -351,10 +355,15 @@ app.openapi(facultyDirectoryRoute, async (c) => {
 				value: count(),
 			})
 			.from(proposalMembers)
+			.innerJoin(
+				proposals,
+				eq(proposalMembers.proposalId, proposals.proposalId),
+			)
 			.where(
 				and(
 					inArray(proposalMembers.userId, userIds),
 					sql`${proposalMembers.projectRole} != 'Project Leader'`,
+					isNull(proposals.archivedAt),
 				),
 			)
 			.groupBy(proposalMembers.userId),
@@ -938,6 +947,7 @@ const projectDetailsRoute = createRoute({
 		params: z.object({
 			proposalId: z
 				.string()
+				.uuid()
 				.openapi({ param: { name: "proposalId", in: "path" } }),
 		}),
 	},

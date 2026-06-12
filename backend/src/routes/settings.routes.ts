@@ -7,6 +7,7 @@ import {
 	type SettingListCacheValue,
 	settingsListCache,
 } from "../lib/cache.js";
+import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
@@ -176,7 +177,7 @@ app.openapi(upsertRoute, async (c) => {
 		userId: user.userId,
 		action: `Upserted setting "${body.settingKey}"`,
 		tableAffected: "system_settings",
-		ipAddress: c.req.header("x-forwarded-for") ?? null,
+		ipAddress: getClientIp(c),
 	});
 
 	if (cacheEnabled) {

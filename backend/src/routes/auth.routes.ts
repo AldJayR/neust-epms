@@ -107,6 +107,15 @@ const checkPasswordRoute = createRoute({
 	},
 });
 
+// Rate limit: 10 requests per 15 minutes per IP to prevent HIBP relay abuse
+const checkPasswordLimiter = rateLimiter({
+	windowMs: 15 * 60 * 1000,
+	limit: 10,
+	standardHeaders: "draft-6",
+	keyGenerator: (c) => getClientIp(c),
+});
+app.use("/auth/check-password", checkPasswordLimiter);
+
 app.openapi(checkPasswordRoute, async (c) => {
 	const { password } = c.req.valid("json");
 	const compromised = await isPasswordCompromised(password);
@@ -245,14 +254,14 @@ app.openapi(registerRoute, async (c) => {
 			}
 
 			await insertAuditLog(
-			{
-				userId: userRow.userId,
-				action: "Self-registered account",
-				tableAffected: "users",
-				ipAddress: getClientIp(c),
-			},
-			tx,
-		);
+				{
+					userId: userRow.userId,
+					action: "Self-registered account",
+					tableAffected: "users",
+					ipAddress: getClientIp(c),
+				},
+				tx,
+			);
 
 			return userRow;
 		});
@@ -385,6 +394,15 @@ app.openapi(createUserRoute, async (c) => {
 		);
 	}
 
+	// Ensure the supplied email matches the Supabase Auth user's email
+	if (supabaseUser.user.email && body.email !== supabaseUser.user.email) {
+		throw new ApiError(
+			400,
+			"EMAIL_MISMATCH",
+			"The email provided does not match the Supabase Auth user's email",
+		);
+	}
+
 	const created = await db.transaction(async (tx) => {
 		const [userRow] = await tx
 			.insert(users)
@@ -407,14 +425,14 @@ app.openapi(createUserRoute, async (c) => {
 		}
 
 		await insertAuditLog(
-		{
-			userId: authUser.userId,
-			action: `Created user ${userRow.userId}`,
-			tableAffected: "users",
-			ipAddress: getClientIp(c),
-		},
-		tx,
-	);
+			{
+				userId: authUser.userId,
+				action: `Created user ${userRow.userId}`,
+				tableAffected: "users",
+				ipAddress: getClientIp(c),
+			},
+			tx,
+		);
 
 		return userRow;
 	});

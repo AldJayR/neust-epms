@@ -1,13 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { createClient } from "@supabase/supabase-js";
-import { and, eq, isNull, max } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { proposalDocuments } from "../db/schema/proposal-documents.js";
 import { proposals } from "../db/schema/proposals.js";
 import { env } from "../env.js";
-import { getClientIp as getTrustedClientIp } from "../lib/client-ip.js";
 import { insertAuditLog } from "../lib/audit.js";
+import { getClientIp as getTrustedClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { type AuthUser, ROLE_NAMES } from "../lib/types.js";
 import type { AuthEnv } from "../middleware/auth.js";
@@ -290,6 +290,12 @@ app.openapi(uploadRoute, async (c) => {
 		);
 	}
 
+	// Pre-check Content-Length to avoid buffering large payloads in memory
+	const contentLength = Number(c.req.header("content-length") ?? 0);
+	if (contentLength > MAX_UPLOAD_BYTES) {
+		throw new ApiError(413, "FILE_TOO_LARGE", "File exceeds 10MB limit");
+	}
+
 	// Parse multipart form data
 	const formData = await c.req.formData();
 	const file = formData.get("file");
@@ -310,16 +316,22 @@ app.openapi(uploadRoute, async (c) => {
 		throw new ApiError(422, "INVALID_FILE_TYPE", "Only PDF files are allowed");
 	}
 
-	// 1. Determine next version (short transaction for consistency)
+	// 1. Determine next version (SELECT FOR UPDATE to prevent race condition)
 	const nextVersion = await db.transaction(async (tx) => {
-		const [maxVersion] = await tx
-			.select({ maxVer: max(proposalDocuments.versionNum) })
-			.from(proposalDocuments)
-			.where(eq(proposalDocuments.proposalId, proposalId));
-		return (maxVersion?.maxVer ?? 0) + 1;
+		const result = await tx.execute(sql`
+			SELECT COALESCE(MAX(version_num), 0) + 1 AS max_ver
+			FROM proposal_documents
+			WHERE proposal_id = ${proposalId}
+			FOR UPDATE
+		`);
+		return Number(result.rows[0]?.max_ver ?? 1);
 	});
 
-	const storagePath = generateSecureStoragePath(proposalId, nextVersion, file.name);
+	const storagePath = generateSecureStoragePath(
+		proposalId,
+		nextVersion,
+		file.name,
+	);
 
 	// 2. Upload to Supabase Storage (outside transaction)
 	const { error: uploadError } = await supabase.storage
@@ -330,7 +342,11 @@ app.openapi(uploadRoute, async (c) => {
 		});
 
 	if (uploadError) {
-		throw new ApiError(400, "UPLOAD_FAILED", `Supabase storage upload failed: ${uploadError.message}`);
+		throw new ApiError(
+			400,
+			"UPLOAD_FAILED",
+			`Supabase storage upload failed: ${uploadError.message}`,
+		);
 	}
 
 	// 3. Insert DB record

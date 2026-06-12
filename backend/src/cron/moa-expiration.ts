@@ -21,9 +21,10 @@ export function startMoaExpirationCron(): void {
 
 		try {
 			const now = new Date();
-			const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+			// Use a 48-hour window instead of 24h to tolerate brief downtime
+			const windowStart = new Date(now.getTime() - 48 * 60 * 60 * 1000);
 
-			// Find MOAs that expired in the last 24h and are not archived
+			// Find MOAs that expired within the window and are not archived
 			const expiredMoas = await db
 				.select({
 					moaId: moas.moaId,
@@ -32,11 +33,13 @@ export function startMoaExpirationCron(): void {
 				})
 				.from(moas)
 				.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
-				.where(and(
-					lte(moas.validUntil, now),
-					sql`${moas.validUntil} > ${twentyFourHoursAgo}`,
-					isNull(moas.archivedAt),
-				));
+				.where(
+					and(
+						lte(moas.validUntil, now),
+						sql`${moas.validUntil} > ${windowStart}`,
+						isNull(moas.archivedAt),
+					),
+				);
 
 			if (expiredMoas.length === 0) {
 				console.log("[CRON] No expired MOAs found.");
@@ -59,6 +62,8 @@ export function startMoaExpirationCron(): void {
 
 /**
  * Sends email notifications for expired MOAs via Resend.
+ * Uses Promise.allSettled so one failure does not abort the rest.
+ * Includes a small delay between sends to respect Resend's rate limits.
  */
 async function sendExpirationEmails(
 	expiredMoas: Array<{
@@ -71,15 +76,28 @@ async function sendExpirationEmails(
 		const { Resend } = await import("resend");
 		const resend = new Resend(env.RESEND_API_KEY);
 
-		await Promise.all(expiredMoas.map(moa => resend.emails.send({
-			from: env.RESEND_FROM ?? "noreply@neust.edu.ph",
-			to: env.ADMIN_EMAIL ?? "admin@neust.edu.ph",
-			subject: `MOA Expired: ${moa.partnerName}`,
-			text: `The MOA with ${moa.partnerName} (ID: ${moa.moaId}) expired on ${moa.validUntil.toISOString()}.`,
-		})));
+		const results = await Promise.allSettled(
+			expiredMoas.map(async (moa, i) => {
+				// Throttle: ~2 req/s to respect Resend rate limits
+				if (i > 0) await new Promise((r) => setTimeout(r, 500));
+				return resend.emails.send({
+					from: env.RESEND_FROM ?? "noreply@neust.edu.ph",
+					to: env.ADMIN_EMAIL ?? "admin@neust.edu.ph",
+					subject: `MOA Expired: ${moa.partnerName}`,
+					text: `The MOA with ${moa.partnerName} (ID: ${moa.moaId}) expired on ${moa.validUntil.toISOString()}.`,
+				});
+			}),
+		);
 
+		const succeeded = results.filter((r) => r.status === "fulfilled").length;
+		const failed = results.filter((r) => r.status === "rejected");
+		if (failed.length > 0) {
+			for (const f of failed) {
+				console.error(`[CRON] Email send failed:`, f.reason);
+			}
+		}
 		console.log(
-			`[CRON] Sent ${expiredMoas.length} expiration email(s) via Resend.`,
+			`[CRON] Sent ${succeeded}/${expiredMoas.length} expiration email(s) via Resend.`,
 		);
 	} catch {
 		console.warn(

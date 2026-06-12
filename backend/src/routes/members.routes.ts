@@ -5,6 +5,7 @@ import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposals } from "../db/schema/proposals.js";
 import { users } from "../db/schema/users.js";
 import { insertAuditLog } from "../lib/audit.js";
+import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import type { AuthEnv } from "../middleware/auth.js";
 
@@ -223,7 +224,7 @@ app.openapi(addMemberRoute, async (c) => {
 			throw new ApiError(404, "USER_NOT_FOUND", "Target user not found");
 		}
 
-		// Prevent duplicate membership
+		// Prevent duplicate membership (unique constraint on proposalId + userId)
 		const [existingMember] = await tx
 			.select({ memberId: proposalMembers.memberId })
 			.from(proposalMembers)
@@ -237,6 +238,28 @@ app.openapi(addMemberRoute, async (c) => {
 
 		if (existingMember) {
 			throw new ApiError(409, "DUPLICATE", "User is already a member");
+		}
+
+		// Enforce single project leader per proposal
+		if (body.projectRole === PROJECT_LEADER_ROLE) {
+			const [existingLeader] = await tx
+				.select({ memberId: proposalMembers.memberId })
+				.from(proposalMembers)
+				.where(
+					and(
+						eq(proposalMembers.proposalId, proposalId),
+						eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE),
+					),
+				)
+				.limit(1);
+
+			if (existingLeader) {
+				throw new ApiError(
+					409,
+					"DUPLICATE_LEADER",
+					"A proposal can only have one project leader",
+				);
+			}
 		}
 
 		const [createdMember] = await tx
@@ -257,7 +280,7 @@ app.openapi(addMemberRoute, async (c) => {
 				userId: authUser.userId,
 				action: `Added member ${body.userId} to proposal ${proposalId}`,
 				tableAffected: "proposal_members",
-				ipAddress: c.req.header("x-forwarded-for") ?? null,
+				ipAddress: getClientIp(c),
 			},
 			tx,
 		);
@@ -336,7 +359,7 @@ app.openapi(removeMemberRoute, async (c) => {
 				userId: authUser.userId,
 				action: `Removed member ${memberId} from proposal ${proposalId}`,
 				tableAffected: "proposal_members",
-				ipAddress: c.req.header("x-forwarded-for") ?? null,
+				ipAddress: getClientIp(c),
 			},
 			tx,
 		);

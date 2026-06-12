@@ -86,18 +86,25 @@ app.use("*", async (c, next) => {
 });
 
 // ── Request timeout: 30s ──
-app.use("*", async (_c, next) => {
-	const timeout = AbortSignal.timeout(30_000);
+app.use("*", async (c, next) => {
+	const controller = new AbortController();
+	const { signal } = controller;
+	const timer = setTimeout(() => controller.abort(), 30_000);
+
 	try {
 		await Promise.race([
 			next(),
 			new Promise<never>((_, reject) => {
-				timeout.addEventListener("abort", () => reject(new Error("Request timeout")));
+				signal.addEventListener(
+					"abort",
+					() => reject(new Error("Request timeout")),
+					{ once: true },
+				);
 			}),
 		]);
 	} catch (error) {
 		if (error instanceof Error && error.message === "Request timeout") {
-			return _c.json(
+			return c.json(
 				{
 					error: {
 						code: "REQUEST_TIMEOUT",
@@ -108,6 +115,8 @@ app.use("*", async (_c, next) => {
 			);
 		}
 		throw error;
+	} finally {
+		clearTimeout(timer);
 	}
 });
 

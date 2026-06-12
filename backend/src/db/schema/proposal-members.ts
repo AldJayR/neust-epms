@@ -1,4 +1,11 @@
-import { index, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+	index,
+	pgTable,
+	timestamp,
+	unique,
+	uuid,
+	varchar,
+} from "drizzle-orm/pg-core";
 import { proposals } from "./proposals.js";
 import { users } from "./users.js";
 
@@ -20,5 +27,9 @@ export const proposalMembers = pgTable(
 	(table) => ({
 		proposalIdx: index("pm_proposal_id_idx").on(table.proposalId),
 		userIdx: index("pm_user_id_idx").on(table.userId),
+		uniqueProposalUser: unique("pm_proposal_user_unique").on(
+			table.proposalId,
+			table.userId,
+		),
 	}),
 );

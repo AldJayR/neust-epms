@@ -222,7 +222,11 @@ app.openapi(bulkUpdateStatusRoute, async (c) => {
 
 	// Prevent self-deactivation
 	if (isActive === false && userIds.includes(authUser.userId)) {
-		throw new ApiError(403, "FORBIDDEN", "You cannot deactivate your own account");
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You cannot deactivate your own account",
+		);
 	}
 
 	if (userIds.length === 0) {
@@ -332,26 +336,26 @@ app.openapi(bulkApproveRoute, async (c) => {
 	const allRoles = await db.select().from(roles);
 	const roleMap = new Map(allRoles.map((r) => [r.roleName, r.roleId]));
 
+	// Perform updates in a transaction for atomicity.
+	// Cache invalidation and audit log happen AFTER commit to avoid
+	// irreversible side-effects if the transaction rolls back.
 	let updatedCount = 0;
 
-	// We perform updates in a transaction for atomicity
 	await db.transaction(async (tx) => {
-		const results = await Promise.all(
-			usersToApprove.map(async (u) => {
-				const roleId = roleMap.get(u.roleName);
-				if (!roleId) return null;
-				const result = await tx
-					.update(users)
-					.set({ isActive: true, roleId, updatedAt: new Date() })
-					.where(eq(users.userId, u.userId))
-					.returning({ userId: users.userId });
-				return result.length > 0 ? result[0] : null;
-			})
-		);
-		updatedCount = results.filter(Boolean).length;
+		// Sequential updates to avoid interleaving concurrent queries on the
+		// same Postgres connection.
+		for (const u of usersToApprove) {
+			const roleId = roleMap.get(u.roleName);
+			if (!roleId) continue;
+			const result = await tx
+				.update(users)
+				.set({ isActive: true, roleId, updatedAt: new Date() })
+				.where(eq(users.userId, u.userId))
+				.returning({ userId: users.userId });
+			if (result.length > 0) updatedCount++;
+		}
 
 		if (updatedCount > 0) {
-			invalidateAuthUserCache(usersToApprove.map((u) => u.userId));
 			await insertAuditLog(
 				{
 					userId: authUser.userId,
@@ -363,6 +367,11 @@ app.openapi(bulkApproveRoute, async (c) => {
 			);
 		}
 	});
+
+	// Invalidate cache AFTER successful commit
+	if (updatedCount > 0) {
+		invalidateAuthUserCache(usersToApprove.map((u) => u.userId));
+	}
 
 	return c.json(
 		{

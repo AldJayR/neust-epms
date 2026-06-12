@@ -234,7 +234,10 @@ app.openapi(listRoute, async (c) => {
 			leaderAcademicRank: users.academicRank,
 		})
 		.from(proposals)
-		.leftJoin(leaderSubquery, eq(proposals.proposalId, leaderSubquery.proposalId))
+		.leftJoin(
+			leaderSubquery,
+			eq(proposals.proposalId, leaderSubquery.proposalId),
+		)
 		.leftJoin(users, eq(leaderSubquery.userId, users.userId))
 		.where(and(...whereConditions))
 		.orderBy(desc(proposals.createdAt))
@@ -291,9 +294,27 @@ app.openapi(retStatsRoute, async (c) => {
 	}
 
 	const [pending, approved, denied] = await Promise.all([
-		db.select({ value: count() }).from(proposals).where(and(...whereConditions, eq(proposals.status, PROPOSAL_STATUS.SUBMITTED))),
-		db.select({ value: count() }).from(proposals).where(and(...whereConditions, eq(proposals.status, PROPOSAL_STATUS.APPROVED))),
-		db.select({ value: count() }).from(proposals).where(and(...whereConditions, eq(proposals.status, PROPOSAL_STATUS.REJECTED))),
+		db
+			.select({ value: count() })
+			.from(proposals)
+			.where(
+				and(
+					...whereConditions,
+					eq(proposals.status, PROPOSAL_STATUS.SUBMITTED),
+				),
+			),
+		db
+			.select({ value: count() })
+			.from(proposals)
+			.where(
+				and(...whereConditions, eq(proposals.status, PROPOSAL_STATUS.APPROVED)),
+			),
+		db
+			.select({ value: count() })
+			.from(proposals)
+			.where(
+				and(...whereConditions, eq(proposals.status, PROPOSAL_STATUS.REJECTED)),
+			),
 	]);
 
 	return c.json(
@@ -415,6 +436,27 @@ const createProposalRoute = createRoute({
 app.openapi(createProposalRoute, async (c) => {
 	const user = c.get("user");
 	const body = c.req.valid("json");
+
+	// Scope check: campusId/departmentId must match the creator's own campus/department
+	if (
+		user.roleName === ROLE_NAMES.FACULTY ||
+		user.roleName === ROLE_NAMES.RET_CHAIR
+	) {
+		if (body.campusId !== user.campusId) {
+			throw new ApiError(
+				403,
+				"FORBIDDEN",
+				"You can only create proposals for your own campus",
+			);
+		}
+		if (user.departmentId !== null && body.departmentId !== user.departmentId) {
+			throw new ApiError(
+				403,
+				"FORBIDDEN",
+				"You can only create proposals for your own department",
+			);
+		}
+	}
 
 	const created = await db.transaction(async (tx) => {
 		const [proposal] = await tx

@@ -6,6 +6,7 @@ import { projectReports } from "../db/schema/project-reports.js";
 import { projects } from "../db/schema/projects.js";
 import { proposals } from "../db/schema/proposals.js";
 import { insertAuditLog } from "../lib/audit.js";
+import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import {
 	PROJECT_STATUS,
@@ -279,7 +280,7 @@ app.openapi(createProjectRoute, async (c) => {
 				userId: user.userId,
 				action: `Created project ${createdProject.projectId} from proposal ${body.proposalId}`,
 				tableAffected: "projects",
-				ipAddress: c.req.header("x-forwarded-for") ?? null,
+				ipAddress: getClientIp(c),
 			},
 			tx,
 		);
@@ -375,7 +376,7 @@ app.openapi(linkMoaRoute, async (c) => {
 				userId: user.userId,
 				action: `Linked MOA ${body.moaId} to project ${id}`,
 				tableAffected: "projects",
-				ipAddress: c.req.header("x-forwarded-for") ?? null,
+				ipAddress: getClientIp(c),
 			},
 			tx,
 		);
@@ -485,7 +486,7 @@ app.openapi(transitionRoute, async (c) => {
 				userId: user.userId,
 				action: `Transitioned project ${id} to ${body.status}`,
 				tableAffected: "projects",
-				ipAddress: c.req.header("x-forwarded-for") ?? null,
+				ipAddress: getClientIp(c),
 			},
 			tx,
 		);
@@ -604,7 +605,7 @@ app.openapi(closeProjectRoute, async (c) => {
 				userId: user.userId,
 				action: `Closed project ${id}`,
 				tableAffected: "projects",
-				ipAddress: c.req.header("x-forwarded-for") ?? null,
+				ipAddress: getClientIp(c),
 			},
 			tx,
 		);

@@ -4,6 +4,7 @@ import { db } from "../db/client.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
 import { specialOrders } from "../db/schema/special-orders.js";
 import { insertAuditLog } from "../lib/audit.js";
+import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
@@ -198,7 +199,7 @@ app.openapi(createRoute_, async (c) => {
 		userId: user.userId,
 		action: `Created special order ${created.specialOrderId} for member ${body.memberId}`,
 		tableAffected: "special_orders",
-		ipAddress: c.req.header("x-forwarded-for") ?? null,
+		ipAddress: getClientIp(c),
 	});
 
 	return c.json(
