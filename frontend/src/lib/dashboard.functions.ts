@@ -210,6 +210,12 @@ export interface ReportsResponse {
 	total: number;
 }
 
+export interface ReportStatsResponse {
+	total: number;
+	progress: number;
+	terminal: number;
+}
+
 // ── Server Functions ──────────────────────────────────────
 
 export const getDirectorDashboardFn = createServerFn({ method: "GET" }).handler(
@@ -427,7 +433,7 @@ export const getReportStatsFn = createServerFn({ method: "GET" }).handler(
 			throw new Error("Unauthorized");
 		}
 
-		const response = await fetch(`${API_BASE}/reports?page=1&limit=100`, {
+		const response = await fetch(`${API_BASE}/reports/stats`, {
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
 			},
@@ -435,10 +441,10 @@ export const getReportStatsFn = createServerFn({ method: "GET" }).handler(
 
 		if (!response.ok) {
 			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(errorBody.error?.message ?? "Failed to fetch reports");
+			throw new Error(errorBody.error?.message ?? "Failed to fetch report stats");
 		}
 
-		return (await response.json()) as ReportsResponse;
+		return (await response.json()) as ReportStatsResponse;
 	},
 );
 
@@ -486,8 +492,40 @@ export function projectDetailsQueryOptions(proposalId: string) {
 
 export function reportsQueryOptions() {
 	return queryOptions({
-		queryKey: ["dashboard", "reports"],
+		queryKey: ["dashboard", "reports", "stats"],
 		queryFn: () => getReportStatsFn(),
+		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
+	});
+}
+
+export function reportsListQueryOptions(params: {
+	page: number;
+	limit: number;
+	search?: string;
+}) {
+	return queryOptions({
+		queryKey: ["dashboard", "reports", "list", params],
+		queryFn: async () => {
+			const session = await useAppSession();
+			const { accessToken } = session.data;
+			if (!accessToken) throw new Error("Unauthorized");
+
+			const searchParams = new URLSearchParams({
+				page: String(params.page),
+				limit: String(params.limit),
+			});
+			if (params.search) searchParams.set("search", params.search);
+
+			const response = await fetch(
+				`${API_BASE}/reports?${searchParams.toString()}`,
+				{ headers: { Authorization: `Bearer ${accessToken}` } },
+			);
+			if (!response.ok) {
+				const errorBody = (await response.json()) as ApiErrorResponse;
+				throw new Error(errorBody.error?.message ?? "Failed to fetch reports");
+			}
+			return (await response.json()) as ReportsResponse;
+		},
 		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
 	});
 }

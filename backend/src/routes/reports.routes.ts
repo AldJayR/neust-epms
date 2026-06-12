@@ -48,6 +48,14 @@ const CreateReportSchema = z
 	})
 	.openapi("CreateReport");
 
+const ReportStatsSchema = z
+	.object({
+		total: z.number(),
+		progress: z.number(),
+		terminal: z.number(),
+	})
+	.openapi("ReportStats");
+
 const ErrorSchema = z
 	.object({
 		error: z.object({ code: z.string(), message: z.string() }),
@@ -174,6 +182,73 @@ app.openapi(listRoute, async (c) => {
 	}));
 
 	return c.json({ items, total }, 200);
+});
+
+// ── GET /reports/stats ──
+const statsRoute = createRoute({
+	method: "get",
+	path: "/reports/stats",
+	tags: ["Reports"],
+	summary: "Get report counts without fetching full list",
+	security: [{ Bearer: [] }],
+	responses: {
+		200: {
+			content: { "application/json": { schema: ReportStatsSchema } },
+			description: "Report statistics",
+		},
+	},
+});
+
+app.openapi(statsRoute, async (c) => {
+	const user = c.get("user");
+
+	const whereConditions: SQL[] = [isNull(projectReports.archivedAt)];
+
+	if (user.roleName === ROLE_NAMES.FACULTY) {
+		if (user.departmentId !== null) {
+			whereConditions.push(eq(proposals.departmentId, user.departmentId));
+		} else {
+			whereConditions.push(eq(proposals.campusId, user.campusId));
+		}
+	} else if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+		if (user.isMainCampus && user.departmentId !== null) {
+			whereConditions.push(eq(proposals.departmentId, user.departmentId));
+		} else {
+			whereConditions.push(eq(proposals.campusId, user.campusId));
+		}
+	}
+
+	const baseJoin = db
+		.select({ value: count() })
+		.from(projectReports)
+		.innerJoin(projects, eq(projectReports.projectId, projects.projectId))
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+		.where(and(...whereConditions));
+
+	const [totalRow, progressRow, terminalRow] = await Promise.all([
+		baseJoin,
+		db
+			.select({ value: count() })
+			.from(projectReports)
+			.innerJoin(projects, eq(projectReports.projectId, projects.projectId))
+			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+			.where(and(...whereConditions, eq(projectReports.reportType, "Progress"))),
+		db
+			.select({ value: count() })
+			.from(projectReports)
+			.innerJoin(projects, eq(projectReports.projectId, projects.projectId))
+			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+			.where(and(...whereConditions, eq(projectReports.reportType, "Terminal"))),
+	]);
+
+	return c.json(
+		{
+			total: Number(totalRow[0]?.value ?? 0),
+			progress: Number(progressRow[0]?.value ?? 0),
+			terminal: Number(terminalRow[0]?.value ?? 0),
+		},
+		200,
+	);
 });
 
 // ── POST /reports ──

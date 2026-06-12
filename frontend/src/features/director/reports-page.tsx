@@ -21,21 +21,25 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { reportsQueryOptions } from "@/lib/dashboard.functions";
+import { reportsQueryOptions, reportsListQueryOptions } from "@/lib/dashboard.functions";
 import { AppShell } from "../layout/app-shell";
 
 export function ReportsPage() {
 	const [search, setSearch] = useState("");
-	const { data, isLoading, error } = useQuery(reportsQueryOptions());
+	const [page, setPage] = useState(1);
+	const limit = 20;
 
-	const reports = data?.items ?? [];
-	const totalReports = data?.total ?? 0;
-	const progressCount = reports.filter(
-		(r) => r.reportType === "Progress",
-	).length;
-	const terminalCount = reports.filter(
-		(r) => r.reportType === "Terminal",
-	).length;
+	const { data: stats, isLoading: statsLoading } = useQuery(reportsQueryOptions());
+	const { data: listData, isLoading: listLoading, error } = useQuery(
+		reportsListQueryOptions({ page, limit, search: search || undefined }),
+	);
+
+	const reports = listData?.items ?? [];
+	const totalReports = stats?.total ?? 0;
+	const progressCount = stats?.progress ?? 0;
+	const terminalCount = stats?.terminal ?? 0;
+	const isLoading = statsLoading || listLoading;
+	const totalPages = Math.max(1, Math.ceil(totalReports / limit));
 
 	const showTableHeader = reports.length > 0 || search.trim().length > 0;
 
@@ -227,6 +231,8 @@ export function ReportsPage() {
 							variant="ghost"
 							size="sm"
 							className="gap-1 font-medium text-sm"
+							disabled={page <= 1}
+							onClick={() => setPage((p) => Math.max(1, p - 1))}
 						>
 							<ChevronLeft className="size-4" />
 							Previous
@@ -236,12 +242,14 @@ export function ReportsPage() {
 							size="sm"
 							className="h-9 w-9 p-0 border-[#e5e5e5] shadow-sm font-medium"
 						>
-							1
+							{page}
 						</Button>
 						<Button
 							variant="ghost"
 							size="sm"
 							className="gap-1 font-medium text-sm"
+							disabled={page >= totalPages}
+							onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
 						>
 							Next
 							<ChevronRight className="size-4" />
