@@ -10,6 +10,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import type { AuthContext } from "../lib/auth";
 import { getCurrentUserFn } from "../lib/auth.functions";
+import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
 
 interface MyRouterContext {
@@ -84,6 +85,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
 				{children}
+				<Toaster position="top-right" />
 				{import.meta.env.DEV && (
 					<TanStackDevtools
 						config={{

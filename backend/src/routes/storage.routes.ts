@@ -16,7 +16,7 @@ const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
 
 const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
-const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
 function sanitizeFilename(fileName: string): string {
 	const normalized = fileName
@@ -293,7 +293,7 @@ app.openapi(uploadRoute, async (c) => {
 	// Pre-check Content-Length to avoid buffering large payloads in memory
 	const contentLength = Number(c.req.header("content-length") ?? 0);
 	if (contentLength > MAX_UPLOAD_BYTES) {
-		throw new ApiError(413, "FILE_TOO_LARGE", "File exceeds 10MB limit");
+		throw new ApiError(413, "FILE_TOO_LARGE", "File exceeds 50MB limit");
 	}
 
 	// Parse multipart form data
@@ -309,20 +309,23 @@ app.openapi(uploadRoute, async (c) => {
 	}
 
 	if (file.size > MAX_UPLOAD_BYTES) {
-		throw new ApiError(413, "FILE_TOO_LARGE", "File exceeds 10MB limit");
+		throw new ApiError(413, "FILE_TOO_LARGE", "File exceeds 50MB limit");
 	}
 
 	if (file.type !== "application/pdf") {
 		throw new ApiError(422, "INVALID_FILE_TYPE", "Only PDF files are allowed");
 	}
 
-	// 1. Determine next version (SELECT FOR UPDATE to prevent race condition)
+	// 1. Determine next version (lock rows first, then aggregate)
 	const nextVersion = await db.transaction(async (tx) => {
 		const result = await tx.execute(sql`
 			SELECT COALESCE(MAX(version_num), 0) + 1 AS max_ver
-			FROM proposal_documents
-			WHERE proposal_id = ${proposalId}
-			FOR UPDATE
+			FROM (
+				SELECT version_num
+				FROM proposal_documents
+				WHERE proposal_id = ${proposalId}
+				FOR UPDATE
+			) locked
 		`);
 		return Number(result.rows[0]?.max_ver ?? 1);
 	});

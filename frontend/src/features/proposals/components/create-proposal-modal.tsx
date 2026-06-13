@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Progress, ProgressValue } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -44,8 +45,6 @@ import {
   createProposalFn, 
   uploadProposalDocumentFn, 
   sdgsQueryOptions, 
-  campusesQueryOptions,
-  departmentsQueryOptions
 } from "@/lib/ret.functions";
 import { searchUsersFn } from "@/lib/auth.functions";
 import type { AuthUser } from "@/lib/auth";
@@ -69,6 +68,51 @@ const formSchema = z.object({
   })).min(1, "At least one team member is required"),
 });
 
+function formatPeso(value: number): string {
+  if (!value && value !== 0) return "";
+  return value.toLocaleString("en-PH", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function parsePesoInput(raw: string): number {
+  const cleaned = raw.replace(/[^0-9.]/g, "");
+  const parsed = parseFloat(cleaned);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+interface CurrencyInputProps {
+  value: number;
+  onChange: (value: number) => void;
+  placeholder?: string;
+}
+
+function CurrencyInput({ value, onChange, placeholder }: CurrencyInputProps) {
+  const [display, setDisplay] = React.useState(() => formatPeso(value));
+
+  React.useEffect(() => {
+    setDisplay(formatPeso(value));
+  }, [value]);
+
+  return (
+    <div className="relative">
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₱</span>
+      <Input
+        type="text"
+        inputMode="decimal"
+        className="pl-7"
+        value={display}
+        placeholder={placeholder}
+        onChange={(e) => {
+          const raw = e.target.value;
+          const num = parsePesoInput(raw);
+          setDisplay(raw === "" ? "" : formatPeso(num));
+          onChange(num);
+        }}
+        onBlur={() => setDisplay(formatPeso(value))}
+      />
+    </div>
+  );
+}
+
 type FormValues = z.infer<typeof formSchema>;
 
 interface CreateProposalModalProps {
@@ -80,8 +124,12 @@ interface CreateProposalModalProps {
 export function CreateProposalModal({ open, onOpenChange, user }: CreateProposalModalProps) {
   const [step, setStep] = React.useState(1);
   const [file, setFile] = React.useState<File | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [userSearch, setUserSearch] = React.useState("");
   const queryClient = useQueryClient();
+  const [uploadProgress, setUploadProgress] = React.useState(0);
+  const [uploadPhase, setUploadPhase] = React.useState<"idle" | "creating" | "uploading" | "done">("idle");
+  const uploadIntervalRef = React.useRef<ReturnType<typeof setInterval>>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -113,8 +161,6 @@ export function CreateProposalModal({ open, onOpenChange, user }: CreateProposal
   });
 
   const sdgsQuery = useQuery(sdgsQueryOptions());
-  const campusesQuery = useQuery(campusesQueryOptions());
-  const departmentsQuery = useQuery(departmentsQueryOptions());
 
   const searchUsersQuery = useQuery({
     queryKey: ["users", "search", userSearch],
@@ -137,6 +183,9 @@ export function CreateProposalModal({ open, onOpenChange, user }: CreateProposal
     }
 
     try {
+      setUploadPhase("creating");
+      setUploadProgress(0);
+
       const proposal = await createProposalMutation.mutateAsync({
         data: {
           campusId: Number(values.campusId),
@@ -154,21 +203,33 @@ export function CreateProposalModal({ open, onOpenChange, user }: CreateProposal
         }
       });
 
+      setUploadProgress(30);
+      setUploadPhase("uploading");
+
       const formData = new FormData();
       formData.append("file", file);
       formData.append("proposalId", proposal.proposalId);
       
       await uploadDocumentMutation.mutateAsync({ data: formData });
 
+      setUploadProgress(100);
+      setUploadPhase("done");
+
       toast.success("Project proposal submitted successfully!");
       onOpenChange(false);
       form.reset();
       setStep(1);
       setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       queryClient.invalidateQueries({ queryKey: ["ret", "dashboard"] });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Something went wrong";
       toast.error(message);
+    } finally {
+      setTimeout(() => {
+        setUploadPhase("idle");
+        setUploadProgress(0);
+      }, 1000);
     }
   };
 
@@ -188,26 +249,74 @@ export function CreateProposalModal({ open, onOpenChange, user }: CreateProposal
 
   const prevStep = () => setStep(step - 1);
 
+  React.useEffect(() => {
+    if (uploadPhase !== "uploading") return;
+
+    const fileSizeMB = file ? file.size / 1024 / 1024 : 1;
+    const baseInterval = 80;
+    const interval = Math.max(40, baseInterval - fileSizeMB * 2);
+    const increment = Math.max(1, Math.min(8, 30 / fileSizeMB));
+
+    uploadIntervalRef.current = setInterval(() => {
+      setUploadProgress((prev) => {
+        const next = prev + increment;
+        return next >= 95 ? 95 : next;
+      });
+    }, interval);
+
+    return () => {
+      if (uploadIntervalRef.current) clearInterval(uploadIntervalRef.current);
+    };
+  }, [uploadPhase, file]);
+
+  const [isDragging, setIsDragging] = React.useState(false);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
-      const selectedFile = e.target.files[0];
-      if (selectedFile.type !== "application/pdf") {
-        toast.error("Only PDF files are allowed");
-        return;
-      }
-      if (selectedFile.size > 10 * 1024 * 1024) {
-        toast.error("File size must be less than 10MB");
-        return;
-      }
-      setFile(selectedFile);
+      validateAndSetFile(e.target.files[0]);
+      e.target.value = "";
     }
+  };
+
+  const validateAndSetFile = (selectedFile: File) => {
+    if (selectedFile.type !== "application/pdf") {
+      toast.error("Only PDF files are allowed");
+      return;
+    }
+    if (selectedFile.size > 50 * 1024 * 1024) {
+      toast.error("File size must be less than 50MB");
+      return;
+    }
+    setFile(selectedFile);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile) validateAndSetFile(droppedFile);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const removeFile = () => {
+    setFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden gap-0">
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
-            <DialogHeader className="p-6 border-b border-[#ebebeb]">
+          <form onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }} className="flex flex-col h-full">
+            <DialogHeader className="py-4 px-6 border-b border-[#ebebeb]">
               <DialogTitle className="text-xl font-semibold text-[#11215a]">
                 Start New Project Proposal
               </DialogTitle>
@@ -231,22 +340,20 @@ export function CreateProposalModal({ open, onOpenChange, user }: CreateProposal
                     </FieldContent>
                     <FieldError errors={[form.formState.errors.title]} />
                   </Field>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Field>
-                      <FieldLabel>Banner Program</FieldLabel>
-                      <FieldContent>
-                        <Input placeholder="e.g. Community Outreach" {...form.register("bannerProgram")} />
-                      </FieldContent>
-                      <FieldError errors={[form.formState.errors.bannerProgram]} />
-                    </Field>
-                    <Field>
-                      <FieldLabel>Project Locale</FieldLabel>
-                      <FieldContent>
-                        <Input placeholder="e.g. Cabanatuan City" {...form.register("projectLocale")} />
-                      </FieldContent>
-                      <FieldError errors={[form.formState.errors.projectLocale]} />
-                    </Field>
-                  </div>
+                  <Field>
+                    <FieldLabel>Banner Program</FieldLabel>
+                    <FieldContent>
+                      <Input placeholder="e.g. Community Outreach" {...form.register("bannerProgram")} />
+                    </FieldContent>
+                    <FieldError errors={[form.formState.errors.bannerProgram]} />
+                  </Field>
+                  <Field>
+                    <FieldLabel>Project Locale</FieldLabel>
+                    <FieldContent>
+                      <Input placeholder="e.g. Cabanatuan City" {...form.register("projectLocale")} />
+                    </FieldContent>
+                    <FieldError errors={[form.formState.errors.projectLocale]} />
+                  </Field>
                   <Field>
                     <FieldLabel>Extension Category</FieldLabel>
                     <FieldContent>
@@ -266,50 +373,18 @@ export function CreateProposalModal({ open, onOpenChange, user }: CreateProposal
                     </FieldContent>
                     <FieldError errors={[form.formState.errors.extensionCategory]} />
                   </Field>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Field>
-                      <FieldLabel>Campus</FieldLabel>
-                      <FieldContent>
-                        <Select 
-                          onValueChange={(val) => { if (val != null) form.setValue("campusId", val); }} 
-                          defaultValue={form.getValues("campusId")}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select campus" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {campusesQuery.data?.map(campus => (
-                              <SelectItem key={campus.id} value={campus.id.toString()}>
-                                {campus.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FieldContent>
-                      <FieldError errors={[form.formState.errors.campusId]} />
-                    </Field>
-                    <Field>
-                      <FieldLabel>Department</FieldLabel>
-                      <FieldContent>
-                        <Select 
-                          onValueChange={(val) => { if (val != null) form.setValue("departmentId", val); }} 
-                          defaultValue={form.getValues("departmentId")}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select department" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {departmentsQuery.data?.map(dept => (
-                              <SelectItem key={dept.id} value={dept.id.toString()}>
-                                {dept.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FieldContent>
-                      <FieldError errors={[form.formState.errors.departmentId]} />
-                    </Field>
-                  </div>
+                  <Field>
+                    <FieldLabel>Campus</FieldLabel>
+                    <FieldContent>
+                      <Input readOnly value={user.campusName} className="bg-muted" />
+                    </FieldContent>
+                  </Field>
+                  <Field>
+                    <FieldLabel>Department</FieldLabel>
+                    <FieldContent>
+                      <Input readOnly value={user.departmentName ?? ""} className="bg-muted" />
+                    </FieldContent>
+                  </Field>
                   <div className="space-y-2">
                     <FieldLabel>Addressed SDGs</FieldLabel>
                     <div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto p-2 border rounded-md">
@@ -359,14 +434,22 @@ export function CreateProposalModal({ open, onOpenChange, user }: CreateProposal
                     <Field>
                       <FieldLabel>Budget (Partner)</FieldLabel>
                       <FieldContent>
-                        <Input type="number" {...form.register("budgetPartner", { valueAsNumber: true })} />
+                        <CurrencyInput
+                          value={form.watch("budgetPartner")}
+                          onChange={(val) => form.setValue("budgetPartner", val)}
+                          placeholder="0"
+                        />
                       </FieldContent>
                       <FieldError errors={[form.formState.errors.budgetPartner]} />
                     </Field>
                     <Field>
                       <FieldLabel>Budget (NEUST)</FieldLabel>
                       <FieldContent>
-                        <Input type="number" {...form.register("budgetNeust", { valueAsNumber: true })} />
+                        <CurrencyInput
+                          value={form.watch("budgetNeust")}
+                          onChange={(val) => form.setValue("budgetNeust", val)}
+                          placeholder="0"
+                        />
                       </FieldContent>
                       <FieldError errors={[form.formState.errors.budgetNeust]} />
                     </Field>
@@ -426,20 +509,26 @@ export function CreateProposalModal({ open, onOpenChange, user }: CreateProposal
                           <div className="flex-1">
                             <p className="text-sm font-medium">{field.name}</p>
                             <div className="mt-1 flex items-center gap-2">
-                              <Select 
-                                value={form.watch(`members.${index}.projectRole`)}
-                                onValueChange={(val) => { if (val != null) form.setValue(`members.${index}.projectRole`, val); }}
-                              >
-                                <SelectTrigger className="h-7 w-[150px] text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Project Leader">Project Leader</SelectItem>
-                                  <SelectItem value="Co-Project Leader">Co-Project Leader</SelectItem>
-                                  <SelectItem value="Project Staff">Project Staff</SelectItem>
-                                  <SelectItem value="Member">Member</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              {field.userId === user.userId ? (
+                                <span className="text-xs text-muted-foreground h-7 flex items-center">
+                                  {form.watch(`members.${index}.projectRole`)}
+                                </span>
+                              ) : (
+                                <Select 
+                                  value={form.watch(`members.${index}.projectRole`)}
+                                  onValueChange={(val) => { if (val != null) form.setValue(`members.${index}.projectRole`, val); }}
+                                >
+                                  <SelectTrigger className="h-7 w-[150px] text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Project Leader">Project Leader</SelectItem>
+                                    <SelectItem value="Co-Project Leader">Co-Project Leader</SelectItem>
+                                    <SelectItem value="Project Staff">Project Staff</SelectItem>
+                                    <SelectItem value="Member">Member</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
                             </div>
                           </div>
                           {field.userId !== user.userId && (
@@ -462,43 +551,73 @@ export function CreateProposalModal({ open, onOpenChange, user }: CreateProposal
 
               {step === 4 && (
                 <div className="space-y-6">
-                  <div className="border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-4 bg-[#fcfcfc] border-[#e5e5e5]">
-                    {file ? (
+                  <div
+                    className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-4 bg-[#fcfcfc] transition-colors ${isDragging ? "border-primary bg-primary/5" : "border-[#e5e5e5]"}`}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                  >
+                    {uploadPhase !== "idle" ? (
+                      <div className="flex flex-col items-center gap-3 w-full max-w-xs">
+                        <div className="p-3 bg-primary/10 rounded-full">
+                          <Loader2 className="size-8 text-primary animate-spin" />
+                        </div>
+                        <p className="text-sm font-medium">
+                          {uploadPhase === "creating" && "Creating proposal..."}
+                          {uploadPhase === "uploading" && "Uploading document..."}
+                          {uploadPhase === "done" && "Upload complete!"}
+                        </p>
+                        <Progress value={uploadProgress} className="w-full">
+                          <ProgressValue />
+                        </Progress>
+                      </div>
+                    ) : file ? (
                       <div className="flex flex-col items-center gap-2">
-                        <div className="p-3 bg-blue-50 rounded-full">
-                          <FileText className="size-8 text-blue-600" />
+                        <div className="p-3 bg-primary/10 rounded-full">
+                          <FileText className="size-8 text-primary" />
                         </div>
                         <p className="text-sm font-medium">{file.name}</p>
                         <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="mt-2"
-                          onClick={() => setFile(null)}
-                        >
-                          Change File
-                        </Button>
+                        <div className="flex gap-2 mt-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => { fileInputRef.current?.click(); }}
+                          >
+                            Change File
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={removeFile}
+                          >
+                            Remove
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <>
-                        <div className="p-4 bg-blue-50 rounded-full">
-                          <Upload className="size-8 text-blue-600" />
+                        <div className="p-4 bg-primary/10 rounded-full">
+                          <Upload className="size-8 text-primary" />
                         </div>
                         <div className="text-center">
                           <p className="text-sm font-medium">Click to upload or drag and drop</p>
-                          <p className="text-xs text-muted-foreground mt-1">Project Proposal PDF (Max 10MB)</p>
+                          <p className="text-xs text-muted-foreground mt-1">Project Proposal PDF (Max 50MB)</p>
                         </div>
                         <input
                           type="file"
                           id="file-upload"
+                          ref={fileInputRef}
                           className="hidden"
                           accept="application/pdf"
                           onChange={handleFileChange}
                         />
                         <Button 
                           variant="secondary" 
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                          className="bg-brand-primary hover:bg-brand-primary-hover text-white"
                           render={<label htmlFor="file-upload" className="cursor-pointer" />}
+                          nativeButton={false}
                         >
                           Select File
                         </Button>
@@ -513,7 +632,7 @@ export function CreateProposalModal({ open, onOpenChange, user }: CreateProposal
               <div className="flex items-center justify-between w-full">
                 {step > 1 ? (
                   <Button type="button" variant="outline" onClick={prevStep}>
-                    <ChevronLeft className="mr-2 size-4" />
+                    <ChevronLeft className="size-4" />
                     Previous
                   </Button>
                 ) : (
@@ -523,25 +642,26 @@ export function CreateProposalModal({ open, onOpenChange, user }: CreateProposal
                 )}
 
                 {step < 4 ? (
-                  <Button type="button" onClick={nextStep} className="bg-[#11215a] hover:bg-[#11215a]/90">
+                  <Button type="button" onClick={nextStep} className="bg-brand-primary hover:bg-brand-primary-hover">
                     Next
-                    <ChevronRight className="ml-2 size-4" />
+                    <ChevronRight className="size-4" />
                   </Button>
                 ) : (
                   <Button 
-                    type="submit" 
-                    className="bg-blue-600 hover:bg-blue-700 text-white min-w-[120px]"
+                    type="button"
+                    onClick={() => form.handleSubmit(onSubmit)()}
+                    className="bg-brand-primary hover:bg-brand-primary-hover text-white"
                     disabled={createProposalMutation.isPending || uploadDocumentMutation.isPending}
                   >
                     {createProposalMutation.isPending || uploadDocumentMutation.isPending ? (
                       <>
-                        <Loader2 className="mr-2 size-4 animate-spin" />
+                        <Loader2 className="size-4 animate-spin" />
                         Submitting...
                       </>
                     ) : (
                       <>
                         Finish
-                        <Check className="ml-2 size-4" />
+                        <Check className="size-4" />
                       </>
                     )}
                   </Button>

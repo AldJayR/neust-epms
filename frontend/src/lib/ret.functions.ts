@@ -183,7 +183,7 @@ export const uploadProposalDocumentFn = createServerFn({ method: "POST" })
 		if (typeof proposalId !== "string" || !proposalId) {
 			throw new Error("proposalId is required");
 		}
-		return { proposalId, formData: data };
+		return data;
 	})
 	.handler(async ({ data }) => {
 		const session = await useAppSession();
@@ -193,14 +193,21 @@ export const uploadProposalDocumentFn = createServerFn({ method: "POST" })
 			throw new Error("Unauthorized");
 		}
 
+		const proposalId = data.get("proposalId") as string;
+		const file = data.get("file");
+
+		if (!(file instanceof File)) {
+			throw new Error("A PDF file is required");
+		}
+
 		const response = await fetch(
-			`${API_BASE}/proposals/${data.proposalId}/documents/upload`,
+			`${API_BASE}/proposals/${proposalId}/documents/upload`,
 			{
 				method: "POST",
 				headers: {
 					Authorization: `Bearer ${accessToken}`,
 				},
-				body: data.formData,
+				body: data,
 			},
 		);
 

@@ -138,7 +138,7 @@ describe("POST /proposals/:proposalId/documents/upload", () => {
 		const formData = new FormData();
 		formData.set(
 			"file",
-			new File([new Uint8Array(10 * 1024 * 1024 + 1)], "large.pdf", {
+			new File([new Uint8Array(50 * 1024 * 1024 + 1)], "large.pdf", {
 				type: "application/pdf",
 			}),
 		);
