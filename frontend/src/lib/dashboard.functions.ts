@@ -179,6 +179,7 @@ export interface ProjectDetailsResponse {
 			name: string;
 			avatarUrl?: string;
 		};
+		departmentCode: string;
 		department: string;
 		duration: string;
 		moaLinked: string;

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import {
 	CircleCheck,
@@ -62,6 +63,7 @@ export function RETDashboardPage({
 	const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
 	const [searchInput, setSearchInput] = React.useState(search ?? "");
 	const [statusFilter, setStatusFilter] = React.useState<string>("all");
+	const navigate = useNavigate();
 
 	const statsQuery = useQuery(retDashboardStatsQueryOptions());
 	const proposalsQuery = useQuery(
@@ -246,8 +248,12 @@ export function RETDashboardPage({
 											<EllipsisVertical className="size-4" />
 										</DropdownMenuTrigger>
 										<DropdownMenuContent align="end">
-											<DropdownMenuItem>View Details</DropdownMenuItem>
-											<DropdownMenuItem>Review Proposal</DropdownMenuItem>
+											<DropdownMenuItem onClick={() => navigate({ to: "/projects/$projectId", params: { projectId: proposal.proposalId } })}>
+												View Details
+											</DropdownMenuItem>
+											<DropdownMenuItem onClick={() => navigate({ to: "/proposals/$proposalId", params: { proposalId: proposal.proposalId } })}>
+												Review Proposal
+											</DropdownMenuItem>
 										</DropdownMenuContent>
 									</DropdownMenu>
 								</TableCell>

@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import type { ApiErrorResponse } from "./auth";
-import { useAppSession } from "./session.server";
+import { getValidAccessToken } from "./session.server";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 const RET_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
@@ -99,12 +99,7 @@ export interface MetadataItem {
 
 export const getRETDashboardStatsFn = createServerFn({ method: "GET" }).handler(
 	async () => {
-		const session = await useAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const accessToken = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/proposals/ret/dashboard-stats`, {
 			headers: {
@@ -124,12 +119,7 @@ export const getRETDashboardStatsFn = createServerFn({ method: "GET" }).handler(
 export const getRETProposalsFn = createServerFn({ method: "GET" })
 	.inputValidator(retDashboardParamsSchema)
 	.handler(async ({ data }) => {
-		const session = await useAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const accessToken = await getValidAccessToken();
 
 		const url = new URL(`${API_BASE}/proposals`);
 		url.searchParams.set("page", data.page.toString());
@@ -153,12 +143,7 @@ export const getRETProposalsFn = createServerFn({ method: "GET" })
 export const createProposalFn = createServerFn({ method: "POST" })
 	.inputValidator((data: CreateProposalInput) => data)
 	.handler(async ({ data }) => {
-		const session = await useAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const accessToken = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/proposals`, {
 			method: "POST",
@@ -186,12 +171,7 @@ export const uploadProposalDocumentFn = createServerFn({ method: "POST" })
 		return data;
 	})
 	.handler(async ({ data }) => {
-		const session = await useAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const accessToken = await getValidAccessToken();
 
 		const proposalId = data.get("proposalId") as string;
 		const file = data.get("file");
@@ -224,9 +204,7 @@ export const uploadProposalDocumentFn = createServerFn({ method: "POST" })
 	});
 
 export const getSDGsFn = createServerFn({ method: "GET" }).handler(async () => {
-	const session = await useAppSession();
-	const { accessToken } = session.data;
-	if (!accessToken) throw new Error("Unauthorized");
+	const accessToken = await getValidAccessToken();
 
 	const response = await fetch(`${API_BASE}/proposals/metadata/sdgs`, {
 		headers: { Authorization: `Bearer ${accessToken}` },
@@ -237,9 +215,7 @@ export const getSDGsFn = createServerFn({ method: "GET" }).handler(async () => {
 
 export const getSectorsFn = createServerFn({ method: "GET" }).handler(
 	async () => {
-		const session = await useAppSession();
-		const { accessToken } = session.data;
-		if (!accessToken) throw new Error("Unauthorized");
+		const accessToken = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/proposals/metadata/sectors`, {
 			headers: { Authorization: `Bearer ${accessToken}` },

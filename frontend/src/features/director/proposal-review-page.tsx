@@ -10,6 +10,7 @@ import {
 	reviewProposalFn,
 } from "@/lib/dashboard.functions";
 import { AppShell } from "../layout/app-shell";
+import { PdfViewer } from "@/components/pdf-viewer";
 
 interface ProposalReviewPageProps {
 	proposalId: string;
@@ -125,29 +126,21 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 					<div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 						{/* Left Column: PDF Viewer */}
 						<div className="lg:col-span-8 flex flex-col gap-4">
-							<div className="bg-[#f9f9f9] border border-[#ebebeb] rounded-[12px] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] overflow-hidden h-[844px] flex flex-col items-center pt-8 px-4">
-								<div className="bg-white w-full h-full shadow-lg rounded-t-sm overflow-hidden flex flex-col">
-									<div className="flex-1">
-										{currentDoc ? (
-											<iframe
-												src={currentDoc.url}
-												className="w-full h-full border-none"
-												title={currentDoc.name}
-											/>
-										) : (
-											<div className="flex items-center justify-center h-full text-[#737373]">
-												No document available
-											</div>
-										)}
+							<div className="bg-[#f9f9f9] border border-[#ebebeb] rounded-[12px] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] overflow-hidden h-[844px]">
+								{currentDoc ? (
+									<PdfViewer url={currentDoc.url} className="h-full" />
+								) : (
+									<div className="flex items-center justify-center h-full text-[#737373]">
+										No document available
 									</div>
-								</div>
+								)}
 							</div>
 						</div>
 
 						{/* Right Column: Details & Actions */}
 						<div className="lg:col-span-4 flex flex-col gap-6">
 							<Card className="border-[#ebebeb] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] rounded-[12px] overflow-hidden">
-								<div className="px-4 py-3 border-b border-[#ebebeb]">
+								<div className="px-4 py-2 border-b border-[#ebebeb]">
 									<h2 className="text-sm font-normal text-[#666]">
 										Proposal Details
 									</h2>
@@ -167,7 +160,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 												Department
 											</span>
 											<span className="text-black font-medium">
-												{data.metadata.department}
+												{data.metadata.departmentCode}
 											</span>
 										</div>
 										<div className="flex justify-between items-center text-[14px]">

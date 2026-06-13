@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import {
 	and,
@@ -31,11 +32,14 @@ import {
 	type ProjectStatus,
 	ROLE_NAMES,
 } from "../lib/types.js";
+import { env } from "../env.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
+
+const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
 // ── Authentication & Authorization ──
 // MUST be registered before any route handler below: in Hono, middleware
@@ -988,6 +992,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 			budgetPartner: proposals.budgetPartner,
 			leaderFirstName: users.firstName,
 			leaderLastName: users.lastName,
+			departmentCode: departments.departmentCode,
 			departmentName: departments.departmentName,
 			projectStatus: projects.projectStatus,
 			targetStartDate: proposals.targetStartDate,
@@ -1143,13 +1148,24 @@ app.openapi(projectDetailsRoute, async (c) => {
 		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
 	);
 
-	const attachments = documentRows.map((doc) => ({
-		id: doc.documentId,
-		name: doc.storagePath.split("/").pop() || doc.storagePath,
-		type: doc.storagePath.split(".").pop()?.toUpperCase() || "FILE",
-		url: doc.storagePath,
-		version: `v${doc.versionNum}`,
-	}));
+	const attachments = await Promise.all(
+		documentRows.map(async (doc) => {
+			const { data: signedUrlData } = await supabase.storage
+				.from("documents")
+				.createSignedUrl(doc.storagePath, 3600);
+
+			const rawName = doc.storagePath.split("/").pop() || doc.storagePath;
+			const cleanName = rawName.replace(/^v\d+_\d+_[a-f0-9-]+_/, "");
+
+			return {
+				id: doc.documentId,
+				name: cleanName,
+				type: doc.storagePath.split(".").pop()?.toUpperCase() || "FILE",
+				url: signedUrlData?.signedUrl ?? "",
+				version: `v${doc.versionNum}`,
+			};
+		}),
+	);
 
 	const status = row.projectStatus || row.status;
 
@@ -1163,6 +1179,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 				leader: {
 					name: `${row.leaderFirstName ?? "N/A"} ${row.leaderLastName ?? "N/A"}`.trim(),
 				},
+				departmentCode: row.departmentCode,
 				department: row.departmentName,
 				duration,
 				moaLinked: row.moaPartner || "None",

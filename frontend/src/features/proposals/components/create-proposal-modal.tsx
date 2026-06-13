@@ -133,6 +133,7 @@ export function CreateProposalModal({ open, onOpenChange, user }: CreateProposal
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
     defaultValues: {
       title: "",
       bannerProgram: "",
@@ -162,10 +163,19 @@ export function CreateProposalModal({ open, onOpenChange, user }: CreateProposal
 
   const sdgsQuery = useQuery(sdgsQueryOptions());
 
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(userSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [userSearch]);
+
   const searchUsersQuery = useQuery({
-    queryKey: ["users", "search", userSearch],
-    queryFn: () => searchUsersFn({ data: { search: userSearch } }),
-    enabled: userSearch.length > 2,
+    queryKey: ["users", "search", debouncedSearch],
+    queryFn: () => searchUsersFn({ data: { search: debouncedSearch } }),
+    enabled: debouncedSearch.length >= 2,
   });
 
   const createProposalMutation = useMutation({
@@ -359,7 +369,7 @@ export function CreateProposalModal({ open, onOpenChange, user }: CreateProposal
                     <FieldContent>
                       <Select 
                         onValueChange={(val) => { if (val != null) form.setValue("extensionCategory", val); }} 
-                        defaultValue={form.getValues("extensionCategory")}
+                        value={form.watch("extensionCategory")}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select category" />

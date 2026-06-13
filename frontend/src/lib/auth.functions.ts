@@ -6,7 +6,7 @@ import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { ApiErrorResponse, AuthUser } from "./auth";
-import { useAppSession } from "./session.server";
+import { getValidAccessToken, useAppSession } from "./session.server";
 import { supabase } from "./supabase.server";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
@@ -103,9 +103,7 @@ export interface SearchUserResponse {
 export const searchUsersFn = createServerFn({ method: "GET" })
 	.inputValidator(z.object({ search: z.string().min(1) }))
 	.handler(async ({ data }) => {
-		const session = await useAppSession();
-		const { accessToken } = session.data;
-		if (!accessToken) throw new Error("Unauthorized");
+		const accessToken = await getValidAccessToken();
 
 		const query = new URLSearchParams({ search: data.search });
 		const response = await fetch(`${API_BASE}/auth/users/search?${query}`, {
