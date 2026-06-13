@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { createClient } from "@supabase/supabase-js";
-import { eq } from "drizzle-orm";
+import { eq, ilike, or } from "drizzle-orm";
 import { rateLimiter } from "hono-rate-limiter";
 import { db } from "../db/client.js";
 import { campuses } from "../db/schema/campuses.js";
@@ -520,6 +520,60 @@ app.openapi(listCampusesRoute, async (c) => {
 		rows.map((r) => ({ id: r.campusId, name: r.campusName })),
 		200,
 	);
+});
+
+// ── GET /auth/users/search ──
+const searchUsersRoute = createRoute({
+	method: "get",
+	path: "/auth/users/search",
+	tags: ["Auth"],
+	summary: "Search for users (Faculty list for team composition)",
+	security: [{ Bearer: [] }],
+	request: {
+		query: z.object({
+			search: z.string().min(1),
+		}),
+	},
+	responses: {
+		200: {
+			content: {
+				"application/json": {
+					schema: z.array(
+						z.object({
+							userId: z.string(),
+							firstName: z.string(),
+							lastName: z.string(),
+							email: z.string(),
+						}),
+					),
+				},
+			},
+			description: "Matching users",
+		},
+	},
+});
+
+app.openapi(searchUsersRoute, async (c) => {
+	const { search } = c.req.valid("query");
+
+	const rows = await db
+		.select({
+			userId: users.userId,
+			firstName: users.firstName,
+			lastName: users.lastName,
+			email: users.email,
+		})
+		.from(users)
+		.where(
+			or(
+				ilike(users.firstName, `%${search}%`),
+				ilike(users.lastName, `%${search}%`),
+				ilike(users.email, `%${search}%`),
+			),
+		)
+		.limit(10);
+
+	return c.json(rows, 200);
 });
 
 export default app;

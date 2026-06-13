@@ -472,7 +472,9 @@ export const getReportStatsFn = createServerFn({ method: "GET" }).handler(
 
 		if (!response.ok) {
 			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(errorBody.error?.message ?? "Failed to fetch report stats");
+			throw new Error(
+				errorBody.error?.message ?? "Failed to fetch report stats",
+			);
 		}
 
 		return (await response.json()) as ReportStatsResponse;

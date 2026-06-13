@@ -40,6 +40,7 @@ import {
 	retProposalsQueryOptions,
 } from "@/lib/ret.functions";
 import { formatAcademicRank } from "@/lib/utils";
+import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
 
 interface RETDashboardPageProps {
 	user: AuthUser;
@@ -58,6 +59,7 @@ export function RETDashboardPage({
 	onSearch,
 	onPageChange,
 }: RETDashboardPageProps) {
+	const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
 	const [searchInput, setSearchInput] = React.useState(search ?? "");
 	const [statusFilter, setStatusFilter] = React.useState<string>("all");
 
@@ -104,7 +106,10 @@ export function RETDashboardPage({
 						{user.departmentName ?? user.campusName}
 					</p>
 				</div>
-				<Button className="bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-[#fafafa] rounded-[10px] h-9 gap-1.5 px-[10px] py-2 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]">
+				<Button
+					onClick={() => setIsCreateModalOpen(true)}
+					className="bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-[#fafafa] rounded-[10px] h-9 gap-1.5 px-[10px] py-2 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
+				>
 					<Plus className="size-4" />
 					<span className="font-medium">Start New Project Proposal</span>
 				</Button>
@@ -295,10 +300,15 @@ export function RETDashboardPage({
 					</Button>
 				</div>
 			</div>
+
+			<CreateProposalModal
+				open={isCreateModalOpen}
+				onOpenChange={setIsCreateModalOpen}
+				user={user}
+			/>
 		</div>
 	);
 }
-
 function ProposalStatusBadge({ status }: { status: string }) {
 	let label = status;
 	let icon = <CircleCheck className="size-3 text-[#737373]" />;

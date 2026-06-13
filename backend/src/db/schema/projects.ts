@@ -21,8 +21,6 @@ export const projects = pgTable(
 			.notNull()
 			.references(() => proposals.proposalId),
 		moaId: uuid("moa_id").references(() => moas.moaId),
-		startDate: timestamp("start_date", { withTimezone: true }),
-		targetEnd: timestamp("target_end", { withTimezone: true }),
 		actualEndDate: timestamp("actual_end_date", { withTimezone: true }),
 		projectStatus: varchar("project_status", { length: 50 })
 			.notNull()

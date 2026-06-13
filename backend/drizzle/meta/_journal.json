@@ -29,6 +29,20 @@
       "when": 1781274166796,
       "tag": "0003_hard_stone_men",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1781335009532,
+      "tag": "0004_rapid_toro",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781335966601,
+      "tag": "0005_left_bulldozer",
+      "breakpoints": true
     }
   ]
 }

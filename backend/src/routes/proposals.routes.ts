@@ -1,12 +1,14 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { and, count, desc, eq, ilike, isNull, or, type SQL } from "drizzle-orm";
 import { db } from "../db/client.js";
+import { beneficiarySectors } from "../db/schema/beneficiary-sectors.js";
 import { proposalBeneficiaries } from "../db/schema/proposal-beneficiaries.js";
 import { proposalDepartments } from "../db/schema/proposal-departments.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposalReviews } from "../db/schema/proposal-reviews.js";
 import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
 import { proposals } from "../db/schema/proposals.js";
+import { sdgs } from "../db/schema/sdgs.js";
 import { users } from "../db/schema/users.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { getClientIp } from "../lib/client-ip.js";
@@ -57,6 +59,8 @@ const ProposalSchema = z
 		status: z.string(),
 		bypassedRetChair: z.boolean(),
 		revisionNum: z.number(),
+		targetStartDate: z.string().nullable().optional(),
+		targetEndDate: z.string().nullable().optional(),
 		createdAt: z.string(),
 		updatedAt: z.string(),
 		archivedAt: z.string().nullable(),
@@ -88,9 +92,19 @@ const CreateProposalSchema = z
 		extensionCategory: z.string().min(1),
 		budgetPartner: z.coerce.number().nonnegative().finite().optional(),
 		budgetNeust: z.coerce.number().nonnegative().finite().optional(),
+		targetStartDate: z.string().datetime().optional(),
+		targetEndDate: z.string().datetime().optional(),
 		departmentIds: z.array(z.number().int().positive()).optional(),
 		sectorIds: z.array(z.number().int().positive()).optional(),
 		sdgIds: z.array(z.number().int().positive()).optional(),
+		members: z
+			.array(
+				z.object({
+					userId: z.string().uuid(),
+					projectRole: z.string().min(1),
+				}),
+			)
+			.optional(),
 	})
 	.openapi("CreateProposal");
 
@@ -226,6 +240,8 @@ app.openapi(listRoute, async (c) => {
 			status: proposals.status,
 			bypassedRetChair: proposals.bypassedRetChair,
 			revisionNum: proposals.revisionNum,
+			targetStartDate: proposals.targetStartDate,
+			targetEndDate: proposals.targetEndDate,
 			createdAt: proposals.createdAt,
 			updatedAt: proposals.updatedAt,
 			archivedAt: proposals.archivedAt,
@@ -249,6 +265,8 @@ app.openapi(listRoute, async (c) => {
 		createdAt: r.createdAt.toISOString(),
 		updatedAt: r.updatedAt.toISOString(),
 		archivedAt: r.archivedAt?.toISOString() ?? null,
+		targetStartDate: r.targetStartDate?.toISOString() ?? null,
+		targetEndDate: r.targetEndDate?.toISOString() ?? null,
 	}));
 
 	const [totalResult] = await db
@@ -384,6 +402,8 @@ app.openapi(getRoute, async (c) => {
 			status: proposals.status,
 			bypassedRetChair: proposals.bypassedRetChair,
 			revisionNum: proposals.revisionNum,
+			targetStartDate: proposals.targetStartDate,
+			targetEndDate: proposals.targetEndDate,
 			createdAt: proposals.createdAt,
 			updatedAt: proposals.updatedAt,
 			archivedAt: proposals.archivedAt,
@@ -402,6 +422,8 @@ app.openapi(getRoute, async (c) => {
 			createdAt: row.createdAt.toISOString(),
 			updatedAt: row.updatedAt.toISOString(),
 			archivedAt: row.archivedAt?.toISOString() ?? null,
+			targetStartDate: row.targetStartDate?.toISOString() ?? null,
+			targetEndDate: row.targetEndDate?.toISOString() ?? null,
 		},
 		200,
 	);
@@ -470,6 +492,12 @@ app.openapi(createProposalRoute, async (c) => {
 				extensionCategory: body.extensionCategory,
 				budgetPartner: (body.budgetPartner ?? 0).toFixed(2),
 				budgetNeust: (body.budgetNeust ?? 0).toFixed(2),
+				targetStartDate: body.targetStartDate
+					? new Date(body.targetStartDate)
+					: null,
+				targetEndDate: body.targetEndDate
+					? new Date(body.targetEndDate)
+					: null,
 			})
 			.returning();
 
@@ -477,12 +505,22 @@ app.openapi(createProposalRoute, async (c) => {
 			throw new ApiError(500, "INSERT_FAILED", "Failed to create proposal");
 		}
 
-		// Auto-add creator as Project Leader
-		await tx.insert(proposalMembers).values({
+		// Add team members (including the creator as Project Leader if not already specified)
+		const memberValues = (body.members ?? []).map((m) => ({
 			proposalId: proposal.proposalId,
-			userId: user.userId,
-			projectRole: PROJECT_LEADER_ROLE,
-		});
+			userId: m.userId,
+			projectRole: m.projectRole,
+		}));
+
+		if (!memberValues.some((m) => m.userId === user.userId)) {
+			memberValues.push({
+				proposalId: proposal.proposalId,
+				userId: user.userId,
+				projectRole: PROJECT_LEADER_ROLE,
+			});
+		}
+
+		await tx.insert(proposalMembers).values(memberValues);
 
 		// Insert collaborating departments
 		if (body.departmentIds && body.departmentIds.length > 0) {
@@ -1004,6 +1042,56 @@ app.openapi(archiveRoute, async (c) => {
 	});
 
 	return c.json({ message: "Proposal archived" }, 200);
+});
+
+// ── GET /proposals/metadata/sdgs ──
+const listSdgsRoute = createRoute({
+	method: "get",
+	path: "/proposals/metadata/sdgs",
+	tags: ["Proposals"],
+	summary: "List all SDGs",
+	responses: {
+		200: {
+			description: "SDG list",
+		},
+	},
+});
+
+app.openapi(listSdgsRoute, async (c) => {
+	const rows = await db
+		.select({
+			sdgId: sdgs.sdgId,
+			sdgName: sdgs.sdgTitle,
+		})
+		.from(sdgs)
+		.orderBy(sdgs.sdgId);
+
+	return c.json(rows, 200);
+});
+
+// ── GET /proposals/metadata/sectors ──
+const listSectorsRoute = createRoute({
+	method: "get",
+	path: "/proposals/metadata/sectors",
+	tags: ["Proposals"],
+	summary: "List all beneficiary sectors",
+	responses: {
+		200: {
+			description: "Sectors list",
+		},
+	},
+});
+
+app.openapi(listSectorsRoute, async (c) => {
+	const rows = await db
+		.select({
+			sectorId: beneficiarySectors.sectorId,
+			sectorName: beneficiarySectors.sectorName,
+		})
+		.from(beneficiarySectors)
+		.orderBy(beneficiarySectors.sectorName);
+
+	return c.json(rows, 200);
 });
 
 export default app;

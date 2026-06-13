@@ -21,7 +21,10 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { reportsQueryOptions, reportsListQueryOptions } from "@/lib/dashboard.functions";
+import {
+	reportsListQueryOptions,
+	reportsQueryOptions,
+} from "@/lib/dashboard.functions";
 import { AppShell } from "../layout/app-shell";
 
 export function ReportsPage() {
@@ -29,8 +32,14 @@ export function ReportsPage() {
 	const [page, setPage] = useState(1);
 	const limit = 20;
 
-	const { data: stats, isLoading: statsLoading } = useQuery(reportsQueryOptions());
-	const { data: listData, isLoading: listLoading, error } = useQuery(
+	const { data: stats, isLoading: statsLoading } = useQuery(
+		reportsQueryOptions(),
+	);
+	const {
+		data: listData,
+		isLoading: listLoading,
+		error,
+	} = useQuery(
 		reportsListQueryOptions({ page, limit, search: search || undefined }),
 	);
 

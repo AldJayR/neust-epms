@@ -26,8 +26,8 @@ const ProjectSchema = z
 		projectId: z.string().uuid(),
 		proposalId: z.string().uuid(),
 		moaId: z.string().uuid().nullable(),
-		startDate: z.string().nullable(),
-		targetEnd: z.string().nullable(),
+		targetStartDate: z.string().nullable(),
+		targetEndDate: z.string().nullable(),
 		actualEndDate: z.string().nullable(),
 		projectStatus: z.string(),
 		createdAt: z.string(),
@@ -43,8 +43,6 @@ const ProjectListSchema = z
 const CreateProjectSchema = z
 	.object({
 		proposalId: z.string(),
-		startDate: z.string().datetime().optional(),
-		targetEnd: z.string().datetime().optional(),
 	})
 	.openapi("CreateProject");
 
@@ -155,8 +153,8 @@ app.openapi(listRoute, async (c) => {
 			projectId: projects.projectId,
 			proposalId: projects.proposalId,
 			moaId: projects.moaId,
-			startDate: projects.startDate,
-			targetEnd: projects.targetEnd,
+			targetStartDate: proposals.targetStartDate,
+			targetEndDate: proposals.targetEndDate,
 			actualEndDate: projects.actualEndDate,
 			projectStatus: projects.projectStatus,
 			createdAt: projects.createdAt,
@@ -164,6 +162,7 @@ app.openapi(listRoute, async (c) => {
 			archivedAt: projects.archivedAt,
 		})
 		.from(projects)
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
 		.where(
 			and(
 				isNull(projects.archivedAt),
@@ -176,8 +175,8 @@ app.openapi(listRoute, async (c) => {
 
 	const items = rows.map((r) => ({
 		...r,
-		startDate: r.startDate?.toISOString() ?? null,
-		targetEnd: r.targetEnd?.toISOString() ?? null,
+		targetStartDate: r.targetStartDate?.toISOString() ?? null,
+		targetEndDate: r.targetEndDate?.toISOString() ?? null,
 		actualEndDate: r.actualEndDate?.toISOString() ?? null,
 		createdAt: r.createdAt.toISOString(),
 		updatedAt: r.updatedAt.toISOString(),
@@ -230,7 +229,11 @@ app.openapi(createProjectRoute, async (c) => {
 	const created = await db.transaction(async (tx) => {
 		// Verify proposal is approved
 		const [proposal] = await tx
-			.select({ status: proposals.status })
+			.select({
+				status: proposals.status,
+				targetStartDate: proposals.targetStartDate,
+				targetEndDate: proposals.targetEndDate,
+			})
 			.from(proposals)
 			.where(eq(proposals.proposalId, body.proposalId))
 			.limit(1);
@@ -266,8 +269,6 @@ app.openapi(createProjectRoute, async (c) => {
 			.insert(projects)
 			.values({
 				proposalId: body.proposalId,
-				startDate: body.startDate ? new Date(body.startDate) : null,
-				targetEnd: body.targetEnd ? new Date(body.targetEnd) : null,
 			})
 			.returning();
 
@@ -285,14 +286,18 @@ app.openapi(createProjectRoute, async (c) => {
 			tx,
 		);
 
-		return createdProject;
+		return {
+			...createdProject,
+			targetStartDate: proposal.targetStartDate,
+			targetEndDate: proposal.targetEndDate,
+		};
 	});
 
 	return c.json(
 		{
 			...created,
-			startDate: created.startDate?.toISOString() ?? null,
-			targetEnd: created.targetEnd?.toISOString() ?? null,
+			targetStartDate: created.targetStartDate?.toISOString() ?? null,
+			targetEndDate: created.targetEndDate?.toISOString() ?? null,
 			actualEndDate: created.actualEndDate?.toISOString() ?? null,
 			createdAt: created.createdAt.toISOString(),
 			updatedAt: created.updatedAt.toISOString(),

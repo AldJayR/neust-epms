@@ -990,8 +990,8 @@ app.openapi(projectDetailsRoute, async (c) => {
 			leaderLastName: users.lastName,
 			departmentName: departments.departmentName,
 			projectStatus: projects.projectStatus,
-			startDate: projects.startDate,
-			targetEnd: projects.targetEnd,
+			targetStartDate: proposals.targetStartDate,
+			targetEndDate: proposals.targetEndDate,
 			moaPartner: partners.partnerName,
 		})
 		.from(proposals)
@@ -1090,8 +1090,8 @@ app.openapi(projectDetailsRoute, async (c) => {
 		"Dec",
 	];
 	let duration = "Not yet started";
-	if (row.startDate && row.targetEnd) {
-		duration = `${months[row.startDate.getMonth()]} ${row.startDate.getFullYear()} - ${months[row.targetEnd.getMonth()]} ${row.targetEnd.getFullYear()}`;
+	if (row.targetStartDate && row.targetEndDate) {
+		duration = `${months[row.targetStartDate.getMonth()]} ${row.targetStartDate.getFullYear()} - ${months[row.targetEndDate.getMonth()]} ${row.targetEndDate.getFullYear()}`;
 	}
 
 	const budgetNeust = Number(row.budgetNeust ?? 0);

@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useRef, useState } from "react";
 import {
 	Calendar,
 	ChevronLeft,
@@ -11,6 +10,7 @@ import {
 	Search,
 	TrendingUp,
 } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -19,7 +19,7 @@ import {
 import app from "./projects.routes.js";
 
 beforeEach(() => {
-	setMockUser(MOCK_USERS.faculty);
+	setMockUser(MOCK_USERS.director);
 });
 
 describe("GET /projects", () => {
@@ -56,6 +56,9 @@ describe("POST /projects", () => {
 		});
 
 		expect(res.status).toBe(201);
+		const body = await res.json();
+		expect(body).toHaveProperty("targetStartDate");
+		expect(body).toHaveProperty("targetEndDate");
 	});
 
 	it("should reject creating a project from a non-Approved proposal", async () => {

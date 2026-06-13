@@ -93,6 +93,28 @@ export const loginFn = createServerFn({ method: "POST" })
 		};
 	});
 
+export interface SearchUserResponse {
+	userId: string;
+	firstName: string;
+	lastName: string;
+	email: string;
+}
+
+export const searchUsersFn = createServerFn({ method: "GET" })
+	.inputValidator(z.object({ search: z.string().min(1) }))
+	.handler(async ({ data }) => {
+		const session = await useAppSession();
+		const { accessToken } = session.data;
+		if (!accessToken) throw new Error("Unauthorized");
+
+		const query = new URLSearchParams({ search: data.search });
+		const response = await fetch(`${API_BASE}/auth/users/search?${query}`, {
+			headers: { Authorization: `Bearer ${accessToken}` },
+		});
+		if (!response.ok) throw new Error("Failed to search users");
+		return (await response.json()) as SearchUserResponse[];
+	});
+
 // ── Signup ────────────────────────────────────────────────
 
 export const signupFn = createServerFn({ method: "POST" })

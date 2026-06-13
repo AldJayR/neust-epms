@@ -45,6 +45,8 @@ export const proposals = pgTable(
 		status: varchar("status", { length: 50 }).notNull().default("Draft"),
 		bypassedRetChair: boolean("bypassed_ret_chair").notNull().default(false),
 		revisionNum: integer("revision_num").notNull().default(0),
+		targetStartDate: timestamp("target_start_date", { withTimezone: true }),
+		targetEndDate: timestamp("target_end_date", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
