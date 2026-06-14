@@ -1,16 +1,14 @@
 import robotoLatinWghtUrl from "@fontsource-variable/roboto/files/roboto-latin-wght-normal.woff2?url";
-import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import {
 	createRootRouteWithContext,
 	HeadContent,
 	Scripts,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
+import { Toaster } from "sonner";
+import { Devtools } from "../components/devtools";
 import type { AuthContext } from "../lib/auth";
 import { getCurrentUserFn } from "../lib/auth.functions";
-import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
 
 interface MyRouterContext {
@@ -58,7 +56,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			},
 		],
 	}),
-	notFoundComponent: () => (
+	notFoundComponent: NotFound,
+	shellComponent: RootDocument,
+});
+
+function NotFound() {
+	return (
 		<div className="flex min-h-dvh flex-col items-center justify-center p-8 text-center">
 			<h1 className="text-4xl font-semibold">404</h1>
 			<p className="mt-4 text-xl text-muted-foreground">
@@ -71,35 +74,21 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				Go home
 			</a>
 		</div>
-	),
-	shellComponent: RootDocument,
-});
+	);
+}
 
+// biome-ignore lint/security/noDangerouslySetInnerHtml: theme init script prevents flash
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
-				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: theme init script prevents flash */}
 				<script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
 				<HeadContent />
 			</head>
 			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
 				{children}
 				<Toaster position="top-right" />
-				{import.meta.env.DEV && (
-					<TanStackDevtools
-						config={{
-							position: "bottom-right",
-						}}
-						plugins={[
-							{
-								name: "Tanstack Router",
-								render: <TanStackRouterDevtoolsPanel />,
-							},
-							TanStackQueryDevtools,
-						]}
-					/>
-				)}
+				<Devtools />
 				<Scripts />
 			</body>
 		</html>

@@ -33,8 +33,9 @@ app.use(
 	secureHeaders({
 		contentSecurityPolicy: {
 			defaultSrc: ["'self'"],
-			scriptSrc: ["'self'"],
-			styleSrc: ["'self'", "'unsafe-inline'"],
+			scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+			styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+			connectSrc: ["'self'", "https://cdn.jsdelivr.net"],
 			imgSrc: ["'self'", "data:", "blob:"],
 		},
 		xFrameOptions: "DENY",
