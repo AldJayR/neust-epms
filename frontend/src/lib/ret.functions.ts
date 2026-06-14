@@ -117,7 +117,7 @@ export const getRETDashboardStatsFn = createServerFn({ method: "GET" }).handler(
 );
 
 export const getRETProposalsFn = createServerFn({ method: "GET" })
-	.inputValidator(retDashboardParamsSchema)
+	.validator(retDashboardParamsSchema)
 	.handler(async ({ data }) => {
 		const accessToken = await getValidAccessToken();
 
@@ -141,7 +141,7 @@ export const getRETProposalsFn = createServerFn({ method: "GET" })
 	});
 
 export const createProposalFn = createServerFn({ method: "POST" })
-	.inputValidator((data: CreateProposalInput) => data)
+	.validator((data: CreateProposalInput) => data)
 	.handler(async ({ data }) => {
 		const accessToken = await getValidAccessToken();
 
@@ -163,7 +163,7 @@ export const createProposalFn = createServerFn({ method: "POST" })
 	});
 
 export const uploadProposalDocumentFn = createServerFn({ method: "POST" })
-	.inputValidator((data: FormData) => {
+	.validator((data: FormData) => {
 		const proposalId = data.get("proposalId");
 		if (typeof proposalId !== "string" || !proposalId) {
 			throw new Error("proposalId is required");

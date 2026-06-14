@@ -8,7 +8,9 @@ import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposalReviews } from "../db/schema/proposal-reviews.js";
 import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
 import { proposals } from "../db/schema/proposals.js";
+import { proposalComments } from "../db/schema/proposal-comments.js";
 import { sdgs } from "../db/schema/sdgs.js";
+import { roles } from "../db/schema/roles.js";
 import { users } from "../db/schema/users.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { getClientIp } from "../lib/client-ip.js";
@@ -1092,6 +1094,197 @@ app.openapi(listSectorsRoute, async (c) => {
 		.orderBy(beneficiarySectors.sectorName);
 
 	return c.json(rows, 200);
+});
+
+// ── Comments API Endpoints ──
+
+// --- Comments Schemas ---
+const CommentParams = z.object({
+	id: z
+		.string()
+		.uuid()
+		.openapi({ param: { name: "id", in: "path" } }),
+	docId: z
+		.string()
+		.uuid()
+		.openapi({ param: { name: "docId", in: "path" } }),
+});
+
+const CreateCommentSchema = z
+	.object({
+		content: z.string().min(1),
+		annotationJson: z
+			.object({
+				x: z.number(),
+				y: z.number(),
+				width: z.number(),
+				height: z.number(),
+				page: z.number(),
+			})
+			.nullable()
+			.optional(),
+	})
+	.openapi("CreateComment");
+
+const CommentUserSchema = z.object({
+	userId: z.string().uuid(),
+	name: z.string(),
+	email: z.string(),
+	roleName: z.string(),
+});
+
+const CommentResponseSchema = z
+	.object({
+		commentId: z.string().uuid(),
+		proposalId: z.string().uuid(),
+		documentId: z.string().uuid(),
+		userId: z.string().uuid(),
+		content: z.string(),
+		annotationJson: z
+			.object({
+				x: z.number(),
+				y: z.number(),
+				width: z.number(),
+				height: z.number(),
+				page: z.number(),
+			})
+			.nullable(),
+		createdAt: z.string(),
+		user: CommentUserSchema,
+	})
+	.openapi("CommentResponse");
+
+const CommentListSchema = z.array(CommentResponseSchema).openapi("CommentList");
+
+// --- Comments Routes ---
+const createCommentRoute = createRoute({
+	method: "post",
+	path: "/proposals/{id}/documents/{docId}/comments",
+	tags: ["Proposals"],
+	summary: "Add a spatial comment/annotation to a document",
+	security: [{ Bearer: [] }],
+	request: {
+		params: CommentParams,
+		body: {
+			content: { "application/json": { schema: CreateCommentSchema } },
+		},
+	},
+	responses: {
+		201: {
+			content: { "application/json": { schema: CommentResponseSchema } },
+			description: "Comment created",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Proposal or document not found",
+		},
+	},
+});
+
+const listCommentsRoute = createRoute({
+	method: "get",
+	path: "/proposals/{id}/documents/{docId}/comments",
+	tags: ["Proposals"],
+	summary: "Get all comments/annotations for a document",
+	security: [{ Bearer: [] }],
+	request: {
+		params: CommentParams,
+	},
+	responses: {
+		200: {
+			content: { "application/json": { schema: CommentListSchema } },
+			description: "List of comments",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Document not found",
+		},
+	},
+});
+
+app.openapi(createCommentRoute, async (c) => {
+	const user = c.get("user");
+	const { id: proposalId, docId: documentId } = c.req.valid("param");
+	const { content, annotationJson } = c.req.valid("json");
+
+	// Verify the proposal exists
+	const [proposal] = await db
+		.select({ proposalId: proposals.proposalId })
+		.from(proposals)
+		.where(eq(proposals.proposalId, proposalId))
+		.limit(1);
+
+	if (!proposal) {
+		throw new ApiError("NOT_FOUND", "Proposal not found");
+	}
+
+	const [newComment] = await db
+		.insert(proposalComments)
+		.values({
+			proposalId,
+			documentId,
+			userId: user.userId,
+			content,
+			annotationJson: annotationJson ?? null,
+		})
+		.returning();
+
+	return c.json(
+		{
+			...newComment,
+			createdAt: newComment.createdAt.toISOString(),
+			user: {
+				userId: user.userId,
+				name: `${user.firstName} ${user.lastName}`.trim(),
+				email: user.email,
+				roleName: user.roleName,
+			},
+		},
+		201,
+	);
+});
+
+app.openapi(listCommentsRoute, async (c) => {
+	const { docId: documentId } = c.req.valid("param");
+
+	const rows = await db
+		.select({
+			commentId: proposalComments.commentId,
+			proposalId: proposalComments.proposalId,
+			documentId: proposalComments.documentId,
+			userId: proposalComments.userId,
+			content: proposalComments.content,
+			annotationJson: proposalComments.annotationJson,
+			createdAt: proposalComments.createdAt,
+			userFirstName: users.firstName,
+			userLastName: users.lastName,
+			userEmail: users.email,
+			userRoleName: roles.roleName,
+		})
+		.from(proposalComments)
+		.innerJoin(users, eq(proposalComments.userId, users.userId))
+		.innerJoin(roles, eq(users.roleId, roles.roleId))
+		.where(eq(proposalComments.documentId, documentId))
+		.orderBy(desc(proposalComments.createdAt));
+
+	return c.json(
+		rows.map((row) => ({
+			commentId: row.commentId,
+			proposalId: row.proposalId,
+			documentId: row.documentId,
+			userId: row.userId,
+			content: row.content,
+			annotationJson: row.annotationJson,
+			createdAt: row.createdAt.toISOString(),
+			user: {
+				userId: row.userId,
+				name: `${row.userFirstName} ${row.userLastName}`.trim(),
+				email: row.userEmail,
+				roleName: row.userRoleName,
+			},
+		})),
+		200,
+	);
 });
 
 export default app;

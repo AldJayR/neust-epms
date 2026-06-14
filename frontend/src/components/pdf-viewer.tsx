@@ -1,15 +1,25 @@
-"use client";
-
 import { Suspense, lazy } from "react";
+import type { ProposalComment, AnnotationData } from "@/lib/comments.functions";
 
 const PdfInner = lazy(() => import("./pdf-inner"));
 
 interface PdfViewerProps {
 	url: string;
 	className?: string;
+	proposalId?: string;
+	documentId?: string;
+	comments?: ProposalComment[];
+	onAddComment?: (content: string, annotation: AnnotationData | null) => Promise<void>;
 }
 
-export function PdfViewer({ url, className }: PdfViewerProps) {
+export function PdfViewer({
+	url,
+	className,
+	proposalId,
+	documentId,
+	comments,
+	onAddComment,
+}: PdfViewerProps) {
 	return (
 		<div
 			className={`flex flex-col items-center gap-4 overflow-y-auto p-4 ${className ?? ""}`}
@@ -22,7 +32,13 @@ export function PdfViewer({ url, className }: PdfViewerProps) {
 					</div>
 				}
 			>
-				<PdfInner url={url} />
+				<PdfInner
+					url={url}
+					proposalId={proposalId}
+					documentId={documentId}
+					comments={comments}
+					onAddComment={onAddComment}
+				/>
 			</Suspense>
 		</div>
 	);

@@ -125,7 +125,7 @@ export const getAdminStatsFn = createServerFn({ method: "GET" }).handler(
 // ── Get Admin Users ──────────────────────────────────────
 
 export const getAdminUsersFn = createServerFn({ method: "GET" })
-	.inputValidator(adminUsersQueryParamsSchema)
+	.validator(adminUsersQueryParamsSchema)
 	.handler(async ({ data }) => {
 		const session = await useAppSession();
 		const { accessToken } = session.data;
@@ -160,7 +160,7 @@ export const getAdminUsersFn = createServerFn({ method: "GET" })
 // ── Bulk Update User Status ──────────────────────────────
 
 export const bulkUpdateUserStatusFn = createServerFn({ method: "POST" })
-	.inputValidator(bulkUpdateStatusSchema)
+	.validator(bulkUpdateStatusSchema)
 	.handler(async ({ data }) => {
 		const session = await useAppSession();
 		const { accessToken } = session.data;
@@ -233,7 +233,7 @@ export function rolesQueryOptions() {
 // ── Bulk Approve Users ───────────────────────────────────
 
 export const bulkApproveUsersFn = createServerFn({ method: "POST" })
-	.inputValidator(bulkApproveSchema)
+	.validator(bulkApproveSchema)
 	.handler(async ({ data }) => {
 		const session = await useAppSession();
 		const { accessToken } = session.data;
@@ -290,7 +290,7 @@ export interface AuditStats {
 }
 
 export const getAuditLogsFn = createServerFn({ method: "GET" })
-	.inputValidator(auditLogsParamsSchema)
+	.validator(auditLogsParamsSchema)
 	.handler(async ({ data }) => {
 		const session = await useAppSession();
 		const { accessToken } = session.data;

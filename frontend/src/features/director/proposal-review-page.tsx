@@ -11,6 +11,7 @@ import {
 } from "@/lib/dashboard.functions";
 import { AppShell } from "../layout/app-shell";
 import { PdfViewer } from "@/components/pdf-viewer";
+import { getProposalCommentsFn, saveProposalCommentFn } from "@/lib/comments.functions";
 
 interface ProposalReviewPageProps {
 	proposalId: string;
@@ -62,6 +63,41 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	const currentDoc =
 		data?.attachments.find((a) => a.id === activeAttachmentId) ??
 		data?.attachments[0];
+
+	const { data: comments = [] } = useQuery({
+		queryKey: ["proposal-comments", currentDoc?.id],
+		queryFn: () =>
+			getProposalCommentsFn({
+				data: { proposalId, documentId: currentDoc!.id },
+			}),
+		enabled: !!currentDoc?.id,
+	});
+
+	const addCommentMutation = useMutation({
+		mutationFn: (input: {
+			content: string;
+			annotationJson: {
+				x: number;
+				y: number;
+				width: number;
+				height: number;
+				page: number;
+			} | null;
+		}) =>
+			saveProposalCommentFn({
+				data: {
+					proposalId,
+					documentId: currentDoc!.id,
+					content: input.content,
+					annotationJson: input.annotationJson,
+				},
+			}),
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["proposal-comments", currentDoc?.id],
+			});
+		},
+	});
 
 	const isReviewable =
 		data?.status === "Endorsed" || data?.status === "Submitted";
@@ -128,7 +164,19 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 						<div className="lg:col-span-8 flex flex-col gap-4">
 							<div className="bg-[#f9f9f9] border border-[#ebebeb] rounded-[12px] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] overflow-hidden h-[844px]">
 								{currentDoc ? (
-									<PdfViewer url={currentDoc.url} className="h-full" />
+									<PdfViewer
+										url={currentDoc.url}
+										className="h-full"
+										proposalId={proposalId}
+										documentId={currentDoc.id}
+										comments={comments}
+										onAddComment={async (content, annotation) => {
+											await addCommentMutation.mutateAsync({
+												content,
+												annotationJson: annotation,
+											});
+										}}
+									/>
 								) : (
 									<div className="flex items-center justify-center h-full text-[#737373]">
 										No document available

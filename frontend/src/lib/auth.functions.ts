@@ -32,7 +32,7 @@ const signupSchema = z.object({
 // ── Login ─────────────────────────────────────────────────
 
 export const loginFn = createServerFn({ method: "POST" })
-	.inputValidator(loginSchema)
+	.validator(loginSchema)
 	.handler(async ({ data }) => {
 		const session = await useAppSession();
 
@@ -101,7 +101,7 @@ export interface SearchUserResponse {
 }
 
 export const searchUsersFn = createServerFn({ method: "GET" })
-	.inputValidator(z.object({ search: z.string().min(1) }))
+	.validator(z.object({ search: z.string().min(1) }))
 	.handler(async ({ data }) => {
 		const accessToken = await getValidAccessToken();
 
@@ -116,7 +116,7 @@ export const searchUsersFn = createServerFn({ method: "GET" })
 // ── Signup ────────────────────────────────────────────────
 
 export const signupFn = createServerFn({ method: "POST" })
-	.inputValidator(signupSchema)
+	.validator(signupSchema)
 	.handler(async ({ data }) => {
 		// Call our backend register endpoint
 		const response = await fetch(`${API_BASE}/auth/register`, {
@@ -181,7 +181,7 @@ export const getCampusesFn = createServerFn({ method: "GET" }).handler(
 // ── Password breach check ──
 
 export const checkPasswordFn = createServerFn({ method: "POST" })
-	.inputValidator(z.object({ password: z.string().min(1) }))
+	.validator(z.object({ password: z.string().min(1) }))
 	.handler(async ({ data }) => {
 		const response = await fetch(`${API_BASE}/auth/check-password`, {
 			method: "POST",

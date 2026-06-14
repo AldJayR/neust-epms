@@ -247,7 +247,7 @@ export const getDirectorDashboardFn = createServerFn({ method: "GET" }).handler(
 );
 
 export const getProjectHubFn = createServerFn({ method: "GET" })
-	.inputValidator(projectHubParamsSchema)
+	.validator(projectHubParamsSchema)
 	.handler(async ({ data }) => {
 		const session = await useAppSession();
 		const { accessToken } = session.data;
@@ -285,7 +285,7 @@ export const getProjectHubFn = createServerFn({ method: "GET" })
 	});
 
 export const getMoaRepositoryFn = createServerFn({ method: "GET" })
-	.inputValidator(moaRepositoryParamsSchema)
+	.validator(moaRepositoryParamsSchema)
 	.handler(async ({ data }) => {
 		const session = await useAppSession();
 		const { accessToken } = session.data;
@@ -322,7 +322,7 @@ export const getMoaRepositoryFn = createServerFn({ method: "GET" })
 	});
 
 export const getFacultyDirectoryFn = createServerFn({ method: "GET" })
-	.inputValidator(facultyDirectoryParamsSchema)
+	.validator(facultyDirectoryParamsSchema)
 	.handler(async ({ data }) => {
 		const session = await useAppSession();
 		const { accessToken } = session.data;
@@ -359,7 +359,7 @@ export const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 	});
 
 export const getProjectDetailsFn = createServerFn({ method: "GET" })
-	.inputValidator(z.string())
+	.validator(z.string())
 	.handler(async ({ data: proposalId }) => {
 		const session = await useAppSession();
 		const { accessToken } = session.data;
@@ -388,7 +388,7 @@ export const getProjectDetailsFn = createServerFn({ method: "GET" })
 	});
 
 export const reviewProposalFn = createServerFn({ method: "POST" })
-	.inputValidator(
+	.validator(
 		z.object({
 			proposalId: z.string(),
 			decision: z.enum(["Endorsed", "Approved", "Returned", "Rejected"]),
@@ -433,7 +433,7 @@ const reportsListParamsSchema = z.object({
 });
 
 export const getReportsListFn = createServerFn({ method: "GET" })
-	.inputValidator(reportsListParamsSchema)
+	.validator(reportsListParamsSchema)
 	.handler(async ({ data }) => {
 		const session = await useAppSession();
 		const { accessToken } = session.data;
