@@ -1215,7 +1215,7 @@ app.openapi(createCommentRoute, async (c) => {
 		.limit(1);
 
 	if (!proposal) {
-		throw new ApiError("NOT_FOUND", "Proposal not found");
+		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
 	}
 
 	const [newComment] = await db
@@ -1229,9 +1229,18 @@ app.openapi(createCommentRoute, async (c) => {
 		})
 		.returning();
 
+	if (!newComment) {
+		throw new ApiError(500, "INSERT_FAILED", "Failed to create comment");
+	}
+
 	return c.json(
 		{
-			...newComment,
+			commentId: newComment.commentId,
+			proposalId: newComment.proposalId,
+			documentId: newComment.documentId,
+			userId: newComment.userId,
+			content: newComment.content,
+			annotationJson: newComment.annotationJson,
 			createdAt: newComment.createdAt.toISOString(),
 			user: {
 				userId: user.userId,
