@@ -699,142 +699,200 @@ const PdfInner = forwardRef<PdfViewerRef, PdfInnerProps>((
 	}
 
 	return (
-		<div className="relative flex flex-col h-full w-full">
-			{/* Floating Tool Mode Toolbar */}
-			{onAddComment && (
-				<div className="absolute top-4 left-4 z-40 bg-white/95 border border-[#ebebeb] px-2 py-1 rounded-full flex items-center gap-1 shadow-md backdrop-blur-md select-none">
-					<Button
-						variant={toolMode === "hand" ? "secondary" : "ghost"}
-						size="icon"
-						className={`size-8 rounded-full cursor-pointer ${toolMode === "hand" ? "bg-brand-primary/10 text-brand-primary" : "text-[#555]"}`}
-						onClick={() => setToolMode("hand")}
-						title="View & Select Text"
-					>
-						<Hand className="size-4" />
-					</Button>
-					<Button
-						variant={toolMode === "comment" ? "secondary" : "ghost"}
-						size="icon"
-						className={`size-8 rounded-full cursor-pointer ${toolMode === "comment" ? "bg-brand-primary/10 text-brand-primary" : "text-[#555]"}`}
-						onClick={() => setToolMode("comment")}
-						title="Add Remark (Drag on page)"
-					>
-						<MessageSquare className="size-4" />
-					</Button>
-					{onToggleTheaterMode && (
-						<>
-							<div className="w-px h-4 bg-[#ebebeb] mx-1" />
-							<Button
-								variant="ghost"
-								size="icon"
-								className="size-8 rounded-full cursor-pointer text-[#555] hover:bg-gray-100"
-								onClick={onToggleTheaterMode}
-								title={isTheaterMode ? "Exit Theater Mode" : "Theater Mode (Maximize View)"}
-							>
-								{isTheaterMode ? (
-									<Minimize2 className="size-4" />
-								) : (
-									<Maximize2 className="size-4" />
-								)}
-							</Button>
-						</>
-					)}
+		<TooltipProvider>
+			<div className="relative flex flex-col h-full w-full">
+				{/* Floating Tool Mode Toolbar */}
+				{onAddComment && (
+					<div className="absolute top-4 left-4 z-40 bg-white/95 border border-[#ebebeb] px-2 py-1 rounded-full flex items-center gap-1 shadow-md backdrop-blur-md select-none">
+						<Tooltip>
+							<TooltipTrigger
+								render={
+									<Button
+										variant={toolMode === "hand" ? "secondary" : "ghost"}
+										size="icon"
+										className={`size-8 rounded-full cursor-pointer ${toolMode === "hand" ? "bg-brand-primary/10 text-brand-primary" : "text-[#555]"}`}
+										onClick={() => setToolMode("hand")}
+									>
+										<Hand className="size-4" />
+									</Button>
+								}
+							/>
+							<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
+								View & Select Text
+							</TooltipContent>
+						</Tooltip>
+
+						<Tooltip>
+							<TooltipTrigger
+								render={
+									<Button
+										variant={toolMode === "comment" ? "secondary" : "ghost"}
+										size="icon"
+										className={`size-8 rounded-full cursor-pointer ${toolMode === "comment" ? "bg-brand-primary/10 text-brand-primary" : "text-[#555]"}`}
+										onClick={() => setToolMode("comment")}
+									>
+										<MessageSquare className="size-4" />
+									</Button>
+								}
+							/>
+							<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
+								Add Remark (Drag on page)
+							</TooltipContent>
+						</Tooltip>
+
+						{onToggleTheaterMode && (
+							<>
+								<div className="w-px h-4 bg-[#ebebeb] mx-1" />
+								<Tooltip>
+									<TooltipTrigger
+										render={
+											<Button
+												variant="ghost"
+												size="icon"
+												className="size-8 rounded-full cursor-pointer text-[#555] hover:bg-gray-100"
+												onClick={onToggleTheaterMode}
+											>
+												{isTheaterMode ? (
+													<Minimize2 className="size-4" />
+												) : (
+													<Maximize2 className="size-4" />
+												)}
+											</Button>
+										}
+									/>
+									<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
+										{isTheaterMode ? "Exit Theater Mode" : "Theater Mode (Maximize View)"}
+									</TooltipContent>
+								</Tooltip>
+							</>
+						)}
+					</div>
+				)}
+
+				{/* Floating Page Indicator Pill */}
+				<div className="absolute top-4 right-4 z-40 bg-zinc-900/80 text-white px-3 py-1.5 rounded-full text-[12px] font-semibold tracking-wide backdrop-blur-md shadow-md border border-white/10 select-none">
+					Page {currentPage} of {numPages || "–"}
 				</div>
-			)}
 
-			{/* Floating Page Indicator Pill */}
-			<div className="absolute top-4 right-4 z-40 bg-zinc-900/80 text-white px-3 py-1.5 rounded-full text-[12px] font-semibold tracking-wide backdrop-blur-md shadow-md border border-white/10 select-none">
-				Page {currentPage} of {numPages || "–"}
-			</div>
-
-			<div
-				ref={scrollRef}
-				className="flex-1 overflow-auto p-4"
-			>
-				<div className="flex flex-col items-center gap-4 w-fit mx-auto">
-					{pdfDoc &&
-						Array.from({ length: numPages }, (_, i) => {
-							const pg = i + 1;
-							const aspect = pageAspectRatios[pg] || Math.SQRT2;
-							return (
-								<div
-									key={pg}
-									ref={(el) => {
-										if (el) pageRefs.current.set(pg, el);
-										else pageRefs.current.delete(pg);
-									}}
-									data-page={pg}
-								>
-									{visiblePages.has(pg) ? (
-										<PdfPageCanvas
-											pdfDoc={pdfDoc}
-											pageNumber={pg}
-											width={pageWidth}
-											scale={renderedScale}
-											aspectRatio={aspect}
-											onPageLoad={handlePageLoad}
-											toolMode={toolMode}
-											comments={comments.filter(
-												(c) => c.annotationJson?.page === pg,
-											)}
-											onAddComment={onAddComment}
-										/>
-									) : (
-										<div
-											className="rounded bg-[#f5f5f5] animate-pulse flex items-center justify-center"
-											style={{
-												width: pageWidth * scale,
-												height: pageWidth * aspect * scale,
-											}}
-										/>
-									)}
-								</div>
-							);
-						})}
+				<div
+					ref={scrollRef}
+					className="flex-1 overflow-auto p-4"
+				>
+					<div className="flex flex-col items-center gap-4 w-fit mx-auto">
+						{pdfDoc &&
+							Array.from({ length: numPages }, (_, i) => {
+								const pg = i + 1;
+								const aspect = pageAspectRatios[pg] || Math.SQRT2;
+								return (
+									<div
+										key={pg}
+										ref={(el) => {
+											if (el) pageRefs.current.set(pg, el);
+											else pageRefs.current.delete(pg);
+										}}
+										data-page={pg}
+									>
+										{visiblePages.has(pg) ? (
+											<PdfPageCanvas
+												pdfDoc={pdfDoc}
+												pageNumber={pg}
+												width={pageWidth}
+												scale={renderedScale}
+												aspectRatio={aspect}
+												onPageLoad={handlePageLoad}
+												toolMode={toolMode}
+												comments={comments.filter(
+													(c) => c.annotationJson?.page === pg,
+												)}
+												onAddComment={onAddComment}
+											/>
+										) : (
+											<div
+												className="rounded bg-[#f5f5f5] animate-pulse flex items-center justify-center"
+												style={{
+													width: pageWidth * scale,
+													height: pageWidth * aspect * scale,
+												}}
+											/>
+										)}
+									</div>
+								);
+							})}
+					</div>
 				</div>
-			</div>
 
-			<div className="flex items-center justify-center border-t border-[#ebebeb] bg-white px-4 py-2">
-				{/* Zoom controls */}
-				<div className="flex items-center gap-1.5">
-					<Button
-						variant="outline"
-						size="icon"
-						className="size-8 rounded-[8px] border-[#e5e5e5]"
-						onClick={zoomOut}
-						disabled={scale <= ZOOM_STEPS[0]}
-					>
-						<Minus className="size-3.5" />
-					</Button>
-					<button
-						type="button"
-						onClick={resetZoom}
-						className="text-[13px] text-[#666] tabular-nums w-[48px] text-center hover:text-[#11215a] cursor-pointer"
-					>
-						{Math.round(scale * 100)}%
-					</button>
-					<Button
-						variant="outline"
-						size="icon"
-						className="size-8 rounded-[8px] border-[#e5e5e5]"
-						onClick={zoomIn}
-						disabled={scale >= ZOOM_STEPS[ZOOM_STEPS.length - 1]}
-					>
-						<Plus className="size-3.5" />
-					</Button>
-					{scale !== DEFAULT_SCALE && (
-						<Button
-							variant="ghost"
-							size="icon"
-							className="size-8 rounded-[8px] text-[#666] hover:text-[#11215a]"
+				<div className="flex items-center justify-center border-t border-[#ebebeb] bg-white px-4 py-2">
+					{/* Zoom controls */}
+					<div className="flex items-center gap-1.5">
+						<Tooltip>
+							<TooltipTrigger
+								render={
+									<Button
+										variant="outline"
+										size="icon"
+										className="size-8 rounded-[8px] border-[#e5e5e5]"
+										onClick={zoomOut}
+										disabled={scale <= ZOOM_STEPS[0]}
+									>
+										<Minus className="size-3.5" />
+									</Button>
+								}
+							/>
+							<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
+								Zoom Out
+							</TooltipContent>
+						</Tooltip>
+
+						<button
+							type="button"
 							onClick={resetZoom}
+							className="text-[13px] text-[#666] tabular-nums w-[48px] text-center hover:text-[#11215a] cursor-pointer"
 						>
-							<RotateCcw className="size-3.5" />
-						</Button>
-					)}
+							{Math.round(scale * 100)}%
+						</button>
+
+						<Tooltip>
+							<TooltipTrigger
+								render={
+									<Button
+										variant="outline"
+										size="icon"
+										className="size-8 rounded-[8px] border-[#e5e5e5]"
+										onClick={zoomIn}
+										disabled={scale >= ZOOM_STEPS[ZOOM_STEPS.length - 1]}
+									>
+										<Plus className="size-3.5" />
+									</Button>
+								}
+							/>
+							<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
+								Zoom In
+							</TooltipContent>
+						</Tooltip>
+
+						{scale !== DEFAULT_SCALE && (
+							<Tooltip>
+								<TooltipTrigger
+									render={
+										<Button
+											variant="ghost"
+											size="icon"
+											className="size-8 rounded-[8px] text-[#666] hover:text-[#11215a]"
+											onClick={resetZoom}
+										>
+											<RotateCcw className="size-3.5" />
+										</Button>
+									}
+								/>
+								<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
+									Reset Zoom
+								</TooltipContent>
+							</Tooltip>
+						)}
+					</div>
 				</div>
 			</div>
-		</div>
+		</TooltipProvider>
 	);
 });
 
