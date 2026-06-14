@@ -6,9 +6,12 @@ import {
 	RotateCcw,
 	Hand,
 	MessageSquare,
+	Maximize2,
+	Minimize2,
 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
+import type { PdfViewerRef } from "./pdf-viewer";
 import { Button } from "@/components/ui/button";
 import {
 	Tooltip,
@@ -35,6 +38,8 @@ interface PdfInnerProps {
 	documentId?: string;
 	comments?: ProposalComment[];
 	onAddComment?: (content: string, annotation: AnnotationData | null) => Promise<void>;
+	isTheaterMode?: boolean;
+	onToggleTheaterMode?: () => void;
 }
 
 interface PdfPageCanvasProps {
@@ -441,13 +446,18 @@ function PdfPageCanvas({
 	);
 }
 
-export default function PdfInner({
-	url,
-	proposalId,
-	documentId,
-	comments = [],
-	onAddComment,
-}: PdfInnerProps) {
+const PdfInner = forwardRef<PdfViewerRef, PdfInnerProps>((
+	{
+		url,
+		proposalId,
+		documentId,
+		comments = [],
+		onAddComment,
+		isTheaterMode = false,
+		onToggleTheaterMode,
+	},
+	ref,
+) => {
 	const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
 	const [numPages, setNumPages] = useState(0);
 	const [visiblePages, setVisiblePages] = useState<Set<number>>(new Set([1]));
@@ -462,6 +472,15 @@ export default function PdfInner({
 
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+	useImperativeHandle(ref, () => ({
+		scrollToPage: (pageNumber: number) => {
+			const pageEl = pageRefs.current.get(pageNumber);
+			if (pageEl) {
+				pageEl.scrollIntoView({ behavior: "smooth", block: "center" });
+			}
+		},
+	}));
 
 	const handlePageLoad = (pageNumber: number, aspect: number) => {
 		setPageAspectRatios((prev) => {
@@ -683,7 +702,7 @@ export default function PdfInner({
 		<div className="relative flex flex-col h-full w-full">
 			{/* Floating Tool Mode Toolbar */}
 			{onAddComment && (
-				<div className="absolute top-4 left-4 z-10 bg-white/95 border border-[#ebebeb] px-2 py-1 rounded-full flex items-center gap-1 shadow-md backdrop-blur-md select-none">
+				<div className="absolute top-4 left-4 z-40 bg-white/95 border border-[#ebebeb] px-2 py-1 rounded-full flex items-center gap-1 shadow-md backdrop-blur-md select-none">
 					<Button
 						variant={toolMode === "hand" ? "secondary" : "ghost"}
 						size="icon"
@@ -702,11 +721,29 @@ export default function PdfInner({
 					>
 						<MessageSquare className="size-4" />
 					</Button>
+					{onToggleTheaterMode && (
+						<>
+							<div className="w-px h-4 bg-[#ebebeb] mx-1" />
+							<Button
+								variant="ghost"
+								size="icon"
+								className="size-8 rounded-full cursor-pointer text-[#555] hover:bg-gray-100"
+								onClick={onToggleTheaterMode}
+								title={isTheaterMode ? "Exit Theater Mode" : "Theater Mode (Maximize View)"}
+							>
+								{isTheaterMode ? (
+									<Minimize2 className="size-4" />
+								) : (
+									<Maximize2 className="size-4" />
+								)}
+							</Button>
+						</>
+					)}
 				</div>
 			)}
 
 			{/* Floating Page Indicator Pill */}
-			<div className="absolute top-4 right-4 z-10 bg-zinc-900/80 text-white px-3 py-1.5 rounded-full text-[12px] font-semibold tracking-wide backdrop-blur-md shadow-md border border-white/10 select-none">
+			<div className="absolute top-4 right-4 z-40 bg-zinc-900/80 text-white px-3 py-1.5 rounded-full text-[12px] font-semibold tracking-wide backdrop-blur-md shadow-md border border-white/10 select-none">
 				Page {currentPage} of {numPages || "–"}
 			</div>
 
@@ -799,4 +836,7 @@ export default function PdfInner({
 			</div>
 		</div>
 	);
-}
+});
+
+PdfInner.displayName = "PdfInner";
+export default PdfInner;
