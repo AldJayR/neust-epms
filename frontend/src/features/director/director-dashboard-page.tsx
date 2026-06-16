@@ -3,6 +3,7 @@ import * as React from "react";
 import type { AuthUser } from "@/lib/auth";
 import { getCampusesFn } from "@/lib/auth.functions";
 import { directorDashboardQueryOptions } from "@/lib/dashboard.functions";
+import { MetricCard } from "@/components/custom/metric-card";
 
 const ProjectsChartCard = React.lazy(() => import("./projects-chart-card"));
 
@@ -12,23 +13,6 @@ const metricCards = [
 	{ label: "Under Evaluation", key: "underEvaluation" as const },
 	{ label: "Completed", key: "completed" as const },
 ];
-
-function MetricCard({
-	label,
-	value,
-}: {
-	label: string;
-	value: string | number;
-}) {
-	return (
-		<div className="flex h-[104px] flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-			<p className="text-[14px] leading-4 text-[#666]">{label}</p>
-			<p className="text-[36px] font-semibold leading-9 text-[#11215a]">
-				{value}
-			</p>
-		</div>
-	);
-}
 
 function RecentActivitiesCard({
 	activities,

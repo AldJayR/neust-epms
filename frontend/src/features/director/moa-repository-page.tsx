@@ -17,6 +17,7 @@ import { useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MetricCard } from "@/components/custom/metric-card";
 import {
 	Pagination,
 	PaginationContent,
@@ -78,22 +79,7 @@ function MoaStatusBadge({ status }: { status: string }) {
 	);
 }
 
-function MetricCard({
-	label,
-	value,
-}: {
-	label: string;
-	value: string | number;
-}) {
-	return (
-		<div className="flex h-[104px] flex-1 flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-			<p className="text-[14px] leading-4 text-[#666]">{label}</p>
-			<p className="text-[36px] font-semibold leading-9 text-[#11215a]">
-				{value}
-			</p>
-		</div>
-	);
-}
+
 
 interface MoaRepositoryPageProps {
 	user?: AuthUser | null;
@@ -150,14 +136,16 @@ export function MoaRepositoryPage({
 				</div>
 
 				<div className="flex items-center gap-6">
-					<MetricCard label="Total MOAs" value={metrics.totalMoas} />
+					<MetricCard label="Total MOAs" value={metrics.totalMoas} className="flex-1" />
 					<MetricCard
 						label="Expiring within 90 days"
 						value={String(metrics.expiringWithin90Days).padStart(2, "0")}
+						className="flex-1"
 					/>
 					<MetricCard
 						label="Active Partnerships"
 						value={metrics.activePartnerships}
+						className="flex-1"
 					/>
 				</div>
 

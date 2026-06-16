@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { MetricCard } from "@/components/custom/metric-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -78,28 +79,9 @@ export function ReportsPage() {
 
 				{/* Metric Cards Grid */}
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-					<div className="flex h-[104px] flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-						<p className="text-[14px] leading-4 text-[#666]">Total Reports</p>
-						<p className="text-[36px] font-semibold leading-9 text-[#11215a]">
-							{totalReports}
-						</p>
-					</div>
-					<div className="flex h-[104px] flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-						<p className="text-[14px] leading-4 text-[#666]">
-							Progress Reports
-						</p>
-						<p className="text-[36px] font-semibold leading-9 text-[#11215a]">
-							{progressCount}
-						</p>
-					</div>
-					<div className="flex h-[104px] flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-						<p className="text-[14px] leading-4 text-[#666]">
-							Terminal Reports
-						</p>
-						<p className="text-[36px] font-semibold leading-9 text-[#11215a]">
-							{terminalCount}
-						</p>
-					</div>
+					<MetricCard label="Total Reports" value={totalReports} />
+					<MetricCard label="Progress Reports" value={progressCount} />
+					<MetricCard label="Terminal Reports" value={terminalCount} />
 				</div>
 
 				{/* Search and Filters */}

@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MetricCard } from "@/components/custom/metric-card";
 import {
 	Table,
 	TableBody,
@@ -27,22 +28,7 @@ import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
 import { AppShell } from "../layout/app-shell";
 
-function MetricCard({
-	label,
-	value,
-}: {
-	label: string;
-	value: string | number;
-}) {
-	return (
-		<div className="flex h-[104px] flex-1 flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-			<p className="text-[14px] font-normal leading-4 text-[#666]">{label}</p>
-			<p className="text-[36px] font-semibold leading-9 text-[#11215a]">
-				{value}
-			</p>
-		</div>
-	);
-}
+
 
 interface RetFacultyDirectoryPageProps {
 	user?: AuthUser | null;
@@ -95,12 +81,13 @@ export function RetFacultyDirectoryPage({
 
 				{/* Metric Cards */}
 				<div className="flex items-center gap-6">
-					<MetricCard label="Total Faculty" value={total.toLocaleString()} />
+					<MetricCard label="Total Faculty" value={total.toLocaleString()} className="flex-1" />
 					<MetricCard
 						label="Active Faculty"
 						value={metrics?.totalActiveExtension.toLocaleString() ?? "0"}
+						className="flex-1"
 					/>
-					<MetricCard label="Faculty without Extension Projects" value="0" />
+					<MetricCard label="Faculty without Extension Projects" value="0" className="flex-1" />
 				</div>
 
 				{/* Controls: Search & Filter */}

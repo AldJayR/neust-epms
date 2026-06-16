@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MetricCard } from "@/components/custom/metric-card";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -138,21 +138,12 @@ export function UsersPage({
 
 			<div className="grid gap-6 md:grid-cols-3">
 				{stats.map((stat) => (
-					<Card
+					<MetricCard
 						key={stat.label}
-						className="border-[#ebebeb] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] rounded-[12px]"
-					>
-						<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-							<CardTitle className="text-sm font-normal text-[#666]">
-								{stat.label}
-							</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<div className="text-4xl font-semibold text-[#11215a]">
-								{stat.value}
-							</div>
-						</CardContent>
-					</Card>
+						label={stat.label}
+						value={stat.value}
+						variant="card"
+					/>
 				))}
 			</div>
 
