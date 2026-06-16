@@ -5,12 +5,10 @@ import {
 	Loader2,
 	MoreVertical,
 	Users,
-	XCircle,
 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MetricCard } from "@/components/custom/metric-card";
 import {
@@ -39,6 +37,7 @@ import {
 import { formatAcademicRank } from "@/lib/utils";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { BulkApproveDialog } from "./bulk-approve-dialog";
+import { StatusBadge } from "./components/status-badge";
 
 interface UsersPageProps {
 	page: number;
@@ -285,26 +284,4 @@ export function UsersPage({
 	);
 }
 
-function StatusBadge({ isActive }: { isActive: boolean }) {
-	if (isActive) {
-		return (
-			<Badge
-				variant="outline"
-				className="h-[22px] gap-1 rounded-lg border-[#e5e5e5] px-2 font-medium text-[#737373] bg-white"
-			>
-				<CheckCircle2 className="size-3 text-[#10b981]" />
-				Active
-			</Badge>
-		);
-	}
 
-	return (
-		<Badge
-			variant="outline"
-			className="h-[22px] gap-1 rounded-lg border-[#e5e5e5] px-2 font-medium text-[#737373] bg-white"
-		>
-			<XCircle className="size-3 text-[#ef4444]" />
-			Deactivated
-		</Badge>
-	);
-}

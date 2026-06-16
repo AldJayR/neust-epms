@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import {
-	CircleCheck,
 	EllipsisVertical,
 	Filter,
 	Loader2,
@@ -11,7 +10,6 @@ import {
 import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MetricCard } from "@/components/custom/metric-card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -44,6 +42,7 @@ import {
 import { formatAcademicRank } from "@/lib/utils";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
+import { ProposalStatusBadge } from "./components/proposal-status-badge";
 
 interface RETDashboardPageProps {
 	user: AuthUser;
@@ -292,27 +291,4 @@ export function RETDashboardPage({
 		</div>
 	);
 }
-function ProposalStatusBadge({ status }: { status: string }) {
-	let label = status;
-	let icon = <CircleCheck className="size-3 text-[#737373]" />;
 
-	if (status === "Submitted") {
-		label = "Pending";
-	} else if (status === "Endorsed") {
-		label = "For Endorsement";
-		icon = <CircleCheck className="size-3 text-[#10b981]" />;
-	} else if (status === "Approved") {
-		label = "Approved";
-		icon = <CircleCheck className="size-3 text-[#10b981]" />;
-	}
-
-	return (
-		<Badge
-			variant="outline"
-			className="h-[22px] gap-1 rounded-lg border-[#e5e5e5] px-1.5 py-0.5 font-medium text-xs text-[#737373] bg-white shadow-none"
-		>
-			{icon}
-			{label}
-		</Badge>
-	);
-}
