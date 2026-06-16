@@ -1,0 +1,337 @@
+"use client";
+
+import * as pdfjsLib from "pdfjs-dist";
+import { useEffect, useRef, useState } from "react";
+import type { AnnotationData, ProposalComment } from "@/lib/comments.functions";
+import { CommentHighlights, CommentCreationPopover } from "./pdf-annotations";
+
+interface PdfPageCanvasProps {
+	pdfDoc: pdfjsLib.PDFDocumentProxy;
+	pageNumber: number;
+	width: number;
+	scale: number;
+	aspectRatio: number;
+	onPageLoad: (pageNumber: number, aspect: number) => void;
+	toolMode: "hand" | "comment";
+	comments: ProposalComment[];
+	onAddComment?: (
+		content: string,
+		annotation: AnnotationData | null,
+	) => Promise<void>;
+}
+
+export function PdfPageCanvas({
+	pdfDoc,
+	pageNumber,
+	width,
+	scale,
+	aspectRatio,
+	onPageLoad,
+	toolMode,
+	comments,
+	onAddComment,
+}: PdfPageCanvasProps) {
+	const canvasRef1 = useRef<HTMLCanvasElement>(null);
+	const canvasRef2 = useRef<HTMLCanvasElement>(null);
+	const [activeCanvas, setActiveCanvas] = useState<1 | 2>(1);
+	const [isLoading, setIsLoading] = useState(true);
+	const [hasRendered, setHasRendered] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	const overlayRef = useRef<HTMLDivElement>(null);
+	const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(
+		null,
+	);
+	const [dragCurrent, setDragCurrent] = useState<{
+		x: number;
+		y: number;
+	} | null>(null);
+	const [showCommentPopover, setShowCommentPopover] = useState(false);
+	const [commentText, setCommentText] = useState("");
+	const [pendingAnnotation, setPendingAnnotation] =
+		useState<AnnotationData | null>(null);
+
+	const [lastRendered, setLastRendered] = useState<{
+		width: number;
+		scale: number;
+	}>(() => ({
+		width,
+		scale,
+	}));
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: activeCanvas and hasRendered changes should not trigger a re-render
+	useEffect(() => {
+		// Keep track of the active rendering task so we can cancel it on change/unmount
+		// biome-ignore lint/suspicious/noExplicitAny: PDF.js Internal RenderTask type is complex
+		let activeRenderTask: any = null;
+		let isDestroyed = false;
+
+		const renderPage = async () => {
+			try {
+				setIsLoading(true);
+				setError(null);
+
+				// Retrieve page instance
+				const page = await pdfDoc.getPage(pageNumber);
+				if (isDestroyed) return;
+
+				// Determine which canvas is the target (hidden one)
+				const targetCanvasIndex = activeCanvas === 1 && hasRendered ? 2 : 1;
+				const targetCanvas =
+					targetCanvasIndex === 1 ? canvasRef1.current : canvasRef2.current;
+				if (!targetCanvas) return;
+
+				// Get original dimensions to support landscape & horizontal pages
+				const defaultViewport = page.getViewport({ scale: 1 });
+				const aspect = defaultViewport.height / defaultViewport.width;
+				onPageLoad(pageNumber, aspect);
+
+				// Calculate scale factor relative to target width
+				const scaleFactor = (width * scale) / defaultViewport.width;
+				const viewport = page.getViewport({ scale: scaleFactor });
+
+				const context = targetCanvas.getContext("2d");
+				if (!context) return;
+
+				// Cap Device Pixel Ratio to 1.5 to reduce VRAM memory footprint by up to 75% on high-DPI screens
+				const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+				targetCanvas.width = viewport.width * dpr;
+				targetCanvas.height = viewport.height * dpr;
+				targetCanvas.style.width = `${viewport.width}px`;
+				targetCanvas.style.height = `${viewport.height}px`;
+
+				context.scale(dpr, dpr);
+
+				const renderContext = {
+					canvas: targetCanvas,
+					canvasContext: context,
+					viewport: viewport,
+				};
+
+				// Start rendering task
+				activeRenderTask = page.render(renderContext);
+
+				await activeRenderTask.promise;
+				if (!isDestroyed) {
+					setActiveCanvas(targetCanvasIndex);
+					setLastRendered({ width, scale });
+					setHasRendered(true);
+					setIsLoading(false);
+				}
+			} catch (err: unknown) {
+				// Avoid throwing/logging expected cancellation exceptions
+				const errorName = (err as Error)?.name;
+				if (
+					errorName === "RenderingCancelledException" ||
+					errorName === "WorkerDragCancelledException"
+				) {
+					return;
+				}
+				if (!isDestroyed) {
+					setError((err as Error).message || "Failed to render page");
+					setIsLoading(false);
+				}
+			}
+		};
+
+		renderPage();
+
+		return () => {
+			isDestroyed = true;
+			if (activeRenderTask) {
+				try {
+					activeRenderTask.cancel();
+				} catch {
+					// Ignore errors on render task cancellation
+				}
+			}
+		};
+	}, [pdfDoc, pageNumber, width, scale]);
+
+	const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+		if (toolMode !== "comment" || showCommentPopover) return;
+		const rect = e.currentTarget.getBoundingClientRect();
+		const startX = e.clientX - rect.left;
+		const startY = e.clientY - rect.top;
+		setDragStart({ x: startX, y: startY });
+		setDragCurrent({ x: startX, y: startY });
+	};
+
+	const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+		if (!dragStart || showCommentPopover) return;
+		const rect = e.currentTarget.getBoundingClientRect();
+		const currentX = e.clientX - rect.left;
+		const currentY = e.clientY - rect.top;
+		setDragCurrent({ x: currentX, y: currentY });
+	};
+
+	const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+		if (!dragStart || showCommentPopover) return;
+		const rect = e.currentTarget.getBoundingClientRect();
+		const endX = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+		const endY = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
+
+		const x1 = Math.min(dragStart.x, endX);
+		const x2 = Math.max(dragStart.x, endX);
+		const y1 = Math.min(dragStart.y, endY);
+		const y2 = Math.max(dragStart.y, endY);
+
+		const boxWidth = x2 - x1;
+		const boxHeight = y2 - y1;
+
+		if (boxWidth > 5 && boxHeight > 5) {
+			const pctX = (x1 / rect.width) * 100;
+			const pctY = (y1 / rect.height) * 100;
+			const pctW = (boxWidth / rect.width) * 100;
+			const pctH = (boxHeight / rect.height) * 100;
+
+			setPendingAnnotation({
+				x: pctX,
+				y: pctY,
+				width: pctW,
+				height: pctH,
+				page: pageNumber,
+			});
+			setShowCommentPopover(true);
+		} else {
+			setDragStart(null);
+			setDragCurrent(null);
+		}
+	};
+
+	const handleSaveComment = async () => {
+		if (!commentText.trim() || !onAddComment || !pendingAnnotation) return;
+		try {
+			setIsLoading(true);
+			await onAddComment(commentText, pendingAnnotation);
+			setCommentText("");
+			setShowCommentPopover(false);
+			setPendingAnnotation(null);
+			setDragStart(null);
+			setDragCurrent(null);
+		} catch (err) {
+			setError((err as Error).message || "Failed to save comment");
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleCancelComment = () => {
+		setCommentText("");
+		setShowCommentPopover(false);
+		setPendingAnnotation(null);
+		setDragStart(null);
+		setDragCurrent(null);
+	};
+
+	const dragBoxStyle: React.CSSProperties | null =
+		dragStart && dragCurrent
+			? {
+					position: "absolute",
+					left: Math.min(dragStart.x, dragCurrent.x),
+					top: Math.min(dragStart.y, dragCurrent.y),
+					width: Math.abs(dragCurrent.x - dragStart.x),
+					height: Math.abs(dragCurrent.y - dragStart.y),
+					border: "2px dashed #10b981",
+					backgroundColor: "rgba(16, 185, 129, 0.15)",
+					pointerEvents: "none",
+				}
+			: null;
+
+	const overlayStyle: React.CSSProperties = {
+		position: "absolute",
+		top: 0,
+		left: 0,
+		width: "100%",
+		height: "100%",
+		zIndex: 30,
+		cursor: toolMode === "comment" ? "crosshair" : "default",
+		pointerEvents: toolMode === "comment" ? "auto" : "none",
+	};
+
+	const activeScaleRatio =
+		(width * scale) / (lastRendered.width * lastRendered.scale || 1);
+
+	const canvas1Style: React.CSSProperties = {
+		position: "absolute",
+		top: 0,
+		left: 0,
+		visibility: activeCanvas === 1 && hasRendered ? "visible" : "hidden",
+		transform:
+			activeCanvas === 1 && activeScaleRatio !== 1
+				? `scale(${activeScaleRatio})`
+				: undefined,
+		transformOrigin: "top left",
+		transition: "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+	};
+
+	const canvas2Style: React.CSSProperties = {
+		position: "absolute",
+		top: 0,
+		left: 0,
+		visibility: activeCanvas === 2 && hasRendered ? "visible" : "hidden",
+		transform:
+			activeCanvas === 2 && activeScaleRatio !== 1
+				? `scale(${activeScaleRatio})`
+				: undefined,
+		transformOrigin: "top left",
+		transition: "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+	};
+
+	return (
+		<div
+			className="relative flex items-center justify-center bg-white rounded shadow-sm overflow-hidden"
+			style={{
+				width: width * scale,
+				height: width * aspectRatio * scale,
+				transition:
+					"width 0.25s cubic-bezier(0.16, 1, 0.3, 1), height 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+			}}
+		>
+			<canvas ref={canvasRef1} style={canvas1Style} />
+			<canvas ref={canvasRef2} style={canvas2Style} />
+
+			{/* Interactive Overlay Layer */}
+			<section
+				ref={overlayRef}
+				style={overlayStyle}
+				aria-label="PDF Interaction Overlay"
+				onMouseDown={handleMouseDown}
+				onMouseMove={handleMouseMove}
+				onMouseUp={handleMouseUp}
+			>
+				{dragBoxStyle && <div style={dragBoxStyle} />}
+			</section>
+
+			{/* Render existing comments highlights (hoverable in hand mode) */}
+			<CommentHighlights comments={comments} />
+
+			{/* Comment creation popover */}
+			{showCommentPopover && (
+				<CommentCreationPopover
+					pendingAnnotation={pendingAnnotation}
+					pageNumber={pageNumber}
+					commentText={commentText}
+					onCommentTextChange={setCommentText}
+					onSave={handleSaveComment}
+					onCancel={handleCancelComment}
+				/>
+			)}
+
+			{(!hasRendered || isLoading) && (
+				<div
+					className={`absolute inset-0 flex items-center justify-center bg-[#f5f5f5]/80 ${!hasRendered ? "animate-pulse" : ""}`}
+				>
+					{!hasRendered && (
+						<div className="size-6 animate-spin rounded-full border-2 border-brand-primary border-t-transparent" />
+					)}
+				</div>
+			)}
+			{error && (
+				<div className="absolute inset-0 flex items-center justify-center text-xs text-red-500 bg-[#f5f5f5] p-4 text-center">
+					{error}
+				</div>
+			)}
+		</div>
+	);
+}

@@ -1,7 +1,7 @@
 import { Suspense, lazy, forwardRef } from "react";
 import type { ProposalComment, AnnotationData } from "@/lib/comments.functions";
 
-const PdfInner = lazy(() => import("./pdf-inner"));
+const PdfInner = lazy(() => import("@/features/director/pdf-inner"));
 
 export interface PdfViewerRef {
 	scrollToPage: (pageNumber: number) => void;
