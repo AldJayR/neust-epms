@@ -1,17 +1,24 @@
 "use client";
 
 import {
+	Hand,
+	Maximize2,
+	MessageSquare,
+	Minimize2,
 	Minus,
 	Plus,
 	RotateCcw,
-	Hand,
-	MessageSquare,
-	Maximize2,
-	Minimize2,
 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
-import type { PdfViewerRef } from "./pdf-viewer";
+import {
+	forwardRef,
+	useDeferredValue,
+	useEffect,
+	useImperativeHandle,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Tooltip,
@@ -19,12 +26,13 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { ProposalComment, AnnotationData } from "@/lib/comments.functions";
+import type { AnnotationData, ProposalComment } from "@/lib/comments.functions";
+import type { PdfViewerRef } from "./pdf-viewer";
 
 // Configure worker locally using Vite's native URL resolution
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 	"pdfjs-dist/build/pdf.worker.min.mjs",
-	import.meta.url
+	import.meta.url,
 ).toString();
 
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
@@ -37,7 +45,10 @@ interface PdfInnerProps {
 	proposalId?: string;
 	documentId?: string;
 	comments?: ProposalComment[];
-	onAddComment?: (content: string, annotation: AnnotationData | null) => Promise<void>;
+	onAddComment?: (
+		content: string,
+		annotation: AnnotationData | null,
+	) => Promise<void>;
 	isTheaterMode?: boolean;
 	onToggleTheaterMode?: () => void;
 }
@@ -51,7 +62,10 @@ interface PdfPageCanvasProps {
 	onPageLoad: (pageNumber: number, aspect: number) => void;
 	toolMode: "hand" | "comment";
 	comments: ProposalComment[];
-	onAddComment?: (content: string, annotation: AnnotationData | null) => Promise<void>;
+	onAddComment?: (
+		content: string,
+		annotation: AnnotationData | null,
+	) => Promise<void>;
 }
 
 /**
@@ -78,16 +92,23 @@ function PdfPageCanvas({
 	const [error, setError] = useState<string | null>(null);
 
 	const overlayRef = useRef<HTMLDivElement>(null);
-	const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
-	const [dragCurrent, setDragCurrent] = useState<{ x: number; y: number } | null>(null);
+	const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(
+		null,
+	);
+	const [dragCurrent, setDragCurrent] = useState<{
+		x: number;
+		y: number;
+	} | null>(null);
 	const [showCommentPopover, setShowCommentPopover] = useState(false);
 	const [commentText, setCommentText] = useState("");
-	const [pendingAnnotation, setPendingAnnotation] = useState<AnnotationData | null>(null);
+	const [pendingAnnotation, setPendingAnnotation] =
+		useState<AnnotationData | null>(null);
 
 	// Track the exact width and scale at which the active canvas was last successfully rendered
 	const lastRenderedWidthRef = useRef<number>(width);
 	const lastRenderedScaleRef = useRef<number>(scale);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: activeCanvas and hasRendered changes should not trigger a re-render
 	useEffect(() => {
 		// Keep track of the active rendering task so we can cancel it on change/unmount
 		// biome-ignore lint/suspicious/noExplicitAny: PDF.js Internal RenderTask type is complex
@@ -105,7 +126,8 @@ function PdfPageCanvas({
 
 				// Determine which canvas is the target (hidden one)
 				const targetCanvasIndex = activeCanvas === 1 && hasRendered ? 2 : 1;
-				const targetCanvas = targetCanvasIndex === 1 ? canvasRef1.current : canvasRef2.current;
+				const targetCanvas =
+					targetCanvasIndex === 1 ? canvasRef1.current : canvasRef2.current;
 				if (!targetCanvas) return;
 
 				// Get original dimensions to support landscape & horizontal pages
@@ -173,7 +195,6 @@ function PdfPageCanvas({
 				}
 			}
 		};
-		// biome-ignore lint/correctness/useExhaustiveDependencies: activeCanvas and hasRendered changes should not trigger a re-render
 	}, [pdfDoc, pageNumber, width, scale]);
 
 	const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -271,7 +292,8 @@ function PdfPageCanvas({
 				position: "absolute",
 				left: `${pendingAnnotation.x}%`,
 				top: `${pendingAnnotation.y + pendingAnnotation.height}%`,
-				transform: pendingAnnotation.y > 70 ? "translateY(-105%)" : "translateY(4px)",
+				transform:
+					pendingAnnotation.y > 70 ? "translateY(-105%)" : "translateY(4px)",
 				zIndex: 50,
 			}
 		: null;
@@ -288,7 +310,8 @@ function PdfPageCanvas({
 	};
 
 	const activeScaleRatio =
-		(width * scale) / (lastRenderedWidthRef.current * lastRenderedScaleRef.current || 1);
+		(width * scale) /
+		(lastRenderedWidthRef.current * lastRenderedScaleRef.current || 1);
 
 	const canvas1Style: React.CSSProperties = {
 		position: "absolute",
@@ -330,15 +353,16 @@ function PdfPageCanvas({
 			<canvas ref={canvasRef2} style={canvas2Style} />
 
 			{/* Interactive Overlay Layer */}
-			<div
+			<section
 				ref={overlayRef}
 				style={overlayStyle}
+				aria-label="PDF Interaction Overlay"
 				onMouseDown={handleMouseDown}
 				onMouseMove={handleMouseMove}
 				onMouseUp={handleMouseUp}
 			>
 				{dragBoxStyle && <div style={dragBoxStyle} />}
-			</div>
+			</section>
 
 			{/* Render existing comments highlights (hoverable in hand mode) */}
 			<TooltipProvider>
@@ -401,11 +425,13 @@ function PdfPageCanvas({
 						</span>
 					</div>
 					<textarea
+						ref={(el) => {
+							if (el) el.focus();
+						}}
 						className="w-full h-20 text-[12px] p-2 border border-[#e5e5e5] rounded-[6px] focus:outline-none focus:border-brand-primary resize-none"
 						placeholder="Type your feedback here..."
 						value={commentText}
 						onChange={(e) => setCommentText(e.target.value)}
-						autoFocus
 					/>
 					<div className="flex justify-end gap-2">
 						<Button
@@ -446,455 +472,459 @@ function PdfPageCanvas({
 	);
 }
 
-const PdfInner = forwardRef<PdfViewerRef, PdfInnerProps>((
-	{
-		url,
-		proposalId,
-		documentId,
-		comments = [],
-		onAddComment,
-		isTheaterMode = false,
-		onToggleTheaterMode,
-	},
-	ref,
-) => {
-	const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
-	const [numPages, setNumPages] = useState(0);
-	const [visiblePages, setVisiblePages] = useState<Set<number>>(new Set([1]));
-	const [currentPage, setCurrentPage] = useState(1);
-	const [scale, setScale] = useState(DEFAULT_SCALE);
-	const [renderedScale, setRenderedScale] = useState(DEFAULT_SCALE);
-	const [pageWidth, setPageWidth] = useState(BASE_WIDTH);
-	const [loadingDoc, setLoadingDoc] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-	const [pageAspectRatios, setPageAspectRatios] = useState<Record<number, number>>({});
-	const [toolMode, setToolMode] = useState<"hand" | "comment">("hand");
+function subscribeWidth(callback: () => void) {
+	window.addEventListener("resize", callback);
+	return () => window.removeEventListener("resize", callback);
+}
 
-	const scrollRef = useRef<HTMLDivElement>(null);
-	const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+function getWidthSnapshot() {
+	return window.innerWidth;
+}
 
-	useImperativeHandle(ref, () => ({
-		scrollToPage: (pageNumber: number) => {
-			const pageEl = pageRefs.current.get(pageNumber);
-			if (pageEl) {
-				pageEl.scrollIntoView({ behavior: "smooth", block: "center" });
-			}
+function getServerWidthSnapshot() {
+	return 1024;
+}
+
+const PdfInner = forwardRef<PdfViewerRef, PdfInnerProps>(
+	(
+		{
+			url,
+			comments = [],
+			onAddComment,
+			isTheaterMode = false,
+			onToggleTheaterMode,
 		},
-	}));
+		ref,
+	) => {
+		const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(
+			null,
+		);
+		const [numPages, setNumPages] = useState(0);
+		const [visiblePages, setVisiblePages] = useState<Set<number>>(new Set([1]));
+		const [currentPage, setCurrentPage] = useState(1);
+		const [scale, setScale] = useState(DEFAULT_SCALE);
+		const deferredScale = useDeferredValue(scale);
+		const windowWidth = useSyncExternalStore(
+			subscribeWidth,
+			getWidthSnapshot,
+			getServerWidthSnapshot,
+		);
+		const pageWidth = Math.min(BASE_WIDTH, windowWidth - 120);
+		const [loadingDoc, setLoadingDoc] = useState(true);
+		const [error, setError] = useState<string | null>(null);
+		const [pageAspectRatios, setPageAspectRatios] = useState<
+			Record<number, number>
+		>({});
+		const [toolMode, setToolMode] = useState<"hand" | "comment">("hand");
 
-	const handlePageLoad = (pageNumber: number, aspect: number) => {
-		setPageAspectRatios((prev) => {
-			if (prev[pageNumber] === aspect) return prev;
-			return { ...prev, [pageNumber]: aspect };
-		});
-	};
+		const scrollRef = useRef<HTMLDivElement>(null);
+		const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
-	// Debounce scale changes to prevent main-thread freezing during rapid zooming
-	useEffect(() => {
-		const handler = setTimeout(() => {
-			setRenderedScale(scale);
-		}, 250);
-		return () => clearTimeout(handler);
-	}, [scale]);
+		useImperativeHandle(ref, () => ({
+			scrollToPage: (pageNumber: number) => {
+				const pageEl = pageRefs.current.get(pageNumber);
+				if (pageEl) {
+					pageEl.scrollIntoView({ behavior: "smooth", block: "center" });
+				}
+			},
+		}));
 
-	// SSR-safe and Responsive Width hook
-	useEffect(() => {
-		const handleResize = () => {
-			setPageWidth(Math.min(BASE_WIDTH, window.innerWidth - 120));
-		};
-		handleResize();
-		window.addEventListener("resize", handleResize);
-		return () => window.removeEventListener("resize", handleResize);
-	}, []);
-
-	// Keyboard shortcuts for zooming (Ctrl/Cmd + plus/minus/0, or direct plus/minus/0)
-	useEffect(() => {
-		const handleKeyDown = (e: KeyboardEvent) => {
-			const activeEl = document.activeElement;
-			if (
-				activeEl &&
-				(activeEl.tagName === "INPUT" ||
-					activeEl.tagName === "TEXTAREA" ||
-					activeEl.isContentEditable)
-			) {
-				return;
-			}
-
-			// Support both direct keystrokes (+, -, 0) and Ctrl/Cmd modifier combos
-			const isZoomIn =
-				e.key === "=" ||
-				e.key === "+" ||
-				(e.ctrlKey && e.key === "=") ||
-				(e.metaKey && e.key === "=");
-			const isZoomOut =
-				e.key === "-" ||
-				e.key === "_" ||
-				(e.ctrlKey && e.key === "-") ||
-				(e.metaKey && e.key === "-");
-			const isZoomReset =
-				e.key === "0" ||
-				(e.ctrlKey && e.key === "0") ||
-				(e.metaKey && e.key === "0");
-
-			if (isZoomIn) {
-				e.preventDefault();
-				zoomIn();
-			} else if (isZoomOut) {
-				e.preventDefault();
-				zoomOut();
-			} else if (isZoomReset) {
-				e.preventDefault();
-				resetZoom();
-			}
+		const handlePageLoad = (pageNumber: number, aspect: number) => {
+			setPageAspectRatios((prev) => {
+				if (prev[pageNumber] === aspect) return prev;
+				return { ...prev, [pageNumber]: aspect };
+			});
 		};
 
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, []);
-
-	// Load document progressively on mount using Byte-Range requests
-	useEffect(() => {
-		let isDestroyed = false;
-		// biome-ignore lint/suspicious/noExplicitAny: PDF.js Internal getDocument task type is complex
-		let loadingTask: any = null;
-
-		const loadDocument = async () => {
-			try {
-				setLoadingDoc(true);
-				setError(null);
-
-				loadingTask = pdfjsLib.getDocument({
-					url,
-					cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
-					cMapPacked: true,
-					standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`,
-					disableAutoFetch: true, // Only download requested page byte ranges
-					disableRange: false,
-					disableStream: false,
-				});
-
-				const doc = await loadingTask.promise;
-				if (isDestroyed) {
-					loadingTask.destroy().catch(() => {});
+		// Keyboard shortcuts for zooming (Ctrl/Cmd + plus/minus/0, or direct plus/minus/0)
+		// biome-ignore lint/correctness/useExhaustiveDependencies: zoom controls are stable and shouldn't trigger listener reset
+		useEffect(() => {
+			const handleKeyDown = (e: KeyboardEvent) => {
+				const activeEl = document.activeElement;
+				if (
+					activeEl &&
+					(activeEl.tagName === "INPUT" ||
+						activeEl.tagName === "TEXTAREA" ||
+						activeEl.isContentEditable)
+				) {
 					return;
 				}
 
-				setPdfDoc(doc);
-				setNumPages(doc.numPages);
-				setVisiblePages(new Set([1]));
-				setCurrentPage(1);
-				setLoadingDoc(false);
-			} catch (err: unknown) {
-				if (!isDestroyed) {
-					setError((err as Error).message || "Failed to load PDF document");
-					setLoadingDoc(false);
+				// Support both direct keystrokes (+, -, 0) and Ctrl/Cmd modifier combos
+				const isZoomIn =
+					e.key === "=" ||
+					e.key === "+" ||
+					(e.ctrlKey && e.key === "=") ||
+					(e.metaKey && e.key === "=");
+				const isZoomOut =
+					e.key === "-" ||
+					e.key === "_" ||
+					(e.ctrlKey && e.key === "-") ||
+					(e.metaKey && e.key === "-");
+				const isZoomReset =
+					e.key === "0" ||
+					(e.ctrlKey && e.key === "0") ||
+					(e.metaKey && e.key === "0");
+
+				if (isZoomIn) {
+					e.preventDefault();
+					zoomIn();
+				} else if (isZoomOut) {
+					e.preventDefault();
+					zoomOut();
+				} else if (isZoomReset) {
+					e.preventDefault();
+					resetZoom();
 				}
-			}
-		};
+			};
 
-		loadDocument();
+			window.addEventListener("keydown", handleKeyDown);
+			return () => window.removeEventListener("keydown", handleKeyDown);
+		}, []);
 
-		return () => {
-			isDestroyed = true;
-			if (loadingTask) {
-				loadingTask.destroy().catch(() => {});
-			}
-		};
-	}, [url]);
+		// Load document progressively on mount using Byte-Range requests
+		useEffect(() => {
+			let isDestroyed = false;
+			// biome-ignore lint/suspicious/noExplicitAny: PDF.js Internal getDocument task type is complex
+			let loadingTask: any = null;
 
-	// Intersection observers for virtualization & active page tracking
-	useEffect(() => {
-		const scrollEl = scrollRef.current;
-		if (!scrollEl || numPages === 0) return;
+			const loadDocument = async () => {
+				try {
+					setLoadingDoc(true);
+					setError(null);
 
-		// Virtualization preload observer (unmounts non-visible pages to clear GPU canvases)
-		const preloadObserver = new IntersectionObserver(
-			(entries) => {
-				setVisiblePages((prev) => {
-					const next = new Set(prev);
+					loadingTask = pdfjsLib.getDocument({
+						url,
+						cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+						cMapPacked: true,
+						standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`,
+						disableAutoFetch: true, // Only download requested page byte ranges
+						disableRange: false,
+						disableStream: false,
+					});
+
+					const doc = await loadingTask.promise;
+					if (isDestroyed) {
+						loadingTask.destroy().catch(() => {});
+						return;
+					}
+
+					setPdfDoc(doc);
+					setNumPages(doc.numPages);
+					setVisiblePages(new Set([1]));
+					setCurrentPage(1);
+					setLoadingDoc(false);
+				} catch (err: unknown) {
+					if (!isDestroyed) {
+						setError((err as Error).message || "Failed to load PDF document");
+						setLoadingDoc(false);
+					}
+				}
+			};
+
+			loadDocument();
+
+			return () => {
+				isDestroyed = true;
+				if (loadingTask) {
+					loadingTask.destroy().catch(() => {});
+				}
+			};
+		}, [url]);
+
+		// Intersection observers for virtualization & active page tracking
+		useEffect(() => {
+			const scrollEl = scrollRef.current;
+			if (!scrollEl || numPages === 0) return;
+
+			// Virtualization preload observer (unmounts non-visible pages to clear GPU canvases)
+			const preloadObserver = new IntersectionObserver(
+				(entries) => {
+					setVisiblePages((prev) => {
+						const next = new Set(prev);
+						for (const entry of entries) {
+							const pg = Number((entry.target as HTMLElement).dataset.page);
+							if (entry.isIntersecting) {
+								next.add(pg);
+							} else {
+								next.delete(pg);
+							}
+						}
+						return next;
+					});
+				},
+				{
+					root: scrollEl,
+					rootMargin: `${BUFFER_PAGES * 200}px 0px`,
+					threshold: 0,
+				},
+			);
+
+			// Precise active-page tracker observer (fixes premature updates and scroll-up issue)
+			const pageTrackerObserver = new IntersectionObserver(
+				(entries) => {
 					for (const entry of entries) {
-						const pg = Number((entry.target as HTMLElement).dataset.page);
 						if (entry.isIntersecting) {
-							next.add(pg);
-						} else {
-							next.delete(pg);
+							const pg = Number((entry.target as HTMLElement).dataset.page);
+							setCurrentPage(pg);
 						}
 					}
-					return next;
-				});
-			},
-			{
-				root: scrollEl,
-				rootMargin: `${BUFFER_PAGES * 200}px 0px`,
-				threshold: 0,
-			},
-		);
+				},
+				{
+					root: scrollEl,
+					rootMargin: "-10% 0px -80% 0px", // Focuses on the upper segment of the viewport
+					threshold: 0,
+				},
+			);
 
-		// Precise active-page tracker observer (fixes premature updates and scroll-up issue)
-		const pageTrackerObserver = new IntersectionObserver(
-			(entries) => {
-				for (const entry of entries) {
-					if (entry.isIntersecting) {
-						const pg = Number((entry.target as HTMLElement).dataset.page);
-						setCurrentPage(pg);
-					}
+			// Small delay to ensure elements are mounted before registration
+			const timer = setTimeout(() => {
+				for (const [, el] of pageRefs.current) {
+					preloadObserver.observe(el);
+					pageTrackerObserver.observe(el);
 				}
-			},
-			{
-				root: scrollEl,
-				rootMargin: "-10% 0px -80% 0px", // Focuses on the upper segment of the viewport
-				threshold: 0,
-			},
-		);
+			}, 100);
 
-		// Small delay to ensure elements are mounted before registration
-		const timer = setTimeout(() => {
-			for (const [, el] of pageRefs.current) {
-				preloadObserver.observe(el);
-				pageTrackerObserver.observe(el);
-			}
-		}, 100);
+			return () => {
+				clearTimeout(timer);
+				preloadObserver.disconnect();
+				pageTrackerObserver.disconnect();
+			};
+		}, [numPages]);
 
-		return () => {
-			clearTimeout(timer);
-			preloadObserver.disconnect();
-			pageTrackerObserver.disconnect();
-		};
-	}, [numPages]);
+		// Navigation is scroll-driven now
 
-	// Navigation is scroll-driven now
+		function zoomIn() {
+			setScale((prev) => {
+				const idx = ZOOM_STEPS.findIndex((s) => s >= prev);
+				return ZOOM_STEPS[Math.min(idx + 1, ZOOM_STEPS.length - 1)];
+			});
+		}
 
-	function zoomIn() {
-		setScale((prev) => {
-			const idx = ZOOM_STEPS.findIndex((s) => s >= prev);
-			return ZOOM_STEPS[Math.min(idx + 1, ZOOM_STEPS.length - 1)];
-		});
-	}
+		function zoomOut() {
+			setScale((prev) => {
+				const idx = ZOOM_STEPS.findLastIndex((s) => s <= prev);
+				return ZOOM_STEPS[Math.max(idx - 1, 0)];
+			});
+		}
 
-	function zoomOut() {
-		setScale((prev) => {
-			const idx = ZOOM_STEPS.findLastIndex((s) => s <= prev);
-			return ZOOM_STEPS[Math.max(idx - 1, 0)];
-		});
-	}
+		function resetZoom() {
+			setScale(DEFAULT_SCALE);
+		}
 
-	function resetZoom() {
-		setScale(DEFAULT_SCALE);
-	}
+		if (error) {
+			return (
+				<div className="flex h-full items-center justify-center text-[#737373]">
+					{error}
+				</div>
+			);
+		}
 
-	if (error) {
+		if (loadingDoc) {
+			return (
+				<div className="flex h-full items-center justify-center">
+					<div className="size-8 animate-spin rounded-full border-4 border-brand-primary border-t-transparent" />
+				</div>
+			);
+		}
+
 		return (
-			<div className="flex h-full items-center justify-center text-[#737373]">
-				{error}
-			</div>
-		);
-	}
+			<TooltipProvider>
+				<div className="relative flex flex-col h-full w-full">
+					{/* Floating Tool Mode Toolbar */}
+					{onAddComment && (
+						<div className="absolute top-4 left-4 z-40 bg-white/95 border border-[#ebebeb] px-2 py-1 rounded-full flex items-center gap-1 shadow-md backdrop-blur-md select-none">
+							<Tooltip>
+								<TooltipTrigger
+									render={
+										<Button
+											variant={toolMode === "hand" ? "secondary" : "ghost"}
+											size="icon"
+											className={`size-8 rounded-full cursor-pointer ${toolMode === "hand" ? "bg-brand-primary/10 text-brand-primary" : "text-[#555]"}`}
+											onClick={() => setToolMode("hand")}
+										>
+											<Hand className="size-4" />
+										</Button>
+									}
+								/>
+								<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
+									View & Select Text
+								</TooltipContent>
+							</Tooltip>
 
-	if (loadingDoc) {
-		return (
-			<div className="flex h-full items-center justify-center">
-				<div className="size-8 animate-spin rounded-full border-4 border-brand-primary border-t-transparent" />
-			</div>
-		);
-	}
+							<Tooltip>
+								<TooltipTrigger
+									render={
+										<Button
+											variant={toolMode === "comment" ? "secondary" : "ghost"}
+											size="icon"
+											className={`size-8 rounded-full cursor-pointer ${toolMode === "comment" ? "bg-brand-primary/10 text-brand-primary" : "text-[#555]"}`}
+											onClick={() => setToolMode("comment")}
+										>
+											<MessageSquare className="size-4" />
+										</Button>
+									}
+								/>
+								<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
+									Add Remark (Drag on page)
+								</TooltipContent>
+							</Tooltip>
 
-	return (
-		<TooltipProvider>
-			<div className="relative flex flex-col h-full w-full">
-				{/* Floating Tool Mode Toolbar */}
-				{onAddComment && (
-					<div className="absolute top-4 left-4 z-40 bg-white/95 border border-[#ebebeb] px-2 py-1 rounded-full flex items-center gap-1 shadow-md backdrop-blur-md select-none">
-						<Tooltip>
-							<TooltipTrigger
-								render={
-									<Button
-										variant={toolMode === "hand" ? "secondary" : "ghost"}
-										size="icon"
-										className={`size-8 rounded-full cursor-pointer ${toolMode === "hand" ? "bg-brand-primary/10 text-brand-primary" : "text-[#555]"}`}
-										onClick={() => setToolMode("hand")}
-									>
-										<Hand className="size-4" />
-									</Button>
-								}
-							/>
-							<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
-								View & Select Text
-							</TooltipContent>
-						</Tooltip>
+							{onToggleTheaterMode && (
+								<>
+									<div className="w-px h-4 bg-[#ebebeb] mx-1" />
+									<Tooltip>
+										<TooltipTrigger
+											render={
+												<Button
+													variant="ghost"
+													size="icon"
+													className="size-8 rounded-full cursor-pointer text-[#555] hover:bg-gray-100"
+													onClick={onToggleTheaterMode}
+												>
+													{isTheaterMode ? (
+														<Minimize2 className="size-4" />
+													) : (
+														<Maximize2 className="size-4" />
+													)}
+												</Button>
+											}
+										/>
+										<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
+											{isTheaterMode
+												? "Exit Theater Mode"
+												: "Theater Mode (Maximize View)"}
+										</TooltipContent>
+									</Tooltip>
+								</>
+							)}
+						</div>
+					)}
 
-						<Tooltip>
-							<TooltipTrigger
-								render={
-									<Button
-										variant={toolMode === "comment" ? "secondary" : "ghost"}
-										size="icon"
-										className={`size-8 rounded-full cursor-pointer ${toolMode === "comment" ? "bg-brand-primary/10 text-brand-primary" : "text-[#555]"}`}
-										onClick={() => setToolMode("comment")}
-									>
-										<MessageSquare className="size-4" />
-									</Button>
-								}
-							/>
-							<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
-								Add Remark (Drag on page)
-							</TooltipContent>
-						</Tooltip>
+					{/* Floating Page Indicator Pill */}
+					<div className="absolute top-4 right-4 z-40 bg-zinc-900/80 text-white px-3 py-1.5 rounded-full text-[12px] font-semibold tracking-wide backdrop-blur-md shadow-md border border-white/10 select-none">
+						Page {currentPage} of {numPages || "–"}
+					</div>
 
-						{onToggleTheaterMode && (
-							<>
-								<div className="w-px h-4 bg-[#ebebeb] mx-1" />
+					<div ref={scrollRef} className="flex-1 overflow-auto p-4">
+						<div className="flex flex-col items-center gap-4 w-fit mx-auto">
+							{pdfDoc &&
+								Array.from({ length: numPages }, (_, i) => {
+									const pg = i + 1;
+									const aspect = pageAspectRatios[pg] || Math.SQRT2;
+									return (
+										<div
+											key={pg}
+											ref={(el) => {
+												if (el) pageRefs.current.set(pg, el);
+												else pageRefs.current.delete(pg);
+											}}
+											data-page={pg}
+										>
+											{visiblePages.has(pg) ? (
+												<PdfPageCanvas
+													pdfDoc={pdfDoc}
+													pageNumber={pg}
+													width={pageWidth}
+													scale={deferredScale}
+													aspectRatio={aspect}
+													onPageLoad={handlePageLoad}
+													toolMode={toolMode}
+													comments={comments.filter(
+														(c) => c.annotationJson?.page === pg,
+													)}
+													onAddComment={onAddComment}
+												/>
+											) : (
+												<div
+													className="rounded bg-[#f5f5f5] animate-pulse flex items-center justify-center"
+													style={{
+														width: pageWidth * scale,
+														height: pageWidth * aspect * scale,
+													}}
+												/>
+											)}
+										</div>
+									);
+								})}
+						</div>
+					</div>
+
+					<div className="flex items-center justify-center border-t border-[#ebebeb] bg-white px-4 py-2">
+						{/* Zoom controls */}
+						<div className="flex items-center gap-1.5">
+							<Tooltip>
+								<TooltipTrigger
+									render={
+										<Button
+											variant="outline"
+											size="icon"
+											className="size-8 rounded-[8px] border-[#e5e5e5]"
+											onClick={zoomOut}
+											disabled={scale <= ZOOM_STEPS[0]}
+										>
+											<Minus className="size-3.5" />
+										</Button>
+									}
+								/>
+								<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
+									Zoom Out
+								</TooltipContent>
+							</Tooltip>
+
+							<button
+								type="button"
+								onClick={resetZoom}
+								className="text-[13px] text-[#666] tabular-nums w-[48px] text-center hover:text-[#11215a] cursor-pointer"
+							>
+								{Math.round(scale * 100)}%
+							</button>
+
+							<Tooltip>
+								<TooltipTrigger
+									render={
+										<Button
+											variant="outline"
+											size="icon"
+											className="size-8 rounded-[8px] border-[#e5e5e5]"
+											onClick={zoomIn}
+											disabled={scale >= ZOOM_STEPS[ZOOM_STEPS.length - 1]}
+										>
+											<Plus className="size-3.5" />
+										</Button>
+									}
+								/>
+								<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
+									Zoom In
+								</TooltipContent>
+							</Tooltip>
+
+							{scale !== DEFAULT_SCALE && (
 								<Tooltip>
 									<TooltipTrigger
 										render={
 											<Button
 												variant="ghost"
 												size="icon"
-												className="size-8 rounded-full cursor-pointer text-[#555] hover:bg-gray-100"
-												onClick={onToggleTheaterMode}
+												className="size-8 rounded-[8px] text-[#666] hover:text-[#11215a]"
+												onClick={resetZoom}
 											>
-												{isTheaterMode ? (
-													<Minimize2 className="size-4" />
-												) : (
-													<Maximize2 className="size-4" />
-												)}
+												<RotateCcw className="size-3.5" />
 											</Button>
 										}
 									/>
 									<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
-										{isTheaterMode ? "Exit Theater Mode" : "Theater Mode (Maximize View)"}
+										Reset Zoom
 									</TooltipContent>
 								</Tooltip>
-							</>
-						)}
-					</div>
-				)}
-
-				{/* Floating Page Indicator Pill */}
-				<div className="absolute top-4 right-4 z-40 bg-zinc-900/80 text-white px-3 py-1.5 rounded-full text-[12px] font-semibold tracking-wide backdrop-blur-md shadow-md border border-white/10 select-none">
-					Page {currentPage} of {numPages || "–"}
-				</div>
-
-				<div
-					ref={scrollRef}
-					className="flex-1 overflow-auto p-4"
-				>
-					<div className="flex flex-col items-center gap-4 w-fit mx-auto">
-						{pdfDoc &&
-							Array.from({ length: numPages }, (_, i) => {
-								const pg = i + 1;
-								const aspect = pageAspectRatios[pg] || Math.SQRT2;
-								return (
-									<div
-										key={pg}
-										ref={(el) => {
-											if (el) pageRefs.current.set(pg, el);
-											else pageRefs.current.delete(pg);
-										}}
-										data-page={pg}
-									>
-										{visiblePages.has(pg) ? (
-											<PdfPageCanvas
-												pdfDoc={pdfDoc}
-												pageNumber={pg}
-												width={pageWidth}
-												scale={renderedScale}
-												aspectRatio={aspect}
-												onPageLoad={handlePageLoad}
-												toolMode={toolMode}
-												comments={comments.filter(
-													(c) => c.annotationJson?.page === pg,
-												)}
-												onAddComment={onAddComment}
-											/>
-										) : (
-											<div
-												className="rounded bg-[#f5f5f5] animate-pulse flex items-center justify-center"
-												style={{
-													width: pageWidth * scale,
-													height: pageWidth * aspect * scale,
-												}}
-											/>
-										)}
-									</div>
-								);
-							})}
+							)}
+						</div>
 					</div>
 				</div>
-
-				<div className="flex items-center justify-center border-t border-[#ebebeb] bg-white px-4 py-2">
-					{/* Zoom controls */}
-					<div className="flex items-center gap-1.5">
-						<Tooltip>
-							<TooltipTrigger
-								render={
-									<Button
-										variant="outline"
-										size="icon"
-										className="size-8 rounded-[8px] border-[#e5e5e5]"
-										onClick={zoomOut}
-										disabled={scale <= ZOOM_STEPS[0]}
-									>
-										<Minus className="size-3.5" />
-									</Button>
-								}
-							/>
-							<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
-								Zoom Out
-							</TooltipContent>
-						</Tooltip>
-
-						<button
-							type="button"
-							onClick={resetZoom}
-							className="text-[13px] text-[#666] tabular-nums w-[48px] text-center hover:text-[#11215a] cursor-pointer"
-						>
-							{Math.round(scale * 100)}%
-						</button>
-
-						<Tooltip>
-							<TooltipTrigger
-								render={
-									<Button
-										variant="outline"
-										size="icon"
-										className="size-8 rounded-[8px] border-[#e5e5e5]"
-										onClick={zoomIn}
-										disabled={scale >= ZOOM_STEPS[ZOOM_STEPS.length - 1]}
-									>
-										<Plus className="size-3.5" />
-									</Button>
-								}
-							/>
-							<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
-								Zoom In
-							</TooltipContent>
-						</Tooltip>
-
-						{scale !== DEFAULT_SCALE && (
-							<Tooltip>
-								<TooltipTrigger
-									render={
-										<Button
-											variant="ghost"
-											size="icon"
-											className="size-8 rounded-[8px] text-[#666] hover:text-[#11215a]"
-											onClick={resetZoom}
-										>
-											<RotateCcw className="size-3.5" />
-										</Button>
-									}
-								/>
-								<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
-									Reset Zoom
-								</TooltipContent>
-							</Tooltip>
-						)}
-					</div>
-				</div>
-			</div>
-		</TooltipProvider>
-	);
-});
+			</TooltipProvider>
+		);
+	},
+);
 
 PdfInner.displayName = "PdfInner";
 export default PdfInner;
