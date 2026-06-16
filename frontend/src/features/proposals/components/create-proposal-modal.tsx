@@ -118,11 +118,13 @@ interface CurrencyInputProps {
 }
 
 function CurrencyInput({ value, onChange, placeholder }: CurrencyInputProps) {
+	const [prevValue, setPrevValue] = React.useState(value);
 	const [display, setDisplay] = React.useState(() => formatPeso(value));
 
-	React.useEffect(() => {
+	if (value !== prevValue) {
+		setPrevValue(value);
 		setDisplay(formatPeso(value));
-	}, [value]);
+	}
 
 	return (
 		<div className="relative">
@@ -169,7 +171,6 @@ export function CreateProposalModal({
 	const [uploadPhase, setUploadPhase] = React.useState<
 		"idle" | "creating" | "uploading" | "done"
 	>("idle");
-	const uploadIntervalRef = React.useRef<ReturnType<typeof setInterval>>(null);
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
@@ -207,19 +208,12 @@ export function CreateProposalModal({
 
 	const sdgsQuery = useQuery(sdgsQueryOptions());
 
-	const [debouncedSearch, setDebouncedSearch] = React.useState("");
-
-	React.useEffect(() => {
-		const timer = setTimeout(() => {
-			setDebouncedSearch(userSearch);
-		}, 300);
-		return () => clearTimeout(timer);
-	}, [userSearch]);
+	const deferredSearch = React.useDeferredValue(userSearch);
 
 	const searchUsersQuery = useQuery({
-		queryKey: ["users", "search", debouncedSearch],
-		queryFn: () => searchUsersFn({ data: { search: debouncedSearch } }),
-		enabled: debouncedSearch.length >= 2,
+		queryKey: ["users", "search", deferredSearch],
+		queryFn: () => searchUsersFn({ data: { search: deferredSearch } }),
+		enabled: deferredSearch.length >= 2,
 	});
 
 	const createProposalMutation = useMutation({
@@ -235,6 +229,8 @@ export function CreateProposalModal({
 			toast.error("Please upload the Project Proposal PDF");
 			return;
 		}
+
+		let timer: ReturnType<typeof setInterval> | null = null;
 
 		try {
 			setUploadPhase("creating");
@@ -263,12 +259,25 @@ export function CreateProposalModal({
 			setUploadProgress(30);
 			setUploadPhase("uploading");
 
+			const fileSizeMB = file.size / 1024 / 1024;
+			const baseInterval = 80;
+			const interval = Math.max(40, baseInterval - fileSizeMB * 2);
+			const increment = Math.max(1, Math.min(8, 30 / fileSizeMB));
+
+			timer = setInterval(() => {
+				setUploadProgress((prev) => {
+					const next = prev + increment;
+					return next >= 95 ? 95 : next;
+				});
+			}, interval);
+
 			const formData = new FormData();
 			formData.append("file", file);
 			formData.append("proposalId", proposal.proposalId);
 
 			await uploadDocumentMutation.mutateAsync({ data: formData });
 
+			if (timer) clearInterval(timer);
 			setUploadProgress(100);
 			setUploadPhase("done");
 
@@ -280,6 +289,7 @@ export function CreateProposalModal({
 			if (fileInputRef.current) fileInputRef.current.value = "";
 			queryClient.invalidateQueries({ queryKey: ["ret", "dashboard"] });
 		} catch (error: unknown) {
+			if (timer) clearInterval(timer);
 			const message =
 				error instanceof Error ? error.message : "Something went wrong";
 			toast.error(message);
@@ -319,26 +329,6 @@ export function CreateProposalModal({
 	};
 
 	const prevStep = () => setStep(step - 1);
-
-	React.useEffect(() => {
-		if (uploadPhase !== "uploading") return;
-
-		const fileSizeMB = file ? file.size / 1024 / 1024 : 1;
-		const baseInterval = 80;
-		const interval = Math.max(40, baseInterval - fileSizeMB * 2);
-		const increment = Math.max(1, Math.min(8, 30 / fileSizeMB));
-
-		uploadIntervalRef.current = setInterval(() => {
-			setUploadProgress((prev) => {
-				const next = prev + increment;
-				return next >= 95 ? 95 : next;
-			});
-		}, interval);
-
-		return () => {
-			if (uploadIntervalRef.current) clearInterval(uploadIntervalRef.current);
-		};
-	}, [uploadPhase, file]);
 
 	const [isDragging, setIsDragging] = React.useState(false);
 
