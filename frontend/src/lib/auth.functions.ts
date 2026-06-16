@@ -202,7 +202,7 @@ export const getCurrentUserFn = createServerFn({ method: "POST" })
 	.validator(z.void())
 	.handler(async () => {
 		const session = await getAppSession();
-		const { accessToken, userId, user, createdAt } = session.data;
+		const { userId, user, createdAt } = session.data;
 
 		if (
 			user &&
@@ -212,14 +212,22 @@ export const getCurrentUserFn = createServerFn({ method: "POST" })
 			return user;
 		}
 
-		if (!accessToken || !userId) {
+		if (!userId) {
+			return null;
+		}
+
+		let token: string;
+		try {
+			token = await getValidAccessToken();
+		} catch {
+			await session.clear();
 			return null;
 		}
 
 		// Validate the token is still valid by calling our backend
 		const meResponse = await fetch(`${API_BASE}/auth/me`, {
 			headers: {
-				Authorization: `Bearer ${accessToken}`,
+				Authorization: `Bearer ${token}`,
 			},
 		});
 
@@ -266,7 +274,7 @@ export const getCurrentUserFn = createServerFn({ method: "POST" })
 		const currentUser = (await meResponse.json()) as AuthUser;
 
 		const currentUserSessionData = {
-			accessToken,
+			accessToken: token,
 			refreshToken: session.data.refreshToken,
 			userId,
 			email: currentUser.email,

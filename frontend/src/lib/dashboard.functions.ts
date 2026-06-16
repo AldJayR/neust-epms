@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import type { ApiErrorResponse } from "./auth";
-import { getAppSession } from "./session.server";
+import { getValidAccessToken } from "./session.server";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 const DIRECTOR_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
@@ -223,16 +223,11 @@ export interface ReportStatsResponse {
 export const getDirectorDashboardFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const token = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/director/dashboard`, {
 			headers: {
-				Authorization: `Bearer ${accessToken}`,
+				Authorization: `Bearer ${token}`,
 			},
 		});
 
@@ -249,12 +244,7 @@ export const getDirectorDashboardFn = createServerFn({ method: "GET" })
 export const getProjectHubFn = createServerFn({ method: "GET" })
 	.validator(projectHubParamsSchema)
 	.handler(async ({ data }) => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const token = await getValidAccessToken();
 
 		const query = new URLSearchParams({
 			page: data.page.toString(),
@@ -269,7 +259,7 @@ export const getProjectHubFn = createServerFn({ method: "GET" })
 			`${API_BASE}/director/hub/projects?${query.toString()}`,
 			{
 				headers: {
-					Authorization: `Bearer ${accessToken}`,
+					Authorization: `Bearer ${token}`,
 				},
 			},
 		);
@@ -287,12 +277,7 @@ export const getProjectHubFn = createServerFn({ method: "GET" })
 export const getMoaRepositoryFn = createServerFn({ method: "GET" })
 	.validator(moaRepositoryParamsSchema)
 	.handler(async ({ data }) => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const token = await getValidAccessToken();
 
 		const query = new URLSearchParams({
 			page: data.page.toString(),
@@ -306,7 +291,7 @@ export const getMoaRepositoryFn = createServerFn({ method: "GET" })
 			`${API_BASE}/director/moas?${query.toString()}`,
 			{
 				headers: {
-					Authorization: `Bearer ${accessToken}`,
+					Authorization: `Bearer ${token}`,
 				},
 			},
 		);
@@ -324,12 +309,7 @@ export const getMoaRepositoryFn = createServerFn({ method: "GET" })
 export const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 	.validator(facultyDirectoryParamsSchema)
 	.handler(async ({ data }) => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const token = await getValidAccessToken();
 
 		const query = new URLSearchParams({
 			page: data.page.toString(),
@@ -343,7 +323,7 @@ export const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 			`${API_BASE}/director/faculty?${query.toString()}`,
 			{
 				headers: {
-					Authorization: `Bearer ${accessToken}`,
+					Authorization: `Bearer ${token}`,
 				},
 			},
 		);
@@ -361,18 +341,13 @@ export const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 export const getProjectDetailsFn = createServerFn({ method: "GET" })
 	.validator(z.string())
 	.handler(async ({ data: proposalId }) => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const token = await getValidAccessToken();
 
 		const response = await fetch(
 			`${API_BASE}/director/projects/${proposalId}`,
 			{
 				headers: {
-					Authorization: `Bearer ${accessToken}`,
+					Authorization: `Bearer ${token}`,
 				},
 			},
 		);
@@ -396,12 +371,7 @@ export const reviewProposalFn = createServerFn({ method: "POST" })
 		}),
 	)
 	.handler(async ({ data }) => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const token = await getValidAccessToken();
 
 		const response = await fetch(
 			`${API_BASE}/proposals/${data.proposalId}/review`,
@@ -409,7 +379,7 @@ export const reviewProposalFn = createServerFn({ method: "POST" })
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${accessToken}`,
+					Authorization: `Bearer ${token}`,
 				},
 				body: JSON.stringify({
 					decision: data.decision,
@@ -435,9 +405,7 @@ const reportsListParamsSchema = z.object({
 export const getReportsListFn = createServerFn({ method: "GET" })
 	.validator(reportsListParamsSchema)
 	.handler(async ({ data }) => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-		if (!accessToken) throw new Error("Unauthorized");
+		const token = await getValidAccessToken();
 
 		const searchParams = new URLSearchParams({
 			page: String(data.page),
@@ -447,7 +415,7 @@ export const getReportsListFn = createServerFn({ method: "GET" })
 
 		const response = await fetch(
 			`${API_BASE}/reports?${searchParams.toString()}`,
-			{ headers: { Authorization: `Bearer ${accessToken}` } },
+			{ headers: { Authorization: `Bearer ${token}` } },
 		);
 		if (!response.ok) {
 			const errorBody = (await response.json()) as ApiErrorResponse;
@@ -459,16 +427,11 @@ export const getReportsListFn = createServerFn({ method: "GET" })
 export const getReportStatsFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const token = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/reports/stats`, {
 			headers: {
-				Authorization: `Bearer ${accessToken}`,
+				Authorization: `Bearer ${token}`,
 			},
 		});
 

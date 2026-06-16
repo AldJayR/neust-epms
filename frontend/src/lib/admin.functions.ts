@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { ApiErrorResponse } from "./auth";
-import { getAppSession } from "./session.server";
+import { getValidAccessToken } from "./session.server";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 const ADMIN_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
@@ -99,16 +99,11 @@ export function adminUsersQueryOptions({
 export const getAdminStatsFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const token = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/admin/stats`, {
 			headers: {
-				Authorization: `Bearer ${accessToken}`,
+				Authorization: `Bearer ${token}`,
 			},
 		});
 
@@ -127,12 +122,7 @@ export const getAdminStatsFn = createServerFn({ method: "GET" })
 export const getAdminUsersFn = createServerFn({ method: "GET" })
 	.validator(adminUsersQueryParamsSchema)
 	.handler(async ({ data }) => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const token = await getValidAccessToken();
 
 		const query = new URLSearchParams();
 		if (data.search) query.append("search", data.search);
@@ -144,7 +134,7 @@ export const getAdminUsersFn = createServerFn({ method: "GET" })
 			`${API_BASE}/admin/users?${query.toString()}`,
 			{
 				headers: {
-					Authorization: `Bearer ${accessToken}`,
+					Authorization: `Bearer ${token}`,
 				},
 			},
 		);
@@ -162,17 +152,12 @@ export const getAdminUsersFn = createServerFn({ method: "GET" })
 export const bulkUpdateUserStatusFn = createServerFn({ method: "POST" })
 	.validator(bulkUpdateStatusSchema)
 	.handler(async ({ data }) => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const token = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/admin/users/status`, {
 			method: "PATCH",
 			headers: {
-				Authorization: `Bearer ${accessToken}`,
+				Authorization: `Bearer ${token}`,
 				"Content-Type": "application/json",
 			},
 			body: JSON.stringify(data),
@@ -201,16 +186,11 @@ export interface RoleResponse {
 export const getRolesFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const token = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/admin/roles`, {
 			headers: {
-				Authorization: `Bearer ${accessToken}`,
+				Authorization: `Bearer ${token}`,
 			},
 		});
 
@@ -235,17 +215,12 @@ export function rolesQueryOptions() {
 export const bulkApproveUsersFn = createServerFn({ method: "POST" })
 	.validator(bulkApproveSchema)
 	.handler(async ({ data }) => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const token = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/admin/users/approve`, {
 			method: "PATCH",
 			headers: {
-				Authorization: `Bearer ${accessToken}`,
+				Authorization: `Bearer ${token}`,
 				"Content-Type": "application/json",
 			},
 			body: JSON.stringify(data),
@@ -292,12 +267,7 @@ export interface AuditStats {
 export const getAuditLogsFn = createServerFn({ method: "GET" })
 	.validator(auditLogsParamsSchema)
 	.handler(async ({ data }) => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const token = await getValidAccessToken();
 
 		const query = new URLSearchParams();
 		query.append("page", data.page.toString());
@@ -306,7 +276,7 @@ export const getAuditLogsFn = createServerFn({ method: "GET" })
 
 		const response = await fetch(`${API_BASE}/audit-logs?${query.toString()}`, {
 			headers: {
-				Authorization: `Bearer ${accessToken}`,
+				Authorization: `Bearer ${token}`,
 			},
 		});
 
@@ -321,16 +291,11 @@ export const getAuditLogsFn = createServerFn({ method: "GET" })
 export const getAuditStatsFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-
-		if (!accessToken) {
-			throw new Error("Unauthorized");
-		}
+		const token = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/audit-logs/stats`, {
 			headers: {
-				Authorization: `Bearer ${accessToken}`,
+				Authorization: `Bearer ${token}`,
 			},
 		});
 

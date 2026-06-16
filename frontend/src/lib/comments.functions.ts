@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { ApiErrorResponse } from "./auth";
-import { getAppSession } from "./session.server";
+import { getValidAccessToken } from "./session.server";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 
@@ -53,9 +53,7 @@ const getCommentsValidator = z.object({
 export const saveProposalCommentFn = createServerFn({ method: "POST" })
 	.validator(saveCommentValidator)
 	.handler(async ({ data }) => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-		if (!accessToken) throw new Error("Unauthorized");
+		const token = await getValidAccessToken();
 
 		const { proposalId, documentId, content, annotationJson } = data;
 
@@ -65,7 +63,7 @@ export const saveProposalCommentFn = createServerFn({ method: "POST" })
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${accessToken}`,
+					Authorization: `Bearer ${token}`,
 				},
 				body: JSON.stringify({
 					content,
@@ -85,9 +83,7 @@ export const saveProposalCommentFn = createServerFn({ method: "POST" })
 export const getProposalCommentsFn = createServerFn({ method: "GET" })
 	.validator(getCommentsValidator)
 	.handler(async ({ data }) => {
-		const session = await getAppSession();
-		const { accessToken } = session.data;
-		if (!accessToken) throw new Error("Unauthorized");
+		const token = await getValidAccessToken();
 
 		const { proposalId, documentId } = data;
 
@@ -96,7 +92,7 @@ export const getProposalCommentsFn = createServerFn({ method: "GET" })
 			{
 				method: "GET",
 				headers: {
-					Authorization: `Bearer ${accessToken}`,
+					Authorization: `Bearer ${token}`,
 				},
 			},
 		);
