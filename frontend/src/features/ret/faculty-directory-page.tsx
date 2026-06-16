@@ -26,7 +26,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AuthUser } from "@/lib/auth";
 import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
-import { AppShell } from "../layout/app-shell";
 
 
 
@@ -66,8 +65,7 @@ export function RetFacultyDirectoryPage({
 	const totalPages = Math.ceil(total / limit);
 
 	return (
-		<AppShell>
-			<div className="flex flex-col gap-8">
+		<div className="flex flex-col gap-8">
 				{/* Page Header */}
 				<div className="flex flex-col gap-2">
 					<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
@@ -307,6 +305,6 @@ export function RetFacultyDirectoryPage({
 					</div>
 				</div>
 			</div>
-		</AppShell>
+	</div>
 	);
 }

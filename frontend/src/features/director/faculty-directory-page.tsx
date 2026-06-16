@@ -25,7 +25,6 @@ import type { AuthUser } from "@/lib/auth";
 import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
 import { PaginationBar } from "@/components/ui/pagination-bar";
-import { AppShell } from "../layout/app-shell";
 
 
 
@@ -78,8 +77,7 @@ export function FacultyDirectoryPage({
 	];
 
 	return (
-		<AppShell>
-			<div className="flex flex-col gap-8">
+		<div className="flex flex-col gap-8">
 				<div className="flex items-center justify-between">
 					<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
 						Faculty Directory
@@ -220,6 +218,6 @@ export function FacultyDirectoryPage({
 					isLoading={isLoading}
 				/>
 			</div>
-		</AppShell>
+	</div>
 	);
 }

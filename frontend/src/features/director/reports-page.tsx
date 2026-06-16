@@ -18,7 +18,6 @@ import {
 	reportsQueryOptions,
 } from "@/lib/dashboard.functions";
 import { PaginationBar } from "@/components/ui/pagination-bar";
-import { AppShell } from "../layout/app-shell";
 
 const formatDate = (dateStr: string) => {
 	try {
@@ -67,8 +66,7 @@ export function ReportsPage() {
 	];
 
 	return (
-		<AppShell>
-			<div className="flex flex-col gap-8">
+		<div className="flex flex-col gap-8">
 				{/* Header Section */}
 				<div className="flex items-center justify-between">
 					<h1 className="text-2xl font-semibold text-[#11215a]">Reports</h1>
@@ -173,6 +171,6 @@ export function ReportsPage() {
 				isLoading={isLoading}
 			/>
 			</div>
-		</AppShell>
+	</div>
 	);
 }

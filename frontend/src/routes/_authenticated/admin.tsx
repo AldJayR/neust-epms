@@ -1,5 +1,4 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { AppShell } from "@/features/layout/app-shell";
 
 export const Route = createFileRoute("/_authenticated/admin")({
 	beforeLoad: ({ context }) => {
@@ -14,9 +13,5 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 function AdminLayout() {
-	return (
-		<AppShell>
-			<Outlet />
-		</AppShell>
-	);
+	return <Outlet />;
 }

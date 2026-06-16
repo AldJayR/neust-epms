@@ -24,7 +24,6 @@ import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { TableCell, TableRow } from "@/components/ui/table";
 import type { AuthUser } from "@/lib/auth";
 import { projectHubQueryOptions } from "@/lib/dashboard.functions";
-import { AppShell } from "../layout/app-shell";
 
 function ProjectStatusBadge({ status }: { status: string }) {
 	if (status === "Approved") {
@@ -118,8 +117,7 @@ export function ProjectHubPage({
 	];
 
 	return (
-		<AppShell>
-			<div className="flex flex-col gap-8">
+		<div className="flex flex-col gap-8">
 				<div>
 					<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
 						Project Hub
@@ -251,6 +249,6 @@ export function ProjectHubPage({
 					isLoading={isLoading}
 				/>
 			</div>
-		</AppShell>
+	</div>
 	);
 }

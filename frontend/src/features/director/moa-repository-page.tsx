@@ -20,7 +20,6 @@ import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { TableCell, TableRow } from "@/components/ui/table";
 import type { AuthUser } from "@/lib/auth";
 import { moaRepositoryQueryOptions } from "@/lib/dashboard.functions";
-import { AppShell } from "../layout/app-shell";
 
 function MoaStatusBadge({ status }: { status: string }) {
 	if (status === "Valid") {
@@ -108,8 +107,7 @@ export function MoaRepositoryPage({
 	];
 
 	return (
-		<AppShell>
-			<div className="flex flex-col gap-8">
+		<div className="flex flex-col gap-8">
 				<div className="flex items-center justify-between bg-white">
 					<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
 						Memoranda of Agreements
@@ -211,6 +209,6 @@ export function MoaRepositoryPage({
 					isLoading={isLoading}
 				/>
 			</div>
-		</AppShell>
+	</div>
 	);
 }

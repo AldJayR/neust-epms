@@ -9,7 +9,6 @@ import {
 	projectDetailsQueryOptions,
 	reviewProposalFn,
 } from "@/lib/dashboard.functions";
-import { AppShell } from "../layout/app-shell";
 import { PdfViewer, type PdfViewerRef } from "@/components/pdf-viewer";
 import {
 	getProposalCommentsFn,
@@ -429,8 +428,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	};
 
 	return (
-		<AppShell>
-			<div className="flex flex-col gap-8">
+		<div className="flex flex-col gap-8">
 				{/* Page Header */}
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-4">
@@ -556,6 +554,6 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 					</div>
 				) : null}
 			</div>
-		</AppShell>
+		</div>
 	);
 }

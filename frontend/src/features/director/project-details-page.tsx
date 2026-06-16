@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/dialog";
 
 import { projectDetailsQueryOptions } from "@/lib/dashboard.functions";
-import { AppShell } from "../layout/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProjectDetailsPageProps {
@@ -30,137 +29,135 @@ interface ProjectDetailsPageProps {
 
 function ProjectDetailsSkeleton() {
 	return (
-		<AppShell>
-			<div className="flex flex-col gap-8">
-				{/* Header */}
-				<div className="flex items-start justify-between">
-					<div className="flex flex-col gap-2">
-						<div className="flex items-center gap-3">
-							<Skeleton className="h-5 w-20 rounded-[6px]" />
-							<Skeleton className="h-4 w-16" />
-						</div>
-						<Skeleton className="h-7 w-80" />
+		<div className="flex flex-col gap-8">
+			{/* Header */}
+			<div className="flex items-start justify-between">
+				<div className="flex flex-col gap-2">
+					<div className="flex items-center gap-3">
+						<Skeleton className="h-5 w-20 rounded-[6px]" />
+						<Skeleton className="h-4 w-16" />
 					</div>
-					<Skeleton className="h-9 w-48 rounded-[10px]" />
+					<Skeleton className="h-7 w-80" />
 				</div>
+				<Skeleton className="h-9 w-48 rounded-[10px]" />
+			</div>
 
-				<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-					{/* Main Column */}
-					<div className="lg:col-span-8 flex flex-col gap-6">
-						{/* Project Overview */}
-						<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
-							<div className="bg-[#fcfcfc] border-b border-[#ebebeb] px-6 py-3">
-								<Skeleton className="h-4 w-32" />
-							</div>
-							<div className="divide-y divide-[#ebebeb]">
-								<div className="flex items-center justify-between px-6 py-3">
-									<Skeleton className="h-4 w-28" />
-									<div className="flex items-center gap-3">
-										<Skeleton className="size-8 rounded-full" />
-										<Skeleton className="h-4 w-32" />
-									</div>
-								</div>
-								<div className="flex items-center justify-between px-6 py-3">
-									<Skeleton className="h-4 w-32" />
-									<Skeleton className="h-4 w-40" />
-								</div>
-								<div className="flex items-center justify-between px-6 py-3">
-									<Skeleton className="h-4 w-20" />
-									<Skeleton className="h-4 w-36" />
-								</div>
-								<div className="flex items-center justify-between px-6 py-3">
-									<Skeleton className="h-4 w-24" />
-									<Skeleton className="h-4 w-20" />
-								</div>
-								<div className="flex items-center justify-between px-6 py-3">
-									<Skeleton className="h-4 w-24" />
-									<div className="flex flex-col items-end gap-1">
-										<Skeleton className="h-5 w-28" />
-										<Skeleton className="h-3 w-48" />
-									</div>
-								</div>
-								<div className="flex items-center justify-between px-6 py-3">
-									<Skeleton className="h-4 w-28" />
-									<div className="flex items-center gap-4">
-										<div className="flex -space-x-2">
-											<Skeleton className="size-8 rounded-full" />
-											<Skeleton className="size-8 rounded-full" />
-											<Skeleton className="size-8 rounded-full" />
-										</div>
-										<Skeleton className="size-4" />
-									</div>
-								</div>
-							</div>
+			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+				{/* Main Column */}
+				<div className="lg:col-span-8 flex flex-col gap-6">
+					{/* Project Overview */}
+					<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
+						<div className="bg-[#fcfcfc] border-b border-[#ebebeb] px-6 py-3">
+							<Skeleton className="h-4 w-32" />
 						</div>
-
-						{/* Document History */}
-						<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-							<div className="px-6 py-3 border-b border-[#ebebeb]">
-								<Skeleton className="h-4 w-32" />
+						<div className="divide-y divide-[#ebebeb]">
+							<div className="flex items-center justify-between px-6 py-3">
+								<Skeleton className="h-4 w-28" />
+								<div className="flex items-center gap-3">
+									<Skeleton className="size-8 rounded-full" />
+									<Skeleton className="h-4 w-32" />
+								</div>
 							</div>
-							<div className="px-6 py-4">
-								<div className="relative space-y-6 before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-[#ebebeb]">
-									{[1, 2].map((i) => (
-										<div
-											key={i}
-											className="relative flex items-start gap-4 pl-8"
-										>
-											<Skeleton className="absolute left-0 mt-1 size-[22px] rounded-full" />
-											<div className="flex flex-1 flex-col gap-1">
-												<div className="flex items-center justify-between">
-													<div className="flex items-center gap-2">
-														<Skeleton className="h-4 w-20" />
-														<Skeleton className="h-5 w-16 rounded-[6px]" />
-													</div>
-													<Skeleton className="h-3 w-28" />
-												</div>
-												<Skeleton className="h-3 w-36" />
-											</div>
-										</div>
-									))}
+							<div className="flex items-center justify-between px-6 py-3">
+								<Skeleton className="h-4 w-32" />
+								<Skeleton className="h-4 w-40" />
+							</div>
+							<div className="flex items-center justify-between px-6 py-3">
+								<Skeleton className="h-4 w-20" />
+								<Skeleton className="h-4 w-36" />
+							</div>
+							<div className="flex items-center justify-between px-6 py-3">
+								<Skeleton className="h-4 w-24" />
+								<Skeleton className="h-4 w-20" />
+							</div>
+							<div className="flex items-center justify-between px-6 py-3">
+								<Skeleton className="h-4 w-24" />
+								<div className="flex flex-col items-end gap-1">
+									<Skeleton className="h-5 w-28" />
+									<Skeleton className="h-3 w-48" />
+								</div>
+							</div>
+							<div className="flex items-center justify-between px-6 py-3">
+								<Skeleton className="h-4 w-28" />
+								<div className="flex items-center gap-4">
+									<div className="flex -space-x-2">
+										<Skeleton className="size-8 rounded-full" />
+										<Skeleton className="size-8 rounded-full" />
+										<Skeleton className="size-8 rounded-full" />
+									</div>
+									<Skeleton className="size-4" />
 								</div>
 							</div>
 						</div>
 					</div>
 
-					{/* Sidebar */}
-					<div className="lg:col-span-4 flex flex-col gap-6">
-						{/* Attachments */}
-						<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
-							<div className="bg-[#fcfcfc] border-b border-[#ebebeb] px-6 py-3">
-								<Skeleton className="h-4 w-24" />
-							</div>
-							<div className="p-4 flex flex-col gap-3">
-								{[1].map((i) => (
+					{/* Document History */}
+					<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+						<div className="px-6 py-3 border-b border-[#ebebeb]">
+							<Skeleton className="h-4 w-32" />
+						</div>
+						<div className="px-6 py-4">
+							<div className="relative space-y-6 before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-[#ebebeb]">
+								{[1, 2].map((i) => (
 									<div
 										key={i}
-										className="flex flex-col gap-3 rounded-[10px] border border-[#e5e5e5] bg-[#fcfcfc] p-3"
+										className="relative flex items-start gap-4 pl-8"
 									>
-										<div className="flex items-center gap-3">
-											<Skeleton className="size-10 rounded-[8px]" />
-											<div className="flex flex-1 flex-col gap-1">
-												<Skeleton className="h-4 w-40" />
-												<Skeleton className="h-3 w-20" />
+										<Skeleton className="absolute left-0 mt-1 size-[22px] rounded-full" />
+										<div className="flex flex-1 flex-col gap-1">
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2">
+													<Skeleton className="h-4 w-20" />
+													<Skeleton className="h-5 w-16 rounded-[6px]" />
+												</div>
+												<Skeleton className="h-3 w-28" />
 											</div>
-										</div>
-										<div className="grid grid-cols-2 gap-2">
-											<Skeleton className="h-8 rounded-[8px]" />
-											<Skeleton className="h-8 rounded-[8px]" />
+											<Skeleton className="h-3 w-36" />
 										</div>
 									</div>
 								))}
 							</div>
 						</div>
+					</div>
+				</div>
 
-						{/* Actions */}
-						<div className="flex flex-col gap-3">
-							<Skeleton className="h-10 rounded-[10px]" />
-							<Skeleton className="h-10 rounded-[10px]" />
+				{/* Sidebar */}
+				<div className="lg:col-span-4 flex flex-col gap-6">
+					{/* Attachments */}
+					<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
+						<div className="bg-[#fcfcfc] border-b border-[#ebebeb] px-6 py-3">
+							<Skeleton className="h-4 w-24" />
 						</div>
+						<div className="p-4 flex flex-col gap-3">
+							{[1].map((i) => (
+								<div
+									key={i}
+									className="flex flex-col gap-3 rounded-[10px] border border-[#e5e5e5] bg-[#fcfcfc] p-3"
+								>
+									<div className="flex items-center gap-3">
+										<Skeleton className="size-10 rounded-[8px]" />
+										<div className="flex flex-1 flex-col gap-1">
+											<Skeleton className="h-4 w-40" />
+											<Skeleton className="h-3 w-20" />
+										</div>
+									</div>
+									<div className="grid grid-cols-2 gap-2">
+										<Skeleton className="h-8 rounded-[8px]" />
+										<Skeleton className="h-8 rounded-[8px]" />
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+
+					{/* Actions */}
+					<div className="flex flex-col gap-3">
+						<Skeleton className="h-10 rounded-[10px]" />
+						<Skeleton className="h-10 rounded-[10px]" />
 					</div>
 				</div>
 			</div>
-		</AppShell>
+		</div>
 	);
 }
 
@@ -486,69 +483,65 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 
 	if (!data) {
 		return (
-			<AppShell>
-				<div className="flex h-[400px] items-center justify-center text-muted-foreground">
-					Project not found.
-				</div>
-			</AppShell>
+			<div className="flex h-[400px] items-center justify-center text-muted-foreground">
+				Project not found.
+			</div>
 		);
 	}
 
 	return (
-		<AppShell>
-			<div className="flex flex-col gap-8">
-				{/* Header */}
-				<div className="flex items-start justify-between">
-					<div className="flex flex-col gap-2">
-						<div className="flex items-center gap-3">
-							<Badge
-								variant="outline"
-								className="bg-amber-50 text-amber-700 border-amber-200 px-3 py-1 font-semibold uppercase tracking-wider text-[10px]"
-							>
-								{data.status}
-							</Badge>
-							<span className="text-[12px] font-medium text-[#666]">
-								Version {data.version}
-							</span>
-						</div>
-						<h1 className="text-[22px] font-semibold text-[#11215a]">
-							{data.title}
-						</h1>
+		<div className="flex flex-col gap-8">
+			{/* Header */}
+			<div className="flex items-start justify-between">
+				<div className="flex flex-col gap-2">
+					<div className="flex items-center gap-3">
+						<Badge
+							variant="outline"
+							className="bg-amber-50 text-amber-700 border-amber-200 px-3 py-1 font-semibold uppercase tracking-wider text-[10px]"
+						>
+							{data.status}
+						</Badge>
+						<span className="text-[12px] font-medium text-[#666]">
+							Version {data.version}
+						</span>
 					</div>
-					<Button className="flex w-fit items-center gap-2 rounded-[10px] bg-brand-primary px-5 h-9 text-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-brand-primary-hover">
-						<Eye className="size-4" />
-						<span className="text-sm font-medium">Read Proposal Document</span>
-					</Button>
+					<h1 className="text-[22px] font-semibold text-[#11215a]">
+						{data.title}
+					</h1>
+				</div>
+				<Button className="flex w-fit items-center gap-2 rounded-[10px] bg-brand-primary px-5 h-9 text-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-brand-primary-hover">
+					<Eye className="size-4" />
+					<span className="text-sm font-medium">Read Proposal Document</span>
+				</Button>
+			</div>
+
+			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+				{/* Main Column */}
+				<div className="lg:col-span-8 flex flex-col gap-6">
+					<ProjectOverviewCard metadata={data.metadata} members={data.members} />
+					<DocumentHistoryCard history={data.history} />
 				</div>
 
-				<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-					{/* Main Column */}
-					<div className="lg:col-span-8 flex flex-col gap-6">
-						<ProjectOverviewCard metadata={data.metadata} members={data.members} />
-						<DocumentHistoryCard history={data.history} />
-					</div>
+				{/* Sidebar */}
+				<div className="lg:col-span-4 flex flex-col gap-6">
+					<AttachmentsCard attachments={data.attachments} />
 
-					{/* Sidebar */}
-					<div className="lg:col-span-4 flex flex-col gap-6">
-						<AttachmentsCard attachments={data.attachments} />
-
-						{/* Actions */}
-						<div className="flex flex-col gap-3">
-							<Button className="w-full h-10 rounded-[10px] bg-green-600 font-medium text-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-green-700">
-								<CheckCircle2 className="mr-2 size-4" />
-								Approve Proposal
-							</Button>
-							<Button
-								variant="outline"
-								className="w-full h-10 rounded-[10px] border border-red-200 bg-white font-medium text-red-600 hover:bg-red-50"
-							>
-								<RotateCcw className="mr-2 size-4" />
-								Return for Revision
-							</Button>
-						</div>
+					{/* Actions */}
+					<div className="flex flex-col gap-3">
+						<Button className="w-full h-10 rounded-[10px] bg-green-600 font-medium text-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-green-700">
+							<CheckCircle2 className="mr-2 size-4" />
+							Approve Proposal
+						</Button>
+						<Button
+							variant="outline"
+							className="w-full h-10 rounded-[10px] border border-red-200 bg-white font-medium text-red-600 hover:bg-red-50"
+						>
+							<RotateCcw className="mr-2 size-4" />
+							Return for Revision
+						</Button>
 					</div>
 				</div>
 			</div>
-		</AppShell>
+		</div>
 	);
 }

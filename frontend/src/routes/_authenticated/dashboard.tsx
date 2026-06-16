@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { UsersPage } from "@/features/admin/users-page";
 import { DirectorDashboardPage } from "@/features/director/director-dashboard-page";
-import { AppShell } from "@/features/layout/app-shell";
 import { RETDashboardPage } from "@/features/ret/ret-dashboard-page";
 import {
 	adminStatsQueryOptions,
@@ -100,38 +99,30 @@ function DashboardPage() {
 
 	if (user?.roleName === "Super Admin") {
 		return (
-			<AppShell>
-				<UsersPage
-					page={page}
-					pageSize={pageSize}
-					search={search}
-					onSearch={handleSearch}
-					onPageChange={handlePageChange}
-				/>
-			</AppShell>
+			<UsersPage
+				page={page}
+				pageSize={pageSize}
+				search={search}
+				onSearch={handleSearch}
+				onPageChange={handlePageChange}
+			/>
 		);
 	}
 
 	if (user?.roleName === "Director") {
-		return (
-			<AppShell>
-				<DirectorDashboardPage user={user} />
-			</AppShell>
-		);
+		return <DirectorDashboardPage user={user} />;
 	}
 
 	if (user?.roleName === "RET Chair") {
 		return (
-			<AppShell>
-				<RETDashboardPage
-					user={user}
-					page={page}
-					pageSize={pageSize}
-					search={search}
-					onSearch={handleSearch}
-					onPageChange={handlePageChange}
-				/>
-			</AppShell>
+			<RETDashboardPage
+				user={user}
+				page={page}
+				pageSize={pageSize}
+				search={search}
+				onSearch={handleSearch}
+				onPageChange={handlePageChange}
+			/>
 		);
 	}
 
