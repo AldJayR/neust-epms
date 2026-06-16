@@ -11,7 +11,6 @@ import {
 	Settings,
 	UserCircle,
 } from "lucide-react";
-import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 

@@ -334,7 +334,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 
 interface DocumentHistoryCardProps {
 	history: {
-		id: number;
+		id: string | number;
 		version: string;
 		status: string;
 		date: string;
@@ -417,7 +417,7 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 
 interface AttachmentsCardProps {
 	attachments: {
-		id: number;
+		id: string | number;
 		name: string;
 		type: string;
 		version: string;
