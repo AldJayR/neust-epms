@@ -305,6 +305,5 @@ export function RetFacultyDirectoryPage({
 					</div>
 				</div>
 			</div>
-	</div>
 	);
 }

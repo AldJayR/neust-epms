@@ -29,7 +29,6 @@ import {
 	auditLogsQueryOptions,
 	auditStatsQueryOptions,
 } from "@/lib/admin.functions";
-import { cn } from "@/lib/utils";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -85,7 +84,6 @@ export function ActivityLogPage({
 	onSearch,
 	onPageChange,
 }: ActivityLogPageProps) {
-	const [searchInput, setSearchInput] = React.useState(search ?? "");
 
 	const { data: statsData } = useQuery(auditStatsQueryOptions());
 	const { data: logsData, isLoading: isLogsLoading } = useQuery(
@@ -134,7 +132,7 @@ export function ActivityLogPage({
 
 			<div className="flex items-center justify-between">
 				<SearchInput
-					value={searchInput}
+					value={search ?? ""}
 					onChange={(val) => onSearch(val || undefined)}
 					placeholder="Search by users or email"
 					ariaLabel="Search activity log"

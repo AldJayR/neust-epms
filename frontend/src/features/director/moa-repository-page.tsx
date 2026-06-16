@@ -6,7 +6,6 @@ import {
 	Plus,
 	SlidersHorizontal,
 } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 import { SearchInput } from "@/components/ui/search-input";
@@ -94,7 +93,7 @@ export function MoaRepositoryPage({
 
 				<div className="flex items-center justify-between">
 					<SearchInput
-						value={search}
+						value={search ?? ""}
 						onChange={onSearchChange}
 						placeholder="Search MOAs"
 						ariaLabel="Search MOAs"
@@ -158,7 +157,7 @@ export function MoaRepositoryPage({
 					</div>
 				</div>
 
-					<PaginationBar
+				<PaginationBar
 					page={page}
 					totalPages={totalPages}
 					onPageChange={onPageChange}
@@ -167,6 +166,5 @@ export function MoaRepositoryPage({
 					isLoading={isLoading}
 				/>
 			</div>
-	</div>
 	);
 }

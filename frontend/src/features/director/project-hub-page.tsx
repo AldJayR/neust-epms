@@ -5,7 +5,6 @@ import {
 	EllipsisVertical,
 	Filter,
 } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 import { SearchInput } from "@/components/ui/search-input";
@@ -84,7 +83,7 @@ export function ProjectHubPage({
 
 				<div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
 					<SearchInput
-						value={search}
+						value={search ?? ""}
 						onChange={onSearchChange}
 						placeholder="Search by project title or faculty name..."
 						ariaLabel="Search projects"
@@ -198,7 +197,7 @@ export function ProjectHubPage({
 					/>
 				</div>
 
-					<PaginationBar
+				<PaginationBar
 					page={page}
 					totalPages={totalPages}
 					onPageChange={onPageChange}
@@ -207,6 +206,5 @@ export function ProjectHubPage({
 					isLoading={isLoading}
 				/>
 			</div>
-	</div>
 	);
 }

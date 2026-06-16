@@ -62,14 +62,13 @@ export function RETDashboardPage({
 	onPageChange,
 }: RETDashboardPageProps) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
-	const [searchInput, setSearchInput] = React.useState(search ?? "");
 	const [statusFilter, setStatusFilter] = React.useState<string>("all");
 	const navigate = useNavigate();
 
 	const { data: statsData, isLoading: isStatsLoading } = useQuery(
 		retDashboardStatsQueryOptions(),
 	);
-	const { data: proposalsData, isLoading: isProposalsLoading } = useQuery(
+	const { data: proposalsData, isLoading: isProposalsLoading, isFetching: isProposalsFetching } = useQuery(
 		retProposalsQueryOptions({ page, limit: pageSize, search }),
 	);
 
@@ -131,7 +130,7 @@ export function RETDashboardPage({
 			{/* Filters */}
 			<div className="flex items-center justify-between gap-4">
 				<SearchInput
-					value={searchInput}
+					value={search ?? ""}
 					onChange={(val) => onSearch(val || undefined)}
 					placeholder="Search by project proposals"
 					ariaLabel="Search by project proposals"
@@ -160,7 +159,7 @@ export function RETDashboardPage({
 
 			{/* Proposals Table */}
 			<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden min-h-[400px] relative">
-				{proposalsQuery.isFetching && (
+				{isProposalsFetching && (
 					<div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center backdrop-blur-[1px]">
 						<Loader2 className="h-8 w-8 animate-spin text-primary" />
 					</div>

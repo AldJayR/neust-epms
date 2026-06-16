@@ -4,9 +4,7 @@ import {
 	Download,
 	EllipsisVertical,
 	Filter,
-	TrendingUp,
 } from "lucide-react";
-import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Button } from "@/components/ui/button";
@@ -118,7 +116,7 @@ export function FacultyDirectoryPage({
 
 				<div className="flex items-center justify-between">
 					<SearchInput
-						value={search}
+						value={search ?? ""}
 						onChange={onSearchChange}
 						placeholder="Search by project title or faculty name..."
 						ariaLabel="Search faculty directory"
@@ -209,7 +207,7 @@ export function FacultyDirectoryPage({
 					/>
 				</div>
 
-					<PaginationBar
+				<PaginationBar
 					page={page}
 					totalPages={totalPages}
 					onPageChange={onPageChange}
@@ -218,6 +216,5 @@ export function FacultyDirectoryPage({
 					isLoading={isLoading}
 				/>
 			</div>
-	</div>
 	);
 }

@@ -551,9 +551,8 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 								</Card>
 							</div>
 						)}
-					</div>
-				) : null}
-			</div>
+				</div>
+			) : null}
 		</div>
 	);
 }

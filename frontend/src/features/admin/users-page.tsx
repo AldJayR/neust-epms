@@ -56,8 +56,6 @@ export function UsersPage({
 }: UsersPageProps) {
 	const queryClient = useQueryClient();
 
-	const [searchInput, setSearchInput] = React.useState(search ?? "");
-
 	// ── Queries ──────────────────────────────────────────────
 
 	const { data: statsData, isLoading: isStatsLoading } = useQuery(
@@ -148,7 +146,7 @@ export function UsersPage({
 
 			<div className="flex items-center justify-between gap-4">
 				<SearchInput
-					value={searchInput}
+					value={search ?? ""}
 					onChange={(val) => onSearch(val || undefined)}
 					placeholder="Search users"
 					ariaLabel="Search users"

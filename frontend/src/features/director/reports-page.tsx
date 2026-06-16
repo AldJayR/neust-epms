@@ -170,7 +170,6 @@ export function ReportsPage() {
 				limit={limit}
 				isLoading={isLoading}
 			/>
-			</div>
-	</div>
+		</div>
 	);
 }
