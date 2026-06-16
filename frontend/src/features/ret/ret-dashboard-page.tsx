@@ -42,6 +42,7 @@ import {
 	retProposalsQueryOptions,
 } from "@/lib/ret.functions";
 import { formatAcademicRank } from "@/lib/utils";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
 
 interface RETDashboardPageProps {
@@ -274,42 +275,14 @@ export function RETDashboardPage({
 				)}
 			</div>
 
-			{/* Pagination */}
-			<div className="flex items-center justify-between">
-				<p className="text-xs text-[#666]">
-					Showing <span className="font-bold">{proposals.length}</span> of{" "}
-					<span className="font-bold">{total}</span> results
-				</p>
-				<div className="flex items-center gap-1">
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-9 gap-1 px-3 font-medium text-sm text-[#0a0a0a]"
-						onClick={() => onPageChange(Math.max(1, page - 1))}
-						disabled={page <= 1 || isLoading}
-					>
-						Previous
-					</Button>
-					<Button
-						variant="outline"
-						size="icon"
-						className="h-9 w-9 bg-white font-medium border-[#e5e5e5] text-sm text-[#0a0a0a] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1)]"
-					>
-						{page}
-					</Button>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-9 gap-1 px-3 font-medium text-sm text-[#0a0a0a]"
-						onClick={() => onPageChange(page + 1)}
-						disabled={
-							!proposalsQuery.data || page * pageSize >= total || isLoading
-						}
-					>
-						Next
-					</Button>
-				</div>
-			</div>
+				<PaginationBar
+				page={page}
+				totalPages={Math.ceil(total / pageSize)}
+				onPageChange={onPageChange}
+				total={total}
+				limit={pageSize}
+				isLoading={isLoading}
+			/>
 
 			<CreateProposalModal
 				open={isCreateModalOpen}

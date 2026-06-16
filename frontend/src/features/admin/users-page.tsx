@@ -43,6 +43,7 @@ import {
 	bulkUpdateUserStatusFn,
 } from "@/lib/admin.functions";
 import { formatAcademicRank } from "@/lib/utils";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { BulkApproveDialog } from "./bulk-approve-dialog";
 
 interface UsersPageProps {
@@ -283,42 +284,14 @@ export function UsersPage({
 				)}
 			</div>
 
-			<div className="flex items-center justify-between">
-				<p className="text-xs text-[#666]">
-					Showing{" "}
-					<span className="font-bold">{usersData?.users.length ?? 0}</span> of{" "}
-					<span className="font-bold">{usersData?.total ?? 0}</span> results
-				</p>
-				<div className="flex items-center gap-1">
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-9 gap-1 px-3 font-medium"
-						onClick={() => onPageChange(Math.max(1, page - 1))}
-						disabled={page <= 1 || isLoading}
-					>
-						Previous
-					</Button>
-					<Button
-						variant="outline"
-						size="icon"
-						className="h-9 w-9 bg-white font-medium border-[#e5e5e5]"
-					>
-						{page}
-					</Button>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-9 gap-1 px-3 font-medium"
-						onClick={() => onPageChange(page + 1)}
-						disabled={
-							!usersData || page * pageSize >= usersData.total || isLoading
-						}
-					>
-						Next
-					</Button>
-				</div>
-			</div>
+				<PaginationBar
+				page={page}
+				totalPages={Math.ceil((usersData?.total ?? 0) / pageSize)}
+				onPageChange={onPageChange}
+				total={usersData?.total ?? 0}
+				limit={pageSize}
+				isLoading={isLoading}
+			/>
 		</div>
 	);
 }

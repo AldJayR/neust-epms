@@ -1,8 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClientOnly } from "@tanstack/react-router";
 import {
-	ChevronLeft,
-	ChevronRight,
 	CircleCheck,
 	CloudUpload,
 	Download,
@@ -32,6 +30,7 @@ import {
 	auditStatsQueryOptions,
 } from "@/lib/admin.functions";
 import { cn } from "@/lib/utils";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
 	month: "short",
@@ -260,54 +259,14 @@ export function ActivityLogPage({
 				</Table>
 			</div>
 
-			<div className="flex items-center justify-between">
-				<p className="text-xs text-[#666]">
-					Showing{" "}
-					<span className="font-bold">
-						{logsData ? logsData.items.length : 0}
-					</span>{" "}
-					of <span className="font-bold">{logsData?.total ?? 0}</span> results
-				</p>
-				<div className="flex items-center gap-1">
-					<Button
-						variant="ghost"
-						size="sm"
-						className="gap-1 h-9 px-3 text-[#0a0a0a] font-medium"
-						disabled={page === 1}
-						onClick={() => onPageChange(page - 1)}
-					>
-						<ChevronLeft className="size-4" />
-						<span>Previous</span>
-					</Button>
-					{[1, 2, 3].map((p) => (
-						<Button
-							key={p}
-							variant={page === p ? "outline" : "ghost"}
-							size="icon"
-							className={cn(
-								"size-9 rounded-[8px]",
-								page === p && "border-[#e5e5e5] shadow-sm",
-							)}
-							onClick={() => onPageChange(p)}
-						>
-							{p}
-						</Button>
-					))}
-					<div className="px-2 text-muted-foreground">
-						<MoreVertical className="size-4 rotate-90" />
-					</div>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="gap-1 h-9 px-3 text-[#0a0a0a] font-medium"
-						onClick={() => onPageChange(page + 1)}
-						disabled={logsData ? page * limit >= logsData.total : true}
-					>
-						<span>Next</span>
-						<ChevronRight className="size-4" />
-					</Button>
-				</div>
-			</div>
+				<PaginationBar
+				page={page}
+				totalPages={Math.ceil((logsData?.total ?? 0) / limit)}
+				onPageChange={onPageChange}
+				total={logsData?.total ?? 0}
+				limit={limit}
+				isLoading={isLogsLoading}
+			/>
 		</div>
 	);
 }

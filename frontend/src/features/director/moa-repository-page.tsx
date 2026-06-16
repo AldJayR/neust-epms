@@ -4,8 +4,6 @@ import { format } from "date-fns";
 import {
 	AlertCircle,
 	CheckCircle2,
-	ChevronLeft,
-	ChevronRight,
 	EllipsisVertical,
 	Loader2,
 	Plus,
@@ -18,13 +16,7 @@ import { Button } from "@/components/ui/button";
 
 import { SearchInput } from "@/components/ui/search-input";
 import { MetricCard } from "@/components/custom/metric-card";
-import {
-	Pagination,
-	PaginationContent,
-	PaginationEllipsis,
-	PaginationItem,
-	PaginationLink,
-} from "@/components/ui/pagination";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import {
 	Table,
 	TableBody,
@@ -242,96 +234,14 @@ export function MoaRepositoryPage({
 					</div>
 				</div>
 
-				<div className="flex items-center justify-between pt-4">
-					<p className="text-[12px] text-[#666]">
-						Showing <span className="font-bold">{items.length}</span> of{" "}
-						<span className="font-bold">{total}</span> results
-					</p>
-
-					{totalPages > 1 && (
-						<Pagination className="w-auto mx-0">
-							<PaginationContent className="gap-1">
-								<PaginationItem>
-									<Button
-										variant="ghost"
-										size="sm"
-										className="gap-1 pl-2.5 text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
-										onClick={() => onPageChange(page - 1)}
-										disabled={page <= 1}
-									>
-										<ChevronLeft className="size-4" />
-										<span>Previous</span>
-									</Button>
-								</PaginationItem>
-
-								<PaginationItem>
-									<PaginationLink
-										isActive={page === 1}
-										onClick={() => onPageChange(1)}
-										className={
-											page === 1
-												? "border-[#e5e5e5] bg-white text-[14px] font-medium text-[#0a0a0a] shadow-sm"
-												: "border-transparent text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
-										}
-									>
-										1
-									</PaginationLink>
-								</PaginationItem>
-
-								{totalPages > 1 && (
-									<PaginationItem>
-										<PaginationLink
-											isActive={page === 2}
-											onClick={() => onPageChange(2)}
-											className={
-												page === 2
-													? "border-[#e5e5e5] bg-white text-[14px] font-medium text-[#0a0a0a] shadow-sm"
-													: "border-transparent text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
-											}
-										>
-											2
-										</PaginationLink>
-									</PaginationItem>
-								)}
-
-								{totalPages > 2 && (
-									<PaginationItem>
-										<PaginationLink
-											isActive={page === 3}
-											onClick={() => onPageChange(3)}
-											className={
-												page === 3
-													? "border-[#e5e5e5] bg-white text-[14px] font-medium text-[#0a0a0a] shadow-sm"
-													: "border-transparent text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
-											}
-										>
-											3
-										</PaginationLink>
-									</PaginationItem>
-								)}
-
-								{totalPages > 3 && (
-									<PaginationItem>
-										<PaginationEllipsis />
-									</PaginationItem>
-								)}
-
-								<PaginationItem>
-									<Button
-										variant="ghost"
-										size="sm"
-										className="gap-1 pr-2.5 text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
-										onClick={() => onPageChange(page + 1)}
-										disabled={page >= totalPages}
-									>
-										<span>Next</span>
-										<ChevronRight className="size-4" />
-									</Button>
-								</PaginationItem>
-							</PaginationContent>
-						</Pagination>
-					)}
-				</div>
+					<PaginationBar
+					page={page}
+					totalPages={totalPages}
+					onPageChange={onPageChange}
+					total={total}
+					limit={limit}
+					isLoading={isLoading}
+				/>
 			</div>
 		</AppShell>
 	);

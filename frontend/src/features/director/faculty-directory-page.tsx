@@ -1,8 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
 	Calendar,
-	ChevronLeft,
-	ChevronRight,
 	Download,
 	EllipsisVertical,
 	Filter,
@@ -33,6 +31,7 @@ import {
 import type { AuthUser } from "@/lib/auth";
 import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { AppShell } from "../layout/app-shell";
 
 
@@ -249,67 +248,14 @@ export function FacultyDirectoryPage({
 					</Table>
 				</div>
 
-				<div className="flex items-center justify-between pt-4">
-					<p className="text-[12px] text-[#666]">
-						Showing <span className="font-bold">{(page - 1) * limit + 1}</span>{" "}
-						to{" "}
-						<span className="font-bold">{Math.min(page * limit, total)}</span>{" "}
-						of <span className="font-bold">{total.toLocaleString()}</span>{" "}
-						results
-					</p>
-
-					{totalPages > 1 && (
-						<div className="flex items-center gap-1">
-							<Button
-								variant="ghost"
-								size="sm"
-								className="gap-1 text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
-								onClick={() => onPageChange(page - 1)}
-								disabled={page <= 1}
-							>
-								<ChevronLeft className="size-4" />
-								<span>Previous</span>
-							</Button>
-
-							{[...Array(totalPages)].map((_, i) => {
-								const p = i + 1;
-								if (
-									p === 1 ||
-									p === totalPages ||
-									(p >= page - 1 && p <= page + 1)
-								) {
-									return (
-										<Button
-											key={p}
-											variant={page === p ? "outline" : "ghost"}
-											size="icon"
-											onClick={() => onPageChange(p)}
-											className={
-												page === p
-													? "size-9 border-[#e5e5e5] bg-white text-[14px] font-medium text-[#0a0a0a] shadow-sm"
-													: "size-9 text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
-											}
-										>
-											{p}
-										</Button>
-									);
-								}
-								return null;
-							})}
-
-							<Button
-								variant="ghost"
-								size="sm"
-								className="gap-1 text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
-								onClick={() => onPageChange(page + 1)}
-								disabled={page >= totalPages}
-							>
-								<span>Next</span>
-								<ChevronRight className="size-4" />
-							</Button>
-						</div>
-					)}
-				</div>
+					<PaginationBar
+					page={page}
+					totalPages={totalPages}
+					onPageChange={onPageChange}
+					total={total}
+					limit={limit}
+					isLoading={isLoading}
+				/>
 			</div>
 		</AppShell>
 	);

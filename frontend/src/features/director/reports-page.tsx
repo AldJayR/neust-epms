@@ -1,7 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-	ChevronLeft,
-	ChevronRight,
 	Download,
 	Loader2,
 	MoreVertical,
@@ -26,6 +24,7 @@ import {
 	reportsListQueryOptions,
 	reportsQueryOptions,
 } from "@/lib/dashboard.functions";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { AppShell } from "../layout/app-shell";
 
 const formatDate = (dateStr: string) => {
@@ -208,42 +207,14 @@ export function ReportsPage() {
 					</Table>
 				</div>
 
-				{/* Pagination Controls */}
-				<div className="flex items-center justify-between mt-2">
-					<p className="text-xs text-[#666]">
-						Showing <span className="font-bold">{reports.length}</span> of{" "}
-						<span className="font-bold">{totalReports}</span> results
-					</p>
-					<div className="flex items-center gap-1">
-						<Button
-							variant="ghost"
-							size="sm"
-							className="gap-1 font-medium text-sm"
-							disabled={page <= 1}
-							onClick={() => setPage((p) => Math.max(1, p - 1))}
-						>
-							<ChevronLeft className="size-4" />
-							Previous
-						</Button>
-						<Button
-							variant="outline"
-							size="sm"
-							className="h-9 w-9 p-0 border-[#e5e5e5] shadow-sm font-medium"
-						>
-							{page}
-						</Button>
-						<Button
-							variant="ghost"
-							size="sm"
-							className="gap-1 font-medium text-sm"
-							disabled={page >= totalPages}
-							onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-						>
-							Next
-							<ChevronRight className="size-4" />
-						</Button>
-					</div>
-				</div>
+				<PaginationBar
+				page={page}
+				totalPages={totalPages}
+				onPageChange={setPage}
+				total={totalReports}
+				limit={limit}
+				isLoading={isLoading}
+			/>
 			</div>
 		</AppShell>
 	);

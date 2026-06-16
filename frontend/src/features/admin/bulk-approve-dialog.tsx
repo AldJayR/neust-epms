@@ -36,6 +36,7 @@ import {
 	getAdminUsersFn,
 	getRolesFn,
 } from "@/lib/admin.functions";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 
 interface BulkApproveDialogProps {
 	children: React.ReactNode;
@@ -364,47 +365,14 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 							</div>
 						</div>
 
-						<div className="flex items-center justify-between pt-2">
-							<p className="text-[12px] font-medium leading-4 text-[#666]">
-								<span className="font-semibold text-[#0a0a0a]">
-									{selectedUsers.size}
-								</span>{" "}
-								of{" "}
-								<span className="font-semibold text-[#0a0a0a]">
-									{usersData?.total ?? 0}
-								</span>{" "}
-								row(s) selected.
-							</p>
-							<div className="flex items-center gap-1">
-								<Button
-									variant="outline"
-									size="sm"
-									className="h-9 rounded-[10px] border-[#e5e5e5] bg-white px-4 text-[14px] font-medium text-[#0a0a0a] shadow-[0px_1px_1.5px_rgba(0,0,0,0.1)] hover:bg-white"
-									onClick={() =>
-										dispatch({
-											type: "SET_PAGE",
-											payload: Math.max(1, page - 1),
-										})
-									}
-									disabled={page <= 1 || isUsersFetching}
-								>
-									Previous
-								</Button>
-								<Button
-									variant="outline"
-									size="sm"
-									className="h-9 rounded-[10px] border-[#e5e5e5] bg-white px-4 text-[14px] font-medium text-[#0a0a0a] shadow-[0px_1px_1.5px_rgba(0,0,0,0.1)] hover:bg-white"
-									onClick={() =>
-										dispatch({ type: "SET_PAGE", payload: page + 1 })
-									}
-									disabled={
-										!usersData || page * 5 >= usersData.total || isUsersFetching
-									}
-								>
-									Next
-								</Button>
-							</div>
-						</div>
+							<PaginationBar
+							page={page}
+							totalPages={Math.ceil((usersData?.total ?? 0) / 5)}
+							onPageChange={(p) => dispatch({ type: "SET_PAGE", payload: p })}
+							total={usersData?.total ?? 0}
+							limit={5}
+							isLoading={isUsersFetching}
+						/>
 					</div>
 
 					<div className="flex justify-end">

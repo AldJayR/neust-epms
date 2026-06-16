@@ -3,8 +3,6 @@ import { ClientOnly } from "@tanstack/react-router";
 import { format } from "date-fns";
 import {
 	CheckCircle2,
-	ChevronLeft,
-	ChevronRight,
 	EllipsisVertical,
 	Filter,
 	Loader2,
@@ -15,13 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 import { SearchInput } from "@/components/ui/search-input";
-import {
-	Pagination,
-	PaginationContent,
-	PaginationEllipsis,
-	PaginationItem,
-	PaginationLink,
-} from "@/components/ui/pagination";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import {
 	Select,
 	SelectContent,
@@ -285,82 +277,14 @@ export function ProjectHubPage({
 					</Table>
 				</div>
 
-				<div className="flex flex-col items-center justify-between gap-4 border-t border-transparent pt-4 sm:flex-row">
-					<p className="text-xs text-[#666]">
-						Showing{" "}
-						<span className="font-bold">
-							{Math.min((page - 1) * limit + 1, total)}
-						</span>{" "}
-						to{" "}
-						<span className="font-bold">{Math.min(page * limit, total)}</span>{" "}
-						of <span className="font-bold">{total}</span> results
-					</p>
-
-					{totalPages > 1 && (
-						<Pagination className="w-auto mx-0">
-							<PaginationContent className="gap-1">
-								<PaginationItem>
-									<Button
-										variant="ghost"
-										size="sm"
-										className="gap-1 pl-2.5 text-[#0a0a0a] hover:bg-transparent"
-										onClick={() => onPageChange(page - 1)}
-										disabled={page <= 1}
-									>
-										<ChevronLeft className="size-4" />
-										<span>Previous</span>
-									</Button>
-								</PaginationItem>
-
-								{[...Array(totalPages)].map((_, i) => {
-									const p = i + 1;
-									if (
-										p === 1 ||
-										p === totalPages ||
-										(p >= page - 1 && p <= page + 1)
-									) {
-										return (
-											<PaginationItem key={p}>
-												<PaginationLink
-													isActive={page === p}
-													onClick={() => onPageChange(p)}
-													className={
-														page === p
-															? "border-[#e5e5e5] bg-white text-[#0a0a0a] shadow-sm"
-															: "border-transparent text-[#0a0a0a] hover:bg-transparent"
-													}
-												>
-													{p}
-												</PaginationLink>
-											</PaginationItem>
-										);
-									}
-									if (p === page - 2 || p === page + 2) {
-										return (
-											<PaginationItem key={p}>
-												<PaginationEllipsis />
-											</PaginationItem>
-										);
-									}
-									return null;
-								})}
-
-								<PaginationItem>
-									<Button
-										variant="ghost"
-										size="sm"
-										className="gap-1 pr-2.5 text-[#0a0a0a] hover:bg-transparent"
-										onClick={() => onPageChange(page + 1)}
-										disabled={page >= totalPages}
-									>
-										<span>Next</span>
-										<ChevronRight className="size-4" />
-									</Button>
-								</PaginationItem>
-							</PaginationContent>
-						</Pagination>
-					)}
-				</div>
+					<PaginationBar
+					page={page}
+					totalPages={totalPages}
+					onPageChange={onPageChange}
+					total={total}
+					limit={limit}
+					isLoading={isLoading}
+				/>
 			</div>
 		</AppShell>
 	);
