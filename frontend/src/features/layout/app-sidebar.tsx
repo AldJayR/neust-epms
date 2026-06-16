@@ -16,6 +16,7 @@ import {
 	type RoleSidebarItem,
 } from "@/components/role-sidebar";
 import type { AuthUser } from "@/lib/auth";
+import { isDirector, isRETChair } from "@/lib/permissions";
 
 type NavItem = {
 	title: string;
@@ -151,9 +152,9 @@ export function AppSidebar({
 	const pathname = routerState.location.pathname;
 
 	let navMain = adminNav;
-	if (user?.roleName === "Director") {
+	if (isDirector(user)) {
 		navMain = directorNav;
-	} else if (user?.roleName === "RET Chair") {
+	} else if (isRETChair(user)) {
 		navMain = retNav;
 	}
 

@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { ProjectHubPage } from "@/features/director/project-hub-page";
 import { projectHubQueryOptions } from "@/lib/dashboard.functions";
+import { requireRole, isSuperAdmin, isAdminOrDirector } from "@/lib/permissions";
 
 const projectsSearchSchema = z.object({
 	page: z.number().optional().default(1),
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 		status: search.status,
 	}),
 	beforeLoad: ({ context }) => {
-		if (context.auth.user?.roleName === "Super Admin") {
+		if (isSuperAdmin(context.auth.user)) {
 			throw redirect({
 				to: "/dashboard",
 				search: { page: 1, pageSize: 10 },
@@ -29,10 +30,7 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 		}
 	},
 	loader: async ({ context, deps }) => {
-		if (
-			context.auth.user?.roleName !== "Director" &&
-			context.auth.user?.roleName !== "Super Admin"
-		) {
+		if (requireRole(context.auth.user, 'Director', 'Super Admin')) {
 			return null;
 		}
 
@@ -86,7 +84,7 @@ function ProjectsIndexPage() {
 		});
 	};
 
-	if (user?.roleName === "Director" || user?.roleName === "Super Admin") {
+	if (isAdminOrDirector(user)) {
 		return (
 			<ProjectHubPage
 				page={page}

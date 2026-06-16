@@ -1,6 +1,7 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { ActivityLogPage } from "@/features/admin/activity-log-page";
+import { requireRole } from "@/lib/permissions";
 
 const searchSchema = z.object({
 	page: z.number().int().min(1).catch(1),
@@ -11,7 +12,7 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/_authenticated/admin/activity-log/")({
 	validateSearch: (search) => searchSchema.parse(search),
 	beforeLoad: ({ context }) => {
-		if (context.auth.user?.roleName !== "Super Admin") {
+		if (requireRole(context.auth.user, 'Super Admin')) {
 			throw redirect({
 				to: "/dashboard",
 				search: { page: 1, pageSize: 10 },

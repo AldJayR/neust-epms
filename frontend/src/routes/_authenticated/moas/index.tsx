@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { MoaRepositoryPage } from "@/features/director/moa-repository-page";
 import { moaRepositoryQueryOptions } from "@/lib/dashboard.functions";
+import { requireRole } from "@/lib/permissions";
 
 const moasSearchSchema = z.object({
 	page: z.number().optional().default(1),
@@ -19,11 +20,7 @@ export const Route = createFileRoute("/_authenticated/moas/")({
 		status: search.status,
 	}),
 	beforeLoad: ({ context }) => {
-		if (
-			context.auth.user?.roleName !== "Director" &&
-			context.auth.user?.roleName !== "Super Admin" &&
-			context.auth.user?.roleName !== "RET Chair"
-		) {
+		if (requireRole(context.auth.user, 'Director', 'Super Admin', 'RET Chair')) {
 			throw redirect({
 				to: "/dashboard",
 				search: { page: 1, pageSize: 10 },

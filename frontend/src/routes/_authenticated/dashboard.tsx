@@ -12,6 +12,7 @@ import {
 	retDashboardStatsQueryOptions,
 	retProposalsQueryOptions,
 } from "@/lib/ret.functions";
+import { requireRole, isSuperAdmin, isDirector, isRETChair } from "@/lib/permissions";
 
 const dashboardSearchSchema = z.object({
 	page: z.number().optional().default(1),
@@ -27,15 +28,11 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 		search: search.search,
 	}),
 	loader: async ({ context, deps }) => {
-		if (
-			context.auth.user?.roleName !== "Super Admin" &&
-			context.auth.user?.roleName !== "Director" &&
-			context.auth.user?.roleName !== "RET Chair"
-		) {
+		if (requireRole(context.auth.user, 'Super Admin', 'Director', 'RET Chair')) {
 			return null;
 		}
 
-		if (context.auth.user?.roleName === "Super Admin") {
+		if (isSuperAdmin(context.auth.user)) {
 			const statsPromise = context.queryClient.ensureQueryData(
 				adminStatsQueryOptions(),
 			);
@@ -50,7 +47,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 			return null;
 		}
 
-		if (context.auth.user?.roleName === "RET Chair") {
+		if (isRETChair(context.auth.user)) {
 			const statsPromise = context.queryClient.ensureQueryData(
 				retDashboardStatsQueryOptions(),
 			);
@@ -97,7 +94,7 @@ function DashboardPage() {
 		);
 	}
 
-	if (user?.roleName === "Super Admin") {
+	if (isSuperAdmin(user)) {
 		return (
 			<UsersPage
 				page={page}
@@ -109,11 +106,11 @@ function DashboardPage() {
 		);
 	}
 
-	if (user?.roleName === "Director") {
+	if (isDirector(user)) {
 		return <DirectorDashboardPage user={user} />;
 	}
 
-	if (user?.roleName === "RET Chair") {
+	if (isRETChair(user)) {
 		return (
 			<RETDashboardPage
 				user={user}

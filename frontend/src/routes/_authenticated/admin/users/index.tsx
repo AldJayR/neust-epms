@@ -5,6 +5,7 @@ import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
 } from "@/lib/admin.functions";
+import { requireRole } from "@/lib/permissions";
 
 const usersSearchSchema = z.object({
 	page: z.number().optional().default(1),
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/admin/users/")({
 		search: search.search,
 	}),
 	beforeLoad: ({ context }) => {
-		if (context.auth.user?.roleName !== "Super Admin") {
+		if (requireRole(context.auth.user, 'Super Admin')) {
 			throw redirect({
 				to: "/dashboard",
 				search: { page: 1, pageSize: 10 },
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/admin/users/")({
 		}
 	},
 	loader: async ({ context, deps }) => {
-		if (context.auth.user?.roleName !== "Super Admin") {
+		if (requireRole(context.auth.user, 'Super Admin')) {
 			return null;
 		}
 

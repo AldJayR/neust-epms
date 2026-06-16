@@ -20,6 +20,7 @@ import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { TableCell, TableRow } from "@/components/ui/table";
 import type { AuthUser } from "@/lib/auth";
 import { moaRepositoryQueryOptions } from "@/lib/dashboard.functions";
+import { isAdminOrDirector } from "@/lib/permissions";
 
 function MoaStatusBadge({ status }: { status: string }) {
 	if (status === "Valid") {
@@ -112,12 +113,12 @@ export function MoaRepositoryPage({
 					<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
 						Memoranda of Agreements
 					</h1>
-					{user?.roleName === "Director" || user?.roleName === "Super Admin" ? (
-						<Button className="flex items-center gap-1.5 rounded-[10px] bg-brand-primary px-[10px] py-2 text-[#fafafa] shadow-sm hover:bg-brand-primary-hover">
-							<Plus className="size-4" />
-							<span className="text-[14px] font-medium">Create MOA</span>
-						</Button>
-					) : null}
+				{isAdminOrDirector(user) ? (
+					<Button className="flex items-center gap-1.5 rounded-[10px] bg-brand-primary px-[10px] py-2 text-[#fafafa] shadow-sm hover:bg-brand-primary-hover">
+						<Plus className="size-4" />
+						<span className="text-[14px] font-medium">Create MOA</span>
+					</Button>
+				) : null}
 				</div>
 
 				<div className="flex items-center gap-6">

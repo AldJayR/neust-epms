@@ -1,8 +1,9 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { requireRole } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
 	beforeLoad: ({ context }) => {
-		if (context.auth.user?.roleName !== "Super Admin") {
+		if (requireRole(context.auth.user, 'Super Admin')) {
 			throw redirect({
 				to: "/dashboard",
 				search: { page: 1, pageSize: 10 },

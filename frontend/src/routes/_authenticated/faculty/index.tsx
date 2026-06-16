@@ -3,6 +3,7 @@ import { z } from "zod";
 import { FacultyDirectoryPage } from "@/features/director/faculty-directory-page";
 import { RetFacultyDirectoryPage } from "@/features/ret/faculty-directory-page";
 import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
+import { requireRole, isRETChair } from "@/lib/permissions";
 
 const facultySearchSchema = z.object({
 	page: z.number().optional().default(1),
@@ -20,11 +21,7 @@ export const Route = createFileRoute("/_authenticated/faculty/")({
 		college: search.college,
 	}),
 	beforeLoad: ({ context }) => {
-		if (
-			context.auth.user?.roleName !== "Director" &&
-			context.auth.user?.roleName !== "Super Admin" &&
-			context.auth.user?.roleName !== "RET Chair"
-		) {
+		if (requireRole(context.auth.user, 'Director', 'Super Admin', 'RET Chair')) {
 			throw redirect({
 				to: "/dashboard",
 				search: { page: 1, pageSize: 10 },
@@ -67,7 +64,7 @@ function FacultyIndexPage() {
 		});
 	};
 
-	if (user?.roleName === "RET Chair") {
+	if (isRETChair(user)) {
 		return (
 			<RetFacultyDirectoryPage
 				user={user}

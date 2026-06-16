@@ -22,6 +22,7 @@ import {
 } from "../lib/admin.functions";
 import type { AuthUser } from "../lib/auth";
 import { loginFn } from "../lib/auth.functions";
+import { isSuperAdmin } from "@/lib/permissions";
 
 const loginSchema = z.object({
 	email: z.email("Please enter a valid email address"),
@@ -86,7 +87,7 @@ function LoginPage() {
 		}
 
 		if (
-			result?.user?.roleName === "Super Admin" &&
+			isSuperAdmin(result?.user) &&
 			(safeRedirectTarget === "/dashboard" ||
 				safeRedirectTarget.startsWith("/admin/users"))
 		) {
