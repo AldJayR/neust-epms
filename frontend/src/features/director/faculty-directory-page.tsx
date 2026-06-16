@@ -10,7 +10,7 @@ import {
 	Search,
 	TrendingUp,
 } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,13 +113,10 @@ export function FacultyDirectoryPage({
 
 	const [localSearch, setLocalSearch] = useState(search ?? "");
 	const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
-	const debouncedSearch = useCallback(
-		(value: string) => {
-			if (debounceRef.current) clearTimeout(debounceRef.current);
-			debounceRef.current = setTimeout(() => onSearchChange(value), 300);
-		},
-		[onSearchChange],
-	);
+	const debouncedSearch = (value: string) => {
+		if (debounceRef.current) clearTimeout(debounceRef.current);
+		debounceRef.current = setTimeout(() => onSearchChange(value), 300);
+	};
 
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;

@@ -105,8 +105,13 @@ function PdfPageCanvas({
 		useState<AnnotationData | null>(null);
 
 	// Track the exact width and scale at which the active canvas was last successfully rendered
-	const lastRenderedWidthRef = useRef<number>(width);
-	const lastRenderedScaleRef = useRef<number>(scale);
+	const [lastRendered, setLastRendered] = useState<{
+		width: number;
+		scale: number;
+	}>(() => ({
+		width,
+		scale,
+	}));
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: activeCanvas and hasRendered changes should not trigger a re-render
 	useEffect(() => {
@@ -152,6 +157,7 @@ function PdfPageCanvas({
 				context.scale(dpr, dpr);
 
 				const renderContext = {
+					canvas: targetCanvas,
 					canvasContext: context,
 					viewport: viewport,
 				};
@@ -162,8 +168,7 @@ function PdfPageCanvas({
 				await activeRenderTask.promise;
 				if (!isDestroyed) {
 					setActiveCanvas(targetCanvasIndex);
-					lastRenderedWidthRef.current = width;
-					lastRenderedScaleRef.current = scale;
+					setLastRendered({ width, scale });
 					setHasRendered(true);
 					setIsLoading(false);
 				}
@@ -310,8 +315,7 @@ function PdfPageCanvas({
 	};
 
 	const activeScaleRatio =
-		(width * scale) /
-		(lastRenderedWidthRef.current * lastRenderedScaleRef.current || 1);
+		(width * scale) / (lastRendered.width * lastRendered.scale || 1);
 
 	const canvas1Style: React.CSSProperties = {
 		position: "absolute",
@@ -545,7 +549,7 @@ const PdfInner = forwardRef<PdfViewerRef, PdfInnerProps>(
 					activeEl &&
 					(activeEl.tagName === "INPUT" ||
 						activeEl.tagName === "TEXTAREA" ||
-						activeEl.isContentEditable)
+						(activeEl instanceof HTMLElement && activeEl.isContentEditable))
 				) {
 					return;
 				}
@@ -696,15 +700,20 @@ const PdfInner = forwardRef<PdfViewerRef, PdfInnerProps>(
 
 		function zoomIn() {
 			setScale((prev) => {
-				const idx = ZOOM_STEPS.findIndex((s) => s >= prev);
-				return ZOOM_STEPS[Math.min(idx + 1, ZOOM_STEPS.length - 1)];
+				for (const s of ZOOM_STEPS) {
+					if (s > prev) return s;
+				}
+				return ZOOM_STEPS[ZOOM_STEPS.length - 1] ?? DEFAULT_SCALE;
 			});
 		}
 
 		function zoomOut() {
 			setScale((prev) => {
-				const idx = ZOOM_STEPS.findLastIndex((s) => s <= prev);
-				return ZOOM_STEPS[Math.max(idx - 1, 0)];
+				for (let i = ZOOM_STEPS.length - 1; i >= 0; i--) {
+					const s = ZOOM_STEPS[i];
+					if (s !== undefined && s < prev) return s;
+				}
+				return ZOOM_STEPS[0] ?? DEFAULT_SCALE;
 			});
 		}
 
