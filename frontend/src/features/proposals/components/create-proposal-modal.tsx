@@ -1,31 +1,19 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
 import {
-	Calendar as CalendarIcon,
 	Check,
 	ChevronLeft,
 	ChevronRight,
-	FileText,
 	Loader2,
-	Plus,
-	Search,
-	Trash2,
-	Upload,
 } from "lucide-react";
 import * as React from "react";
 import {
-	Controller,
 	type SubmitHandler,
-	useFieldArray,
 	useForm,
-	useWatch,
 } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
 	DialogContent,
@@ -34,35 +22,18 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Field,
-	FieldContent,
-	FieldError,
-	FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import { Progress, ProgressValue } from "@/components/ui/progress";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import type { AuthUser } from "@/lib/auth";
-import { searchUsersFn } from "@/lib/auth.functions";
 import {
 	createProposalFn,
 	sdgsQueryOptions,
 	uploadProposalDocumentFn,
 } from "@/lib/ret.functions";
+import { ProposalStepInfo } from "./proposal-step-info";
+import { ProposalStepDetails } from "./proposal-step-details";
+import { ProposalStepMembers } from "./proposal-step-members";
+import { ProposalStepDocuments } from "./proposal-step-documents";
 
-const formSchema = z
+export const formSchema = z
 	.object({
 		title: z.string().min(1, "Project title is required"),
 		bannerProgram: z.string().min(1, "Banner program is required"),
@@ -98,59 +69,7 @@ const formSchema = z
 		},
 	);
 
-function formatPeso(value: number): string {
-	if (!value && value !== 0) return "";
-	return value.toLocaleString("en-PH", {
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 2,
-	});
-}
-
-function parsePesoInput(raw: string): number {
-	const cleaned = raw.replace(/[^0-9.]/g, "");
-	const parsed = parseFloat(cleaned);
-	return Number.isNaN(parsed) ? 0 : parsed;
-}
-
-interface CurrencyInputProps {
-	value: number;
-	onChange: (value: number) => void;
-	placeholder?: string;
-}
-
-function CurrencyInput({ value, onChange, placeholder }: CurrencyInputProps) {
-	const [prevValue, setPrevValue] = React.useState(value);
-	const [display, setDisplay] = React.useState(() => formatPeso(value));
-
-	if (value !== prevValue) {
-		setPrevValue(value);
-		setDisplay(formatPeso(value));
-	}
-
-	return (
-		<div className="relative">
-			<span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-				₱
-			</span>
-			<Input
-				type="text"
-				inputMode="decimal"
-				className="pl-7"
-				value={display}
-				placeholder={placeholder}
-				onChange={(e) => {
-					const raw = e.target.value;
-					const num = parsePesoInput(raw);
-					setDisplay(raw === "" ? "" : formatPeso(num));
-					onChange(num);
-				}}
-				onBlur={() => setDisplay(formatPeso(value))}
-			/>
-		</div>
-	);
-}
-
-type FormValues = z.infer<typeof formSchema>;
+export type FormValues = z.infer<typeof formSchema>;
 
 interface CreateProposalModalProps {
 	open: boolean;
@@ -166,12 +85,12 @@ export function CreateProposalModal({
 	const [step, setStep] = React.useState(1);
 	const [file, setFile] = React.useState<File | null>(null);
 	const fileInputRef = React.useRef<HTMLInputElement>(null);
-	const [userSearch, setUserSearch] = React.useState("");
 	const queryClient = useQueryClient();
 	const [uploadProgress, setUploadProgress] = React.useState(0);
 	const [uploadPhase, setUploadPhase] = React.useState<
 		"idle" | "creating" | "uploading" | "done"
 	>("idle");
+	const [isDragging, setIsDragging] = React.useState(false);
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
@@ -198,34 +117,7 @@ export function CreateProposalModal({
 		},
 	});
 
-	const {
-		fields: memberFields,
-		append: appendMember,
-		remove: removeMember,
-	} = useFieldArray({
-		control: form.control,
-		name: "members",
-	});
-
 	const { data: sdgsData } = useQuery(sdgsQueryOptions());
-
-	const deferredSearch = React.useDeferredValue(userSearch);
-
-	const { data: searchUsersData } = useQuery({
-		queryKey: ["users", "search", deferredSearch],
-		queryFn: () => searchUsersFn({ data: { search: deferredSearch } }),
-		enabled: deferredSearch.length >= 2,
-	});
-
-	const watchedSdgIds =
-		useWatch({
-			control: form.control,
-			name: "sdgIds",
-		}) || [];
-	const watchedMembers = useWatch({
-		control: form.control,
-		name: "members",
-	});
 
 	const createProposalMutation = useMutation({
 		mutationFn: createProposalFn,
@@ -349,49 +241,6 @@ export function CreateProposalModal({
 
 	const prevStep = () => setStep((prev) => prev - 1);
 
-	const [isDragging, setIsDragging] = React.useState(false);
-
-	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		if (e.target.files?.[0]) {
-			validateAndSetFile(e.target.files[0]);
-			e.target.value = "";
-		}
-	};
-
-	const validateAndSetFile = (selectedFile: File) => {
-		if (selectedFile.type !== "application/pdf") {
-			toast.error("Only PDF files are allowed");
-			return;
-		}
-		if (selectedFile.size > 50 * 1024 * 1024) {
-			toast.error("File size must be less than 50MB");
-			return;
-		}
-		setFile(selectedFile);
-	};
-
-	const handleDrop = (e: React.DragEvent) => {
-		e.preventDefault();
-		setIsDragging(false);
-		const droppedFile = e.dataTransfer.files[0];
-		if (droppedFile) validateAndSetFile(droppedFile);
-	};
-
-	const handleDragOver = (e: React.DragEvent) => {
-		e.preventDefault();
-		setIsDragging(true);
-	};
-
-	const handleDragLeave = (e: React.DragEvent) => {
-		e.preventDefault();
-		setIsDragging(false);
-	};
-
-	const removeFile = () => {
-		setFile(null);
-		if (fileInputRef.current) fileInputRef.current.value = "";
-	};
-
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-[700px] p-0 overflow-hidden gap-0">
@@ -419,460 +268,31 @@ export function CreateProposalModal({
 
 					<div className="p-6 overflow-y-auto max-h-[60vh]">
 						{step === 1 && (
-							<div className="space-y-4">
-								<Field>
-									<FieldLabel>Project Title</FieldLabel>
-									<FieldContent>
-										<Input
-											placeholder="Enter project title"
-											{...form.register("title")}
-										/>
-									</FieldContent>
-									<FieldError errors={[form.formState.errors.title]} />
-								</Field>
-								<Field>
-									<FieldLabel>Banner Program</FieldLabel>
-									<FieldContent>
-										<Input
-											placeholder="e.g. Community Outreach"
-											{...form.register("bannerProgram")}
-										/>
-									</FieldContent>
-									<FieldError errors={[form.formState.errors.bannerProgram]} />
-								</Field>
-								<Field>
-									<FieldLabel>Project Locale</FieldLabel>
-									<FieldContent>
-										<Input
-											placeholder="e.g. Cabanatuan City"
-											{...form.register("projectLocale")}
-										/>
-									</FieldContent>
-									<FieldError errors={[form.formState.errors.projectLocale]} />
-								</Field>
-								<Field>
-									<FieldLabel>Extension Category</FieldLabel>
-									<FieldContent>
-										<Select
-											onValueChange={(val) => {
-												if (val != null)
-													form.setValue("extensionCategory", val);
-											}}
-											value={form.watch("extensionCategory")}
-										>
-											<SelectTrigger>
-												<SelectValue placeholder="Select category" />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="Category A">Category A</SelectItem>
-												<SelectItem value="Category B">Category B</SelectItem>
-												<SelectItem value="Category C">Category C</SelectItem>
-											</SelectContent>
-										</Select>
-									</FieldContent>
-									<FieldError
-										errors={[form.formState.errors.extensionCategory]}
-									/>
-								</Field>
-								<Field>
-									<FieldLabel>Campus</FieldLabel>
-									<FieldContent>
-										<Input
-											readOnly
-											value={user.campusName}
-											className="bg-muted"
-										/>
-									</FieldContent>
-								</Field>
-								<Field>
-									<FieldLabel>Department</FieldLabel>
-									<FieldContent>
-										<Input
-											readOnly
-											value={user.departmentName ?? ""}
-											className="bg-muted"
-										/>
-									</FieldContent>
-								</Field>
-								<div className="space-y-2">
-									<FieldLabel>Addressed SDGs</FieldLabel>
-									<div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto p-2 border rounded-md">
-										{sdgsData?.map((sdg) => (
-											<div
-												key={sdg.sdgId}
-												className="flex flex-row items-start space-x-3 space-y-0"
-											>
-												<Checkbox
-													checked={watchedSdgIds.includes(sdg.sdgId)}
-													onCheckedChange={(checked) => {
-														const current = form.getValues("sdgIds") || [];
-														if (checked) {
-															form.setValue("sdgIds", [...current, sdg.sdgId]);
-														} else {
-															form.setValue(
-																"sdgIds",
-																current.filter((id) => id !== sdg.sdgId),
-															);
-														}
-													}}
-												/>
-												<span className="font-normal text-xs">
-													{sdg.sdgName}
-												</span>
-											</div>
-										))}
-									</div>
-									<FieldError errors={[form.formState.errors.sdgIds]} />
-								</div>
-							</div>
+							<ProposalStepInfo
+								form={form}
+								user={user}
+								sdgsData={sdgsData}
+							/>
 						)}
 
 						{step === 2 && (
-							<div className="space-y-4">
-								<div className="grid grid-cols-2 gap-4">
-									<Field>
-										<FieldLabel>Target Start Date</FieldLabel>
-										<FieldContent>
-											<Controller
-												control={form.control}
-												name="targetStartDate"
-												render={({ field }) => (
-													<Popover>
-														<PopoverTrigger
-															render={
-																<Button
-																	type="button"
-																	variant="outline"
-																	className="w-full justify-start text-left font-normal"
-																/>
-															}
-														>
-															<CalendarIcon className="mr-2 size-4 text-muted-foreground" />
-															{field.value ? (
-																format(new Date(field.value), "PPP")
-															) : (
-																<span className="text-muted-foreground">
-																	Pick a start date
-																</span>
-															)}
-														</PopoverTrigger>
-														<PopoverContent
-															className="w-auto p-0"
-															align="start"
-														>
-															<Calendar
-																mode="single"
-																selected={
-																	field.value
-																		? new Date(field.value)
-																		: undefined
-																}
-																onSelect={(date) =>
-																	field.onChange(
-																		date ? format(date, "yyyy-MM-dd") : "",
-																	)
-																}
-															/>
-														</PopoverContent>
-													</Popover>
-												)}
-											/>
-										</FieldContent>
-										<FieldError
-											errors={[form.formState.errors.targetStartDate]}
-										/>
-									</Field>
-									<Field>
-										<FieldLabel>Target End Date</FieldLabel>
-										<FieldContent>
-											<Controller
-												control={form.control}
-												name="targetEndDate"
-												render={({ field }) => (
-													<Popover>
-														<PopoverTrigger
-															render={
-																<Button
-																	type="button"
-																	variant="outline"
-																	className="w-full justify-start text-left font-normal"
-																/>
-															}
-														>
-															<CalendarIcon className="mr-2 size-4 text-muted-foreground" />
-															{field.value ? (
-																format(new Date(field.value), "PPP")
-															) : (
-																<span className="text-muted-foreground">
-																	Pick an end date
-																</span>
-															)}
-														</PopoverTrigger>
-														<PopoverContent
-															className="w-auto p-0"
-															align="start"
-														>
-															<Calendar
-																mode="single"
-																selected={
-																	field.value
-																		? new Date(field.value)
-																		: undefined
-																}
-																onSelect={(date) =>
-																	field.onChange(
-																		date ? format(date, "yyyy-MM-dd") : "",
-																	)
-																}
-															/>
-														</PopoverContent>
-													</Popover>
-												)}
-											/>
-										</FieldContent>
-										<FieldError
-											errors={[form.formState.errors.targetEndDate]}
-										/>
-									</Field>
-								</div>
-								<div className="grid grid-cols-2 gap-4">
-									<Field>
-										<FieldLabel>Budget (Partner)</FieldLabel>
-										<FieldContent>
-											<CurrencyInput
-												value={form.watch("budgetPartner")}
-												onChange={(val) => form.setValue("budgetPartner", val)}
-												placeholder="0"
-											/>
-										</FieldContent>
-										<FieldError
-											errors={[form.formState.errors.budgetPartner]}
-										/>
-									</Field>
-									<Field>
-										<FieldLabel>Budget (NEUST)</FieldLabel>
-										<FieldContent>
-											<CurrencyInput
-												value={form.watch("budgetNeust")}
-												onChange={(val) => form.setValue("budgetNeust", val)}
-												placeholder="0"
-											/>
-										</FieldContent>
-										<FieldError errors={[form.formState.errors.budgetNeust]} />
-									</Field>
-								</div>
-							</div>
+							<ProposalStepDetails form={form} />
 						)}
 
 						{step === 3 && (
-							<div className="space-y-4">
-								<div className="space-y-2">
-									<FieldLabel>Search Team Members</FieldLabel>
-									<div className="relative">
-										<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-										<Input
-											placeholder="Search by name or email"
-											className="pl-9"
-											value={userSearch}
-											onChange={(e) => setUserSearch(e.target.value)}
-										/>
-									</div>
-									{searchUsersData && searchUsersData.length > 0 && (
-										<div className="mt-2 border rounded-md divide-y shadow-sm max-h-[150px] overflow-y-auto">
-											{searchUsersData.map((u) => (
-												<button
-													key={u.userId}
-													type="button"
-													className="w-full text-left p-2 flex items-center justify-between hover:bg-slate-50 cursor-pointer"
-													onClick={() => {
-														if (
-															!memberFields.some((m) => m.userId === u.userId)
-														) {
-															appendMember({
-																userId: u.userId,
-																projectRole: "Member",
-																name: `${u.firstName} ${u.lastName}`,
-															});
-														} else {
-															toast.error("User is already a team member");
-														}
-														setUserSearch("");
-													}}
-												>
-													<div className="text-sm">
-														<p className="font-medium">
-															{u.firstName} {u.lastName}
-														</p>
-														<p className="text-xs text-muted-foreground">
-															{u.email}
-														</p>
-													</div>
-													<Plus className="size-4 text-blue-600" />
-												</button>
-											))}
-										</div>
-									)}
-								</div>
-
-								<div className="space-y-2">
-									<FieldLabel>Team Members & Roles</FieldLabel>
-									<div className="border rounded-md divide-y">
-										{memberFields.map((field, index) => (
-											<div
-												key={field.id}
-												className="p-3 flex items-center justify-between"
-											>
-												<div className="flex-1">
-													<p className="text-sm font-medium">{field.name}</p>
-													<div className="mt-1 flex items-center gap-2">
-														{field.userId === user.userId ? (
-															<span className="text-xs text-muted-foreground h-7 flex items-center">
-																{watchedMembers?.[index]?.projectRole ??
-																	field.projectRole}
-															</span>
-														) : (
-															<Select
-																value={
-																	watchedMembers?.[index]?.projectRole ??
-																	field.projectRole
-																}
-																onValueChange={(val) => {
-																	if (val != null)
-																		form.setValue(
-																			`members.${index}.projectRole`,
-																			val,
-																		);
-																}}
-															>
-																<SelectTrigger className="h-7 w-[150px] text-xs">
-																	<SelectValue />
-																</SelectTrigger>
-																<SelectContent>
-																	<SelectItem value="Project Leader">
-																		Project Leader
-																	</SelectItem>
-																	<SelectItem value="Co-Project Leader">
-																		Co-Project Leader
-																	</SelectItem>
-																	<SelectItem value="Project Staff">
-																		Project Staff
-																	</SelectItem>
-																	<SelectItem value="Member">Member</SelectItem>
-																</SelectContent>
-															</Select>
-														)}
-													</div>
-												</div>
-												{field.userId !== user.userId && (
-													<Button
-														variant="ghost"
-														size="icon"
-														className="text-red-500 hover:text-red-700 hover:bg-red-50"
-														onClick={() => removeMember(index)}
-													>
-														<Trash2 className="size-4" />
-													</Button>
-												)}
-											</div>
-										))}
-									</div>
-									<FieldError errors={[form.formState.errors.members]} />
-								</div>
-							</div>
+							<ProposalStepMembers form={form} user={user} />
 						)}
 
 						{step === 4 && (
-							<div className="space-y-6">
-								{/* biome-ignore lint/a11y/noStaticElementInteractions: drag and drop zone */}
-								<div
-									className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-4 bg-[#fcfcfc] transition-colors ${isDragging ? "border-primary bg-primary/5" : "border-[#e5e5e5]"}`}
-									onDrop={handleDrop}
-									onDragOver={handleDragOver}
-									onDragLeave={handleDragLeave}
-								>
-									{uploadPhase !== "idle" ? (
-										<div className="flex flex-col items-center gap-3 w-full max-w-xs">
-											<div className="p-3 bg-primary/10 rounded-full">
-												<Loader2 className="size-8 text-primary animate-spin" />
-											</div>
-											<p className="text-sm font-medium">
-												{uploadPhase === "creating" && "Creating proposal..."}
-												{uploadPhase === "uploading" && "Uploading document..."}
-												{uploadPhase === "done" && "Upload complete!"}
-											</p>
-											<Progress value={uploadProgress} className="w-full">
-												<ProgressValue />
-											</Progress>
-										</div>
-									) : file ? (
-										<div className="flex flex-col items-center gap-2">
-											<div className="p-3 bg-primary/10 rounded-full">
-												<FileText className="size-8 text-primary" />
-											</div>
-											<p className="text-sm font-medium">{file.name}</p>
-											<p className="text-xs text-muted-foreground">
-												{(file.size / 1024 / 1024).toFixed(2)} MB
-											</p>
-											<div className="flex gap-2 mt-2">
-												<Button
-													variant="outline"
-													size="sm"
-													onClick={() => {
-														fileInputRef.current?.click();
-													}}
-												>
-													Change File
-												</Button>
-												<Button
-													variant="outline"
-													size="sm"
-													className="text-destructive hover:text-destructive"
-													onClick={removeFile}
-												>
-													Remove
-												</Button>
-											</div>
-										</div>
-									) : (
-										<>
-											<div className="p-4 bg-primary/10 rounded-full">
-												<Upload className="size-8 text-primary" />
-											</div>
-											<div className="text-center">
-												<p className="text-sm font-medium">
-													Click to upload or drag and drop
-												</p>
-												<p className="text-xs text-muted-foreground mt-1">
-													Project Proposal PDF (Max 50MB)
-												</p>
-											</div>
-											<input
-												type="file"
-												id="file-upload"
-												ref={fileInputRef}
-												className="hidden"
-												aria-label="Upload Project Proposal PDF"
-												accept="application/pdf"
-												onChange={handleFileChange}
-											/>
-											<Button
-												variant="secondary"
-												className="bg-brand-primary hover:bg-brand-primary-hover text-white"
-												render={
-													/* biome-ignore lint/a11y/noLabelWithoutControl: label is used to render button wrapper */
-													<label
-														htmlFor="file-upload"
-														className="cursor-pointer"
-													>
-														Select File
-													</label>
-												}
-												nativeButton={false}
-											/>
-										</>
-									)}
-								</div>
-							</div>
+							<ProposalStepDocuments
+								file={file}
+								setFile={setFile}
+								fileInputRef={fileInputRef}
+								isDragging={isDragging}
+								setIsDragging={setIsDragging}
+								uploadPhase={uploadPhase}
+								uploadProgress={uploadProgress}
+							/>
 						)}
 					</div>
 
