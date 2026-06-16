@@ -7,7 +7,6 @@ import {
 	Filter,
 	Loader2,
 	Plus,
-	Search,
 } from "lucide-react";
 import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,7 +19,8 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+
+import { SearchInput } from "@/components/ui/search-input";
 import {
 	Select,
 	SelectContent,
@@ -73,10 +73,7 @@ export function RETDashboardPage({
 		retProposalsQueryOptions({ page, limit: pageSize, search }),
 	);
 
-	const handleSearchSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		onSearch(searchInput || undefined);
-	};
+
 
 	const stats = [
 		{
@@ -133,19 +130,13 @@ export function RETDashboardPage({
 
 			{/* Filters */}
 			<div className="flex items-center justify-between gap-4">
-				<form
-					onSubmit={handleSearchSubmit}
-					className="relative w-full max-w-[352px]"
-				>
-					<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-					<Input
-						placeholder="Search by project proposals"
-						aria-label="Search by project proposals"
-						className="h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-none placeholder:text-[#737373] text-sm"
-						value={searchInput}
-						onChange={(e) => setSearchInput(e.target.value)}
-					/>
-				</form>
+				<SearchInput
+					value={searchInput}
+					onChange={(val) => onSearch(val || undefined)}
+					placeholder="Search by project proposals"
+					ariaLabel="Search by project proposals"
+					className="max-w-[352px]"
+				/>
 				<div className="flex items-center gap-2">
 					<Select
 						value={statusFilter}

@@ -5,14 +5,14 @@ import {
 	Download,
 	Loader2,
 	MoreVertical,
-	Search,
 	SlidersHorizontal,
 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
+import { SearchInput } from "@/components/ui/search-input";
 
 import {
 	Table,
@@ -86,16 +86,13 @@ export function ReportsPage() {
 
 				{/* Search and Filters */}
 				<div className="flex items-center justify-between">
-					<div className="relative w-full max-w-[352px]">
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-						<Input
-							placeholder="Search reports"
-							aria-label="Search reports"
-							className="pl-9 h-9 border-[#e5e5e5] rounded-[8px]"
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-						/>
-					</div>
+					<SearchInput
+						value={search}
+						onChange={(val) => setSearch(val)}
+						placeholder="Search reports"
+						ariaLabel="Search reports"
+						className="max-w-[352px]"
+					/>
 					<Button
 						variant="outline"
 						className="h-9 w-9 p-0 border-[#e5e5e5] rounded-[8px] shadow-sm"

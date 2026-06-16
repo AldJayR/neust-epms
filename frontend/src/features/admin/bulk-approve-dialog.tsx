@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Search, XIcon } from "lucide-react";
+import { Loader2, XIcon } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,7 +14,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+
+import { SearchInput } from "@/components/ui/search-input";
 import {
 	Select,
 	SelectContent,
@@ -241,18 +242,13 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 					</DialogHeader>
 
 					<div className="flex min-h-0 flex-1 flex-col gap-4">
-						<div className="relative w-full max-w-[360px] shrink-0">
-							<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-							<Input
-								placeholder="Search users"
-								aria-label="Search pending users"
-								className="h-8 w-full rounded-md border-[#e5e5e5] bg-white pl-10 text-sm shadow-[0px_1px_1px_rgba(0,0,0,0.1)]"
-								value={search}
-								onChange={(e) => {
-									dispatch({ type: "SET_SEARCH", payload: e.target.value });
-								}}
-							/>
-						</div>
+					<SearchInput
+							value={search}
+							onChange={(val) => dispatch({ type: "SET_SEARCH", payload: val })}
+							placeholder="Search users"
+							ariaLabel="Search pending users"
+							className="max-w-[360px]"
+						/>
 
 						<div className="relative flex-1 overflow-hidden rounded-md border border-[#e5e5e5] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 							{isUsersFetching && (

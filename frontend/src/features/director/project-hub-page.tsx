@@ -9,12 +9,12 @@ import {
 	Filter,
 	Loader2,
 	RotateCcw,
-	Search,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
+import { SearchInput } from "@/components/ui/search-input";
 import {
 	Pagination,
 	PaginationContent,
@@ -113,12 +113,6 @@ export function ProjectHubPage({
 		projectHubQueryOptions({ page, limit, search, college, status }),
 	);
 
-	const [localSearch, setLocalSearch] = useState(search ?? "");
-	const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
-	const debouncedSearch = (value: string) => {
-		if (debounceRef.current) clearTimeout(debounceRef.current);
-		debounceRef.current = setTimeout(() => onSearchChange(value), 300);
-	};
 
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
@@ -139,19 +133,13 @@ export function ProjectHubPage({
 				</div>
 
 				<div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-					<div className="relative w-full max-w-[352px]">
-						<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#737373]" />
-						<Input
-							placeholder="Search by project title or faculty name..."
-							aria-label="Search projects"
-							className="h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-sm"
-							value={localSearch}
-							onChange={(e) => {
-								setLocalSearch(e.target.value);
-								debouncedSearch(e.target.value);
-							}}
-						/>
-					</div>
+					<SearchInput
+						value={search}
+						onChange={onSearchChange}
+						placeholder="Search by project title or faculty name..."
+						ariaLabel="Search projects"
+						className="max-w-[352px]"
+					/>
 					<div className="flex w-full items-center gap-4 sm:w-auto">
 						<Select
 							value={college || "all"}

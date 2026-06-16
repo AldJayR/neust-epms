@@ -7,14 +7,14 @@ import {
 	EllipsisVertical,
 	Filter,
 	Loader2,
-	Search,
 	TrendingUp,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
+import { SearchInput } from "@/components/ui/search-input";
 import {
 	Select,
 	SelectContent,
@@ -61,12 +61,6 @@ export function FacultyDirectoryPage({
 		facultyDirectoryQueryOptions({ page, limit, search, college }),
 	);
 
-	const [localSearch, setLocalSearch] = useState(search ?? "");
-	const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
-	const debouncedSearch = (value: string) => {
-		if (debounceRef.current) clearTimeout(debounceRef.current);
-		debounceRef.current = setTimeout(() => onSearchChange(value), 300);
-	};
 
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
@@ -123,19 +117,13 @@ export function FacultyDirectoryPage({
 				</div>
 
 				<div className="flex items-center justify-between">
-					<div className="relative w-full max-w-[352px]">
-						<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#737373]" />
-						<Input
-							placeholder="Search by project title or faculty name..."
-							aria-label="Search faculty directory"
-							className="h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-none placeholder:text-[#737373]"
-							value={localSearch}
-							onChange={(e) => {
-								setLocalSearch(e.target.value);
-								debouncedSearch(e.target.value);
-							}}
-						/>
-					</div>
+					<SearchInput
+						value={search}
+						onChange={onSearchChange}
+						placeholder="Search by project title or faculty name..."
+						ariaLabel="Search faculty directory"
+						className="max-w-[352px]"
+					/>
 					<Select
 						value={college || "all"}
 						onValueChange={(val) =>

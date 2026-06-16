@@ -10,14 +10,14 @@ import {
 	Loader2,
 	LogIn,
 	MoreVertical,
-	Search,
 	Settings,
 	UserCircle,
 } from "lucide-react";
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
+import { SearchInput } from "@/components/ui/search-input";
 import { MetricCard } from "@/components/custom/metric-card";
 import {
 	Table,
@@ -93,10 +93,7 @@ export function ActivityLogPage({
 		auditLogsQueryOptions({ page, limit, search }),
 	);
 
-	const handleSearchSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		onSearch(searchInput || undefined);
-	};
+
 
 	const stats = [
 		{
@@ -137,19 +134,13 @@ export function ActivityLogPage({
 			</div>
 
 			<div className="flex items-center justify-between">
-				<form
-					onSubmit={handleSearchSubmit}
-					className="relative w-full max-w-[352px]"
-				>
-					<Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-					<Input
-						placeholder="Search by users or email"
-						aria-label="Search activity log"
-						className="pl-9 h-9 border-[#e5e5e5] rounded-[8px]"
-						value={searchInput}
-						onChange={(e) => setSearchInput(e.target.value)}
-					/>
-				</form>
+				<SearchInput
+					value={searchInput}
+					onChange={(val) => onSearch(val || undefined)}
+					placeholder="Search by users or email"
+					ariaLabel="Search activity log"
+					className="max-w-[352px]"
+				/>
 				<Button
 					variant="outline"
 					size="icon"

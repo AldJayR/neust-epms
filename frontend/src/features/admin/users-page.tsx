@@ -4,7 +4,6 @@ import {
 	Filter,
 	Loader2,
 	MoreVertical,
-	Search,
 	Users,
 	XCircle,
 } from "lucide-react";
@@ -28,7 +27,8 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "@/components/ui/empty";
-import { Input } from "@/components/ui/input";
+
+import { SearchInput } from "@/components/ui/search-input";
 import {
 	Table,
 	TableBody,
@@ -94,10 +94,7 @@ export function UsersPage({
 
 	// ── Handlers ─────────────────────────────────────────────
 
-	const handleSearchSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		onSearch(searchInput || undefined);
-	};
+
 
 	const stats = [
 		{
@@ -148,19 +145,13 @@ export function UsersPage({
 			</div>
 
 			<div className="flex items-center justify-between gap-4">
-				<form
-					onSubmit={handleSearchSubmit}
-					className="relative w-full max-w-[352px]"
-				>
-					<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-					<Input
-						placeholder="Search users"
-						aria-label="Search users"
-						className="h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-none placeholder:text-[#737373]"
-						value={searchInput}
-						onChange={(e) => setSearchInput(e.target.value)}
-					/>
-				</form>
+				<SearchInput
+					value={searchInput}
+					onChange={(val) => onSearch(val || undefined)}
+					placeholder="Search users"
+					ariaLabel="Search users"
+					className="max-w-[352px]"
+				/>
 				<Button
 					variant="outline"
 					size="icon"
