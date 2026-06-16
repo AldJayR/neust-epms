@@ -42,79 +42,12 @@ interface BulkApproveDialogProps {
 	children: React.ReactNode;
 }
 
-type State = {
-	open: boolean;
-	page: number;
-	search: string;
-	selectedUsers: Set<string>;
-	userRoles: Record<string, string>;
-};
-
-type Action =
-	| { type: "SET_OPEN"; payload: boolean }
-	| { type: "SET_PAGE"; payload: number }
-	| { type: "SET_SEARCH"; payload: string }
-	| { type: "TOGGLE_USER"; payload: { userId: string; checked: boolean } }
-	| { type: "SELECT_ALL"; payload: { userIds: string[]; checked: boolean } }
-	| { type: "SET_USER_ROLE"; payload: { userId: string; roleName: string } }
-	| { type: "RESET" };
-
-const initialState: State = {
-	open: false,
-	page: 1,
-	search: "",
-	selectedUsers: new Set(),
-	userRoles: {},
-};
-
-function reducer(state: State, action: Action): State {
-	switch (action.type) {
-		case "SET_OPEN":
-			return { ...state, open: action.payload };
-		case "SET_PAGE":
-			return { ...state, page: action.payload };
-		case "SET_SEARCH":
-			return { ...state, search: action.payload, page: 1 };
-		case "TOGGLE_USER": {
-			const newSelected = new Set(state.selectedUsers);
-			if (action.payload.checked) {
-				newSelected.add(action.payload.userId);
-			} else {
-				newSelected.delete(action.payload.userId);
-			}
-			return { ...state, selectedUsers: newSelected };
-		}
-		case "SELECT_ALL": {
-			const newSelected = new Set(state.selectedUsers);
-			if (action.payload.checked) {
-				for (const id of action.payload.userIds) {
-					newSelected.add(id);
-				}
-			} else {
-				for (const id of action.payload.userIds) {
-					newSelected.delete(id);
-				}
-			}
-			return { ...state, selectedUsers: newSelected };
-		}
-		case "SET_USER_ROLE":
-			return {
-				...state,
-				userRoles: {
-					...state.userRoles,
-					[action.payload.userId]: action.payload.roleName,
-				},
-			};
-		case "RESET":
-			return initialState;
-		default:
-			return state;
-	}
-}
-
 export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
-	const [state, dispatch] = React.useReducer(reducer, initialState);
-	const { open, page, search, selectedUsers, userRoles } = state;
+	const [open, setOpen] = React.useState(false);
+	const [page, setPage] = React.useState(1);
+	const [search, setSearch] = React.useState("");
+	const [selectedUsers, setSelectedUsers] = React.useState<Set<string>>(new Set());
+	const [userRoles, setUserRoles] = React.useState<Record<string, string>>({});
 
 	const queryClient = useQueryClient();
 	const getAdminUsers = useServerFn(getAdminUsersFn);
@@ -146,7 +79,11 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 		onSuccess: (data) => {
 			toast.success(`Successfully approved ${data.updatedCount} user(s)`);
 			queryClient.invalidateQueries({ queryKey: ["admin"] });
-			dispatch({ type: "RESET" });
+			setOpen(false);
+			setPage(1);
+			setSearch("");
+			setSelectedUsers(new Set());
+			setUserRoles({});
 		},
 		onError: (error: Error) => {
 			toast.error(error.message);
@@ -156,32 +93,40 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 	// ── Handlers ─────────────────────────────────────────────
 
 	const handleOpenChange = (newOpen: boolean) => {
-		dispatch({ type: "SET_OPEN", payload: newOpen });
+		setOpen(newOpen);
 		if (!newOpen) {
-			// Reset state on close
 			setTimeout(() => {
-				dispatch({ type: "RESET" });
+				setPage(1);
+				setSearch("");
+				setSelectedUsers(new Set());
+				setUserRoles({});
 			}, 200);
 		}
 	};
 
 	const handleSelectAll = (checked: boolean) => {
 		if (!usersData) return;
-		dispatch({
-			type: "SELECT_ALL",
-			payload: {
-				userIds: usersData.users.map((u) => u.userId),
-				checked,
-			},
+		setSelectedUsers(prev => {
+			const next = new Set(prev);
+			for (const id of usersData.users.map((u) => u.userId)) {
+				if (checked) next.add(id);
+				else next.delete(id);
+			}
+			return next;
 		});
 	};
 
 	const handleSelectRow = (userId: string, checked: boolean) => {
-		dispatch({ type: "TOGGLE_USER", payload: { userId, checked } });
+		setSelectedUsers(prev => {
+			const next = new Set(prev);
+			if (checked) next.add(userId);
+			else next.delete(userId);
+			return next;
+		});
 	};
 
 	const handleRoleChange = (userId: string, roleName: string) => {
-		dispatch({ type: "SET_USER_ROLE", payload: { userId, roleName } });
+		setUserRoles(prev => ({ ...prev, [userId]: roleName }));
 	};
 
 	const handleApprove = () => {
@@ -245,7 +190,10 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 					<div className="flex min-h-0 flex-1 flex-col gap-4">
 					<SearchInput
 							value={search}
-							onChange={(val) => dispatch({ type: "SET_SEARCH", payload: val })}
+							onChange={(val) => {
+							setSearch(val);
+							setPage(1);
+						}}
 							placeholder="Search users"
 							ariaLabel="Search pending users"
 							className="max-w-[360px]"
@@ -368,7 +316,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 							<PaginationBar
 							page={page}
 							totalPages={Math.ceil((usersData?.total ?? 0) / 5)}
-							onPageChange={(p) => dispatch({ type: "SET_PAGE", payload: p })}
+							onPageChange={(p) => setPage(p)}
 							total={usersData?.total ?? 0}
 							limit={5}
 							isLoading={isUsersFetching}
