@@ -121,13 +121,13 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 
 	// ── Queries ──────────────────────────────────────────────
 
-	const rolesQuery = useQuery({
+	const { data: rolesData } = useQuery({
 		queryKey: ["admin", "roles"],
 		queryFn: () => getRoles(),
 		enabled: open,
 	});
 
-	const usersQuery = useQuery({
+	const { data: usersData, isFetching: isUsersFetching } = useQuery({
 		queryKey: ["admin", "users", "pending", { page, search }],
 		queryFn: () =>
 			getAdminUsers({
@@ -164,11 +164,11 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 	};
 
 	const handleSelectAll = (checked: boolean) => {
-		if (!usersQuery.data) return;
+		if (!usersData) return;
 		dispatch({
 			type: "SELECT_ALL",
 			payload: {
-				userIds: usersQuery.data.users.map((u) => u.userId),
+				userIds: usersData.users.map((u) => u.userId),
 				checked,
 			},
 		});
@@ -207,8 +207,8 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 	};
 
 	const allVisibleUsersSelected =
-		!!usersQuery.data?.users.length &&
-		usersQuery.data.users.every((u) => selectedUsers.has(u.userId));
+		!!usersData?.users.length &&
+		usersData.users.every((u) => selectedUsers.has(u.userId));
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
@@ -255,7 +255,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 						</div>
 
 						<div className="relative flex-1 overflow-hidden rounded-md border border-[#e5e5e5] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-							{usersQuery.isFetching && (
+							{isUsersFetching && (
 								<div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
 									<Loader2 className="size-8 animate-spin text-primary" />
 								</div>
@@ -283,7 +283,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 										</TableRow>
 									</TableHeader>
 									<TableBody>
-										{usersQuery.data?.users.map((user) => (
+										{usersData?.users.map((user) => (
 											<TableRow
 												key={user.userId}
 												className="border-b-[#e5e5e5] transition-colors hover:bg-[#fcfcfc]"
@@ -338,7 +338,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 																<SelectValue placeholder="Select role" />
 															</SelectTrigger>
 															<SelectContent className="rounded-md shadow-lg">
-																{rolesQuery.data?.map((role) => (
+																{rolesData?.map((role) => (
 																	<SelectItem
 																		key={role.roleId}
 																		value={role.roleName}
@@ -353,17 +353,16 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 												</TableCell>
 											</TableRow>
 										))}
-										{!usersQuery.isFetching &&
-											usersQuery.data?.users.length === 0 && (
-												<TableRow>
-													<TableCell
-														colSpan={4}
-														className="h-32 text-center italic text-muted-foreground"
-													>
-														No pending users found.
-													</TableCell>
-												</TableRow>
-											)}
+										{!isUsersFetching && usersData?.users.length === 0 && (
+											<TableRow>
+												<TableCell
+													colSpan={4}
+													className="h-32 text-center italic text-muted-foreground"
+												>
+													No pending users found.
+												</TableCell>
+											</TableRow>
+										)}
 									</TableBody>
 								</Table>
 							</div>
@@ -376,7 +375,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 								</span>{" "}
 								of{" "}
 								<span className="font-semibold text-[#0a0a0a]">
-									{usersQuery.data?.total ?? 0}
+									{usersData?.total ?? 0}
 								</span>{" "}
 								row(s) selected.
 							</p>
@@ -391,7 +390,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 											payload: Math.max(1, page - 1),
 										})
 									}
-									disabled={page <= 1 || usersQuery.isFetching}
+									disabled={page <= 1 || isUsersFetching}
 								>
 									Previous
 								</Button>
@@ -403,9 +402,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 										dispatch({ type: "SET_PAGE", payload: page + 1 })
 									}
 									disabled={
-										!usersQuery.data ||
-										page * 5 >= usersQuery.data.total ||
-										usersQuery.isFetching
+										!usersData || page * 5 >= usersData.total || isUsersFetching
 									}
 								>
 									Next

@@ -16,4 +16,4 @@ export function getContext() {
 		auth,
 	};
 }
-export default function TanstackQueryProvider() {}
+

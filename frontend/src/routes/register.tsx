@@ -8,7 +8,7 @@ import {
 	useNavigate,
 	useRouterState,
 } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, LazyMotion, domMax, m } from "motion/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import {
@@ -67,20 +67,22 @@ function RegisterRoute() {
 	});
 
 	return (
-		<main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8">
-			<AnimatePresence mode="wait" initial={false}>
-				<motion.div
-					key={pathname}
-					initial={{ opacity: 0, x: 20 }}
-					animate={{ opacity: 1, x: 0 }}
-					exit={{ opacity: 0, x: -20 }}
-					transition={{ duration: 0.3, ease: "easeInOut" }}
-					className="w-full max-w-[480px]"
-				>
-					{pathname !== "/register" ? <Outlet /> : <RegisterStepOneForm />}
-				</motion.div>
-			</AnimatePresence>
-		</main>
+		<LazyMotion features={domMax}>
+			<main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8">
+				<AnimatePresence mode="wait" initial={false}>
+					<m.div
+						key={pathname}
+						initial={{ opacity: 0, x: 20 }}
+						animate={{ opacity: 1, x: 0 }}
+						exit={{ opacity: 0, x: -20 }}
+						transition={{ duration: 0.3, ease: "easeInOut" }}
+						className="w-full max-w-[480px]"
+					>
+						{pathname !== "/register" ? <Outlet /> : <RegisterStepOneForm />}
+					</m.div>
+				</AnimatePresence>
+			</main>
+		</LazyMotion>
 	);
 }
 
@@ -147,11 +149,11 @@ function RegisterStepOneForm() {
 						</h1>
 					</div>
 					<div className="flex items-center gap-2">
-						<motion.span
+						<m.span
 							layoutId="reg-step-1"
 							className="h-2 w-6 rounded-[12px] bg-brand-primary"
 						/>
-						<motion.span
+						<m.span
 							layoutId="reg-step-2"
 							className="size-2 rounded-[12px] bg-[#d9d9d9]"
 						/>

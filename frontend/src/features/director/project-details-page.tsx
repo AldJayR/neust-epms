@@ -101,7 +101,10 @@ function ProjectDetailsSkeleton() {
 							<div className="px-6 py-4">
 								<div className="relative space-y-6 before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-[#ebebeb]">
 									{[1, 2].map((i) => (
-										<div key={i} className="relative flex items-start gap-4 pl-8">
+										<div
+											key={i}
+											className="relative flex items-start gap-4 pl-8"
+										>
 											<Skeleton className="absolute left-0 mt-1 size-[22px] rounded-full" />
 											<div className="flex flex-1 flex-col gap-1">
 												<div className="flex items-center justify-between">
@@ -129,7 +132,10 @@ function ProjectDetailsSkeleton() {
 							</div>
 							<div className="p-4 flex flex-col gap-3">
 								{[1].map((i) => (
-									<div key={i} className="flex flex-col gap-3 rounded-[10px] border border-[#e5e5e5] bg-[#fcfcfc] p-3">
+									<div
+										key={i}
+										className="flex flex-col gap-3 rounded-[10px] border border-[#e5e5e5] bg-[#fcfcfc] p-3"
+									>
 										<div className="flex items-center gap-3">
 											<Skeleton className="size-10 rounded-[8px]" />
 											<div className="flex flex-1 flex-col gap-1">
@@ -158,6 +164,319 @@ function ProjectDetailsSkeleton() {
 	);
 }
 
+interface ProjectOverviewCardProps {
+	metadata: {
+		leader: {
+			name: string;
+			avatarUrl?: string;
+		};
+		department: string;
+		duration: string;
+		moaLinked: string;
+		budget: {
+			total: number;
+			neust: number;
+			partner: number;
+		};
+	};
+	members: {
+		userId: string;
+		name: string;
+		avatarUrl?: string;
+		role: string;
+	}[];
+}
+
+function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
+	return (
+		<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
+			<div className="bg-[#fcfcfc] border-b border-[#ebebeb] px-6 py-3">
+				<p className="text-[14px] font-semibold text-[#11215a]">
+					Project Overview
+				</p>
+			</div>
+			<div className="divide-y divide-[#ebebeb]">
+				<div className="flex items-center justify-between px-6 py-3">
+					<span className="text-[14px] text-[#666]">
+						Project Leader
+					</span>
+					<div className="flex items-center gap-3">
+						<Avatar className="size-8 border border-[#ebebeb]">
+							<AvatarImage
+								src={metadata.leader.avatarUrl}
+								alt={metadata.leader.name}
+							/>
+							<AvatarFallback className="bg-brand-primary/10 text-brand-primary text-[10px]">
+								{metadata.leader.name
+									.split(" ")
+									.map((n) => n[0])
+									.join("")}
+							</AvatarFallback>
+						</Avatar>
+						<span className="text-[14px] font-medium text-[#0a0a0a]">
+							{metadata.leader.name}
+						</span>
+					</div>
+				</div>
+				<div className="flex items-center justify-between px-6 py-3">
+					<span className="text-[14px] text-[#666]">
+						Department / Unit
+					</span>
+					<span className="text-[14px] font-medium text-[#0a0a0a]">
+						{metadata.department}
+					</span>
+				</div>
+				<div className="flex items-center justify-between px-6 py-3">
+					<span className="text-[14px] text-[#666]">Duration</span>
+					<span className="text-[14px] font-medium text-[#0a0a0a]">
+						{metadata.duration}
+					</span>
+				</div>
+				<div className="flex items-center justify-between px-6 py-3">
+					<span className="text-[14px] text-[#666]">MOA Linked</span>
+					<div className="flex items-center gap-2">
+						<CheckCircle2 className="size-4 text-green-500" />
+						<span className="text-[14px] font-medium text-[#0a0a0a]">
+							{metadata.moaLinked}
+						</span>
+					</div>
+				</div>
+				<div className="flex items-center justify-between px-6 py-3">
+					<span className="text-[14px] text-[#666]">Total Budget</span>
+					<div className="flex flex-col items-end">
+						<span className="text-[14px] font-semibold text-[#11215a]">
+							₱{metadata.budget.total.toLocaleString()}
+						</span>
+						<span className="text-[12px] text-[#666]">
+							NEUST: ₱{metadata.budget.neust.toLocaleString()} |
+							Partner: ₱{metadata.budget.partner.toLocaleString()}
+						</span>
+					</div>
+				</div>
+
+				{/* Team Members */}
+				<Dialog>
+					<DialogTrigger
+						render={
+							<button
+								type="button"
+								aria-label="View project team members"
+								className="flex w-full items-center justify-between px-6 py-3 transition-colors hover:bg-[#fcfcfc]"
+							/>
+						}
+					>
+						<span className="text-[14px] text-[#666]">
+							Project Team
+						</span>
+						<div className="flex items-center gap-4">
+							<div className="flex -space-x-2">
+								{members.slice(0, 4).map((member) => (
+									<Avatar
+										key={member.userId}
+										className="size-8 border-2 border-white ring-1 ring-[#ebebeb]"
+									>
+										<AvatarImage
+											src={member.avatarUrl}
+											alt={member.name}
+										/>
+										<AvatarFallback className="bg-gray-100 text-gray-600 text-[10px]">
+											{member.name
+												.split(" ")
+												.map((n) => n[0])
+												.join("")}
+										</AvatarFallback>
+									</Avatar>
+								))}
+								{members.length > 4 && (
+									<div className="flex size-8 items-center justify-center rounded-full border-2 border-white bg-gray-50 text-[10px] font-bold text-[#666] ring-1 ring-[#ebebeb]">
+										+{members.length - 4}
+									</div>
+								)}
+							</div>
+							<ChevronRight className="size-4 text-[#999]" />
+						</div>
+					</DialogTrigger>
+					<DialogContent className="sm:max-w-[425px] rounded-[12px] p-6">
+						<DialogHeader className="pb-4">
+							<DialogTitle className="text-[16px] font-semibold text-[#11215a]">
+								Project Members
+							</DialogTitle>
+						</DialogHeader>
+						<div className="flex flex-col gap-1 max-h-[400px] overflow-y-auto pr-2">
+							{members.map((member) => (
+								<div
+									key={member.userId}
+									className="flex items-center gap-3 p-2 rounded-[8px] transition-colors hover:bg-[#fcfcfc]"
+								>
+									<Avatar className="size-9 border border-[#ebebeb]">
+										<AvatarImage
+											src={member.avatarUrl}
+											alt={member.name}
+										/>
+										<AvatarFallback className="bg-gray-100 text-gray-600">
+											<User className="size-4" />
+										</AvatarFallback>
+									</Avatar>
+									<div className="flex flex-col">
+										<span className="text-[14px] font-medium text-[#0a0a0a]">
+											{member.name}
+										</span>
+										<span className="text-[12px] text-[#666]">
+											{member.role}
+										</span>
+									</div>
+								</div>
+							))}
+						</div>
+					</DialogContent>
+				</Dialog>
+			</div>
+		</div>
+	);
+}
+
+interface DocumentHistoryCardProps {
+	history: {
+		id: number;
+		version: string;
+		status: string;
+		date: string;
+		actorName: string;
+		comment?: string;
+	}[];
+}
+
+function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
+	return (
+		<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+			<div className="px-6 py-3 border-b border-[#ebebeb]">
+				<p className="text-[14px] font-semibold text-[#11215a]">
+					Document History
+				</p>
+			</div>
+			<div className="px-6 py-4">
+				<div className="relative space-y-6 before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-[#ebebeb]">
+					{history.map((item, idx) => (
+						<div
+							key={item.id}
+							className="relative flex items-start gap-4 pl-8"
+						>
+							<div
+								className={`absolute left-0 mt-1 size-[22px] rounded-full border-[3px] border-white shadow-sm ring-1 ring-[#ebebeb] ${idx === 0 ? "bg-brand-primary" : "bg-white"}`}
+							/>
+							<div className="flex flex-1 flex-col gap-1">
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-2">
+										<span className="text-[14px] font-medium text-[#0a0a0a]">
+											Version {item.version}
+										</span>
+										<Badge
+											className={`${
+												item.status === "Current"
+													? "bg-blue-50 text-blue-600 border-blue-100"
+													: item.status === "Returned"
+														? "bg-red-50 text-red-600 border-red-100"
+														: "bg-gray-50 text-gray-600 border-gray-100"
+											} rounded-[6px] px-2 py-0 h-5 text-[10px] font-semibold uppercase`}
+										>
+											{item.status}
+										</Badge>
+									</div>
+									<span className="text-[12px] text-[#666]">
+										{format(
+											new Date(item.date),
+											"MMM dd, yyyy · hh:mm a",
+										)}
+									</span>
+								</div>
+								<p className="text-[13px] text-[#666]">
+									{item.status === "Returned"
+										? "Returned by Technical Panel"
+										: `Uploaded by ${item.actorName}`}
+								</p>
+								{item.comment && (
+									<div className="rounded-[8px] border border-dashed border-[#e5e5e5] bg-[#fcfcfc] p-3 text-[12px] italic text-[#737373]">
+										"{item.comment}"
+									</div>
+								)}
+								{item.status !== "Current" && (
+									<Button
+										variant="outline"
+										size="sm"
+										className="w-fit gap-1.5 rounded-[8px] border-[#e5e5e5] h-7 text-[12px] font-medium text-[#737373] hover:bg-[#fcfcfc]"
+									>
+										<FileText className="size-3" />
+										View Version
+									</Button>
+								)}
+							</div>
+						</div>
+					))}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+interface AttachmentsCardProps {
+	attachments: {
+		id: number;
+		name: string;
+		type: string;
+		version: string;
+	}[];
+}
+
+function AttachmentsCard({ attachments }: AttachmentsCardProps) {
+	return (
+		<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
+			<div className="bg-[#fcfcfc] border-b border-[#ebebeb] px-6 py-3">
+				<p className="text-[14px] font-semibold text-[#11215a]">
+					Attachments
+				</p>
+			</div>
+			<div className="p-4 flex flex-col gap-3">
+				{attachments.map((attachment) => (
+					<div
+						key={attachment.id}
+						className="flex flex-col gap-3 rounded-[10px] border border-[#e5e5e5] bg-[#fcfcfc] p-3 transition-colors hover:border-brand-primary/30"
+					>
+						<div className="flex items-center gap-3">
+							<div className="flex size-10 items-center justify-center rounded-[8px] bg-red-50 text-red-500">
+								<FileText className="size-5" />
+							</div>
+							<div className="flex flex-1 flex-col overflow-hidden">
+								<span className="truncate text-[14px] font-medium text-[#0a0a0a]">
+									{attachment.name}
+								</span>
+								<span className="text-[12px] text-[#666]">
+									{attachment.type} · v{attachment.version}
+								</span>
+							</div>
+						</div>
+						<div className="grid grid-cols-2 gap-2">
+							<Button
+								variant="outline"
+								className="h-8 rounded-[8px] border-[#e5e5e5] text-[12px] font-medium text-[#666] hover:bg-white"
+							>
+								<Eye className="mr-1.5 size-3.5" />
+								View
+							</Button>
+							<Button
+								variant="outline"
+								className="h-8 rounded-[8px] border-[#e5e5e5] text-[12px] font-medium text-[#666] hover:bg-white"
+							>
+								<Download className="mr-1.5 size-3.5" />
+								Download
+							</Button>
+						</div>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
 export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 	const { data, isLoading } = useQuery(projectDetailsQueryOptions(proposalId));
 
@@ -177,289 +496,59 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 
 	return (
 		<AppShell>
-		<div className="flex flex-col gap-8">
-			{/* Header */}
-			<div className="flex items-start justify-between">
-				<div className="flex flex-col gap-2">
-					<div className="flex items-center gap-3">
-						<Badge
-							variant="outline"
-							className="bg-amber-50 text-amber-700 border-amber-200 px-3 py-1 font-semibold uppercase tracking-wider text-[10px]"
-						>
-							{data.status}
-						</Badge>
-						<span className="text-[12px] font-medium text-[#666]">
-							Version {data.version}
-						</span>
+			<div className="flex flex-col gap-8">
+				{/* Header */}
+				<div className="flex items-start justify-between">
+					<div className="flex flex-col gap-2">
+						<div className="flex items-center gap-3">
+							<Badge
+								variant="outline"
+								className="bg-amber-50 text-amber-700 border-amber-200 px-3 py-1 font-semibold uppercase tracking-wider text-[10px]"
+							>
+								{data.status}
+							</Badge>
+							<span className="text-[12px] font-medium text-[#666]">
+								Version {data.version}
+							</span>
+						</div>
+						<h1 className="text-[22px] font-semibold text-[#11215a]">
+							{data.title}
+						</h1>
 					</div>
-					<h1 className="text-[22px] font-semibold text-[#11215a]">
-						{data.title}
-					</h1>
-				</div>
-				<Button className="flex w-fit items-center gap-2 rounded-[10px] bg-brand-primary px-5 h-9 text-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-brand-primary-hover">
-					<Eye className="size-4" />
-					<span className="text-sm font-medium">Read Proposal Document</span>
-				</Button>
-			</div>
-
-			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-				{/* Main Column */}
-				<div className="lg:col-span-8 flex flex-col gap-6">
-					{/* Project Overview */}
-					<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
-						<div className="bg-[#fcfcfc] border-b border-[#ebebeb] px-6 py-3">
-							<p className="text-[14px] font-semibold text-[#11215a]">
-								Project Overview
-							</p>
-						</div>
-						<div className="divide-y divide-[#ebebeb]">
-							<div className="flex items-center justify-between px-6 py-3">
-								<span className="text-[14px] text-[#666]">Project Leader</span>
-								<div className="flex items-center gap-3">
-									<Avatar className="size-8 border border-[#ebebeb]">
-										<AvatarImage src={data.metadata.leader.avatarUrl} alt={data.metadata.leader.name} />
-										<AvatarFallback className="bg-brand-primary/10 text-brand-primary text-[10px]">
-											{data.metadata.leader.name.split(" ").map((n) => n[0]).join("")}
-										</AvatarFallback>
-									</Avatar>
-									<span className="text-[14px] font-medium text-[#0a0a0a]">
-										{data.metadata.leader.name}
-									</span>
-								</div>
-							</div>
-							<div className="flex items-center justify-between px-6 py-3">
-								<span className="text-[14px] text-[#666]">Department / Unit</span>
-								<span className="text-[14px] font-medium text-[#0a0a0a]">
-									{data.metadata.department}
-								</span>
-							</div>
-							<div className="flex items-center justify-between px-6 py-3">
-								<span className="text-[14px] text-[#666]">Duration</span>
-								<span className="text-[14px] font-medium text-[#0a0a0a]">
-									{data.metadata.duration}
-								</span>
-							</div>
-							<div className="flex items-center justify-between px-6 py-3">
-								<span className="text-[14px] text-[#666]">MOA Linked</span>
-								<div className="flex items-center gap-2">
-									<CheckCircle2 className="size-4 text-green-500" />
-									<span className="text-[14px] font-medium text-[#0a0a0a]">
-										{data.metadata.moaLinked}
-									</span>
-								</div>
-							</div>
-							<div className="flex items-center justify-between px-6 py-3">
-								<span className="text-[14px] text-[#666]">Total Budget</span>
-								<div className="flex flex-col items-end">
-									<span className="text-[14px] font-semibold text-[#11215a]">
-										₱{data.metadata.budget.total.toLocaleString()}
-									</span>
-									<span className="text-[12px] text-[#666]">
-										NEUST: ₱{data.metadata.budget.neust.toLocaleString()} | Partner: ₱{data.metadata.budget.partner.toLocaleString()}
-									</span>
-								</div>
-							</div>
-
-							{/* Team Members */}
-							<Dialog>
-								<DialogTrigger
-									render={
-										<button
-											type="button"
-											className="flex w-full items-center justify-between px-6 py-3 transition-colors hover:bg-[#fcfcfc]"
-										/>
-									}
-								>
-									<span className="text-[14px] text-[#666]">Project Team</span>
-									<div className="flex items-center gap-4">
-										<div className="flex -space-x-2">
-											{data.members.slice(0, 4).map((member) => (
-												<Avatar
-													key={member.userId}
-													className="size-8 border-2 border-white ring-1 ring-[#ebebeb]"
-												>
-													<AvatarImage src={member.avatarUrl} alt={member.name} />
-													<AvatarFallback className="bg-gray-100 text-gray-600 text-[10px]">
-														{member.name.split(" ").map((n) => n[0]).join("")}
-													</AvatarFallback>
-												</Avatar>
-											))}
-											{data.members.length > 4 && (
-												<div className="flex size-8 items-center justify-center rounded-full border-2 border-white bg-gray-50 text-[10px] font-bold text-[#666] ring-1 ring-[#ebebeb]">
-													+{data.members.length - 4}
-												</div>
-											)}
-										</div>
-										<ChevronRight className="size-4 text-[#999]" />
-									</div>
-								</DialogTrigger>
-								<DialogContent className="sm:max-w-[425px] rounded-[12px] p-6">
-									<DialogHeader className="pb-4">
-										<DialogTitle className="text-[16px] font-semibold text-[#11215a]">
-											Project Members
-										</DialogTitle>
-									</DialogHeader>
-									<div className="flex flex-col gap-1 max-h-[400px] overflow-y-auto pr-2">
-										{data.members.map((member) => (
-											<div
-												key={member.userId}
-												className="flex items-center gap-3 p-2 rounded-[8px] transition-colors hover:bg-[#fcfcfc]"
-											>
-												<Avatar className="size-9 border border-[#ebebeb]">
-													<AvatarImage src={member.avatarUrl} alt={member.name} />
-													<AvatarFallback className="bg-gray-100 text-gray-600">
-														<User className="size-4" />
-													</AvatarFallback>
-												</Avatar>
-												<div className="flex flex-col">
-													<span className="text-[14px] font-medium text-[#0a0a0a]">
-														{member.name}
-													</span>
-													<span className="text-[12px] text-[#666]">
-														{member.role}
-													</span>
-												</div>
-											</div>
-										))}
-									</div>
-								</DialogContent>
-							</Dialog>
-						</div>
-					</div>
-
-					{/* Document History */}
-					<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-						<div className="px-6 py-3 border-b border-[#ebebeb]">
-							<p className="text-[14px] font-semibold text-[#11215a]">
-								Document History
-							</p>
-						</div>
-						<div className="px-6 py-4">
-							<div className="relative space-y-6 before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-[#ebebeb]">
-								{data.history.map((item, idx) => (
-									<div
-										key={item.id}
-										className="relative flex items-start gap-4 pl-8"
-									>
-										<div
-											className={`absolute left-0 mt-1 size-[22px] rounded-full border-[3px] border-white shadow-sm ring-1 ring-[#ebebeb] ${idx === 0 ? "bg-brand-primary" : "bg-white"}`}
-										/>
-										<div className="flex flex-1 flex-col gap-1">
-											<div className="flex items-center justify-between">
-												<div className="flex items-center gap-2">
-													<span className="text-[14px] font-medium text-[#0a0a0a]">
-														Version {item.version}
-													</span>
-													<Badge
-														className={`${
-															item.status === "Current"
-																? "bg-blue-50 text-blue-600 border-blue-100"
-																: item.status === "Returned"
-																	? "bg-red-50 text-red-600 border-red-100"
-																	: "bg-gray-50 text-gray-600 border-gray-100"
-														} rounded-[6px] px-2 py-0 h-5 text-[10px] font-semibold uppercase`}
-													>
-														{item.status}
-													</Badge>
-												</div>
-												<span className="text-[12px] text-[#666]">
-													{format(new Date(item.date), "MMM dd, yyyy · hh:mm a")}
-												</span>
-											</div>
-											<p className="text-[13px] text-[#666]">
-												{item.status === "Returned"
-													? "Returned by Technical Panel"
-													: `Uploaded by ${item.actorName}`}
-											</p>
-											{item.comment && (
-												<div className="rounded-[8px] border border-dashed border-[#e5e5e5] bg-[#fcfcfc] p-3 text-[12px] italic text-[#737373]">
-													"{item.comment}"
-												</div>
-											)}
-											{item.status !== "Current" && (
-												<Button
-													variant="outline"
-													size="sm"
-													className="w-fit gap-1.5 rounded-[8px] border-[#e5e5e5] h-7 text-[12px] font-medium text-[#737373] hover:bg-[#fcfcfc]"
-												>
-													<FileText className="size-3" />
-													View Version
-												</Button>
-											)}
-										</div>
-									</div>
-								))}
-							</div>
-						</div>
-					</div>
+					<Button className="flex w-fit items-center gap-2 rounded-[10px] bg-brand-primary px-5 h-9 text-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-brand-primary-hover">
+						<Eye className="size-4" />
+						<span className="text-sm font-medium">Read Proposal Document</span>
+					</Button>
 				</div>
 
-				{/* Sidebar */}
-				<div className="lg:col-span-4 flex flex-col gap-6">
-					{/* Attachments */}
-					<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
-						<div className="bg-[#fcfcfc] border-b border-[#ebebeb] px-6 py-3">
-							<p className="text-[14px] font-semibold text-[#11215a]">
-								Attachments
-							</p>
-						</div>
-						<div className="p-4 flex flex-col gap-3">
-							{data.attachments.map((attachment) => (
-								<div
-									key={attachment.id}
-									className="flex flex-col gap-3 rounded-[10px] border border-[#e5e5e5] bg-[#fcfcfc] p-3 transition-colors hover:border-brand-primary/30"
-								>
-									<div className="flex items-center gap-3">
-										<div className="flex size-10 items-center justify-center rounded-[8px] bg-red-50 text-red-500">
-											<FileText className="size-5" />
-										</div>
-										<div className="flex flex-1 flex-col overflow-hidden">
-											<span className="truncate text-[14px] font-medium text-[#0a0a0a]">
-												{attachment.name}
-											</span>
-											<span className="text-[12px] text-[#666]">
-												{attachment.type} · v{attachment.version}
-											</span>
-										</div>
-									</div>
-									<div className="grid grid-cols-2 gap-2">
-										<Button
-											variant="outline"
-											className="h-8 rounded-[8px] border-[#e5e5e5] text-[12px] font-medium text-[#666] hover:bg-white"
-										>
-											<Eye className="mr-1.5 size-3.5" />
-											View
-										</Button>
-										<Button
-											variant="outline"
-											className="h-8 rounded-[8px] border-[#e5e5e5] text-[12px] font-medium text-[#666] hover:bg-white"
-										>
-											<Download className="mr-1.5 size-3.5" />
-											Download
-										</Button>
-									</div>
-								</div>
-							))}
-						</div>
+				<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+					{/* Main Column */}
+					<div className="lg:col-span-8 flex flex-col gap-6">
+						<ProjectOverviewCard metadata={data.metadata} members={data.members} />
+						<DocumentHistoryCard history={data.history} />
 					</div>
 
-					{/* Actions */}
-					<div className="flex flex-col gap-3">
-						<Button className="w-full h-10 rounded-[10px] bg-green-600 font-medium text-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-green-700">
-							<CheckCircle2 className="mr-2 size-4" />
-							Approve Proposal
-						</Button>
-						<Button
-							variant="outline"
-							className="w-full h-10 rounded-[10px] border border-red-200 bg-white font-medium text-red-600 hover:bg-red-50"
-						>
-							<RotateCcw className="mr-2 size-4" />
-							Return for Revision
-						</Button>
+					{/* Sidebar */}
+					<div className="lg:col-span-4 flex flex-col gap-6">
+						<AttachmentsCard attachments={data.attachments} />
+
+						{/* Actions */}
+						<div className="flex flex-col gap-3">
+							<Button className="w-full h-10 rounded-[10px] bg-green-600 font-medium text-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-green-700">
+								<CheckCircle2 className="mr-2 size-4" />
+								Approve Proposal
+							</Button>
+							<Button
+								variant="outline"
+								className="w-full h-10 rounded-[10px] border border-red-200 bg-white font-medium text-red-600 hover:bg-red-50"
+							>
+								<RotateCcw className="mr-2 size-4" />
+								Return for Revision
+							</Button>
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
 		</AppShell>
 	);
 }

@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { ApiErrorResponse } from "./auth";
-import { useAppSession } from "./session.server";
+import { getAppSession } from "./session.server";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 const ADMIN_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
@@ -96,9 +96,10 @@ export function adminUsersQueryOptions({
 
 // ── Get Admin Stats ──────────────────────────────────────
 
-export const getAdminStatsFn = createServerFn({ method: "GET" }).handler(
-	async () => {
-		const session = await useAppSession();
+export const getAdminStatsFn = createServerFn({ method: "GET" })
+	.validator(z.void())
+	.handler(async () => {
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 
 		if (!accessToken) {
@@ -119,15 +120,14 @@ export const getAdminStatsFn = createServerFn({ method: "GET" }).handler(
 		}
 
 		return (await response.json()) as AdminStats;
-	},
-);
+	});
 
 // ── Get Admin Users ──────────────────────────────────────
 
 export const getAdminUsersFn = createServerFn({ method: "GET" })
 	.validator(adminUsersQueryParamsSchema)
 	.handler(async ({ data }) => {
-		const session = await useAppSession();
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 
 		if (!accessToken) {
@@ -162,7 +162,7 @@ export const getAdminUsersFn = createServerFn({ method: "GET" })
 export const bulkUpdateUserStatusFn = createServerFn({ method: "POST" })
 	.validator(bulkUpdateStatusSchema)
 	.handler(async ({ data }) => {
-		const session = await useAppSession();
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 
 		if (!accessToken) {
@@ -198,9 +198,10 @@ export interface RoleResponse {
 	roleName: string;
 }
 
-export const getRolesFn = createServerFn({ method: "GET" }).handler(
-	async () => {
-		const session = await useAppSession();
+export const getRolesFn = createServerFn({ method: "GET" })
+	.validator(z.void())
+	.handler(async () => {
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 
 		if (!accessToken) {
@@ -219,8 +220,7 @@ export const getRolesFn = createServerFn({ method: "GET" }).handler(
 		}
 
 		return (await response.json()) as RoleResponse[];
-	},
-);
+	});
 
 export function rolesQueryOptions() {
 	return queryOptions({
@@ -235,7 +235,7 @@ export function rolesQueryOptions() {
 export const bulkApproveUsersFn = createServerFn({ method: "POST" })
 	.validator(bulkApproveSchema)
 	.handler(async ({ data }) => {
-		const session = await useAppSession();
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 
 		if (!accessToken) {
@@ -292,7 +292,7 @@ export interface AuditStats {
 export const getAuditLogsFn = createServerFn({ method: "GET" })
 	.validator(auditLogsParamsSchema)
 	.handler(async ({ data }) => {
-		const session = await useAppSession();
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 
 		if (!accessToken) {
@@ -318,9 +318,10 @@ export const getAuditLogsFn = createServerFn({ method: "GET" })
 		return (await response.json()) as AuditLogListResponse;
 	});
 
-export const getAuditStatsFn = createServerFn({ method: "GET" }).handler(
-	async () => {
-		const session = await useAppSession();
+export const getAuditStatsFn = createServerFn({ method: "GET" })
+	.validator(z.void())
+	.handler(async () => {
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 
 		if (!accessToken) {
@@ -341,8 +342,7 @@ export const getAuditStatsFn = createServerFn({ method: "GET" }).handler(
 		}
 
 		return (await response.json()) as AuditStats;
-	},
-);
+	});
 
 export function auditLogsQueryOptions(params: {
 	page: number;

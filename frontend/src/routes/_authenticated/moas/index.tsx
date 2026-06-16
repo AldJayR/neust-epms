@@ -12,6 +12,12 @@ const moasSearchSchema = z.object({
 
 export const Route = createFileRoute("/_authenticated/moas/")({
 	validateSearch: (search) => moasSearchSchema.parse(search),
+	loaderDeps: ({ search }) => ({
+		page: search.page,
+		limit: search.limit,
+		search: search.search,
+		status: search.status,
+	}),
 	beforeLoad: ({ context }) => {
 		if (
 			context.auth.user?.roleName !== "Director" &&
@@ -24,12 +30,6 @@ export const Route = createFileRoute("/_authenticated/moas/")({
 			});
 		}
 	},
-	loaderDeps: ({ search }) => ({
-		page: search.page,
-		limit: search.limit,
-		search: search.search,
-		status: search.status,
-	}),
 	loader: async ({ context, deps }) => {
 		await context.queryClient.ensureQueryData(
 			moaRepositoryQueryOptions({

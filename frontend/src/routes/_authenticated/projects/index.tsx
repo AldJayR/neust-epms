@@ -13,6 +13,13 @@ const projectsSearchSchema = z.object({
 
 export const Route = createFileRoute("/_authenticated/projects/")({
 	validateSearch: (search) => projectsSearchSchema.parse(search),
+	loaderDeps: ({ search }) => ({
+		page: search.page,
+		limit: search.limit,
+		search: search.search,
+		college: search.college,
+		status: search.status,
+	}),
 	beforeLoad: ({ context }) => {
 		if (context.auth.user?.roleName === "Super Admin") {
 			throw redirect({
@@ -21,13 +28,6 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 			});
 		}
 	},
-	loaderDeps: ({ search }) => ({
-		page: search.page,
-		limit: search.limit,
-		search: search.search,
-		college: search.college,
-		status: search.status,
-	}),
 	loader: async ({ context, deps }) => {
 		if (
 			context.auth.user?.roleName !== "Director" &&

@@ -3,7 +3,7 @@
 // Only import via server functions in .functions.ts files.
 
 import { createClient } from "@supabase/supabase-js";
-import { useSession } from "@tanstack/react-start/server";
+import { useSession as getSession } from "@tanstack/react-start/server";
 import type { AuthUser } from "./auth";
 
 export interface SessionData {
@@ -40,8 +40,8 @@ if (!sessionSecret && process.env.NODE_ENV === "production") {
  * - sameSite: 'lax' → CSRF protection
  * - 7 day expiry
  */
-export function useAppSession() {
-	return useSession<SessionData>({
+export function getAppSession() {
+	return getSession<SessionData>({
 		password:
 			sessionSecret ?? "at-least-32-characters-long-secret-for-dev-only!",
 		cookie: {
@@ -59,7 +59,7 @@ export function useAppSession() {
  * Use this in server functions instead of reading session.data.accessToken directly.
  */
 export async function getValidAccessToken(): Promise<string> {
-	const session = await useAppSession();
+	const session = await getAppSession();
 	const { accessToken, refreshToken } = session.data;
 
 	if (!refreshToken) {

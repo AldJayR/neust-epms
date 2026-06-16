@@ -66,11 +66,15 @@ export function UsersPage({
 
 	// ── Queries ──────────────────────────────────────────────
 
-	const statsQuery = useQuery(adminStatsQueryOptions());
-
-	const usersQuery = useQuery(
-		adminUsersQueryOptions({ page, pageSize, search }),
+	const { data: statsData, isLoading: isStatsLoading } = useQuery(
+		adminStatsQueryOptions(),
 	);
+
+	const {
+		data: usersData,
+		isLoading: isUsersLoading,
+		isFetching: isUsersFetching,
+	} = useQuery(adminUsersQueryOptions({ page, pageSize, search }));
 
 	// ── Mutations ────────────────────────────────────────────
 
@@ -98,20 +102,20 @@ export function UsersPage({
 	const stats = [
 		{
 			label: "Total Accounts",
-			value: statsQuery.data?.totalAccounts ?? "...",
+			value: statsData?.totalAccounts ?? "...",
 		},
 		{
 			label: "Pending Approval",
-			value: statsQuery.data?.pendingApproval ?? "...",
+			value: statsData?.pendingApproval ?? "...",
 		},
 		{
 			label: "Deactivated",
-			value: statsQuery.data?.deactivated ?? "...",
+			value: statsData?.deactivated ?? "...",
 		},
 	];
 
-	const isLoading = usersQuery.isLoading || statsQuery.isLoading;
-	const users = usersQuery.data?.users ?? [];
+	const isLoading = isUsersLoading || isStatsLoading;
+	const users = usersData?.users ?? [];
 	const hasUsers = users.length > 0;
 	const hasSearch = !!search?.trim();
 
@@ -176,7 +180,7 @@ export function UsersPage({
 			</div>
 
 			<div className="rounded-[12px] border border-[#ebebeb] bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden min-h-[400px] relative">
-				{usersQuery.isFetching && (
+				{isUsersFetching && (
 					<div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center backdrop-blur-[1px]">
 						<Loader2 className="h-8 w-8 animate-spin text-primary" />
 					</div>
@@ -300,11 +304,8 @@ export function UsersPage({
 			<div className="flex items-center justify-between">
 				<p className="text-xs text-[#666]">
 					Showing{" "}
-					<span className="font-bold">
-						{usersQuery.data?.users.length ?? 0}
-					</span>{" "}
-					of <span className="font-bold">{usersQuery.data?.total ?? 0}</span>{" "}
-					results
+					<span className="font-bold">{usersData?.users.length ?? 0}</span> of{" "}
+					<span className="font-bold">{usersData?.total ?? 0}</span> results
 				</p>
 				<div className="flex items-center gap-1">
 					<Button
@@ -329,9 +330,7 @@ export function UsersPage({
 						className="h-9 gap-1 px-3 font-medium"
 						onClick={() => onPageChange(page + 1)}
 						disabled={
-							!usersQuery.data ||
-							page * pageSize >= usersQuery.data.total ||
-							isLoading
+							!usersData || page * pageSize >= usersData.total || isLoading
 						}
 					>
 						Next

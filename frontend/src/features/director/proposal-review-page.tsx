@@ -11,10 +11,331 @@ import {
 } from "@/lib/dashboard.functions";
 import { AppShell } from "../layout/app-shell";
 import { PdfViewer, type PdfViewerRef } from "@/components/pdf-viewer";
-import { getProposalCommentsFn, saveProposalCommentFn } from "@/lib/comments.functions";
+import {
+	getProposalCommentsFn,
+	saveProposalCommentFn,
+} from "@/lib/comments.functions";
 
 interface ProposalReviewPageProps {
 	proposalId: string;
+}
+
+const formatBudget = (value: number) => `P${value.toLocaleString("en-PH")}`;
+
+const formatReviewDate = (dateStr: string) => {
+	try {
+		return new Date(dateStr).toLocaleDateString("en-US", {
+			month: "long",
+			day: "numeric",
+			year: "numeric",
+			hour: "numeric",
+			minute: "2-digit",
+		});
+	} catch {
+		return dateStr;
+	}
+};
+
+interface ProposalDetailsTabProps {
+	data: {
+		metadata: {
+			leader: {
+				name: string;
+			};
+			departmentCode: string;
+			duration: string;
+			budget: {
+				neust: number;
+			};
+			moaLinked: string;
+		};
+		attachments: {
+			id: string;
+			name: string;
+			version: string;
+		}[];
+	};
+	endorsement?: {
+		status: string;
+		actorName: string;
+		date: string;
+		comment?: string;
+	};
+	activeAttachmentId: string | null;
+	setActiveAttachmentId: (id: string) => void;
+	isReviewable: boolean;
+	handleDeny: () => void;
+	handleApprove: () => void;
+	isPending: boolean;
+}
+
+function ProposalDetailsTab({
+	data,
+	endorsement,
+	activeAttachmentId,
+	setActiveAttachmentId,
+	isReviewable,
+	handleDeny,
+	handleApprove,
+	isPending,
+}: ProposalDetailsTabProps) {
+	return (
+		<CardContent className="p-0">
+			<div className="p-5 space-y-4">
+				<div className="flex justify-between items-center text-[14px]">
+					<span className="text-[#737373] font-medium">
+						Submitted by
+					</span>
+					<span className="text-black font-medium">
+						{data.metadata.leader.name}
+					</span>
+				</div>
+				<div className="flex justify-between items-center text-[14px]">
+					<span className="text-[#737373] font-medium">
+						Department
+					</span>
+					<span className="text-black font-medium">
+						{data.metadata.departmentCode}
+					</span>
+				</div>
+				<div className="flex justify-between items-center text-[14px]">
+					<span className="text-[#737373] font-medium">
+						Duration
+					</span>
+					<span className="text-black font-medium">
+						{data.metadata.duration}
+					</span>
+				</div>
+				<div className="flex justify-between items-center text-[14px]">
+					<span className="text-[#737373] font-medium">
+						Budget (NEUST)
+					</span>
+					<span className="text-black font-medium">
+						{formatBudget(data.metadata.budget.neust)}
+					</span>
+				</div>
+				<div className="flex justify-between items-center text-[14px]">
+					<span className="text-[#737373] font-medium">
+						MOA Partner
+					</span>
+					<span className="text-black font-medium">
+						{data.metadata.moaLinked}
+					</span>
+				</div>
+			</div>
+
+			<div className="px-5 py-2">
+				<Separator className="bg-[#ebebeb]" />
+			</div>
+
+			{endorsement && (
+				<div className="p-5 space-y-4">
+					<h3 className="text-[14px] font-medium text-black">
+						Endorsement
+					</h3>
+					<div className="rounded-[10px] border border-[#e5e5e5] p-3 space-y-1">
+						<div className="flex items-center gap-3">
+							<CheckCircle2 className="size-4 text-black" />
+							<span className="text-[14px] font-medium text-black">
+								{endorsement.status} by {endorsement.actorName}
+							</span>
+						</div>
+						<div className="pl-7">
+							<span className="text-[12px] text-[#737373] font-light">
+								{formatReviewDate(endorsement.date)}
+							</span>
+						</div>
+					</div>
+
+					{endorsement.comment && (
+						<>
+							<h3 className="text-[14px] font-medium text-black mt-6">
+								Remarks
+							</h3>
+							<div className="rounded-[10px] border border-[#e5e5e5] p-3">
+								<p className="text-[14px] text-black font-light leading-relaxed">
+									"{endorsement.comment}"
+								</p>
+							</div>
+						</>
+					)}
+				</div>
+			)}
+
+			<div className="px-5 py-2">
+				<Separator className="bg-[#ebebeb]" />
+			</div>
+
+			<div className="p-5 space-y-3">
+				<h3 className="text-[14px] font-medium text-black">
+					Attached documents
+				</h3>
+				<div className="space-y-1">
+					{data.attachments.map((file) => {
+						const isActive =
+							activeAttachmentId === null
+								? data.attachments[0]?.id === file.id
+								: activeAttachmentId === file.id;
+						return (
+							<button
+								key={file.id}
+								type="button"
+								onClick={() => {
+									setActiveAttachmentId(file.id);
+								}}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" || e.key === " ") {
+										e.preventDefault();
+										setActiveAttachmentId(file.id);
+									}
+								}}
+								className={`w-full px-3 py-2 rounded-[5px] flex flex-col gap-0.5 cursor-pointer text-left ${isActive ? "bg-[#caf1f6]" : "bg-transparent hover:bg-gray-50"}`}
+							>
+								<span
+									className={`text-[12px] font-semibold ${isActive ? "text-[#0d74ce]" : "text-black"}`}
+								>
+									{file.name}
+								</span>
+								<span className="text-[11px] text-[#737373]">
+									{file.version}{" "}
+									{isActive && "· Currently Viewing"}
+								</span>
+							</button>
+						);
+					})}
+				</div>
+			</div>
+
+			{isReviewable && (
+				<div className="p-5 flex gap-3">
+					<Button
+						variant="outline"
+						className="flex-1 border border-[#e5e5e5] rounded-[10px] text-[#e54d2e] font-medium h-9 text-sm shadow-sm"
+						onClick={handleDeny}
+						disabled={isPending}
+					>
+						{isPending ? (
+							<Loader2 className="size-4 animate-spin" />
+						) : (
+							"Return"
+						)}
+					</Button>
+					<Button
+						className="flex-1 bg-[#14369c] text-white hover:bg-[#14369c]/90 rounded-[10px] font-medium h-9 text-sm shadow-sm"
+						onClick={handleApprove}
+						disabled={isPending}
+					>
+						{isPending ? (
+							<Loader2 className="size-4 animate-spin" />
+						) : (
+							"Approve"
+						)}
+					</Button>
+				</div>
+			)}
+		</CardContent>
+	);
+}
+
+interface CommentsTabProps {
+	comments: {
+		commentId: string;
+		user: {
+			name: string;
+			roleName: string;
+		};
+		createdAt: string;
+		content: string;
+		annotationJson: {
+			page: number;
+		} | null;
+	}[];
+	attachmentsCount: number;
+	pdfViewerRef: React.RefObject<PdfViewerRef | null>;
+}
+
+function CommentsTab({ comments, attachmentsCount, pdfViewerRef }: CommentsTabProps) {
+	return (
+		<div className="flex flex-col h-[750px] justify-between">
+			{/* Comments List */}
+			<div className="flex-1 overflow-y-auto p-5 space-y-4">
+				{comments.length === 0 ? (
+					<div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted-foreground gap-2">
+						<MessageSquare className="size-8 text-gray-300 animate-pulse" />
+						<p className="text-sm font-semibold">
+							No comments yet
+						</p>
+						<p className="text-xs text-[#737373] font-light">
+							Drag on the PDF page in comment mode to add
+							remarks.
+						</p>
+					</div>
+				) : (
+					comments.map((comment) => (
+						<div
+							key={comment.commentId}
+							className="border border-[#ebebeb] rounded-xl p-4 bg-gray-50 hover:bg-gray-100/70 transition-colors space-y-2 cursor-pointer text-left"
+							role="button"
+							tabIndex={0}
+							onClick={() => {
+								const annot = comment.annotationJson;
+								if (annot?.page) {
+									pdfViewerRef.current?.scrollToPage(
+										annot.page,
+									);
+								}
+							}}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									const annot = comment.annotationJson;
+									if (annot?.page) {
+										pdfViewerRef.current?.scrollToPage(
+											annot.page,
+										);
+									}
+								}
+							}}
+						>
+							<div className="flex items-center justify-between gap-4">
+								<div className="flex flex-col">
+									<span className="text-xs font-semibold text-black">
+										{comment.user.name}
+									</span>
+									<span className="text-[10px] text-[#737373]">
+										{comment.user.roleName}
+									</span>
+								</div>
+								<span className="text-[10px] text-[#999]">
+									{new Date(
+										comment.createdAt,
+									).toLocaleDateString()}
+								</span>
+							</div>
+							<p className="text-xs text-[#333] leading-relaxed break-words">
+								{comment.content}
+							</p>
+							{comment.annotationJson && (
+								<span className="inline-block bg-[#14369c]/10 text-[#14369c] text-[9px] font-semibold px-2 py-0.5 rounded-[4px]">
+									Page {comment.annotationJson.page}
+								</span>
+							)}
+						</div>
+					))
+				)}
+			</div>
+
+			{/* Bottom panel */}
+			<div className="border-t border-[#ebebeb] p-5 bg-white space-y-4">
+				<div className="flex justify-between items-center text-[13px] text-[#737373]">
+					<span>Attached Documents</span>
+					<span className="font-semibold text-black">
+						{attachmentsCount} files
+					</span>
+				</div>
+			</div>
+		</div>
+	);
 }
 
 export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
@@ -43,22 +364,6 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	const [isTheaterMode, setIsTheaterMode] = useState(false);
 	const [activeTab, setActiveTab] = useState<"details" | "comments">("details");
 	const pdfViewerRef = useRef<PdfViewerRef>(null);
-
-	const formatBudget = (value: number) => `P${value.toLocaleString("en-PH")}`;
-
-	const formatReviewDate = (dateStr: string) => {
-		try {
-			return new Date(dateStr).toLocaleDateString("en-US", {
-				month: "long",
-				day: "numeric",
-				year: "numeric",
-				hour: "numeric",
-				minute: "2-digit",
-			});
-		} catch {
-			return dateStr;
-		}
-	};
 
 	const endorsement = data?.history.find(
 		(h) => h.status === "Endorsed" || h.status === "Approved",
@@ -165,7 +470,9 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 					/* Main Content Layout */
 					<div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 						{/* Left Column: PDF Viewer */}
-						<div className={`${isTheaterMode ? "lg:col-span-12 w-full" : "lg:col-span-8"} flex flex-col gap-4`}>
+						<div
+							className={`${isTheaterMode ? "lg:col-span-12 w-full" : "lg:col-span-8"} flex flex-col gap-4`}
+						>
 							<div className="bg-[#f9f9f9] border border-[#ebebeb] rounded-[12px] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] overflow-hidden h-[844px]">
 								{currentDoc ? (
 									<PdfViewer
@@ -212,7 +519,9 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 										>
 											Comments
 											{comments.length > 0 && (
-												<span className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === "comments" ? "bg-[#14369c] text-white" : "bg-gray-100 text-[#737373]"}`}>
+												<span
+													className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === "comments" ? "bg-[#14369c] text-white" : "bg-gray-100 text-[#737373]"}`}
+												>
 													{comments.length}
 												</span>
 											)}
@@ -221,245 +530,25 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 
 									{/* Tab Content: Details */}
 									{activeTab === "details" && (
-										<CardContent className="p-0">
-											<div className="p-5 space-y-4">
-												<div className="flex justify-between items-center text-[14px]">
-													<span className="text-[#737373] font-medium">
-														Submitted by
-													</span>
-													<span className="text-black font-medium">
-														{data.metadata.leader.name}
-													</span>
-												</div>
-												<div className="flex justify-between items-center text-[14px]">
-													<span className="text-[#737373] font-medium">
-														Department
-													</span>
-													<span className="text-black font-medium">
-														{data.metadata.departmentCode}
-													</span>
-												</div>
-												<div className="flex justify-between items-center text-[14px]">
-													<span className="text-[#737373] font-medium">
-														Duration
-													</span>
-													<span className="text-black font-medium">
-														{data.metadata.duration}
-													</span>
-												</div>
-												<div className="flex justify-between items-center text-[14px]">
-													<span className="text-[#737373] font-medium">
-														Budget (NEUST)
-													</span>
-													<span className="text-black font-medium">
-														{formatBudget(data.metadata.budget.neust)}
-													</span>
-												</div>
-												<div className="flex justify-between items-center text-[14px]">
-													<span className="text-[#737373] font-medium">
-														MOA Partner
-													</span>
-													<span className="text-black font-medium">
-														{data.metadata.moaLinked}
-													</span>
-												</div>
-											</div>
-
-											<div className="px-5 py-2">
-												<Separator className="bg-[#ebebeb]" />
-											</div>
-
-											{endorsement && (
-												<div className="p-5 space-y-4">
-													<h3 className="text-[14px] font-medium text-black">
-														Endorsement
-													</h3>
-													<div className="rounded-[10px] border border-[#e5e5e5] p-3 space-y-1">
-														<div className="flex items-center gap-3">
-															<CheckCircle2 className="size-4 text-black" />
-															<span className="text-[14px] font-medium text-black">
-																{endorsement.status} by {endorsement.actorName}
-															</span>
-														</div>
-														<div className="pl-7">
-															<span className="text-[12px] text-[#737373] font-light">
-																{formatReviewDate(endorsement.date)}
-															</span>
-														</div>
-													</div>
-
-													{endorsement.comment && (
-														<>
-															<h3 className="text-[14px] font-medium text-black mt-6">
-																Remarks
-															</h3>
-															<div className="rounded-[10px] border border-[#e5e5e5] p-3">
-																<p className="text-[14px] text-black font-light leading-relaxed">
-																	"{endorsement.comment}"
-																</p>
-															</div>
-														</>
-													)}
-												</div>
-											)}
-
-											<div className="px-5 py-2">
-												<Separator className="bg-[#ebebeb]" />
-											</div>
-
-											<div className="p-5 space-y-3">
-												<h3 className="text-[14px] font-medium text-black">
-													Attached documents
-												</h3>
-												<div className="space-y-1">
-													{data.attachments.map((file) => {
-														const isActive =
-															activeAttachmentId === null
-																? data.attachments[0]?.id === file.id
-																: activeAttachmentId === file.id;
-														return (
-															<button
-																key={file.id}
-																type="button"
-																onClick={() => {
-																	setActiveAttachmentId(file.id);
-																}}
-																onKeyDown={(e) => {
-																	if (e.key === "Enter" || e.key === " ") {
-																		e.preventDefault();
-																		setActiveAttachmentId(file.id);
-																	}
-																}}
-																className={`w-full px-3 py-2 rounded-[5px] flex flex-col gap-0.5 cursor-pointer text-left ${isActive ? "bg-[#caf1f6]" : "bg-transparent hover:bg-gray-50"}`}
-															>
-																<span
-																	className={`text-[12px] font-semibold ${isActive ? "text-[#0d74ce]" : "text-black"}`}
-																>
-																	{file.name}
-																</span>
-																<span className="text-[11px] text-[#737373]">
-																	{file.version} {isActive && "· Currently Viewing"}
-																</span>
-															</button>
-														);
-													})}
-												</div>
-											</div>
-
-											{isReviewable && (
-												<div className="p-5 flex gap-3">
-													<Button
-														variant="outline"
-														className="flex-1 border border-[#e5e5e5] rounded-[10px] text-[#e54d2e] font-medium h-9 text-sm shadow-sm"
-														onClick={handleDeny}
-														disabled={reviewMutation.isPending}
-													>
-														{reviewMutation.isPending ? (
-															<Loader2 className="size-4 animate-spin" />
-														) : (
-															"Return"
-														)}
-													</Button>
-													<Button
-														className="flex-1 bg-[#14369c] text-white hover:bg-[#14369c]/90 rounded-[10px] font-medium h-9 text-sm shadow-sm"
-														onClick={handleApprove}
-														disabled={reviewMutation.isPending}
-													>
-														{reviewMutation.isPending ? (
-															<Loader2 className="size-4 animate-spin" />
-														) : (
-															"Approve"
-														)}
-													</Button>
-												</div>
-											)}
-										</CardContent>
+										<ProposalDetailsTab
+											data={data}
+											endorsement={endorsement}
+											activeAttachmentId={activeAttachmentId}
+											setActiveAttachmentId={setActiveAttachmentId}
+											isReviewable={isReviewable}
+											handleDeny={handleDeny}
+											handleApprove={handleApprove}
+											isPending={reviewMutation.isPending}
+										/>
 									)}
 
 									{/* Tab Content: Comments */}
 									{activeTab === "comments" && (
-										<div className="flex flex-col h-[750px] justify-between">
-											{/* Comments List */}
-											<div className="flex-1 overflow-y-auto p-5 space-y-4">
-												{comments.length === 0 ? (
-													<div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted-foreground gap-2">
-														<MessageSquare className="size-8 text-gray-300 animate-pulse" />
-														<p className="text-sm font-semibold">No comments yet</p>
-														<p className="text-xs text-[#737373] font-light">Drag on the PDF page in comment mode to add remarks.</p>
-													</div>
-												) : (
-													comments.map((comment) => (
-														<div
-															key={comment.commentId}
-															className="border border-[#ebebeb] rounded-xl p-4 bg-gray-50 hover:bg-gray-100/70 transition-colors space-y-2 cursor-pointer text-left"
-															onClick={() => {
-																const annot = comment.annotationJson;
-																if (annot?.page) {
-																	pdfViewerRef.current?.scrollToPage(annot.page);
-																}
-															}}
-														>
-															<div className="flex items-center justify-between gap-4">
-																<div className="flex flex-col">
-																	<span className="text-xs font-semibold text-black">
-																		{comment.user.name}
-																	</span>
-																	<span className="text-[10px] text-[#737373]">
-																		{comment.user.roleName}
-																	</span>
-																</div>
-																<span className="text-[10px] text-[#999]">
-																	{new Date(comment.createdAt).toLocaleDateString()}
-																</span>
-															</div>
-															<p className="text-xs text-[#333] leading-relaxed break-words">
-																{comment.content}
-															</p>
-															{comment.annotationJson && (
-																<span className="inline-block bg-[#14369c]/10 text-[#14369c] text-[9px] font-semibold px-2 py-0.5 rounded-[4px]">
-																	Page {comment.annotationJson.page}
-																</span>
-															)}
-														</div>
-													))
-												)}
-											</div>
-
-											{/* Bottom panel */}
-											<div className="border-t border-[#ebebeb] p-5 bg-white space-y-4">
-												<div className="flex justify-between items-center text-[13px] text-[#737373]">
-													<span>Attached Documents</span>
-													<span className="font-semibold text-black">{data.attachments.length} files</span>
-												</div>
-												{isReviewable && (
-													<div className="flex gap-3">
-														<Button
-															variant="outline"
-															className="flex-1 border border-[#e5e5e5] rounded-[10px] text-[#e54d2e] font-medium h-9 text-sm shadow-sm"
-															onClick={handleDeny}
-															disabled={reviewMutation.isPending}
-														>
-															{reviewMutation.isPending ? (
-																<Loader2 className="size-4 animate-spin" />
-															) : (
-																"Return"
-															)}
-														</Button>
-														<Button
-															className="flex-1 bg-[#14369c] text-white hover:bg-[#14369c]/90 rounded-[10px] font-medium h-9 text-sm shadow-sm"
-															onClick={handleApprove}
-															disabled={reviewMutation.isPending}
-														>
-															{reviewMutation.isPending ? (
-																<Loader2 className="size-4 animate-spin" />
-															) : (
-																"Approve"
-															)}
-														</Button>
-													</div>
-												)}
-											</div>
-										</div>
+										<CommentsTab
+											comments={comments}
+											attachmentsCount={data.attachments.length}
+											pdfViewerRef={pdfViewerRef}
+										/>
 									)}
 								</Card>
 							</div>

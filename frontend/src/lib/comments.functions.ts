@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { ApiErrorResponse } from "./auth";
-import { useAppSession } from "./session.server";
+import { getAppSession } from "./session.server";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 
@@ -30,8 +30,8 @@ export interface ProposalComment {
 }
 
 const saveCommentValidator = z.object({
-	proposalId: z.string().uuid(),
-	documentId: z.string().uuid(),
+	proposalId: z.uuid(),
+	documentId: z.uuid(),
 	content: z.string().min(1),
 	annotationJson: z
 		.object({
@@ -46,14 +46,14 @@ const saveCommentValidator = z.object({
 });
 
 const getCommentsValidator = z.object({
-	proposalId: z.string().uuid(),
-	documentId: z.string().uuid(),
+	proposalId: z.uuid(),
+	documentId: z.uuid(),
 });
 
 export const saveProposalCommentFn = createServerFn({ method: "POST" })
 	.validator(saveCommentValidator)
 	.handler(async ({ data }) => {
-		const session = await useAppSession();
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 		if (!accessToken) throw new Error("Unauthorized");
 
@@ -85,7 +85,7 @@ export const saveProposalCommentFn = createServerFn({ method: "POST" })
 export const getProposalCommentsFn = createServerFn({ method: "GET" })
 	.validator(getCommentsValidator)
 	.handler(async ({ data }) => {
-		const session = await useAppSession();
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 		if (!accessToken) throw new Error("Unauthorized");
 

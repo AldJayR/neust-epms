@@ -5,7 +5,7 @@ import {
 	redirect,
 	useNavigate,
 } from "@tanstack/react-router";
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -22,7 +22,7 @@ import { checkPasswordFn, signupFn } from "../lib/auth.functions";
 
 const registerStep2Schema = z
 	.object({
-		email: z.string().email("Please enter a valid email address"),
+		email: z.email("Please enter a valid email address"),
 		password: z.string().min(8, "Password must be at least 8 characters"),
 		confirmPassword: z.string().min(1, "Please confirm your password"),
 		acceptTerms: z.boolean(),
@@ -74,9 +74,10 @@ function RegisterStepTwo() {
 						"This password has been exposed in a data breach. Please choose a different one.",
 				});
 			}
-		} finally {
-			setPasswordChecking(false);
+		} catch (err) {
+			console.error("Failed to check password safety:", err);
 		}
+		setPasswordChecking(false);
 	}
 
 	async function onSubmit(data: z.infer<typeof registerStep2Schema>) {
@@ -175,7 +176,7 @@ function RegisterStepTwo() {
 						</h1>
 					</div>
 					<div className="flex items-center gap-2">
-						<motion.span
+						<m.span
 							layoutId="reg-step-1"
 							className="size-2 cursor-pointer rounded-[12px] bg-[#d9d9d9] transition-colors hover:bg-zinc-400"
 							onClick={() => navigate({ to: "/register" })}
@@ -189,7 +190,7 @@ function RegisterStepTwo() {
 							tabIndex={0}
 							aria-label="Go to step 1"
 						/>
-						<motion.span
+						<m.span
 							layoutId="reg-step-2"
 							className="h-2 w-6 rounded-[12px] bg-brand-primary"
 						/>

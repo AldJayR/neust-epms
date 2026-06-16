@@ -51,6 +51,42 @@ interface ActivityLogPageProps {
 	onPageChange: (page: number) => void;
 }
 
+function StatCard({ label, value }: { label: string; value: string | number }) {
+	return (
+		<div className="flex h-[104px] flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+			<p className="text-[14px] leading-4 text-[#666]">{label}</p>
+			<p className="text-[36px] font-semibold leading-9 text-[#11215a]">
+				{value}
+			</p>
+		</div>
+	);
+}
+
+const getActionTypeInfo = (action: string, table: string) => {
+	const lowerAction = action.toLowerCase();
+	if (lowerAction.includes("approved proposal")) {
+		return { label: "Approval", icon: <CircleCheck className="size-3" /> };
+	}
+	if (lowerAction.includes("submitted") || lowerAction.includes("upload")) {
+		return { label: "Upload", icon: <CloudUpload className="size-3" /> };
+	}
+	if (lowerAction.includes("login") || lowerAction.includes("logged in")) {
+		return { label: "Login", icon: <LogIn className="size-3" /> };
+	}
+	if (lowerAction.includes("status")) {
+		return { label: "Status", icon: <Settings className="size-3" /> };
+	}
+	if (table === "users" || lowerAction.includes("account")) {
+		return { label: "Account", icon: <UserCircle className="size-3" /> };
+	}
+	return { label: "System", icon: <Settings className="size-3" /> };
+};
+
+const exportToCsv = () => {
+	// Placeholder for CSV export
+	console.log("Exporting to CSV...");
+};
+
 export function ActivityLogPage({
 	page,
 	limit,
@@ -60,8 +96,10 @@ export function ActivityLogPage({
 }: ActivityLogPageProps) {
 	const [searchInput, setSearchInput] = React.useState(search ?? "");
 
-	const statsQuery = useQuery(auditStatsQueryOptions());
-	const logsQuery = useQuery(auditLogsQueryOptions({ page, limit, search }));
+	const { data: statsData } = useQuery(auditStatsQueryOptions());
+	const { data: logsData, isLoading: isLogsLoading } = useQuery(
+		auditLogsQueryOptions({ page, limit, search }),
+	);
 
 	const handleSearchSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -71,63 +109,21 @@ export function ActivityLogPage({
 	const stats = [
 		{
 			label: "Total actions today",
-			value: statsQuery.data?.totalActionsToday ?? "...",
+			value: statsData?.totalActionsToday ?? "...",
 		},
 		{
 			label: "Unique users active",
-			value: statsQuery.data?.uniqueUsersActive ?? "...",
+			value: statsData?.uniqueUsersActive ?? "...",
 		},
 		{
 			label: "Account changes",
-			value: statsQuery.data?.accountChanges ?? "...",
+			value: statsData?.accountChanges ?? "...",
 		},
 		{
 			label: "Failed logins",
-			value: statsQuery.data?.failedLogins ?? "...",
+			value: statsData?.failedLogins ?? "...",
 		},
 	];
-
-	function StatCard({
-		label,
-		value,
-	}: {
-		label: string;
-		value: string | number;
-	}) {
-		return (
-			<div className="flex h-[104px] flex-col gap-4 overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-				<p className="text-[14px] leading-4 text-[#666]">{label}</p>
-				<p className="text-[36px] font-semibold leading-9 text-[#11215a]">
-					{value}
-				</p>
-			</div>
-		);
-	}
-
-	const getActionTypeInfo = (action: string, table: string) => {
-		const lowerAction = action.toLowerCase();
-		if (lowerAction.includes("approved proposal")) {
-			return { label: "Approval", icon: <CircleCheck className="size-3" /> };
-		}
-		if (lowerAction.includes("submitted") || lowerAction.includes("upload")) {
-			return { label: "Upload", icon: <CloudUpload className="size-3" /> };
-		}
-		if (lowerAction.includes("login") || lowerAction.includes("logged in")) {
-			return { label: "Login", icon: <LogIn className="size-3" /> };
-		}
-		if (lowerAction.includes("status")) {
-			return { label: "Status", icon: <Settings className="size-3" /> };
-		}
-		if (table === "users" || lowerAction.includes("account")) {
-			return { label: "Account", icon: <UserCircle className="size-3" /> };
-		}
-		return { label: "System", icon: <Settings className="size-3" /> };
-	};
-
-	const exportToCsv = () => {
-		// Placeholder for CSV export
-		console.log("Exporting to CSV...");
-	};
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -192,7 +188,7 @@ export function ActivityLogPage({
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{logsQuery.isLoading ? (
+						{isLogsLoading ? (
 							<TableRow>
 								<TableCell colSpan={5} className="h-32 text-center">
 									<Loader2
@@ -202,7 +198,7 @@ export function ActivityLogPage({
 									/>
 								</TableCell>
 							</TableRow>
-						) : logsQuery.data?.items.length === 0 ? (
+						) : logsData?.items.length === 0 ? (
 							<TableRow>
 								<TableCell
 									colSpan={5}
@@ -212,7 +208,7 @@ export function ActivityLogPage({
 								</TableCell>
 							</TableRow>
 						) : (
-							logsQuery.data?.items.map((log) => {
+							logsData?.items.map((log) => {
 								const typeInfo = getActionTypeInfo(
 									log.action,
 									log.tableAffected,
@@ -285,10 +281,9 @@ export function ActivityLogPage({
 				<p className="text-xs text-[#666]">
 					Showing{" "}
 					<span className="font-bold">
-						{logsQuery.data ? logsQuery.data.items.length : 0}
+						{logsData ? logsData.items.length : 0}
 					</span>{" "}
-					of <span className="font-bold">{logsQuery.data?.total ?? 0}</span>{" "}
-					results
+					of <span className="font-bold">{logsData?.total ?? 0}</span> results
 				</p>
 				<div className="flex items-center gap-1">
 					<Button
@@ -323,9 +318,7 @@ export function ActivityLogPage({
 						size="sm"
 						className="gap-1 h-9 px-3 text-[#0a0a0a] font-medium"
 						onClick={() => onPageChange(page + 1)}
-						disabled={
-							logsQuery.data ? page * limit >= logsQuery.data.total : true
-						}
+						disabled={logsData ? page * limit >= logsData.total : true}
 					>
 						<span>Next</span>
 						<ChevronRight className="size-4" />

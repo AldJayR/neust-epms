@@ -134,14 +134,12 @@ function ExpiringMoasCard({
 function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 	const [selectedCampus, setSelectedCampus] = React.useState("Sumacab Campus");
 
-	const dashboardQuery = useQuery(directorDashboardQueryOptions());
-	const campusesQuery = useQuery({
+	const { data: dashboard } = useQuery(directorDashboardQueryOptions());
+	const { data: campuses = [] } = useQuery({
 		queryKey: ["campuses"],
 		queryFn: () => getCampusesFn(),
 	});
 
-	const dashboard = dashboardQuery.data;
-	const campuses = campusesQuery.data ?? [];
 	const metrics = dashboard?.metrics ?? {
 		totalProjects: 0,
 		ongoingProjects: 0,

@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import {
 	createRootRouteWithContext,
 	HeadContent,
+	Link,
 	Scripts,
 } from "@tanstack/react-router";
 import { Toaster } from "sonner";
@@ -67,12 +68,12 @@ function NotFound() {
 			<p className="mt-4 text-xl text-muted-foreground">
 				Oops! The page you're looking for doesn't exist.
 			</p>
-			<a
-				href="/"
+			<Link
+				to="/"
 				className="mt-8 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
 			>
 				Go home
-			</a>
+			</Link>
 		</div>
 	);
 }

@@ -27,6 +27,18 @@ import {
 } from "@/lib/dashboard.functions";
 import { AppShell } from "../layout/app-shell";
 
+const formatDate = (dateStr: string) => {
+	try {
+		return new Date(dateStr).toLocaleDateString("en-US", {
+			month: "short",
+			day: "numeric",
+			year: "numeric",
+		});
+	} catch {
+		return dateStr;
+	}
+};
+
 export function ReportsPage() {
 	const [search, setSearch] = useState("");
 	const [page, setPage] = useState(1);
@@ -51,18 +63,6 @@ export function ReportsPage() {
 	const totalPages = Math.max(1, Math.ceil(totalReports / limit));
 
 	const showTableHeader = reports.length > 0 || search.trim().length > 0;
-
-	const formatDate = (dateStr: string) => {
-		try {
-			return new Date(dateStr).toLocaleDateString("en-US", {
-				month: "short",
-				day: "numeric",
-				year: "numeric",
-			});
-		} catch {
-			return dateStr;
-		}
-	};
 
 	return (
 		<AppShell>

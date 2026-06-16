@@ -19,6 +19,7 @@ import {
 	type SubmitHandler,
 	useFieldArray,
 	useForm,
+	useWatch,
 } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -77,7 +78,7 @@ const formSchema = z
 		members: z
 			.array(
 				z.object({
-					userId: z.string().uuid(),
+					userId: z.uuid(),
 					projectRole: z.string().min(1, "Role is required"),
 					name: z.string(), // helper for UI
 				}),
@@ -206,22 +207,40 @@ export function CreateProposalModal({
 		name: "members",
 	});
 
-	const sdgsQuery = useQuery(sdgsQueryOptions());
+	const { data: sdgsData } = useQuery(sdgsQueryOptions());
 
 	const deferredSearch = React.useDeferredValue(userSearch);
 
-	const searchUsersQuery = useQuery({
+	const { data: searchUsersData } = useQuery({
 		queryKey: ["users", "search", deferredSearch],
 		queryFn: () => searchUsersFn({ data: { search: deferredSearch } }),
 		enabled: deferredSearch.length >= 2,
 	});
 
+	const watchedSdgIds =
+		useWatch({
+			control: form.control,
+			name: "sdgIds",
+		}) || [];
+	const watchedMembers = useWatch({
+		control: form.control,
+		name: "members",
+	});
+
 	const createProposalMutation = useMutation({
 		mutationFn: createProposalFn,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["proposals"] });
+			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+		},
 	});
 
 	const uploadDocumentMutation = useMutation({
 		mutationFn: uploadProposalDocumentFn,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["proposals"] });
+			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+		},
 	});
 
 	const onSubmit: SubmitHandler<FormValues> = async (values) => {
@@ -325,10 +344,10 @@ export function CreateProposalModal({
 		}
 
 		const isValid = await form.trigger(fieldsToValidate);
-		if (isValid) setStep(step + 1);
+		if (isValid) setStep((prev) => prev + 1);
 	};
 
-	const prevStep = () => setStep(step - 1);
+	const prevStep = () => setStep((prev) => prev - 1);
 
 	const [isDragging, setIsDragging] = React.useState(false);
 
@@ -478,13 +497,13 @@ export function CreateProposalModal({
 								<div className="space-y-2">
 									<FieldLabel>Addressed SDGs</FieldLabel>
 									<div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto p-2 border rounded-md">
-										{sdgsQuery.data?.map((sdg) => (
+										{sdgsData?.map((sdg) => (
 											<div
 												key={sdg.sdgId}
 												className="flex flex-row items-start space-x-3 space-y-0"
 											>
 												<Checkbox
-													checked={form.watch("sdgIds")?.includes(sdg.sdgId)}
+													checked={watchedSdgIds.includes(sdg.sdgId)}
 													onCheckedChange={(checked) => {
 														const current = form.getValues("sdgIds") || [];
 														if (checked) {
@@ -658,42 +677,41 @@ export function CreateProposalModal({
 											onChange={(e) => setUserSearch(e.target.value)}
 										/>
 									</div>
-									{searchUsersQuery.data &&
-										searchUsersQuery.data.length > 0 && (
-											<div className="mt-2 border rounded-md divide-y shadow-sm max-h-[150px] overflow-y-auto">
-												{searchUsersQuery.data.map((u) => (
-													<button
-														key={u.userId}
-														type="button"
-														className="w-full text-left p-2 flex items-center justify-between hover:bg-slate-50 cursor-pointer"
-														onClick={() => {
-															if (
-																!memberFields.some((m) => m.userId === u.userId)
-															) {
-																appendMember({
-																	userId: u.userId,
-																	projectRole: "Member",
-																	name: `${u.firstName} ${u.lastName}`,
-																});
-															} else {
-																toast.error("User is already a team member");
-															}
-															setUserSearch("");
-														}}
-													>
-														<div className="text-sm">
-															<p className="font-medium">
-																{u.firstName} {u.lastName}
-															</p>
-															<p className="text-xs text-muted-foreground">
-																{u.email}
-															</p>
-														</div>
-														<Plus className="size-4 text-blue-600" />
-													</button>
-												))}
-											</div>
-										)}
+									{searchUsersData && searchUsersData.length > 0 && (
+										<div className="mt-2 border rounded-md divide-y shadow-sm max-h-[150px] overflow-y-auto">
+											{searchUsersData.map((u) => (
+												<button
+													key={u.userId}
+													type="button"
+													className="w-full text-left p-2 flex items-center justify-between hover:bg-slate-50 cursor-pointer"
+													onClick={() => {
+														if (
+															!memberFields.some((m) => m.userId === u.userId)
+														) {
+															appendMember({
+																userId: u.userId,
+																projectRole: "Member",
+																name: `${u.firstName} ${u.lastName}`,
+															});
+														} else {
+															toast.error("User is already a team member");
+														}
+														setUserSearch("");
+													}}
+												>
+													<div className="text-sm">
+														<p className="font-medium">
+															{u.firstName} {u.lastName}
+														</p>
+														<p className="text-xs text-muted-foreground">
+															{u.email}
+														</p>
+													</div>
+													<Plus className="size-4 text-blue-600" />
+												</button>
+											))}
+										</div>
+									)}
 								</div>
 
 								<div className="space-y-2">
@@ -709,13 +727,15 @@ export function CreateProposalModal({
 													<div className="mt-1 flex items-center gap-2">
 														{field.userId === user.userId ? (
 															<span className="text-xs text-muted-foreground h-7 flex items-center">
-																{form.watch(`members.${index}.projectRole`)}
+																{watchedMembers?.[index]?.projectRole ??
+																	field.projectRole}
 															</span>
 														) : (
 															<Select
-																value={form.watch(
-																	`members.${index}.projectRole`,
-																)}
+																value={
+																	watchedMembers?.[index]?.projectRole ??
+																	field.projectRole
+																}
 																onValueChange={(val) => {
 																	if (val != null)
 																		form.setValue(
@@ -831,6 +851,7 @@ export function CreateProposalModal({
 												id="file-upload"
 												ref={fileInputRef}
 												className="hidden"
+												aria-label="Upload Project Proposal PDF"
 												accept="application/pdf"
 												onChange={handleFileChange}
 											/>
@@ -842,12 +863,12 @@ export function CreateProposalModal({
 													<label
 														htmlFor="file-upload"
 														className="cursor-pointer"
-													/>
+													>
+														Select File
+													</label>
 												}
 												nativeButton={false}
-											>
-												Select File
-											</Button>
+											/>
 										</>
 									)}
 								</div>

@@ -65,8 +65,10 @@ export function RETDashboardPage({
 	const [statusFilter, setStatusFilter] = React.useState<string>("all");
 	const navigate = useNavigate();
 
-	const statsQuery = useQuery(retDashboardStatsQueryOptions());
-	const proposalsQuery = useQuery(
+	const { data: statsData, isLoading: isStatsLoading } = useQuery(
+		retDashboardStatsQueryOptions(),
+	);
+	const { data: proposalsData, isLoading: isProposalsLoading } = useQuery(
 		retProposalsQueryOptions({ page, limit: pageSize, search }),
 	);
 
@@ -78,21 +80,21 @@ export function RETDashboardPage({
 	const stats = [
 		{
 			label: "Pending Review",
-			value: statsQuery.data?.pendingReview ?? "...",
+			value: statsData?.pendingReview ?? "...",
 		},
 		{
 			label: "Approved Projects",
-			value: statsQuery.data?.approvedProjects ?? "...",
+			value: statsData?.approvedProjects ?? "...",
 		},
 		{
 			label: "Denied Projects",
-			value: statsQuery.data?.deniedProjects ?? "...",
+			value: statsData?.deniedProjects ?? "...",
 		},
 	];
 
-	const proposals = proposalsQuery.data?.items ?? [];
-	const total = proposalsQuery.data?.total ?? 0;
-	const isLoading = proposalsQuery.isLoading || statsQuery.isLoading;
+	const proposals = proposalsData?.items ?? [];
+	const total = proposalsData?.total ?? 0;
+	const isLoading = isProposalsLoading || isStatsLoading;
 	const showTableHeader =
 		proposals.length > 0 || (search ?? "").trim().length > 0;
 
@@ -248,10 +250,24 @@ export function RETDashboardPage({
 											<EllipsisVertical className="size-4" />
 										</DropdownMenuTrigger>
 										<DropdownMenuContent align="end">
-											<DropdownMenuItem onClick={() => navigate({ to: "/projects/$projectId", params: { projectId: proposal.proposalId } })}>
+											<DropdownMenuItem
+												onClick={() =>
+													navigate({
+														to: "/projects/$projectId",
+														params: { projectId: proposal.proposalId },
+													})
+												}
+											>
 												View Details
 											</DropdownMenuItem>
-											<DropdownMenuItem onClick={() => navigate({ to: "/proposals/$proposalId", params: { proposalId: proposal.proposalId } })}>
+											<DropdownMenuItem
+												onClick={() =>
+													navigate({
+														to: "/proposals/$proposalId",
+														params: { proposalId: proposal.proposalId },
+													})
+												}
+											>
 												Review Proposal
 											</DropdownMenuItem>
 										</DropdownMenuContent>

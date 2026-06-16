@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import type { ApiErrorResponse } from "./auth";
-import { useAppSession } from "./session.server";
+import { getAppSession } from "./session.server";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 const DIRECTOR_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
@@ -220,9 +220,10 @@ export interface ReportStatsResponse {
 
 // ── Server Functions ──────────────────────────────────────
 
-export const getDirectorDashboardFn = createServerFn({ method: "GET" }).handler(
-	async () => {
-		const session = await useAppSession();
+export const getDirectorDashboardFn = createServerFn({ method: "GET" })
+	.validator(z.void())
+	.handler(async () => {
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 
 		if (!accessToken) {
@@ -243,13 +244,12 @@ export const getDirectorDashboardFn = createServerFn({ method: "GET" }).handler(
 		}
 
 		return (await response.json()) as DirectorDashboardResponse;
-	},
-);
+	});
 
 export const getProjectHubFn = createServerFn({ method: "GET" })
 	.validator(projectHubParamsSchema)
 	.handler(async ({ data }) => {
-		const session = await useAppSession();
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 
 		if (!accessToken) {
@@ -287,7 +287,7 @@ export const getProjectHubFn = createServerFn({ method: "GET" })
 export const getMoaRepositoryFn = createServerFn({ method: "GET" })
 	.validator(moaRepositoryParamsSchema)
 	.handler(async ({ data }) => {
-		const session = await useAppSession();
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 
 		if (!accessToken) {
@@ -324,7 +324,7 @@ export const getMoaRepositoryFn = createServerFn({ method: "GET" })
 export const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 	.validator(facultyDirectoryParamsSchema)
 	.handler(async ({ data }) => {
-		const session = await useAppSession();
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 
 		if (!accessToken) {
@@ -361,7 +361,7 @@ export const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 export const getProjectDetailsFn = createServerFn({ method: "GET" })
 	.validator(z.string())
 	.handler(async ({ data: proposalId }) => {
-		const session = await useAppSession();
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 
 		if (!accessToken) {
@@ -396,7 +396,7 @@ export const reviewProposalFn = createServerFn({ method: "POST" })
 		}),
 	)
 	.handler(async ({ data }) => {
-		const session = await useAppSession();
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 
 		if (!accessToken) {
@@ -435,7 +435,7 @@ const reportsListParamsSchema = z.object({
 export const getReportsListFn = createServerFn({ method: "GET" })
 	.validator(reportsListParamsSchema)
 	.handler(async ({ data }) => {
-		const session = await useAppSession();
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 		if (!accessToken) throw new Error("Unauthorized");
 
@@ -456,9 +456,10 @@ export const getReportsListFn = createServerFn({ method: "GET" })
 		return (await response.json()) as ReportsResponse;
 	});
 
-export const getReportStatsFn = createServerFn({ method: "GET" }).handler(
-	async () => {
-		const session = await useAppSession();
+export const getReportStatsFn = createServerFn({ method: "GET" })
+	.validator(z.void())
+	.handler(async () => {
+		const session = await getAppSession();
 		const { accessToken } = session.data;
 
 		if (!accessToken) {
@@ -479,8 +480,7 @@ export const getReportStatsFn = createServerFn({ method: "GET" }).handler(
 		}
 
 		return (await response.json()) as ReportStatsResponse;
-	},
-);
+	});
 
 // ── Query Options ─────────────────────────────────────────
 

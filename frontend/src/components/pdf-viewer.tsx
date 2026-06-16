@@ -13,7 +13,10 @@ interface PdfViewerProps {
 	proposalId?: string;
 	documentId?: string;
 	comments?: ProposalComment[];
-	onAddComment?: (content: string, annotation: AnnotationData | null) => Promise<void>;
+	onAddComment?: (
+		content: string,
+		annotation: AnnotationData | null,
+	) => Promise<void>;
 	isTheaterMode?: boolean;
 	onToggleTheaterMode?: () => void;
 }

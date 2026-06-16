@@ -6,7 +6,7 @@ import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { ApiErrorResponse, AuthUser } from "./auth";
-import { getValidAccessToken, useAppSession } from "./session.server";
+import { getValidAccessToken, getAppSession } from "./session.server";
 import { supabase } from "./supabase.server";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
@@ -15,12 +15,12 @@ const USER_PROFILE_CACHE_TTL_MS = 1000 * 60 * 5;
 // ── Schemas ───────────────────────────────────────────────
 
 const loginSchema = z.object({
-	email: z.string().email(),
+	email: z.email(),
 	password: z.string().min(1),
 });
 
 const signupSchema = z.object({
-	email: z.string().email(),
+	email: z.email(),
 	password: z.string().min(8),
 	firstName: z.string().min(1),
 	lastName: z.string().min(1),
@@ -34,14 +34,13 @@ const signupSchema = z.object({
 export const loginFn = createServerFn({ method: "POST" })
 	.validator(loginSchema)
 	.handler(async ({ data }) => {
-		const session = await useAppSession();
-
-		// 1. Authenticate with Supabase
-		const { data: authData, error: authError } =
-			await supabase.auth.signInWithPassword({
+		const [session, { data: authData, error: authError }] = await Promise.all([
+			getAppSession(),
+			supabase.auth.signInWithPassword({
 				email: data.email,
 				password: data.password,
-			});
+			}),
+		]);
 
 		if (authError || !authData.session) {
 			return {
@@ -77,14 +76,15 @@ export const loginFn = createServerFn({ method: "POST" })
 		}
 
 		// 3. Store tokens in encrypted httpOnly session
-		await session.update({
+		const sessionData = {
 			accessToken: authData.session.access_token,
 			refreshToken: authData.session.refresh_token,
 			userId: user.userId,
 			email: user.email,
 			user,
 			createdAt: Date.now(),
-		});
+		};
+		await session.update(sessionData);
 
 		// 4. Return success; client handles SPA navigation
 		return {
@@ -150,7 +150,7 @@ export const signupFn = createServerFn({ method: "POST" })
 // ── Logout ────────────────────────────────────────────────
 
 export const logoutFn = createServerFn({ method: "POST" }).handler(async () => {
-	const session = await useAppSession();
+	const session = await getAppSession();
 	await session.clear();
 	throw redirect({ to: "/login" });
 });
@@ -198,9 +198,10 @@ export const checkPasswordFn = createServerFn({ method: "POST" })
 
 // ── Get Current User ──────────────────────────────────────
 
-export const getCurrentUserFn = createServerFn({ method: "POST" }).handler(
-	async () => {
-		const session = await useAppSession();
+export const getCurrentUserFn = createServerFn({ method: "POST" })
+	.validator(z.void())
+	.handler(async () => {
+		const session = await getAppSession();
 		const { accessToken, userId, user, createdAt } = session.data;
 
 		if (
@@ -241,14 +242,15 @@ export const getCurrentUserFn = createServerFn({ method: "POST" }).handler(
 
 						if (retryResponse.ok) {
 							const currentUser = (await retryResponse.json()) as AuthUser;
-							await session.update({
+							const refreshSessionData = {
 								accessToken: refreshData.session.access_token,
 								refreshToken: refreshData.session.refresh_token,
 								userId: currentUser.userId,
 								email: currentUser.email,
 								user: currentUser,
 								createdAt: Date.now(),
-							});
+							};
+							await session.update(refreshSessionData);
 							return currentUser;
 						}
 					}
@@ -263,15 +265,15 @@ export const getCurrentUserFn = createServerFn({ method: "POST" }).handler(
 
 		const currentUser = (await meResponse.json()) as AuthUser;
 
-		await session.update({
+		const currentUserSessionData = {
 			accessToken,
 			refreshToken: session.data.refreshToken,
 			userId,
 			email: currentUser.email,
 			user: currentUser,
 			createdAt: Date.now(),
-		});
+		};
+		await session.update(currentUserSessionData);
 
 		return currentUser;
-	},
-);
+	});

@@ -13,6 +13,12 @@ const facultySearchSchema = z.object({
 
 export const Route = createFileRoute("/_authenticated/faculty/")({
 	validateSearch: (search) => facultySearchSchema.parse(search),
+	loaderDeps: ({ search }) => ({
+		page: search.page,
+		limit: search.limit,
+		search: search.search,
+		college: search.college,
+	}),
 	beforeLoad: ({ context }) => {
 		if (
 			context.auth.user?.roleName !== "Director" &&
@@ -25,12 +31,6 @@ export const Route = createFileRoute("/_authenticated/faculty/")({
 			});
 		}
 	},
-	loaderDeps: ({ search }) => ({
-		page: search.page,
-		limit: search.limit,
-		search: search.search,
-		college: search.college,
-	}),
 	loader: async ({ context, deps }) => {
 		await context.queryClient.ensureQueryData(
 			facultyDirectoryQueryOptions({
