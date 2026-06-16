@@ -28,15 +28,9 @@ import {
 	EmptyTitle,
 } from "@/components/ui/empty";
 
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { SearchInput } from "@/components/ui/search-input";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
@@ -117,6 +111,14 @@ export function UsersPage({
 	const hasUsers = users.length > 0;
 	const hasSearch = !!search?.trim();
 
+	const columns: DataTableColumn[] = [
+		{ key: "name", label: "Faculty Name", className: "w-[320px] font-medium text-[#666]" },
+		{ key: "department", label: "Department", className: "text-center font-medium text-[#666]" },
+		{ key: "role", label: "Role", className: "text-center font-medium text-[#666]" },
+		{ key: "status", label: "Status", className: "text-center font-medium text-[#666]" },
+		{ key: "actions", label: "", className: "w-[50px]" },
+	];
+
 	return (
 		<div className="flex flex-col gap-8">
 			<div className="flex items-center justify-between">
@@ -169,102 +171,89 @@ export function UsersPage({
 					</div>
 				)}
 				{hasUsers || isLoading ? (
-					<Table aria-label="User management">
-						<TableHeader className="bg-white">
-							<TableRow className="hover:bg-transparent">
-								<TableHead className="w-[320px] font-medium text-[#666]">
-									Faculty Name
-								</TableHead>
-								<TableHead className="text-center font-medium text-[#666]">
-									Department
-								</TableHead>
-								<TableHead className="text-center font-medium text-[#666]">
-									Role
-								</TableHead>
-								<TableHead className="text-center font-medium text-[#666]">
-									Status
-								</TableHead>
-								<TableHead className="w-[50px]"></TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{users.map((user) => (
-								<TableRow
-									key={user.userId}
-									className="bg-white border-b-[#ebebeb] hover:bg-[#fcfcfc]"
-								>
-									<TableCell className="py-4">
-										<div className="flex items-center gap-3">
-											<Avatar className="h-9 w-9">
-												<AvatarImage
-													src=""
-													alt={`${user.firstName} ${user.lastName}`}
+					<DataTable
+						columns={columns}
+						data={users}
+						renderRow={(user) => (
+							<TableRow
+								key={user.userId}
+								className="bg-white border-b-[#ebebeb] hover:bg-[#fcfcfc]"
+							>
+								<TableCell className="py-4">
+									<div className="flex items-center gap-3">
+										<Avatar className="h-9 w-9">
+											<AvatarImage
+												src=""
+												alt={`${user.firstName} ${user.lastName}`}
+											/>
+											<AvatarFallback className="bg-primary/10 text-primary font-medium">
+												{user.firstName[0]}
+												{user.lastName[0]}
+											</AvatarFallback>
+										</Avatar>
+										<div className="flex flex-col">
+											<span className="text-sm font-normal text-[#0a0a0a]">
+												{user.firstName} {user.lastName}
+											</span>
+											<span className="text-xs text-[#666]">
+												{formatAcademicRank(user.academicRank)}
+											</span>
+										</div>
+									</div>
+								</TableCell>
+								<TableCell className="text-center text-sm text-[#0a0a0a]">
+									{user.departmentName ?? user.campusName}
+								</TableCell>
+								<TableCell className="text-center text-sm text-[#0a0a0a]">
+									{user.roleName}
+								</TableCell>
+								<TableCell>
+									<div className="flex justify-center">
+										<StatusBadge isActive={user.isActive} />
+									</div>
+								</TableCell>
+								<TableCell>
+									<DropdownMenu>
+										<DropdownMenuTrigger
+											render={
+												<Button
+													variant="ghost"
+													size="icon"
+													className="size-8"
 												/>
-												<AvatarFallback className="bg-primary/10 text-primary font-medium">
-													{user.firstName[0]}
-													{user.lastName[0]}
-												</AvatarFallback>
-											</Avatar>
-											<div className="flex flex-col">
-												<span className="text-sm font-normal text-[#0a0a0a]">
-													{user.firstName} {user.lastName}
-												</span>
-												<span className="text-xs text-[#666]">
-													{formatAcademicRank(user.academicRank)}
-												</span>
-											</div>
-										</div>
-									</TableCell>
-									<TableCell className="text-center text-sm text-[#0a0a0a]">
-										{user.departmentName ?? user.campusName}
-									</TableCell>
-									<TableCell className="text-center text-sm text-[#0a0a0a]">
-										{user.roleName}
-									</TableCell>
-									<TableCell>
-										<div className="flex justify-center">
-											<StatusBadge isActive={user.isActive} />
-										</div>
-									</TableCell>
-									<TableCell>
-										<DropdownMenu>
-											<DropdownMenuTrigger
-												render={
-													<Button
-														variant="ghost"
-														size="icon"
-														className="size-8"
-													/>
+											}
+											aria-label="Open user actions"
+										>
+											<MoreVertical className="size-4" />
+										</DropdownMenuTrigger>
+										<DropdownMenuContent align="end">
+											<DropdownMenuItem>View Details</DropdownMenuItem>
+											<DropdownMenuItem>Edit User</DropdownMenuItem>
+											<DropdownMenuSeparator />
+											<DropdownMenuItem
+												className={
+													user.isActive ? "text-destructive" : "text-primary"
 												}
-												aria-label="Open user actions"
+												onClick={() =>
+													updateStatusMutation.mutate({
+														userIds: [user.userId],
+														isActive: !user.isActive,
+													})
+												}
+												disabled={updateStatusMutation.isPending}
 											>
-												<MoreVertical className="size-4" />
-											</DropdownMenuTrigger>
-											<DropdownMenuContent align="end">
-												<DropdownMenuItem>View Details</DropdownMenuItem>
-												<DropdownMenuItem>Edit User</DropdownMenuItem>
-												<DropdownMenuSeparator />
-												<DropdownMenuItem
-													className={
-														user.isActive ? "text-destructive" : "text-primary"
-													}
-													onClick={() =>
-														updateStatusMutation.mutate({
-															userIds: [user.userId],
-															isActive: !user.isActive,
-														})
-													}
-													disabled={updateStatusMutation.isPending}
-												>
-													{user.isActive ? "Deactivate" : "Activate"}
-												</DropdownMenuItem>
-											</DropdownMenuContent>
-										</DropdownMenu>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
+												{user.isActive ? "Deactivate" : "Activate"}
+											</DropdownMenuItem>
+										</DropdownMenuContent>
+									</DropdownMenu>
+								</TableCell>
+							</TableRow>
+						)}
+						isLoading={isLoading}
+						isEmpty={!hasUsers}
+						colSpan={5}
+						ariaLabel="User management"
+					/>
 				) : (
 					<div className="flex min-h-[400px] items-center justify-center bg-white px-6">
 						<Empty className="border-0 p-0">

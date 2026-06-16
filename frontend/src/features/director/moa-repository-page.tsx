@@ -5,7 +5,6 @@ import {
 	AlertCircle,
 	CheckCircle2,
 	EllipsisVertical,
-	Loader2,
 	Plus,
 	SlidersHorizontal,
 	XCircle,
@@ -17,14 +16,8 @@ import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/ui/search-input";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PaginationBar } from "@/components/ui/pagination-bar";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import type { AuthUser } from "@/lib/auth";
 import { moaRepositoryQueryOptions } from "@/lib/dashboard.functions";
 import { AppShell } from "../layout/app-shell";
@@ -106,6 +99,14 @@ export function MoaRepositoryPage({
 	};
 	const totalPages = Math.ceil(total / limit);
 
+	const columns: DataTableColumn[] = [
+		{ key: "partner", label: "Partner Organization", className: "w-[320px] px-4 py-2 text-[14px] font-medium text-[#666]" },
+		{ key: "dateSigned", label: "Date Signed", className: "w-[223px] px-4 py-2 text-center text-[14px] font-medium text-[#666]" },
+		{ key: "daysToExpiry", label: "Days to Expiry", className: "w-[255px] px-4 py-2 text-center text-[14px] font-medium text-[#666]" },
+		{ key: "status", label: "Status", className: "w-[129px] px-4 py-2 text-center text-[14px] font-medium text-[#666]" },
+		{ key: "actions", label: "", className: "w-[50px]" },
+	];
+
 	return (
 		<AppShell>
 			<div className="flex flex-col gap-8">
@@ -155,82 +156,49 @@ export function MoaRepositoryPage({
 
 				<div className="overflow-hidden rounded-[12px] border border-[#ebebeb] bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 					<div className="bg-white">
-						<Table aria-label="Memoranda of Agreements">
-							<TableHeader>
-								<TableRow className="border-b border-[#ebebeb] hover:bg-transparent">
-									<TableHead className="w-[320px] px-4 py-2 text-[14px] font-medium text-[#666]">
-										Partner Organization
-									</TableHead>
-									<TableHead className="w-[223px] px-4 py-2 text-center text-[14px] font-medium text-[#666]">
-										Date Signed
-									</TableHead>
-									<TableHead className="w-[255px] px-4 py-2 text-center text-[14px] font-medium text-[#666]">
-										Days to Expiry
-									</TableHead>
-									<TableHead className="w-[129px] px-4 py-2 text-center text-[14px] font-medium text-[#666]">
-										Status
-									</TableHead>
-									<TableHead className="w-[50px]"></TableHead>
+						<DataTable
+							columns={columns}
+							data={items}
+							renderRow={(moa) => (
+								<TableRow
+									key={moa.id}
+									className="border-b border-[#ebebeb] py-2 hover:bg-[#fcfcfc]"
+								>
+									<TableCell className="px-4 py-3 text-[14px] font-semibold text-[#0a0a0a]">
+										{moa.partnerOrganization}
+									</TableCell>
+									<TableCell className="px-4 py-3 text-center text-[14px] text-[#0a0a0a]">
+										<ClientOnly fallback="...">
+											{format(new Date(moa.dateSigned), "MMM dd, yyyy")}
+										</ClientOnly>
+									</TableCell>
+									<TableCell className="px-4 py-3 text-center text-[14px] text-[#0a0a0a]">
+										{moa.daysToExpiry}{" "}
+										{typeof moa.daysToExpiry === "number" ? "Days" : ""}
+									</TableCell>
+									<TableCell className="px-4 py-3">
+										<div className="flex justify-center">
+											<MoaStatusBadge status={moa.status} />
+										</div>
+									</TableCell>
+									<TableCell className="px-4 py-3 text-right">
+										<Button
+											variant="ghost"
+											size="icon"
+											className="size-8"
+											aria-label="More actions for MOA"
+										>
+											<EllipsisVertical className="size-4 text-[#737373]" />
+										</Button>
+									</TableCell>
 								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{isLoading ? (
-									<TableRow>
-										<TableCell colSpan={5} className="h-24 text-center">
-											<Loader2
-												className="mx-auto size-6 animate-spin text-[#11215a]"
-												role="status"
-												aria-label="Loading MOAs"
-											/>
-										</TableCell>
-									</TableRow>
-								) : items.length === 0 ? (
-									<TableRow>
-										<TableCell
-											colSpan={5}
-											className="h-24 text-center text-muted-foreground"
-										>
-											No MOAs found.
-										</TableCell>
-									</TableRow>
-								) : (
-									items.map((moa) => (
-										<TableRow
-											key={moa.id}
-											className="border-b border-[#ebebeb] py-2 hover:bg-[#fcfcfc]"
-										>
-											<TableCell className="px-4 py-3 text-[14px] font-semibold text-[#0a0a0a]">
-												{moa.partnerOrganization}
-											</TableCell>
-											<TableCell className="px-4 py-3 text-center text-[14px] text-[#0a0a0a]">
-												<ClientOnly fallback="...">
-													{format(new Date(moa.dateSigned), "MMM dd, yyyy")}
-												</ClientOnly>
-											</TableCell>
-											<TableCell className="px-4 py-3 text-center text-[14px] text-[#0a0a0a]">
-												{moa.daysToExpiry}{" "}
-												{typeof moa.daysToExpiry === "number" ? "Days" : ""}
-											</TableCell>
-											<TableCell className="px-4 py-3">
-												<div className="flex justify-center">
-													<MoaStatusBadge status={moa.status} />
-												</div>
-											</TableCell>
-											<TableCell className="px-4 py-3 text-right">
-												<Button
-													variant="ghost"
-													size="icon"
-													className="size-8"
-													aria-label="More actions for MOA"
-												>
-													<EllipsisVertical className="size-4 text-[#737373]" />
-												</Button>
-											</TableCell>
-										</TableRow>
-									))
-								)}
-							</TableBody>
-						</Table>
+							)}
+							isLoading={isLoading}
+							isEmpty={items.length === 0}
+							emptyMessage="No MOAs found."
+							colSpan={5}
+							ariaLabel="Memoranda of Agreements"
+						/>
 					</div>
 				</div>
 
