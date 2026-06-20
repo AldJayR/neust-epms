@@ -1,6 +1,7 @@
 "use client";
 
-import type * as pdfjsLib from "pdfjs-dist";
+import "../pdf-ssr-polyfill";
+import * as pdfjsLib from "pdfjs-dist";
 import { useEffect, useRef, useState } from "react";
 import type { AnnotationData, ProposalComment } from "@/lib/comments.functions";
 import { CommentHighlights, CommentCreationPopover } from "./pdf-annotations";
@@ -33,6 +34,7 @@ export function PdfPageCanvas({
 }: PdfPageCanvasProps) {
 	const canvasRef1 = useRef<HTMLCanvasElement>(null);
 	const canvasRef2 = useRef<HTMLCanvasElement>(null);
+	const textLayerRef = useRef<HTMLDivElement>(null);
 	const [activeCanvas, setActiveCanvas] = useState<1 | 2>(1);
 	const [isLoading, setIsLoading] = useState(true);
 	const [hasRendered, setHasRendered] = useState(false);
@@ -117,6 +119,24 @@ export function PdfPageCanvas({
 					setLastRendered({ width, scale });
 					setHasRendered(true);
 					setIsLoading(false);
+
+					// Render Text Layer
+					if (textLayerRef.current) {
+						textLayerRef.current.innerHTML = "";
+						textLayerRef.current.style.setProperty(
+							"--scale-factor",
+							String(scaleFactor),
+						);
+						const textContent = await page.getTextContent();
+						if (!isDestroyed && textLayerRef.current) {
+							const textLayer = new pdfjsLib.TextLayer({
+								textContentSource: textContent,
+								container: textLayerRef.current,
+								viewport: viewport,
+							});
+							await textLayer.render();
+						}
+					}
 				}
 			} catch (err: unknown) {
 				// Avoid throwing/logging expected cancellation exceptions
@@ -144,6 +164,9 @@ export function PdfPageCanvas({
 				} catch {
 					// Ignore errors on render task cancellation
 				}
+			}
+			if (textLayerRef.current) {
+				textLayerRef.current.innerHTML = "";
 			}
 		};
 	}, [pdfDoc, pageNumber, width, scale]);
@@ -278,6 +301,16 @@ export function PdfPageCanvas({
 		transition: "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
 	};
 
+	const textLayerStyle: React.CSSProperties = {
+		position: "absolute",
+		top: 0,
+		left: 0,
+		width: `${width * scale}px`,
+		height: `${width * aspectRatio * scale}px`,
+		zIndex: 10,
+		pointerEvents: toolMode === "hand" ? "auto" : "none",
+	};
+
 	return (
 		<div
 			className="relative flex items-center justify-center bg-white rounded shadow-sm overflow-hidden"
@@ -290,6 +323,13 @@ export function PdfPageCanvas({
 		>
 			<canvas ref={canvasRef1} style={canvas1Style} />
 			<canvas ref={canvasRef2} style={canvas2Style} />
+
+			{/* Text Layer for Selection */}
+			<div
+				ref={textLayerRef}
+				className="textLayer"
+				style={textLayerStyle}
+			/>
 
 			{/* Interactive Overlay Layer */}
 			<section

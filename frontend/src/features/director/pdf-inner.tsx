@@ -90,6 +90,48 @@ const PdfInner = forwardRef<PdfViewerRef, PdfInnerProps>(
 
 		const scrollRef = useRef<HTMLDivElement>(null);
 		const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+		const [isDragging, setIsDragging] = useState(false);
+		const dragStartScroll = useRef({ left: 0, top: 0, x: 0, y: 0 });
+
+		const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+			if (toolMode !== "hand" || !scrollRef.current) return;
+			if (e.button !== 0) return; // Only left click
+
+			const target = e.target as HTMLElement;
+			if (
+				target.closest("button") ||
+				target.closest("textarea") ||
+				target.closest("input") ||
+				target.closest("[role='tooltip']") ||
+				target.closest(".cursor-pointer") ||
+				target.closest(".textLayer span")
+			) {
+				return;
+			}
+
+			setIsDragging(true);
+			dragStartScroll.current = {
+				left: scrollRef.current.scrollLeft,
+				top: scrollRef.current.scrollTop,
+				x: e.clientX,
+				y: e.clientY,
+			};
+		};
+
+		const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+			if (!isDragging || toolMode !== "hand" || !scrollRef.current) return;
+			e.preventDefault();
+
+			const dx = e.clientX - dragStartScroll.current.x;
+			const dy = e.clientY - dragStartScroll.current.y;
+
+			scrollRef.current.scrollLeft = dragStartScroll.current.left - dx;
+			scrollRef.current.scrollTop = dragStartScroll.current.top - dy;
+		};
+
+		const handleMouseUpOrLeave = () => {
+			setIsDragging(false);
+		};
 
 		useImperativeHandle(ref, () => ({
 			scrollToPage: (pageNumber: number) => {
@@ -321,7 +363,20 @@ const PdfInner = forwardRef<PdfViewerRef, PdfInnerProps>(
 						onResetZoom={resetZoom}
 					/>
 
-					<div ref={scrollRef} className="flex-1 overflow-auto p-4">
+					<div
+						ref={scrollRef}
+						className={`flex-1 overflow-auto p-4 ${
+							toolMode === "hand"
+								? isDragging
+									? "cursor-grabbing select-none"
+									: "cursor-grab"
+								: ""
+						}`}
+						onMouseDown={handleMouseDown}
+						onMouseMove={handleMouseMove}
+						onMouseUp={handleMouseUpOrLeave}
+						onMouseLeave={handleMouseUpOrLeave}
+					>
 						<div className="flex flex-col items-center gap-4 w-fit mx-auto">
 							{pdfDoc &&
 								Array.from({ length: numPages }, (_, i) => {
