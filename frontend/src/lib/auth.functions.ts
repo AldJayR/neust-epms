@@ -8,9 +8,54 @@ import { z } from "zod";
 import type { ApiErrorResponse, AuthUser } from "./auth";
 import { getValidAccessToken, getAppSession } from "./session.server";
 import { supabase } from "./supabase.server";
+import { requireRole, type RoleName } from "./permissions";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
-const USER_PROFILE_CACHE_TTL_MS = 1000 * 60 * 5;
+const USER_PROFILE_CACHE_TTL_MS = 1000 * 30; // 30 seconds
+
+/**
+ * Safely extracts error messages from API responses, handling both JSON and non-JSON errors
+ */
+export async function getErrorMessage(response: Response, defaultMessage: string): Promise<string> {
+	try {
+		const contentType = response.headers.get("content-type");
+		if (contentType && contentType.includes("application/json")) {
+			const body = await response.json() as ApiErrorResponse;
+			return body.error?.message ?? defaultMessage;
+		}
+		const text = await response.text();
+		if (text && text.length < 200) {
+			return text;
+		}
+	} catch {
+		// Ignore parsing errors
+	}
+	return defaultMessage;
+}
+
+/**
+ * Verifies the logged-in user exists, is active, and possesses at least one of the specified roles.
+ * Throws an Error if authorization fails.
+ */
+export async function authorizeSessionUser(...roles: RoleName[]): Promise<AuthUser> {
+	const session = await getAppSession();
+	const user = session.data.user;
+
+	if (!user) {
+		throw new Error("Unauthorized. Please log in.");
+	}
+
+	if (!user.isActive) {
+		await session.clear();
+		throw new Error("Your account has been deactivated. Contact an administrator.");
+	}
+
+	if (requireRole(user, ...roles)) {
+		throw new Error("Forbidden. Insufficient permissions.");
+	}
+
+	return user;
+}
 
 // ── Schemas ───────────────────────────────────────────────
 
@@ -57,12 +102,13 @@ export const loginFn = createServerFn({ method: "POST" })
 		});
 
 		if (!meResponse.ok) {
-			const errorBody = (await meResponse.json()) as ApiErrorResponse;
+			const message = await getErrorMessage(
+				meResponse,
+				"Your account has not been provisioned. Contact an administrator."
+			);
 			return {
 				error: true as const,
-				message:
-					errorBody.error?.message ??
-					"Your account has not been provisioned. Contact an administrator.",
+				message,
 			};
 		}
 
@@ -103,13 +149,18 @@ export interface SearchUserResponse {
 export const searchUsersFn = createServerFn({ method: "GET" })
 	.validator(z.object({ search: z.string().min(1) }))
 	.handler(async ({ data }) => {
+		// Require an authenticated user with any of our active roles
+		await authorizeSessionUser("RET Chair", "Director", "Super Admin");
 		const accessToken = await getValidAccessToken();
 
 		const query = new URLSearchParams({ search: data.search });
 		const response = await fetch(`${API_BASE}/auth/users/search?${query}`, {
 			headers: { Authorization: `Bearer ${accessToken}` },
 		});
-		if (!response.ok) throw new Error("Failed to search users");
+		if (!response.ok) {
+			const message = await getErrorMessage(response, "Failed to search users");
+			throw new Error(message);
+		}
 		return (await response.json()) as SearchUserResponse[];
 	});
 
@@ -130,10 +181,10 @@ export const signupFn = createServerFn({ method: "POST" })
 		});
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
+			const message = await getErrorMessage(response, "Registration failed");
 			return {
 				error: true as const,
-				message: errorBody.error?.message ?? "Registration failed",
+				message,
 			};
 		}
 
@@ -209,6 +260,10 @@ export const getCurrentUserFn = createServerFn({ method: "POST" })
 			createdAt &&
 			Date.now() - createdAt < USER_PROFILE_CACHE_TTL_MS
 		) {
+			if (!user.isActive) {
+				await session.clear();
+				return null;
+			}
 			return user;
 		}
 
@@ -250,6 +305,10 @@ export const getCurrentUserFn = createServerFn({ method: "POST" })
 
 						if (retryResponse.ok) {
 							const currentUser = (await retryResponse.json()) as AuthUser;
+							if (!currentUser.isActive) {
+								await session.clear();
+								return null;
+							}
 							const refreshSessionData = {
 								accessToken: refreshData.session.access_token,
 								refreshToken: refreshData.session.refresh_token,
@@ -272,6 +331,10 @@ export const getCurrentUserFn = createServerFn({ method: "POST" })
 		}
 
 		const currentUser = (await meResponse.json()) as AuthUser;
+		if (!currentUser.isActive) {
+			await session.clear();
+			return null;
+		}
 
 		const currentUserSessionData = {
 			accessToken: token,

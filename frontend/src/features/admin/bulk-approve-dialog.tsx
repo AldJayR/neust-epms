@@ -250,15 +250,15 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 																alt={`${user.firstName} ${user.lastName}`}
 															/>
 															<AvatarFallback className="bg-primary/5 text-xs font-medium text-primary">
-																{user.firstName[0]}
-																{user.lastName[0]}
+																{user.firstName?.charAt(0) ?? ""}
+																{user.lastName?.charAt(0) ?? ""}
 															</AvatarFallback>
 														</Avatar>
 														<div className="flex min-w-0 flex-col">
 															<span className="truncate text-[14px] font-medium leading-5 text-[#0a0a0a]">
 																{user.firstName}{" "}
 																{user.middleName
-																	? `${user.middleName[0]}. `
+																	? `${user.middleName.charAt(0)}. `
 																	: ""}{" "}
 																{user.lastName}
 															</span>

@@ -69,7 +69,7 @@ export function RETDashboardPage({
 		retDashboardStatsQueryOptions(),
 	);
 	const { data: proposalsData, isLoading: isProposalsLoading, isFetching: isProposalsFetching } = useQuery(
-		retProposalsQueryOptions({ page, limit: pageSize, search }),
+		retProposalsQueryOptions({ page, limit: pageSize, search, status: statusFilter }),
 	);
 
 
@@ -140,7 +140,10 @@ export function RETDashboardPage({
 					<Select
 						value={statusFilter}
 						onValueChange={(v) => {
-							if (v) setStatusFilter(v);
+							if (v) {
+								setStatusFilter(v);
+								onPageChange(1);
+							}
 						}}
 					>
 						<SelectTrigger className="h-9 w-[180px] rounded-lg border-[#e5e5e5] bg-white text-[#737373] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1)]">
@@ -200,8 +203,8 @@ export function RETDashboardPage({
 										<Avatar className="size-9 rounded-full">
 											<AvatarImage src="" alt="Leader" />
 											<AvatarFallback className="bg-primary/10 text-primary font-medium text-xs">
-												{proposal.leaderFirstName?.[0]}
-												{proposal.leaderLastName?.[0]}
+												{proposal.leaderFirstName?.charAt(0) ?? ""}
+												{proposal.leaderLastName?.charAt(0) ?? ""}
 											</AvatarFallback>
 										</Avatar>
 										<div className="flex flex-col gap-[2px]">

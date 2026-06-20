@@ -141,15 +141,16 @@ const retNav: NavGroup[] = [
 export function AppSidebar({
 	...props
 }: React.ComponentProps<typeof RoleSidebar>) {
-	const routerState = useRouterState();
-	const authenticatedMatch = routerState.matches.find(
-		(m) => m.routeId === "/_authenticated",
-	);
-	const user = authenticatedMatch?.context
-		? (authenticatedMatch.context as { user: AuthUser | null }).user
-		: null;
+	const user = useRouterState({
+		select: (s) => {
+			const authMatch = s.matches.find((m) => m.routeId === "/_authenticated");
+			return (authMatch?.context as { user: AuthUser | null } | undefined)?.user ?? null;
+		},
+	});
 
-	const pathname = routerState.location.pathname;
+	const pathname = useRouterState({
+		select: (s) => s.location.pathname,
+	});
 
 	let navMain = adminNav;
 	if (isDirector(user)) {

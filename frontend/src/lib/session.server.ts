@@ -58,6 +58,13 @@ export function getAppSession() {
  * Uses JWT expiry check + Supabase refreshSession().
  * Use this in server functions instead of reading session.data.accessToken directly.
  */
+interface RefreshResult {
+	accessToken: string;
+	refreshToken: string;
+}
+
+const activeRefreshes = new Map<string, Promise<RefreshResult>>();
+
 export async function getValidAccessToken(): Promise<string> {
 	const session = await getAppSession();
 	const { accessToken, refreshToken } = session.data;
@@ -80,22 +87,42 @@ export async function getValidAccessToken(): Promise<string> {
 	}
 
 	// Token expired or missing — refresh
-	const supabase = createClient(
-		process.env.SUPABASE_URL!,
-		process.env.SUPABASE_ANON_KEY!,
-	);
-	const { data, error } = await supabase.auth.refreshSession({
-		refresh_token: refreshToken,
-	});
+	let refreshPromise = activeRefreshes.get(refreshToken);
+	if (!refreshPromise) {
+		refreshPromise = (async () => {
+			try {
+				const supabase = createClient(
+					process.env.SUPABASE_URL!,
+					process.env.SUPABASE_ANON_KEY!,
+				);
+				const { data, error } = await supabase.auth.refreshSession({
+					refresh_token: refreshToken,
+				});
 
-	if (error || !data.session) {
-		await session.clear();
-		throw new Error("Session expired. Please log in again.");
+				if (error || !data.session) {
+					throw new Error("Session expired. Please log in again.");
+				}
+
+				return {
+					accessToken: data.session.access_token,
+					refreshToken: data.session.refresh_token,
+				};
+			} finally {
+				activeRefreshes.delete(refreshToken);
+			}
+		})();
+		activeRefreshes.set(refreshToken, refreshPromise);
 	}
 
-	await session.update({
-		accessToken: data.session.access_token,
-		refreshToken: data.session.refresh_token,
-	});
-	return data.session.access_token;
+	try {
+		const result = await refreshPromise;
+		await session.update({
+			accessToken: result.accessToken,
+			refreshToken: result.refreshToken,
+		});
+		return result.accessToken;
+	} catch (err) {
+		await session.clear();
+		throw err;
+	}
 }

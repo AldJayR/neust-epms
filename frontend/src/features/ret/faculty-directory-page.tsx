@@ -6,13 +6,11 @@ import {
 	EllipsisVertical,
 	ListFilter,
 	Loader2,
-	Search,
 } from "lucide-react";
-import { useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { MetricCard } from "@/components/custom/metric-card";
 import {
 	Table,
@@ -51,13 +49,6 @@ export function RetFacultyDirectoryPage({
 		facultyDirectoryQueryOptions({ page, limit, search }),
 	);
 
-	const [localSearch, setLocalSearch] = useState(search ?? "");
-	const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
-	const debouncedSearch = (value: string) => {
-		if (debounceRef.current) clearTimeout(debounceRef.current);
-		debounceRef.current = setTimeout(() => onSearchChange(value), 300);
-	};
-
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
 	// metrics from existing API might need extension later to match the design's specific stats
@@ -82,7 +73,7 @@ export function RetFacultyDirectoryPage({
 					<MetricCard label="Total Faculty" value={total.toLocaleString()} className="flex-1" />
 					<MetricCard
 						label="Active Faculty"
-						value={metrics?.totalActiveExtension.toLocaleString() ?? "0"}
+						value={(metrics?.totalActiveExtension ?? 0).toLocaleString()}
 						className="flex-1"
 					/>
 					<MetricCard label="Faculty without Extension Projects" value="0" className="flex-1" />
@@ -90,19 +81,13 @@ export function RetFacultyDirectoryPage({
 
 				{/* Controls: Search & Filter */}
 				<div className="flex items-center justify-between">
-					<div className="relative w-full max-w-[352px]">
-						<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#737373]" />
-						<Input
-							placeholder="Search faculty"
-							aria-label="Search faculty directory"
-							className="h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-none placeholder:text-[#737373]"
-							value={localSearch}
-							onChange={(e) => {
-								setLocalSearch(e.target.value);
-								debouncedSearch(e.target.value);
-							}}
-						/>
-					</div>
+					<SearchInput
+						value={search ?? ""}
+						onChange={onSearchChange}
+						placeholder="Search faculty"
+						ariaLabel="Search faculty directory"
+						className="max-w-[352px]"
+					/>
 					<Button
 						variant="outline"
 						size="icon"
@@ -185,8 +170,8 @@ export function RetFacultyDirectoryPage({
 													<div className="flex items-center gap-3">
 														<Avatar className="size-9">
 															<AvatarFallback className="bg-[#ddd] text-[#666]">
-																{faculty.firstName[0]}
-																{faculty.lastName[0]}
+																{faculty.firstName?.charAt(0) ?? ""}
+																{faculty.lastName?.charAt(0) ?? ""}
 															</AvatarFallback>
 														</Avatar>
 														<div className="flex flex-col">

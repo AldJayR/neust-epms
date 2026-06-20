@@ -124,6 +124,7 @@ export function CreateProposalModal({
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+			queryClient.invalidateQueries({ queryKey: ["ret"] });
 		},
 	});
 
@@ -132,6 +133,7 @@ export function CreateProposalModal({
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+			queryClient.invalidateQueries({ queryKey: ["ret"] });
 		},
 	});
 

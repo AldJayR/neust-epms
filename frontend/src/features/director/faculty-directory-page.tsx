@@ -161,8 +161,8 @@ export function FacultyDirectoryPage({
 									<div className="flex items-center gap-3">
 										<Avatar className="size-9">
 											<AvatarFallback className="bg-[#ddd] text-[#666]">
-												{faculty.firstName[0]}
-												{faculty.lastName[0]}
+												{faculty.firstName?.charAt(0) ?? ""}
+												{faculty.lastName?.charAt(0) ?? ""}
 											</AvatarFallback>
 										</Avatar>
 										<div className="flex flex-col">

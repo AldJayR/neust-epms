@@ -61,7 +61,9 @@ export function RoleSidebar({
 	fallbackRole = "User",
 	...props
 }: RoleSidebarProps) {
-	const initials = user ? `${user.firstName[0]}${user.lastName[0]}` : "JD";
+	const initials = user
+		? `${user.firstName?.charAt(0) ?? ""}${user.lastName?.charAt(0) ?? ""}` || "JD"
+		: "JD";
 	const fullName = user
 		? `${user.firstName} ${user.lastName}`
 		: fallbackFullName;

@@ -2,8 +2,8 @@ import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import type { ApiErrorResponse } from "./auth";
 import { getValidAccessToken } from "./session.server";
+import { authorizeSessionUser, getErrorMessage } from "./auth.functions";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 const RET_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
@@ -15,6 +15,26 @@ const retDashboardParamsSchema = z.object({
 	limit: z.number(),
 	search: z.string().optional(),
 	status: z.string().optional(),
+});
+
+const createProposalSchema = z.object({
+	campusId: z.number(),
+	departmentId: z.number(),
+	title: z.string().min(1),
+	bannerProgram: z.string().min(1),
+	projectLocale: z.string().min(1),
+	extensionCategory: z.string().min(1),
+	budgetPartner: z.number().optional(),
+	budgetNeust: z.number().optional(),
+	targetStartDate: z.string().optional(),
+	targetEndDate: z.string().optional(),
+	departmentIds: z.array(z.number()).optional(),
+	sectorIds: z.array(z.number()).optional(),
+	sdgIds: z.array(z.number()).optional(),
+	members: z.array(z.object({
+		userId: z.string().uuid(),
+		projectRole: z.string().min(1),
+	})).optional(),
 });
 
 // ── Interfaces ────────────────────────────────────────────
@@ -99,6 +119,7 @@ export interface MetadataItem {
 
 export const getRETDashboardStatsFn = createServerFn({ method: "GET" }).handler(
 	async () => {
+		await authorizeSessionUser("RET Chair", "Director");
 		const accessToken = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/proposals/ret/dashboard-stats`, {
@@ -108,8 +129,8 @@ export const getRETDashboardStatsFn = createServerFn({ method: "GET" }).handler(
 		});
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(errorBody.error?.message ?? "Failed to fetch RET stats");
+			const message = await getErrorMessage(response, "Failed to fetch RET stats");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as RETDashboardStats;
@@ -119,12 +140,16 @@ export const getRETDashboardStatsFn = createServerFn({ method: "GET" }).handler(
 export const getRETProposalsFn = createServerFn({ method: "GET" })
 	.validator(retDashboardParamsSchema)
 	.handler(async ({ data }) => {
+		await authorizeSessionUser("RET Chair", "Director");
 		const accessToken = await getValidAccessToken();
 
 		const url = new URL(`${API_BASE}/proposals`);
 		url.searchParams.set("page", data.page.toString());
 		url.searchParams.set("limit", data.limit.toString());
 		if (data.search) url.searchParams.set("search", data.search);
+		if (data.status && data.status !== "all") {
+			url.searchParams.set("status", data.status);
+		}
 
 		const response = await fetch(url.toString(), {
 			headers: {
@@ -133,16 +158,17 @@ export const getRETProposalsFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(errorBody.error?.message ?? "Failed to fetch proposals");
+			const message = await getErrorMessage(response, "Failed to fetch proposals");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as ProposalListResponse;
 	});
 
 export const createProposalFn = createServerFn({ method: "POST" })
-	.validator((data: CreateProposalInput) => data)
+	.validator(createProposalSchema)
 	.handler(async ({ data }) => {
+		await authorizeSessionUser("RET Chair", "Director");
 		const accessToken = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/proposals`, {
@@ -155,8 +181,8 @@ export const createProposalFn = createServerFn({ method: "POST" })
 		});
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(errorBody.error?.message ?? "Failed to create proposal");
+			const message = await getErrorMessage(response, "Failed to create proposal");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as ProposalItem;
@@ -168,17 +194,20 @@ export const uploadProposalDocumentFn = createServerFn({ method: "POST" })
 		if (typeof proposalId !== "string" || !proposalId) {
 			throw new Error("proposalId is required");
 		}
+		const file = data.get("file");
+		if (!(file instanceof File)) {
+			throw new Error("file is required and must be a File");
+		}
+		if (file.type !== "application/pdf") {
+			throw new Error("Only PDF documents are allowed");
+		}
 		return data;
 	})
 	.handler(async ({ data }) => {
+		await authorizeSessionUser("RET Chair", "Director");
 		const accessToken = await getValidAccessToken();
 
 		const proposalId = data.get("proposalId") as string;
-		const file = data.get("file");
-
-		if (!(file instanceof File)) {
-			throw new Error("A PDF file is required");
-		}
 
 		const response = await fetch(
 			`${API_BASE}/proposals/${proposalId}/documents/upload`,
@@ -192,8 +221,8 @@ export const uploadProposalDocumentFn = createServerFn({ method: "POST" })
 		);
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(errorBody.error?.message ?? "Failed to upload document");
+			const message = await getErrorMessage(response, "Failed to upload document");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as {

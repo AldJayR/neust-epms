@@ -48,7 +48,7 @@ interface ProposalDetailsTabProps {
 			};
 			moaLinked: string;
 		};
-		attachments: {
+		attachments?: {
 			id: string;
 			name: string;
 			version: string;
@@ -170,10 +170,10 @@ function ProposalDetailsTab({
 					Attached documents
 				</h3>
 				<div className="space-y-1">
-					{data.attachments.map((file) => {
+					{data.attachments?.map((file) => {
 						const isActive =
 							activeAttachmentId === null
-								? data.attachments[0]?.id === file.id
+								? data.attachments?.[0]?.id === file.id
 								: activeAttachmentId === file.id;
 						return (
 							<button
@@ -350,9 +350,10 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 			comments?: string;
 		}) => reviewProposalFn({ data: input }),
 		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: ["dashboard", "proposals", proposalId],
-			});
+			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+			queryClient.invalidateQueries({ queryKey: ["proposals"] });
+			queryClient.invalidateQueries({ queryKey: ["ret"] });
+			queryClient.invalidateQueries({ queryKey: ["projects"] });
 		},
 	});
 
@@ -369,14 +370,14 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	);
 
 	const currentDoc =
-		data?.attachments.find((a) => a.id === activeAttachmentId) ??
-		data?.attachments[0];
+		data?.attachments?.find((a) => a.id === activeAttachmentId) ??
+		data?.attachments?.[0];
 
 	const { data: comments = [] } = useQuery({
 		queryKey: ["proposal-comments", currentDoc?.id],
 		queryFn: () =>
 			getProposalCommentsFn({
-				data: { proposalId, documentId: currentDoc!.id },
+				data: { proposalId, documentId: currentDoc?.id ?? "" },
 			}),
 		enabled: !!currentDoc?.id,
 	});
@@ -391,15 +392,19 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 				height: number;
 				page: number;
 			} | null;
-		}) =>
-			saveProposalCommentFn({
+		}) => {
+			if (!currentDoc?.id) {
+				throw new Error("No document is selected for comments.");
+			}
+			return saveProposalCommentFn({
 				data: {
 					proposalId,
-					documentId: currentDoc!.id,
+					documentId: currentDoc.id,
 					content: input.content,
 					annotationJson: input.annotationJson,
 				},
-			}),
+			});
+		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({
 				queryKey: ["proposal-comments", currentDoc?.id],
@@ -544,7 +549,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 									{activeTab === "comments" && (
 										<CommentsTab
 											comments={comments}
-											attachmentsCount={data.attachments.length}
+											attachmentsCount={data.attachments?.length ?? 0}
 											pdfViewerRef={pdfViewerRef}
 										/>
 									)}

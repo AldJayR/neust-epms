@@ -1,8 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import type { ApiErrorResponse } from "./auth";
 import { getValidAccessToken } from "./session.server";
+import { authorizeSessionUser, getErrorMessage } from "./auth.functions";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 const ADMIN_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
@@ -99,6 +99,7 @@ export function adminUsersQueryOptions({
 export const getAdminStatsFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
+		await authorizeSessionUser("Super Admin");
 		const token = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/admin/stats`, {
@@ -108,10 +109,8 @@ export const getAdminStatsFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(
-				errorBody.error?.message ?? "Failed to fetch admin stats",
-			);
+			const message = await getErrorMessage(response, "Failed to fetch admin stats");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as AdminStats;
@@ -122,6 +121,7 @@ export const getAdminStatsFn = createServerFn({ method: "GET" })
 export const getAdminUsersFn = createServerFn({ method: "GET" })
 	.validator(adminUsersQueryParamsSchema)
 	.handler(async ({ data }) => {
+		await authorizeSessionUser("Super Admin");
 		const token = await getValidAccessToken();
 
 		const query = new URLSearchParams();
@@ -140,8 +140,8 @@ export const getAdminUsersFn = createServerFn({ method: "GET" })
 		);
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(errorBody.error?.message ?? "Failed to fetch users");
+			const message = await getErrorMessage(response, "Failed to fetch users");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as UsersListResponse;
@@ -152,6 +152,7 @@ export const getAdminUsersFn = createServerFn({ method: "GET" })
 export const bulkUpdateUserStatusFn = createServerFn({ method: "POST" })
 	.validator(bulkUpdateStatusSchema)
 	.handler(async ({ data }) => {
+		await authorizeSessionUser("Super Admin");
 		const token = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/admin/users/status`, {
@@ -164,10 +165,8 @@ export const bulkUpdateUserStatusFn = createServerFn({ method: "POST" })
 		});
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(
-				errorBody.error?.message ?? "Failed to update user status",
-			);
+			const message = await getErrorMessage(response, "Failed to update user status");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as {
@@ -186,6 +185,7 @@ export interface RoleResponse {
 export const getRolesFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
+		await authorizeSessionUser("Super Admin");
 		const token = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/admin/roles`, {
@@ -195,8 +195,8 @@ export const getRolesFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(errorBody.error?.message ?? "Failed to fetch roles");
+			const message = await getErrorMessage(response, "Failed to fetch roles");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as RoleResponse[];
@@ -215,6 +215,7 @@ export function rolesQueryOptions() {
 export const bulkApproveUsersFn = createServerFn({ method: "POST" })
 	.validator(bulkApproveSchema)
 	.handler(async ({ data }) => {
+		await authorizeSessionUser("Super Admin");
 		const token = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/admin/users/approve`, {
@@ -227,10 +228,8 @@ export const bulkApproveUsersFn = createServerFn({ method: "POST" })
 		});
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(
-				errorBody.error?.message ?? "Failed to bulk approve users",
-			);
+			const message = await getErrorMessage(response, "Failed to bulk approve users");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as {
@@ -267,6 +266,7 @@ export interface AuditStats {
 export const getAuditLogsFn = createServerFn({ method: "GET" })
 	.validator(auditLogsParamsSchema)
 	.handler(async ({ data }) => {
+		await authorizeSessionUser("Super Admin");
 		const token = await getValidAccessToken();
 
 		const query = new URLSearchParams();
@@ -281,8 +281,8 @@ export const getAuditLogsFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(errorBody.error?.message ?? "Failed to fetch audit logs");
+			const message = await getErrorMessage(response, "Failed to fetch audit logs");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as AuditLogListResponse;
@@ -291,6 +291,7 @@ export const getAuditLogsFn = createServerFn({ method: "GET" })
 export const getAuditStatsFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
+		await authorizeSessionUser("Super Admin");
 		const token = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/audit-logs/stats`, {
@@ -300,10 +301,8 @@ export const getAuditStatsFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(
-				errorBody.error?.message ?? "Failed to fetch audit stats",
-			);
+			const message = await getErrorMessage(response, "Failed to fetch audit stats");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as AuditStats;

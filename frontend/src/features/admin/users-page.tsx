@@ -183,8 +183,8 @@ export function UsersPage({
 												alt={`${user.firstName} ${user.lastName}`}
 											/>
 											<AvatarFallback className="bg-primary/10 text-primary font-medium">
-												{user.firstName[0]}
-												{user.lastName[0]}
+												{user.firstName?.charAt(0) ?? ""}
+												{user.lastName?.charAt(0) ?? ""}
 											</AvatarFallback>
 										</Avatar>
 										<div className="flex flex-col">

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import type { ApiErrorResponse } from "./auth";
 import { getValidAccessToken } from "./session.server";
+import { authorizeSessionUser, getErrorMessage } from "./auth.functions";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 
@@ -53,6 +53,7 @@ const getCommentsValidator = z.object({
 export const saveProposalCommentFn = createServerFn({ method: "POST" })
 	.validator(saveCommentValidator)
 	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director", "RET Chair");
 		const token = await getValidAccessToken();
 
 		const { proposalId, documentId, content, annotationJson } = data;
@@ -73,8 +74,8 @@ export const saveProposalCommentFn = createServerFn({ method: "POST" })
 		);
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(errorBody.error?.message ?? "Failed to save comment");
+			const message = await getErrorMessage(response, "Failed to save comment");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as ProposalComment;
@@ -83,6 +84,7 @@ export const saveProposalCommentFn = createServerFn({ method: "POST" })
 export const getProposalCommentsFn = createServerFn({ method: "GET" })
 	.validator(getCommentsValidator)
 	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director", "RET Chair");
 		const token = await getValidAccessToken();
 
 		const { proposalId, documentId } = data;
@@ -98,8 +100,8 @@ export const getProposalCommentsFn = createServerFn({ method: "GET" })
 		);
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(errorBody.error?.message ?? "Failed to fetch comments");
+			const message = await getErrorMessage(response, "Failed to fetch comments");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as ProposalComment[];

@@ -87,7 +87,10 @@ export function ReportsPage() {
 				<div className="flex items-center justify-between">
 					<SearchInput
 						value={search}
-						onChange={(val) => setSearch(val)}
+						onChange={(val) => {
+							setSearch(val);
+							setPage(1);
+						}}
 						placeholder="Search reports"
 						ariaLabel="Search reports"
 						className="max-w-[352px]"

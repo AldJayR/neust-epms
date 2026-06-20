@@ -2,8 +2,8 @@ import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import type { ApiErrorResponse } from "./auth";
 import { getValidAccessToken } from "./session.server";
+import { authorizeSessionUser, getErrorMessage } from "./auth.functions";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 const DIRECTOR_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
@@ -223,6 +223,7 @@ export interface ReportStatsResponse {
 export const getDirectorDashboardFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
+		await authorizeSessionUser("Director");
 		const token = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/director/dashboard`, {
@@ -232,10 +233,8 @@ export const getDirectorDashboardFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(
-				errorBody.error?.message ?? "Failed to fetch director dashboard",
-			);
+			const message = await getErrorMessage(response, "Failed to fetch director dashboard");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as DirectorDashboardResponse;
@@ -244,6 +243,7 @@ export const getDirectorDashboardFn = createServerFn({ method: "GET" })
 export const getProjectHubFn = createServerFn({ method: "GET" })
 	.validator(projectHubParamsSchema)
 	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director");
 		const token = await getValidAccessToken();
 
 		const query = new URLSearchParams({
@@ -265,10 +265,8 @@ export const getProjectHubFn = createServerFn({ method: "GET" })
 		);
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(
-				errorBody.error?.message ?? "Failed to fetch project hub",
-			);
+			const message = await getErrorMessage(response, "Failed to fetch project hub");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as ProjectHubResponse;
@@ -277,6 +275,7 @@ export const getProjectHubFn = createServerFn({ method: "GET" })
 export const getMoaRepositoryFn = createServerFn({ method: "GET" })
 	.validator(moaRepositoryParamsSchema)
 	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director");
 		const token = await getValidAccessToken();
 
 		const query = new URLSearchParams({
@@ -297,10 +296,8 @@ export const getMoaRepositoryFn = createServerFn({ method: "GET" })
 		);
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(
-				errorBody.error?.message ?? "Failed to fetch MOA repository",
-			);
+			const message = await getErrorMessage(response, "Failed to fetch MOA repository");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as MoaRepositoryResponse;
@@ -309,6 +306,7 @@ export const getMoaRepositoryFn = createServerFn({ method: "GET" })
 export const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 	.validator(facultyDirectoryParamsSchema)
 	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director", "RET Chair");
 		const token = await getValidAccessToken();
 
 		const query = new URLSearchParams({
@@ -329,10 +327,8 @@ export const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 		);
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(
-				errorBody.error?.message ?? "Failed to fetch faculty directory",
-			);
+			const message = await getErrorMessage(response, "Failed to fetch faculty directory");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as FacultyDirectoryResponse;
@@ -341,6 +337,7 @@ export const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 export const getProjectDetailsFn = createServerFn({ method: "GET" })
 	.validator(z.string())
 	.handler(async ({ data: proposalId }) => {
+		await authorizeSessionUser("Director", "RET Chair");
 		const token = await getValidAccessToken();
 
 		const response = await fetch(
@@ -353,10 +350,8 @@ export const getProjectDetailsFn = createServerFn({ method: "GET" })
 		);
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(
-				errorBody.error?.message ?? "Failed to fetch project details",
-			);
+			const message = await getErrorMessage(response, "Failed to fetch project details");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as ProjectDetailsResponse;
@@ -365,12 +360,13 @@ export const getProjectDetailsFn = createServerFn({ method: "GET" })
 export const reviewProposalFn = createServerFn({ method: "POST" })
 	.validator(
 		z.object({
-			proposalId: z.string(),
+			proposalId: z.string().uuid(),
 			decision: z.enum(["Endorsed", "Approved", "Returned", "Rejected"]),
 			comments: z.string().optional(),
 		}),
 	)
 	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director", "RET Chair");
 		const token = await getValidAccessToken();
 
 		const response = await fetch(
@@ -389,8 +385,8 @@ export const reviewProposalFn = createServerFn({ method: "POST" })
 		);
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(errorBody.error?.message ?? "Failed to submit review");
+			const message = await getErrorMessage(response, "Failed to submit review");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as { message: string };
@@ -405,6 +401,7 @@ const reportsListParamsSchema = z.object({
 export const getReportsListFn = createServerFn({ method: "GET" })
 	.validator(reportsListParamsSchema)
 	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director", "RET Chair");
 		const token = await getValidAccessToken();
 
 		const searchParams = new URLSearchParams({
@@ -418,8 +415,8 @@ export const getReportsListFn = createServerFn({ method: "GET" })
 			{ headers: { Authorization: `Bearer ${token}` } },
 		);
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(errorBody.error?.message ?? "Failed to fetch reports");
+			const message = await getErrorMessage(response, "Failed to fetch reports");
+			throw new Error(message);
 		}
 		return (await response.json()) as ReportsResponse;
 	});
@@ -427,6 +424,7 @@ export const getReportsListFn = createServerFn({ method: "GET" })
 export const getReportStatsFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
+		await authorizeSessionUser("Director", "RET Chair");
 		const token = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/reports/stats`, {
@@ -436,10 +434,8 @@ export const getReportStatsFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const errorBody = (await response.json()) as ApiErrorResponse;
-			throw new Error(
-				errorBody.error?.message ?? "Failed to fetch report stats",
-			);
+			const message = await getErrorMessage(response, "Failed to fetch report stats");
+			throw new Error(message);
 		}
 
 		return (await response.json()) as ReportStatsResponse;
