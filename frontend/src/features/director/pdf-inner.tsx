@@ -1,5 +1,6 @@
 "use client";
 
+import "./pdf-ssr-polyfill";
 import * as pdfjsLib from "pdfjs-dist";
 import {
 	forwardRef,

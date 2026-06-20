@@ -1,6 +1,6 @@
 "use client";
 
-import * as pdfjsLib from "pdfjs-dist";
+import type * as pdfjsLib from "pdfjs-dist";
 import { useEffect, useRef, useState } from "react";
 import type { AnnotationData, ProposalComment } from "@/lib/comments.functions";
 import { CommentHighlights, CommentCreationPopover } from "./pdf-annotations";

@@ -6,8 +6,6 @@ import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { ApiErrorResponse, AuthUser } from "./auth";
-import { getValidAccessToken, getAppSession } from "./session.server";
-import { supabase } from "./supabase.server";
 import { requireRole, type RoleName } from "./permissions";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
@@ -33,29 +31,7 @@ export async function getErrorMessage(response: Response, defaultMessage: string
 	return defaultMessage;
 }
 
-/**
- * Verifies the logged-in user exists, is active, and possesses at least one of the specified roles.
- * Throws an Error if authorization fails.
- */
-export async function authorizeSessionUser(...roles: RoleName[]): Promise<AuthUser> {
-	const session = await getAppSession();
-	const user = session.data.user;
 
-	if (!user) {
-		throw new Error("Unauthorized. Please log in.");
-	}
-
-	if (!user.isActive) {
-		await session.clear();
-		throw new Error("Your account has been deactivated. Contact an administrator.");
-	}
-
-	if (requireRole(user, ...roles)) {
-		throw new Error("Forbidden. Insufficient permissions.");
-	}
-
-	return user;
-}
 
 // ── Schemas ───────────────────────────────────────────────
 
@@ -79,6 +55,9 @@ const signupSchema = z.object({
 export const loginFn = createServerFn({ method: "POST" })
 	.validator(loginSchema)
 	.handler(async ({ data }) => {
+		const { getAppSession } = await import("./session.server");
+		const { supabase } = await import("./supabase.server");
+
 		const [session, { data: authData, error: authError }] = await Promise.all([
 			getAppSession(),
 			supabase.auth.signInWithPassword({
@@ -149,6 +128,7 @@ export interface SearchUserResponse {
 export const searchUsersFn = createServerFn({ method: "GET" })
 	.validator(z.object({ search: z.string().min(1) }))
 	.handler(async ({ data }) => {
+		const { authorizeSessionUser, getValidAccessToken } = await import("./session.server");
 		// Require an authenticated user with any of our active roles
 		await authorizeSessionUser("RET Chair", "Director", "Super Admin");
 		const accessToken = await getValidAccessToken();
@@ -201,6 +181,7 @@ export const signupFn = createServerFn({ method: "POST" })
 // ── Logout ────────────────────────────────────────────────
 
 export const logoutFn = createServerFn({ method: "POST" }).handler(async () => {
+	const { getAppSession } = await import("./session.server");
 	const session = await getAppSession();
 	await session.clear();
 	throw redirect({ to: "/login" });
@@ -252,6 +233,9 @@ export const checkPasswordFn = createServerFn({ method: "POST" })
 export const getCurrentUserFn = createServerFn({ method: "POST" })
 	.validator(z.void())
 	.handler(async () => {
+		const { getAppSession, getValidAccessToken } = await import("./session.server");
+		const { supabase } = await import("./supabase.server");
+
 		const session = await getAppSession();
 		const { userId, user, createdAt } = session.data;
 

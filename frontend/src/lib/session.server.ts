@@ -5,6 +5,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { useSession as getSession } from "@tanstack/react-start/server";
 import type { AuthUser } from "./auth";
+import { requireRole, type RoleName } from "./permissions";
 
 export interface SessionData {
 	/** Supabase access token (JWT) */
@@ -125,4 +126,28 @@ export async function getValidAccessToken(): Promise<string> {
 		await session.clear();
 		throw err;
 	}
+}
+
+/**
+ * Verifies the logged-in user exists, is active, and possesses at least one of the specified roles.
+ * Throws an Error if authorization fails.
+ */
+export async function authorizeSessionUser(...roles: RoleName[]): Promise<AuthUser> {
+	const session = await getAppSession();
+	const user = session.data.user;
+
+	if (!user) {
+		throw new Error("Unauthorized. Please log in.");
+	}
+
+	if (!user.isActive) {
+		await session.clear();
+		throw new Error("Your account has been deactivated. Contact an administrator.");
+	}
+
+	if (requireRole(user, ...roles)) {
+		throw new Error("Forbidden. Insufficient permissions.");
+	}
+
+	return user;
 }
