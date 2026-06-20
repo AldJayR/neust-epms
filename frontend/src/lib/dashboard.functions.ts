@@ -275,7 +275,7 @@ export const getProjectHubFn = createServerFn({ method: "GET" })
 export const getMoaRepositoryFn = createServerFn({ method: "GET" })
 	.validator(moaRepositoryParamsSchema)
 	.handler(async ({ data }) => {
-		await authorizeSessionUser("Director");
+		await authorizeSessionUser("Director", "RET Chair");
 		const token = await getValidAccessToken();
 
 		const query = new URLSearchParams({

@@ -57,6 +57,7 @@ export function PdfToolbar({
 								<Button
 									variant={toolMode === "hand" ? "secondary" : "ghost"}
 									size="icon"
+									aria-label="Hand Tool (Pan and select text)"
 									className={`size-8 rounded-full cursor-pointer ${toolMode === "hand" ? "bg-brand-primary/10 text-brand-primary" : "text-[#555]"}`}
 									onClick={() => onToolModeChange("hand")}
 								>
@@ -75,6 +76,7 @@ export function PdfToolbar({
 								<Button
 									variant={toolMode === "comment" ? "secondary" : "ghost"}
 									size="icon"
+									aria-label="Comment Tool (Drag on page to add remark)"
 									className={`size-8 rounded-full cursor-pointer ${toolMode === "comment" ? "bg-brand-primary/10 text-brand-primary" : "text-[#555]"}`}
 									onClick={() => onToolModeChange("comment")}
 								>
@@ -96,6 +98,7 @@ export function PdfToolbar({
 										<Button
 											variant="ghost"
 											size="icon"
+											aria-label={isTheaterMode ? "Exit Theater Mode" : "Enter Theater Mode"}
 											className="size-8 rounded-full cursor-pointer text-[#555] hover:bg-gray-100"
 											onClick={onToggleTheaterMode}
 										>
@@ -132,6 +135,7 @@ export function PdfToolbar({
 								<Button
 									variant="outline"
 									size="icon"
+									aria-label="Zoom Out"
 									className="size-8 rounded-[8px] border-[#e5e5e5]"
 									onClick={onZoomOut}
 									disabled={scale <= ZOOM_STEPS[0]}
@@ -159,6 +163,7 @@ export function PdfToolbar({
 								<Button
 									variant="outline"
 									size="icon"
+									aria-label="Zoom In"
 									className="size-8 rounded-[8px] border-[#e5e5e5]"
 									onClick={onZoomIn}
 									disabled={scale >= ZOOM_STEPS[ZOOM_STEPS.length - 1]}
@@ -179,6 +184,7 @@ export function PdfToolbar({
 									<Button
 										variant="ghost"
 										size="icon"
+										aria-label="Reset Zoom"
 										className="size-8 rounded-[8px] text-[#666] hover:text-[#11215a]"
 										onClick={onResetZoom}
 									>

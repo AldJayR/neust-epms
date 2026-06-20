@@ -24,6 +24,9 @@ export function CommentHighlights({ comments }: CommentHighlightsProps) {
 						<TooltipTrigger
 							render={
 								<div
+									tabIndex={0}
+									role="button"
+									aria-label={`Comment by ${comment.user.name}: "${comment.content}"`}
 									style={{
 										position: "absolute",
 										left: `${annot.x}%`,
@@ -33,7 +36,7 @@ export function CommentHighlights({ comments }: CommentHighlightsProps) {
 										zIndex: 20,
 										pointerEvents: "auto",
 									}}
-									className="bg-yellow-400/25 border border-yellow-500/20 hover:bg-yellow-400/40 transition-colors cursor-pointer"
+									className="bg-yellow-400/25 border border-yellow-500/20 hover:bg-yellow-400/40 focus-visible:bg-yellow-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary transition-colors cursor-pointer"
 								/>
 							}
 						/>

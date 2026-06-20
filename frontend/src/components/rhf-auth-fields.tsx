@@ -62,6 +62,12 @@ export function RHFTextField<TFieldValues extends FieldValues>({
 	className?: string;
 }) {
 	const { field, fieldState } = useController({ control, name });
+	const errorId = `${field.name}-error`;
+	const descId = `${field.name}-description`;
+	const describedBy = [
+		fieldState.error ? errorId : null,
+		description && !fieldState.invalid ? descId : null,
+	].filter(Boolean).join(" ");
 
 	return (
 		<Field data-invalid={fieldState.invalid}>
@@ -72,12 +78,13 @@ export function RHFTextField<TFieldValues extends FieldValues>({
 				type={type}
 				placeholder={placeholder}
 				aria-invalid={fieldState.invalid}
+				aria-describedby={describedBy || undefined}
 				className={cn(inputClassName, className)}
 			/>
 			{description && !fieldState.invalid && (
-				<FieldDescription>{description}</FieldDescription>
+				<FieldDescription id={descId}>{description}</FieldDescription>
 			)}
-			<FieldError errors={[fieldState.error]} />
+			<FieldError id={errorId} errors={[fieldState.error]} />
 		</Field>
 	);
 }
@@ -99,6 +106,12 @@ export function RHFPasswordField<TFieldValues extends FieldValues>({
 }) {
 	const { field, fieldState } = useController({ control, name });
 	const [showPassword, setShowPassword] = useState(false);
+	const errorId = `${field.name}-error`;
+	const descId = `${field.name}-description`;
+	const describedBy = [
+		fieldState.error ? errorId : null,
+		description && !fieldState.invalid ? descId : null,
+	].filter(Boolean).join(" ");
 
 	return (
 		<Field data-invalid={fieldState.invalid}>
@@ -112,6 +125,7 @@ export function RHFPasswordField<TFieldValues extends FieldValues>({
 					id={field.name}
 					type={showPassword ? "text" : "password"}
 					aria-invalid={fieldState.invalid}
+					aria-describedby={describedBy || undefined}
 					className="text-black placeholder:text-zinc-500"
 					onBlur={() => {
 						field.onBlur();
@@ -136,9 +150,9 @@ export function RHFPasswordField<TFieldValues extends FieldValues>({
 				</InputGroupAddon>
 			</InputGroup>
 			{description && !fieldState.invalid && (
-				<FieldDescription>{description}</FieldDescription>
+				<FieldDescription id={descId}>{description}</FieldDescription>
 			)}
-			<FieldError errors={[fieldState.error]} />
+			<FieldError id={errorId} errors={[fieldState.error]} />
 		</Field>
 	);
 }
@@ -160,17 +174,21 @@ export function RHFSelectField<TFieldValues extends FieldValues>({
 	const optionLabels = Object.fromEntries(
 		options.map((option) => [option.value, option.label]),
 	) as Record<string, string>;
+	const triggerId = `${field.name}-trigger`;
+	const errorId = `${field.name}-error`;
 
 	return (
 		<Field data-invalid={fieldState.invalid}>
-			<FieldLabel>{label}</FieldLabel>
+			<FieldLabel htmlFor={triggerId}>{label}</FieldLabel>
 			<Select
 				name={field.name}
 				value={typeof field.value === "string" ? field.value : ""}
 				onValueChange={(value) => field.onChange(value ?? "")}
 			>
 				<SelectTrigger
+					id={triggerId}
 					aria-invalid={fieldState.invalid}
+					aria-describedby={fieldState.error ? errorId : undefined}
 					onBlur={field.onBlur}
 					className={cn("w-full", inputClassName)}
 				>
@@ -200,7 +218,7 @@ export function RHFSelectField<TFieldValues extends FieldValues>({
 					</SelectGroup>
 				</SelectContent>
 			</Select>
-			<FieldError errors={[fieldState.error]} />
+			<FieldError id={errorId} errors={[fieldState.error]} />
 		</Field>
 	);
 }
