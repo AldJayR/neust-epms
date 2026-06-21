@@ -6,7 +6,13 @@ import {
 	mockSelectChain,
 	mockMutationChain,
 } from "../../test/helpers.js";
-import app from "./members.routes.js";
+import baseApp from "./members.routes.js";
+import { OpenAPIHono } from "@hono/zod-openapi";
+import { authMiddleware } from "../middleware/auth.js";
+
+const app = new OpenAPIHono();
+app.use("*", authMiddleware);
+app.route("/", baseApp);
 
 beforeEach(() => {
 	setMockUser(MOCK_USERS.faculty);

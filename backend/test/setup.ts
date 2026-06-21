@@ -44,7 +44,7 @@ vi.mock("../src/db/client.js", () => {
 		insert: vi.fn(),
 		update: vi.fn(),
 		delete: vi.fn(),
-		execute: vi.fn().mockResolvedValue([]),
+		execute: vi.fn().mockResolvedValue({ rows: [] }),
 		transaction: vi.fn((callback) => callback(mockDb)),
 	};
 	return { db: mockDb, pool: {} };
@@ -68,6 +68,16 @@ const mockSupabase = {
 				error: null,
 			}),
 			deleteUser: vi.fn().mockResolvedValue({ error: null }),
+			getUserById: vi.fn(async (id: string) => {
+				const email =
+					id === "bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb"
+						? "new@neust.edu.ph"
+						: "fail@neust.edu.ph";
+				return {
+					data: { user: { id, email } },
+					error: null,
+				};
+			}),
 		},
 	},
 	storage: {

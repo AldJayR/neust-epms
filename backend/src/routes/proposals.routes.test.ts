@@ -14,7 +14,13 @@ import {
 	mockMutationChain,
 	mockTransaction,
 } from "../../test/helpers.js";
-import app from "./proposals.routes.js";
+import baseApp from "./proposals.routes.js";
+import { OpenAPIHono } from "@hono/zod-openapi";
+import { authMiddleware } from "../middleware/auth.js";
+
+const app = new OpenAPIHono();
+app.use("*", authMiddleware);
+app.route("/", baseApp);
 
 const PROPOSAL_ID = "eeeeeeee-5555-4555-8555-eeeeeeeeeeee";
 
@@ -26,6 +32,7 @@ describe("GET /proposals", () => {
 	it("should return a list of proposals", async () => {
 		const mockProposal = createMockProposal();
 		vi.mocked(db.select)
+			.mockReturnValueOnce(mockSelectChain([]) as never) // leaderSubquery
 			.mockReturnValueOnce(mockSelectChain([mockProposal]) as never) // items
 			.mockReturnValueOnce(mockSelectChain([{ value: 1 }]) as never); // count
 
@@ -163,7 +170,10 @@ describe("POST /proposals/:id/submit", () => {
 describe("POST /proposals/:id/review", () => {
 	it("should allow RET Chair to endorse a Submitted proposal", async () => {
 		setMockUser(MOCK_USERS.retChair);
-		const mock = createMockProposal({ status: "Pending Review" });
+		const mock = createMockProposal({
+			status: "Pending Review",
+			departmentId: MOCK_USERS.retChair.departmentId,
+		});
 		let selectCallCount = 0;
 		vi.mocked(db.select).mockImplementation(() => {
 			selectCallCount++;

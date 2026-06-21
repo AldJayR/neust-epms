@@ -4,7 +4,10 @@
  * Tests the global error handler, 404 handler, and health check.
  * These don't require auth or DB access.
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+vi.unmock("./middleware/auth.js");
+
 import app from "./app.js";
 
 describe("App shell", () => {
@@ -31,9 +34,8 @@ describe("App shell", () => {
 		});
 
 		it("should return 401 for unknown /api/v1 routes (auth middleware intercepts)", async () => {
-			// This verifies that all /api/v1/* paths are protected —
-			// even non-existent ones return 401, not 404.
-			const res = await app.request("/api/v1/nonexistent-route");
+			// This verifies that protected paths return 401 when unauthenticated.
+			const res = await app.request("/api/v1/proposals/00000000-0000-0000-0000-000000000000");
 
 			expect(res.status).toBe(401);
 		});

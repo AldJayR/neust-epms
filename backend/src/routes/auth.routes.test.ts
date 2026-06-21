@@ -67,7 +67,7 @@ describe("POST /auth/users", () => {
 				roleId: 4,
 				campusId: 1,
 				departmentId: 1,
-				supabaseUserId: "new-user-id",
+				supabaseUserId: "bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb",
 			}),
 		});
 		expect(res.status).toBe(201);
@@ -84,7 +84,7 @@ describe("POST /auth/users", () => {
 				email: "fail@neust.edu.ph",
 				roleId: 4,
 				campusId: 1,
-				supabaseUserId: "fail-user-id",
+				supabaseUserId: "cccccccc-1111-4111-8111-cccccccccccc",
 			}),
 		});
 		expect(res.status).toBe(403);
@@ -134,7 +134,7 @@ describe("POST /auth/register", () => {
 				firstName: "John",
 				lastName: "Doe",
 				email: "new@neust.edu.ph",
-				password: "Password123",
+				password: "SuperSecurePass2026!",
 				campusId: 1,
 			}),
 		});
@@ -157,7 +157,7 @@ describe("POST /auth/register", () => {
 				firstName: "John",
 				lastName: "Doe",
 				email: "existing@neust.edu.ph",
-				password: "Password123",
+				password: "SuperSecurePass2026!",
 				campusId: 1,
 			}),
 		});

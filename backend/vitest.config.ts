@@ -39,6 +39,6 @@ export default defineConfig({
 		// Run tests in sequence to avoid DB connection conflicts
 		pool: "forks",
 		maxWorkers: 1,
-		isolate: false,
+		isolate: true,
 	},
 });

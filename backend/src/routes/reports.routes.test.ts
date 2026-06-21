@@ -41,13 +41,30 @@ describe("POST /reports", () => {
 			reportId: "aaa",
 			projectId: project.projectId,
 			submittedById: MOCK_USERS.faculty.userId,
-			reportType: "Monthly",
+			reportType: "Progress",
 			storagePath: null,
 			remarks: "Good progress",
 			submittedAt: new Date(),
 			archivedAt: null,
 		};
-		vi.mocked(db.select).mockReturnValue(mockSelectChain([project]) as never);
+		const enriched = {
+			reportId: "aaa",
+			projectId: project.projectId,
+			projectTitle: "Test Project",
+			leaderFirstName: "John",
+			leaderLastName: "Doe",
+			departmentName: "CS",
+			reportType: "Progress",
+			submittedAt: new Date(),
+			storagePath: null,
+			remarks: "Good progress",
+			periodStart: null,
+			periodEnd: null,
+			archivedAt: null,
+		};
+		vi.mocked(db.select)
+			.mockReturnValueOnce(mockSelectChain([project]) as never)
+			.mockReturnValueOnce(mockSelectChain([enriched]) as never);
 		vi.mocked(db.insert).mockReturnValue(mockMutationChain([report]) as never);
 
 		const res = await app.request("/reports", {
@@ -55,7 +72,7 @@ describe("POST /reports", () => {
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
 				projectId: project.projectId,
-				reportType: "Monthly",
+				reportType: "Progress",
 				remarks: "Good progress",
 			}),
 		});
@@ -69,7 +86,7 @@ describe("POST /reports", () => {
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
 				projectId: "ffffffff-0000-4000-8000-ffffffffffff",
-				reportType: "Monthly",
+				reportType: "Progress",
 			}),
 		});
 		expect(res.status).toBe(404);
@@ -78,8 +95,15 @@ describe("POST /reports", () => {
 
 describe("DELETE /reports/:id (soft delete)", () => {
 	it("should archive an existing report", async () => {
-		const mock = { reportId: "aaa", archivedAt: new Date() };
-		vi.mocked(db.update).mockReturnValue(mockMutationChain([mock]) as never);
+		const mockReport = {
+			reportId: "aaaaaaaa-0000-4000-8000-aaaaaaaaaaaa",
+			submittedById: MOCK_USERS.faculty.userId,
+			departmentId: 1,
+			campusId: 1,
+		};
+		const mockUpdate = { reportId: "aaaaaaaa-0000-4000-8000-aaaaaaaaaaaa", archivedAt: new Date() };
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([mockReport]) as never);
+		vi.mocked(db.update).mockReturnValue(mockMutationChain([mockUpdate]) as never);
 		const res = await app.request(
 			"/reports/aaaaaaaa-0000-4000-8000-aaaaaaaaaaaa",
 			{ method: "DELETE" },
@@ -88,6 +112,7 @@ describe("DELETE /reports/:id (soft delete)", () => {
 	});
 
 	it("should return 404 for non-existent report", async () => {
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
 		vi.mocked(db.update).mockReturnValue(mockMutationChain([]) as never);
 		const res = await app.request(
 			"/reports/aaaaaaaa-0000-4000-8000-aaaaaaaaaaaa",

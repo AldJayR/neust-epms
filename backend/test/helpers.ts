@@ -157,6 +157,7 @@ export function mockSelectChain(result: unknown[]) {
 	chain.orderBy = returnChain;
 	chain.offset = returnChain;
 	chain.limit = returnChain;
+	chain.as = returnChain;
 	chain.then = (resolve: (v: unknown) => void) => resolve(result);
 	return chain;
 }

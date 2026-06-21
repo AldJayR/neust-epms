@@ -10,7 +10,7 @@ import {
 import app from "./moas.routes.js";
 
 beforeEach(() => {
-	setMockUser(MOCK_USERS.faculty);
+	setMockUser(MOCK_USERS.director);
 });
 
 describe("GET /moas", () => {
@@ -27,14 +27,14 @@ describe("GET /moas", () => {
 
 describe("POST /moas", () => {
 	it("should create a MOA with valid dates", async () => {
-		// Mock partner lookup
-		vi.mocked(db.select)
-			.mockReturnValueOnce(
-				mockSelectChain([
-					{ partnerId: "22222222-8888-4888-8888-222222222222" },
-				]) as never,
-			)
-			.mockReturnValueOnce(mockMutationChain([createMockMoa()]) as never);
+		vi.mocked(db.select).mockReturnValue(
+			mockSelectChain([
+				{ partnerId: "22222222-8888-4888-8888-222222222222" },
+			]) as never,
+		);
+		vi.mocked(db.insert).mockReturnValue(
+			mockMutationChain([createMockMoa()]) as never,
+		);
 		const res = await app.request("/moas", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },

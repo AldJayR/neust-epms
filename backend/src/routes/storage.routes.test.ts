@@ -6,7 +6,13 @@ import {
 	createMockProposal,
 	mockSelectChain,
 } from "../../test/helpers.js";
-import app from "./storage.routes.js";
+import baseApp from "./storage.routes.js";
+import { OpenAPIHono } from "@hono/zod-openapi";
+import { authMiddleware } from "../middleware/auth.js";
+
+const app = new OpenAPIHono();
+app.use("*", authMiddleware);
+app.route("/", baseApp);
 
 const PROPOSAL_ID = "eeeeeeee-5555-4555-8555-eeeeeeeeeeee";
 const DOC_ID = "dddddddd-8888-4888-8888-dddddddddddd";
