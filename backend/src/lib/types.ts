@@ -83,7 +83,7 @@ export type RoleName = (typeof ROLE_NAMES)[keyof typeof ROLE_NAMES];
 // ── Proposal status values ──
 export const PROPOSAL_STATUS = {
 	DRAFT: "Draft",
-	SUBMITTED: "Submitted",
+	PENDING_REVIEW: "Pending Review",
 	ENDORSED: "Endorsed",
 	APPROVED: "Approved",
 	RETURNED: "Returned",

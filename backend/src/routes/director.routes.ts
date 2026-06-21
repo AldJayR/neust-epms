@@ -664,9 +664,9 @@ app.openapi(projectHubRoute, async (c) => {
 			eq(proposals.status, PROPOSAL_STATUS.APPROVED),
 			eq(proposals.status, PROPOSAL_STATUS.RETURNED),
 			eq(proposals.status, PROPOSAL_STATUS.REJECTED),
-			// DFD 6.1: Submitted proposals that bypassed RET Chair route directly to Director
+			// DFD 6.1: Pending Review proposals that bypassed RET Chair route directly to Director
 			and(
-				eq(proposals.status, PROPOSAL_STATUS.SUBMITTED),
+				eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
 				eq(proposals.bypassedRetChair, true),
 			),
 		),
@@ -771,7 +771,7 @@ app.openapi(dashboardRoute, async (c) => {
 	const underEvalConditions = [
 		isNull(proposals.archivedAt),
 		or(
-			eq(proposals.status, PROPOSAL_STATUS.SUBMITTED),
+			eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
 			eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
 		),
 	];

@@ -125,7 +125,7 @@ export function ProjectHubPage({
 							<SelectContent>
 								<SelectItem value="all">All Statuses</SelectItem>
 								<SelectItem value="Approved">Approved</SelectItem>
-								<SelectItem value="Submitted">For Review</SelectItem>
+								<SelectItem value="Pending Review">For Review</SelectItem>
 								<SelectItem value="Returned">Needs Revision</SelectItem>
 								<SelectItem value="Ongoing">Ongoing</SelectItem>
 								<SelectItem value="Completed">Completed</SelectItem>

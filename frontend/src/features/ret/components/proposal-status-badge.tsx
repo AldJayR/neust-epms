@@ -5,7 +5,7 @@ export function ProposalStatusBadge({ status }: { status: string }) {
 	let label = status;
 	let icon = <CircleCheck className="size-3 text-[#737373]" />;
 
-	if (status === "Submitted") {
+	if (status === "Pending Review") {
 		label = "Pending";
 	} else if (status === "Endorsed") {
 		label = "For Endorsement";

@@ -34,7 +34,7 @@ describe("PROPOSAL_STATUS", () => {
 	it("should follow the correct state machine order", () => {
 		const expected = [
 			"Draft",
-			"Submitted",
+			"Pending Review",
 			"Endorsed",
 			"Approved",
 			"Returned",

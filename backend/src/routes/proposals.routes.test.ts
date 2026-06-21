@@ -147,7 +147,7 @@ describe("POST /proposals/:id/submit", () => {
 	});
 
 	it("should reject submission of an already Submitted proposal", async () => {
-		const mock = createMockProposal({ status: "Submitted" });
+		const mock = createMockProposal({ status: "Pending Review" });
 		vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
 
 		const res = await app.request(`/proposals/${PROPOSAL_ID}/submit`, {
@@ -163,7 +163,7 @@ describe("POST /proposals/:id/submit", () => {
 describe("POST /proposals/:id/review", () => {
 	it("should allow RET Chair to endorse a Submitted proposal", async () => {
 		setMockUser(MOCK_USERS.retChair);
-		const mock = createMockProposal({ status: "Submitted" });
+		const mock = createMockProposal({ status: "Pending Review" });
 		let selectCallCount = 0;
 		vi.mocked(db.select).mockImplementation(() => {
 			selectCallCount++;
@@ -215,7 +215,7 @@ describe("POST /proposals/:id/review", () => {
 
 	it("should reject Director approving before endorsement (no bypass)", async () => {
 		setMockUser(MOCK_USERS.director);
-		const mock = createMockProposal({ status: "Submitted" });
+		const mock = createMockProposal({ status: "Pending Review" });
 		let selectCallCount = 0;
 		vi.mocked(db.select).mockImplementation(() => {
 			selectCallCount++;
@@ -241,7 +241,7 @@ describe("POST /proposals/:id/review", () => {
 	it("should allow Director to approve a Submitted proposal when bypassedRetChair is true", async () => {
 		setMockUser(MOCK_USERS.director);
 		const mock = createMockProposal({
-			status: "Submitted",
+			status: "Pending Review",
 			bypassedRetChair: true,
 		});
 		let selectCallCount = 0;

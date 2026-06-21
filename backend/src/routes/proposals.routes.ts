@@ -320,7 +320,7 @@ app.openapi(retStatsRoute, async (c) => {
 			.where(
 				and(
 					...whereConditions,
-					eq(proposals.status, PROPOSAL_STATUS.SUBMITTED),
+					eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
 				),
 			),
 		db
@@ -502,7 +502,7 @@ app.openapi(createProposalRoute, async (c) => {
 					: null,
 				// DFD 6.1: RET Chair submissions bypass endorsement, route directly to Director
 				bypassedRetChair: user.roleName === ROLE_NAMES.RET_CHAIR,
-				status: PROPOSAL_STATUS.SUBMITTED,
+				status: PROPOSAL_STATUS.PENDING_REVIEW,
 			})
 			.returning();
 
@@ -755,7 +755,7 @@ app.openapi(submitRoute, async (c) => {
 	const [updated] = await db
 		.update(proposals)
 		.set({
-			status: PROPOSAL_STATUS.SUBMITTED,
+			status: PROPOSAL_STATUS.PENDING_REVIEW,
 			updatedAt: new Date(),
 		})
 		.where(
@@ -883,7 +883,7 @@ app.openapi(reviewRoute, async (c) => {
 
 	if (
 		user.roleName === ROLE_NAMES.RET_CHAIR &&
-		existing.status === PROPOSAL_STATUS.SUBMITTED
+		existing.status === PROPOSAL_STATUS.PENDING_REVIEW
 	) {
 		reviewStage = REVIEW_STAGE.ENDORSEMENT;
 		if (body.decision === REVIEW_DECISION.ENDORSED) {
@@ -920,10 +920,10 @@ app.openapi(reviewRoute, async (c) => {
 		}
 	} else if (
 		user.roleName === ROLE_NAMES.DIRECTOR &&
-		existing.status === PROPOSAL_STATUS.SUBMITTED &&
+		existing.status === PROPOSAL_STATUS.PENDING_REVIEW &&
 		bypassRow?.bypassedRetChair
 	) {
-		// Bypassed RET Chair: Director can approve a Submitted proposal directly
+		// Bypassed RET Chair: Director can approve a Pending Review proposal directly
 		// when the proposal previously cleared endorsement but was returned by Director
 		reviewStage = REVIEW_STAGE.APPROVAL;
 		if (body.decision === REVIEW_DECISION.APPROVED) {

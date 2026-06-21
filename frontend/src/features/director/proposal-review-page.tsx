@@ -413,7 +413,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	});
 
 	const isReviewable =
-		data?.status === "Endorsed" || data?.status === "Submitted";
+		data?.status === "Endorsed" || data?.status === "Pending Review";
 
 	const handleApprove = () => {
 		const decision = data?.status === "Endorsed" ? "Approved" : "Endorsed";

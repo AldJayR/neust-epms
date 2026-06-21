@@ -17,7 +17,7 @@ export function ProjectStatusBadge({ status }: { status: string }) {
 			</Badge>
 		);
 	}
-	if (status === "Submitted" || status === "Endorsed") {
+	if (status === "Pending Review" || status === "Endorsed") {
 		return (
 			<Badge
 				variant="secondary"
