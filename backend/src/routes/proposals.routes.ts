@@ -502,6 +502,7 @@ app.openapi(createProposalRoute, async (c) => {
 					: null,
 				// DFD 6.1: RET Chair submissions bypass endorsement, route directly to Director
 				bypassedRetChair: user.roleName === ROLE_NAMES.RET_CHAIR,
+				status: PROPOSAL_STATUS.SUBMITTED,
 			})
 			.returning();
 
@@ -561,7 +562,7 @@ app.openapi(createProposalRoute, async (c) => {
 
 	await insertAuditLog({
 		userId: user.userId,
-		action: `Created proposal ${created.proposalId}`,
+		action: `Created and submitted proposal ${created.proposalId}`,
 		tableAffected: "proposals",
 		ipAddress: getClientIp(c),
 	});
