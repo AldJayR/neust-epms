@@ -168,7 +168,11 @@ describe("POST /proposals/:id/review", () => {
 		vi.mocked(db.select).mockImplementation(() => {
 			selectCallCount++;
 			if (selectCallCount === 1) return mockSelectChain([mock]) as never; // proposal lookup
-			return mockSelectChain([]) as never; // isProjectLeader → not a leader
+			if (selectCallCount === 2)
+				return mockSelectChain([]) as never; // isProjectLeader → not a leader
+			return mockSelectChain([
+				{ bypassedRetChair: false },
+			]) as never; // bypassRow
 		});
 		vi.mocked(db.transaction).mockImplementation(
 			mockTransaction(mock) as never,
@@ -190,7 +194,11 @@ describe("POST /proposals/:id/review", () => {
 		vi.mocked(db.select).mockImplementation(() => {
 			selectCallCount++;
 			if (selectCallCount === 1) return mockSelectChain([mock]) as never; // proposal lookup
-			return mockSelectChain([]) as never; // isProjectLeader → not a leader
+			if (selectCallCount === 2)
+				return mockSelectChain([]) as never; // isProjectLeader → not a leader
+			return mockSelectChain([
+				{ bypassedRetChair: false },
+			]) as never; // bypassRow
 		});
 		vi.mocked(db.transaction).mockImplementation(
 			mockTransaction(mock) as never,
@@ -205,14 +213,18 @@ describe("POST /proposals/:id/review", () => {
 		expect(res.status).toBe(200);
 	});
 
-	it("should reject Director approving before endorsement", async () => {
+	it("should reject Director approving before endorsement (no bypass)", async () => {
 		setMockUser(MOCK_USERS.director);
 		const mock = createMockProposal({ status: "Submitted" });
 		let selectCallCount = 0;
 		vi.mocked(db.select).mockImplementation(() => {
 			selectCallCount++;
 			if (selectCallCount === 1) return mockSelectChain([mock]) as never; // proposal lookup
-			return mockSelectChain([]) as never; // isProjectLeader → not a leader
+			if (selectCallCount === 2)
+				return mockSelectChain([]) as never; // isProjectLeader → not a leader
+			return mockSelectChain([
+				{ bypassedRetChair: false },
+			]) as never; // bypassRow
 		});
 
 		const res = await app.request(`/proposals/${PROPOSAL_ID}/review`, {
@@ -224,6 +236,73 @@ describe("POST /proposals/:id/review", () => {
 		expect(res.status).toBe(400);
 		const body = await res.json();
 		expect(body.error.code).toBe("INVALID_STATE");
+	});
+
+	it("should allow Director to approve a Submitted proposal when bypassedRetChair is true", async () => {
+		setMockUser(MOCK_USERS.director);
+		const mock = createMockProposal({
+			status: "Submitted",
+			bypassedRetChair: true,
+		});
+		let selectCallCount = 0;
+		vi.mocked(db.select).mockImplementation(() => {
+			selectCallCount++;
+			if (selectCallCount === 1) return mockSelectChain([mock]) as never; // proposal lookup
+			if (selectCallCount === 2)
+				return mockSelectChain([]) as never; // isProjectLeader → not a leader
+			return mockSelectChain([
+				{ bypassedRetChair: true },
+			]) as never; // bypassRow
+		});
+		vi.mocked(db.transaction).mockImplementation(
+			mockTransaction(mock) as never,
+		);
+
+		const res = await app.request(`/proposals/${PROPOSAL_ID}/review`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ decision: "Approved" }),
+		});
+
+		expect(res.status).toBe(200);
+	});
+
+	it("should set bypassedRetChair when Director returns an Endorsed proposal", async () => {
+		setMockUser(MOCK_USERS.director);
+		const mock = createMockProposal({ status: "Endorsed" });
+		let selectCallCount = 0;
+		vi.mocked(db.select).mockImplementation(() => {
+			selectCallCount++;
+			if (selectCallCount === 1) return mockSelectChain([mock]) as never; // proposal lookup
+			if (selectCallCount === 2)
+				return mockSelectChain([]) as never; // isProjectLeader → not a leader
+			return mockSelectChain([
+				{ bypassedRetChair: false },
+			]) as never; // bypassRow
+		});
+		vi.mocked(db.transaction).mockImplementation(
+			mockTransaction(mock) as never,
+		);
+
+		const res = await app.request(`/proposals/${PROPOSAL_ID}/review`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ decision: "Returned", comments: "Needs revision" }),
+		});
+
+		expect(res.status).toBe(200);
+		// Verify the transaction set bypassedRetChair: true
+		const txUpdate = vi.mocked(db.transaction).mock.calls[0][0];
+		const txObj = {
+			insert: vi.fn(() => ({ values: vi.fn(() => ({})) })),
+			update: vi.fn(() => ({
+				set: vi.fn((vals: Record<string, unknown>) => {
+					expect(vals.bypassedRetChair).toBe(true);
+					return { where: vi.fn(() => ({ returning: vi.fn(() => [mock]) })) };
+				}),
+			})),
+		};
+		await (txUpdate as (tx: unknown) => Promise<unknown>)(txObj);
 	});
 });
 

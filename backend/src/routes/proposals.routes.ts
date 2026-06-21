@@ -500,6 +500,8 @@ app.openapi(createProposalRoute, async (c) => {
 				targetEndDate: body.targetEndDate
 					? new Date(body.targetEndDate)
 					: null,
+				// DFD 6.1: RET Chair submissions bypass endorsement, route directly to Director
+				bypassedRetChair: user.roleName === ROLE_NAMES.RET_CHAIR,
 			})
 			.returning();
 
@@ -871,6 +873,13 @@ app.openapi(reviewRoute, async (c) => {
 	let reviewStage: string;
 	let newStatus: string;
 
+	// Fetch bypassedRetChair flag for routing decisions
+	const [bypassRow] = await db
+		.select({ bypassedRetChair: proposals.bypassedRetChair })
+		.from(proposals)
+		.where(and(eq(proposals.proposalId, id), isNull(proposals.archivedAt)))
+		.limit(1);
+
 	if (
 		user.roleName === ROLE_NAMES.RET_CHAIR &&
 		existing.status === PROPOSAL_STATUS.SUBMITTED
@@ -908,6 +917,27 @@ app.openapi(reviewRoute, async (c) => {
 				"Director can only Approve, Return, or Reject at this stage",
 			);
 		}
+	} else if (
+		user.roleName === ROLE_NAMES.DIRECTOR &&
+		existing.status === PROPOSAL_STATUS.SUBMITTED &&
+		bypassRow?.bypassedRetChair
+	) {
+		// Bypassed RET Chair: Director can approve a Submitted proposal directly
+		// when the proposal previously cleared endorsement but was returned by Director
+		reviewStage = REVIEW_STAGE.APPROVAL;
+		if (body.decision === REVIEW_DECISION.APPROVED) {
+			newStatus = PROPOSAL_STATUS.APPROVED;
+		} else if (body.decision === REVIEW_DECISION.RETURNED) {
+			newStatus = PROPOSAL_STATUS.RETURNED;
+		} else if (body.decision === REVIEW_DECISION.REJECTED) {
+			newStatus = PROPOSAL_STATUS.REJECTED;
+		} else {
+			throw new ApiError(
+				400,
+				"INVALID_DECISION",
+				"Director can only Approve, Return, or Reject at this stage",
+			);
+		}
 	} else {
 		throw new ApiError(
 			400,
@@ -918,6 +948,13 @@ app.openapi(reviewRoute, async (c) => {
 
 	// EC-04: When returned, increment revision number (docs are preserved)
 	const revisionIncrement = newStatus === PROPOSAL_STATUS.RETURNED ? 1 : 0;
+
+	// DFD 6.1: When Director returns an Endorsed proposal, set bypassedRetChair
+	// so subsequent resubmissions route directly to Director (skip RET Chair)
+	const isDirectorReturningEndorsed =
+		user.roleName === ROLE_NAMES.DIRECTOR &&
+		existing.status === PROPOSAL_STATUS.ENDORSED &&
+		newStatus === PROPOSAL_STATUS.RETURNED;
 
 	await db.transaction(async (tx) => {
 		// EC-05: Always insert a new review entry (never overwrite)
@@ -935,6 +972,7 @@ app.openapi(reviewRoute, async (c) => {
 				status: newStatus,
 				revisionNum: existing.revisionNum + revisionIncrement,
 				updatedAt: new Date(),
+				...(isDirectorReturningEndorsed ? { bypassedRetChair: true } : {}),
 			})
 			.where(
 				and(

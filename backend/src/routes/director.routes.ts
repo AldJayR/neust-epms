@@ -664,6 +664,11 @@ app.openapi(projectHubRoute, async (c) => {
 			eq(proposals.status, PROPOSAL_STATUS.APPROVED),
 			eq(proposals.status, PROPOSAL_STATUS.RETURNED),
 			eq(proposals.status, PROPOSAL_STATUS.REJECTED),
+			// DFD 6.1: Submitted proposals that bypassed RET Chair route directly to Director
+			and(
+				eq(proposals.status, PROPOSAL_STATUS.SUBMITTED),
+				eq(proposals.bypassedRetChair, true),
+			),
 		),
 	];
 
