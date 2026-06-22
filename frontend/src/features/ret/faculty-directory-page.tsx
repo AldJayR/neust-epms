@@ -221,13 +221,13 @@ export function RetFacultyDirectoryPage({
 								className={cn(
 									"size-9 rounded-lg border-[#e5e5e5] bg-white shadow-sm relative transition-all duration-200",
 									activeFilterCount > 0 &&
-										"border-[#14369c] ring-1 ring-[#14369c]",
+										"border-brand-primary ring-1 ring-brand-primary",
 								)}
 								aria-label="Filter faculty list"
 							>
 								<ListFilter className="size-4" />
 								{activeFilterCount > 0 && (
-									<span className="absolute -top-1 -right-1 flex h-2 w-2 rounded-full bg-[#14369c]" />
+									<span className="absolute -top-1 -right-1 flex h-2 w-2 rounded-full bg-brand-primary" />
 								)}
 							</Button>
 						}
@@ -254,7 +254,7 @@ export function RetFacultyDirectoryPage({
 								<Button
 									variant="secondary"
 									size="sm"
-									className="h-7 text-xs bg-[#f4f7fc] text-[#14369c] border border-[#e2ecf8] hover:bg-[#eaf1fd] rounded-md px-2.5 font-medium cursor-pointer"
+									className="h-7 text-xs bg-[#f4f7fc] text-brand-primary border border-brand-primary/20 hover:bg-[#eaf1fd] rounded-md px-2.5 font-medium cursor-pointer"
 									onClick={() => {
 										setSelectedLoads(["0"]);
 										setSelectedRanks([]);
@@ -265,7 +265,7 @@ export function RetFacultyDirectoryPage({
 								<Button
 									variant="secondary"
 									size="sm"
-									className="h-7 text-xs bg-[#fef2f2] text-[#991b1b] border border-[#fee2e2] hover:bg-[#fee2e2] rounded-md px-2.5 font-medium cursor-pointer"
+									className="h-7 text-xs bg-[#fef2f2] text-destructive border border-destructive/20 hover:bg-[#fee2e2] rounded-md px-2.5 font-medium cursor-pointer"
 									onClick={() => {
 										setSelectedLoads(["3+"]);
 										setSelectedRanks([]);
@@ -363,7 +363,7 @@ export function RetFacultyDirectoryPage({
 								<Button
 									variant="ghost"
 									size="sm"
-									className="h-7 text-xs text-muted-foreground hover:text-[#991b1b] cursor-pointer"
+									className="h-7 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
 									onClick={() => {
 										setSelectedRanks([]);
 										setSelectedLoads([]);
