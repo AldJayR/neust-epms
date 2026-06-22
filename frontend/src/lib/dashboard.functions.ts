@@ -248,7 +248,7 @@ const getDirectorDashboardFn = createServerFn({ method: "GET" })
 const getProjectHubFn = createServerFn({ method: "GET" })
 	.validator(projectHubParamsSchema)
 	.handler(async ({ data }) => {
-		await authorizeSessionUser("Director");
+		await authorizeSessionUser("Director", "RET Chair");
 		const token = await getValidAccessToken();
 
 		const query = new URLSearchParams({

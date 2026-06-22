@@ -3,7 +3,8 @@ import { z } from "zod";
 import { ProjectHubPage } from "@/features/director/project-hub-page";
 import { projectHubQueryOptions } from "@/lib/dashboard.functions";
 import {
-	isAdminOrDirector,
+	isDirector,
+	isRETChair,
 	isSuperAdmin,
 	requireRole,
 } from "@/lib/permissions";
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 		}
 	},
 	loader: async ({ context, deps }) => {
-		if (requireRole(context.auth.user, "Director", "Super Admin")) {
+		if (requireRole(context.auth.user, "Director", "RET Chair")) {
 			return null;
 		}
 
@@ -88,7 +89,7 @@ function ProjectsIndexPage() {
 		});
 	};
 
-	if (isAdminOrDirector(user)) {
+	if (isDirector(user) || isRETChair(user)) {
 		return (
 			<ProjectHubPage
 				page={page}
