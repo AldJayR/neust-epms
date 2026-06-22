@@ -4,7 +4,7 @@ import {
 	CircleCheck,
 	CloudUpload,
 	Download,
-	Filter,
+	ListFilter,
 	LogIn,
 	MoreVertical,
 	Settings,
@@ -227,7 +227,7 @@ export function ActivityLogPage({
 					className="h-9 w-9 border-[#e5e5e5] rounded-[8px] shadow-sm"
 					aria-label="Filter activity log"
 				>
-					<Filter className="size-4" />
+					<ListFilter className="size-4" />
 				</Button>
 			</div>
 

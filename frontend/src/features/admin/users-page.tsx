@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Filter, Loader2, MoreVertical } from "lucide-react";
+import { CheckCircle2, ListFilter, Loader2, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -229,7 +229,7 @@ export function UsersPage({
 					size="icon"
 					className="h-9 w-9 rounded-lg border-[#e5e5e5]"
 				>
-					<Filter className="size-4" />
+					<ListFilter className="size-4" />
 				</Button>
 			</div>
 

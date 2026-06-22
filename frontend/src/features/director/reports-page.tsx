@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Download, MoreVertical, SlidersHorizontal } from "lucide-react";
+import { Download, ListFilter, MoreVertical } from "lucide-react";
 import { useState } from "react";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Badge } from "@/components/ui/badge";
@@ -159,7 +159,7 @@ export function ReportsPage() {
 					className="h-9 w-9 p-0 border-[#e5e5e5] rounded-[8px] shadow-sm"
 					aria-label="Filter reports"
 				>
-					<SlidersHorizontal className="size-4" />
+					<ListFilter className="size-4" />
 				</Button>
 			</div>
 

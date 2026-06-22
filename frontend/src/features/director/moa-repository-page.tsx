@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClientOnly } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { EllipsisVertical, Plus, SlidersHorizontal } from "lucide-react";
+import { EllipsisVertical, ListFilter, Plus } from "lucide-react";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
@@ -161,7 +161,7 @@ export function MoaRepositoryPage({
 					className="h-9 w-9 border-[#e5e5e5] bg-white shadow-sm"
 					aria-label="Filter MOAs"
 				>
-					<SlidersHorizontal className="size-4 text-[#0a0a0a]" />
+					<ListFilter className="size-4 text-[#0a0a0a]" />
 				</Button>
 			</div>
 
