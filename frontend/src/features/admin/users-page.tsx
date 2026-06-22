@@ -1,11 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-	CheckCircle2,
-	Filter,
-	Loader2,
-	MoreVertical,
-	Users,
-} from "lucide-react";
+import { CheckCircle2, Filter, Loader2, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,13 +12,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	Empty,
-	EmptyDescription,
-	EmptyHeader,
-	EmptyMedia,
-	EmptyTitle,
-} from "@/components/ui/empty";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import {
@@ -103,6 +90,7 @@ export function UsersPage({
 	const users = usersData?.users ?? [];
 	const hasUsers = users.length > 0;
 	const hasSearch = !!search?.trim();
+	const showTableHeader = hasUsers || hasSearch;
 
 	const columns: DataTableColumnDef<UserResponse>[] = [
 		{
@@ -251,30 +239,18 @@ export function UsersPage({
 						<Loader2 className="h-8 w-8 animate-spin text-primary" />
 					</div>
 				)}
-				{hasUsers || isLoading ? (
-					<DataTable
-						columns={columns}
-						data={users}
-						isLoading={isLoading}
-						ariaLabel="User management"
-					/>
-				) : (
-					<div className="flex min-h-[400px] items-center justify-center bg-white px-6">
-						<Empty className="border-0 p-0">
-							<EmptyHeader>
-								<EmptyMedia variant="icon">
-									<Users className="size-5" />
-								</EmptyMedia>
-								<EmptyTitle>No users found</EmptyTitle>
-								<EmptyDescription>
-									{hasSearch
-										? "Try adjusting your search term to find matching accounts."
-										: "No user accounts are available yet."}
-								</EmptyDescription>
-							</EmptyHeader>
-						</Empty>
-					</div>
-				)}
+				<DataTable
+					columns={columns}
+					data={users}
+					isLoading={isLoading}
+					ariaLabel="User management"
+					showHeader={showTableHeader}
+					emptyMessage={
+						hasSearch
+							? "Try adjusting your search term to find matching accounts."
+							: "No user accounts are available yet."
+					}
+				/>
 			</div>
 
 			<PaginationBar

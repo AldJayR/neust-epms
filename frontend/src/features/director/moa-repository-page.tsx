@@ -46,6 +46,10 @@ export function MoaRepositoryPage({
 		activePartnerships: 0,
 	};
 	const totalPages = Math.ceil(total / limit);
+	const showTableHeader =
+		items.length > 0 ||
+		(search ?? "").trim().length > 0 ||
+		(status ?? "").trim().length > 0;
 
 	const columns: DataTableColumnDef<MoaItem>[] = [
 		{
@@ -169,6 +173,7 @@ export function MoaRepositoryPage({
 						isLoading={isLoading}
 						emptyMessage="No MOAs found."
 						ariaLabel="Memoranda of Agreements"
+						showHeader={showTableHeader}
 					/>
 				</div>
 			</div>

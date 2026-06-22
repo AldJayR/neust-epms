@@ -173,9 +173,11 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 		approveMutation.mutate({ users: usersToApprove });
 	};
 
+	const users = usersData?.users ?? [];
+	const showTableHeader = users.length > 0 || (search ?? "").trim().length > 0;
+
 	const allVisibleUsersSelected =
-		!!usersData?.users.length &&
-		usersData.users.every((u) => selectedUsers.has(u.userId));
+		users.length > 0 && users.every((u) => selectedUsers.has(u.userId));
 
 	const columns: DataTableColumnDef<UserResponse>[] = [
 		{
@@ -325,9 +327,10 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 							<div className="h-full overflow-auto">
 								<DataTable
 									columns={columns}
-									data={usersData?.users ?? []}
+									data={users}
 									emptyMessage="No pending users found."
 									ariaLabel="Pending users for approval"
+									showHeader={showTableHeader}
 								/>
 							</div>
 						</div>

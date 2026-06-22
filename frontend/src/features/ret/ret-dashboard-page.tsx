@@ -56,10 +56,7 @@ export function RETDashboardPage({
 	const { data: statsData, isLoading: isStatsLoading } = useQuery(
 		retDashboardStatsQueryOptions(),
 	);
-	const {
-		data: proposalsData,
-		isLoading: isProposalsLoading,
-	} = useQuery(
+	const { data: proposalsData, isLoading: isProposalsLoading } = useQuery(
 		retProposalsQueryOptions({
 			page,
 			limit: pageSize,

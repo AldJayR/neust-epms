@@ -78,6 +78,9 @@ export function ActivityLogPage({
 		auditLogsQueryOptions({ page, limit, search }),
 	);
 
+	const logs = logsData?.items ?? [];
+	const showTableHeader = logs.length > 0 || (search ?? "").trim().length > 0;
+
 	const stats = [
 		{
 			label: "Total actions today",
@@ -231,10 +234,11 @@ export function ActivityLogPage({
 			<div className="border border-[#ebebeb] rounded-[12px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden bg-white">
 				<DataTable
 					columns={columns}
-					data={logsData?.items ?? []}
+					data={logs}
 					isLoading={isLogsLoading}
 					emptyMessage="No activities found."
 					ariaLabel="Activity log"
+					showHeader={showTableHeader}
 				/>
 			</div>
 

@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import * as React from "react";
 import {
 	ChevronLeft,
 	ChevronRight,
 	EllipsisVertical,
 	ListFilter,
 } from "lucide-react";
+import * as React from "react";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -55,12 +55,14 @@ export function RetFacultyDirectoryPage({
 	// metrics from existing API might need extension later to match the design's specific stats
 	const metrics = data?.metrics;
 	const totalPages = Math.ceil(total / limit);
+	const showTableHeader = items.length > 0 || (search ?? "").trim().length > 0;
 
 	const columns: DataTableColumnDef<FacultyInvolvement>[] = [
 		{
 			id: "name",
 			header: "Faculty Name",
-			headerClassName: "w-[320px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			headerClassName:
+				"w-[320px] px-4 py-2 text-[14px] font-medium text-[#666]",
 			cellClassName: "px-4 py-3",
 			cell: ({ row }) => {
 				const faculty = row.original;
@@ -82,7 +84,8 @@ export function RetFacultyDirectoryPage({
 		{
 			id: "rank",
 			header: "Rank",
-			headerClassName: "w-[200px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			headerClassName:
+				"w-[200px] px-4 py-2 text-[14px] font-medium text-[#666]",
 			cellClassName: "px-4 py-3",
 			cell: ({ row }) => {
 				const faculty = row.original;
@@ -99,18 +102,18 @@ export function RetFacultyDirectoryPage({
 		{
 			id: "totalProjects",
 			header: "Total Projects",
-			headerClassName: "w-[150px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			headerClassName:
+				"w-[150px] px-4 py-2 text-[14px] font-medium text-[#666]",
 			cellClassName: "px-4 py-3 text-[14px] text-[#0a0a0a]",
 			cell: ({ row }) => row.original.totalInvolvement,
 		},
 		{
 			id: "status",
 			header: "Account Status",
-			headerClassName: "w-[150px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			headerClassName:
+				"w-[150px] px-4 py-2 text-[14px] font-medium text-[#666]",
 			cellClassName: "px-4 py-3",
-			cell: ({ row }) => (
-				<StatusBadge isActive={row.original.isActive} />
-			),
+			cell: ({ row }) => <StatusBadge isActive={row.original.isActive} />,
 		},
 		{
 			id: "actions",
@@ -218,6 +221,7 @@ export function RetFacultyDirectoryPage({
 							isLoading={isLoading}
 							emptyMessage="No faculty records found."
 							ariaLabel="Faculty directory"
+							showHeader={showTableHeader}
 						/>
 					</div>
 				</div>
