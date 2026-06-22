@@ -150,6 +150,7 @@ const FacultyInvolvementSchema = z.object({
 	lastName: z.string(),
 	academicRank: z.string().nullable(),
 	college: z.string().nullable(),
+	departmentCode: z.string().nullable(),
 	isActive: z.boolean(),
 	leadProjects: z.number(),
 	collaboratorProjects: z.number(),
@@ -246,6 +247,7 @@ app.openapi(facultyDirectoryRoute, async (c) => {
 			lastName: users.lastName,
 			academicRank: users.academicRank,
 			college: departments.departmentName,
+			departmentCode: departments.departmentCode,
 			isActive: users.isActive,
 		})
 		.from(users)

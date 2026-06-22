@@ -85,12 +85,12 @@ export function RetFacultyDirectoryPage({
 			},
 		},
 		{
-			id: "college",
-			header: "College",
+			id: "department",
+			header: "Department",
 			headerClassName:
 				"w-[200px] px-4 py-2 text-[14px] font-medium text-[#666]",
 			cellClassName: "px-4 py-3 text-[14px] text-[#0a0a0a]",
-			cell: ({ row }) => row.original.college,
+			cell: ({ row }) => row.original.departmentCode,
 		},
 		{
 			id: "leadProjects",

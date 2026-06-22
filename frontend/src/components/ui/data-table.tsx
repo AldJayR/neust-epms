@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { FolderOpen, Loader2 } from "lucide-react";
 import {
 	flexRender,
 	getCoreRowModel,
@@ -14,6 +14,12 @@ import {
 	TableHeader,
 	TableRow,
 } from "./table";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyMedia,
+} from "./empty";
 import { cn } from "#/lib/utils";
 
 interface DataTableProps<TData, TValue> {
@@ -102,11 +108,17 @@ function DataTable<TData, TValue>({
 					</TableRow>
 				) : data.length === 0 ? (
 					<TableRow>
-						<TableCell
-							colSpan={colSpan}
-							className="h-24 text-center text-muted-foreground"
-						>
-							{emptyMessage}
+						<TableCell colSpan={colSpan} className="p-0">
+							<Empty className="border-0 py-12">
+								<EmptyContent>
+									<EmptyMedia variant="icon">
+										<FolderOpen className="size-5 text-[#666]" />
+									</EmptyMedia>
+									<EmptyDescription className="text-sm text-[#666]">
+										{emptyMessage}
+									</EmptyDescription>
+								</EmptyContent>
+							</Empty>
 						</TableCell>
 					</TableRow>
 				) : (
