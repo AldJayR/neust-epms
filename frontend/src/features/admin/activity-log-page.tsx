@@ -14,19 +14,13 @@ import {
 import { MetricCard } from "@/components/custom/metric-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
-import {
 	auditLogsQueryOptions,
 	auditStatsQueryOptions,
+	type AuditLog,
 } from "@/lib/admin.functions";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -104,6 +98,99 @@ export function ActivityLogPage({
 		},
 	];
 
+	const columns: DataTableColumnDef<AuditLog>[] = [
+		{
+			id: "time",
+			header: "Time",
+			headerClassName: "w-[140px] font-medium text-[#666] text-sm py-2.5",
+			cellClassName: "py-2.5 text-left",
+			cell: ({ row }) => {
+				const createdAt = new Date(row.original.createdAt);
+				return (
+					<div className="flex flex-col">
+						<ClientOnly
+							fallback={
+								<div className="flex flex-col">
+									<span className="text-sm text-[#0a0a0a]">...</span>
+									<span className="text-xs text-[#666]">...</span>
+								</div>
+							}
+						>
+							<span className="text-sm text-[#0a0a0a]">
+								{dateFormatter.format(createdAt)}
+							</span>
+							<span className="text-xs text-[#666]">
+								{timeFormatter.format(createdAt)}
+							</span>
+						</ClientOnly>
+					</div>
+				);
+			},
+		},
+		{
+			id: "action",
+			header: "Action",
+			headerClassName: "font-medium text-[#666] text-sm py-2.5",
+			cellClassName: "py-2.5 text-sm text-[#0a0a0a] leading-normal text-left",
+			cell: ({ row }) => row.original.action,
+		},
+		{
+			id: "actor",
+			header: "Actor",
+			headerClassName: "w-[200px] font-medium text-[#666] text-sm py-2.5",
+			cellClassName: "py-2.5 text-left",
+			cell: ({ row }) => (
+				<div className="flex flex-col">
+					<span className="text-sm text-[#0a0a0a]">
+						{row.original.actorName ?? "System"}
+					</span>
+					<span className="text-xs text-muted-foreground">
+						{row.original.actorRole ?? "Automated"}
+					</span>
+				</div>
+			),
+		},
+		{
+			id: "type",
+			header: () => <div className="text-center">Type</div>,
+			headerClassName: "w-[130px] font-medium text-[#666] text-sm py-2.5 text-center",
+			cellClassName: "py-2.5 text-center",
+			cell: ({ row }) => {
+				const typeInfo = getActionTypeInfo(
+					row.original.action,
+					row.original.tableAffected,
+				);
+				return (
+					<div className="flex justify-center">
+						<Badge
+							variant="outline"
+							className="font-medium text-[#737373] border-[#e5e5e5] h-[22px] px-1.5 gap-1 rounded-[8px]"
+						>
+							{typeInfo.icon}
+							<span>{typeInfo.label}</span>
+						</Badge>
+					</div>
+				);
+			},
+		},
+		{
+			id: "actions",
+			header: "",
+			headerClassName: "w-[50px] py-2.5",
+			cellClassName: "py-2.5 text-center",
+			cell: () => (
+				<Button
+					variant="ghost"
+					size="icon"
+					className="size-8"
+					aria-label="More actions for log entry"
+				>
+					<MoreVertical className="size-4" />
+				</Button>
+			),
+		},
+	];
+
 	return (
 		<div className="flex flex-col gap-8">
 			<div className="flex items-center justify-between">
@@ -142,112 +229,13 @@ export function ActivityLogPage({
 			</div>
 
 			<div className="border border-[#ebebeb] rounded-[12px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden bg-white">
-				<Table aria-label="Activity log">
-					<TableHeader className="bg-white">
-						<TableRow className="border-b-[#ebebeb] hover:bg-transparent">
-							<TableHead className="w-[140px] font-medium text-[#666] text-sm py-2.5">
-								Time
-							</TableHead>
-							<TableHead className="font-medium text-[#666] text-sm py-2.5">
-								Action
-							</TableHead>
-							<TableHead className="w-[200px] font-medium text-[#666] text-sm py-2.5">
-								Actor
-							</TableHead>
-							<TableHead className="w-[130px] font-medium text-[#666] text-sm py-2.5 text-center">
-								Type
-							</TableHead>
-							<TableHead className="w-[50px] py-2.5" />
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{isLogsLoading ? (
-							<TableRow>
-								<TableCell colSpan={5} className="h-32 text-center">
-									<Loader2
-										className="size-8 animate-spin mx-auto text-primary/20"
-										role="status"
-										aria-label="Loading activity log"
-									/>
-								</TableCell>
-							</TableRow>
-						) : logsData?.items.length === 0 ? (
-							<TableRow>
-								<TableCell
-									colSpan={5}
-									className="h-32 text-center text-muted-foreground"
-								>
-									No activities found.
-								</TableCell>
-							</TableRow>
-						) : (
-							logsData?.items.map((log) => {
-								const typeInfo = getActionTypeInfo(
-									log.action,
-									log.tableAffected,
-								);
-								const createdAt = new Date(log.createdAt);
-								return (
-									<TableRow key={log.logId} className="border-b-[#e5e5e5]">
-										<TableCell className="py-2.5">
-											<div className="flex flex-col">
-												<ClientOnly
-													fallback={
-														<div className="flex flex-col">
-															<span className="text-sm text-[#0a0a0a]">
-																...
-															</span>
-															<span className="text-xs text-[#666]">...</span>
-														</div>
-													}
-												>
-													<span className="text-sm text-[#0a0a0a]">
-														{dateFormatter.format(createdAt)}
-													</span>
-													<span className="text-xs text-[#666]">
-														{timeFormatter.format(createdAt)}
-													</span>
-												</ClientOnly>
-											</div>
-										</TableCell>
-										<TableCell className="py-2.5 text-sm text-[#0a0a0a] leading-normal">
-											{log.action}
-										</TableCell>
-										<TableCell className="py-2.5">
-											<div className="flex flex-col">
-												<span className="text-sm text-[#0a0a0a]">
-													{log.actorName ?? "System"}
-												</span>
-												<span className="text-xs text-muted-foreground">
-													{log.actorRole ?? "Automated"}
-												</span>
-											</div>
-										</TableCell>
-										<TableCell className="py-2.5 text-center">
-											<Badge
-												variant="outline"
-												className="font-medium text-[#737373] border-[#e5e5e5] h-[22px] px-1.5 gap-1 rounded-[8px]"
-											>
-												{typeInfo.icon}
-												<span>{typeInfo.label}</span>
-											</Badge>
-										</TableCell>
-										<TableCell className="py-2.5 text-center">
-											<Button
-												variant="ghost"
-												size="icon"
-												className="size-8"
-												aria-label="More actions for log entry"
-											>
-												<MoreVertical className="size-4" />
-											</Button>
-										</TableCell>
-									</TableRow>
-								);
-							})
-						)}
-					</TableBody>
-				</Table>
+				<DataTable
+					columns={columns}
+					data={logsData?.items ?? []}
+					isLoading={isLogsLoading}
+					emptyMessage="No activities found."
+					ariaLabel="Activity log"
+				/>
 			</div>
 
 			<PaginationBar

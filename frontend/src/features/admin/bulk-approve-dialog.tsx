@@ -23,18 +23,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
+import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import {
 	bulkApproveUsersFn,
 	getAdminUsersFn,
 	getRolesFn,
+	type UserResponse,
 } from "@/lib/admin.functions";
 
 interface BulkApproveDialogProps {
@@ -180,6 +174,109 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 		!!usersData?.users.length &&
 		usersData.users.every((u) => selectedUsers.has(u.userId));
 
+	const columns: DataTableColumnDef<UserResponse>[] = [
+		{
+			id: "select",
+			header: () => (
+				<div className="flex justify-center">
+					<Checkbox
+						checked={allVisibleUsersSelected}
+						onCheckedChange={handleSelectAll}
+						aria-label="Select all"
+					/>
+				</div>
+			),
+			headerClassName: "w-[50px] px-4 text-center",
+			cellClassName: "px-4 text-center",
+			cell: ({ row }) => (
+				<div className="flex justify-center">
+					<Checkbox
+						checked={selectedUsers.has(row.original.userId)}
+						onCheckedChange={(checked) =>
+							handleSelectRow(row.original.userId, checked as boolean)
+						}
+						aria-label={`Select ${row.original.firstName}`}
+					/>
+				</div>
+			),
+		},
+		{
+			id: "name",
+			header: "Name",
+			headerClassName: "min-w-[250px] font-medium text-[#0a0a0a] text-left",
+			cell: ({ row }) => {
+				const user = row.original;
+				return (
+					<div className="flex items-center gap-[10px]">
+						<Avatar className="size-9 border border-[#e5e5e5]">
+							<AvatarImage
+								src=""
+								alt={`${user.firstName} ${user.lastName}`}
+							/>
+							<AvatarFallback className="bg-primary/5 text-xs font-medium text-primary">
+								{user.firstName?.charAt(0) ?? ""}
+								{user.lastName?.charAt(0) ?? ""}
+							</AvatarFallback>
+						</Avatar>
+						<div className="flex min-w-0 flex-col text-left">
+							<span className="truncate text-[14px] font-medium leading-5 text-[#0a0a0a]">
+								{user.firstName}{" "}
+								{user.middleName
+									? `${user.middleName.charAt(0)}. `
+									: ""}{" "}
+								{user.lastName}
+							</span>
+							<span className="truncate text-[12px] leading-4 text-[#666]">
+								{user.campusName}
+							</span>
+						</div>
+					</div>
+				);
+			},
+		},
+		{
+			id: "department",
+			header: () => <div className="text-center">Department</div>,
+			headerClassName: "min-w-[200px] text-center font-medium text-[#0a0a0a]",
+			cellClassName: "text-center text-[14px] text-[#0a0a0a]",
+			cell: ({ row }) => row.original.departmentName ?? "-",
+		},
+		{
+			id: "role",
+			header: () => <div className="text-right">Assign role</div>,
+			headerClassName: "w-[200px] pr-6 text-right font-medium text-[#0a0a0a]",
+			cellClassName: "pr-6",
+			cell: ({ row }) => {
+				const user = row.original;
+				return (
+					<div className="flex justify-end">
+						<Select
+							value={userRoles[user.userId]}
+							onValueChange={(val) =>
+								handleRoleChange(user.userId, val as string)
+							}
+						>
+							<SelectTrigger className="h-[30px] w-[160px] rounded-md border-[#e5e5e5] bg-white px-3 shadow-[0px_1px_1px_rgba(0,0,0,0.1)]">
+								<SelectValue placeholder="Select role" />
+							</SelectTrigger>
+							<SelectContent className="rounded-md shadow-lg">
+								{rolesData?.map((role) => (
+									<SelectItem
+										key={role.roleId}
+										value={role.roleName}
+										className="text-sm"
+									>
+										{role.roleName}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+				);
+			},
+		},
+	];
+
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogTrigger
@@ -228,110 +325,12 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 								</div>
 							)}
 							<div className="h-full overflow-auto">
-								<Table aria-label="Pending users for approval">
-									<TableHeader className="sticky top-0 z-20 bg-white">
-										<TableRow className="border-b-[#e5e5e5] hover:bg-transparent">
-											<TableHead className="w-[50px] px-4 text-center">
-												<Checkbox
-													checked={allVisibleUsersSelected}
-													onCheckedChange={handleSelectAll}
-													aria-label="Select all"
-												/>
-											</TableHead>
-											<TableHead className="min-w-[250px] font-medium text-[#0a0a0a]">
-												Name
-											</TableHead>
-											<TableHead className="min-w-[200px] text-center font-medium text-[#0a0a0a]">
-												Department
-											</TableHead>
-											<TableHead className="w-[200px] pr-6 text-right font-medium text-[#0a0a0a]">
-												Assign role
-											</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{usersData?.users.map((user) => (
-											<TableRow
-												key={user.userId}
-												className="border-b-[#e5e5e5] transition-colors hover:bg-[#fcfcfc]"
-											>
-												<TableCell className="px-4 text-center">
-													<Checkbox
-														checked={selectedUsers.has(user.userId)}
-														onCheckedChange={(checked) =>
-															handleSelectRow(user.userId, checked as boolean)
-														}
-														aria-label={`Select ${user.firstName}`}
-													/>
-												</TableCell>
-												<TableCell>
-													<div className="flex items-center gap-[10px]">
-														<Avatar className="size-9 border border-[#e5e5e5]">
-															<AvatarImage
-																src=""
-																alt={`${user.firstName} ${user.lastName}`}
-															/>
-															<AvatarFallback className="bg-primary/5 text-xs font-medium text-primary">
-																{user.firstName?.charAt(0) ?? ""}
-																{user.lastName?.charAt(0) ?? ""}
-															</AvatarFallback>
-														</Avatar>
-														<div className="flex min-w-0 flex-col">
-															<span className="truncate text-[14px] font-medium leading-5 text-[#0a0a0a]">
-																{user.firstName}{" "}
-																{user.middleName
-																	? `${user.middleName.charAt(0)}. `
-																	: ""}{" "}
-																{user.lastName}
-															</span>
-															<span className="truncate text-[12px] leading-4 text-[#666]">
-																{user.campusName}
-															</span>
-														</div>
-													</div>
-												</TableCell>
-												<TableCell className="text-center text-[14px] text-[#0a0a0a]">
-													{user.departmentName ?? "-"}
-												</TableCell>
-												<TableCell className="pr-6">
-													<div className="flex justify-end">
-														<Select
-															value={userRoles[user.userId]}
-															onValueChange={(val) =>
-																handleRoleChange(user.userId, val as string)
-															}
-														>
-															<SelectTrigger className="h-[30px] w-[160px] rounded-md border-[#e5e5e5] bg-white px-3 shadow-[0px_1px_1px_rgba(0,0,0,0.1)]">
-																<SelectValue placeholder="Select role" />
-															</SelectTrigger>
-															<SelectContent className="rounded-md shadow-lg">
-																{rolesData?.map((role) => (
-																	<SelectItem
-																		key={role.roleId}
-																		value={role.roleName}
-																		className="text-sm"
-																	>
-																		{role.roleName}
-																	</SelectItem>
-																))}
-															</SelectContent>
-														</Select>
-													</div>
-												</TableCell>
-											</TableRow>
-										))}
-										{!isUsersFetching && usersData?.users.length === 0 && (
-											<TableRow>
-												<TableCell
-													colSpan={4}
-													className="h-32 text-center italic text-muted-foreground"
-												>
-													No pending users found.
-												</TableCell>
-											</TableRow>
-										)}
-									</TableBody>
-								</Table>
+								<DataTable
+									columns={columns}
+									data={usersData?.users ?? []}
+									emptyMessage="No pending users found."
+									ariaLabel="Pending users for approval"
+								/>
 							</div>
 						</div>
 

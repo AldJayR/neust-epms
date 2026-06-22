@@ -11,18 +11,14 @@ import { MetricCard } from "@/components/custom/metric-card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import { SearchInput } from "@/components/ui/search-input";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AuthUser } from "@/lib/auth";
-import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
+import {
+	facultyDirectoryQueryOptions,
+	type FacultyInvolvement,
+} from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
 
 interface RetFacultyDirectoryPageProps {
@@ -128,109 +124,13 @@ export function RetFacultyDirectoryPage({
 
 					{/* Table */}
 					<div className="bg-white">
-						<Table>
-							<TableHeader className="bg-white">
-								<TableRow className="border-b border-[#ebebeb] hover:bg-transparent">
-									<TableHead className="w-[320px] px-4 py-2 text-[14px] font-medium text-[#666]">
-										Faculty Name
-									</TableHead>
-									<TableHead className="w-[179px] px-4 py-2 text-[14px] font-medium text-[#666]">
-										Rank
-									</TableHead>
-									<TableHead className="w-[174px] px-4 py-2 text-right text-[14px] font-medium text-[#666]">
-										Total Projects
-									</TableHead>
-									<TableHead className="w-[254px] px-4 py-2 text-center text-[14px] font-medium text-[#666]">
-										Account Status
-									</TableHead>
-									<TableHead className="w-[50px]"></TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{isLoading ? (
-									<TableRow>
-										<TableCell colSpan={5} className="h-24 text-center">
-											<Loader2
-												className="mx-auto size-6 animate-spin text-[#11215a]"
-												role="status"
-												aria-label="Loading faculty data"
-											/>
-										</TableCell>
-									</TableRow>
-								) : items.length === 0 ? (
-									<TableRow>
-										<TableCell
-											colSpan={5}
-											className="h-24 text-center text-muted-foreground"
-										>
-											No faculty records found.
-										</TableCell>
-									</TableRow>
-								) : (
-									items.map((faculty) => (
-										<TableRow
-											key={faculty.userId}
-											className="border-b border-[#ebebeb] hover:bg-[#fcfcfc]"
-										>
-											<TableCell className="px-4 py-3">
-												<div className="flex items-center gap-3">
-													<Avatar className="size-9">
-														<AvatarFallback className="bg-[#ddd] text-[#666]">
-															{faculty.firstName?.charAt(0) ?? ""}
-															{faculty.lastName?.charAt(0) ?? ""}
-														</AvatarFallback>
-													</Avatar>
-													<div className="flex flex-col">
-														<span className="text-[14px] font-normal text-[#0a0a0a]">
-															{faculty.firstName} {faculty.lastName}
-														</span>
-														<span className="text-[12px] text-[#666]">
-															{faculty.college || "N/A"}
-														</span>
-													</div>
-												</div>
-											</TableCell>
-											<TableCell className="px-4 py-3">
-												<Badge
-													variant="secondary"
-													className="rounded-lg border-[#e5e5e5] bg-white font-medium text-[#737373] shadow-none"
-												>
-													{formatAcademicRank(faculty.academicRank)}
-												</Badge>
-											</TableCell>
-											<TableCell className="px-4 py-3 text-right text-[14px] font-normal text-[#0a0a0a]">
-												{faculty.totalInvolvement}
-											</TableCell>
-											<TableCell className="px-4 py-3 text-center">
-												<Badge
-													variant="secondary"
-													className="inline-flex items-center gap-1 rounded-lg border-[#e5e5e5] bg-white font-medium text-[#737373] shadow-none"
-												>
-													{faculty.isActive ? (
-														<>
-															<CircleCheck className="size-3 text-[#22c55e]" />
-															Active
-														</>
-													) : (
-														"Inactive"
-													)}
-												</Badge>
-											</TableCell>
-											<TableCell className="px-4 py-3 text-right">
-												<Button
-													variant="ghost"
-													size="icon"
-													className="size-8 text-[#737373]"
-													aria-label="More actions"
-												>
-													<EllipsisVertical className="size-4" />
-												</Button>
-											</TableCell>
-										</TableRow>
-									))
-								)}
-							</TableBody>
-						</Table>
+						<DataTable
+							columns={columns}
+							data={items}
+							isLoading={isLoading}
+							emptyMessage="No faculty records found."
+							ariaLabel="Faculty directory"
+						/>
 					</div>
 				</div>
 
