@@ -23,6 +23,7 @@ const dashboardSearchSchema = z.object({
 	page: z.number().optional().default(1),
 	pageSize: z.number().optional().default(10),
 	search: z.string().optional(),
+	isActive: z.string().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 		page: search.page,
 		pageSize: search.pageSize,
 		search: search.search,
+		isActive: search.isActive,
 	}),
 	loader: async ({ context, deps }) => {
 		if (
@@ -48,6 +50,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 					page: deps.page,
 					pageSize: deps.pageSize,
 					search: deps.search,
+					isActive: deps.isActive,
 				}),
 			);
 			await Promise.all([statsPromise, usersPromise]);
@@ -78,7 +81,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
 	const { user } = Route.useRouteContext();
-	const { page, pageSize, search } = Route.useSearch();
+	const { page, pageSize, search, isActive } = Route.useSearch();
 	const navigate = Route.useNavigate();
 
 	const handleSearch = (newSearch: string | undefined) => {
@@ -90,6 +93,16 @@ function DashboardPage() {
 	const handlePageChange = (newPage: number) => {
 		navigate({
 			search: (old) => ({ ...old, page: newPage }),
+		});
+	};
+
+	const handleIsActiveChange = (newIsActive: string | undefined) => {
+		navigate({
+			search: (old) => ({
+				...old,
+				isActive: newIsActive || undefined,
+				page: 1,
+			}),
 		});
 	};
 
@@ -107,8 +120,10 @@ function DashboardPage() {
 				page={page}
 				pageSize={pageSize}
 				search={search}
+				isActive={isActive}
 				onSearch={handleSearch}
 				onPageChange={handlePageChange}
+				onIsActiveChange={handleIsActiveChange}
 			/>
 		);
 	}

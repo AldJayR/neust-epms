@@ -11,6 +11,7 @@ const usersSearchSchema = z.object({
 	page: z.number().optional().default(1),
 	pageSize: z.number().optional().default(10),
 	search: z.string().optional(),
+	isActive: z.string().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/admin/users/")({
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/_authenticated/admin/users/")({
 		page: search.page,
 		pageSize: search.pageSize,
 		search: search.search,
+		isActive: search.isActive,
 	}),
 	beforeLoad: ({ context }) => {
 		if (requireRole(context.auth.user, "Super Admin")) {
@@ -40,6 +42,7 @@ export const Route = createFileRoute("/_authenticated/admin/users/")({
 					page: deps.page,
 					pageSize: deps.pageSize,
 					search: deps.search,
+					isActive: deps.isActive,
 				}),
 			),
 		]);
@@ -48,7 +51,7 @@ export const Route = createFileRoute("/_authenticated/admin/users/")({
 });
 
 function UsersPageRoute() {
-	const { page, pageSize, search } = Route.useSearch();
+	const { page, pageSize, search, isActive } = Route.useSearch();
 	const navigate = Route.useNavigate();
 
 	const handleSearch = (newSearch: string | undefined) => {
@@ -63,13 +66,25 @@ function UsersPageRoute() {
 		});
 	};
 
+	const handleIsActiveChange = (newIsActive: string | undefined) => {
+		navigate({
+			search: (old) => ({
+				...old,
+				isActive: newIsActive || undefined,
+				page: 1,
+			}),
+		});
+	};
+
 	return (
 		<UsersPage
 			page={page}
 			pageSize={pageSize}
 			search={search}
+			isActive={isActive}
 			onSearch={handleSearch}
 			onPageChange={handlePageChange}
+			onIsActiveChange={handleIsActiveChange}
 		/>
 	);
 }

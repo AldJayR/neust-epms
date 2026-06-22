@@ -59,6 +59,12 @@ function MoasIndexPage() {
 		});
 	};
 
+	const handleStatusChange = (newStatus: string) => {
+		navigate({
+			search: (old) => ({ ...old, status: newStatus || undefined, page: 1 }),
+		});
+	};
+
 	return (
 		<MoaRepositoryPage
 			user={user}
@@ -68,6 +74,7 @@ function MoasIndexPage() {
 			status={status}
 			onPageChange={handlePageChange}
 			onSearchChange={handleSearch}
+			onStatusChange={handleStatusChange}
 		/>
 	);
 }

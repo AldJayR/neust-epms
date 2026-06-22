@@ -9,6 +9,8 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -28,16 +30,20 @@ interface UsersPageProps {
 	page: number;
 	pageSize: number;
 	search?: string;
+	isActive?: string;
 	onSearch: (search: string | undefined) => void;
 	onPageChange: (page: number) => void;
+	onIsActiveChange: (isActive: string | undefined) => void;
 }
 
 export function UsersPage({
 	page,
 	pageSize,
 	search,
+	isActive,
 	onSearch,
 	onPageChange,
+	onIsActiveChange,
 }: UsersPageProps) {
 	const queryClient = useQueryClient();
 
@@ -51,7 +57,7 @@ export function UsersPage({
 		data: usersData,
 		isLoading: isUsersLoading,
 		isFetching: isUsersFetching,
-	} = useQuery(adminUsersQueryOptions({ page, pageSize, search }));
+	} = useQuery(adminUsersQueryOptions({ page, pageSize, search, isActive }));
 
 	// ── Mutations ────────────────────────────────────────────
 
@@ -224,13 +230,37 @@ export function UsersPage({
 					ariaLabel="Search users"
 					className="max-w-[352px]"
 				/>
-				<Button
-					variant="outline"
-					size="icon"
-					className="h-9 w-9 rounded-lg border-[#e5e5e5]"
-				>
-					<ListFilter className="size-4" />
-				</Button>
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<Button
+								variant="outline"
+								size="icon"
+								className="h-9 w-9 rounded-lg border-[#e5e5e5]"
+							>
+								<ListFilter className="size-4" />
+							</Button>
+						}
+					/>
+					<DropdownMenuContent align="end" className="w-48">
+						<DropdownMenuRadioGroup
+							value={isActive || "all"}
+							onValueChange={(val) =>
+								onIsActiveChange(val === "all" ? undefined : val)
+							}
+						>
+							<DropdownMenuRadioItem value="all">
+								All Statuses
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="true">
+								Active Only
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="false">
+								Inactive Only
+							</DropdownMenuRadioItem>
+						</DropdownMenuRadioGroup>
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</div>
 
 			<div className="rounded-[12px] border border-[#ebebeb] bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden min-h-[400px] relative">

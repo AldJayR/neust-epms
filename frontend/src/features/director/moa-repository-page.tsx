@@ -5,6 +5,13 @@ import { EllipsisVertical, ListFilter, Plus } from "lucide-react";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import type { AuthUser } from "@/lib/auth";
@@ -23,6 +30,7 @@ interface MoaRepositoryPageProps {
 	status?: string;
 	onPageChange: (page: number) => void;
 	onSearchChange: (search: string) => void;
+	onStatusChange: (status: string) => void;
 }
 
 export function MoaRepositoryPage({
@@ -33,6 +41,7 @@ export function MoaRepositoryPage({
 	status,
 	onPageChange,
 	onSearchChange,
+	onStatusChange,
 }: MoaRepositoryPageProps) {
 	const { data, isLoading } = useQuery(
 		moaRepositoryQueryOptions({ page, limit, search, status }),
@@ -155,14 +164,37 @@ export function MoaRepositoryPage({
 					ariaLabel="Search MOAs"
 					className="max-w-[352px]"
 				/>
-				<Button
-					variant="outline"
-					size="icon"
-					className="h-9 w-9 border-[#e5e5e5] bg-white shadow-sm"
-					aria-label="Filter MOAs"
-				>
-					<ListFilter className="size-4 text-[#0a0a0a]" />
-				</Button>
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<Button
+								variant="outline"
+								size="icon"
+								className="h-9 w-9 border-[#e5e5e5] bg-white shadow-sm"
+								aria-label="Filter MOAs"
+							>
+								<ListFilter className="size-4 text-[#0a0a0a]" />
+							</Button>
+						}
+					/>
+					<DropdownMenuContent align="end" className="w-48">
+						<DropdownMenuRadioGroup
+							value={status || "all"}
+							onValueChange={(val) => onStatusChange(val === "all" ? "" : val)}
+						>
+							<DropdownMenuRadioItem value="all">
+								All Statuses
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="Valid">Valid</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="Renewal Needed">
+								Renewal Needed
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="Expired">
+								Expired
+							</DropdownMenuRadioItem>
+						</DropdownMenuRadioGroup>
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</div>
 
 			<div className="overflow-hidden rounded-[12px] border border-[#ebebeb] bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">

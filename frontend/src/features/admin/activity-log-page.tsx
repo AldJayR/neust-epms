@@ -10,10 +10,18 @@ import {
 	Settings,
 	UserCircle,
 } from "lucide-react";
+import * as React from "react";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import {
@@ -73,12 +81,21 @@ export function ActivityLogPage({
 	onSearch,
 	onPageChange,
 }: ActivityLogPageProps) {
+	const [typeFilter, setTypeFilter] = React.useState<string>("all");
 	const { data: statsData } = useQuery(auditStatsQueryOptions());
 	const { data: logsData, isLoading: isLogsLoading } = useQuery(
 		auditLogsQueryOptions({ page, limit, search }),
 	);
 
-	const logs = logsData?.items ?? [];
+	const allLogs = logsData?.items ?? [];
+	const logs = React.useMemo(() => {
+		if (typeFilter === "all") return allLogs;
+		return allLogs.filter((log) => {
+			const typeInfo = getActionTypeInfo(log.action, log.tableAffected);
+			return typeInfo.label.toLowerCase() === typeFilter.toLowerCase();
+		});
+	}, [allLogs, typeFilter]);
+
 	const showTableHeader = logs.length > 0 || (search ?? "").trim().length > 0;
 
 	const stats = [
@@ -221,14 +238,43 @@ export function ActivityLogPage({
 					ariaLabel="Search activity log"
 					className="max-w-[352px]"
 				/>
-				<Button
-					variant="outline"
-					size="icon"
-					className="h-9 w-9 border-[#e5e5e5] rounded-[8px] shadow-sm"
-					aria-label="Filter activity log"
-				>
-					<ListFilter className="size-4" />
-				</Button>
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<Button
+								variant="outline"
+								size="icon"
+								className="h-9 w-9 border-[#e5e5e5] rounded-[8px] shadow-sm"
+								aria-label="Filter activity log"
+							>
+								<ListFilter className="size-4" />
+							</Button>
+						}
+					/>
+					<DropdownMenuContent align="end" className="w-48">
+						<DropdownMenuRadioGroup
+							value={typeFilter}
+							onValueChange={(val) => setTypeFilter(val)}
+						>
+							<DropdownMenuRadioItem value="all">
+								All Actions
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="approval">
+								Approval
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="upload">
+								Upload
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="login">Login</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="status">
+								Status
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="account">
+								Account
+							</DropdownMenuRadioItem>
+						</DropdownMenuRadioGroup>
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</div>
 
 			<div className="border border-[#ebebeb] rounded-[12px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden bg-white">

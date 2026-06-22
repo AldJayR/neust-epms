@@ -5,6 +5,13 @@ import { MetricCard } from "@/components/custom/metric-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import {
@@ -28,6 +35,9 @@ const formatDate = (dateStr: string) => {
 export function ReportsPage() {
 	const [search, setSearch] = useState("");
 	const [page, setPage] = useState(1);
+	const [typeFilter, setTypeFilter] = useState<"All" | "Progress" | "Terminal">(
+		"All",
+	);
 	const limit = 20;
 
 	const { data: stats, isLoading: statsLoading } = useQuery(
@@ -42,13 +52,18 @@ export function ReportsPage() {
 	);
 
 	const reports = listData?.items ?? [];
+	const filteredReports =
+		typeFilter === "All"
+			? reports
+			: reports.filter((r) => r.reportType === typeFilter);
 	const totalReports = stats?.total ?? 0;
 	const progressCount = stats?.progress ?? 0;
 	const terminalCount = stats?.terminal ?? 0;
 	const isLoading = statsLoading || listLoading;
 	const totalPages = Math.max(1, Math.ceil(totalReports / limit));
 
-	const showTableHeader = reports.length > 0 || search.trim().length > 0;
+	const showTableHeader =
+		filteredReports.length > 0 || search.trim().length > 0;
 
 	const columns: DataTableColumnDef<ReportItem>[] = [
 		{
@@ -154,20 +169,42 @@ export function ReportsPage() {
 					ariaLabel="Search reports"
 					className="max-w-[352px]"
 				/>
-				<Button
-					variant="outline"
-					className="h-9 w-9 p-0 border-[#e5e5e5] rounded-[8px] shadow-sm"
-					aria-label="Filter reports"
-				>
-					<ListFilter className="size-4" />
-				</Button>
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<Button
+								variant="outline"
+								className="h-9 w-9 p-0 border-[#e5e5e5] rounded-[8px] shadow-sm animate-fade-in"
+								aria-label="Filter reports"
+							>
+								<ListFilter className="size-4" />
+							</Button>
+						}
+					/>
+					<DropdownMenuContent align="end" className="w-48">
+						<DropdownMenuRadioGroup
+							value={typeFilter}
+							onValueChange={(val) => setTypeFilter(val as any)}
+						>
+							<DropdownMenuRadioItem value="All">
+								All Types
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="Progress">
+								Progress Reports
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="Terminal">
+								Terminal Reports
+							</DropdownMenuRadioItem>
+						</DropdownMenuRadioGroup>
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</div>
 
 			{/* Data Table */}
 			<div className="overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 				<DataTable
 					columns={columns}
-					data={reports}
+					data={filteredReports}
 					showHeader={showTableHeader}
 					isLoading={isLoading}
 					error={error ? "Failed to load reports." : null}
