@@ -6,11 +6,18 @@ import {
 	ListFilter,
 } from "lucide-react";
 import * as React from "react";
+import { cn } from "#/lib/utils";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { SearchInput } from "@/components/ui/search-input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/features/admin/components/status-badge";
@@ -39,6 +46,8 @@ export function RetFacultyDirectoryPage({
 	onSearchChange,
 }: RetFacultyDirectoryPageProps) {
 	const [activeTab, setActiveTab] = React.useState<string>("department");
+	const [selectedRanks, setSelectedRanks] = React.useState<string[]>([]);
+	const [selectedLoads, setSelectedLoads] = React.useState<string[]>([]); // "0", "1-2", "3+"
 
 	// The RET Chair view is scoped to their college by default (handled by backend)
 	const { data, isLoading } = useQuery(
@@ -51,11 +60,40 @@ export function RetFacultyDirectoryPage({
 	);
 
 	const items = data?.items ?? [];
+	const filteredItems = React.useMemo(() => {
+		let result = items;
+
+		// 1. Rank filter
+		if (selectedRanks.length > 0) {
+			result = result.filter((item) => {
+				const rank = item.academicRank?.toLowerCase() ?? "";
+				return selectedRanks.some((r) => rank.includes(r.toLowerCase()));
+			});
+		}
+
+		// 2. Load filter
+		if (selectedLoads.length > 0) {
+			result = result.filter((item) => {
+				const count = item.totalInvolvement ?? 0;
+				return selectedLoads.some((load) => {
+					if (load === "0") return count === 0;
+					if (load === "1-2") return count >= 1 && count <= 2;
+					if (load === "3+") return count >= 3;
+					return true;
+				});
+			});
+		}
+
+		return result;
+	}, [items, selectedRanks, selectedLoads]);
+
+	const activeFilterCount = selectedRanks.length + selectedLoads.length;
 	const total = data?.total ?? 0;
 	// metrics from existing API might need extension later to match the design's specific stats
 	const metrics = data?.metrics;
 	const totalPages = Math.ceil(total / limit);
-	const showTableHeader = items.length > 0 || (search ?? "").trim().length > 0;
+	const showTableHeader =
+		filteredItems.length > 0 || (search ?? "").trim().length > 0;
 
 	const columns: DataTableColumnDef<FacultyInvolvement>[] = [
 		{
@@ -174,13 +212,169 @@ export function RetFacultyDirectoryPage({
 					ariaLabel="Search faculty directory"
 					className="max-w-[352px]"
 				/>
-				<Button
-					variant="outline"
-					size="icon"
-					className="size-9 rounded-lg border-[#e5e5e5] bg-white shadow-sm"
-				>
-					<ListFilter className="size-4" />
-				</Button>
+				<Popover>
+					<PopoverTrigger
+						render={
+							<Button
+								variant="outline"
+								size="icon"
+								className={cn(
+									"size-9 rounded-lg border-[#e5e5e5] bg-white shadow-sm relative transition-all duration-200",
+									activeFilterCount > 0 &&
+										"border-[#14369c] ring-1 ring-[#14369c]",
+								)}
+								aria-label="Filter faculty list"
+							>
+								<ListFilter className="size-4" />
+								{activeFilterCount > 0 && (
+									<span className="absolute -top-1 -right-1 flex h-2 w-2 rounded-full bg-[#14369c]" />
+								)}
+							</Button>
+						}
+					/>
+					<PopoverContent
+						align="end"
+						className="w-[320px] p-4 bg-white border border-[#ebebeb] rounded-xl shadow-lg gap-4 flex flex-col z-50"
+					>
+						<div className="flex flex-col gap-1">
+							<h4 className="font-semibold text-sm text-[#11215a]">
+								Directory Filters
+							</h4>
+							<p className="text-xs text-muted-foreground">
+								Filter faculty in your department.
+							</p>
+						</div>
+
+						{/* Presets / Quick Filters */}
+						<div className="flex flex-col gap-2 border-t border-[#ebebeb] pt-3">
+							<span className="text-[10px] font-bold uppercase tracking-wider text-[#666]">
+								Quick Actions
+							</span>
+							<div className="flex flex-wrap gap-1.5">
+								<Button
+									variant="secondary"
+									size="sm"
+									className="h-7 text-xs bg-[#f4f7fc] text-[#14369c] border border-[#e2ecf8] hover:bg-[#eaf1fd] rounded-md px-2.5 font-medium cursor-pointer"
+									onClick={() => {
+										setSelectedLoads(["0"]);
+										setSelectedRanks([]);
+									}}
+								>
+									Available for Assignment
+								</Button>
+								<Button
+									variant="secondary"
+									size="sm"
+									className="h-7 text-xs bg-[#fef2f2] text-[#991b1b] border border-[#fee2e2] hover:bg-[#fee2e2] rounded-md px-2.5 font-medium cursor-pointer"
+									onClick={() => {
+										setSelectedLoads(["3+"]);
+										setSelectedRanks([]);
+									}}
+								>
+									Highly Loaded (3+)
+								</Button>
+							</div>
+						</div>
+
+						{/* Rank Select */}
+						<div className="flex flex-col gap-2 border-t border-[#ebebeb] pt-3">
+							<span className="text-[10px] font-bold uppercase tracking-wider text-[#666]">
+								Academic Ranks
+							</span>
+							<div className="grid grid-cols-2 gap-x-4 gap-y-2">
+								{[
+									{ label: "Instructors", val: "instructor" },
+									{ label: "Assistant Prof", val: "assistant" },
+									{ label: "Associate Prof", val: "associate" },
+									{ label: "Professors", val: "professor" },
+								].map((r) => {
+									const isChecked = selectedRanks.includes(r.val);
+									const checkboxId = `rank-${r.val}`;
+									return (
+										<div
+											key={r.val}
+											className="flex items-center gap-2 text-xs font-medium text-slate-700 select-none"
+										>
+											<Checkbox
+												id={checkboxId}
+												checked={isChecked}
+												onCheckedChange={(checked) => {
+													if (checked) {
+														setSelectedRanks([...selectedRanks, r.val]);
+													} else {
+														setSelectedRanks(
+															selectedRanks.filter((x) => x !== r.val),
+														);
+													}
+												}}
+											/>
+											<label htmlFor={checkboxId} className="cursor-pointer">
+												{r.label}
+											</label>
+										</div>
+									);
+								})}
+							</div>
+						</div>
+
+						{/* Project Load Select */}
+						<div className="flex flex-col gap-2 border-t border-[#ebebeb] pt-3">
+							<span className="text-[10px] font-bold uppercase tracking-wider text-[#666]">
+								Project Involvement
+							</span>
+							<div className="grid grid-cols-2 gap-x-4 gap-y-2">
+								{[
+									{ label: "0 Projects", val: "0" },
+									{ label: "1-2 Projects", val: "1-2" },
+									{ label: "3+ Projects", val: "3+" },
+								].map((l) => {
+									const isChecked = selectedLoads.includes(l.val);
+									const checkboxId = `load-${l.val}`;
+									return (
+										<div
+											key={l.val}
+											className="flex items-center gap-2 text-xs font-medium text-slate-700 select-none"
+										>
+											<Checkbox
+												id={checkboxId}
+												checked={isChecked}
+												onCheckedChange={(checked) => {
+													if (checked) {
+														setSelectedLoads([...selectedLoads, l.val]);
+													} else {
+														setSelectedLoads(
+															selectedLoads.filter((x) => x !== l.val),
+														);
+													}
+												}}
+											/>
+											<label htmlFor={checkboxId} className="cursor-pointer">
+												{l.label}
+											</label>
+										</div>
+									);
+								})}
+							</div>
+						</div>
+
+						{/* Reset Footer */}
+						{activeFilterCount > 0 && (
+							<div className="flex justify-end items-center border-t border-[#ebebeb] pt-3 mt-1">
+								<Button
+									variant="ghost"
+									size="sm"
+									className="h-7 text-xs text-muted-foreground hover:text-[#991b1b] cursor-pointer"
+									onClick={() => {
+										setSelectedRanks([]);
+										setSelectedLoads([]);
+									}}
+								>
+									Reset All
+								</Button>
+							</div>
+						)}
+					</PopoverContent>
+				</Popover>
 			</div>
 
 			{/* Content Section with Tabs and Table */}
@@ -217,7 +411,7 @@ export function RetFacultyDirectoryPage({
 					<div className="bg-white">
 						<DataTable
 							columns={columns}
-							data={items}
+							data={filteredItems}
 							isLoading={isLoading}
 							emptyMessage="No faculty records found."
 							ariaLabel="Faculty directory"
@@ -229,7 +423,7 @@ export function RetFacultyDirectoryPage({
 				{/* Pagination Section */}
 				<div className="flex items-center justify-between">
 					<p className="text-[12px] text-[#666]">
-						Showing <span className="font-bold">{items.length}</span> of{" "}
+						Showing <span className="font-bold">{filteredItems.length}</span> of{" "}
 						<span className="font-bold">{total.toLocaleString()}</span> results
 					</p>
 
