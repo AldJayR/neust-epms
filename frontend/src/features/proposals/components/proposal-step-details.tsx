@@ -104,21 +104,12 @@ export function ProposalStepDetails({ form }: ProposalStepDetailsProps) {
 											</span>
 										)}
 									</PopoverTrigger>
-									<PopoverContent
-										className="w-auto p-0"
-										align="start"
-									>
+									<PopoverContent className="w-auto p-0" align="start">
 										<Calendar
 											mode="single"
-											selected={
-												field.value
-													? new Date(field.value)
-													: undefined
-											}
+											selected={field.value ? new Date(field.value) : undefined}
 											onSelect={(date) =>
-												field.onChange(
-													date ? format(date, "yyyy-MM-dd") : "",
-												)
+												field.onChange(date ? format(date, "yyyy-MM-dd") : "")
 											}
 										/>
 									</PopoverContent>
@@ -126,9 +117,7 @@ export function ProposalStepDetails({ form }: ProposalStepDetailsProps) {
 							)}
 						/>
 					</FieldContent>
-					<FieldError
-						errors={[form.formState.errors.targetStartDate]}
-					/>
+					<FieldError errors={[form.formState.errors.targetStartDate]} />
 				</Field>
 				<Field>
 					<FieldLabel>Target End Date</FieldLabel>
@@ -156,21 +145,12 @@ export function ProposalStepDetails({ form }: ProposalStepDetailsProps) {
 											</span>
 										)}
 									</PopoverTrigger>
-									<PopoverContent
-										className="w-auto p-0"
-										align="start"
-									>
+									<PopoverContent className="w-auto p-0" align="start">
 										<Calendar
 											mode="single"
-											selected={
-												field.value
-													? new Date(field.value)
-													: undefined
-											}
+											selected={field.value ? new Date(field.value) : undefined}
 											onSelect={(date) =>
-												field.onChange(
-													date ? format(date, "yyyy-MM-dd") : "",
-												)
+												field.onChange(date ? format(date, "yyyy-MM-dd") : "")
 											}
 										/>
 									</PopoverContent>
@@ -178,9 +158,7 @@ export function ProposalStepDetails({ form }: ProposalStepDetailsProps) {
 							)}
 						/>
 					</FieldContent>
-					<FieldError
-						errors={[form.formState.errors.targetEndDate]}
-					/>
+					<FieldError errors={[form.formState.errors.targetEndDate]} />
 				</Field>
 			</div>
 			<div className="grid grid-cols-2 gap-4">
@@ -193,9 +171,7 @@ export function ProposalStepDetails({ form }: ProposalStepDetailsProps) {
 							placeholder="0"
 						/>
 					</FieldContent>
-					<FieldError
-						errors={[form.formState.errors.budgetPartner]}
-					/>
+					<FieldError errors={[form.formState.errors.budgetPartner]} />
 				</Field>
 				<Field>
 					<FieldLabel>Budget (NEUST)</FieldLabel>

@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/admin/users/")({
 		search: search.search,
 	}),
 	beforeLoad: ({ context }) => {
-		if (requireRole(context.auth.user, 'Super Admin')) {
+		if (requireRole(context.auth.user, "Super Admin")) {
 			throw redirect({
 				to: "/dashboard",
 				search: { page: 1, pageSize: 10 },
@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/admin/users/")({
 		}
 	},
 	loader: async ({ context, deps }) => {
-		if (requireRole(context.auth.user, 'Super Admin')) {
+		if (requireRole(context.auth.user, "Super Admin")) {
 			return null;
 		}
 

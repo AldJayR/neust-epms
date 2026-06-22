@@ -5,7 +5,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { useSession as getSession } from "@tanstack/react-start/server";
 import type { AuthUser } from "./auth";
-import { requireRole, type RoleName } from "./permissions";
+import { type RoleName, requireRole } from "./permissions";
 
 export interface SessionData {
 	/** Supabase access token (JWT) */
@@ -132,7 +132,9 @@ export async function getValidAccessToken(): Promise<string> {
  * Verifies the logged-in user exists, is active, and possesses at least one of the specified roles.
  * Throws an Error if authorization fails.
  */
-export async function authorizeSessionUser(...roles: RoleName[]): Promise<AuthUser> {
+export async function authorizeSessionUser(
+	...roles: RoleName[]
+): Promise<AuthUser> {
 	const session = await getAppSession();
 	const user = session.data.user;
 
@@ -142,7 +144,9 @@ export async function authorizeSessionUser(...roles: RoleName[]): Promise<AuthUs
 
 	if (!user.isActive) {
 		await session.clear();
-		throw new Error("Your account has been deactivated. Contact an administrator.");
+		throw new Error(
+			"Your account has been deactivated. Contact an administrator.",
+		);
 	}
 
 	if (requireRole(user, ...roles)) {

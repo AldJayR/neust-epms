@@ -9,10 +9,15 @@ import {
 } from "@/lib/admin.functions";
 import { directorDashboardQueryOptions } from "@/lib/dashboard.functions";
 import {
+	isDirector,
+	isRETChair,
+	isSuperAdmin,
+	requireRole,
+} from "@/lib/permissions";
+import {
 	retDashboardStatsQueryOptions,
 	retProposalsQueryOptions,
 } from "@/lib/ret.functions";
-import { requireRole, isSuperAdmin, isDirector, isRETChair } from "@/lib/permissions";
 
 const dashboardSearchSchema = z.object({
 	page: z.number().optional().default(1),
@@ -28,7 +33,9 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 		search: search.search,
 	}),
 	loader: async ({ context, deps }) => {
-		if (requireRole(context.auth.user, 'Super Admin', 'Director', 'RET Chair')) {
+		if (
+			requireRole(context.auth.user, "Super Admin", "Director", "RET Chair")
+		) {
 			return null;
 		}
 

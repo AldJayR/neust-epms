@@ -4,7 +4,7 @@ import "../pdf-ssr-polyfill";
 import * as pdfjsLib from "pdfjs-dist";
 import { useEffect, useRef, useState } from "react";
 import type { AnnotationData, ProposalComment } from "@/lib/comments.functions";
-import { CommentHighlights, CommentCreationPopover } from "./pdf-annotations";
+import { CommentCreationPopover, CommentHighlights } from "./pdf-annotations";
 
 interface PdfPageCanvasProps {
 	pdfDoc: pdfjsLib.PDFDocumentProxy;
@@ -325,11 +325,7 @@ export function PdfPageCanvas({
 			<canvas ref={canvasRef2} style={canvas2Style} />
 
 			{/* Text Layer for Selection */}
-			<div
-				ref={textLayerRef}
-				className="textLayer"
-				style={textLayerStyle}
-			/>
+			<div ref={textLayerRef} className="textLayer" style={textLayerStyle} />
 
 			{/* Interactive Overlay Layer */}
 			<section

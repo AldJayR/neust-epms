@@ -7,9 +7,10 @@ import {
 	Users,
 } from "lucide-react";
 import { toast } from "sonner";
+import { MetricCard } from "@/components/custom/metric-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MetricCard } from "@/components/custom/metric-card";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -24,8 +25,7 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "@/components/ui/empty";
-
-import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import { TableCell, TableRow } from "@/components/ui/table";
 import {
@@ -34,7 +34,6 @@ import {
 	bulkUpdateUserStatusFn,
 } from "@/lib/admin.functions";
 import { formatAcademicRank } from "@/lib/utils";
-import { PaginationBar } from "@/components/ui/pagination-bar";
 import { BulkApproveDialog } from "./bulk-approve-dialog";
 import { StatusBadge } from "./components/status-badge";
 
@@ -85,8 +84,6 @@ export function UsersPage({
 
 	// ── Handlers ─────────────────────────────────────────────
 
-
-
 	const stats = [
 		{
 			label: "Total Accounts",
@@ -108,10 +105,26 @@ export function UsersPage({
 	const hasSearch = !!search?.trim();
 
 	const columns: DataTableColumn[] = [
-		{ key: "name", label: "Faculty Name", className: "w-[320px] font-medium text-[#666]" },
-		{ key: "department", label: "Department", className: "text-center font-medium text-[#666]" },
-		{ key: "role", label: "Role", className: "text-center font-medium text-[#666]" },
-		{ key: "status", label: "Status", className: "text-center font-medium text-[#666]" },
+		{
+			key: "name",
+			label: "Faculty Name",
+			className: "w-[320px] font-medium text-[#666]",
+		},
+		{
+			key: "department",
+			label: "Department",
+			className: "text-center font-medium text-[#666]",
+		},
+		{
+			key: "role",
+			label: "Role",
+			className: "text-center font-medium text-[#666]",
+		},
+		{
+			key: "status",
+			label: "Status",
+			className: "text-center font-medium text-[#666]",
+		},
 		{ key: "actions", label: "", className: "w-[50px]" },
 	];
 
@@ -269,7 +282,7 @@ export function UsersPage({
 				)}
 			</div>
 
-				<PaginationBar
+			<PaginationBar
 				page={page}
 				totalPages={Math.ceil((usersData?.total ?? 0) / pageSize)}
 				onPageChange={onPageChange}
@@ -280,5 +293,3 @@ export function UsersPage({
 		</div>
 	);
 }
-
-

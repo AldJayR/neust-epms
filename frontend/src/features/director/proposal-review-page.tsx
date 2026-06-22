@@ -1,19 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Download, Loader2, MessageSquare } from "lucide-react";
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
+import { PdfViewer, type PdfViewerRef } from "@/components/pdf-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
-	projectDetailsQueryOptions,
-	reviewProposalFn,
-} from "@/lib/dashboard.functions";
-import { PdfViewer, type PdfViewerRef } from "@/components/pdf-viewer";
-import {
 	getProposalCommentsFn,
 	saveProposalCommentFn,
 } from "@/lib/comments.functions";
+import {
+	projectDetailsQueryOptions,
+	reviewProposalFn,
+} from "@/lib/dashboard.functions";
 
 interface ProposalReviewPageProps {
 	proposalId: string;
@@ -82,41 +82,31 @@ function ProposalDetailsTab({
 		<CardContent className="p-0">
 			<div className="p-5 space-y-4">
 				<div className="flex justify-between items-center text-[14px]">
-					<span className="text-[#737373] font-medium">
-						Submitted by
-					</span>
+					<span className="text-[#737373] font-medium">Submitted by</span>
 					<span className="text-black font-medium">
 						{data.metadata.leader.name}
 					</span>
 				</div>
 				<div className="flex justify-between items-center text-[14px]">
-					<span className="text-[#737373] font-medium">
-						Department
-					</span>
+					<span className="text-[#737373] font-medium">Department</span>
 					<span className="text-black font-medium">
 						{data.metadata.departmentCode}
 					</span>
 				</div>
 				<div className="flex justify-between items-center text-[14px]">
-					<span className="text-[#737373] font-medium">
-						Duration
-					</span>
+					<span className="text-[#737373] font-medium">Duration</span>
 					<span className="text-black font-medium">
 						{data.metadata.duration}
 					</span>
 				</div>
 				<div className="flex justify-between items-center text-[14px]">
-					<span className="text-[#737373] font-medium">
-						Budget (NEUST)
-					</span>
+					<span className="text-[#737373] font-medium">Budget (NEUST)</span>
 					<span className="text-black font-medium">
 						{formatBudget(data.metadata.budget.neust)}
 					</span>
 				</div>
 				<div className="flex justify-between items-center text-[14px]">
-					<span className="text-[#737373] font-medium">
-						MOA Partner
-					</span>
+					<span className="text-[#737373] font-medium">MOA Partner</span>
 					<span className="text-black font-medium">
 						{data.metadata.moaLinked}
 					</span>
@@ -129,9 +119,7 @@ function ProposalDetailsTab({
 
 			{endorsement && (
 				<div className="p-5 space-y-4">
-					<h3 className="text-[14px] font-medium text-black">
-						Endorsement
-					</h3>
+					<h2 className="text-[14px] font-medium text-black">Endorsement</h2>
 					<div className="rounded-[10px] border border-[#e5e5e5] p-3 space-y-1">
 						<div className="flex items-center gap-3">
 							<CheckCircle2 className="size-4 text-black" />
@@ -148,9 +136,9 @@ function ProposalDetailsTab({
 
 					{endorsement.comment && (
 						<>
-							<h3 className="text-[14px] font-medium text-black mt-6">
+							<h2 className="text-[14px] font-medium text-black mt-6">
 								Remarks
-							</h3>
+							</h2>
 							<div className="rounded-[10px] border border-[#e5e5e5] p-3">
 								<p className="text-[14px] text-black font-light leading-relaxed">
 									"{endorsement.comment}"
@@ -166,9 +154,9 @@ function ProposalDetailsTab({
 			</div>
 
 			<div className="p-5 space-y-3">
-				<h3 className="text-[14px] font-medium text-black">
+				<h2 className="text-[14px] font-medium text-black">
 					Attached documents
-				</h3>
+				</h2>
 				<div className="space-y-1">
 					{data.attachments?.map((file) => {
 						const isActive =
@@ -196,8 +184,7 @@ function ProposalDetailsTab({
 									{file.name}
 								</span>
 								<span className="text-[11px] text-[#737373]">
-									{file.version}{" "}
-									{isActive && "· Currently Viewing"}
+									{file.version} {isActive && "· Currently Viewing"}
 								</span>
 							</button>
 						);
@@ -213,11 +200,7 @@ function ProposalDetailsTab({
 						onClick={handleDeny}
 						disabled={isPending}
 					>
-						{isPending ? (
-							<Loader2 className="size-4 animate-spin" />
-						) : (
-							"Return"
-						)}
+						{isPending ? <Loader2 className="size-4 animate-spin" /> : "Return"}
 					</Button>
 					<Button
 						className="flex-1 bg-[#14369c] text-white hover:bg-[#14369c]/90 rounded-[10px] font-medium h-9 text-sm shadow-sm"
@@ -253,7 +236,11 @@ interface CommentsTabProps {
 	pdfViewerRef: React.RefObject<PdfViewerRef | null>;
 }
 
-function CommentsTab({ comments, attachmentsCount, pdfViewerRef }: CommentsTabProps) {
+function CommentsTab({
+	comments,
+	attachmentsCount,
+	pdfViewerRef,
+}: CommentsTabProps) {
 	return (
 		<div className="flex flex-col h-[750px] justify-between">
 			{/* Comments List */}
@@ -261,12 +248,9 @@ function CommentsTab({ comments, attachmentsCount, pdfViewerRef }: CommentsTabPr
 				{comments.length === 0 ? (
 					<div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted-foreground gap-2">
 						<MessageSquare className="size-8 text-gray-300 animate-pulse" />
-						<p className="text-sm font-semibold">
-							No comments yet
-						</p>
+						<p className="text-sm font-semibold">No comments yet</p>
 						<p className="text-xs text-[#737373] font-light">
-							Drag on the PDF page in comment mode to add
-							remarks.
+							Drag on the PDF page in comment mode to add remarks.
 						</p>
 					</div>
 				) : (
@@ -279,9 +263,7 @@ function CommentsTab({ comments, attachmentsCount, pdfViewerRef }: CommentsTabPr
 							onClick={() => {
 								const annot = comment.annotationJson;
 								if (annot?.page) {
-									pdfViewerRef.current?.scrollToPage(
-										annot.page,
-									);
+									pdfViewerRef.current?.scrollToPage(annot.page);
 								}
 							}}
 							onKeyDown={(e) => {
@@ -289,9 +271,7 @@ function CommentsTab({ comments, attachmentsCount, pdfViewerRef }: CommentsTabPr
 									e.preventDefault();
 									const annot = comment.annotationJson;
 									if (annot?.page) {
-										pdfViewerRef.current?.scrollToPage(
-											annot.page,
-										);
+										pdfViewerRef.current?.scrollToPage(annot.page);
 									}
 								}
 							}}
@@ -306,9 +286,7 @@ function CommentsTab({ comments, attachmentsCount, pdfViewerRef }: CommentsTabPr
 									</span>
 								</div>
 								<span className="text-[10px] text-[#999]">
-									{new Date(
-										comment.createdAt,
-									).toLocaleDateString()}
+									{new Date(comment.createdAt).toLocaleDateString()}
 								</span>
 							</div>
 							<p className="text-xs text-[#333] leading-relaxed break-words">
@@ -434,128 +412,128 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 
 	return (
 		<div className="flex flex-col gap-8">
-				{/* Page Header */}
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-4">
-						<h1 className="text-2xl font-semibold text-[#11215a] tracking-tight">
-							{isLoading ? "Loading..." : (data?.title ?? "Proposal")}
-						</h1>
-						{data?.status && (
-							<Badge
-								variant="outline"
-								className="bg-white border-[#e5e5e5] text-[#737373] font-medium rounded-lg px-2.5 py-0.5 text-[12px]"
-							>
-								{data.status}
-							</Badge>
-						)}
-					</div>
-					{currentDoc && (
-						<a href={currentDoc.url} target="_blank" rel="noopener noreferrer">
-							<Button className="bg-[#14369c] text-white hover:bg-[#14369c]/90 rounded-[10px] h-9 px-4 gap-2 text-sm font-medium">
-								<Download className="size-4" />
-								Download
-							</Button>
-						</a>
+			{/* Page Header */}
+			<div className="flex items-center justify-between">
+				<div className="flex items-center gap-4">
+					<h1 className="text-2xl font-semibold text-[#11215a] tracking-tight">
+						{isLoading ? "Loading..." : (data?.title ?? "Proposal")}
+					</h1>
+					{data?.status && (
+						<Badge
+							variant="outline"
+							className="bg-white border-[#e5e5e5] text-[#737373] font-medium rounded-lg px-2.5 py-0.5 text-[12px]"
+						>
+							{data.status}
+						</Badge>
 					)}
 				</div>
+				{currentDoc && (
+					<a href={currentDoc.url} target="_blank" rel="noopener noreferrer">
+						<Button className="bg-[#14369c] text-white hover:bg-[#14369c]/90 rounded-[10px] h-9 px-4 gap-2 text-sm font-medium">
+							<Download className="size-4" />
+							Download
+						</Button>
+					</a>
+				)}
+			</div>
 
-				{isLoading ? (
-					<div className="flex items-center justify-center h-[500px]">
-						<Loader2 className="size-8 animate-spin text-[#11215a]" />
-					</div>
-				) : error ? (
-					<div className="flex items-center justify-center h-[500px]">
-						<p className="text-muted-foreground">
-							Failed to load proposal details.
-						</p>
-					</div>
-				) : data ? (
-					/* Main Content Layout */
-					<div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-						{/* Left Column: PDF Viewer */}
-						<div
-							className={`${isTheaterMode ? "lg:col-span-12 w-full" : "lg:col-span-8"} flex flex-col gap-4`}
-						>
-							<div className="bg-[#f9f9f9] border border-[#ebebeb] rounded-[12px] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] overflow-hidden h-[844px]">
-								{currentDoc ? (
-									<PdfViewer
-										ref={pdfViewerRef}
-										url={currentDoc.url}
-										className="h-full"
-										proposalId={proposalId}
-										documentId={currentDoc.id}
-										comments={comments}
-										onAddComment={async (content, annotation) => {
-											await addCommentMutation.mutateAsync({
-												content,
-												annotationJson: annotation,
-											});
-										}}
-										isTheaterMode={isTheaterMode}
-										onToggleTheaterMode={() => setIsTheaterMode(!isTheaterMode)}
-									/>
-								) : (
-									<div className="flex items-center justify-center h-full text-[#737373]">
-										No document available
-									</div>
-								)}
-							</div>
+			{isLoading ? (
+				<div className="flex items-center justify-center h-[500px]">
+					<Loader2 className="size-8 animate-spin text-[#11215a]" />
+				</div>
+			) : error ? (
+				<div className="flex items-center justify-center h-[500px]">
+					<p className="text-muted-foreground">
+						Failed to load proposal details.
+					</p>
+				</div>
+			) : data ? (
+				/* Main Content Layout */
+				<div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+					{/* Left Column: PDF Viewer */}
+					<div
+						className={`${isTheaterMode ? "lg:col-span-12 w-full" : "lg:col-span-8"} flex flex-col gap-4`}
+					>
+						<div className="bg-[#f9f9f9] border border-[#ebebeb] rounded-[12px] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] overflow-hidden h-[844px]">
+							{currentDoc ? (
+								<PdfViewer
+									ref={pdfViewerRef}
+									url={currentDoc.url}
+									className="h-full"
+									proposalId={proposalId}
+									documentId={currentDoc.id}
+									comments={comments}
+									onAddComment={async (content, annotation) => {
+										await addCommentMutation.mutateAsync({
+											content,
+											annotationJson: annotation,
+										});
+									}}
+									isTheaterMode={isTheaterMode}
+									onToggleTheaterMode={() => setIsTheaterMode(!isTheaterMode)}
+								/>
+							) : (
+								<div className="flex items-center justify-center h-full text-[#737373]">
+									No document available
+								</div>
+							)}
 						</div>
+					</div>
 
-						{/* Right Column: Details & Actions */}
-						{!isTheaterMode && (
-							<div className="lg:col-span-4 flex flex-col gap-6">
-								<Card className="border-[#ebebeb] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] rounded-[12px] overflow-hidden">
-									{/* Tabs Header */}
-									<div className="flex border-b border-[#ebebeb]">
-										<button
-											type="button"
-											onClick={() => setActiveTab("details")}
-											className={`flex-1 py-3 text-xs font-semibold border-b-2 text-center cursor-pointer transition-colors ${activeTab === "details" ? "border-[#14369c] text-[#14369c]" : "border-transparent text-[#737373] hover:text-black"}`}
-										>
-											Proposal Details
-										</button>
-										<button
-											type="button"
-											onClick={() => setActiveTab("comments")}
-											className={`flex-1 py-3 text-xs font-semibold border-b-2 text-center cursor-pointer transition-colors flex items-center justify-center gap-1.5 ${activeTab === "comments" ? "border-[#14369c] text-[#14369c]" : "border-transparent text-[#737373] hover:text-black"}`}
-										>
-											Comments
-											{comments.length > 0 && (
-												<span
-													className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === "comments" ? "bg-[#14369c] text-white" : "bg-gray-100 text-[#737373]"}`}
-												>
-													{comments.length}
-												</span>
-											)}
-										</button>
-									</div>
+					{/* Right Column: Details & Actions */}
+					{!isTheaterMode && (
+						<div className="lg:col-span-4 flex flex-col gap-6">
+							<Card className="border-[#ebebeb] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] rounded-[12px] overflow-hidden">
+								{/* Tabs Header */}
+								<div className="flex border-b border-[#ebebeb]">
+									<button
+										type="button"
+										onClick={() => setActiveTab("details")}
+										className={`flex-1 py-3 text-xs font-semibold border-b-2 text-center cursor-pointer transition-colors ${activeTab === "details" ? "border-[#14369c] text-[#14369c]" : "border-transparent text-[#737373] hover:text-black"}`}
+									>
+										Proposal Details
+									</button>
+									<button
+										type="button"
+										onClick={() => setActiveTab("comments")}
+										className={`flex-1 py-3 text-xs font-semibold border-b-2 text-center cursor-pointer transition-colors flex items-center justify-center gap-1.5 ${activeTab === "comments" ? "border-[#14369c] text-[#14369c]" : "border-transparent text-[#737373] hover:text-black"}`}
+									>
+										Comments
+										{comments.length > 0 && (
+											<span
+												className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === "comments" ? "bg-[#14369c] text-white" : "bg-gray-100 text-[#737373]"}`}
+											>
+												{comments.length}
+											</span>
+										)}
+									</button>
+								</div>
 
-									{/* Tab Content: Details */}
-									{activeTab === "details" && (
-										<ProposalDetailsTab
-											data={data}
-											endorsement={endorsement}
-											activeAttachmentId={activeAttachmentId}
-											setActiveAttachmentId={setActiveAttachmentId}
-											isReviewable={isReviewable}
-											handleDeny={handleDeny}
-											handleApprove={handleApprove}
-											isPending={reviewMutation.isPending}
-										/>
-									)}
+								{/* Tab Content: Details */}
+								{activeTab === "details" && (
+									<ProposalDetailsTab
+										data={data}
+										endorsement={endorsement}
+										activeAttachmentId={activeAttachmentId}
+										setActiveAttachmentId={setActiveAttachmentId}
+										isReviewable={isReviewable}
+										handleDeny={handleDeny}
+										handleApprove={handleApprove}
+										isPending={reviewMutation.isPending}
+									/>
+								)}
 
-									{/* Tab Content: Comments */}
-									{activeTab === "comments" && (
-										<CommentsTab
-											comments={comments}
-											attachmentsCount={data.attachments?.length ?? 0}
-											pdfViewerRef={pdfViewerRef}
-										/>
-									)}
-								</Card>
-							</div>
-						)}
+								{/* Tab Content: Comments */}
+								{activeTab === "comments" && (
+									<CommentsTab
+										comments={comments}
+										attachmentsCount={data.attachments?.length ?? 0}
+										pdfViewerRef={pdfViewerRef}
+									/>
+								)}
+							</Card>
+						</div>
+					)}
 				</div>
 			) : null}
 		</div>

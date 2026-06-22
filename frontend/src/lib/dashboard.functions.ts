@@ -1,9 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-
-import { getValidAccessToken, authorizeSessionUser } from "./session.server";
 import { getErrorMessage } from "./auth.functions";
+import { authorizeSessionUser, getValidAccessToken } from "./session.server";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 const DIRECTOR_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
@@ -233,7 +232,10 @@ export const getDirectorDashboardFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch director dashboard");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch director dashboard",
+			);
 			throw new Error(message);
 		}
 
@@ -265,7 +267,10 @@ export const getProjectHubFn = createServerFn({ method: "GET" })
 		);
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch project hub");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch project hub",
+			);
 			throw new Error(message);
 		}
 
@@ -296,7 +301,10 @@ export const getMoaRepositoryFn = createServerFn({ method: "GET" })
 		);
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch MOA repository");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch MOA repository",
+			);
 			throw new Error(message);
 		}
 
@@ -327,7 +335,10 @@ export const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 		);
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch faculty directory");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch faculty directory",
+			);
 			throw new Error(message);
 		}
 
@@ -350,7 +361,10 @@ export const getProjectDetailsFn = createServerFn({ method: "GET" })
 		);
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch project details");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch project details",
+			);
 			throw new Error(message);
 		}
 
@@ -385,7 +399,10 @@ export const reviewProposalFn = createServerFn({ method: "POST" })
 		);
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to submit review");
+			const message = await getErrorMessage(
+				response,
+				"Failed to submit review",
+			);
 			throw new Error(message);
 		}
 
@@ -415,7 +432,10 @@ export const getReportsListFn = createServerFn({ method: "GET" })
 			{ headers: { Authorization: `Bearer ${token}` } },
 		);
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch reports");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch reports",
+			);
 			throw new Error(message);
 		}
 		return (await response.json()) as ReportsResponse;
@@ -434,7 +454,10 @@ export const getReportStatsFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch report stats");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch report stats",
+			);
 			throw new Error(message);
 		}
 

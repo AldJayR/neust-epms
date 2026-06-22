@@ -1,5 +1,5 @@
-import { Suspense, lazy, forwardRef } from "react";
-import type { ProposalComment, AnnotationData } from "@/lib/comments.functions";
+import { forwardRef, lazy, Suspense } from "react";
+import type { AnnotationData, ProposalComment } from "@/lib/comments.functions";
 
 const PdfInner = lazy(() => import("@/features/director/pdf-inner"));
 

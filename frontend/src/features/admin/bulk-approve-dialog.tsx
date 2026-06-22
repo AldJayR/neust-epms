@@ -14,7 +14,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import {
 	Select,
@@ -36,7 +36,6 @@ import {
 	getAdminUsersFn,
 	getRolesFn,
 } from "@/lib/admin.functions";
-import { PaginationBar } from "@/components/ui/pagination-bar";
 
 interface BulkApproveDialogProps {
 	children: React.ReactNode;
@@ -46,7 +45,9 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 	const [open, setOpen] = React.useState(false);
 	const [page, setPage] = React.useState(1);
 	const [search, setSearch] = React.useState("");
-	const [selectedUsers, setSelectedUsers] = React.useState<Set<string>>(new Set());
+	const [selectedUsers, setSelectedUsers] = React.useState<Set<string>>(
+		new Set(),
+	);
 	const [userRoles, setUserRoles] = React.useState<Record<string, string>>({});
 
 	const queryClient = useQueryClient();
@@ -106,7 +107,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 
 	const handleSelectAll = (checked: boolean) => {
 		if (!usersData) return;
-		setSelectedUsers(prev => {
+		setSelectedUsers((prev) => {
 			const next = new Set(prev);
 			for (const id of usersData.users.map((u) => u.userId)) {
 				if (checked) next.add(id);
@@ -117,7 +118,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 	};
 
 	const handleSelectRow = (userId: string, checked: boolean) => {
-		setSelectedUsers(prev => {
+		setSelectedUsers((prev) => {
 			const next = new Set(prev);
 			if (checked) next.add(userId);
 			else next.delete(userId);
@@ -126,7 +127,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 	};
 
 	const handleRoleChange = (userId: string, roleName: string) => {
-		setUserRoles(prev => ({ ...prev, [userId]: roleName }));
+		setUserRoles((prev) => ({ ...prev, [userId]: roleName }));
 	};
 
 	const handleApprove = () => {
@@ -188,12 +189,12 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 					</DialogHeader>
 
 					<div className="flex min-h-0 flex-1 flex-col gap-4">
-					<SearchInput
+						<SearchInput
 							value={search}
 							onChange={(val) => {
-							setSearch(val);
-							setPage(1);
-						}}
+								setSearch(val);
+								setPage(1);
+							}}
 							placeholder="Search users"
 							ariaLabel="Search pending users"
 							className="max-w-[360px]"
@@ -313,7 +314,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 							</div>
 						</div>
 
-							<PaginationBar
+						<PaginationBar
 							page={page}
 							totalPages={Math.ceil((usersData?.total ?? 0) / 5)}
 							onPageChange={(p) => setPage(p)}

@@ -62,7 +62,8 @@ export function RoleSidebar({
 	...props
 }: RoleSidebarProps) {
 	const initials = user
-		? `${user.firstName?.charAt(0) ?? ""}${user.lastName?.charAt(0) ?? ""}` || "JD"
+		? `${user.firstName?.charAt(0) ?? ""}${user.lastName?.charAt(0) ?? ""}` ||
+			"JD"
 		: "JD";
 	const fullName = user
 		? `${user.firstName} ${user.lastName}`

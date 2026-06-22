@@ -1,15 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
-import {
-	EllipsisVertical,
-	Filter,
-	Loader2,
-	Plus,
-} from "lucide-react";
+import { EllipsisVertical, Filter, Loader2, Plus } from "lucide-react";
 import * as React from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MetricCard } from "@/components/custom/metric-card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -17,7 +12,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import {
 	Select,
@@ -40,7 +35,6 @@ import {
 	retProposalsQueryOptions,
 } from "@/lib/ret.functions";
 import { formatAcademicRank } from "@/lib/utils";
-import { PaginationBar } from "@/components/ui/pagination-bar";
 import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
 import { ProposalStatusBadge } from "./components/proposal-status-badge";
 
@@ -68,11 +62,18 @@ export function RETDashboardPage({
 	const { data: statsData, isLoading: isStatsLoading } = useQuery(
 		retDashboardStatsQueryOptions(),
 	);
-	const { data: proposalsData, isLoading: isProposalsLoading, isFetching: isProposalsFetching } = useQuery(
-		retProposalsQueryOptions({ page, limit: pageSize, search, status: statusFilter }),
+	const {
+		data: proposalsData,
+		isLoading: isProposalsLoading,
+		isFetching: isProposalsFetching,
+	} = useQuery(
+		retProposalsQueryOptions({
+			page,
+			limit: pageSize,
+			search,
+			status: statusFilter,
+		}),
 	);
-
-
 
 	const stats = [
 		{
@@ -119,11 +120,7 @@ export function RETDashboardPage({
 			{/* Stats Cards */}
 			<div className="grid gap-6 md:grid-cols-3">
 				{stats.map((stat) => (
-					<MetricCard
-						key={stat.label}
-						label={stat.label}
-						value={stat.value}
-					/>
+					<MetricCard key={stat.label} label={stat.label} value={stat.value} />
 				))}
 			</div>
 
@@ -276,7 +273,7 @@ export function RETDashboardPage({
 				)}
 			</div>
 
-				<PaginationBar
+			<PaginationBar
 				page={page}
 				totalPages={Math.ceil(total / pageSize)}
 				onPageChange={onPageChange}
@@ -293,4 +290,3 @@ export function RETDashboardPage({
 		</div>
 	);
 }
-

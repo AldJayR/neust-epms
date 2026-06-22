@@ -144,7 +144,10 @@ export function AppSidebar({
 	const user = useRouterState({
 		select: (s) => {
 			const authMatch = s.matches.find((m) => m.routeId === "/_authenticated");
-			return (authMatch?.context as { user: AuthUser | null } | undefined)?.user ?? null;
+			return (
+				(authMatch?.context as { user: AuthUser | null } | undefined)?.user ??
+				null
+			);
 		},
 	});
 

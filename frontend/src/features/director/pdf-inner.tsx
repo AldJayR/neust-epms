@@ -11,15 +11,15 @@ import {
 	useState,
 	useSyncExternalStore,
 } from "react";
+import type { PdfViewerRef } from "@/components/pdf-viewer";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { AnnotationData, ProposalComment } from "@/lib/comments.functions";
-import type { PdfViewerRef } from "@/components/pdf-viewer";
+import { PdfPageCanvas } from "./components/pdf-canvas";
 import {
+	DEFAULT_SCALE,
 	PdfToolbar,
 	ZOOM_STEPS,
-	DEFAULT_SCALE,
 } from "./components/pdf-toolbar";
-import { PdfPageCanvas } from "./components/pdf-canvas";
 
 // Configure worker locally using Vite's native URL resolution
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(

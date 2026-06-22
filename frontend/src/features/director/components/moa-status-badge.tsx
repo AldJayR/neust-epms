@@ -1,8 +1,4 @@
-import {
-	AlertCircle,
-	CheckCircle2,
-	XCircle,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export function MoaStatusBadge({ status }: { status: string }) {

@@ -1,5 +1,5 @@
 import { FileText, Loader2, Upload } from "lucide-react";
-import * as React from "react";
+import type * as React from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Progress, ProgressValue } from "@/components/ui/progress";
@@ -146,10 +146,7 @@ export function ProposalStepDocuments({
 							className="bg-brand-primary hover:bg-brand-primary-hover text-white"
 							render={
 								/* biome-ignore lint/a11y/noLabelWithoutControl: label is used to render button wrapper */
-								<label
-									htmlFor="file-upload"
-									className="cursor-pointer"
-								>
+								<label htmlFor="file-upload" className="cursor-pointer">
 									Select File
 								</label>
 							}

@@ -12,7 +12,7 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/_authenticated/admin/activity-log/")({
 	validateSearch: (search) => searchSchema.parse(search),
 	beforeLoad: ({ context }) => {
-		if (requireRole(context.auth.user, 'Super Admin')) {
+		if (requireRole(context.auth.user, "Super Admin")) {
 			throw redirect({
 				to: "/dashboard",
 				search: { page: 1, pageSize: 10 },

@@ -1,8 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getValidAccessToken, authorizeSessionUser } from "./session.server";
 import { getErrorMessage } from "./auth.functions";
+import { authorizeSessionUser, getValidAccessToken } from "./session.server";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 const ADMIN_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
@@ -109,7 +109,10 @@ export const getAdminStatsFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch admin stats");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch admin stats",
+			);
 			throw new Error(message);
 		}
 
@@ -165,7 +168,10 @@ export const bulkUpdateUserStatusFn = createServerFn({ method: "POST" })
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to update user status");
+			const message = await getErrorMessage(
+				response,
+				"Failed to update user status",
+			);
 			throw new Error(message);
 		}
 
@@ -228,7 +234,10 @@ export const bulkApproveUsersFn = createServerFn({ method: "POST" })
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to bulk approve users");
+			const message = await getErrorMessage(
+				response,
+				"Failed to bulk approve users",
+			);
 			throw new Error(message);
 		}
 
@@ -281,7 +290,10 @@ export const getAuditLogsFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch audit logs");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch audit logs",
+			);
 			throw new Error(message);
 		}
 
@@ -301,7 +313,10 @@ export const getAuditStatsFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch audit stats");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch audit stats",
+			);
 			throw new Error(message);
 		}
 

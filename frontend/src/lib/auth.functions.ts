@@ -6,7 +6,7 @@ import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { ApiErrorResponse, AuthUser } from "./auth";
-import { requireRole, type RoleName } from "./permissions";
+import { type RoleName, requireRole } from "./permissions";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 const USER_PROFILE_CACHE_TTL_MS = 1000 * 30; // 30 seconds
@@ -14,11 +14,14 @@ const USER_PROFILE_CACHE_TTL_MS = 1000 * 30; // 30 seconds
 /**
  * Safely extracts error messages from API responses, handling both JSON and non-JSON errors
  */
-export async function getErrorMessage(response: Response, defaultMessage: string): Promise<string> {
+export async function getErrorMessage(
+	response: Response,
+	defaultMessage: string,
+): Promise<string> {
 	try {
 		const contentType = response.headers.get("content-type");
 		if (contentType && contentType.includes("application/json")) {
-			const body = await response.json() as ApiErrorResponse;
+			const body = (await response.json()) as ApiErrorResponse;
 			return body.error?.message ?? defaultMessage;
 		}
 		const text = await response.text();
@@ -30,8 +33,6 @@ export async function getErrorMessage(response: Response, defaultMessage: string
 	}
 	return defaultMessage;
 }
-
-
 
 // ── Schemas ───────────────────────────────────────────────
 
@@ -83,7 +84,7 @@ export const loginFn = createServerFn({ method: "POST" })
 		if (!meResponse.ok) {
 			const message = await getErrorMessage(
 				meResponse,
-				"Your account has not been provisioned. Contact an administrator."
+				"Your account has not been provisioned. Contact an administrator.",
 			);
 			return {
 				error: true as const,
@@ -128,7 +129,9 @@ export interface SearchUserResponse {
 export const searchUsersFn = createServerFn({ method: "GET" })
 	.validator(z.object({ search: z.string().min(1) }))
 	.handler(async ({ data }) => {
-		const { authorizeSessionUser, getValidAccessToken } = await import("./session.server");
+		const { authorizeSessionUser, getValidAccessToken } = await import(
+			"./session.server"
+		);
 		// Require an authenticated user with any of our active roles
 		await authorizeSessionUser("RET Chair", "Director", "Super Admin");
 		const accessToken = await getValidAccessToken();
@@ -233,7 +236,9 @@ export const checkPasswordFn = createServerFn({ method: "POST" })
 export const getCurrentUserFn = createServerFn({ method: "POST" })
 	.validator(z.void())
 	.handler(async () => {
-		const { getAppSession, getValidAccessToken } = await import("./session.server");
+		const { getAppSession, getValidAccessToken } = await import(
+			"./session.server"
+		);
 		const { supabase } = await import("./supabase.server");
 
 		const session = await getAppSession();

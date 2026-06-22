@@ -1,3 +1,5 @@
+import type { UseFormReturn } from "react-hook-form";
+import { useWatch } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Field,
@@ -14,8 +16,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import type { AuthUser } from "@/lib/auth";
-import type { UseFormReturn } from "react-hook-form";
-import { useWatch } from "react-hook-form";
 import type { FormValues } from "./create-proposal-modal";
 
 interface ProposalStepInfoProps {
@@ -24,7 +24,11 @@ interface ProposalStepInfoProps {
 	sdgsData?: Array<{ sdgId: number; sdgName: string }>;
 }
 
-export function ProposalStepInfo({ form, user, sdgsData }: ProposalStepInfoProps) {
+export function ProposalStepInfo({
+	form,
+	user,
+	sdgsData,
+}: ProposalStepInfoProps) {
 	const watchedSdgIds =
 		useWatch({
 			control: form.control,
@@ -68,8 +72,7 @@ export function ProposalStepInfo({ form, user, sdgsData }: ProposalStepInfoProps
 				<FieldContent>
 					<Select
 						onValueChange={(val) => {
-							if (val != null)
-								form.setValue("extensionCategory", val);
+							if (val != null) form.setValue("extensionCategory", val);
 						}}
 						value={form.watch("extensionCategory")}
 					>
@@ -83,18 +86,12 @@ export function ProposalStepInfo({ form, user, sdgsData }: ProposalStepInfoProps
 						</SelectContent>
 					</Select>
 				</FieldContent>
-				<FieldError
-					errors={[form.formState.errors.extensionCategory]}
-				/>
+				<FieldError errors={[form.formState.errors.extensionCategory]} />
 			</Field>
 			<Field>
 				<FieldLabel>Campus</FieldLabel>
 				<FieldContent>
-					<Input
-						readOnly
-						value={user.campusName}
-						className="bg-muted"
-					/>
+					<Input readOnly value={user.campusName} className="bg-muted" />
 				</FieldContent>
 			</Field>
 			<Field>
@@ -129,9 +126,7 @@ export function ProposalStepInfo({ form, user, sdgsData }: ProposalStepInfoProps
 									}
 								}}
 							/>
-							<span className="font-normal text-xs">
-								{sdg.sdgName}
-							</span>
+							<span className="font-normal text-xs">{sdg.sdgName}</span>
 						</div>
 					))}
 				</div>

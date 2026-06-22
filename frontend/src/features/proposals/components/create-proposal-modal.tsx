@@ -1,16 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-	Check,
-	ChevronLeft,
-	ChevronRight,
-	Loader2,
-} from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import * as React from "react";
-import {
-	type SubmitHandler,
-	useForm,
-} from "react-hook-form";
+import { type SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -28,10 +20,10 @@ import {
 	sdgsQueryOptions,
 	uploadProposalDocumentFn,
 } from "@/lib/ret.functions";
-import { ProposalStepInfo } from "./proposal-step-info";
 import { ProposalStepDetails } from "./proposal-step-details";
-import { ProposalStepMembers } from "./proposal-step-members";
 import { ProposalStepDocuments } from "./proposal-step-documents";
+import { ProposalStepInfo } from "./proposal-step-info";
+import { ProposalStepMembers } from "./proposal-step-members";
 
 export const formSchema = z
 	.object({
@@ -270,20 +262,12 @@ export function CreateProposalModal({
 
 					<div className="p-6 overflow-y-auto max-h-[60vh]">
 						{step === 1 && (
-							<ProposalStepInfo
-								form={form}
-								user={user}
-								sdgsData={sdgsData}
-							/>
+							<ProposalStepInfo form={form} user={user} sdgsData={sdgsData} />
 						)}
 
-						{step === 2 && (
-							<ProposalStepDetails form={form} />
-						)}
+						{step === 2 && <ProposalStepDetails form={form} />}
 
-						{step === 3 && (
-							<ProposalStepMembers form={form} user={user} />
-						)}
+						{step === 3 && <ProposalStepMembers form={form} user={user} />}
 
 						{step === 4 && (
 							<ProposalStepDocuments

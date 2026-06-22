@@ -20,7 +20,9 @@ export const Route = createFileRoute("/_authenticated/moas/")({
 		status: search.status,
 	}),
 	beforeLoad: ({ context }) => {
-		if (requireRole(context.auth.user, 'Director', 'Super Admin', 'RET Chair')) {
+		if (
+			requireRole(context.auth.user, "Director", "Super Admin", "RET Chair")
+		) {
 			throw redirect({
 				to: "/dashboard",
 				search: { page: 1, pageSize: 10 },

@@ -19,9 +19,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-
-import { projectDetailsQueryOptions } from "@/lib/dashboard.functions";
 import { Skeleton } from "@/components/ui/skeleton";
+import { projectDetailsQueryOptions } from "@/lib/dashboard.functions";
 
 interface ProjectDetailsPageProps {
 	proposalId: string;
@@ -99,10 +98,7 @@ function ProjectDetailsSkeleton() {
 						<div className="px-6 py-4">
 							<div className="relative space-y-6 before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-[#ebebeb]">
 								{[1, 2].map((i) => (
-									<div
-										key={i}
-										className="relative flex items-start gap-4 pl-8"
-									>
+									<div key={i} className="relative flex items-start gap-4 pl-8">
 										<Skeleton className="absolute left-0 mt-1 size-[22px] rounded-full" />
 										<div className="flex flex-1 flex-col gap-1">
 											<div className="flex items-center justify-between">
@@ -188,15 +184,13 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 	return (
 		<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
 			<div className="bg-[#fcfcfc] border-b border-[#ebebeb] px-6 py-3">
-				<p className="text-[14px] font-semibold text-[#11215a]">
+				<h2 className="text-[14px] font-semibold text-[#11215a]">
 					Project Overview
-				</p>
+				</h2>
 			</div>
 			<div className="divide-y divide-[#ebebeb]">
 				<div className="flex items-center justify-between px-6 py-3">
-					<span className="text-[14px] text-[#666]">
-						Project Leader
-					</span>
+					<span className="text-[14px] text-[#666]">Project Leader</span>
 					<div className="flex items-center gap-3">
 						<Avatar className="size-8 border border-[#ebebeb]">
 							<AvatarImage
@@ -216,9 +210,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 					</div>
 				</div>
 				<div className="flex items-center justify-between px-6 py-3">
-					<span className="text-[14px] text-[#666]">
-						Department / Unit
-					</span>
+					<span className="text-[14px] text-[#666]">Department / Unit</span>
 					<span className="text-[14px] font-medium text-[#0a0a0a]">
 						{metadata.department}
 					</span>
@@ -245,8 +237,8 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 							₱{metadata.budget.total.toLocaleString()}
 						</span>
 						<span className="text-[12px] text-[#666]">
-							NEUST: ₱{metadata.budget.neust.toLocaleString()} |
-							Partner: ₱{metadata.budget.partner.toLocaleString()}
+							NEUST: ₱{metadata.budget.neust.toLocaleString()} | Partner: ₱
+							{metadata.budget.partner.toLocaleString()}
 						</span>
 					</div>
 				</div>
@@ -262,9 +254,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 							/>
 						}
 					>
-						<span className="text-[14px] text-[#666]">
-							Project Team
-						</span>
+						<span className="text-[14px] text-[#666]">Project Team</span>
 						<div className="flex items-center gap-4">
 							<div className="flex -space-x-2">
 								{members.slice(0, 4).map((member) => (
@@ -272,10 +262,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 										key={member.userId}
 										className="size-8 border-2 border-white ring-1 ring-[#ebebeb]"
 									>
-										<AvatarImage
-											src={member.avatarUrl}
-											alt={member.name}
-										/>
+										<AvatarImage src={member.avatarUrl} alt={member.name} />
 										<AvatarFallback className="bg-gray-100 text-gray-600 text-[10px]">
 											{member.name
 												.split(" ")
@@ -299,17 +286,14 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 								Project Members
 							</DialogTitle>
 						</DialogHeader>
-						<div className="flex flex-col gap-1 max-h-[400px] overflow-y-auto pr-2">
+						<ul className="flex flex-col gap-1 max-h-[400px] overflow-y-auto pr-2">
 							{members.map((member) => (
-								<div
+								<li
 									key={member.userId}
 									className="flex items-center gap-3 p-2 rounded-[8px] transition-colors hover:bg-[#fcfcfc]"
 								>
 									<Avatar className="size-9 border border-[#ebebeb]">
-										<AvatarImage
-											src={member.avatarUrl}
-											alt={member.name}
-										/>
+										<AvatarImage src={member.avatarUrl} alt={member.name} />
 										<AvatarFallback className="bg-gray-100 text-gray-600">
 											<User className="size-4" />
 										</AvatarFallback>
@@ -322,9 +306,9 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 											{member.role}
 										</span>
 									</div>
-								</div>
+								</li>
 							))}
-						</div>
+						</ul>
 					</DialogContent>
 				</Dialog>
 			</div>
@@ -347,17 +331,14 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 	return (
 		<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="px-6 py-3 border-b border-[#ebebeb]">
-				<p className="text-[14px] font-semibold text-[#11215a]">
+				<h2 className="text-[14px] font-semibold text-[#11215a]">
 					Document History
-				</p>
+				</h2>
 			</div>
 			<div className="px-6 py-4">
-				<div className="relative space-y-6 before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-[#ebebeb]">
+				<ul className="relative space-y-6 before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-[#ebebeb]">
 					{history.map((item, idx) => (
-						<div
-							key={item.id}
-							className="relative flex items-start gap-4 pl-8"
-						>
+						<li key={item.id} className="relative flex items-start gap-4 pl-8">
 							<div
 								className={`absolute left-0 mt-1 size-[22px] rounded-full border-[3px] border-white shadow-sm ring-1 ring-[#ebebeb] ${idx === 0 ? "bg-brand-primary" : "bg-white"}`}
 							/>
@@ -380,10 +361,7 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 										</Badge>
 									</div>
 									<span className="text-[12px] text-[#666]">
-										{format(
-											new Date(item.date),
-											"MMM dd, yyyy · hh:mm a",
-										)}
+										{format(new Date(item.date), "MMM dd, yyyy · hh:mm a")}
 									</span>
 								</div>
 								<p className="text-[13px] text-[#666]">
@@ -407,9 +385,9 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 									</Button>
 								)}
 							</div>
-						</div>
+						</li>
 					))}
-				</div>
+				</ul>
 			</div>
 		</div>
 	);
@@ -428,13 +406,13 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 	return (
 		<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
 			<div className="bg-[#fcfcfc] border-b border-[#ebebeb] px-6 py-3">
-				<p className="text-[14px] font-semibold text-[#11215a]">
+				<h2 className="text-[14px] font-semibold text-[#11215a]">
 					Attachments
-				</p>
+				</h2>
 			</div>
-			<div className="p-4 flex flex-col gap-3">
+			<ul className="p-4 flex flex-col gap-3">
 				{attachments.map((attachment) => (
-					<div
+					<li
 						key={attachment.id}
 						className="flex flex-col gap-3 rounded-[10px] border border-[#e5e5e5] bg-[#fcfcfc] p-3 transition-colors hover:border-brand-primary/30"
 					>
@@ -467,9 +445,9 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 								Download
 							</Button>
 						</div>
-					</div>
+					</li>
 				))}
-			</div>
+			</ul>
 		</div>
 	);
 }
@@ -518,7 +496,10 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
 				{/* Main Column */}
 				<div className="lg:col-span-8 flex flex-col gap-6">
-					<ProjectOverviewCard metadata={data.metadata} members={data.members} />
+					<ProjectOverviewCard
+						metadata={data.metadata}
+						members={data.members}
+					/>
 					<DocumentHistoryCard history={data.history} />
 				</div>
 

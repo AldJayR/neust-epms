@@ -1,13 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Search, Trash2 } from "lucide-react";
 import * as React from "react";
-import { useFieldArray, type UseFormReturn, useWatch } from "react-hook-form";
+import { type UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-	FieldError,
-	FieldLabel,
-} from "@/components/ui/field";
+import { FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -70,9 +67,7 @@ export function ProposalStepMembers({ form, user }: ProposalStepMembersProps) {
 								type="button"
 								className="w-full text-left p-2 flex items-center justify-between hover:bg-slate-50 cursor-pointer"
 								onClick={() => {
-									if (
-										!memberFields.some((m) => m.userId === u.userId)
-									) {
+									if (!memberFields.some((m) => m.userId === u.userId)) {
 										appendMember({
 											userId: u.userId,
 											projectRole: "Member",
@@ -88,9 +83,7 @@ export function ProposalStepMembers({ form, user }: ProposalStepMembersProps) {
 									<p className="font-medium">
 										{u.firstName} {u.lastName}
 									</p>
-									<p className="text-xs text-muted-foreground">
-										{u.email}
-									</p>
+									<p className="text-xs text-muted-foreground">{u.email}</p>
 								</div>
 								<Plus className="size-4 text-blue-600" />
 							</button>
@@ -123,10 +116,7 @@ export function ProposalStepMembers({ form, user }: ProposalStepMembersProps) {
 											}
 											onValueChange={(val) => {
 												if (val != null)
-													form.setValue(
-														`members.${index}.projectRole`,
-														val,
-													);
+													form.setValue(`members.${index}.projectRole`, val);
 											}}
 										>
 											<SelectTrigger className="h-7 w-[150px] text-xs">

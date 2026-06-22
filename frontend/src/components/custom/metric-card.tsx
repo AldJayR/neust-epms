@@ -1,7 +1,7 @@
 import { TrendingUp } from "lucide-react";
+import { cn } from "#/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "#/lib/utils";
 
 interface MetricCardProps {
 	label: string;
@@ -36,9 +36,7 @@ export function MetricCard({
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className="text-4xl font-semibold text-[#11215a]">
-						{value}
-					</div>
+					<div className="text-4xl font-semibold text-[#11215a]">{value}</div>
 				</CardContent>
 			</Card>
 		);

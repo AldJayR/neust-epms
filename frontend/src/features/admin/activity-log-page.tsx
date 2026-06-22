@@ -11,11 +11,11 @@ import {
 	Settings,
 	UserCircle,
 } from "lucide-react";
+import { MetricCard } from "@/components/custom/metric-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
-import { MetricCard } from "@/components/custom/metric-card";
 import {
 	Table,
 	TableBody,
@@ -28,7 +28,6 @@ import {
 	auditLogsQueryOptions,
 	auditStatsQueryOptions,
 } from "@/lib/admin.functions";
-import { PaginationBar } from "@/components/ui/pagination-bar";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
 	month: "short",
@@ -48,8 +47,6 @@ interface ActivityLogPageProps {
 	onSearch: (search: string | undefined) => void;
 	onPageChange: (page: number) => void;
 }
-
-
 
 const getActionTypeInfo = (action: string, table: string) => {
 	const lowerAction = action.toLowerCase();
@@ -83,13 +80,10 @@ export function ActivityLogPage({
 	onSearch,
 	onPageChange,
 }: ActivityLogPageProps) {
-
 	const { data: statsData } = useQuery(auditStatsQueryOptions());
 	const { data: logsData, isLoading: isLogsLoading } = useQuery(
 		auditLogsQueryOptions({ page, limit, search }),
 	);
-
-
 
 	const stats = [
 		{
@@ -256,7 +250,7 @@ export function ActivityLogPage({
 				</Table>
 			</div>
 
-				<PaginationBar
+			<PaginationBar
 				page={page}
 				totalPages={Math.ceil((logsData?.total ?? 0) / limit)}
 				onPageChange={onPageChange}

@@ -67,7 +67,9 @@ export function RHFTextField<TFieldValues extends FieldValues>({
 	const describedBy = [
 		fieldState.error ? errorId : null,
 		description && !fieldState.invalid ? descId : null,
-	].filter(Boolean).join(" ");
+	]
+		.filter(Boolean)
+		.join(" ");
 
 	return (
 		<Field data-invalid={fieldState.invalid}>
@@ -111,7 +113,9 @@ export function RHFPasswordField<TFieldValues extends FieldValues>({
 	const describedBy = [
 		fieldState.error ? errorId : null,
 		description && !fieldState.invalid ? descId : null,
-	].filter(Boolean).join(" ");
+	]
+		.filter(Boolean)
+		.join(" ");
 
 	return (
 		<Field data-invalid={fieldState.invalid}>

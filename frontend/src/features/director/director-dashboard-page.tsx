@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
+import { MetricCard } from "@/components/custom/metric-card";
 import type { AuthUser } from "@/lib/auth";
 import { getCampusesFn } from "@/lib/auth.functions";
 import { directorDashboardQueryOptions } from "@/lib/dashboard.functions";
-import { MetricCard } from "@/components/custom/metric-card";
 
 const ProjectsChartCard = React.lazy(() => import("./projects-chart-card"));
 
@@ -22,7 +22,9 @@ function RecentActivitiesCard({
 	return (
 		<div className="flex h-[370px] flex-col overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex items-center justify-between px-4 py-2 text-[#666]">
-				<p className="text-[14px] font-medium leading-5">Recent Activities</p>
+				<h2 className="text-[14px] font-semibold leading-5 text-[#11215a]">
+					Recent Activities
+				</h2>
 				<button
 					type="button"
 					className="text-[12px] font-medium leading-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm"
@@ -30,10 +32,10 @@ function RecentActivitiesCard({
 					View All
 				</button>
 			</div>
-			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+			<ul className="flex min-h-0 flex-1 flex-col overflow-hidden">
 				{activities.length > 0 ? (
 					activities.map((activity, index) => (
-						<div
+						<li
 							key={`${activity.title}-${activity.time}`}
 							className="border-t border-[#ebebeb] p-4"
 						>
@@ -56,16 +58,16 @@ function RecentActivitiesCard({
 									{activity.time}
 								</p>
 							</div>
-						</div>
+						</li>
 					))
 				) : (
-					<div className="flex flex-1 items-center justify-center px-4">
+					<li className="flex flex-1 items-center justify-center px-4">
 						<p className="text-[14px] text-[#737373] italic">
 							No recent activities.
 						</p>
-					</div>
+					</li>
 				)}
-			</div>
+			</ul>
 		</div>
 	);
 }
@@ -78,7 +80,9 @@ function ExpiringMoasCard({
 	return (
 		<div className="flex h-[148px] flex-col overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex items-center justify-between px-4 py-2 text-[#666]">
-				<p className="text-[14px] font-medium leading-5">Expiring MOAs</p>
+				<h2 className="text-[14px] font-semibold leading-5 text-[#11215a]">
+					Expiring MOAs
+				</h2>
 				<button
 					type="button"
 					className="text-[12px] font-medium leading-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm"
@@ -86,10 +90,10 @@ function ExpiringMoasCard({
 					View All
 				</button>
 			</div>
-			<div className="flex flex-1 flex-col overflow-hidden">
+			<ul className="flex flex-1 flex-col overflow-hidden">
 				{moas.length > 0 ? (
 					moas.map((moa) => (
-						<div
+						<li
 							key={`${moa.name}-${moa.dueText}`}
 							className="border-t border-[#ebebeb] p-4"
 						>
@@ -101,16 +105,16 @@ function ExpiringMoasCard({
 									{moa.dueText}
 								</p>
 							</div>
-						</div>
+						</li>
 					))
 				) : (
-					<div className="flex flex-1 items-center justify-center border-t border-[#ebebeb] px-4 pb-2">
+					<li className="flex flex-1 items-center justify-center border-t border-[#ebebeb] px-4 pb-2">
 						<p className="text-[14px] text-[#737373] italic">
 							No MOAs expiring soon.
 						</p>
-					</div>
+					</li>
 				)}
-			</div>
+			</ul>
 		</div>
 	);
 }

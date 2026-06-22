@@ -9,6 +9,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { isSuperAdmin } from "@/lib/permissions";
 import {
 	RHFPasswordField,
 	RHFSubmitButton,
@@ -22,7 +23,6 @@ import {
 } from "../lib/admin.functions";
 import type { AuthUser } from "../lib/auth";
 import { loginFn } from "../lib/auth.functions";
-import { isSuperAdmin } from "@/lib/permissions";
 
 const loginSchema = z.object({
 	email: z.email("Please enter a valid email address"),

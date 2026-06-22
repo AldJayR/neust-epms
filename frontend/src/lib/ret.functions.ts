@@ -1,9 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-
-import { getValidAccessToken, authorizeSessionUser } from "./session.server";
 import { getErrorMessage } from "./auth.functions";
+import { authorizeSessionUser, getValidAccessToken } from "./session.server";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 const RET_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
@@ -31,10 +30,14 @@ const createProposalSchema = z.object({
 	departmentIds: z.array(z.number()).optional(),
 	sectorIds: z.array(z.number()).optional(),
 	sdgIds: z.array(z.number()).optional(),
-	members: z.array(z.object({
-		userId: z.string().uuid(),
-		projectRole: z.string().min(1),
-	})).optional(),
+	members: z
+		.array(
+			z.object({
+				userId: z.string().uuid(),
+				projectRole: z.string().min(1),
+			}),
+		)
+		.optional(),
 });
 
 // ── Interfaces ────────────────────────────────────────────
@@ -129,7 +132,10 @@ export const getRETDashboardStatsFn = createServerFn({ method: "GET" }).handler(
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch RET stats");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch RET stats",
+			);
 			throw new Error(message);
 		}
 
@@ -158,7 +164,10 @@ export const getRETProposalsFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch proposals");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch proposals",
+			);
 			throw new Error(message);
 		}
 
@@ -181,7 +190,10 @@ export const createProposalFn = createServerFn({ method: "POST" })
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to create proposal");
+			const message = await getErrorMessage(
+				response,
+				"Failed to create proposal",
+			);
 			throw new Error(message);
 		}
 
@@ -221,7 +233,10 @@ export const uploadProposalDocumentFn = createServerFn({ method: "POST" })
 		);
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to upload document");
+			const message = await getErrorMessage(
+				response,
+				"Failed to upload document",
+			);
 			throw new Error(message);
 		}
 

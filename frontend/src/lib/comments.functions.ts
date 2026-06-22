@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getValidAccessToken, authorizeSessionUser } from "./session.server";
 import { getErrorMessage } from "./auth.functions";
+import { authorizeSessionUser, getValidAccessToken } from "./session.server";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 
@@ -100,7 +100,10 @@ export const getProposalCommentsFn = createServerFn({ method: "GET" })
 		);
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch comments");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch comments",
+			);
 			throw new Error(message);
 		}
 
