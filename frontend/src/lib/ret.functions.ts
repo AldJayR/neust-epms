@@ -33,7 +33,7 @@ const createProposalSchema = z.object({
 	members: z
 		.array(
 			z.object({
-				userId: z.string().uuid(),
+				userId: z.uuid(),
 				projectRole: z.string().min(1),
 			}),
 		)
@@ -120,7 +120,7 @@ export interface MetadataItem {
 
 // ── Server Functions ──────────────────────────────────────
 
-export const getRETDashboardStatsFn = createServerFn({ method: "GET" }).handler(
+const getRETDashboardStatsFn = createServerFn({ method: "GET" }).handler(
 	async () => {
 		await authorizeSessionUser("RET Chair", "Director");
 		const accessToken = await getValidAccessToken();
@@ -143,7 +143,7 @@ export const getRETDashboardStatsFn = createServerFn({ method: "GET" }).handler(
 	},
 );
 
-export const getRETProposalsFn = createServerFn({ method: "GET" })
+const getRETProposalsFn = createServerFn({ method: "GET" })
 	.validator(retDashboardParamsSchema)
 	.handler(async ({ data }) => {
 		await authorizeSessionUser("RET Chair", "Director");
@@ -247,7 +247,7 @@ export const uploadProposalDocumentFn = createServerFn({ method: "POST" })
 		};
 	});
 
-export const getSDGsFn = createServerFn({ method: "GET" }).handler(async () => {
+const getSDGsFn = createServerFn({ method: "GET" }).handler(async () => {
 	const accessToken = await getValidAccessToken();
 
 	const response = await fetch(`${API_BASE}/proposals/metadata/sdgs`, {
@@ -257,7 +257,7 @@ export const getSDGsFn = createServerFn({ method: "GET" }).handler(async () => {
 	return (await response.json()) as SDG[];
 });
 
-export const getSectorsFn = createServerFn({ method: "GET" }).handler(
+const getSectorsFn = createServerFn({ method: "GET" }).handler(
 	async () => {
 		const accessToken = await getValidAccessToken();
 
@@ -269,7 +269,7 @@ export const getSectorsFn = createServerFn({ method: "GET" }).handler(
 	},
 );
 
-export const getDepartmentsFn = createServerFn({ method: "GET" }).handler(
+const getDepartmentsFn = createServerFn({ method: "GET" }).handler(
 	async () => {
 		const response = await fetch(`${API_BASE}/auth/departments`);
 		if (!response.ok) throw new Error("Failed to fetch departments");
@@ -277,7 +277,7 @@ export const getDepartmentsFn = createServerFn({ method: "GET" }).handler(
 	},
 );
 
-export const getCampusesFn = createServerFn({ method: "GET" }).handler(
+const getCampusesFn = createServerFn({ method: "GET" }).handler(
 	async () => {
 		const response = await fetch(`${API_BASE}/auth/campuses`);
 		if (!response.ok) throw new Error("Failed to fetch campuses");

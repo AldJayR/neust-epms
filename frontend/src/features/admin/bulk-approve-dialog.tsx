@@ -41,14 +41,30 @@ interface BulkApproveDialogProps {
 	children: React.ReactNode;
 }
 
+interface State {
+	open: boolean;
+	page: number;
+	search: string;
+	selectedUsers: Set<string>;
+	userRoles: Record<string, string>;
+}
+
+const initialState: State = {
+	open: false,
+	page: 1,
+	search: "",
+	selectedUsers: new Set(),
+	userRoles: {},
+};
+
+function stateReducer(state: State, action: Partial<State> | ((prev: State) => Partial<State>)): State {
+	const next = typeof action === "function" ? action(state) : action;
+	return { ...state, ...next };
+}
+
 export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
-	const [open, setOpen] = React.useState(false);
-	const [page, setPage] = React.useState(1);
-	const [search, setSearch] = React.useState("");
-	const [selectedUsers, setSelectedUsers] = React.useState<Set<string>>(
-		new Set(),
-	);
-	const [userRoles, setUserRoles] = React.useState<Record<string, string>>({});
+	const [state, dispatch] = React.useReducer(stateReducer, initialState);
+	const { open, page, search, selectedUsers, userRoles } = state;
 
 	const queryClient = useQueryClient();
 	const getAdminUsers = useServerFn(getAdminUsersFn);
@@ -80,11 +96,13 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 		onSuccess: (data) => {
 			toast.success(`Successfully approved ${data.updatedCount} user(s)`);
 			queryClient.invalidateQueries({ queryKey: ["admin"] });
-			setOpen(false);
-			setPage(1);
-			setSearch("");
-			setSelectedUsers(new Set());
-			setUserRoles({});
+			dispatch({
+				open: false,
+				page: 1,
+				search: "",
+				selectedUsers: new Set(),
+				userRoles: {},
+			});
 		},
 		onError: (error: Error) => {
 			toast.error(error.message);
@@ -94,40 +112,44 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 	// ── Handlers ─────────────────────────────────────────────
 
 	const handleOpenChange = (newOpen: boolean) => {
-		setOpen(newOpen);
+		dispatch({ open: newOpen });
 		if (!newOpen) {
 			setTimeout(() => {
-				setPage(1);
-				setSearch("");
-				setSelectedUsers(new Set());
-				setUserRoles({});
+				dispatch({
+					page: 1,
+					search: "",
+					selectedUsers: new Set(),
+					userRoles: {},
+				});
 			}, 200);
 		}
 	};
 
 	const handleSelectAll = (checked: boolean) => {
 		if (!usersData) return;
-		setSelectedUsers((prev) => {
-			const next = new Set(prev);
+		dispatch((prev) => {
+			const next = new Set(prev.selectedUsers);
 			for (const id of usersData.users.map((u) => u.userId)) {
 				if (checked) next.add(id);
 				else next.delete(id);
 			}
-			return next;
+			return { selectedUsers: next };
 		});
 	};
 
 	const handleSelectRow = (userId: string, checked: boolean) => {
-		setSelectedUsers((prev) => {
-			const next = new Set(prev);
+		dispatch((prev) => {
+			const next = new Set(prev.selectedUsers);
 			if (checked) next.add(userId);
 			else next.delete(userId);
-			return next;
+			return { selectedUsers: next };
 		});
 	};
 
 	const handleRoleChange = (userId: string, roleName: string) => {
-		setUserRoles((prev) => ({ ...prev, [userId]: roleName }));
+		dispatch((prev) => ({
+			userRoles: { ...prev.userRoles, [userId]: roleName },
+		}));
 	};
 
 	const handleApprove = () => {
@@ -142,7 +164,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 			if (!assignedRole) {
 				validationFailed = true;
 				break;
-			}
+				}
 			usersToApprove.push({ userId, roleName: assignedRole });
 		}
 
@@ -192,8 +214,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 						<SearchInput
 							value={search}
 							onChange={(val) => {
-								setSearch(val);
-								setPage(1);
+								dispatch({ search: val, page: 1 });
 							}}
 							placeholder="Search users"
 							ariaLabel="Search pending users"
@@ -317,7 +338,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 						<PaginationBar
 							page={page}
 							totalPages={Math.ceil((usersData?.total ?? 0) / 5)}
-							onPageChange={(p) => setPage(p)}
+							onPageChange={(p) => dispatch({ page: p })}
 							total={usersData?.total ?? 0}
 							limit={5}
 							isLoading={isUsersFetching}

@@ -25,7 +25,7 @@ import { ProposalStepDocuments } from "./proposal-step-documents";
 import { ProposalStepInfo } from "./proposal-step-info";
 import { ProposalStepMembers } from "./proposal-step-members";
 
-export const formSchema = z
+const formSchema = z
 	.object({
 		title: z.string().min(1, "Project title is required"),
 		bannerProgram: z.string().min(1, "Banner program is required"),
@@ -74,15 +74,33 @@ export function CreateProposalModal({
 	onOpenChange,
 	user,
 }: CreateProposalModalProps) {
-	const [step, setStep] = React.useState(1);
-	const [file, setFile] = React.useState<File | null>(null);
+	const [state, setState] = React.useReducer(
+		(
+			prev: {
+				step: number;
+				file: File | null;
+				uploadProgress: number;
+				uploadPhase: "idle" | "creating" | "uploading" | "done";
+				isDragging: boolean;
+			},
+			next: Partial<typeof prev> | ((current: typeof prev) => Partial<typeof prev>),
+		) => {
+			const patch = typeof next === "function" ? next(prev) : next;
+			return { ...prev, ...patch };
+		},
+		{
+			step: 1,
+			file: null,
+			uploadProgress: 0,
+			uploadPhase: "idle" as const,
+			isDragging: false,
+		},
+	);
+
+	const { step, file, uploadProgress, uploadPhase, isDragging } = state;
+
 	const fileInputRef = React.useRef<HTMLInputElement>(null);
 	const queryClient = useQueryClient();
-	const [uploadProgress, setUploadProgress] = React.useState(0);
-	const [uploadPhase, setUploadPhase] = React.useState<
-		"idle" | "creating" | "uploading" | "done"
-	>("idle");
-	const [isDragging, setIsDragging] = React.useState(false);
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
@@ -138,8 +156,7 @@ export function CreateProposalModal({
 		let timer: ReturnType<typeof setInterval> | null = null;
 
 		try {
-			setUploadPhase("creating");
-			setUploadProgress(0);
+			setState({ uploadPhase: "creating", uploadProgress: 0 });
 
 			const proposal = await createProposalMutation.mutateAsync({
 				data: {
@@ -161,8 +178,7 @@ export function CreateProposalModal({
 				},
 			});
 
-			setUploadProgress(30);
-			setUploadPhase("uploading");
+			setState({ uploadProgress: 30, uploadPhase: "uploading" });
 
 			const fileSizeMB = file.size / 1024 / 1024;
 			const baseInterval = 80;
@@ -170,9 +186,9 @@ export function CreateProposalModal({
 			const increment = Math.max(1, Math.min(8, 30 / fileSizeMB));
 
 			timer = setInterval(() => {
-				setUploadProgress((prev) => {
-					const next = prev + increment;
-					return next >= 95 ? 95 : next;
+				setState((curr) => {
+					const next = curr.uploadProgress + increment;
+					return { uploadProgress: next >= 95 ? 95 : next };
 				});
 			}, interval);
 
@@ -183,25 +199,24 @@ export function CreateProposalModal({
 			await uploadDocumentMutation.mutateAsync({ data: formData });
 
 			if (timer) clearInterval(timer);
-			setUploadProgress(100);
-			setUploadPhase("done");
+			setState({ uploadProgress: 100, uploadPhase: "done" });
 
 			toast.success("Project proposal submitted successfully!");
 			onOpenChange(false);
 			form.reset();
-			setStep(1);
-			setFile(null);
+			setState({ step: 1, file: null });
 			if (fileInputRef.current) fileInputRef.current.value = "";
 			queryClient.invalidateQueries({ queryKey: ["ret", "dashboard"] });
+			setTimeout(() => {
+				setState({ uploadPhase: "idle", uploadProgress: 0 });
+			}, 1000);
 		} catch (error: unknown) {
 			if (timer) clearInterval(timer);
 			const message =
 				error instanceof Error ? error.message : "Something went wrong";
 			toast.error(message);
-		} finally {
 			setTimeout(() => {
-				setUploadPhase("idle");
-				setUploadProgress(0);
+				setState({ uploadPhase: "idle", uploadProgress: 0 });
 			}, 1000);
 		}
 	};
@@ -230,18 +245,16 @@ export function CreateProposalModal({
 		}
 
 		const isValid = await form.trigger(fieldsToValidate);
-		if (isValid) setStep((prev) => prev + 1);
+		if (isValid) setState((prev) => ({ step: prev.step + 1 }));
 	};
 
-	const prevStep = () => setStep((prev) => prev - 1);
+	const prevStep = () => setState((prev) => ({ step: prev.step - 1 }));
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-[700px] p-0 overflow-hidden gap-0">
 				<form
-					onKeyDown={(e) => {
-						if (e.key === "Enter") e.preventDefault();
-					}}
+					onSubmit={(e) => e.preventDefault()}
 					className="flex flex-col h-full"
 				>
 					<DialogHeader className="py-4 px-6 border-b border-[#ebebeb]">
@@ -272,10 +285,10 @@ export function CreateProposalModal({
 						{step === 4 && (
 							<ProposalStepDocuments
 								file={file}
-								setFile={setFile}
+								setFile={(f) => setState({ file: f })}
 								fileInputRef={fileInputRef}
 								isDragging={isDragging}
-								setIsDragging={setIsDragging}
+								setIsDragging={(d) => setState({ isDragging: d })}
 								uploadPhase={uploadPhase}
 								uploadProgress={uploadProgress}
 							/>

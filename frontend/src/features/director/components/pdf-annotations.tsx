@@ -23,9 +23,8 @@ export function CommentHighlights({ comments }: CommentHighlightsProps) {
 					<Tooltip key={comment.commentId}>
 						<TooltipTrigger
 							render={
-								<div
-									tabIndex={0}
-									role="button"
+								<button
+									type="button"
 									aria-label={`Comment by ${comment.user.name}: "${comment.content}"`}
 									style={{
 										position: "absolute",
@@ -110,6 +109,7 @@ export function CommentCreationPopover({
 				ref={(el) => {
 					if (el) el.focus();
 				}}
+				aria-label="Feedback comment text"
 				className="w-full h-20 text-[12px] p-2 border border-[#e5e5e5] rounded-[6px] focus:outline-none focus:border-brand-primary resize-none"
 				placeholder="Type your feedback here..."
 				value={commentText}

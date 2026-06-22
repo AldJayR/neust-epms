@@ -255,24 +255,14 @@ function CommentsTab({
 					</div>
 				) : (
 					comments.map((comment) => (
-						<div
+						<button
+							type="button"
 							key={comment.commentId}
-							className="border border-[#ebebeb] rounded-xl p-4 bg-gray-50 hover:bg-gray-100/70 transition-colors space-y-2 cursor-pointer text-left"
-							role="button"
-							tabIndex={0}
+							className="w-full border border-[#ebebeb] rounded-xl p-4 bg-gray-50 hover:bg-gray-100/70 transition-colors space-y-2 cursor-pointer text-left block"
 							onClick={() => {
 								const annot = comment.annotationJson;
 								if (annot?.page) {
 									pdfViewerRef.current?.scrollToPage(annot.page);
-								}
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									const annot = comment.annotationJson;
-									if (annot?.page) {
-										pdfViewerRef.current?.scrollToPage(annot.page);
-									}
 								}
 							}}
 						>
@@ -297,7 +287,7 @@ function CommentsTab({
 									Page {comment.annotationJson.page}
 								</span>
 							)}
-						</div>
+						</button>
 					))
 				)}
 			</div>

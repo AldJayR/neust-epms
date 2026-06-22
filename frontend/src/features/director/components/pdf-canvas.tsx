@@ -2,7 +2,7 @@
 
 import "../pdf-ssr-polyfill";
 import * as pdfjsLib from "pdfjs-dist";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useReducer } from "react";
 import type { AnnotationData, ProposalComment } from "@/lib/comments.functions";
 import { CommentCreationPopover, CommentHighlights } from "./pdf-annotations";
 
@@ -12,7 +12,6 @@ interface PdfPageCanvasProps {
 	width: number;
 	scale: number;
 	aspectRatio: number;
-	onPageLoad: (pageNumber: number, aspect: number) => void;
 	toolMode: "hand" | "comment";
 	comments: ProposalComment[];
 	onAddComment?: (
@@ -21,13 +20,30 @@ interface PdfPageCanvasProps {
 	) => Promise<void>;
 }
 
+interface State {
+	activeCanvas: 1 | 2;
+	isLoading: boolean;
+	hasRendered: boolean;
+	error: string | null;
+	dragStart: { x: number; y: number } | null;
+	dragCurrent: { x: number; y: number } | null;
+	showCommentPopover: boolean;
+	commentText: string;
+	pendingAnnotation: AnnotationData | null;
+	lastRendered: { width: number; scale: number };
+}
+
+function stateReducer(state: State, action: Partial<State> | ((prev: State) => Partial<State>)): State {
+	const next = typeof action === "function" ? action(state) : action;
+	return { ...state, ...next };
+}
+
 export function PdfPageCanvas({
 	pdfDoc,
 	pageNumber,
 	width,
 	scale,
 	aspectRatio,
-	onPageLoad,
 	toolMode,
 	comments,
 	onAddComment,
@@ -35,58 +51,66 @@ export function PdfPageCanvas({
 	const canvasRef1 = useRef<HTMLCanvasElement>(null);
 	const canvasRef2 = useRef<HTMLCanvasElement>(null);
 	const textLayerRef = useRef<HTMLDivElement>(null);
-	const [activeCanvas, setActiveCanvas] = useState<1 | 2>(1);
-	const [isLoading, setIsLoading] = useState(true);
-	const [hasRendered, setHasRendered] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 
-	const overlayRef = useRef<HTMLDivElement>(null);
-	const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(
-		null,
-	);
-	const [dragCurrent, setDragCurrent] = useState<{
-		x: number;
-		y: number;
-	} | null>(null);
-	const [showCommentPopover, setShowCommentPopover] = useState(false);
-	const [commentText, setCommentText] = useState("");
-	const [pendingAnnotation, setPendingAnnotation] =
-		useState<AnnotationData | null>(null);
-
-	const [lastRendered, setLastRendered] = useState<{
-		width: number;
-		scale: number;
-	}>(() => ({
-		width,
-		scale,
+	const [state, dispatch] = useReducer(stateReducer, undefined, () => ({
+		activeCanvas: 1 as 1 | 2,
+		isLoading: true,
+		hasRendered: false,
+		error: null,
+		dragStart: null,
+		dragCurrent: null,
+		showCommentPopover: false,
+		commentText: "",
+		pendingAnnotation: null,
+		lastRendered: { width, scale },
 	}));
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: activeCanvas and hasRendered changes should not trigger a re-render
+	const {
+		activeCanvas,
+		isLoading,
+		hasRendered,
+		error,
+		dragStart,
+		dragCurrent,
+		showCommentPopover,
+		commentText,
+		pendingAnnotation,
+		lastRendered,
+	} = state;
+
+	const overlayRef = useRef<HTMLButtonElement>(null);
+
+	const activeCanvasRef = useRef(activeCanvas);
+	const hasRenderedRef = useRef(hasRendered);
+
+	useEffect(() => {
+		activeCanvasRef.current = activeCanvas;
+		hasRenderedRef.current = hasRendered;
+	});
+
 	useEffect(() => {
 		// Keep track of the active rendering task so we can cancel it on change/unmount
 		// biome-ignore lint/suspicious/noExplicitAny: PDF.js Internal RenderTask type is complex
 		let activeRenderTask: any = null;
 		let isDestroyed = false;
+		const textLayerEl = textLayerRef.current;
 
 		const renderPage = async () => {
 			try {
-				setIsLoading(true);
-				setError(null);
+				dispatch({ isLoading: true, error: null });
 
 				// Retrieve page instance
 				const page = await pdfDoc.getPage(pageNumber);
 				if (isDestroyed) return;
 
 				// Determine which canvas is the target (hidden one)
-				const targetCanvasIndex = activeCanvas === 1 && hasRendered ? 2 : 1;
+				const targetCanvasIndex = activeCanvasRef.current === 1 && hasRenderedRef.current ? 2 : 1;
 				const targetCanvas =
 					targetCanvasIndex === 1 ? canvasRef1.current : canvasRef2.current;
 				if (!targetCanvas) return;
 
 				// Get original dimensions to support landscape & horizontal pages
 				const defaultViewport = page.getViewport({ scale: 1 });
-				const aspect = defaultViewport.height / defaultViewport.width;
-				onPageLoad(pageNumber, aspect);
 
 				// Calculate scale factor relative to target width
 				const scaleFactor = (width * scale) / defaultViewport.width;
@@ -115,23 +139,25 @@ export function PdfPageCanvas({
 
 				await activeRenderTask.promise;
 				if (!isDestroyed) {
-					setActiveCanvas(targetCanvasIndex);
-					setLastRendered({ width, scale });
-					setHasRendered(true);
-					setIsLoading(false);
+					dispatch({
+						activeCanvas: targetCanvasIndex,
+						lastRendered: { width, scale },
+						hasRendered: true,
+						isLoading: false,
+					});
 
 					// Render Text Layer
-					if (textLayerRef.current) {
-						textLayerRef.current.innerHTML = "";
-						textLayerRef.current.style.setProperty(
+					if (textLayerEl) {
+						textLayerEl.innerHTML = "";
+						textLayerEl.style.setProperty(
 							"--scale-factor",
 							String(scaleFactor),
 						);
 						const textContent = await page.getTextContent();
-						if (!isDestroyed && textLayerRef.current) {
+						if (!isDestroyed && textLayerEl) {
 							const textLayer = new pdfjsLib.TextLayer({
 								textContentSource: textContent,
-								container: textLayerRef.current,
+								container: textLayerEl,
 								viewport: viewport,
 							});
 							await textLayer.render();
@@ -148,8 +174,10 @@ export function PdfPageCanvas({
 					return;
 				}
 				if (!isDestroyed) {
-					setError((err as Error).message || "Failed to render page");
-					setIsLoading(false);
+					dispatch({
+						error: (err as Error).message || "Failed to render page",
+						isLoading: false,
+					});
 				}
 			}
 		};
@@ -165,30 +193,32 @@ export function PdfPageCanvas({
 					// Ignore errors on render task cancellation
 				}
 			}
-			if (textLayerRef.current) {
-				textLayerRef.current.innerHTML = "";
+			if (textLayerEl) {
+				textLayerEl.innerHTML = "";
 			}
 		};
 	}, [pdfDoc, pageNumber, width, scale]);
 
-	const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+	const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
 		if (toolMode !== "comment" || showCommentPopover) return;
 		const rect = e.currentTarget.getBoundingClientRect();
 		const startX = e.clientX - rect.left;
 		const startY = e.clientY - rect.top;
-		setDragStart({ x: startX, y: startY });
-		setDragCurrent({ x: startX, y: startY });
+		dispatch({
+			dragStart: { x: startX, y: startY },
+			dragCurrent: { x: startX, y: startY },
+		});
 	};
 
-	const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+	const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
 		if (!dragStart || showCommentPopover) return;
 		const rect = e.currentTarget.getBoundingClientRect();
 		const currentX = e.clientX - rect.left;
 		const currentY = e.clientY - rect.top;
-		setDragCurrent({ x: currentX, y: currentY });
+		dispatch({ dragCurrent: { x: currentX, y: currentY } });
 	};
 
-	const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+	const handleMouseUp = (e: React.MouseEvent<HTMLButtonElement>) => {
 		if (!dragStart || showCommentPopover) return;
 		const rect = e.currentTarget.getBoundingClientRect();
 		const endX = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
@@ -208,43 +238,50 @@ export function PdfPageCanvas({
 			const pctW = (boxWidth / rect.width) * 100;
 			const pctH = (boxHeight / rect.height) * 100;
 
-			setPendingAnnotation({
-				x: pctX,
-				y: pctY,
-				width: pctW,
-				height: pctH,
-				page: pageNumber,
+			dispatch({
+				pendingAnnotation: {
+					x: pctX,
+					y: pctY,
+					width: pctW,
+					height: pctH,
+					page: pageNumber,
+				},
+				showCommentPopover: true,
 			});
-			setShowCommentPopover(true);
 		} else {
-			setDragStart(null);
-			setDragCurrent(null);
+			dispatch({ dragStart: null, dragCurrent: null });
 		}
 	};
 
 	const handleSaveComment = async () => {
 		if (!commentText.trim() || !onAddComment || !pendingAnnotation) return;
 		try {
-			setIsLoading(true);
+			dispatch({ isLoading: true });
 			await onAddComment(commentText, pendingAnnotation);
-			setCommentText("");
-			setShowCommentPopover(false);
-			setPendingAnnotation(null);
-			setDragStart(null);
-			setDragCurrent(null);
+			dispatch({
+				commentText: "",
+				showCommentPopover: false,
+				pendingAnnotation: null,
+				dragStart: null,
+				dragCurrent: null,
+				isLoading: false,
+			});
 		} catch (err) {
-			setError((err as Error).message || "Failed to save comment");
-		} finally {
-			setIsLoading(false);
+			dispatch({
+				error: (err as Error).message || "Failed to save comment",
+				isLoading: false,
+			});
 		}
 	};
 
 	const handleCancelComment = () => {
-		setCommentText("");
-		setShowCommentPopover(false);
-		setPendingAnnotation(null);
-		setDragStart(null);
-		setDragCurrent(null);
+		dispatch({
+			commentText: "",
+			showCommentPopover: false,
+			pendingAnnotation: null,
+			dragStart: null,
+			dragCurrent: null,
+		});
 	};
 
 	const dragBoxStyle: React.CSSProperties | null =
@@ -317,8 +354,6 @@ export function PdfPageCanvas({
 			style={{
 				width: width * scale,
 				height: width * aspectRatio * scale,
-				transition:
-					"width 0.25s cubic-bezier(0.16, 1, 0.3, 1), height 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
 			}}
 		>
 			<canvas ref={canvasRef1} style={canvas1Style} />
@@ -328,7 +363,8 @@ export function PdfPageCanvas({
 			<div ref={textLayerRef} className="textLayer" style={textLayerStyle} />
 
 			{/* Interactive Overlay Layer */}
-			<section
+			<button
+				type="button"
 				ref={overlayRef}
 				style={overlayStyle}
 				aria-label="PDF Interaction Overlay"
@@ -337,7 +373,7 @@ export function PdfPageCanvas({
 				onMouseUp={handleMouseUp}
 			>
 				{dragBoxStyle && <div style={dragBoxStyle} />}
-			</section>
+			</button>
 
 			{/* Render existing comments highlights (hoverable in hand mode) */}
 			<CommentHighlights comments={comments} />
@@ -348,7 +384,7 @@ export function PdfPageCanvas({
 					pendingAnnotation={pendingAnnotation}
 					pageNumber={pageNumber}
 					commentText={commentText}
-					onCommentTextChange={setCommentText}
+					onCommentTextChange={(val) => dispatch({ commentText: val })}
 					onSave={handleSaveComment}
 					onCancel={handleCancelComment}
 				/>

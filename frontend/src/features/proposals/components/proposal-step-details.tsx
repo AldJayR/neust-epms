@@ -39,11 +39,10 @@ interface CurrencyInputProps {
 }
 
 function CurrencyInput({ value, onChange, placeholder }: CurrencyInputProps) {
-	const [prevValue, setPrevValue] = React.useState(value);
 	const [display, setDisplay] = React.useState(() => formatPeso(value));
 
-	if (value !== prevValue) {
-		setPrevValue(value);
+	const currentNumValue = parsePesoInput(display);
+	if (currentNumValue !== value) {
 		setDisplay(formatPeso(value));
 	}
 

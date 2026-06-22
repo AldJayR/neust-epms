@@ -96,7 +96,7 @@ export function adminUsersQueryOptions({
 
 // ── Get Admin Stats ──────────────────────────────────────
 
-export const getAdminStatsFn = createServerFn({ method: "GET" })
+const getAdminStatsFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
 		await authorizeSessionUser("Super Admin");
@@ -272,7 +272,7 @@ export interface AuditStats {
 	failedLogins: number;
 }
 
-export const getAuditLogsFn = createServerFn({ method: "GET" })
+const getAuditLogsFn = createServerFn({ method: "GET" })
 	.validator(auditLogsParamsSchema)
 	.handler(async ({ data }) => {
 		await authorizeSessionUser("Super Admin");
@@ -300,7 +300,7 @@ export const getAuditLogsFn = createServerFn({ method: "GET" })
 		return (await response.json()) as AuditLogListResponse;
 	});
 
-export const getAuditStatsFn = createServerFn({ method: "GET" })
+const getAuditStatsFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
 		await authorizeSessionUser("Super Admin");

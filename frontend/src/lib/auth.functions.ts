@@ -6,7 +6,6 @@ import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { ApiErrorResponse, AuthUser } from "./auth";
-import { type RoleName, requireRole } from "./permissions";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
 const USER_PROFILE_CACHE_TTL_MS = 1000 * 30; // 30 seconds
@@ -56,8 +55,10 @@ const signupSchema = z.object({
 export const loginFn = createServerFn({ method: "POST" })
 	.validator(loginSchema)
 	.handler(async ({ data }) => {
-		const { getAppSession } = await import("./session.server");
-		const { supabase } = await import("./supabase.server");
+		const [{ getAppSession }, { supabase }] = await Promise.all([
+			import("./session.server"),
+			import("./supabase.server"),
+		]);
 
 		const [session, { data: authData, error: authError }] = await Promise.all([
 			getAppSession(),
@@ -129,12 +130,14 @@ export interface SearchUserResponse {
 export const searchUsersFn = createServerFn({ method: "GET" })
 	.validator(z.object({ search: z.string().min(1) }))
 	.handler(async ({ data }) => {
-		const { authorizeSessionUser, getValidAccessToken } = await import(
-			"./session.server"
-		);
+		const [{ authorizeSessionUser, getValidAccessToken }] = await Promise.all([
+			import("./session.server"),
+		]);
 		// Require an authenticated user with any of our active roles
-		await authorizeSessionUser("RET Chair", "Director", "Super Admin");
-		const accessToken = await getValidAccessToken();
+		const [_, accessToken] = await Promise.all([
+			authorizeSessionUser("RET Chair", "Director", "Super Admin"),
+			getValidAccessToken(),
+		]);
 
 		const query = new URLSearchParams({ search: data.search });
 		const response = await fetch(`${API_BASE}/auth/users/search?${query}`, {
@@ -236,10 +239,11 @@ export const checkPasswordFn = createServerFn({ method: "POST" })
 export const getCurrentUserFn = createServerFn({ method: "POST" })
 	.validator(z.void())
 	.handler(async () => {
-		const { getAppSession, getValidAccessToken } = await import(
-			"./session.server"
-		);
-		const { supabase } = await import("./supabase.server");
+		const [{ getAppSession, getValidAccessToken }, { supabase }] =
+			await Promise.all([
+				import("./session.server"),
+				import("./supabase.server"),
+			]);
 
 		const session = await getAppSession();
 		const { userId, user, createdAt } = session.data;

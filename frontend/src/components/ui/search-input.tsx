@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "#/lib/utils";
 
@@ -22,40 +22,48 @@ function SearchInput({
 	debounceMs = 300,
 	className,
 }: SearchInputProps) {
-	const [localValue, setLocalValue] = useState(value);
+	const [prevValue, setPrevValue] = useState<string | null>(null);
+	const [localValue, setLocalValue] = useState<string | null>(null);
+
+	if (prevValue === null) {
+		setPrevValue(value);
+	} else if (value !== prevValue) {
+		setPrevValue(value);
+		setLocalValue(null);
+	}
+
+	const displayValue = localValue !== null ? localValue : value;
+
 	const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-	const handleChange = useCallback(
-		(newValue: string) => {
-			setLocalValue(newValue);
-			if (timerRef.current !== undefined) {
-				clearTimeout(timerRef.current);
-			}
-			if (debounceMs === 0) {
+	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const newValue = e.target.value;
+		setLocalValue(newValue);
+
+		if (timerRef.current !== undefined) {
+			clearTimeout(timerRef.current);
+		}
+
+		if (debounceMs === 0) {
+			onChange(newValue);
+		} else {
+			timerRef.current = setTimeout(() => {
 				onChange(newValue);
-			} else {
-				timerRef.current = setTimeout(() => {
-					onChange(newValue);
-				}, debounceMs);
-			}
-		},
-		[debounceMs, onChange],
-	);
+			}, debounceMs);
+		}
+	};
 
 	useEffect(() => {
-		setLocalValue(value);
-	}, [value]);
-
-	useEffect(() => {
+		const ref = timerRef;
 		return () => {
-			if (timerRef.current !== undefined) {
-				clearTimeout(timerRef.current);
+			if (ref.current !== undefined) {
+				clearTimeout(ref.current);
 			}
 		};
 	}, []);
 
 	return (
-		<div className="relative w-full">
+		<div className="relative w-full" data-prev-value={prevValue}>
 			<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 			<Input
 				placeholder={placeholder}
@@ -64,8 +72,8 @@ function SearchInput({
 					"h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-none placeholder:text-[#737373]",
 					className,
 				)}
-				value={localValue}
-				onChange={(e) => handleChange(e.target.value)}
+				value={displayValue}
+				onChange={handleInputChange}
 			/>
 		</div>
 	);
@@ -73,3 +81,4 @@ function SearchInput({
 
 export { SearchInput };
 export type { SearchInputProps };
+

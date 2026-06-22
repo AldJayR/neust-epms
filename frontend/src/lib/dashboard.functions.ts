@@ -219,7 +219,7 @@ export interface ReportStatsResponse {
 
 // ── Server Functions ──────────────────────────────────────
 
-export const getDirectorDashboardFn = createServerFn({ method: "GET" })
+const getDirectorDashboardFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
 		await authorizeSessionUser("Director");
@@ -242,7 +242,7 @@ export const getDirectorDashboardFn = createServerFn({ method: "GET" })
 		return (await response.json()) as DirectorDashboardResponse;
 	});
 
-export const getProjectHubFn = createServerFn({ method: "GET" })
+const getProjectHubFn = createServerFn({ method: "GET" })
 	.validator(projectHubParamsSchema)
 	.handler(async ({ data }) => {
 		await authorizeSessionUser("Director");
@@ -277,7 +277,7 @@ export const getProjectHubFn = createServerFn({ method: "GET" })
 		return (await response.json()) as ProjectHubResponse;
 	});
 
-export const getMoaRepositoryFn = createServerFn({ method: "GET" })
+const getMoaRepositoryFn = createServerFn({ method: "GET" })
 	.validator(moaRepositoryParamsSchema)
 	.handler(async ({ data }) => {
 		await authorizeSessionUser("Director", "RET Chair");
@@ -311,7 +311,7 @@ export const getMoaRepositoryFn = createServerFn({ method: "GET" })
 		return (await response.json()) as MoaRepositoryResponse;
 	});
 
-export const getFacultyDirectoryFn = createServerFn({ method: "GET" })
+const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 	.validator(facultyDirectoryParamsSchema)
 	.handler(async ({ data }) => {
 		await authorizeSessionUser("Director", "RET Chair");
@@ -345,7 +345,7 @@ export const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 		return (await response.json()) as FacultyDirectoryResponse;
 	});
 
-export const getProjectDetailsFn = createServerFn({ method: "GET" })
+const getProjectDetailsFn = createServerFn({ method: "GET" })
 	.validator(z.string())
 	.handler(async ({ data: proposalId }) => {
 		await authorizeSessionUser("Director", "RET Chair");
@@ -374,7 +374,7 @@ export const getProjectDetailsFn = createServerFn({ method: "GET" })
 export const reviewProposalFn = createServerFn({ method: "POST" })
 	.validator(
 		z.object({
-			proposalId: z.string().uuid(),
+			proposalId: z.uuid(),
 			decision: z.enum(["Endorsed", "Approved", "Returned", "Rejected"]),
 			comments: z.string().optional(),
 		}),
@@ -415,7 +415,7 @@ const reportsListParamsSchema = z.object({
 	search: z.string().optional(),
 });
 
-export const getReportsListFn = createServerFn({ method: "GET" })
+const getReportsListFn = createServerFn({ method: "GET" })
 	.validator(reportsListParamsSchema)
 	.handler(async ({ data }) => {
 		await authorizeSessionUser("Director", "RET Chair");
@@ -441,7 +441,7 @@ export const getReportsListFn = createServerFn({ method: "GET" })
 		return (await response.json()) as ReportsResponse;
 	});
 
-export const getReportStatsFn = createServerFn({ method: "GET" })
+const getReportStatsFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
 		await authorizeSessionUser("Director", "RET Chair");
