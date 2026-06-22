@@ -257,33 +257,27 @@ const getSDGsFn = createServerFn({ method: "GET" }).handler(async () => {
 	return (await response.json()) as SDG[];
 });
 
-const getSectorsFn = createServerFn({ method: "GET" }).handler(
-	async () => {
-		const accessToken = await getValidAccessToken();
+const getSectorsFn = createServerFn({ method: "GET" }).handler(async () => {
+	const accessToken = await getValidAccessToken();
 
-		const response = await fetch(`${API_BASE}/proposals/metadata/sectors`, {
-			headers: { Authorization: `Bearer ${accessToken}` },
-		});
-		if (!response.ok) throw new Error("Failed to fetch sectors");
-		return (await response.json()) as Sector[];
-	},
-);
+	const response = await fetch(`${API_BASE}/proposals/metadata/sectors`, {
+		headers: { Authorization: `Bearer ${accessToken}` },
+	});
+	if (!response.ok) throw new Error("Failed to fetch sectors");
+	return (await response.json()) as Sector[];
+});
 
-const getDepartmentsFn = createServerFn({ method: "GET" }).handler(
-	async () => {
-		const response = await fetch(`${API_BASE}/auth/departments`);
-		if (!response.ok) throw new Error("Failed to fetch departments");
-		return (await response.json()) as MetadataItem[];
-	},
-);
+const getDepartmentsFn = createServerFn({ method: "GET" }).handler(async () => {
+	const response = await fetch(`${API_BASE}/auth/departments`);
+	if (!response.ok) throw new Error("Failed to fetch departments");
+	return (await response.json()) as MetadataItem[];
+});
 
-const getCampusesFn = createServerFn({ method: "GET" }).handler(
-	async () => {
-		const response = await fetch(`${API_BASE}/auth/campuses`);
-		if (!response.ok) throw new Error("Failed to fetch campuses");
-		return (await response.json()) as MetadataItem[];
-	},
-);
+const getCampusesFn = createServerFn({ method: "GET" }).handler(async () => {
+	const response = await fetch(`${API_BASE}/auth/campuses`);
+	if (!response.ok) throw new Error("Failed to fetch campuses");
+	return (await response.json()) as MetadataItem[];
+});
 
 // ── Query Options ─────────────────────────────────────────
 

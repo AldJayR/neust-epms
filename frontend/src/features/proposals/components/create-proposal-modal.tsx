@@ -83,7 +83,9 @@ export function CreateProposalModal({
 				uploadPhase: "idle" | "creating" | "uploading" | "done";
 				isDragging: boolean;
 			},
-			next: Partial<typeof prev> | ((current: typeof prev) => Partial<typeof prev>),
+			next:
+				| Partial<typeof prev>
+				| ((current: typeof prev) => Partial<typeof prev>),
 		) => {
 			const patch = typeof next === "function" ? next(prev) : next;
 			return { ...prev, ...patch };

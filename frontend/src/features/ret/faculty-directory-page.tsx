@@ -13,8 +13,8 @@ import { SearchInput } from "@/components/ui/search-input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AuthUser } from "@/lib/auth";
 import {
-	facultyDirectoryQueryOptions,
 	type FacultyInvolvement,
+	facultyDirectoryQueryOptions,
 } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
 
@@ -50,14 +50,17 @@ export function RetFacultyDirectoryPage({
 		{
 			id: "rank",
 			header: () => <div className="text-center">Rank</div>,
-			headerClassName: "w-[60px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
-			cellClassName: "px-4 py-3 text-center text-[14px] font-bold text-[#0a0a0a]",
+			headerClassName:
+				"w-[60px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			cellClassName:
+				"px-4 py-3 text-center text-[14px] font-bold text-[#0a0a0a]",
 			cell: ({ row }) => (page - 1) * limit + row.index + 1,
 		},
 		{
 			id: "name",
 			header: "Faculty Name",
-			headerClassName: "w-[300px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			headerClassName:
+				"w-[300px] px-4 py-2 text-[14px] font-medium text-[#666]",
 			cellClassName: "px-4 py-3",
 			cell: ({ row }) => {
 				const faculty = row.original;
@@ -84,29 +87,36 @@ export function RetFacultyDirectoryPage({
 		{
 			id: "college",
 			header: "College",
-			headerClassName: "w-[200px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			headerClassName:
+				"w-[200px] px-4 py-2 text-[14px] font-medium text-[#666]",
 			cellClassName: "px-4 py-3 text-[14px] text-[#0a0a0a]",
 			cell: ({ row }) => row.original.college,
 		},
 		{
 			id: "leadProjects",
 			header: () => <div className="text-right">Lead Projects</div>,
-			headerClassName: "w-[120px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
-			cellClassName: "px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]",
+			headerClassName:
+				"w-[120px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
+			cellClassName:
+				"px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]",
 			cell: ({ row }) => row.original.leadProjects,
 		},
 		{
 			id: "collaboratorProjects",
 			header: () => <div className="text-right">Collaborator Projects</div>,
-			headerClassName: "w-[150px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
-			cellClassName: "px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]",
+			headerClassName:
+				"w-[150px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
+			cellClassName:
+				"px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]",
 			cell: ({ row }) => row.original.collaboratorProjects,
 		},
 		{
 			id: "totalInvolvement",
 			header: () => <div className="text-right">Total Involvement</div>,
-			headerClassName: "w-[150px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
-			cellClassName: "px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]",
+			headerClassName:
+				"w-[150px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
+			cellClassName:
+				"px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]",
 			cell: ({ row }) => row.original.totalInvolvement,
 		},
 		{

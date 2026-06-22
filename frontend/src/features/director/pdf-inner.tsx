@@ -7,8 +7,8 @@ import {
 	useDeferredValue,
 	useEffect,
 	useImperativeHandle,
-	useRef,
 	useReducer,
+	useRef,
 	useSyncExternalStore,
 } from "react";
 import type { PdfViewerRef } from "@/components/pdf-viewer";
@@ -82,7 +82,10 @@ const initialState: State = {
 	isDragging: false,
 };
 
-function stateReducer(state: State, action: Partial<State> | ((prev: State) => Partial<State>)): State {
+function stateReducer(
+	state: State,
+	action: Partial<State> | ((prev: State) => Partial<State>),
+): State {
 	const next = typeof action === "function" ? action(state) : action;
 	return { ...state, ...next };
 }
@@ -172,8 +175,6 @@ const PdfInner = ({
 			}
 		},
 	}));
-
-
 
 	// Keyboard shortcuts for zooming (Ctrl/Cmd + plus/minus/0, or direct plus/minus/0)
 	// biome-ignore lint/correctness/useExhaustiveDependencies: zoom controls are stable and shouldn't trigger listener reset
@@ -480,7 +481,8 @@ const PdfInner = ({
 						{pdfDoc &&
 							Array.from({ length: numPages }, (_, i) => {
 								const pg = i + 1;
-								const aspect = pageAspectRatios[pg] || pageAspectRatios[1] || Math.SQRT2;
+								const aspect =
+									pageAspectRatios[pg] || pageAspectRatios[1] || Math.SQRT2;
 								return (
 									<div
 										key={pg}

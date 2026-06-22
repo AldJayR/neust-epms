@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import {
 	Dialog,
 	DialogClose,
@@ -23,7 +24,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import {
 	bulkApproveUsersFn,
 	getAdminUsersFn,
@@ -51,7 +51,10 @@ const initialState: State = {
 	userRoles: {},
 };
 
-function stateReducer(state: State, action: Partial<State> | ((prev: State) => Partial<State>)): State {
+function stateReducer(
+	state: State,
+	action: Partial<State> | ((prev: State) => Partial<State>),
+): State {
 	const next = typeof action === "function" ? action(state) : action;
 	return { ...state, ...next };
 }
@@ -158,7 +161,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 			if (!assignedRole) {
 				validationFailed = true;
 				break;
-				}
+			}
 			usersToApprove.push({ userId, roleName: assignedRole });
 		}
 
@@ -209,10 +212,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 				return (
 					<div className="flex items-center gap-[10px]">
 						<Avatar className="size-9 border border-[#e5e5e5]">
-							<AvatarImage
-								src=""
-								alt={`${user.firstName} ${user.lastName}`}
-							/>
+							<AvatarImage src="" alt={`${user.firstName} ${user.lastName}`} />
 							<AvatarFallback className="bg-primary/5 text-xs font-medium text-primary">
 								{user.firstName?.charAt(0) ?? ""}
 								{user.lastName?.charAt(0) ?? ""}
@@ -221,9 +221,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 						<div className="flex min-w-0 flex-col text-left">
 							<span className="truncate text-[14px] font-medium leading-5 text-[#0a0a0a]">
 								{user.firstName}{" "}
-								{user.middleName
-									? `${user.middleName.charAt(0)}. `
-									: ""}{" "}
+								{user.middleName ? `${user.middleName.charAt(0)}. ` : ""}{" "}
 								{user.lastName}
 							</span>
 							<span className="truncate text-[12px] leading-4 text-[#666]">

@@ -2,7 +2,7 @@
 
 import "../pdf-ssr-polyfill";
 import * as pdfjsLib from "pdfjs-dist";
-import { useEffect, useRef, useReducer } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import type { AnnotationData, ProposalComment } from "@/lib/comments.functions";
 import { CommentCreationPopover, CommentHighlights } from "./pdf-annotations";
 
@@ -33,7 +33,10 @@ interface State {
 	lastRendered: { width: number; scale: number };
 }
 
-function stateReducer(state: State, action: Partial<State> | ((prev: State) => Partial<State>)): State {
+function stateReducer(
+	state: State,
+	action: Partial<State> | ((prev: State) => Partial<State>),
+): State {
 	const next = typeof action === "function" ? action(state) : action;
 	return { ...state, ...next };
 }
@@ -104,7 +107,8 @@ export function PdfPageCanvas({
 				if (isDestroyed) return;
 
 				// Determine which canvas is the target (hidden one)
-				const targetCanvasIndex = activeCanvasRef.current === 1 && hasRenderedRef.current ? 2 : 1;
+				const targetCanvasIndex =
+					activeCanvasRef.current === 1 && hasRenderedRef.current ? 2 : 1;
 				const targetCanvas =
 					targetCanvasIndex === 1 ? canvasRef1.current : canvasRef2.current;
 				if (!targetCanvas) return;

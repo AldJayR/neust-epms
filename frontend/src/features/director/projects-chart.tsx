@@ -28,7 +28,11 @@ interface ProjectsChartProps {
 
 export default function ProjectsChart({ chartData }: ProjectsChartProps) {
 	return (
-		<Suspense fallback={<div className="h-full w-full bg-[#fcfcfc] animate-pulse rounded" />}>
+		<Suspense
+			fallback={
+				<div className="h-full w-full bg-[#fcfcfc] animate-pulse rounded" />
+			}
+		>
 			<ResponsiveContainer width="100%" height="100%" key="projects-chart">
 				<BarChart
 					data={chartData}
@@ -62,4 +66,3 @@ export default function ProjectsChart({ chartData }: ProjectsChartProps) {
 		</Suspense>
 	);
 }
-

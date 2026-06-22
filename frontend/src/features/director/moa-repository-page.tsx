@@ -9,8 +9,8 @@ import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import type { AuthUser } from "@/lib/auth";
 import {
-	moaRepositoryQueryOptions,
 	type MoaItem,
+	moaRepositoryQueryOptions,
 } from "@/lib/dashboard.functions";
 import { isAdminOrDirector } from "@/lib/permissions";
 import { MoaStatusBadge } from "./components/moa-status-badge";
@@ -51,14 +51,17 @@ export function MoaRepositoryPage({
 		{
 			id: "partner",
 			header: "Partner Organization",
-			headerClassName: "w-[320px] px-4 py-2 text-[14px] font-medium text-[#666]",
-			cellClassName: "px-4 py-3 text-[14px] font-semibold text-[#0a0a0a] text-left",
+			headerClassName:
+				"w-[320px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			cellClassName:
+				"px-4 py-3 text-[14px] font-semibold text-[#0a0a0a] text-left",
 			cell: ({ row }) => row.original.partnerOrganization,
 		},
 		{
 			id: "dateSigned",
 			header: () => <div className="text-center">Date Signed</div>,
-			headerClassName: "w-[223px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			headerClassName:
+				"w-[223px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
 			cellClassName: "px-4 py-3 text-center text-[14px] text-[#0a0a0a]",
 			cell: ({ row }) => (
 				<ClientOnly fallback="...">
@@ -69,7 +72,8 @@ export function MoaRepositoryPage({
 		{
 			id: "daysToExpiry",
 			header: () => <div className="text-center">Days to Expiry</div>,
-			headerClassName: "w-[255px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			headerClassName:
+				"w-[255px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
 			cellClassName: "px-4 py-3 text-center text-[14px] text-[#0a0a0a]",
 			cell: ({ row }) => (
 				<>
@@ -81,7 +85,8 @@ export function MoaRepositoryPage({
 		{
 			id: "status",
 			header: () => <div className="text-center">Status</div>,
-			headerClassName: "w-[129px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			headerClassName:
+				"w-[129px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
 			cell: ({ row }) => (
 				<div className="flex justify-center">
 					<MoaStatusBadge status={row.original.status} />

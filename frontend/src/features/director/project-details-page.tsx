@@ -44,10 +44,7 @@ function ProjectDetailsSkeleton() {
 					<BreadcrumbItem>
 						<BreadcrumbLink
 							render={
-								<Link
-									to="/dashboard"
-									search={{ page: 1, pageSize: 10 }}
-								/>
+								<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />
 							}
 						>
 							Dashboard
@@ -515,10 +512,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 					<BreadcrumbItem>
 						<BreadcrumbLink
 							render={
-								<Link
-									to="/dashboard"
-									search={{ page: 1, pageSize: 10 }}
-								/>
+								<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />
 							}
 						>
 							Dashboard
@@ -551,12 +545,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 				</div>
 				<Button
 					className="flex w-fit items-center gap-2 rounded-[10px] bg-brand-primary px-5 h-9 text-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-brand-primary-hover"
-					render={
-						<Link
-							to="/proposals/$proposalId"
-							params={{ proposalId }}
-						/>
-					}
+					render={<Link to="/proposals/$proposalId" params={{ proposalId }} />}
 				>
 					<Eye className="size-4" />
 					<span className="text-sm font-medium">Read Proposal Document</span>

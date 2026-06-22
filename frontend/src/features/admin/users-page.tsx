@@ -115,10 +115,7 @@ export function UsersPage({
 				return (
 					<div className="flex items-center gap-3">
 						<Avatar className="h-9 w-9">
-							<AvatarImage
-								src=""
-								alt={`${user.firstName} ${user.lastName}`}
-							/>
+							<AvatarImage src="" alt={`${user.firstName} ${user.lastName}`} />
 							<AvatarFallback className="bg-primary/10 text-primary font-medium">
 								{user.firstName?.charAt(0) ?? ""}
 								{user.lastName?.charAt(0) ?? ""}
@@ -171,11 +168,7 @@ export function UsersPage({
 						<DropdownMenu>
 							<DropdownMenuTrigger
 								render={
-									<Button
-										variant="ghost"
-										size="icon"
-										className="size-8"
-									/>
+									<Button variant="ghost" size="icon" className="size-8" />
 								}
 								aria-label="Open user actions"
 							>

@@ -8,9 +8,9 @@ import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import {
+	type ReportItem,
 	reportsListQueryOptions,
 	reportsQueryOptions,
-	type ReportItem,
 } from "@/lib/dashboard.functions";
 
 const formatDate = (dateStr: string) => {
@@ -79,7 +79,8 @@ export function ReportsPage() {
 		{
 			id: "reportType",
 			header: () => <div className="text-center">Report Type</div>,
-			headerClassName: "px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			headerClassName:
+				"px-4 py-2 text-center text-[14px] font-medium text-[#666]",
 			cellClassName: "px-4 py-3 text-center",
 			cell: ({ row }) => {
 				const type = row.original.reportType;
@@ -100,7 +101,8 @@ export function ReportsPage() {
 		{
 			id: "submitted",
 			header: () => <div className="text-center">Submitted</div>,
-			headerClassName: "px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			headerClassName:
+				"px-4 py-2 text-center text-[14px] font-medium text-[#666]",
 			cellClassName: "px-4 py-3 text-center text-[14px] text-[#0a0a0a]",
 			cell: ({ row }) => formatDate(row.original.submitted),
 		},

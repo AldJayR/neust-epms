@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { EllipsisVertical, Filter, Loader2, Plus } from "lucide-react";
+import { EllipsisVertical, Filter, Plus } from "lucide-react";
 import * as React from "react";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -21,12 +22,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import type { AuthUser } from "@/lib/auth";
 import {
+	type ProposalItem,
 	retDashboardStatsQueryOptions,
 	retProposalsQueryOptions,
-	type ProposalItem,
 } from "@/lib/ret.functions";
 import { formatAcademicRank } from "@/lib/utils";
 import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
@@ -59,7 +59,6 @@ export function RETDashboardPage({
 	const {
 		data: proposalsData,
 		isLoading: isProposalsLoading,
-		isFetching: isProposalsFetching,
 	} = useQuery(
 		retProposalsQueryOptions({
 			page,
@@ -264,12 +263,7 @@ export function RETDashboardPage({
 			</div>
 
 			{/* Proposals Table */}
-			<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden min-h-[400px] relative">
-				{isProposalsFetching && (
-					<div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center backdrop-blur-[1px]">
-						<Loader2 className="h-8 w-8 animate-spin text-primary" />
-					</div>
-				)}
+			<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden min-h-[400px]">
 				<DataTable
 					columns={columns}
 					data={proposals}

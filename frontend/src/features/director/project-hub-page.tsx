@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/select";
 import type { AuthUser } from "@/lib/auth";
 import {
-	projectHubQueryOptions,
 	type HubProject,
+	projectHubQueryOptions,
 } from "@/lib/dashboard.functions";
 import { ProjectStatusBadge } from "./components/project-status-badge";
 

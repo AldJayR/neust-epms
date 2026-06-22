@@ -417,10 +417,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 					<BreadcrumbItem>
 						<BreadcrumbLink
 							render={
-								<Link
-									to="/dashboard"
-									search={{ page: 1, pageSize: 10 }}
-								/>
+								<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />
 							}
 						>
 							Dashboard

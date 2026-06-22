@@ -17,9 +17,9 @@ import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import {
+	type AuditLog,
 	auditLogsQueryOptions,
 	auditStatsQueryOptions,
-	type AuditLog,
 } from "@/lib/admin.functions";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -152,7 +152,8 @@ export function ActivityLogPage({
 		{
 			id: "type",
 			header: () => <div className="text-center">Type</div>,
-			headerClassName: "w-[130px] font-medium text-[#666] text-sm py-2.5 text-center",
+			headerClassName:
+				"w-[130px] font-medium text-[#666] text-sm py-2.5 text-center",
 			cellClassName: "py-2.5 text-center",
 			cell: ({ row }) => {
 				const typeInfo = getActionTypeInfo(
