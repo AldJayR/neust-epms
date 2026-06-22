@@ -5,7 +5,6 @@ import {
 	CloudUpload,
 	Download,
 	Filter,
-	Loader2,
 	LogIn,
 	MoreVertical,
 	Settings,

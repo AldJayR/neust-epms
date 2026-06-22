@@ -21,18 +21,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
+import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import type { AuthUser } from "@/lib/auth";
 import {
 	retDashboardStatsQueryOptions,
 	retProposalsQueryOptions,
+	type ProposalItem,
 } from "@/lib/ret.functions";
 import { formatAcademicRank } from "@/lib/utils";
 import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
@@ -95,6 +89,118 @@ export function RETDashboardPage({
 	const isLoading = isProposalsLoading || isStatsLoading;
 	const showTableHeader =
 		proposals.length > 0 || (search ?? "").trim().length > 0;
+
+	const columns: DataTableColumnDef<ProposalItem>[] = [
+		{
+			id: "title",
+			header: "Project Title",
+			headerClassName: "w-[352px] font-medium text-[#666] px-4",
+			cellClassName: "px-4 py-3 align-middle",
+			cell: ({ row }) => {
+				const proposal = row.original;
+				return (
+					<p className="text-sm font-medium text-[#0a0a0a] line-clamp-2 leading-5">
+						{proposal.title}
+					</p>
+				);
+			},
+		},
+		{
+			id: "leader",
+			header: "Project Leader",
+			headerClassName: "w-[228px] font-medium text-[#666] px-4",
+			cellClassName: "px-4 py-3 align-middle",
+			cell: ({ row }) => {
+				const proposal = row.original;
+				return (
+					<div className="flex items-center gap-2">
+						<Avatar className="size-9 rounded-full">
+							<AvatarImage src="" alt="Leader" />
+							<AvatarFallback className="bg-primary/10 text-primary font-medium text-xs">
+								{proposal.leaderFirstName?.charAt(0) ?? ""}
+								{proposal.leaderLastName?.charAt(0) ?? ""}
+							</AvatarFallback>
+						</Avatar>
+						<div className="flex flex-col gap-[2px]">
+							<span className="text-sm font-normal text-[#0a0a0a] leading-5">
+								{proposal.leaderFirstName} {proposal.leaderLastName}
+							</span>
+							<span className="text-xs text-[#666] leading-[14px]">
+								{formatAcademicRank(proposal.leaderAcademicRank ?? null)}
+							</span>
+						</div>
+					</div>
+				);
+			},
+		},
+		{
+			id: "dateSubmitted",
+			header: "Date Submitted",
+			headerClassName: "w-[134px] font-medium text-[#666] px-4",
+			cellClassName: "px-4 py-3 align-middle text-sm text-[#0a0a0a]",
+			cell: ({ row }) => {
+				const proposal = row.original;
+				return format(new Date(proposal.createdAt), "MMM dd, yyyy");
+			},
+		},
+		{
+			id: "status",
+			header: "Status",
+			headerClassName: "w-[188px] font-medium text-[#666] px-4",
+			cellClassName: "px-4 py-3 align-middle",
+			cell: ({ row }) => {
+				const proposal = row.original;
+				return <ProposalStatusBadge status={proposal.status} />;
+			},
+		},
+		{
+			id: "actions",
+			header: "",
+			headerClassName: "w-[50px]",
+			cellClassName: "px-4 py-3 align-middle",
+			cell: ({ row }) => {
+				const proposal = row.original;
+				return (
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={
+								<Button
+									variant="ghost"
+									size="icon"
+									className="size-8 text-[#666]"
+								/>
+							}
+							aria-label="Open proposal actions"
+						>
+							<EllipsisVertical className="size-4" />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem
+								onClick={() =>
+									navigate({
+										to: "/projects/$projectId",
+										params: { projectId: proposal.proposalId },
+									})
+								}
+							>
+								View Details
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() =>
+									navigate({
+										to: "/proposals/$proposalId",
+										params: { proposalId: proposal.proposalId },
+									})
+								}
+							>
+								Review Proposal
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				);
+			},
+		},
+	];
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -164,113 +270,14 @@ export function RETDashboardPage({
 						<Loader2 className="h-8 w-8 animate-spin text-primary" />
 					</div>
 				)}
-				<Table>
-					{showTableHeader && (
-						<TableHeader className="bg-white border-b-[#ebebeb]">
-							<TableRow className="hover:bg-transparent h-10">
-								<TableHead className="w-[352px] font-medium text-[#666] px-4">
-									Project Title
-								</TableHead>
-								<TableHead className="w-[228px] font-medium text-[#666] px-4">
-									Project Leader
-								</TableHead>
-								<TableHead className="w-[134px] font-medium text-[#666] px-4">
-									Date Submitted
-								</TableHead>
-								<TableHead className="w-[188px] font-medium text-[#666] px-4">
-									Status
-								</TableHead>
-								<TableHead className="w-[50px]"></TableHead>
-							</TableRow>
-						</TableHeader>
-					)}
-					<TableBody>
-						{proposals.map((proposal) => (
-							<TableRow
-								key={proposal.proposalId}
-								className="border-b-[#ebebeb] hover:bg-[#fcfcfc] py-2"
-							>
-								<TableCell className="px-4 py-3 align-middle">
-									<p className="text-sm font-medium text-[#0a0a0a] line-clamp-2 leading-5">
-										{proposal.title}
-									</p>
-								</TableCell>
-								<TableCell className="px-4 py-3 align-middle">
-									<div className="flex items-center gap-2">
-										<Avatar className="size-9 rounded-full">
-											<AvatarImage src="" alt="Leader" />
-											<AvatarFallback className="bg-primary/10 text-primary font-medium text-xs">
-												{proposal.leaderFirstName?.charAt(0) ?? ""}
-												{proposal.leaderLastName?.charAt(0) ?? ""}
-											</AvatarFallback>
-										</Avatar>
-										<div className="flex flex-col gap-[2px]">
-											<span className="text-sm font-normal text-[#0a0a0a] leading-5">
-												{proposal.leaderFirstName} {proposal.leaderLastName}
-											</span>
-											<span className="text-xs text-[#666] leading-[14px]">
-												{formatAcademicRank(
-													proposal.leaderAcademicRank ?? null,
-												)}
-											</span>
-										</div>
-									</div>
-								</TableCell>
-								<TableCell className="px-4 py-3 align-middle text-sm text-[#0a0a0a]">
-									{format(new Date(proposal.createdAt), "MMM dd, yyyy")}
-								</TableCell>
-								<TableCell className="px-4 py-3 align-middle">
-									<ProposalStatusBadge status={proposal.status} />
-								</TableCell>
-								<TableCell className="px-4 py-3 align-middle">
-									<DropdownMenu>
-										<DropdownMenuTrigger
-											render={
-												<Button
-													variant="ghost"
-													size="icon"
-													className="size-8 text-[#666]"
-												/>
-											}
-											aria-label="Open proposal actions"
-										>
-											<EllipsisVertical className="size-4" />
-										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end">
-											<DropdownMenuItem
-												onClick={() =>
-													navigate({
-														to: "/projects/$projectId",
-														params: { projectId: proposal.proposalId },
-													})
-												}
-											>
-												View Details
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() =>
-													navigate({
-														to: "/proposals/$proposalId",
-														params: { proposalId: proposal.proposalId },
-													})
-												}
-											>
-												Review Proposal
-											</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								</TableCell>
-							</TableRow>
-						))}
-					</TableBody>
-				</Table>
-				{proposals.length === 0 && !isLoading && (
-					<div className="flex min-h-[400px] items-center justify-center bg-white px-6">
-						<p className="text-sm text-muted-foreground italic">
-							No proposals found.
-						</p>
-					</div>
-				)}
+				<DataTable
+					columns={columns}
+					data={proposals}
+					isLoading={isProposalsLoading}
+					emptyMessage="No proposals found."
+					ariaLabel="Proposals table"
+					showHeader={showTableHeader}
+				/>
 			</div>
 
 			<PaginationBar
