@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -27,11 +27,11 @@ import {
 } from "@/components/ui/empty";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
-import { TableCell, TableRow } from "@/components/ui/table";
 import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
 	bulkUpdateUserStatusFn,
+	type UserResponse,
 } from "@/lib/admin.functions";
 import { formatAcademicRank } from "@/lib/utils";
 import { BulkApproveDialog } from "./bulk-approve-dialog";
@@ -104,28 +104,107 @@ export function UsersPage({
 	const hasUsers = users.length > 0;
 	const hasSearch = !!search?.trim();
 
-	const columns: DataTableColumn[] = [
+	const columns: DataTableColumnDef<UserResponse>[] = [
 		{
-			key: "name",
-			label: "Faculty Name",
-			className: "w-[320px] font-medium text-[#666]",
+			id: "name",
+			header: "Faculty Name",
+			headerClassName: "w-[320px] font-medium text-[#666]",
+			cellClassName: "py-4",
+			cell: ({ row }) => {
+				const user = row.original;
+				return (
+					<div className="flex items-center gap-3">
+						<Avatar className="h-9 w-9">
+							<AvatarImage
+								src=""
+								alt={`${user.firstName} ${user.lastName}`}
+							/>
+							<AvatarFallback className="bg-primary/10 text-primary font-medium">
+								{user.firstName?.charAt(0) ?? ""}
+								{user.lastName?.charAt(0) ?? ""}
+							</AvatarFallback>
+						</Avatar>
+						<div className="flex flex-col text-left">
+							<span className="text-sm font-normal text-[#0a0a0a]">
+								{user.firstName} {user.lastName}
+							</span>
+							<span className="text-xs text-[#666]">
+								{formatAcademicRank(user.academicRank)}
+							</span>
+						</div>
+					</div>
+				);
+			},
 		},
 		{
-			key: "department",
-			label: "Department",
-			className: "text-center font-medium text-[#666]",
+			id: "department",
+			header: () => <div className="text-center">Department</div>,
+			headerClassName: "text-center font-medium text-[#666]",
+			cellClassName: "text-center text-sm text-[#0a0a0a]",
+			cell: ({ row }) => row.original.departmentName ?? row.original.campusName,
 		},
 		{
-			key: "role",
-			label: "Role",
-			className: "text-center font-medium text-[#666]",
+			id: "role",
+			header: () => <div className="text-center">Role</div>,
+			headerClassName: "text-center font-medium text-[#666]",
+			cellClassName: "text-center text-sm text-[#0a0a0a]",
+			cell: ({ row }) => row.original.roleName,
 		},
 		{
-			key: "status",
-			label: "Status",
-			className: "text-center font-medium text-[#666]",
+			id: "status",
+			header: () => <div className="text-center">Status</div>,
+			headerClassName: "text-center font-medium text-[#666]",
+			cell: ({ row }) => (
+				<div className="flex justify-center">
+					<StatusBadge isActive={row.original.isActive} />
+				</div>
+			),
 		},
-		{ key: "actions", label: "", className: "w-[50px]" },
+		{
+			id: "actions",
+			header: "",
+			headerClassName: "w-[50px]",
+			cell: ({ row }) => {
+				const user = row.original;
+				return (
+					<div className="flex justify-end pr-2">
+						<DropdownMenu>
+							<DropdownMenuTrigger
+								render={
+									<Button
+										variant="ghost"
+										size="icon"
+										className="size-8"
+									/>
+								}
+								aria-label="Open user actions"
+							>
+								<MoreVertical className="size-4" />
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem>View Details</DropdownMenuItem>
+								<DropdownMenuItem>Edit User</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem
+									className={
+										user.isActive ? "text-destructive" : "text-primary"
+									}
+									onClick={() =>
+										updateStatusMutation.mutate({
+											userIds: [user.userId],
+											isActive: !user.isActive,
+										})
+									}
+									disabled={updateStatusMutation.isPending}
+								>
+									{user.isActive ? "Deactivate" : "Activate"}
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				);
+			},
+		},
 	];
 
 	return (
@@ -183,84 +262,7 @@ export function UsersPage({
 					<DataTable
 						columns={columns}
 						data={users}
-						renderRow={(user) => (
-							<TableRow
-								key={user.userId}
-								className="bg-white border-b-[#ebebeb] hover:bg-[#fcfcfc]"
-							>
-								<TableCell className="py-4">
-									<div className="flex items-center gap-3">
-										<Avatar className="h-9 w-9">
-											<AvatarImage
-												src=""
-												alt={`${user.firstName} ${user.lastName}`}
-											/>
-											<AvatarFallback className="bg-primary/10 text-primary font-medium">
-												{user.firstName?.charAt(0) ?? ""}
-												{user.lastName?.charAt(0) ?? ""}
-											</AvatarFallback>
-										</Avatar>
-										<div className="flex flex-col">
-											<span className="text-sm font-normal text-[#0a0a0a]">
-												{user.firstName} {user.lastName}
-											</span>
-											<span className="text-xs text-[#666]">
-												{formatAcademicRank(user.academicRank)}
-											</span>
-										</div>
-									</div>
-								</TableCell>
-								<TableCell className="text-center text-sm text-[#0a0a0a]">
-									{user.departmentName ?? user.campusName}
-								</TableCell>
-								<TableCell className="text-center text-sm text-[#0a0a0a]">
-									{user.roleName}
-								</TableCell>
-								<TableCell>
-									<div className="flex justify-center">
-										<StatusBadge isActive={user.isActive} />
-									</div>
-								</TableCell>
-								<TableCell>
-									<DropdownMenu>
-										<DropdownMenuTrigger
-											render={
-												<Button
-													variant="ghost"
-													size="icon"
-													className="size-8"
-												/>
-											}
-											aria-label="Open user actions"
-										>
-											<MoreVertical className="size-4" />
-										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end">
-											<DropdownMenuItem>View Details</DropdownMenuItem>
-											<DropdownMenuItem>Edit User</DropdownMenuItem>
-											<DropdownMenuSeparator />
-											<DropdownMenuItem
-												className={
-													user.isActive ? "text-destructive" : "text-primary"
-												}
-												onClick={() =>
-													updateStatusMutation.mutate({
-														userIds: [user.userId],
-														isActive: !user.isActive,
-													})
-												}
-												disabled={updateStatusMutation.isPending}
-											>
-												{user.isActive ? "Deactivate" : "Activate"}
-											</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								</TableCell>
-							</TableRow>
-						)}
 						isLoading={isLoading}
-						isEmpty={!hasUsers}
-						colSpan={5}
 						ariaLabel="User management"
 					/>
 				) : (

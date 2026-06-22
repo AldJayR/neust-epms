@@ -1,5 +1,10 @@
 import { Loader2 } from "lucide-react";
-import type * as React from "react";
+import {
+	flexRender,
+	getCoreRowModel,
+	useReactTable,
+} from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 
 import {
 	Table,
@@ -10,61 +15,75 @@ import {
 	TableRow,
 } from "./table";
 
-interface DataTableColumn {
-	key: string;
-	label: string;
-	className?: string;
-}
-
-interface DataTableProps<T> {
-	columns: DataTableColumn[];
-	data: T[];
-	renderRow: (item: T, index: number) => React.ReactNode;
+interface DataTableProps<TData, TValue> {
+	columns: DataTableColumnDef<TData, TValue>[];
+	data: TData[];
 	isLoading?: boolean;
-	isEmpty?: boolean;
 	error?: string | null;
 	emptyMessage?: string;
 	errorMessage?: string;
-	colSpan: number;
 	showHeader?: boolean;
 	className?: string;
 	ariaLabel?: string;
+	onRowClick?: (item: TData) => void;
 }
 
-function DataTable<T>({
+function DataTable<TData, TValue>({
 	columns,
 	data,
-	renderRow,
 	isLoading = false,
-	isEmpty = false,
 	error = null,
 	emptyMessage = "No records found.",
 	errorMessage = "Something went wrong.",
-	colSpan,
 	showHeader = true,
 	className,
 	ariaLabel,
-}: DataTableProps<T>) {
+	onRowClick,
+}: DataTableProps<TData, TValue>) {
+	const table = useReactTable({
+		data,
+		columns,
+		getCoreRowModel: getCoreRowModel(),
+	});
+
+	const colSpan = columns.length;
+
 	return (
 		<Table className={className} aria-label={ariaLabel}>
 			{showHeader && (
 				<TableHeader className="bg-white">
-					<TableRow className="border-b-[#e5e5e5] hover:bg-transparent">
-						{columns.map((col) => (
-							<TableHead key={col.key} className={col.className}>
-								{col.label}
-							</TableHead>
-						))}
-					</TableRow>
+					{table.getHeaderGroups().map((headerGroup) => (
+						<TableRow
+							key={headerGroup.id}
+							className="border-b-[#e5e5e5] hover:bg-transparent"
+						>
+							{headerGroup.headers.map((header) => {
+								const columnDef = header.column.columnDef as DataTableColumnDef<
+									TData,
+									TValue
+								>;
+								return (
+									<TableHead
+										key={header.id}
+										className={columnDef.headerClassName}
+									>
+										{header.isPlaceholder
+											? null
+											: flexRender(
+													header.column.columnDef.header,
+													header.getContext(),
+												)}
+									</TableHead>
+								);
+							})}
+						</TableRow>
+					))}
 				</TableHeader>
 			)}
 			<TableBody>
 				{isLoading ? (
 					<TableRow>
-						<TableCell
-							colSpan={colSpan}
-							className="h-24 text-center"
-						>
+						<TableCell colSpan={colSpan} className="h-24 text-center">
 							<Loader2
 								className="mx-auto size-6 animate-spin text-[#11215a]"
 								role="status"
@@ -80,7 +99,7 @@ function DataTable<T>({
 							{errorMessage}
 						</TableCell>
 					</TableRow>
-				) : isEmpty ? (
+				) : data.length === 0 ? (
 					<TableRow>
 						<TableCell
 							colSpan={colSpan}
@@ -90,12 +109,47 @@ function DataTable<T>({
 						</TableCell>
 					</TableRow>
 				) : (
-					data.map((item, index) => renderRow(item, index))
+					table.getRowModel().rows.map((row) => (
+						<TableRow
+							key={row.id}
+							data-state={row.getIsSelected() && "selected"}
+							className={onRowClick ? "cursor-pointer" : undefined}
+							onClick={
+								onRowClick ? () => onRowClick(row.original) : undefined
+							}
+						>
+							{row.getVisibleCells().map((cell) => {
+								const columnDef = cell.column.columnDef as DataTableColumnDef<
+									TData,
+									TValue
+								>;
+								return (
+									<TableCell
+										key={cell.id}
+										className={columnDef.cellClassName}
+									>
+										{flexRender(
+											cell.column.columnDef.cell,
+											cell.getContext(),
+										)}
+									</TableCell>
+								);
+							})}
+						</TableRow>
+					))
 				)}
 			</TableBody>
 		</Table>
 	);
 }
 
+export type DataTableColumnDef<
+	TData = unknown,
+	TValue = unknown,
+> = ColumnDef<TData, TValue> & {
+	headerClassName?: string;
+	cellClassName?: string;
+};
+
 export { DataTable };
-export type { DataTableColumn, DataTableProps };
+export type { DataTableProps };

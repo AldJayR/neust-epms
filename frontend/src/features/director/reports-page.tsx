@@ -4,13 +4,13 @@ import { useState } from "react";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
-import { TableCell, TableRow } from "@/components/ui/table";
 import {
 	reportsListQueryOptions,
 	reportsQueryOptions,
+	type ReportItem,
 } from "@/lib/dashboard.functions";
 
 const formatDate = (dateStr: string) => {
@@ -50,33 +50,76 @@ export function ReportsPage() {
 
 	const showTableHeader = reports.length > 0 || search.trim().length > 0;
 
-	const columns: DataTableColumn[] = [
+	const columns: DataTableColumnDef<ReportItem>[] = [
 		{
-			key: "project",
-			label: "Project",
-			className: "px-4 py-2 text-[14px] font-medium text-[#666]",
+			id: "project",
+			header: "Project",
+			headerClassName: "px-4 py-2 text-[14px] font-medium text-[#666]",
+			cellClassName: "px-4 py-3 font-bold text-[#0a0a0a]",
+			cell: ({ row }) => (
+				<div className="truncate max-w-[280px]" title={row.original.project}>
+					{row.original.project}
+				</div>
+			),
 		},
 		{
-			key: "leader",
-			label: "Leader",
-			className: "px-4 py-2 text-[14px] font-medium text-[#666]",
+			id: "leader",
+			header: "Leader",
+			headerClassName: "px-4 py-2 text-[14px] font-medium text-[#666]",
+			cellClassName: "px-4 py-3 text-[14px] text-[#0a0a0a]",
+			cell: ({ row }) => row.original.leader,
 		},
 		{
-			key: "department",
-			label: "Department",
-			className: "px-4 py-2 text-[14px] font-medium text-[#666]",
+			id: "department",
+			header: "Department",
+			headerClassName: "px-4 py-2 text-[14px] font-medium text-[#666]",
+			cellClassName: "px-4 py-3 text-[14px] text-[#0a0a0a]",
+			cell: ({ row }) => row.original.department ?? "—",
 		},
 		{
-			key: "reportType",
-			label: "Report Type",
-			className: "px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			id: "reportType",
+			header: () => <div className="text-center">Report Type</div>,
+			headerClassName: "px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			cellClassName: "px-4 py-3 text-center",
+			cell: ({ row }) => {
+				const type = row.original.reportType;
+				return (
+					<Badge
+						variant="outline"
+						className={`rounded-md font-medium text-[12px] px-2 py-0.5 border ${
+							type === "Terminal"
+								? "bg-[#ffee9c] text-[#ab6400] border-[#e2a336]"
+								: "bg-[#c4e8d1] text-[#218358] border-[#2b9a66]"
+						}`}
+					>
+						{type}
+					</Badge>
+				);
+			},
 		},
 		{
-			key: "submitted",
-			label: "Submitted",
-			className: "px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			id: "submitted",
+			header: () => <div className="text-center">Submitted</div>,
+			headerClassName: "px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			cellClassName: "px-4 py-3 text-center text-[14px] text-[#0a0a0a]",
+			cell: ({ row }) => formatDate(row.original.submitted),
 		},
-		{ key: "actions", label: "", className: "w-[50px]" },
+		{
+			id: "actions",
+			header: "",
+			headerClassName: "w-[50px]",
+			cellClassName: "px-4 py-3 text-right",
+			cell: () => (
+				<Button
+					variant="ghost"
+					size="icon"
+					className="size-8 text-[#737373]"
+					aria-label="More actions for report"
+				>
+					<MoreVertical className="size-4" />
+				</Button>
+			),
+		},
 	];
 
 	return (
@@ -124,54 +167,9 @@ export function ReportsPage() {
 					columns={columns}
 					data={reports}
 					showHeader={showTableHeader}
-					renderRow={(report) => (
-						<TableRow
-							key={report.reportId}
-							className="border-b border-[#ebebeb] py-2 hover:bg-[#fcfcfc]"
-						>
-							<TableCell className="px-4 py-3 font-bold text-[#0a0a0a]">
-								<div className="truncate max-w-[280px]" title={report.project}>
-									{report.project}
-								</div>
-							</TableCell>
-							<TableCell className="px-4 py-3 text-[14px] text-[#0a0a0a]">
-								{report.leader}
-							</TableCell>
-							<TableCell className="px-4 py-3 text-[14px] text-[#0a0a0a]">
-								{report.department ?? "—"}
-							</TableCell>
-							<TableCell className="px-4 py-3 text-center">
-								<Badge
-									variant="outline"
-									className={`rounded-md font-medium text-[12px] px-2 py-0.5 border ${
-										report.reportType === "Terminal"
-											? "bg-[#ffee9c] text-[#ab6400] border-[#e2a336]"
-											: "bg-[#c4e8d1] text-[#218358] border-[#2b9a66]"
-									}`}
-								>
-									{report.reportType}
-								</Badge>
-							</TableCell>
-							<TableCell className="px-4 py-3 text-center text-[14px] text-[#0a0a0a]">
-								{formatDate(report.submitted)}
-							</TableCell>
-							<TableCell className="px-4 py-3 text-right">
-								<Button
-									variant="ghost"
-									size="icon"
-									className="size-8 text-[#737373]"
-									aria-label="More actions for report"
-								>
-									<MoreVertical className="size-4" />
-								</Button>
-							</TableCell>
-						</TableRow>
-					)}
 					isLoading={isLoading}
 					error={error ? "Failed to load reports." : null}
-					isEmpty={reports.length === 0}
 					emptyMessage="No reports found."
-					colSpan={6}
 					ariaLabel="Reports"
 				/>
 			</div>

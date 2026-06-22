@@ -3,7 +3,7 @@ import { Calendar, Download, EllipsisVertical, Filter } from "lucide-react";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import {
@@ -13,9 +13,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { TableCell, TableRow } from "@/components/ui/table";
 import type { AuthUser } from "@/lib/auth";
-import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
+import {
+	facultyDirectoryQueryOptions,
+	type FacultyInvolvement,
+} from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
 
 interface FacultyDirectoryPageProps {
@@ -55,42 +57,85 @@ export function FacultyDirectoryPage({
 		(search ?? "").trim().length > 0 ||
 		(college ?? "").trim().length > 0;
 
-	const columns: DataTableColumn[] = [
+	const columns: DataTableColumnDef<FacultyInvolvement>[] = [
 		{
-			key: "rank",
-			label: "Rank",
-			className:
-				"w-[60px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			id: "rank",
+			header: () => <div className="text-center">Rank</div>,
+			headerClassName: "w-[60px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			cellClassName: "px-4 py-3 text-center text-[14px] font-bold text-[#0a0a0a]",
+			cell: ({ row }) => (page - 1) * limit + row.index + 1,
 		},
 		{
-			key: "name",
-			label: "Faculty Name",
-			className: "w-[300px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			id: "name",
+			header: "Faculty Name",
+			headerClassName: "w-[300px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			cellClassName: "px-4 py-3",
+			cell: ({ row }) => {
+				const faculty = row.original;
+				return (
+					<div className="flex items-center gap-3">
+						<Avatar className="size-9">
+							<AvatarFallback className="bg-[#ddd] text-[#666]">
+								{faculty.firstName?.charAt(0) ?? ""}
+								{faculty.lastName?.charAt(0) ?? ""}
+							</AvatarFallback>
+						</Avatar>
+						<div className="flex flex-col text-left">
+							<span className="text-[14px] font-normal text-[#0a0a0a]">
+								{faculty.firstName} {faculty.lastName}
+							</span>
+							<span className="text-[12px] text-[#666]">
+								{formatAcademicRank(faculty.academicRank)}
+							</span>
+						</div>
+					</div>
+				);
+			},
 		},
 		{
-			key: "college",
-			label: "College",
-			className: "w-[200px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			id: "college",
+			header: "College",
+			headerClassName: "w-[200px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			cellClassName: "px-4 py-3 text-[14px] text-[#0a0a0a]",
+			cell: ({ row }) => row.original.college,
 		},
 		{
-			key: "leadProjects",
-			label: "Lead Projects",
-			className:
-				"w-[120px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
+			id: "leadProjects",
+			header: () => <div className="text-right">Lead Projects</div>,
+			headerClassName: "w-[120px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
+			cellClassName: "px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]",
+			cell: ({ row }) => row.original.leadProjects,
 		},
 		{
-			key: "collaboratorProjects",
-			label: "Collaborator Projects",
-			className:
-				"w-[150px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
+			id: "collaboratorProjects",
+			header: () => <div className="text-right">Collaborator Projects</div>,
+			headerClassName: "w-[150px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
+			cellClassName: "px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]",
+			cell: ({ row }) => row.original.collaboratorProjects,
 		},
 		{
-			key: "totalInvolvement",
-			label: "Total Involvement",
-			className:
-				"w-[150px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
+			id: "totalInvolvement",
+			header: () => <div className="text-right">Total Involvement</div>,
+			headerClassName: "w-[150px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
+			cellClassName: "px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]",
+			cell: ({ row }) => row.original.totalInvolvement,
 		},
-		{ key: "actions", label: "", className: "w-[50px]" },
+		{
+			id: "actions",
+			header: "",
+			headerClassName: "w-[50px]",
+			cellClassName: "px-4 py-3 text-right",
+			cell: () => (
+				<Button
+					variant="ghost"
+					size="icon"
+					className="size-8 text-[#737373]"
+					aria-label="More actions for faculty member"
+				>
+					<EllipsisVertical className="size-4" />
+				</Button>
+			),
+		},
 	];
 
 	return (
@@ -168,60 +213,8 @@ export function FacultyDirectoryPage({
 					columns={columns}
 					data={items}
 					showHeader={showTableHeader}
-					renderRow={(faculty, index) => (
-						<TableRow
-							key={faculty.userId}
-							className="border-b border-[#ebebeb] py-2 hover:bg-[#fcfcfc]"
-						>
-							<TableCell className="px-4 py-3 text-center text-[14px] font-bold text-[#0a0a0a]">
-								{(page - 1) * limit + index + 1}
-							</TableCell>
-							<TableCell className="px-4 py-3">
-								<div className="flex items-center gap-3">
-									<Avatar className="size-9">
-										<AvatarFallback className="bg-[#ddd] text-[#666]">
-											{faculty.firstName?.charAt(0) ?? ""}
-											{faculty.lastName?.charAt(0) ?? ""}
-										</AvatarFallback>
-									</Avatar>
-									<div className="flex flex-col">
-										<span className="text-[14px] font-normal text-[#0a0a0a]">
-											{faculty.firstName} {faculty.lastName}
-										</span>
-										<span className="text-[12px] text-[#666]">
-											{formatAcademicRank(faculty.academicRank)}
-										</span>
-									</div>
-								</div>
-							</TableCell>
-							<TableCell className="px-4 py-3 text-[14px] text-[#0a0a0a]">
-								{faculty.college}
-							</TableCell>
-							<TableCell className="px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]">
-								{faculty.leadProjects}
-							</TableCell>
-							<TableCell className="px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]">
-								{faculty.collaboratorProjects}
-							</TableCell>
-							<TableCell className="px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]">
-								{faculty.totalInvolvement}
-							</TableCell>
-							<TableCell className="px-4 py-3 text-right">
-								<Button
-									variant="ghost"
-									size="icon"
-									className="size-8 text-[#737373]"
-									aria-label="More actions for faculty member"
-								>
-									<EllipsisVertical className="size-4" />
-								</Button>
-							</TableCell>
-						</TableRow>
-					)}
 					isLoading={isLoading}
-					isEmpty={items.length === 0}
 					emptyMessage="No faculty records found."
-					colSpan={7}
 					ariaLabel="Faculty directory"
 				/>
 			</div>

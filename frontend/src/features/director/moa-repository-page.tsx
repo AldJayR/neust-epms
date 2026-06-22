@@ -4,12 +4,14 @@ import { format } from "date-fns";
 import { EllipsisVertical, Plus, SlidersHorizontal } from "lucide-react";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Button } from "@/components/ui/button";
-import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
-import { TableCell, TableRow } from "@/components/ui/table";
 import type { AuthUser } from "@/lib/auth";
-import { moaRepositoryQueryOptions } from "@/lib/dashboard.functions";
+import {
+	moaRepositoryQueryOptions,
+	type MoaItem,
+} from "@/lib/dashboard.functions";
 import { isAdminOrDirector } from "@/lib/permissions";
 import { MoaStatusBadge } from "./components/moa-status-badge";
 
@@ -45,31 +47,63 @@ export function MoaRepositoryPage({
 	};
 	const totalPages = Math.ceil(total / limit);
 
-	const columns: DataTableColumn[] = [
+	const columns: DataTableColumnDef<MoaItem>[] = [
 		{
-			key: "partner",
-			label: "Partner Organization",
-			className: "w-[320px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			id: "partner",
+			header: "Partner Organization",
+			headerClassName: "w-[320px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			cellClassName: "px-4 py-3 text-[14px] font-semibold text-[#0a0a0a] text-left",
+			cell: ({ row }) => row.original.partnerOrganization,
 		},
 		{
-			key: "dateSigned",
-			label: "Date Signed",
-			className:
-				"w-[223px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			id: "dateSigned",
+			header: () => <div className="text-center">Date Signed</div>,
+			headerClassName: "w-[223px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			cellClassName: "px-4 py-3 text-center text-[14px] text-[#0a0a0a]",
+			cell: ({ row }) => (
+				<ClientOnly fallback="...">
+					{format(new Date(row.original.dateSigned), "MMM dd, yyyy")}
+				</ClientOnly>
+			),
 		},
 		{
-			key: "daysToExpiry",
-			label: "Days to Expiry",
-			className:
-				"w-[255px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			id: "daysToExpiry",
+			header: () => <div className="text-center">Days to Expiry</div>,
+			headerClassName: "w-[255px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			cellClassName: "px-4 py-3 text-center text-[14px] text-[#0a0a0a]",
+			cell: ({ row }) => (
+				<>
+					{row.original.daysToExpiry}{" "}
+					{typeof row.original.daysToExpiry === "number" ? "Days" : ""}
+				</>
+			),
 		},
 		{
-			key: "status",
-			label: "Status",
-			className:
-				"w-[129px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			id: "status",
+			header: () => <div className="text-center">Status</div>,
+			headerClassName: "w-[129px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+			cell: ({ row }) => (
+				<div className="flex justify-center">
+					<MoaStatusBadge status={row.original.status} />
+				</div>
+			),
 		},
-		{ key: "actions", label: "", className: "w-[50px]" },
+		{
+			id: "actions",
+			header: "",
+			headerClassName: "w-[50px]",
+			cellClassName: "px-4 py-3 text-right",
+			cell: () => (
+				<Button
+					variant="ghost"
+					size="icon"
+					className="size-8"
+					aria-label="More actions for MOA"
+				>
+					<EllipsisVertical className="size-4 text-[#737373]" />
+				</Button>
+			),
+		},
 	];
 
 	return (
@@ -127,44 +161,8 @@ export function MoaRepositoryPage({
 					<DataTable
 						columns={columns}
 						data={items}
-						renderRow={(moa) => (
-							<TableRow
-								key={moa.id}
-								className="border-b border-[#ebebeb] py-2 hover:bg-[#fcfcfc]"
-							>
-								<TableCell className="px-4 py-3 text-[14px] font-semibold text-[#0a0a0a]">
-									{moa.partnerOrganization}
-								</TableCell>
-								<TableCell className="px-4 py-3 text-center text-[14px] text-[#0a0a0a]">
-									<ClientOnly fallback="...">
-										{format(new Date(moa.dateSigned), "MMM dd, yyyy")}
-									</ClientOnly>
-								</TableCell>
-								<TableCell className="px-4 py-3 text-center text-[14px] text-[#0a0a0a]">
-									{moa.daysToExpiry}{" "}
-									{typeof moa.daysToExpiry === "number" ? "Days" : ""}
-								</TableCell>
-								<TableCell className="px-4 py-3">
-									<div className="flex justify-center">
-										<MoaStatusBadge status={moa.status} />
-									</div>
-								</TableCell>
-								<TableCell className="px-4 py-3 text-right">
-									<Button
-										variant="ghost"
-										size="icon"
-										className="size-8"
-										aria-label="More actions for MOA"
-									>
-										<EllipsisVertical className="size-4 text-[#737373]" />
-									</Button>
-								</TableCell>
-							</TableRow>
-						)}
 						isLoading={isLoading}
-						isEmpty={items.length === 0}
 						emptyMessage="No MOAs found."
-						colSpan={5}
 						ariaLabel="Memoranda of Agreements"
 					/>
 				</div>

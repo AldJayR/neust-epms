@@ -3,7 +3,7 @@ import { ClientOnly, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { EllipsisVertical, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import {
@@ -13,9 +13,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { TableCell, TableRow } from "@/components/ui/table";
 import type { AuthUser } from "@/lib/auth";
-import { projectHubQueryOptions } from "@/lib/dashboard.functions";
+import {
+	projectHubQueryOptions,
+	type HubProject,
+} from "@/lib/dashboard.functions";
 import { ProjectStatusBadge } from "./components/project-status-badge";
 
 interface ProjectHubPageProps {
@@ -57,33 +59,88 @@ export function ProjectHubPage({
 		(college ?? "").trim().length > 0 ||
 		(status ?? "").trim().length > 0;
 
-	const columns: DataTableColumn[] = [
+	const columns: DataTableColumnDef<HubProject>[] = [
 		{
-			key: "title",
-			label: "Project Title",
-			className: "w-[30%] font-medium text-[#666]",
+			id: "title",
+			header: "Project Title",
+			headerClassName: "w-[30%] font-medium text-[#666]",
+			cellClassName: "font-bold text-[#0a0a0a]",
+			cell: ({ row }) => {
+				const project = row.original;
+				return (
+					<Link
+						to="/projects/$projectId"
+						params={{ projectId: project.id }}
+						className="truncate max-w-[280px] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xs inline-block text-left"
+						title={project.title}
+						onClick={(e) => {
+							e.stopPropagation();
+						}}
+					>
+						{project.title}
+					</Link>
+				);
+			},
 		},
 		{
-			key: "leader",
-			label: "Project Leader",
-			className: "w-[20%] font-medium text-[#666]",
+			id: "leader",
+			header: "Project Leader",
+			headerClassName: "w-[20%] font-medium text-[#666]",
+			cell: ({ row }) => {
+				const project = row.original;
+				return (
+					<div className="flex flex-col text-left">
+						<span className="text-[14px] text-[#0a0a0a]">
+							{project.leaderName}
+						</span>
+						<span className="text-[12px] text-[#666]">
+							{project.leaderRank}
+						</span>
+					</div>
+				);
+			},
 		},
 		{
-			key: "college",
-			label: "College",
-			className: "w-[15%] font-medium text-[#666]",
+			id: "college",
+			header: "College",
+			headerClassName: "w-[15%] font-medium text-[#666]",
+			cellClassName: "text-[#0a0a0a] text-left",
+			cell: ({ row }) => row.original.college,
 		},
 		{
-			key: "dateSubmitted",
-			label: "Date Submitted",
-			className: "w-[15%] font-medium text-[#666]",
+			id: "dateSubmitted",
+			header: "Date Submitted",
+			headerClassName: "w-[15%] font-medium text-[#666]",
+			cellClassName: "text-[#0a0a0a] text-left",
+			cell: ({ row }) => (
+				<ClientOnly fallback="...">
+					{format(new Date(row.original.dateSubmitted), "MMM dd, yyyy")}
+				</ClientOnly>
+			),
 		},
 		{
-			key: "status",
-			label: "Status",
-			className: "w-[15%] font-medium text-[#666]",
+			id: "status",
+			header: "Status",
+			headerClassName: "w-[15%] font-medium text-[#666]",
+			cellClassName: "text-left",
+			cell: ({ row }) => <ProjectStatusBadge status={row.original.status} />,
 		},
-		{ key: "actions", label: "", className: "w-[5%]" },
+		{
+			id: "actions",
+			header: "",
+			headerClassName: "w-[5%]",
+			cellClassName: "text-right",
+			cell: () => (
+				<Button
+					variant="ghost"
+					size="icon"
+					className="size-8"
+					aria-label="More actions for project"
+				>
+					<EllipsisVertical className="size-4 text-[#737373]" />
+				</Button>
+			),
+		},
 	];
 
 	return (
@@ -152,63 +209,10 @@ export function ProjectHubPage({
 					columns={columns}
 					data={items}
 					showHeader={showTableHeader}
-					renderRow={(project) => (
-						<TableRow
-							key={project.id}
-							className="cursor-pointer border-[#ebebeb] py-2 hover:bg-[#fcfcfc]"
-							onClick={() => onProjectClick?.(project.id)}
-						>
-							<TableCell className="font-bold text-[#0a0a0a]">
-								<Link
-									to="/projects/$projectId"
-									params={{ projectId: project.id }}
-									className="truncate max-w-[280px] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xs inline-block text-left"
-									title={project.title}
-									onClick={(e) => {
-										e.stopPropagation();
-									}}
-								>
-									{project.title}
-								</Link>
-							</TableCell>
-							<TableCell>
-								<div className="flex flex-col">
-									<span className="text-[14px] text-[#0a0a0a]">
-										{project.leaderName}
-									</span>
-									<span className="text-[12px] text-[#666]">
-										{project.leaderRank}
-									</span>
-								</div>
-							</TableCell>
-							<TableCell className="text-[#0a0a0a]">
-								{project.college}
-							</TableCell>
-							<TableCell className="text-[#0a0a0a]">
-								<ClientOnly fallback="...">
-									{format(new Date(project.dateSubmitted), "MMM dd, yyyy")}
-								</ClientOnly>
-							</TableCell>
-							<TableCell>
-								<ProjectStatusBadge status={project.status} />
-							</TableCell>
-							<TableCell className="text-right">
-								<Button
-									variant="ghost"
-									size="icon"
-									className="size-8"
-									aria-label="More actions for project"
-								>
-									<EllipsisVertical className="size-4 text-[#737373]" />
-								</Button>
-							</TableCell>
-						</TableRow>
-					)}
 					isLoading={isLoading}
-					isEmpty={items.length === 0}
 					emptyMessage="No projects found."
-					colSpan={6}
 					ariaLabel="Projects"
+					onRowClick={(project) => onProjectClick?.(project.id)}
 				/>
 			</div>
 
