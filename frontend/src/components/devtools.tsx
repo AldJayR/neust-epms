@@ -8,17 +8,19 @@ export function Devtools() {
 	}
 
 	return (
-		<TanStackDevtools
-			config={{
-				position: "bottom-right",
-			}}
-			plugins={[
-				{
-					name: "Tanstack Router",
-					render: <TanStackRouterDevtoolsPanel />,
-				},
-				TanStackQueryDevtools,
-			]}
-		/>
+		<>
+			<TanStackDevtools
+				config={{
+					position: "bottom-right",
+				}}
+				plugins={[
+					{
+						name: "Tanstack Router",
+						render: <TanStackRouterDevtoolsPanel />,
+					},
+					TanStackQueryDevtools,
+				]}
+			/>
+		</>
 	);
 }
