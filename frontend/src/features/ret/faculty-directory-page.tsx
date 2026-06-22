@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import * as React from "react";
 import {
 	ChevronLeft,
 	ChevronRight,
@@ -7,10 +8,12 @@ import {
 } from "lucide-react";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import { SearchInput } from "@/components/ui/search-input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StatusBadge } from "@/features/admin/components/status-badge";
 import type { AuthUser } from "@/lib/auth";
 import {
 	type FacultyInvolvement,
@@ -35,9 +38,16 @@ export function RetFacultyDirectoryPage({
 	onPageChange,
 	onSearchChange,
 }: RetFacultyDirectoryPageProps) {
+	const [activeTab, setActiveTab] = React.useState<string>("department");
+
 	// The RET Chair view is scoped to their college by default (handled by backend)
 	const { data, isLoading } = useQuery(
-		facultyDirectoryQueryOptions({ page, limit, search }),
+		facultyDirectoryQueryOptions({
+			page,
+			limit,
+			search,
+			status: activeTab === "pending" ? "pending" : "active",
+		}),
 	);
 
 	const items = data?.items ?? [];
@@ -48,19 +58,9 @@ export function RetFacultyDirectoryPage({
 
 	const columns: DataTableColumnDef<FacultyInvolvement>[] = [
 		{
-			id: "rank",
-			header: () => <div className="text-center">Rank</div>,
-			headerClassName:
-				"w-[60px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
-			cellClassName:
-				"px-4 py-3 text-center text-[14px] font-bold text-[#0a0a0a]",
-			cell: ({ row }) => (page - 1) * limit + row.index + 1,
-		},
-		{
 			id: "name",
 			header: "Faculty Name",
-			headerClassName:
-				"w-[300px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			headerClassName: "w-[320px] px-4 py-2 text-[14px] font-medium text-[#666]",
 			cellClassName: "px-4 py-3",
 			cell: ({ row }) => {
 				const faculty = row.original;
@@ -72,52 +72,45 @@ export function RetFacultyDirectoryPage({
 								{faculty.lastName?.charAt(0) ?? ""}
 							</AvatarFallback>
 						</Avatar>
-						<div className="flex flex-col text-left">
-							<span className="text-[14px] font-normal text-[#0a0a0a]">
-								{faculty.firstName} {faculty.lastName}
-							</span>
-							<span className="text-[12px] text-[#666]">
-								{formatAcademicRank(faculty.academicRank)}
-							</span>
-						</div>
+						<span className="text-[14px] font-normal text-[#0a0a0a]">
+							{faculty.firstName} {faculty.lastName}
+						</span>
 					</div>
 				);
 			},
 		},
 		{
-			id: "department",
-			header: "Department",
-			headerClassName:
-				"w-[200px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			id: "rank",
+			header: "Rank",
+			headerClassName: "w-[200px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			cellClassName: "px-4 py-3",
+			cell: ({ row }) => {
+				const faculty = row.original;
+				return (
+					<Badge
+						variant="outline"
+						className="rounded-lg border-[#e5e5e5] px-2 py-0.5 font-medium text-muted-foreground bg-white"
+					>
+						{formatAcademicRank(faculty.academicRank)}
+					</Badge>
+				);
+			},
+		},
+		{
+			id: "totalProjects",
+			header: "Total Projects",
+			headerClassName: "w-[150px] px-4 py-2 text-[14px] font-medium text-[#666]",
 			cellClassName: "px-4 py-3 text-[14px] text-[#0a0a0a]",
-			cell: ({ row }) => row.original.departmentCode,
-		},
-		{
-			id: "leadProjects",
-			header: () => <div className="text-right">Lead Projects</div>,
-			headerClassName:
-				"w-[120px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
-			cellClassName:
-				"px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]",
-			cell: ({ row }) => row.original.leadProjects,
-		},
-		{
-			id: "collaboratorProjects",
-			header: () => <div className="text-right">Collaborator Projects</div>,
-			headerClassName:
-				"w-[150px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
-			cellClassName:
-				"px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]",
-			cell: ({ row }) => row.original.collaboratorProjects,
-		},
-		{
-			id: "totalInvolvement",
-			header: () => <div className="text-right">Total Involvement</div>,
-			headerClassName:
-				"w-[150px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
-			cellClassName:
-				"px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]",
 			cell: ({ row }) => row.original.totalInvolvement,
+		},
+		{
+			id: "status",
+			header: "Account Status",
+			headerClassName: "w-[150px] px-4 py-2 text-[14px] font-medium text-[#666]",
+			cellClassName: "px-4 py-3",
+			cell: ({ row }) => (
+				<StatusBadge isActive={row.original.isActive} />
+			),
 		},
 		{
 			id: "actions",
@@ -192,19 +185,26 @@ export function RetFacultyDirectoryPage({
 				<div className="overflow-hidden rounded-[12px] border border-[#ebebeb] bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 					{/* Tabs Header */}
 					<div className="border-b border-[#ebebeb] bg-white p-2">
-						<Tabs defaultValue="college" className="w-fit">
+						<Tabs
+							value={activeTab}
+							onValueChange={(val) => {
+								setActiveTab(val);
+								onPageChange(1);
+							}}
+							className="w-fit"
+						>
 							<TabsList className="bg-[#fafafa]">
+								<TabsTrigger
+									value="department"
+									className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+								>
+									Department Directory
+								</TabsTrigger>
 								<TabsTrigger
 									value="pending"
 									className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
 								>
 									Pending Verifications
-								</TabsTrigger>
-								<TabsTrigger
-									value="college"
-									className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
-								>
-									College Directory
 								</TabsTrigger>
 							</TabsList>
 						</Tabs>

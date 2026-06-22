@@ -29,6 +29,7 @@ const facultyDirectoryParamsSchema = z.object({
 	limit: z.number(),
 	search: z.string().optional(),
 	college: z.string().optional(),
+	status: z.string().optional(),
 });
 
 // ── Interfaces ────────────────────────────────────────────
@@ -143,6 +144,7 @@ export interface FacultyDirectoryParams {
 	limit: number;
 	search?: string;
 	college?: string;
+	status?: string;
 }
 
 export interface ProjectMember {
@@ -325,6 +327,7 @@ const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 
 		if (data.search) query.append("search", data.search);
 		if (data.college) query.append("college", data.college);
+		if (data.status) query.append("status", data.status);
 
 		const response = await fetch(
 			`${API_BASE}/director/faculty?${query.toString()}`,

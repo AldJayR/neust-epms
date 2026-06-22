@@ -199,6 +199,10 @@ const facultyDirectoryRoute = createRoute({
 				.string()
 				.optional()
 				.openapi({ param: { name: "college", in: "query" } }),
+			status: z
+				.string()
+				.optional()
+				.openapi({ param: { name: "status", in: "query" } }),
 		}),
 	},
 	responses: {
@@ -210,14 +214,19 @@ const facultyDirectoryRoute = createRoute({
 });
 
 app.openapi(facultyDirectoryRoute, async (c) => {
-	const { page, limit, search, college } = c.req.valid("query");
+	const { page, limit, search, college, status } = c.req.valid("query");
 	const offset = (page - 1) * limit;
 
 	const user = c.get("user");
 	const whereConditions: (SQL | undefined)[] = [
-		eq(users.isActive, true),
 		eq(roles.roleName, ROLE_NAMES.FACULTY),
 	];
+
+	if (status === "pending") {
+		whereConditions.push(eq(users.isActive, false));
+	} else {
+		whereConditions.push(eq(users.isActive, true));
+	}
 
 	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
 		if (user.isMainCampus && user.departmentId !== null) {
