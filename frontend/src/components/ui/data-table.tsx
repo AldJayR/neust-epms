@@ -14,6 +14,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "./table";
+import { cn } from "#/lib/utils";
 
 interface DataTableProps<TData, TValue> {
 	columns: DataTableColumnDef<TData, TValue>[];
@@ -113,7 +114,10 @@ function DataTable<TData, TValue>({
 						<TableRow
 							key={row.id}
 							data-state={row.getIsSelected() && "selected"}
-							className={onRowClick ? "cursor-pointer" : undefined}
+							className={cn(
+								"bg-white border-b border-[#ebebeb] hover:bg-[#fcfcfc]",
+								onRowClick && "cursor-pointer",
+							)}
 							onClick={
 								onRowClick ? () => onRowClick(row.original) : undefined
 							}
