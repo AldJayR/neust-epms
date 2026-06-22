@@ -1,8 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { CheckCircle2, Download, Loader2, MessageSquare } from "lucide-react";
 import { useRef, useState } from "react";
 import { PdfViewer, type PdfViewerRef } from "@/components/pdf-viewer";
 import { Badge } from "@/components/ui/badge";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -401,7 +410,42 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	};
 
 	return (
-		<div className="flex flex-col gap-8">
+		<div className="flex flex-col gap-6">
+			{/* Breadcrumb */}
+			<Breadcrumb>
+				<BreadcrumbList>
+					<BreadcrumbItem>
+						<BreadcrumbLink
+							render={
+								<Link
+									to="/dashboard"
+									search={{ page: 1, pageSize: 10 }}
+								/>
+							}
+						>
+							Dashboard
+						</BreadcrumbLink>
+					</BreadcrumbItem>
+					<BreadcrumbSeparator />
+					<BreadcrumbItem>
+						<BreadcrumbLink
+							render={
+								<Link
+									to="/projects/$projectId"
+									params={{ projectId: proposalId }}
+								/>
+							}
+						>
+							Project Details
+						</BreadcrumbLink>
+					</BreadcrumbItem>
+					<BreadcrumbSeparator />
+					<BreadcrumbItem>
+						<BreadcrumbPage>Proposal Review</BreadcrumbPage>
+					</BreadcrumbItem>
+				</BreadcrumbList>
+			</Breadcrumb>
+
 			{/* Page Header */}
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-4">

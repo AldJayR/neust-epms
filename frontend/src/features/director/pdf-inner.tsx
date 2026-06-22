@@ -392,7 +392,7 @@ const PdfInner = ({
 			preloadObserver.disconnect();
 			pageTrackerObserver.disconnect();
 		};
-	}, [numPages]);
+	}, [numPages, loadingDoc]);
 
 	// Navigation is scroll-driven now
 

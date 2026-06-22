@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import {
 	CheckCircle2,
@@ -11,6 +12,14 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -28,7 +37,29 @@ interface ProjectDetailsPageProps {
 
 function ProjectDetailsSkeleton() {
 	return (
-		<div className="flex flex-col gap-8">
+		<div className="flex flex-col gap-6">
+			{/* Breadcrumb */}
+			<Breadcrumb>
+				<BreadcrumbList>
+					<BreadcrumbItem>
+						<BreadcrumbLink
+							render={
+								<Link
+									to="/dashboard"
+									search={{ page: 1, pageSize: 10 }}
+								/>
+							}
+						>
+							Dashboard
+						</BreadcrumbLink>
+					</BreadcrumbItem>
+					<BreadcrumbSeparator />
+					<BreadcrumbItem>
+						<BreadcrumbPage>Project Details</BreadcrumbPage>
+					</BreadcrumbItem>
+				</BreadcrumbList>
+			</Breadcrumb>
+
 			{/* Header */}
 			<div className="flex items-start justify-between">
 				<div className="flex flex-col gap-2">
@@ -398,6 +429,7 @@ interface AttachmentsCardProps {
 		id: string | number;
 		name: string;
 		type: string;
+		url: string;
 		version: string;
 	}[];
 }
@@ -433,6 +465,13 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 							<Button
 								variant="outline"
 								className="h-8 rounded-[8px] border-[#e5e5e5] text-[12px] font-medium text-[#666] hover:bg-white"
+								render={
+									<a
+										href={attachment.url}
+										target="_blank"
+										rel="noopener noreferrer"
+									/>
+								}
 							>
 								<Eye className="mr-1.5 size-3.5" />
 								View
@@ -440,6 +479,7 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 							<Button
 								variant="outline"
 								className="h-8 rounded-[8px] border-[#e5e5e5] text-[12px] font-medium text-[#666] hover:bg-white"
+								render={<a href={attachment.url} download />}
 							>
 								<Download className="mr-1.5 size-3.5" />
 								Download
@@ -468,7 +508,29 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 	}
 
 	return (
-		<div className="flex flex-col gap-8">
+		<div className="flex flex-col gap-6">
+			{/* Breadcrumb */}
+			<Breadcrumb>
+				<BreadcrumbList>
+					<BreadcrumbItem>
+						<BreadcrumbLink
+							render={
+								<Link
+									to="/dashboard"
+									search={{ page: 1, pageSize: 10 }}
+								/>
+							}
+						>
+							Dashboard
+						</BreadcrumbLink>
+					</BreadcrumbItem>
+					<BreadcrumbSeparator />
+					<BreadcrumbItem>
+						<BreadcrumbPage>Project Details</BreadcrumbPage>
+					</BreadcrumbItem>
+				</BreadcrumbList>
+			</Breadcrumb>
+
 			{/* Header */}
 			<div className="flex items-start justify-between">
 				<div className="flex flex-col gap-2">
@@ -487,7 +549,15 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 						{data.title}
 					</h1>
 				</div>
-				<Button className="flex w-fit items-center gap-2 rounded-[10px] bg-brand-primary px-5 h-9 text-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-brand-primary-hover">
+				<Button
+					className="flex w-fit items-center gap-2 rounded-[10px] bg-brand-primary px-5 h-9 text-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-brand-primary-hover"
+					render={
+						<Link
+							to="/proposals/$proposalId"
+							params={{ proposalId }}
+						/>
+					}
+				>
 					<Eye className="size-4" />
 					<span className="text-sm font-medium">Read Proposal Document</span>
 				</Button>
