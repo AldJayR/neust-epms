@@ -1,15 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
-import {
-	CheckCircle2,
-	ChevronRight,
-	Download,
-	Eye,
-	FileText,
-	RotateCcw,
-	User,
-} from "lucide-react";
+import { ChevronRight, Download, Eye, FileText, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -172,12 +164,6 @@ function ProjectDetailsSkeleton() {
 								</div>
 							))}
 						</div>
-					</div>
-
-					{/* Actions */}
-					<div className="flex flex-col gap-3">
-						<Skeleton className="h-10 rounded-[10px]" />
-						<Skeleton className="h-10 rounded-[10px]" />
 					</div>
 				</div>
 			</div>
@@ -465,7 +451,9 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 										href={attachment.url}
 										target="_blank"
 										rel="noopener noreferrer"
-									/>
+									>
+										View Attachment
+									</a>
 								}
 							>
 								<Eye className="mr-1.5 size-3.5" />
@@ -474,7 +462,11 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 							<Button
 								variant="outline"
 								className="h-8 rounded-[8px] border-[#e5e5e5] text-[12px] font-medium text-[#666] hover:bg-white"
-								render={<a href={attachment.url} download />}
+								render={
+									<a href={attachment.url} download>
+										Download Attachment
+									</a>
+								}
 							>
 								<Download className="mr-1.5 size-3.5" />
 								Download
@@ -563,21 +555,6 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 				{/* Sidebar */}
 				<div className="lg:col-span-4 flex flex-col gap-6">
 					<AttachmentsCard attachments={data.attachments} />
-
-					{/* Actions */}
-					<div className="flex flex-col gap-3">
-						<Button className="w-full h-10 rounded-[10px] bg-green-600 font-medium text-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-green-700">
-							<CheckCircle2 className="mr-2 size-4" />
-							Approve Proposal
-						</Button>
-						<Button
-							variant="outline"
-							className="w-full h-10 rounded-[10px] border border-red-200 bg-white font-medium text-red-600 hover:bg-red-50"
-						>
-							<RotateCcw className="mr-2 size-4" />
-							Return for Revision
-						</Button>
-					</div>
 				</div>
 			</div>
 		</div>
