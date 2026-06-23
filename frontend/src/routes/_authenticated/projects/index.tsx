@@ -19,7 +19,7 @@ const projectsSearchSchema = z.object({
 	search: z.string().optional(),
 	college: z.string().optional(),
 	status: z.string().optional(),
-	myProjectsOnly: z.string().optional(),
+	myProjectsOnly: z.boolean().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/projects/")({
@@ -53,7 +53,7 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 					search: deps.search,
 					college: deps.college,
 					status: deps.status,
-					myProjectsOnly: deps.myProjectsOnly,
+					myProjectsOnly: deps.myProjectsOnly ? "true" : undefined,
 				}),
 			),
 			context.queryClient.ensureQueryData(directorDashboardQueryOptions()),
@@ -87,7 +87,7 @@ function ProjectsIndexPage() {
 		});
 	};
 
-	const handleMyProjectsOnlyChange = (newMyProjectsOnly: string) => {
+	const handleMyProjectsOnlyChange = (newMyProjectsOnly: boolean) => {
 		navigate({
 			search: (old) => ({
 				...old,

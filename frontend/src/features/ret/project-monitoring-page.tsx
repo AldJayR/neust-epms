@@ -29,11 +29,11 @@ interface ProjectMonitoringPageProps {
 	limit: number;
 	search?: string;
 	status?: string;
-	myProjectsOnly?: string;
+	myProjectsOnly?: boolean;
 	onPageChange: (page: number) => void;
 	onSearchChange: (search: string) => void;
 	onStatusChange: (status: string) => void;
-	onMyProjectsOnlyChange: (myProjectsOnly: string) => void;
+	onMyProjectsOnlyChange: (myProjectsOnly: boolean) => void;
 	onProjectClick?: (projectId: string) => void;
 }
 
@@ -51,7 +51,13 @@ export function ProjectMonitoringPage({
 	onProjectClick,
 }: ProjectMonitoringPageProps) {
 	const { data, isLoading } = useQuery(
-		projectHubQueryOptions({ page, limit, search, status, myProjectsOnly }),
+		projectHubQueryOptions({
+			page,
+			limit,
+			search,
+			status,
+			myProjectsOnly: myProjectsOnly ? "true" : undefined,
+		}),
 	);
 	const { data: statsData } = useQuery(directorDashboardQueryOptions());
 	const metrics = statsData?.metrics;
@@ -63,7 +69,7 @@ export function ProjectMonitoringPage({
 		items.length > 0 ||
 		(search ?? "").trim().length > 0 ||
 		(status ?? "").trim().length > 0 ||
-		(myProjectsOnly ?? "").trim().length > 0;
+		myProjectsOnly === true;
 
 	const columns: DataTableColumnDef<HubProject>[] = [
 		{
@@ -209,9 +215,9 @@ export function ProjectMonitoringPage({
 			<div className="overflow-hidden rounded-[12px] border border-[#ebebeb] bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 				<div className="border-b border-[#ebebeb] bg-white p-2">
 					<Tabs
-						value={myProjectsOnly === "true" ? "my" : "all"}
+						value={myProjectsOnly ? "my" : "all"}
 						onValueChange={(val) => {
-							onMyProjectsOnlyChange(val === "my" ? "true" : "");
+							onMyProjectsOnlyChange(val === "my");
 						}}
 						className="w-fit"
 					>
