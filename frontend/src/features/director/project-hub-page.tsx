@@ -18,6 +18,7 @@ import {
 	type HubProject,
 	projectHubQueryOptions,
 } from "@/lib/dashboard.functions";
+import { formatAcademicRank } from "@/lib/utils";
 import { ProjectStatusBadge } from "./components/project-status-badge";
 
 interface ProjectHubPageProps {
@@ -71,7 +72,7 @@ export function ProjectHubPage({
 					<Link
 						to="/projects/$projectId"
 						params={{ projectId: project.id }}
-						className="truncate max-w-[280px] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xs inline-block text-left"
+						className="!text-[#0a0a0a] truncate max-w-[280px] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xs inline-block text-left"
 						title={project.title}
 						onClick={(e) => {
 							e.stopPropagation();
@@ -94,7 +95,7 @@ export function ProjectHubPage({
 							{project.leaderName}
 						</span>
 						<span className="text-[12px] text-[#666]">
-							{project.leaderRank}
+							{formatAcademicRank(project.leaderRank)}
 						</span>
 					</div>
 				);
