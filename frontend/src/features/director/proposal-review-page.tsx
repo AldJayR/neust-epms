@@ -56,6 +56,7 @@ interface ProposalDetailsTabProps {
 				neust: number;
 			};
 			moaLinked: string;
+			sdgs?: string;
 		};
 		attachments?: {
 			id: string;
@@ -115,9 +116,9 @@ function ProposalDetailsTab({
 					</span>
 				</div>
 				<div className="flex justify-between items-center text-[14px]">
-					<span className="text-[#737373] font-medium">MOA Partner</span>
+					<span className="text-[#737373] font-medium">SDGs</span>
 					<span className="text-black font-medium">
-						{data.metadata.moaLinked}
+						{data.metadata.sdgs ?? "None"}
 					</span>
 				</div>
 			</div>

@@ -194,6 +194,7 @@ interface ProjectOverviewCardProps {
 		department: string;
 		duration: string;
 		moaLinked: string;
+		sdgs?: string;
 		budget: {
 			total: number;
 			neust: number;
@@ -250,13 +251,10 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 					</span>
 				</div>
 				<div className="flex items-center justify-between px-6 py-3">
-					<span className="text-[14px] text-[#666]">MOA Linked</span>
-					<div className="flex items-center gap-2">
-						<CheckCircle2 className="size-4 text-green-500" />
-						<span className="text-[14px] font-medium text-[#0a0a0a]">
-							{metadata.moaLinked}
-						</span>
-					</div>
+					<span className="text-[14px] text-[#666]">SDGs</span>
+					<span className="text-[14px] font-medium text-[#0a0a0a]">
+						{metadata.sdgs ?? "None"}
+					</span>
 				</div>
 				<div className="flex items-center justify-between px-6 py-3">
 					<span className="text-[14px] text-[#666]">Total Budget</span>

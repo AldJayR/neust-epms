@@ -23,8 +23,10 @@ import { projects } from "../db/schema/projects.js";
 import { proposalDocuments } from "../db/schema/proposal-documents.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposalReviews } from "../db/schema/proposal-reviews.js";
+import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
 import { proposals } from "../db/schema/proposals.js";
 import { roles } from "../db/schema/roles.js";
+import { sdgs } from "../db/schema/sdgs.js";
 import { users } from "../db/schema/users.js";
 import { env } from "../env.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
@@ -991,6 +993,7 @@ const ProjectDetailsSchema = z.object({
 		department: z.string(),
 		duration: z.string(),
 		moaLinked: z.string(),
+		sdgs: z.string().optional(),
 		budget: z.object({
 			total: z.number(),
 			neust: z.number(),
@@ -1101,7 +1104,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 		}
 	}
 
-	const [memberRows, documentRows, reviewRows] = await Promise.all([
+	const [memberRows, documentRows, reviewRows, sdgRows] = await Promise.all([
 		db
 			.select({
 				userId: users.userId,
@@ -1137,6 +1140,16 @@ app.openapi(projectDetailsRoute, async (c) => {
 			.innerJoin(users, eq(proposalReviews.reviewerId, users.userId))
 			.where(eq(proposalReviews.proposalId, proposalId))
 			.orderBy(desc(proposalReviews.reviewedAt)),
+
+		db
+			.select({
+				sdgNumber: sdgs.sdgNumber,
+				sdgTitle: sdgs.sdgTitle,
+			})
+			.from(proposalSdgs)
+			.innerJoin(sdgs, eq(proposalSdgs.sdgId, sdgs.sdgId))
+			.where(eq(proposalSdgs.proposalId, proposalId))
+			.orderBy(sdgs.sdgNumber),
 	]);
 
 	const months = [
@@ -1228,6 +1241,8 @@ app.openapi(projectDetailsRoute, async (c) => {
 
 	const status = row.projectStatus || row.status;
 
+	const sdgList = sdgRows.map((s) => `SDG ${s.sdgNumber}`).join(", ") || "None";
+
 	return c.json(
 		{
 			id: row.proposalId,
@@ -1242,6 +1257,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 				department: row.departmentName,
 				duration,
 				moaLinked: row.moaPartner || "None",
+				sdgs: sdgList,
 				budget: {
 					total: budgetNeust + budgetPartner,
 					neust: budgetNeust,

@@ -190,6 +190,7 @@ export interface ProjectDetailsResponse {
 		department: string;
 		duration: string;
 		moaLinked: string;
+		sdgs?: string;
 		budget: {
 			total: number;
 			neust: number;
