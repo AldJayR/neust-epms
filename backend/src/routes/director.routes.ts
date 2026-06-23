@@ -1,5 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { createClient } from "@supabase/supabase-js";
 import {
 	and,
 	count,
@@ -18,6 +18,7 @@ import { campuses } from "../db/schema/campuses.js";
 import { departments } from "../db/schema/departments.js";
 import { moas } from "../db/schema/moas.js";
 import { partners } from "../db/schema/partners.js";
+import { projectReports } from "../db/schema/project-reports.js";
 import { projects } from "../db/schema/projects.js";
 import { proposalDocuments } from "../db/schema/proposal-documents.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
@@ -25,6 +26,7 @@ import { proposalReviews } from "../db/schema/proposal-reviews.js";
 import { proposals } from "../db/schema/proposals.js";
 import { roles } from "../db/schema/roles.js";
 import { users } from "../db/schema/users.js";
+import { env } from "../env.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import {
 	PROJECT_STATUS,
@@ -32,7 +34,6 @@ import {
 	type ProjectStatus,
 	ROLE_NAMES,
 } from "../lib/types.js";
-import { env } from "../env.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
 
@@ -63,6 +64,7 @@ const HubProjectSchema = z
 		leaderRank: z.string().nullable(),
 		college: z.string().nullable(),
 		dateSubmitted: z.string(),
+		lastReportDate: z.string().nullable().optional(),
 		status: z.string(),
 		type: z.enum(["Proposal", "Project"]),
 	})
@@ -108,6 +110,8 @@ const DashboardMetricSchema = z.object({
 	ongoingProjects: z.number(),
 	underEvaluation: z.number(),
 	completed: z.number(),
+	overdueProjects: z.number().optional(),
+	pendingClosureProjects: z.number().optional(),
 });
 
 const ChartPointSchema = z.object({
@@ -689,6 +693,14 @@ app.openapi(projectHubRoute, async (c) => {
 		} else {
 			whereConditions.push(eq(proposals.campusId, user.campusId));
 		}
+		whereConditions.push(
+			inArray(projects.projectStatus, [
+				PROJECT_STATUS.APPROVED,
+				PROJECT_STATUS.ONGOING,
+				PROJECT_STATUS.PENDING_CLOSURE,
+				PROJECT_STATUS.OVERDUE,
+			]),
+		);
 	}
 
 	if (search) {
@@ -722,6 +734,18 @@ app.openapi(projectHubRoute, async (c) => {
 		.where(eq(proposalMembers.projectRole, "Project Leader"))
 		.as("leader_members");
 
+	const latestReportsSubquery = db
+		.select({
+			projectId: projectReports.projectId,
+			lastReportDate: sql<Date>`max(${projectReports.submittedAt})`.as(
+				"last_report_date",
+			),
+		})
+		.from(projectReports)
+		.where(isNull(projectReports.archivedAt))
+		.groupBy(projectReports.projectId)
+		.as("latest_reports");
+
 	const query = db
 		.select({
 			id: proposals.proposalId,
@@ -733,6 +757,7 @@ app.openapi(projectHubRoute, async (c) => {
 			dateSubmitted: proposals.createdAt,
 			proposalStatus: proposals.status,
 			projectStatus: projects.projectStatus,
+			lastReportDate: latestReportsSubquery.lastReportDate,
 		})
 		.from(proposals)
 		.innerJoin(
@@ -742,6 +767,10 @@ app.openapi(projectHubRoute, async (c) => {
 		.innerJoin(users, eq(leaderMembersSubquery.userId, users.userId))
 		.leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
 		.leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
+		.leftJoin(
+			latestReportsSubquery,
+			eq(projects.projectId, latestReportsSubquery.projectId),
+		)
 		.where(and(...whereConditions))
 		.orderBy(desc(proposals.createdAt));
 
@@ -766,6 +795,7 @@ app.openapi(projectHubRoute, async (c) => {
 		leaderRank: r.leaderRank,
 		college: r.college,
 		dateSubmitted: r.dateSubmitted.toISOString(),
+		lastReportDate: r.lastReportDate ? r.lastReportDate.toISOString() : null,
 		status: r.projectStatus || r.proposalStatus,
 		type: (r.projectStatus ? "Project" : "Proposal") as "Project" | "Proposal",
 	}));
@@ -805,6 +835,8 @@ app.openapi(dashboardRoute, async (c) => {
 				total: sql<number>`count(*)`,
 				ongoing: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.ONGOING})`,
 				completed: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.COMPLETED})`,
+				overdue: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.OVERDUE})`,
+				pendingClosure: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.PENDING_CLOSURE})`,
 			})
 			.from(projects)
 			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
@@ -881,6 +913,8 @@ app.openapi(dashboardRoute, async (c) => {
 				ongoingProjects: Number(projectMetrics[0]?.ongoing ?? 0),
 				underEvaluation: Number(underEvaluationResult[0]?.value ?? 0),
 				completed: Number(projectMetrics[0]?.completed ?? 0),
+				overdueProjects: Number(projectMetrics[0]?.overdue ?? 0),
+				pendingClosureProjects: Number(projectMetrics[0]?.pendingClosure ?? 0),
 			},
 			chartData: chartRows
 				.map((row) => ({ label: row.label, value: Number(row.value ?? 0) }))

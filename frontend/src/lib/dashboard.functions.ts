@@ -39,6 +39,8 @@ export interface DirectorDashboardMetric {
 	ongoingProjects: number;
 	underEvaluation: number;
 	completed: number;
+	overdueProjects?: number;
+	pendingClosureProjects?: number;
 }
 
 export interface DirectorChartPoint {
@@ -71,6 +73,7 @@ export interface HubProject {
 	leaderRank: string | null;
 	college: string | null;
 	dateSubmitted: string;
+	lastReportDate?: string | null;
 	status: string;
 	type: "Proposal" | "Project";
 }

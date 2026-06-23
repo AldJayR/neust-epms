@@ -110,7 +110,7 @@ const retNav: NavGroup[] = [
 				icon: LayoutDashboard,
 			},
 			{
-				title: "Projects",
+				title: "Project Monitoring",
 				url: "/projects",
 				icon: FolderKanban,
 			},

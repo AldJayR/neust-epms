@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { ProjectHubPage } from "@/features/director/project-hub-page";
+import { ProjectMonitoringPage } from "@/features/ret/project-monitoring-page";
 import { projectHubQueryOptions } from "@/lib/dashboard.functions";
 import {
 	isDirector,
@@ -89,7 +90,7 @@ function ProjectsIndexPage() {
 		});
 	};
 
-	if (isDirector(user) || isRETChair(user)) {
+	if (isDirector(user)) {
 		return (
 			<ProjectHubPage
 				page={page}
@@ -100,6 +101,21 @@ function ProjectsIndexPage() {
 				onPageChange={handlePageChange}
 				onSearchChange={handleSearch}
 				onCollegeChange={handleCollegeChange}
+				onStatusChange={handleStatusChange}
+				onProjectClick={handleProjectClick}
+			/>
+		);
+	}
+
+	if (isRETChair(user)) {
+		return (
+			<ProjectMonitoringPage
+				page={page}
+				limit={limit}
+				search={search}
+				status={status}
+				onPageChange={handlePageChange}
+				onSearchChange={handleSearch}
 				onStatusChange={handleStatusChange}
 				onProjectClick={handleProjectClick}
 			/>

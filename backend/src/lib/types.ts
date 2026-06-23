@@ -118,6 +118,8 @@ export const PROJECT_STATUS = {
 	ONGOING: "Ongoing",
 	COMPLETED: "Completed",
 	CLOSED: "Closed",
+	PENDING_CLOSURE: "Pending Closure",
+	OVERDUE: "Overdue",
 } as const;
 
 export type ProjectStatus =
