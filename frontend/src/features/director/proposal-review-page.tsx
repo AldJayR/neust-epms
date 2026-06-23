@@ -514,7 +514,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 					{/* Right Column: Details & Actions */}
 					{!isTheaterMode && (
 						<div className="lg:col-span-4 flex flex-col gap-6">
-							<Card className="border-[#ebebeb] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] rounded-[12px] overflow-hidden">
+							<Card className="border-[#ebebeb] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] rounded-[12px] overflow-hidden pt-2 pb-0 gap-0">
 								{/* Tabs Header */}
 								<div className="flex border-b border-[#ebebeb]">
 									<button
