@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/sidebar";
 import type { AuthUser } from "@/lib/auth";
 import { logoutFn } from "@/lib/auth.functions";
+import { clearAuthCache } from "@/lib/auth-cache";
 
 export type RoleSidebarItem = {
 	title: string;
@@ -82,6 +83,7 @@ export function RoleSidebar({
 	const handleLogout = async () => {
 		setIsLoggingOut(true);
 		try {
+			clearAuthCache(); // Clear the client-side auth cache
 			await logout();
 			// logoutFn throws a redirect, but we'll navigate just in case
 			navigate({ to: "/login" });

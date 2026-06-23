@@ -22,6 +22,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { AuthUser } from "@/lib/auth";
 import {
 	type ProposalItem,
@@ -68,15 +69,15 @@ export function RETDashboardPage({
 	const stats = [
 		{
 			label: "Pending Review",
-			value: statsData?.pendingReview ?? "...",
+			value: statsData?.pendingReview,
 		},
 		{
 			label: "Approved Projects",
-			value: statsData?.approvedProjects ?? "...",
+			value: statsData?.approvedProjects,
 		},
 		{
 			label: "Denied Projects",
-			value: statsData?.deniedProjects ?? "...",
+			value: statsData?.deniedProjects,
 		},
 	];
 
@@ -100,6 +101,12 @@ export function RETDashboardPage({
 					</p>
 				);
 			},
+			skeleton: (
+				<div className="flex flex-col gap-2">
+					<Skeleton className="h-4 w-3/4 rounded" />
+					<Skeleton className="h-3 w-1/2 rounded" />
+				</div>
+			),
 		},
 		{
 			id: "leader",
@@ -128,6 +135,15 @@ export function RETDashboardPage({
 					</div>
 				);
 			},
+			skeleton: (
+				<div className="flex items-center gap-2">
+					<Skeleton className="size-9 rounded-full" />
+					<div className="flex flex-col gap-1.5 w-[140px]">
+						<Skeleton className="h-3.5 w-3/4 rounded" />
+						<Skeleton className="h-2.5 w-1/2 rounded" />
+					</div>
+				</div>
+			),
 		},
 		{
 			id: "dateSubmitted",
@@ -138,6 +154,7 @@ export function RETDashboardPage({
 				const proposal = row.original;
 				return format(new Date(proposal.createdAt), "MMM dd, yyyy");
 			},
+			skeleton: <Skeleton className="h-4 w-20 rounded" />,
 		},
 		{
 			id: "status",
@@ -148,6 +165,7 @@ export function RETDashboardPage({
 				const proposal = row.original;
 				return <ProposalStatusBadge status={proposal.status} />;
 			},
+			skeleton: <Skeleton className="h-6 w-24 rounded-full" />,
 		},
 		{
 			id: "actions",
@@ -195,6 +213,7 @@ export function RETDashboardPage({
 					</DropdownMenu>
 				);
 			},
+			skeleton: <Skeleton className="size-8 rounded-md ml-auto" />,
 		},
 	];
 
@@ -222,7 +241,12 @@ export function RETDashboardPage({
 			{/* Stats Cards */}
 			<div className="grid gap-6 md:grid-cols-3">
 				{stats.map((stat) => (
-					<MetricCard key={stat.label} label={stat.label} value={stat.value} />
+					<MetricCard
+						key={stat.label}
+						label={stat.label}
+						value={stat.value}
+						isLoading={isStatsLoading}
+					/>
 				))}
 			</div>
 

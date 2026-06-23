@@ -1,4 +1,4 @@
-import { FolderOpen, Loader2 } from "lucide-react";
+import { FolderOpen } from "lucide-react";
 import {
 	flexRender,
 	getCoreRowModel,
@@ -20,6 +20,7 @@ import {
 	EmptyDescription,
 	EmptyMedia,
 } from "./empty";
+import { Skeleton } from "./skeleton";
 import { cn } from "#/lib/utils";
 
 interface DataTableProps<TData, TValue> {
@@ -89,14 +90,23 @@ function DataTable<TData, TValue>({
 			)}
 			<TableBody>
 				{isLoading ? (
-					<TableRow>
-						<TableCell colSpan={colSpan} className="h-24 text-center">
-							<Loader2
-								className="mx-auto size-6 animate-spin text-[#11215a]"
-								role="status"
-							/>
-						</TableCell>
-					</TableRow>
+					Array.from({ length: 5 }).map((_, rowIndex) => (
+						<TableRow
+							key={`skeleton-row-${rowIndex}`}
+							className="bg-white border-b border-[#ebebeb] last:border-0 hover:bg-transparent"
+						>
+							{columns.map((column, colIndex) => (
+								<TableCell
+									key={`skeleton-cell-${rowIndex}-${colIndex}`}
+									className={column.cellClassName}
+								>
+									{column.skeleton ?? (
+										<Skeleton className="h-4 w-[80%] rounded" />
+									)}
+								</TableCell>
+							))}
+						</TableRow>
+					))
 				) : error ? (
 					<TableRow>
 						<TableCell
@@ -165,6 +175,7 @@ export type DataTableColumnDef<
 > = ColumnDef<TData, TValue> & {
 	headerClassName?: string;
 	cellClassName?: string;
+	skeleton?: React.ReactNode;
 };
 
 export { DataTable };

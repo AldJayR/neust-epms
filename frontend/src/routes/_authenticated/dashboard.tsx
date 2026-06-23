@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { Skeleton } from "@/components/ui/skeleton";
 import { UsersPage } from "@/features/admin/users-page";
 import { DirectorDashboardPage } from "@/features/director/director-dashboard-page";
 import { RETDashboardPage } from "@/features/ret/ret-dashboard-page";
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 		search: search.search,
 		isActive: search.isActive,
 	}),
-	loader: async ({ context, deps }) => {
+	loader: ({ context, deps }) => {
 		if (
 			requireRole(context.auth.user, "Super Admin", "Director", "RET Chair")
 		) {
@@ -42,10 +43,8 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 		}
 
 		if (isSuperAdmin(context.auth.user)) {
-			const statsPromise = context.queryClient.ensureQueryData(
-				adminStatsQueryOptions(),
-			);
-			const usersPromise = context.queryClient.ensureQueryData(
+			context.queryClient.prefetchQuery(adminStatsQueryOptions());
+			context.queryClient.prefetchQuery(
 				adminUsersQueryOptions({
 					page: deps.page,
 					pageSize: deps.pageSize,
@@ -53,27 +52,23 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 					isActive: deps.isActive,
 				}),
 			);
-			await Promise.all([statsPromise, usersPromise]);
 			return null;
 		}
 
 		if (isRETChair(context.auth.user)) {
-			const statsPromise = context.queryClient.ensureQueryData(
-				retDashboardStatsQueryOptions(),
-			);
-			const proposalsPromise = context.queryClient.ensureQueryData(
+			context.queryClient.prefetchQuery(retDashboardStatsQueryOptions());
+			context.queryClient.prefetchQuery(
 				retProposalsQueryOptions({
 					page: deps.page,
 					limit: deps.pageSize,
 					search: deps.search,
 				}),
 			);
-			await Promise.all([statsPromise, proposalsPromise]);
 			return null;
 		}
 
 		// Director path
-		await context.queryClient.ensureQueryData(directorDashboardQueryOptions());
+		context.queryClient.prefetchQuery(directorDashboardQueryOptions());
 		return null;
 	},
 	component: DashboardPage,
@@ -108,9 +103,51 @@ function DashboardPage() {
 
 	if (!user) {
 		return (
-			<main className="flex min-h-dvh items-center justify-center p-8">
-				<p className="text-sm text-muted-foreground">Loading dashboard...</p>
-			</main>
+			<div className="flex flex-col gap-8">
+				{/* Welcome Header Skeleton */}
+				<div className="flex items-start justify-between">
+					<div className="flex flex-col gap-2 w-1/3">
+						<Skeleton className="h-8 w-3/4 rounded-md" />
+						<Skeleton className="h-4 w-1/2 rounded-md" />
+					</div>
+					<Skeleton className="h-9 w-48 rounded-[10px]" />
+				</div>
+
+				{/* Stats Cards Skeleton */}
+				<div className="grid gap-6 md:grid-cols-3">
+					{[1, 2, 3].map((i) => (
+						<div
+							key={i}
+							className="h-[104px] rounded-[12px] border border-[#ebebeb] bg-white p-4 flex flex-col gap-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]"
+						>
+							<Skeleton className="h-4 w-1/3 rounded-md" />
+							<Skeleton className="h-9 w-1/4 rounded-md" />
+						</div>
+					))}
+				</div>
+
+				{/* Filters Skeleton */}
+				<div className="flex items-center justify-between gap-4">
+					<Skeleton className="h-9 w-[352px] rounded-lg" />
+					<Skeleton className="h-9 w-[180px] rounded-lg" />
+				</div>
+
+				{/* Proposals Table Skeleton */}
+				<div className="rounded-[12px] border border-[#ebebeb] bg-white overflow-hidden min-h-[400px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] p-4 flex flex-col gap-4">
+					<div className="flex justify-between border-b pb-4">
+						<Skeleton className="h-4 w-1/4 rounded-md" />
+						<Skeleton className="h-4 w-1/5 rounded-md" />
+						<Skeleton className="h-4 w-1/6 rounded-md" />
+					</div>
+					{[1, 2, 3, 4, 5].map((i) => (
+						<div key={i} className="flex justify-between py-2 items-center">
+							<Skeleton className="h-4 w-1/3 rounded-md" />
+							<Skeleton className="h-4 w-1/4 rounded-md" />
+							<Skeleton className="h-4 w-1/6 rounded-md" />
+						</div>
+					))}
+				</div>
+			</div>
 		);
 	}
 

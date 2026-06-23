@@ -2,6 +2,7 @@ import { TrendingUp } from "lucide-react";
 import { cn } from "#/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MetricCardProps {
 	label: string;
@@ -11,6 +12,7 @@ interface MetricCardProps {
 	contributors?: number;
 	className?: string;
 	variant?: "default" | "card";
+	isLoading?: boolean;
 }
 
 export function MetricCard({
@@ -21,6 +23,7 @@ export function MetricCard({
 	contributors,
 	className,
 	variant = "default",
+	isLoading = false,
 }: MetricCardProps) {
 	if (variant === "card") {
 		return (
@@ -36,7 +39,11 @@ export function MetricCard({
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className="text-4xl font-semibold text-[#11215a]">{value}</div>
+					{isLoading ? (
+						<Skeleton className="h-10 w-24 rounded" />
+					) : (
+						<div className="text-4xl font-semibold text-[#11215a]">{value}</div>
+					)}
 				</CardContent>
 			</Card>
 		);
@@ -52,7 +59,28 @@ export function MetricCard({
 			)}
 		>
 			<p className="text-[14px] leading-4 text-[#666]">{label}</p>
-			{isFacultyCustom ? (
+			{isLoading ? (
+				isFacultyCustom ? (
+					<div className="flex flex-col gap-2">
+						<Skeleton className="h-5 w-3/4 rounded" />
+						<div className="flex items-center gap-2">
+							<div className="flex -space-x-2">
+								{[1, 2, 3].map((i) => (
+									<Skeleton
+										key={i}
+										className="size-6 rounded-full border border-white bg-muted"
+									/>
+								))}
+							</div>
+							<Skeleton className="h-4 w-28 rounded" />
+						</div>
+					</div>
+				) : (
+					<div className="flex items-end gap-4">
+						<Skeleton className="h-9 w-20 rounded" />
+					</div>
+				)
+			) : isFacultyCustom ? (
 				<div className="flex flex-col gap-1">
 					<p className="text-[16px] font-medium leading-5 text-[#11215a] truncate">
 						{college}

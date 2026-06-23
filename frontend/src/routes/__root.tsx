@@ -8,8 +8,9 @@ import {
 } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 import { Devtools } from "../components/devtools";
-import type { AuthContext, AuthUser } from "../lib/auth";
+import type { AuthContext } from "../lib/auth";
 import { getCurrentUserFn } from "../lib/auth.functions";
+import { getCachedUser, isCacheStale, setCachedUser } from "../lib/auth-cache";
 import appCss from "../styles.css?url";
 
 interface MyRouterContext {
@@ -19,21 +20,12 @@ interface MyRouterContext {
 
 const THEME_INIT_SCRIPT = `(function(){try{var root=document.documentElement;root.classList.remove('light','dark');root.classList.add('light');root.setAttribute('data-theme','light');root.style.colorScheme='light';window.localStorage.setItem('theme','light');}catch(e){}})();`;
 
-let cachedUser: AuthUser | null = null;
-let lastFetched = 0;
-const CACHE_DURATION_MS = 10000; // 10 seconds
-
 export const Route = createRootRouteWithContext<MyRouterContext>()({
 	beforeLoad: async () => {
-		let user = cachedUser;
-		if (
-			typeof window === "undefined" ||
-			!user ||
-			Date.now() - lastFetched > CACHE_DURATION_MS
-		) {
+		let user = getCachedUser();
+		if (typeof window === "undefined" || isCacheStale()) {
 			user = await getCurrentUserFn();
-			cachedUser = user;
-			lastFetched = Date.now();
+			setCachedUser(user);
 		}
 
 		return {
@@ -91,11 +83,11 @@ function NotFound() {
 	);
 }
 
-// biome-ignore lint/security/noDangerouslySetInnerHtml: theme init script prevents flash
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
+				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: theme init script prevents flash */}
 				<script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
 				<HeadContent />
 			</head>

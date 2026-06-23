@@ -23,6 +23,7 @@ import {
 } from "../lib/admin.functions";
 import type { AuthUser } from "../lib/auth";
 import { loginFn } from "../lib/auth.functions";
+import { setCachedUser } from "../lib/auth-cache";
 
 const loginSchema = z.object({
 	email: z.email("Please enter a valid email address"),
@@ -85,6 +86,8 @@ function LoginPage() {
 			toast.error("Login failed", { description: result.message });
 			return;
 		}
+
+		setCachedUser(result.user); // Cache the authenticated user on client
 
 		if (
 			isSuperAdmin(result?.user) &&
