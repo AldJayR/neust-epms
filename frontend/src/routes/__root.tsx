@@ -6,7 +6,8 @@ import {
 	Link,
 	Scripts,
 } from "@tanstack/react-router";
-import { Toaster } from "sonner";
+import { useEffect } from "react";
+import { Toaster, toast } from "sonner";
 import { Devtools } from "../components/devtools";
 import type { AuthContext } from "../lib/auth";
 import { getCurrentUserFn } from "../lib/auth.functions";
@@ -84,6 +85,65 @@ function NotFound() {
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+	useEffect(() => {
+		let disconnectToastId: string | number | undefined;
+		let countdownInterval: ReturnType<typeof setInterval> | undefined;
+		let remainingSeconds = 5;
+
+		const handleOffline = () => {
+			remainingSeconds = 5;
+			if (disconnectToastId) toast.dismiss(disconnectToastId);
+			if (countdownInterval) clearInterval(countdownInterval);
+
+			disconnectToastId = toast.error(
+				`You have lost connection. Reconnecting in ${remainingSeconds} seconds...`,
+				{
+					duration: Number.POSITIVE_INFINITY,
+				},
+			);
+
+			countdownInterval = setInterval(() => {
+				remainingSeconds -= 1;
+				if (remainingSeconds <= 0) {
+					remainingSeconds = 5;
+				}
+				toast.error(
+					`You have lost connection. Reconnecting in ${remainingSeconds} seconds...`,
+					{
+						id: disconnectToastId,
+						duration: Number.POSITIVE_INFINITY,
+					},
+				);
+			}, 1000);
+		};
+
+		const handleOnline = () => {
+			if (countdownInterval) {
+				clearInterval(countdownInterval);
+				countdownInterval = undefined;
+			}
+			if (disconnectToastId) {
+				toast.dismiss(disconnectToastId);
+				disconnectToastId = undefined;
+				toast.success("Connection restored!");
+			}
+		};
+
+		window.addEventListener("offline", handleOffline);
+		window.addEventListener("online", handleOnline);
+
+		// If initially offline
+		if (!navigator.onLine) {
+			handleOffline();
+		}
+
+		return () => {
+			window.removeEventListener("offline", handleOffline);
+			window.removeEventListener("online", handleOnline);
+			if (countdownInterval) clearInterval(countdownInterval);
+		};
+	}, []);
+
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
