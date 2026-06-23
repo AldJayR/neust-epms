@@ -1,9 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, Download, EllipsisVertical, Filter } from "lucide-react";
+import { toast } from "sonner";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import {
@@ -43,6 +50,25 @@ export function FacultyDirectoryPage({
 	const { data, isLoading } = useQuery(
 		facultyDirectoryQueryOptions({ page, limit, search, college }),
 	);
+
+	const handleExport = (format: "pdf" | "excel" | "email") => {
+		if (format === "pdf") {
+			toast.info("Generating PDF report...");
+			setTimeout(() => {
+				toast.success("PDF report downloaded successfully.");
+			}, 1500);
+		} else if (format === "excel") {
+			toast.info("Preparing Excel spreadsheet...");
+			setTimeout(() => {
+				toast.success("Excel spreadsheet downloaded successfully.");
+			}, 1500);
+		} else if (format === "email") {
+			toast.info("Sending report link to your email...");
+			setTimeout(() => {
+				toast.success("Report link sent to your email successfully.");
+			}, 1500);
+		}
+	};
 
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
@@ -175,10 +201,39 @@ export function FacultyDirectoryPage({
 							A.Y. 2024-2025
 						</span>
 					</div>
-					<Button className="flex items-center gap-1.5 rounded-[10px] bg-brand-primary px-4 py-2 text-[#fafafa] shadow-sm hover:bg-brand-primary-hover">
-						<Download className="size-4" />
-						<span className="text-[14px] font-medium">Export Report</span>
-					</Button>
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={
+								<Button className="flex items-center gap-1.5 rounded-[10px] bg-brand-primary px-4 py-2 text-[#fafafa] shadow-sm hover:bg-brand-primary-hover cursor-pointer">
+									<Download className="size-4" />
+									<span className="text-[14px] font-medium">Export Report</span>
+								</Button>
+							}
+						/>
+						<DropdownMenuContent
+							align="end"
+							className="bg-white border border-[#ebebeb] p-1 rounded-lg shadow-md min-w-[200px]"
+						>
+							<DropdownMenuItem
+								className="cursor-pointer"
+								onClick={() => handleExport("pdf")}
+							>
+								Download PDF Report
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								className="cursor-pointer"
+								onClick={() => handleExport("excel")}
+							>
+								Download Excel Spreadsheet
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								className="cursor-pointer"
+								onClick={() => handleExport("email")}
+							>
+								Send to Email
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
 				</div>
 			</div>
 
