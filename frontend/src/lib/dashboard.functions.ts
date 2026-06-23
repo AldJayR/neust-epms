@@ -15,6 +15,7 @@ const projectHubParamsSchema = z.object({
 	search: z.string().optional(),
 	college: z.string().optional(),
 	status: z.string().optional(),
+	myProjectsOnly: z.string().optional(),
 });
 
 const moaRepositoryParamsSchema = z.object({
@@ -89,6 +90,7 @@ export interface ProjectHubParams {
 	search?: string;
 	college?: string;
 	status?: string;
+	myProjectsOnly?: string;
 }
 
 export interface MoaItem {
@@ -228,7 +230,7 @@ export interface ReportStatsResponse {
 const getDirectorDashboardFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
-		await authorizeSessionUser("Director");
+		await authorizeSessionUser("Director", "RET Chair");
 		const token = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/director/dashboard`, {
@@ -262,6 +264,8 @@ const getProjectHubFn = createServerFn({ method: "GET" })
 		if (data.search) query.append("search", data.search);
 		if (data.college) query.append("college", data.college);
 		if (data.status) query.append("status", data.status);
+		if (data.myProjectsOnly)
+			query.append("myProjectsOnly", data.myProjectsOnly);
 
 		const response = await fetch(
 			`${API_BASE}/director/hub/projects?${query.toString()}`,

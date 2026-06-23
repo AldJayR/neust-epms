@@ -2,7 +2,10 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { ProjectHubPage } from "@/features/director/project-hub-page";
 import { ProjectMonitoringPage } from "@/features/ret/project-monitoring-page";
-import { projectHubQueryOptions } from "@/lib/dashboard.functions";
+import {
+	directorDashboardQueryOptions,
+	projectHubQueryOptions,
+} from "@/lib/dashboard.functions";
 import {
 	isDirector,
 	isRETChair,
@@ -16,6 +19,7 @@ const projectsSearchSchema = z.object({
 	search: z.string().optional(),
 	college: z.string().optional(),
 	status: z.string().optional(),
+	myProjectsOnly: z.string().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/projects/")({
@@ -26,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 		search: search.search,
 		college: search.college,
 		status: search.status,
+		myProjectsOnly: search.myProjectsOnly,
 	}),
 	beforeLoad: ({ context }) => {
 		if (isSuperAdmin(context.auth.user)) {
@@ -40,15 +45,19 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 			return null;
 		}
 
-		await context.queryClient.ensureQueryData(
-			projectHubQueryOptions({
-				page: deps.page,
-				limit: deps.limit,
-				search: deps.search,
-				college: deps.college,
-				status: deps.status,
-			}),
-		);
+		await Promise.all([
+			context.queryClient.ensureQueryData(
+				projectHubQueryOptions({
+					page: deps.page,
+					limit: deps.limit,
+					search: deps.search,
+					college: deps.college,
+					status: deps.status,
+					myProjectsOnly: deps.myProjectsOnly,
+				}),
+			),
+			context.queryClient.ensureQueryData(directorDashboardQueryOptions()),
+		]);
 	},
 	component: ProjectsIndexPage,
 });
@@ -56,7 +65,8 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 function ProjectsIndexPage() {
 	const context = Route.useRouteContext();
 	const user = context.auth.user;
-	const { page, limit, search, college, status } = Route.useSearch();
+	const { page, limit, search, college, status, myProjectsOnly } =
+		Route.useSearch();
 	const navigate = Route.useNavigate();
 
 	const handleSearch = (newSearch: string) => {
@@ -74,6 +84,16 @@ function ProjectsIndexPage() {
 	const handleStatusChange = (newStatus: string) => {
 		navigate({
 			search: (old) => ({ ...old, status: newStatus || undefined, page: 1 }),
+		});
+	};
+
+	const handleMyProjectsOnlyChange = (newMyProjectsOnly: string) => {
+		navigate({
+			search: (old) => ({
+				...old,
+				myProjectsOnly: newMyProjectsOnly || undefined,
+				page: 1,
+			}),
 		});
 	};
 
@@ -110,13 +130,16 @@ function ProjectsIndexPage() {
 	if (isRETChair(user)) {
 		return (
 			<ProjectMonitoringPage
+				user={user}
 				page={page}
 				limit={limit}
 				search={search}
 				status={status}
+				myProjectsOnly={myProjectsOnly}
 				onPageChange={handlePageChange}
 				onSearchChange={handleSearch}
 				onStatusChange={handleStatusChange}
+				onMyProjectsOnlyChange={handleMyProjectsOnlyChange}
 				onProjectClick={handleProjectClick}
 			/>
 		);

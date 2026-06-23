@@ -103,6 +103,10 @@ const HubQuerySchema = z.object({
 		.string()
 		.optional()
 		.openapi({ param: { name: "status", in: "query" } }),
+	myProjectsOnly: z
+		.string()
+		.optional()
+		.openapi({ param: { name: "myProjectsOnly", in: "query" } }),
 });
 
 const DashboardMetricSchema = z.object({
@@ -668,9 +672,19 @@ const projectHubRoute = createRoute({
 });
 
 app.openapi(projectHubRoute, async (c) => {
-	const { page, limit, search, college, status } = c.req.valid("query");
+	const { page, limit, search, college, status, myProjectsOnly } =
+		c.req.valid("query");
 	const offset = (page - 1) * limit;
 	const user = c.get("user");
+
+	const leaderMembersSubquery = db
+		.select({
+			proposalId: proposalMembers.proposalId,
+			userId: proposalMembers.userId,
+		})
+		.from(proposalMembers)
+		.where(eq(proposalMembers.projectRole, "Project Leader"))
+		.as("leader_members");
 
 	const whereConditions = [
 		isNull(proposals.archivedAt),
@@ -725,14 +739,9 @@ app.openapi(projectHubRoute, async (c) => {
 		}
 	}
 
-	const leaderMembersSubquery = db
-		.select({
-			proposalId: proposalMembers.proposalId,
-			userId: proposalMembers.userId,
-		})
-		.from(proposalMembers)
-		.where(eq(proposalMembers.projectRole, "Project Leader"))
-		.as("leader_members");
+	if (myProjectsOnly === "true") {
+		whereConditions.push(eq(leaderMembersSubquery.userId, user.userId));
+	}
 
 	const latestReportsSubquery = db
 		.select({

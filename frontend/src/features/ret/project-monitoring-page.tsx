@@ -14,6 +14,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectStatusBadge } from "@/features/director/components/project-status-badge";
 import type { AuthUser } from "@/lib/auth";
 import {
@@ -28,24 +29,29 @@ interface ProjectMonitoringPageProps {
 	limit: number;
 	search?: string;
 	status?: string;
+	myProjectsOnly?: string;
 	onPageChange: (page: number) => void;
 	onSearchChange: (search: string) => void;
 	onStatusChange: (status: string) => void;
+	onMyProjectsOnlyChange: (myProjectsOnly: string) => void;
 	onProjectClick?: (projectId: string) => void;
 }
 
 export function ProjectMonitoringPage({
+	user,
 	page,
 	limit,
 	search,
 	status,
+	myProjectsOnly,
 	onPageChange,
 	onSearchChange,
 	onStatusChange,
+	onMyProjectsOnlyChange,
 	onProjectClick,
 }: ProjectMonitoringPageProps) {
 	const { data, isLoading } = useQuery(
-		projectHubQueryOptions({ page, limit, search, status }),
+		projectHubQueryOptions({ page, limit, search, status, myProjectsOnly }),
 	);
 	const { data: statsData } = useQuery(directorDashboardQueryOptions());
 	const metrics = statsData?.metrics;
@@ -56,7 +62,8 @@ export function ProjectMonitoringPage({
 	const showTableHeader =
 		items.length > 0 ||
 		(search ?? "").trim().length > 0 ||
-		(status ?? "").trim().length > 0;
+		(status ?? "").trim().length > 0 ||
+		(myProjectsOnly ?? "").trim().length > 0;
 
 	const columns: DataTableColumnDef<HubProject>[] = [
 		{
@@ -199,16 +206,43 @@ export function ProjectMonitoringPage({
 				</div>
 			</div>
 
-			<div className="rounded-lg border border-[#ebebeb] bg-white shadow-sm overflow-hidden min-h-[400px]">
-				<DataTable
-					columns={columns}
-					data={items}
-					showHeader={showTableHeader}
-					isLoading={isLoading}
-					emptyMessage="No projects found."
-					ariaLabel="Projects"
-					onRowClick={(project) => onProjectClick?.(project.id)}
-				/>
+			<div className="overflow-hidden rounded-[12px] border border-[#ebebeb] bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+				<div className="border-b border-[#ebebeb] bg-white p-2">
+					<Tabs
+						value={myProjectsOnly === "true" ? "my" : "all"}
+						onValueChange={(val) => {
+							onMyProjectsOnlyChange(val === "my" ? "true" : "");
+						}}
+						className="w-fit"
+					>
+						<TabsList className="bg-[#fafafa]">
+							<TabsTrigger
+								value="all"
+								className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+							>
+								{user?.isMainCampus ? "Department Projects" : "Campus Projects"}
+							</TabsTrigger>
+							<TabsTrigger
+								value="my"
+								className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+							>
+								My Projects
+							</TabsTrigger>
+						</TabsList>
+					</Tabs>
+				</div>
+
+				<div className="bg-white">
+					<DataTable
+						columns={columns}
+						data={items}
+						showHeader={showTableHeader}
+						isLoading={isLoading}
+						emptyMessage="No projects found."
+						ariaLabel="Projects"
+						onRowClick={(project) => onProjectClick?.(project.id)}
+					/>
+				</div>
 			</div>
 
 			<PaginationBar
