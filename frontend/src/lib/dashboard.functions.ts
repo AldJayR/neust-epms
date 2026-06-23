@@ -539,3 +539,39 @@ export function reportsListQueryOptions(params: {
 		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
 	});
 }
+
+export const emailReportFn = createServerFn({ method: "POST" })
+	.validator(
+		z.object({
+			search: z.string().optional(),
+			college: z.string().optional(),
+			status: z.string().optional(),
+		}),
+	)
+	.handler(async ({ data }) => {
+		const { authorizeSessionUser, getValidAccessToken } = await import(
+			"./session.server"
+		);
+		await authorizeSessionUser("Director", "RET Chair");
+		const token = await getValidAccessToken();
+
+		const response = await fetch(`${API_BASE}/director/email-report`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(data),
+		});
+
+		if (!response.ok) {
+			const message = await getErrorMessage(
+				response,
+				"Failed to send email report",
+			);
+			throw new Error(message);
+		}
+
+		return (await response.json()) as { success: boolean; message: string };
+	});
+

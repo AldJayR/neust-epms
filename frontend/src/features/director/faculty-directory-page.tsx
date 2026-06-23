@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { format } from "date-fns";
 import { Calendar, Download, EllipsisVertical, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { MetricCard } from "@/components/custom/metric-card";
@@ -22,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import type { AuthUser } from "@/lib/auth";
 import {
+	emailReportFn,
 	type FacultyInvolvement,
 	facultyDirectoryQueryOptions,
 } from "@/lib/dashboard.functions";
@@ -51,22 +54,146 @@ export function FacultyDirectoryPage({
 		facultyDirectoryQueryOptions({ page, limit, search, college }),
 	);
 
-	const handleExport = (format: "pdf" | "excel" | "email") => {
-		if (format === "pdf") {
+	const sendEmailReport = useServerFn(emailReportFn);
+
+	const handleExport = async (exportFormat: "pdf" | "excel" | "email") => {
+		if (items.length === 0) {
+			toast.error("No data available to export.");
+			return;
+		}
+
+		if (exportFormat === "pdf") {
 			toast.info("Generating PDF report...");
-			setTimeout(() => {
-				toast.success("PDF report downloaded successfully.");
-			}, 1500);
-		} else if (format === "excel") {
+			const printWindow = window.open("", "_blank");
+			if (printWindow) {
+				const html = `
+					<html>
+						<head>
+							<title>Faculty Directory Report</title>
+							<style>
+								body { font-family: sans-serif; padding: 30px; color: #333; line-height: 1.4; }
+								h1 { color: #11215a; margin-bottom: 2px; font-size: 24px; }
+								p { color: #666; margin-bottom: 24px; font-size: 14px; }
+								table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+								th, td { border: 1px solid #ddd; padding: 10px 12px; text-align: left; font-size: 12px; }
+								th { background-color: #f4f7fc; color: #11215a; font-weight: bold; }
+								tr:nth-child(even) { background-color: #f9f9f9; }
+								.text-right { text-align: right; }
+							</style>
+						</head>
+						<body>
+							<h1>Faculty Directory Report</h1>
+							<p>Academic Year 2024-2025 | Generated on ${format(new Date(), "MMMM dd, yyyy")}</p>
+							<table>
+								<thead>
+									<tr>
+										<th>Rank</th>
+										<th>Faculty Name</th>
+										<th>Academic Rank</th>
+										<th>Department</th>
+										<th class="text-right">Lead Projects</th>
+										<th class="text-right">Collaborator Projects</th>
+										<th class="text-right">Total Involvement</th>
+									</tr>
+								</thead>
+								<tbody>
+									${items
+										.map(
+											(faculty, index) => `
+										<tr>
+											<td>${index + 1}</td>
+											<td>${faculty.firstName} ${faculty.lastName}</td>
+											<td>${formatAcademicRank(faculty.academicRank)}</td>
+											<td>${faculty.departmentCode ?? faculty.college ?? ""}</td>
+											<td class="text-right">${faculty.leadProjects}</td>
+											<td class="text-right">${faculty.collaboratorProjects}</td>
+											<td class="text-right">${faculty.totalInvolvement}</td>
+										</tr>
+									`,
+										)
+										.join("")}
+								</tbody>
+							</table>
+							<script>
+								window.onload = function() {
+									window.print();
+									window.close();
+								}
+							</script>
+						</body>
+					</html>
+				`;
+				printWindow.document.write(html);
+				printWindow.document.close();
+				toast.success("PDF report generated.");
+			} else {
+				toast.error("Failed to open print window. Check popup blocker.");
+			}
+		} else if (exportFormat === "excel") {
 			toast.info("Preparing Excel spreadsheet...");
-			setTimeout(() => {
+			try {
+				const headers = [
+					"Rank",
+					"Faculty Name",
+					"Academic Rank",
+					"Department",
+					"Lead Projects",
+					"Collaborator Projects",
+					"Total Involvement",
+				];
+				const rows = items.map((faculty, index) => [
+					index + 1,
+					`"${faculty.firstName} ${faculty.lastName}"`,
+					`"${formatAcademicRank(faculty.academicRank)}"`,
+					`"${faculty.departmentCode ?? faculty.college ?? ""}"`,
+					faculty.leadProjects,
+					faculty.collaboratorProjects,
+					faculty.totalInvolvement,
+				]);
+
+				const csvContent = [
+					headers.join(","),
+					...rows.map((e) => e.join(",")),
+				].join("\n");
+				const blob = new Blob([csvContent], {
+					type: "text/csv;charset=utf-8;",
+				});
+				const url = URL.createObjectURL(blob);
+				const link = document.createElement("a");
+				link.setAttribute("href", url);
+				link.setAttribute(
+					"download",
+					`Faculty_Directory_Report_${format(new Date(), "yyyy-MM-dd")}.csv`,
+				);
+				link.style.visibility = "hidden";
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
 				toast.success("Excel spreadsheet downloaded successfully.");
-			}, 1500);
-		} else if (format === "email") {
-			toast.info("Sending report link to your email...");
-			setTimeout(() => {
-				toast.success("Report link sent to your email successfully.");
-			}, 1500);
+			} catch {
+				toast.error("Failed to generate Excel spreadsheet.");
+			}
+		} else if (exportFormat === "email") {
+			toast.info("Sending report to your email...");
+			try {
+				const response = await sendEmailReport({
+					data: {
+						search: search || undefined,
+						college: college || undefined,
+					},
+				});
+				if (response.success) {
+					toast.success(response.message || "Email report sent successfully.");
+				} else {
+					toast.error(response.message || "Failed to send email report.");
+				}
+			} catch (error) {
+				const message =
+					error instanceof Error
+						? error.message
+						: "Failed to send email report.";
+				toast.error(message);
+			}
 		}
 	};
 

@@ -1277,4 +1277,249 @@ app.openapi(projectDetailsRoute, async (c) => {
 	);
 });
 
+const emailReportRoute = createRoute({
+	method: "post",
+	path: "/director/email-report",
+	tags: ["Director"],
+	summary: "Email faculty directory report to director",
+	security: [{ Bearer: [] }],
+	request: {
+		body: {
+			content: {
+				"application/json": {
+					schema: z.object({
+						search: z.string().optional(),
+						college: z.string().optional(),
+						status: z.string().optional(),
+					}),
+				},
+			},
+		},
+	},
+	responses: {
+		200: {
+			content: {
+				"application/json": {
+					schema: z.object({
+						success: z.boolean(),
+						message: z.string(),
+					}),
+				},
+			},
+			description: "Email sent successfully",
+		},
+		400: {
+			description: "Invalid request or Resend not configured",
+		},
+	},
+});
+
+app.openapi(emailReportRoute, async (c) => {
+	const { search, college, status } = c.req.valid("json");
+	const user = c.get("user");
+
+	if (!env.RESEND_API_KEY) {
+		return c.json({ success: false, message: "Email service is not configured on the server." }, 400);
+	}
+
+	// 1. Fetch matching faculty directory data (no pagination)
+	const whereConditions: (SQL | undefined)[] = [
+		inArray(roles.roleName, [ROLE_NAMES.FACULTY, ROLE_NAMES.RET_CHAIR]),
+	];
+
+	if (status === "pending") {
+		whereConditions.push(eq(users.isActive, false));
+	} else {
+		whereConditions.push(eq(users.isActive, true));
+	}
+
+	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+		if (user.isMainCampus && user.departmentId !== null) {
+			whereConditions.push(eq(users.departmentId, user.departmentId));
+		} else {
+			whereConditions.push(eq(users.campusId, user.campusId));
+		}
+	}
+
+	if (search) {
+		whereConditions.push(
+			or(
+				ilike(users.firstName, `${search}%`),
+				ilike(users.lastName, `${search}%`),
+			),
+		);
+	}
+
+	if (college) {
+		whereConditions.push(eq(departments.departmentName, college));
+	}
+
+	const rows = await db
+		.select({
+			userId: users.userId,
+			firstName: users.firstName,
+			lastName: users.lastName,
+			academicRank: users.academicRank,
+			college: departments.departmentName,
+			departmentCode: departments.departmentCode,
+			campusName: campuses.campusName,
+			isMainCampus: campuses.isMainCampus,
+		})
+		.from(users)
+		.innerJoin(roles, eq(users.roleId, roles.roleId))
+		.leftJoin(departments, eq(users.departmentId, departments.departmentId))
+		.leftJoin(campuses, eq(users.campusId, campuses.campusId))
+		.where(and(...whereConditions))
+		.orderBy(users.lastName);
+
+	const userIds = rows.map((r) => r.userId);
+
+	let leadMap = new Map<string, number>();
+	let collabMap = new Map<string, number>();
+
+	if (userIds.length > 0) {
+		const [leadCounts, collabCounts] = await Promise.all([
+			db
+				.select({
+					userId: proposalMembers.userId,
+					value: count(),
+				})
+				.from(projects)
+				.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+				.innerJoin(
+					proposalMembers,
+					eq(proposals.proposalId, proposalMembers.proposalId),
+				)
+				.where(
+					and(
+						inArray(proposalMembers.userId, userIds),
+						isNull(projects.archivedAt),
+						eq(proposalMembers.projectRole, "Project Leader"),
+					),
+				)
+				.groupBy(proposalMembers.userId),
+			db
+				.select({
+					userId: proposalMembers.userId,
+					value: count(),
+				})
+				.from(proposalMembers)
+				.innerJoin(
+					proposals,
+					eq(proposalMembers.proposalId, proposals.proposalId),
+				)
+				.where(
+					and(
+						inArray(proposalMembers.userId, userIds),
+						sql`${proposalMembers.projectRole} != 'Project Leader'`,
+						isNull(proposals.archivedAt),
+					),
+				)
+				.groupBy(proposalMembers.userId),
+		]);
+
+		leadMap = new Map(leadCounts.map((r) => [r.userId, Number(r.value ?? 0)]));
+		collabMap = new Map(collabCounts.map((r) => [r.userId, Number(r.value ?? 0)]));
+	}
+
+	const items = rows.map((row) => {
+		const leadProjects = leadMap.get(row.userId) ?? 0;
+		const collaboratorProjects = collabMap.get(row.userId) ?? 0;
+		return {
+			...row,
+			leadProjects,
+			collaboratorProjects,
+			totalInvolvement: leadProjects + collaboratorProjects,
+		};
+	});
+
+	// Helper function to format academic rank inside the template
+	const academicRankLabels: Record<string, string> = {
+		"instructor-1": "Instructor I",
+		"instructor-2": "Instructor II",
+		"instructor-3": "Instructor III",
+		"assistant-prof-1": "Assistant Professor I",
+		"assistant-prof-2": "Assistant Professor II",
+		"associate-prof-1": "Associate Professor I",
+		"associate-prof-2": "Associate Professor II",
+		"professor-1": "Professor I",
+	};
+	const formatRank = (rank: string | null): string => {
+		if (!rank) return "Faculty";
+		return academicRankLabels[rank] ?? rank;
+	};
+
+	// 2. Build email HTML body
+	const htmlReport = `
+		<html>
+			<body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px;">
+				<div style="background-color: #11215a; color: #ffffff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+					<h1 style="margin: 0; font-size: 24px;">Faculty Directory Report</h1>
+					<p style="margin: 5px 0 0; font-size: 14px; opacity: 0.8;">NEUST Extension Services</p>
+				</div>
+				<div style="padding: 20px; border: 1px solid #ebebeb; border-top: none; border-radius: 0 0 8px 8px; background-color: #ffffff;">
+					<p>Dear Director,</p>
+					<p>As requested, here is the compiled Faculty Directory Report matching your active search and filter criteria. You can find the summarized data in the table below:</p>
+					
+					<table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px;">
+						<thead>
+							<tr style="background-color: #f4f7fc; border-bottom: 2px solid #ddd; color: #11215a; text-align: left;">
+								<th style="padding: 10px; border: 1px solid #ddd;">Rank</th>
+								<th style="padding: 10px; border: 1px solid #ddd;">Faculty Name</th>
+								<th style="padding: 10px; border: 1px solid #ddd;">Academic Rank</th>
+								<th style="padding: 10px; border: 1px solid #ddd;">Department</th>
+								<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Lead</th>
+								<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Collab</th>
+								<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Total</th>
+							</tr>
+						</thead>
+						<tbody>
+							${items
+								.map(
+									(faculty, index) => `
+								<tr style="border-bottom: 1px solid #ddd; background-color: ${index % 2 === 0 ? "#ffffff" : "#f9f9f9"};">
+									<td style="padding: 8px 10px; border: 1px solid #ddd;">${index + 1}</td>
+									<td style="padding: 8px 10px; border: 1px solid #ddd; font-weight: bold;">${faculty.firstName} ${faculty.lastName}</td>
+									<td style="padding: 8px 10px; border: 1px solid #ddd;">${formatRank(faculty.academicRank)}</td>
+									<td style="padding: 8px 10px; border: 1px solid #ddd;">
+										${faculty.departmentCode ?? faculty.college ?? ""}
+										${faculty.isMainCampus === false && faculty.campusName ? `<br/><span style="font-size: 11px; color: #666;">(${faculty.campusName})</span>` : ""}
+									</td>
+									<td style="padding: 8px 10px; border: 1px solid #ddd; text-align: right;">${faculty.leadProjects}</td>
+									<td style="padding: 8px 10px; border: 1px solid #ddd; text-align: right;">${faculty.collaboratorProjects}</td>
+									<td style="padding: 8px 10px; border: 1px solid #ddd; text-align: right; font-weight: bold;">${faculty.totalInvolvement}</td>
+								</tr>
+							`,
+								)
+								.join("")}
+						</tbody>
+					</table>
+
+					<p style="margin-top: 30px;">Thank you,</p>
+					<p style="font-weight: bold; margin-bottom: 0;">NEUST Extension Services</p>
+					<p style="font-size: 12px; color: #999; margin-top: 5px;">This email is an automated transmission requested from your active user dashboard session.</p>
+				</div>
+			</body>
+		</html>
+	`;
+
+	// 3. Send email using Resend
+	try {
+		const { Resend } = await import("resend");
+		const resend = new Resend(env.RESEND_API_KEY);
+
+		await resend.emails.send({
+			from: env.RESEND_FROM ?? "noreply@neust.edu.ph",
+			to: user.email,
+			subject: `Faculty Directory Report - A.Y. 2024-2025`,
+			html: htmlReport,
+		});
+
+		return c.json({ success: true, message: "Email report sent successfully." }, 200);
+	} catch (error) {
+		console.error("Failed to send email report:", error);
+		return c.json({ success: false, message: "Failed to send email report." }, 500);
+	}
+});
+
 export default app;
