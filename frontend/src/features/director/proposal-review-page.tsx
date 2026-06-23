@@ -619,28 +619,32 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 						<div className="lg:col-span-4 flex flex-col gap-6">
 							<Card className="border-[#ebebeb] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] rounded-[12px] overflow-hidden pt-2 pb-0 gap-0">
 								{/* Tabs Header */}
-								<div className="flex border-b border-[#ebebeb]">
+								<div className="relative flex border-b border-[#ebebeb]">
 									<button
 										type="button"
 										onClick={() => setActiveTab("details")}
-										className={`flex-1 py-3 text-xs font-semibold border-b-2 text-center cursor-pointer transition-colors ${activeTab === "details" ? "border-[#14369c] text-[#14369c]" : "border-transparent text-[#737373] hover:text-black"}`}
+										className={`flex-1 py-3 text-xs font-semibold text-center cursor-pointer transition-colors ${activeTab === "details" ? "text-[#14369c]" : "text-[#737373] hover:text-black"}`}
 									>
 										Proposal Details
 									</button>
 									<button
 										type="button"
 										onClick={() => setActiveTab("comments")}
-										className={`flex-1 py-3 text-xs font-semibold border-b-2 text-center cursor-pointer transition-colors flex items-center justify-center gap-1.5 ${activeTab === "comments" ? "border-[#14369c] text-[#14369c]" : "border-transparent text-[#737373] hover:text-black"}`}
+										className={`flex-1 py-3 text-xs font-semibold text-center cursor-pointer transition-colors flex items-center justify-center gap-1.5 ${activeTab === "comments" ? "text-[#14369c]" : "text-[#737373] hover:text-black"}`}
 									>
 										Comments
 										{comments.length > 0 && (
 											<span
-												className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === "comments" ? "bg-[#14369c] text-white" : "bg-gray-100 text-[#737373]"}`}
+												className={`px-1.5 py-0.5 rounded-full text-[10px] transition-colors ${activeTab === "comments" ? "bg-[#14369c] text-white" : "bg-gray-100 text-[#737373]"}`}
 											>
 												{comments.length}
 											</span>
 										)}
 									</button>
+									{/* Sliding Underline */}
+									<div
+										className={`absolute bottom-0 h-[2px] w-1/2 bg-[#14369c] transition-all duration-300 ease-in-out ${activeTab === "details" ? "left-0" : "left-1/2"}`}
+									/>
 								</div>
 
 								{/* Tab Content: Details */}
