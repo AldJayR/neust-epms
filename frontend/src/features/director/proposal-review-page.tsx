@@ -128,40 +128,42 @@ function ProposalDetailsTab({
 			</div>
 
 			{endorsement && (
-				<div className="p-5 space-y-4">
-					<h2 className="text-[14px] font-medium text-black">Endorsement</h2>
-					<div className="rounded-[10px] border border-[#e5e5e5] p-3 space-y-1">
-						<div className="flex items-center gap-3">
-							<CheckCircle2 className="size-4 text-black" />
-							<span className="text-[14px] font-medium text-black">
-								{endorsement.status} by {endorsement.actorName}
-							</span>
+				<>
+					<div className="p-5 space-y-4">
+						<h2 className="text-[14px] font-medium text-black">Endorsement</h2>
+						<div className="rounded-[10px] border border-[#e5e5e5] p-3 space-y-1">
+							<div className="flex items-center gap-3">
+								<CheckCircle2 className="size-4 text-black" />
+								<span className="text-[14px] font-medium text-black">
+									{endorsement.status} by {endorsement.actorName}
+								</span>
+							</div>
+							<div className="pl-7">
+								<span className="text-[12px] text-[#737373] font-light">
+									{formatReviewDate(endorsement.date)}
+								</span>
+							</div>
 						</div>
-						<div className="pl-7">
-							<span className="text-[12px] text-[#737373] font-light">
-								{formatReviewDate(endorsement.date)}
-							</span>
-						</div>
+
+						{endorsement.comment && (
+							<>
+								<h2 className="text-[14px] font-medium text-black mt-6">
+									Remarks
+								</h2>
+								<div className="rounded-[10px] border border-[#e5e5e5] p-3">
+									<p className="text-[14px] text-black font-light leading-relaxed">
+										"{endorsement.comment}"
+									</p>
+								</div>
+							</>
+						)}
 					</div>
 
-					{endorsement.comment && (
-						<>
-							<h2 className="text-[14px] font-medium text-black mt-6">
-								Remarks
-							</h2>
-							<div className="rounded-[10px] border border-[#e5e5e5] p-3">
-								<p className="text-[14px] text-black font-light leading-relaxed">
-									"{endorsement.comment}"
-								</p>
-							</div>
-						</>
-					)}
-				</div>
+					<div className="px-5 py-2">
+						<Separator className="bg-[#ebebeb]" />
+					</div>
+				</>
 			)}
-
-			<div className="px-5 py-2">
-				<Separator className="bg-[#ebebeb]" />
-			</div>
 
 			<div className="p-5 space-y-3">
 				<h2 className="text-[14px] font-medium text-black">
