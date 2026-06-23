@@ -1,5 +1,10 @@
 import type { useRender } from "@base-ui/react/use-render";
-import { Link, type LinkProps, useNavigate } from "@tanstack/react-router";
+import {
+	isRedirect,
+	Link,
+	type LinkProps,
+	useNavigate,
+} from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronRight, Loader2, LogOut, type LucideIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
@@ -82,6 +87,9 @@ export function RoleSidebar({
 			navigate({ to: "/login" });
 			setIsLoggingOut(false);
 		} catch (error) {
+			if (isRedirect(error)) {
+				throw error;
+			}
 			console.error("Logout failed:", error);
 			setIsLoggingOut(false);
 		}
