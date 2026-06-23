@@ -534,7 +534,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 					</h1>
 				</div>
 				<Button
-					className="flex w-fit items-center gap-2 rounded-[10px] bg-brand-primary px-5 h-9 text-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-brand-primary-hover"
+					className="flex w-fit items-center gap-2 rounded-[10px] bg-brand-primary px-5 h-9 !text-white hover:!text-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-brand-primary-hover"
 					render={<Link to="/proposals/$proposalId" params={{ proposalId }} />}
 				>
 					<Eye className="size-4" />
