@@ -6,6 +6,7 @@ import {
 	Link,
 	Scripts,
 } from "@tanstack/react-router";
+import { Loader2, Wifi, WifiOff } from "lucide-react";
 import { useEffect } from "react";
 import { Toaster, toast } from "sonner";
 import { Devtools } from "../components/devtools";
@@ -95,8 +96,25 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			if (disconnectToastId) toast.dismiss(disconnectToastId);
 			if (countdownInterval) clearInterval(countdownInterval);
 
-			disconnectToastId = toast.error(
-				`You have lost connection. Reconnecting in ${remainingSeconds} seconds...`,
+			disconnectToastId = toast.custom(
+				() => (
+					<div className="relative flex items-center gap-4 border border-[#ebebeb] bg-white rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
+						<div className="flex size-9 items-center justify-center rounded-full bg-red-50 text-red-500 shrink-0">
+							<WifiOff className="size-5" />
+						</div>
+						<div className="flex flex-col text-left">
+							<span className="text-[14px] font-semibold text-[#0a0a0a] leading-tight">
+								Connection Lost
+							</span>
+							<span className="text-[12px] text-[#737373] mt-1 leading-tight">
+								Reconnecting in {remainingSeconds} seconds...
+							</span>
+						</div>
+						<div className="ml-auto shrink-0 text-[#737373]">
+							<Loader2 className="size-4 animate-spin" />
+						</div>
+					</div>
+				),
 				{
 					duration: Number.POSITIVE_INFINITY,
 				},
@@ -107,8 +125,25 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				if (remainingSeconds <= 0) {
 					remainingSeconds = 5;
 				}
-				toast.error(
-					`You have lost connection. Reconnecting in ${remainingSeconds} seconds...`,
+				toast.custom(
+					() => (
+						<div className="relative flex items-center gap-4 border border-[#ebebeb] bg-white rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
+							<div className="flex size-9 items-center justify-center rounded-full bg-red-50 text-red-500 shrink-0">
+								<WifiOff className="size-5" />
+							</div>
+							<div className="flex flex-col text-left">
+								<span className="text-[14px] font-semibold text-[#0a0a0a] leading-tight">
+									Connection Lost
+								</span>
+								<span className="text-[12px] text-[#737373] mt-1 leading-tight">
+									Reconnecting in {remainingSeconds} seconds...
+								</span>
+							</div>
+							<div className="ml-auto shrink-0 text-[#737373]">
+								<Loader2 className="size-4 animate-spin" />
+							</div>
+						</div>
+					),
 					{
 						id: disconnectToastId,
 						duration: Number.POSITIVE_INFINITY,
@@ -125,8 +160,27 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			if (disconnectToastId) {
 				toast.dismiss(disconnectToastId);
 				disconnectToastId = undefined;
-				toast.success("Connection restored!");
 			}
+			toast.custom(
+				() => (
+					<div className="relative flex items-center gap-4 border border-[#ebebeb] bg-white rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
+						<div className="flex size-9 items-center justify-center rounded-full bg-green-50 text-green-600 shrink-0">
+							<Wifi className="size-5" />
+						</div>
+						<div className="flex flex-col text-left">
+							<span className="text-[14px] font-semibold text-[#0a0a0a] leading-tight">
+								Connection Restored
+							</span>
+							<span className="text-[12px] text-[#737373] mt-1 leading-tight">
+								You are back online.
+							</span>
+						</div>
+					</div>
+				),
+				{
+					duration: 4000,
+				},
+			);
 		};
 
 		window.addEventListener("offline", handleOffline);
