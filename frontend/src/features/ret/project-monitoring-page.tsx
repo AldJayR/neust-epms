@@ -68,8 +68,7 @@ export function ProjectMonitoringPage({
 	const showTableHeader =
 		items.length > 0 ||
 		(search ?? "").trim().length > 0 ||
-		(status ?? "").trim().length > 0 ||
-		myProjectsOnly === true;
+		(status ?? "").trim().length > 0;
 
 	const columns: DataTableColumnDef<HubProject>[] = [
 		{
