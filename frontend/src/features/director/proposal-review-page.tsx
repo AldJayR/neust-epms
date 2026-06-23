@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { CheckCircle2, Download, Loader2, MessageSquare } from "lucide-react";
 import { useRef, useState } from "react";
 import { PdfViewer, type PdfViewerRef } from "@/components/pdf-viewer";
@@ -14,7 +14,17 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import type { AuthUser } from "@/lib/auth";
 import {
 	getProposalCommentsFn,
 	saveProposalCommentFn,
@@ -23,6 +33,7 @@ import {
 	projectDetailsQueryOptions,
 	reviewProposalFn,
 } from "@/lib/dashboard.functions";
+import { isRETChair } from "@/lib/permissions";
 
 interface ProposalReviewPageProps {
 	proposalId: string;
@@ -74,8 +85,9 @@ interface ProposalDetailsTabProps {
 	setActiveAttachmentId: (id: string) => void;
 	isReviewable: boolean;
 	handleDeny: () => void;
-	handleApprove: () => void;
+	handleApprove: (comments?: string) => void;
 	isPending: boolean;
+	isRET?: boolean;
 }
 
 function ProposalDetailsTab({
@@ -87,7 +99,11 @@ function ProposalDetailsTab({
 	handleDeny,
 	handleApprove,
 	isPending,
+	isRET = false,
 }: ProposalDetailsTabProps) {
+	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+	const [commentsText, setCommentsText] = useState("");
+
 	return (
 		<CardContent className="p-0">
 			<div className="p-5 space-y-4">
@@ -204,6 +220,20 @@ function ProposalDetailsTab({
 				</div>
 			</div>
 
+			{isReviewable && isRET && (
+				<>
+					<div className="px-5 py-2">
+						<Separator className="bg-[#ebebeb]" />
+					</div>
+					<div className="px-5 pt-2">
+						<p className="text-[12px] text-[#737373] font-light leading-relaxed">
+							Approving will forward this proposal to the Director/Admin for
+							final review.
+						</p>
+					</div>
+				</>
+			)}
+
 			{isReviewable && (
 				<div className="p-5 flex gap-3">
 					<Button
@@ -215,18 +245,74 @@ function ProposalDetailsTab({
 						{isPending ? <Loader2 className="size-4 animate-spin" /> : "Return"}
 					</Button>
 					<Button
-						className="flex-1 bg-[#14369c] text-white hover:bg-[#14369c]/90 rounded-[10px] font-medium h-9 text-sm shadow-sm"
-						onClick={handleApprove}
+						className="flex-1 bg-[#14369c] text-white hover:bg-[#14369c]/90 rounded-[10px] font-medium h-9 text-sm shadow-sm cursor-pointer"
+						onClick={() => {
+							if (isRET) {
+								setCommentsText("");
+								setIsConfirmOpen(true);
+							} else {
+								handleApprove();
+							}
+						}}
 						disabled={isPending}
 					>
 						{isPending ? (
 							<Loader2 className="size-4 animate-spin" />
+						) : isRET ? (
+							"Endorse"
 						) : (
 							"Approve"
 						)}
 					</Button>
 				</div>
 			)}
+
+			<Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+				<DialogContent className="sm:max-w-[425px] rounded-[12px] p-6 bg-white gap-4">
+					<DialogHeader className="pb-2">
+						<DialogTitle className="text-[16px] font-semibold text-[#11215a]">
+							Endorse Proposal
+						</DialogTitle>
+						<DialogDescription className="text-sm text-[#737373] font-light">
+							Please enter any final comments or remarks before endorsing this
+							proposal (optional).
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="space-y-4">
+						<Textarea
+							placeholder="Write final comments/remarks here (optional)..."
+							value={commentsText}
+							onChange={(e) => setCommentsText(e.target.value)}
+							className="w-full min-h-[100px] border border-[#e5e5e5] rounded-[8px] p-3 text-sm focus-visible:ring-1 focus-visible:ring-[#14369c]"
+						/>
+					</div>
+
+					<DialogFooter className="flex gap-3 mt-4">
+						<Button
+							variant="outline"
+							className="flex-1 border border-[#e5e5e5] rounded-[10px] text-gray-500 font-medium h-9 text-sm shadow-sm cursor-pointer"
+							onClick={() => setIsConfirmOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button
+							className="flex-1 bg-[#14369c] text-white hover:bg-[#14369c]/90 rounded-[10px] font-medium h-9 text-sm shadow-sm cursor-pointer"
+							onClick={() => {
+								handleApprove(commentsText);
+								setIsConfirmOpen(false);
+							}}
+							disabled={isPending}
+						>
+							{isPending ? (
+								<Loader2 className="size-4 animate-spin" />
+							) : (
+								"Endorse"
+							)}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</CardContent>
 	);
 }
@@ -318,6 +404,16 @@ function CommentsTab({
 }
 
 export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
+	const user = useRouterState({
+		select: (s) => {
+			const authMatch = s.matches.find((m) => m.routeId === "/_authenticated");
+			return (
+				(authMatch?.context as { user: AuthUser | null } | undefined)?.user ??
+				null
+			);
+		},
+	});
+
 	const queryClient = useQueryClient();
 	const { data, isLoading, error } = useQuery(
 		projectDetailsQueryOptions(proposalId),
@@ -395,12 +491,16 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	const isReviewable =
 		data?.status === "Endorsed" || data?.status === "Pending Review";
 
-	const handleApprove = () => {
+	const handleApprove = (comments?: string) => {
 		const decision = data?.status === "Endorsed" ? "Approved" : "Endorsed";
 		reviewMutation.mutate({
 			proposalId,
 			decision,
-			comments: "Approved via review",
+			comments:
+				comments ||
+				(decision === "Approved"
+					? "Approved via review"
+					: "Endorsed via review"),
 		});
 	};
 
@@ -554,6 +654,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 										handleDeny={handleDeny}
 										handleApprove={handleApprove}
 										isPending={reviewMutation.isPending}
+										isRET={isRETChair(user)}
 									/>
 								)}
 
