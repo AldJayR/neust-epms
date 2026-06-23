@@ -97,11 +97,25 @@ export function FacultyDirectoryPage({
 		},
 		{
 			id: "college",
-			header: "College",
+			header: "Department",
 			headerClassName:
 				"w-[200px] px-4 py-2 text-[14px] font-medium text-[#666]",
-			cellClassName: "px-4 py-3 text-[14px] text-[#0a0a0a]",
-			cell: ({ row }) => row.original.college,
+			cellClassName: "px-4 py-3 text-[14px]",
+			cell: ({ row }) => {
+				const faculty = row.original;
+				return (
+					<div className="flex flex-col text-left">
+						<span className="font-normal text-[#0a0a0a]">
+							{faculty.departmentCode ?? faculty.college}
+						</span>
+						{faculty.isMainCampus === false && faculty.campusName && (
+							<span className="text-[12px] text-muted-foreground leading-4 mt-0.5">
+								{faculty.campusName}
+							</span>
+						)}
+					</div>
+				);
+			},
 		},
 		{
 			id: "leadProjects",

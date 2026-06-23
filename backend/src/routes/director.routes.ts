@@ -161,6 +161,8 @@ const FacultyInvolvementSchema = z.object({
 	academicRank: z.string().nullable(),
 	college: z.string().nullable(),
 	departmentCode: z.string().nullable(),
+	campusName: z.string().nullable(),
+	isMainCampus: z.boolean().nullable(),
 	isActive: z.boolean(),
 	leadProjects: z.number(),
 	collaboratorProjects: z.number(),
@@ -267,11 +269,14 @@ app.openapi(facultyDirectoryRoute, async (c) => {
 			academicRank: users.academicRank,
 			college: departments.departmentName,
 			departmentCode: departments.departmentCode,
+			campusName: campuses.campusName,
+			isMainCampus: campuses.isMainCampus,
 			isActive: users.isActive,
 		})
 		.from(users)
 		.innerJoin(roles, eq(users.roleId, roles.roleId))
 		.leftJoin(departments, eq(users.departmentId, departments.departmentId))
+		.leftJoin(campuses, eq(users.campusId, campuses.campusId))
 		.where(and(...whereConditions))
 		.orderBy(users.lastName);
 

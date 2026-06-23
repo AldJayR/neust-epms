@@ -125,6 +125,8 @@ export interface FacultyInvolvement {
 	academicRank: string | null;
 	college: string | null;
 	departmentCode: string | null;
+	campusName: string | null;
+	isMainCampus: boolean | null;
 	isActive: boolean;
 	leadProjects: number;
 	collaboratorProjects: number;
