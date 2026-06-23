@@ -231,7 +231,7 @@ app.openapi(facultyDirectoryRoute, async (c) => {
 
 	const user = c.get("user");
 	const whereConditions: (SQL | undefined)[] = [
-		eq(roles.roleName, ROLE_NAMES.FACULTY),
+		inArray(roles.roleName, [ROLE_NAMES.FACULTY, ROLE_NAMES.RET_CHAIR]),
 	];
 
 	if (status === "pending") {
@@ -291,7 +291,7 @@ app.openapi(facultyDirectoryRoute, async (c) => {
 
 	const totalFacultyConditions = [
 		eq(users.isActive, true),
-		eq(roles.roleName, ROLE_NAMES.FACULTY),
+		inArray(roles.roleName, [ROLE_NAMES.FACULTY, ROLE_NAMES.RET_CHAIR]),
 	];
 	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
 		if (user.isMainCampus && user.departmentId !== null) {
@@ -303,7 +303,7 @@ app.openapi(facultyDirectoryRoute, async (c) => {
 
 	const mostActiveCollegeConditions = [
 		eq(users.isActive, true),
-		eq(roles.roleName, ROLE_NAMES.FACULTY),
+		inArray(roles.roleName, [ROLE_NAMES.FACULTY, ROLE_NAMES.RET_CHAIR]),
 	];
 	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
 		if (user.isMainCampus && user.departmentId !== null) {
