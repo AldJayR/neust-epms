@@ -14,6 +14,13 @@ export const authUserCache = new LRUCache<string, AuthUser>({
 	updateAgeOnHas: false,
 });
 
+// Token cache maps token hashes to Supabase user IDs to avoid repeated Supabase HTTPS requests.
+export const tokenCache = new LRUCache<string, string>({
+	max: 5000,
+	ttl: 1000 * 60 * 5, // Keep in sync with user profile TTL
+	ttlAutopurge: true,
+});
+
 /**
  * Manually invalidate the auth cache for specific user IDs.
  * Use this when a user's role or active status is updated.

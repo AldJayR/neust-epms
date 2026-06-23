@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { eq } from "drizzle-orm";
 import { createMiddleware } from "hono/factory";
@@ -7,7 +8,7 @@ import { departments } from "../db/schema/departments.js";
 import { roles } from "../db/schema/roles.js";
 import { users } from "../db/schema/users.js";
 import { env } from "../env.js";
-import { authUserCache, cacheEnabled } from "../lib/cache.js";
+import { authUserCache, cacheEnabled, tokenCache } from "../lib/cache.js";
 import { ApiError } from "../lib/errors.js";
 import type { AuthUser } from "../lib/types.js";
 
@@ -37,23 +38,40 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
 	}
 
 	const token = authHeader.slice(7);
+	const tokenHash = createHash("sha256").update(token).digest("hex");
+	const tokenCacheKey = `auth:token:${tokenHash}`;
 
-	const {
-		data: { user: supabaseUser },
-		error,
-	} = await supabase.auth.getUser(token);
+	let supabaseUserId: string | null = null;
 
-	if (error || !supabaseUser) {
-		throw new ApiError(401, "INVALID_TOKEN", "Invalid or expired token");
+	if (cacheEnabled) {
+		// 1. Try to resolve user ID from token cache (bypasses Supabase HTTPS call)
+		supabaseUserId = tokenCache.get(tokenCacheKey) ?? null;
+
+		if (supabaseUserId) {
+			// 2. Try to resolve user profile from authUserCache (bypasses PostgreSQL DB query)
+			const cachedUser = authUserCache.get(`auth:user:${supabaseUserId}`);
+			if (cachedUser) {
+				c.set("user", cachedUser);
+				await next();
+				return;
+			}
+		}
 	}
 
-	const cacheKey = `auth:user:${supabaseUser.id}`;
-	if (cacheEnabled) {
-		const cachedUser = authUserCache.get(cacheKey);
-		if (cachedUser) {
-			c.set("user", cachedUser);
-			await next();
-			return;
+	// If token mapping is not cached, validate it with Supabase
+	if (!supabaseUserId) {
+		const {
+			data: { user: supabaseUser },
+			error,
+		} = await supabase.auth.getUser(token);
+
+		if (error || !supabaseUser) {
+			throw new ApiError(401, "INVALID_TOKEN", "Invalid or expired token");
+		}
+
+		supabaseUserId = supabaseUser.id;
+		if (cacheEnabled) {
+			tokenCache.set(tokenCacheKey, supabaseUserId);
 		}
 	}
 
@@ -80,7 +98,7 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
 		.innerJoin(roles, eq(users.roleId, roles.roleId))
 		.innerJoin(campuses, eq(users.campusId, campuses.campusId))
 		.leftJoin(departments, eq(users.departmentId, departments.departmentId))
-		.where(eq(users.userId, supabaseUser.id))
+		.where(eq(users.userId, supabaseUserId))
 		.limit(1);
 
 	if (!appUser) {
@@ -114,7 +132,7 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
 	};
 
 	if (cacheEnabled) {
-		authUserCache.set(cacheKey, userContext);
+		authUserCache.set(`auth:user:${supabaseUserId}`, userContext);
 	}
 
 	c.set("user", userContext);
