@@ -445,6 +445,7 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 						</div>
 						<div className="grid grid-cols-2 gap-2">
 							<Button
+								nativeButton={false}
 								variant="outline"
 								className="h-8 rounded-[8px] border-[#e5e5e5] text-[12px] font-medium text-[#666] hover:bg-white"
 								render={
@@ -461,6 +462,7 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 								View
 							</Button>
 							<Button
+								nativeButton={false}
 								variant="outline"
 								className="h-8 rounded-[8px] border-[#e5e5e5] text-[12px] font-medium text-[#666] hover:bg-white"
 								render={
@@ -528,6 +530,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 					</h1>
 				</div>
 				<Button
+					nativeButton={false}
 					className="flex w-fit items-center gap-2 rounded-[10px] bg-brand-primary px-5 h-9 !text-white hover:!text-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-brand-primary-hover"
 					render={<Link to="/proposals/$proposalId" params={{ proposalId }} />}
 				>
