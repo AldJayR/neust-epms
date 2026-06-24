@@ -327,7 +327,7 @@ app.openapi(uploadRoute, async (c) => {
 				FOR UPDATE
 			) locked
 		`);
-		return Number(result.rows[0]?.max_ver ?? 1);
+		return Number(result[0]?.max_ver ?? 1);
 	});
 
 	const storagePath = generateSecureStoragePath(

@@ -3,6 +3,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
@@ -33,5 +34,10 @@ export const proposalReviews = pgTable(
 	(table) => ({
 		proposalIdx: index("pr_proposal_id_idx").on(table.proposalId),
 		reviewerIdx: index("pr_reviewer_id_idx").on(table.reviewerId),
+		proposalReviewerStageUnique: unique("pr_proposal_reviewer_stage_unique").on(
+			table.proposalId,
+			table.reviewerId,
+			table.reviewStage,
+		),
 	}),
 );

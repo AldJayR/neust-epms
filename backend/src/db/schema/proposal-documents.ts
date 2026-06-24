@@ -3,6 +3,7 @@ import {
 	integer,
 	pgTable,
 	timestamp,
+	unique,
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
@@ -27,5 +28,9 @@ export const proposalDocuments = pgTable(
 	},
 	(table) => ({
 		proposalIdx: index("pd_proposal_id_idx").on(table.proposalId),
+		proposalVersionUnique: unique("pd_proposal_version_unique").on(
+			table.proposalId,
+			table.versionNum,
+		),
 	}),
 );

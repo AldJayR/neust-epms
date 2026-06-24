@@ -1,20 +1,17 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import pg from "pg";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import { env } from "../env.js";
 import * as relations from "./relations.js";
 import * as schema from "./schema/index.js";
 
-const pool = new pg.Pool({
-	connectionString: env.DATABASE_URL,
+// Transaction pooler (port 6543) does not support prepared statements
+const client = postgres(env.DATABASE_URL, {
+	prepare: false,
 	max: env.DB_POOL_MAX,
-	idleTimeoutMillis: env.DB_IDLE_TIMEOUT_MS,
-	connectionTimeoutMillis: env.DB_CONNECTION_TIMEOUT_MS,
-	statement_timeout: 30000,
-	idle_in_transaction_session_timeout: 30000,
+	idle_timeout: env.DB_IDLE_TIMEOUT_MS / 1000,
+	connect_timeout: env.DB_CONNECTION_TIMEOUT_MS / 1000,
 });
 
-export const db = drizzle(pool, {
+export const db = drizzle(client, {
 	schema: { ...schema, ...relations },
 });
-
-export { pool };

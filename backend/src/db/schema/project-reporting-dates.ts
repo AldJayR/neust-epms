@@ -1,4 +1,11 @@
-import { boolean, index, pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import {
+	boolean,
+	index,
+	pgTable,
+	timestamp,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { projectReportingSchedules } from "./project-reporting-schedules.js";
 
 export const projectReportingDates = pgTable(
@@ -21,5 +28,8 @@ export const projectReportingDates = pgTable(
 		scheduleIdx: index("project_reporting_dates_schedule_id_idx").on(
 			table.scheduleId,
 		),
+		pendingDateIdx: index("project_reporting_dates_pending_idx")
+			.on(table.scheduleId, table.reportingDate)
+			.where(sql`${table.isCompleted} = false`),
 	}),
 );

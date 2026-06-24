@@ -1,5 +1,12 @@
 import { sql } from "drizzle-orm";
-import { index, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+	check,
+	index,
+	pgTable,
+	timestamp,
+	uuid,
+	varchar,
+} from "drizzle-orm/pg-core";
 import { partners } from "./partners.js";
 
 export const moas = pgTable(
@@ -25,5 +32,9 @@ export const moas = pgTable(
 		activeIdx: index("moas_active_idx")
 			.on(table.validUntil)
 			.where(sql`${table.archivedAt} IS NULL`),
+		validPeriodCheck: check(
+			"moas_valid_period_check",
+			sql`(${table.validFrom} IS NULL OR ${table.validUntil} IS NULL OR ${table.validFrom} < ${table.validUntil})`,
+		),
 	}),
 );

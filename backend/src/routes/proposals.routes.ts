@@ -4,6 +4,7 @@ import { db } from "../db/client.js";
 import { beneficiarySectors } from "../db/schema/beneficiary-sectors.js";
 import { proposalBeneficiaries } from "../db/schema/proposal-beneficiaries.js";
 import { proposalDepartments } from "../db/schema/proposal-departments.js";
+import { proposalDocuments } from "../db/schema/proposal-documents.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposalReviews } from "../db/schema/proposal-reviews.js";
 import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
@@ -1260,7 +1261,6 @@ app.openapi(createCommentRoute, async (c) => {
 	const [newComment] = await db
 		.insert(proposalComments)
 		.values({
-			proposalId,
 			documentId,
 			userId: user.userId,
 			content,
@@ -1275,7 +1275,7 @@ app.openapi(createCommentRoute, async (c) => {
 	return c.json(
 		{
 			commentId: newComment.commentId,
-			proposalId: newComment.proposalId,
+			proposalId,
 			documentId: newComment.documentId,
 			userId: newComment.userId,
 			content: newComment.content,
@@ -1298,7 +1298,7 @@ app.openapi(listCommentsRoute, async (c) => {
 	const rows = await db
 		.select({
 			commentId: proposalComments.commentId,
-			proposalId: proposalComments.proposalId,
+			proposalId: proposalDocuments.proposalId,
 			documentId: proposalComments.documentId,
 			userId: proposalComments.userId,
 			content: proposalComments.content,
@@ -1310,6 +1310,10 @@ app.openapi(listCommentsRoute, async (c) => {
 			userRoleName: roles.roleName,
 		})
 		.from(proposalComments)
+		.innerJoin(
+			proposalDocuments,
+			eq(proposalComments.documentId, proposalDocuments.documentId),
+		)
 		.innerJoin(users, eq(proposalComments.userId, users.userId))
 		.innerJoin(roles, eq(users.roleId, roles.roleId))
 		.where(eq(proposalComments.documentId, documentId))

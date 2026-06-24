@@ -25,8 +25,6 @@ export const auditLogs = pgTable(
 			.defaultNow(),
 	},
 	(table) => ({
-		userIdx: index("al_user_id_idx").on(table.userId),
-		createdIdx: index("al_created_at_idx").on(table.createdAt),
 		userCreatedIdx: index("al_user_created_idx").on(
 			table.userId,
 			table.createdAt,

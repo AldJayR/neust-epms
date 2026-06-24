@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	index,
 	integer,
 	numeric,
@@ -59,5 +61,9 @@ export const proposals = pgTable(
 		campusIdx: index("proposals_campus_id_idx").on(table.campusId),
 		departmentIdx: index("proposals_department_id_idx").on(table.departmentId),
 		statusIdx: index("proposals_status_idx").on(table.status),
+		targetDatesCheck: check(
+			"proposals_target_dates_check",
+			sql`(${table.targetStartDate} IS NULL OR ${table.targetEndDate} IS NULL OR ${table.targetStartDate} < ${table.targetEndDate})`,
+		),
 	}),
 );

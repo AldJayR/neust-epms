@@ -7,7 +7,6 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import { proposalDocuments } from "./proposal-documents.js";
-import { proposals } from "./proposals.js";
 import { users } from "./users.js";
 
 /** Spatial annotation coordinate stored in JSONB */
@@ -27,14 +26,12 @@ interface AnnotationData {
 /**
  * Proposal comments / annotation engine.
  * Binds comments to a specific document version for spatial PDF highlights.
+ * Proposal is derived via documentId → proposal_documents.proposal_id.
  */
 export const proposalComments = pgTable(
 	"proposal_comments",
 	{
 		commentId: uuid("comment_id").primaryKey().defaultRandom(),
-		proposalId: uuid("proposal_id")
-			.notNull()
-			.references(() => proposals.proposalId),
 		documentId: uuid("document_id")
 			.notNull()
 			.references(() => proposalDocuments.documentId),
@@ -48,7 +45,6 @@ export const proposalComments = pgTable(
 			.defaultNow(),
 	},
 	(table) => ({
-		proposalIdx: index("pc_proposal_id_idx").on(table.proposalId),
 		documentIdx: index("pc_document_id_idx").on(table.documentId),
 		userIdx: index("pc_user_id_idx").on(table.userId),
 	}),

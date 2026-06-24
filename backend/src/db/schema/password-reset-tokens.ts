@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { users } from "./users.js";
 
@@ -19,5 +20,8 @@ export const passwordResetTokens = pgTable(
 		userIdx: index("prtk_user_id_idx").on(table.userId),
 		tokenIdx: index("prtk_token_hash_idx").on(table.tokenHash),
 		expiresIdx: index("prtk_expires_at_idx").on(table.expiresAt),
+		activeTokenIdx: index("prtk_active_token_idx")
+			.on(table.tokenHash, table.expiresAt)
+			.where(sql`${table.usedAt} IS NULL`),
 	}),
 );

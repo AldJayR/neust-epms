@@ -71,7 +71,6 @@ export const proposalsRelations = relations(proposals, ({ one, many }) => ({
 	proposalDepartments: many(proposalDepartments),
 	members: many(proposalMembers),
 	documents: many(proposalDocuments),
-	comments: many(proposalComments),
 	reviews: many(proposalReviews),
 	beneficiaries: many(proposalBeneficiaries),
 	sdgs: many(proposalSdgs),
@@ -136,10 +135,6 @@ export const proposalDocumentsRelations = relations(
 export const proposalCommentsRelations = relations(
 	proposalComments,
 	({ one }) => ({
-		proposal: one(proposals, {
-			fields: [proposalComments.proposalId],
-			references: [proposals.proposalId],
-		}),
 		document: one(proposalDocuments, {
 			fields: [proposalComments.documentId],
 			references: [proposalDocuments.documentId],
