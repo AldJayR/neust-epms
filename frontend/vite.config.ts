@@ -23,9 +23,6 @@ const config = defineConfig({
 		environment: "jsdom",
 		globals: true,
 	},
-	experimental: {
-		bundledDev: true,
-	},
 });
 
 export default config;
