@@ -3,6 +3,7 @@ export { beneficiarySectors } from "./beneficiary-sectors.js";
 export { campuses } from "./campuses.js";
 export { departments } from "./departments.js";
 export { moas } from "./moas.js";
+export { notifications } from "./notifications.js";
 export { partners } from "./partners.js";
 export { passwordResetTokens } from "./password-reset-tokens.js";
 export { projectReportingDates } from "./project-reporting-dates.js";
