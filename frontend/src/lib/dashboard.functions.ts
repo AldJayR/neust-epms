@@ -574,4 +574,3 @@ export const emailReportFn = createServerFn({ method: "POST" })
 
 		return (await response.json()) as { success: boolean; message: string };
 	});
-

@@ -208,14 +208,6 @@ export const getRolesFn = createServerFn({ method: "GET" })
 		return (await response.json()) as RoleResponse[];
 	});
 
-export function rolesQueryOptions() {
-	return queryOptions({
-		queryKey: ["admin", "roles"],
-		queryFn: () => getRolesFn(),
-		staleTime: ADMIN_QUERY_STALE_TIME_MS,
-	});
-}
-
 // ── Bulk Approve Users ───────────────────────────────────
 
 export const bulkApproveUsersFn = createServerFn({ method: "POST" })

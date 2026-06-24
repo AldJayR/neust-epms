@@ -108,16 +108,6 @@ export interface SDG {
 	sdgName: string;
 }
 
-export interface Sector {
-	sectorId: number;
-	sectorName: string;
-}
-
-export interface MetadataItem {
-	id: number;
-	name: string;
-}
-
 // ── Server Functions ──────────────────────────────────────
 
 const getRETDashboardStatsFn = createServerFn({ method: "GET" }).handler(
@@ -257,28 +247,6 @@ const getSDGsFn = createServerFn({ method: "GET" }).handler(async () => {
 	return (await response.json()) as SDG[];
 });
 
-const getSectorsFn = createServerFn({ method: "GET" }).handler(async () => {
-	const accessToken = await getValidAccessToken();
-
-	const response = await fetch(`${API_BASE}/proposals/metadata/sectors`, {
-		headers: { Authorization: `Bearer ${accessToken}` },
-	});
-	if (!response.ok) throw new Error("Failed to fetch sectors");
-	return (await response.json()) as Sector[];
-});
-
-const getDepartmentsFn = createServerFn({ method: "GET" }).handler(async () => {
-	const response = await fetch(`${API_BASE}/auth/departments`);
-	if (!response.ok) throw new Error("Failed to fetch departments");
-	return (await response.json()) as MetadataItem[];
-});
-
-const getCampusesFn = createServerFn({ method: "GET" }).handler(async () => {
-	const response = await fetch(`${API_BASE}/auth/campuses`);
-	if (!response.ok) throw new Error("Failed to fetch campuses");
-	return (await response.json()) as MetadataItem[];
-});
-
 // ── Query Options ─────────────────────────────────────────
 
 export function retDashboardStatsQueryOptions() {
@@ -302,29 +270,5 @@ export function sdgsQueryOptions() {
 		queryKey: ["metadata", "sdgs"],
 		queryFn: () => getSDGsFn(),
 		staleTime: 1000 * 60 * 60, // 1 hour
-	});
-}
-
-export function sectorsQueryOptions() {
-	return queryOptions({
-		queryKey: ["metadata", "sectors"],
-		queryFn: () => getSectorsFn(),
-		staleTime: 1000 * 60 * 60,
-	});
-}
-
-export function departmentsQueryOptions() {
-	return queryOptions({
-		queryKey: ["metadata", "departments"],
-		queryFn: () => getDepartmentsFn(),
-		staleTime: 1000 * 60 * 60,
-	});
-}
-
-export function campusesQueryOptions() {
-	return queryOptions({
-		queryKey: ["metadata", "campuses"],
-		queryFn: () => getCampusesFn(),
-		staleTime: 1000 * 60 * 60,
 	});
 }

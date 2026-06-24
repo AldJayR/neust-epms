@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { projectDetailsQueryOptions } from "@/lib/dashboard.functions";
+import { ProjectStatusBadge } from "./components/project-status-badge";
 
 interface ProjectDetailsPageProps {
 	proposalId: string;
@@ -53,10 +54,10 @@ function ProjectDetailsSkeleton() {
 			<div className="flex items-start justify-between">
 				<div className="flex flex-col gap-2">
 					<div className="flex items-center gap-3">
+						<Skeleton className="h-7 w-80" />
 						<Skeleton className="h-5 w-20 rounded-[6px]" />
 						<Skeleton className="h-4 w-16" />
 					</div>
-					<Skeleton className="h-7 w-80" />
 				</div>
 				<Skeleton className="h-9 w-48 rounded-[10px]" />
 			</div>
@@ -518,19 +519,12 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 			{/* Header */}
 			<div className="flex items-start justify-between">
 				<div className="flex flex-col gap-2">
-					<div className="flex items-center gap-3">
-						<Badge
-							variant="outline"
-							className="bg-amber-50 text-amber-700 border-amber-200 px-3 py-1 font-semibold uppercase tracking-wider text-[10px]"
-						>
-							{data.status}
-						</Badge>
-						<span className="text-[12px] font-medium text-[#666]">
+					<h1 className="flex flex-wrap items-center gap-3 text-[22px] font-semibold text-[#11215a]">
+						<span>{data.title}</span>
+						<ProjectStatusBadge status={data.status} />
+						<span className="text-[12px] font-normal text-[#666]">
 							Version {data.version}
 						</span>
-					</div>
-					<h1 className="text-[22px] font-semibold text-[#11215a]">
-						{data.title}
 					</h1>
 				</div>
 				<Button

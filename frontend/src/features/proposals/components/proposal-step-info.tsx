@@ -36,83 +36,106 @@ export function ProposalStepInfo({
 		}) || [];
 
 	return (
-		<div className="space-y-4">
-			<Field>
-				<FieldLabel>Project Title</FieldLabel>
-				<FieldContent>
-					<Input
-						placeholder="Enter project title"
-						{...form.register("title")}
-					/>
-				</FieldContent>
-				<FieldError errors={[form.formState.errors.title]} />
-			</Field>
-			<Field>
-				<FieldLabel>Banner Program</FieldLabel>
-				<FieldContent>
-					<Input
-						placeholder="e.g. Community Outreach"
-						{...form.register("bannerProgram")}
-					/>
-				</FieldContent>
-				<FieldError errors={[form.formState.errors.bannerProgram]} />
-			</Field>
-			<Field>
-				<FieldLabel>Project Locale</FieldLabel>
-				<FieldContent>
-					<Input
-						placeholder="e.g. Cabanatuan City"
-						{...form.register("projectLocale")}
-					/>
-				</FieldContent>
-				<FieldError errors={[form.formState.errors.projectLocale]} />
-			</Field>
-			<Field>
-				<FieldLabel>Extension Category</FieldLabel>
-				<FieldContent>
-					<Select
-						onValueChange={(val) => {
-							if (val != null) form.setValue("extensionCategory", val);
-						}}
-						value={form.watch("extensionCategory")}
-					>
-						<SelectTrigger>
-							<SelectValue placeholder="Select category" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="Category A">Category A</SelectItem>
-							<SelectItem value="Category B">Category B</SelectItem>
-							<SelectItem value="Category C">Category C</SelectItem>
-						</SelectContent>
-					</Select>
-				</FieldContent>
-				<FieldError errors={[form.formState.errors.extensionCategory]} />
-			</Field>
-			<Field>
-				<FieldLabel>Campus</FieldLabel>
-				<FieldContent>
-					<Input readOnly value={user.campusName} className="bg-muted" />
-				</FieldContent>
-			</Field>
-			<Field>
-				<FieldLabel>Department</FieldLabel>
-				<FieldContent>
-					<Input
-						readOnly
-						value={user.departmentName ?? ""}
-						className="bg-muted"
-					/>
-				</FieldContent>
-			</Field>
-			<div className="space-y-2">
+		<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+			<div className="md:col-span-2">
+				<Field>
+					<FieldLabel>Project Title</FieldLabel>
+					<FieldContent>
+						<Input
+							placeholder="Enter project title"
+							{...form.register("title")}
+						/>
+					</FieldContent>
+					<FieldError errors={[form.formState.errors.title]} />
+				</Field>
+			</div>
+
+			<div>
+				<Field>
+					<FieldLabel>Banner Program</FieldLabel>
+					<FieldContent>
+						<Input
+							placeholder="e.g. Community Outreach"
+							{...form.register("bannerProgram")}
+						/>
+					</FieldContent>
+					<FieldError errors={[form.formState.errors.bannerProgram]} />
+				</Field>
+			</div>
+
+			<div>
+				<Field>
+					<FieldLabel>Project Locale</FieldLabel>
+					<FieldContent>
+						<Input
+							placeholder="e.g. Cabanatuan City"
+							{...form.register("projectLocale")}
+						/>
+					</FieldContent>
+					<FieldError errors={[form.formState.errors.projectLocale]} />
+				</Field>
+			</div>
+
+			<div>
+				<Field>
+					<FieldLabel>Extension Category</FieldLabel>
+					<FieldContent>
+						<Select
+							onValueChange={(val) => {
+								if (val != null) form.setValue("extensionCategory", val);
+							}}
+							value={form.watch("extensionCategory")}
+						>
+							<SelectTrigger>
+								<SelectValue placeholder="Select category" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="Category A">Category A</SelectItem>
+								<SelectItem value="Category B">Category B</SelectItem>
+								<SelectItem value="Category C">Category C</SelectItem>
+							</SelectContent>
+						</Select>
+					</FieldContent>
+					<FieldError errors={[form.formState.errors.extensionCategory]} />
+				</Field>
+			</div>
+
+			<div>
+				<Field>
+					<FieldLabel>Campus</FieldLabel>
+					<FieldContent>
+						<Input
+							readOnly
+							value={user.campusName}
+							className="bg-slate-50 text-slate-500 cursor-not-allowed"
+						/>
+					</FieldContent>
+				</Field>
+			</div>
+
+			<div className="md:col-span-2">
+				<Field>
+					<FieldLabel>Department</FieldLabel>
+					<FieldContent>
+						<Input
+							readOnly
+							value={user.departmentName ?? ""}
+							className="bg-slate-50 text-slate-500 cursor-not-allowed"
+						/>
+					</FieldContent>
+				</Field>
+			</div>
+
+			<div className="md:col-span-2 space-y-2">
 				<FieldLabel>Addressed SDGs</FieldLabel>
-				<div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto p-2 border rounded-md">
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[180px] overflow-y-auto p-2 border rounded-md">
 					{sdgsData?.map((sdg) => (
 						<div
 							key={sdg.sdgId}
-							className="flex flex-row items-start space-x-3 space-y-0"
+							className="flex flex-row items-center space-x-2.5 p-1 hover:bg-slate-50/50 rounded transition-colors"
 						>
 							<Checkbox
+								id={`sdg-${sdg.sdgId}`}
 								checked={watchedSdgIds.includes(sdg.sdgId)}
 								onCheckedChange={(checked) => {
 									const current = form.getValues("sdgIds") || [];
@@ -126,7 +149,12 @@ export function ProposalStepInfo({
 									}
 								}}
 							/>
-							<span className="font-normal text-xs">{sdg.sdgName}</span>
+							<label
+								htmlFor={`sdg-${sdg.sdgId}`}
+								className="text-xs font-normal text-slate-600 cursor-pointer select-none"
+							>
+								{sdg.sdgName}
+							</label>
 						</div>
 					))}
 				</div>

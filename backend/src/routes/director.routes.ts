@@ -1206,9 +1206,14 @@ app.openapi(projectDetailsRoute, async (c) => {
 	});
 
 	reviewRows.forEach((review) => {
+		const matchingDoc = documentRows.find(
+			(doc) => doc.uploadedAt.getTime() <= review.reviewedAt.getTime(),
+		);
+		const reviewVersion = matchingDoc ? `v${matchingDoc.versionNum}` : `v${row.revisionNum}`;
+
 		history.push({
 			id: review.reviewId,
-			version: `v${row.revisionNum}`,
+			version: reviewVersion,
 			status:
 				review.decision === "Returned"
 					? "Returned"
