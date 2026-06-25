@@ -81,7 +81,6 @@ export function CreateProposalModal({
 				file: File | null;
 				uploadProgress: number;
 				uploadPhase: "idle" | "creating" | "uploading" | "done";
-				isDragging: boolean;
 			},
 			next:
 				| Partial<typeof prev>
@@ -95,13 +94,10 @@ export function CreateProposalModal({
 			file: null,
 			uploadProgress: 0,
 			uploadPhase: "idle" as const,
-			isDragging: false,
 		},
 	);
 
-	const { step, file, uploadProgress, uploadPhase, isDragging } = state;
-
-	const fileInputRef = React.useRef<HTMLInputElement>(null);
+	const { step, file, uploadProgress, uploadPhase } = state;
 	const queryClient = useQueryClient();
 
 	const form = useForm<FormValues>({
@@ -207,7 +203,6 @@ export function CreateProposalModal({
 			onOpenChange(false);
 			form.reset();
 			setState({ step: 1, file: null });
-			if (fileInputRef.current) fileInputRef.current.value = "";
 			queryClient.invalidateQueries({ queryKey: ["ret", "dashboard"] });
 			setTimeout(() => {
 				setState({ uploadPhase: "idle", uploadProgress: 0 });
@@ -284,17 +279,14 @@ export function CreateProposalModal({
 
 						{step === 3 && <ProposalStepMembers form={form} user={user} />}
 
-						{step === 4 && (
-							<ProposalStepDocuments
-								file={file}
-								setFile={(f) => setState({ file: f })}
-								fileInputRef={fileInputRef}
-								isDragging={isDragging}
-								setIsDragging={(d) => setState({ isDragging: d })}
-								uploadPhase={uploadPhase}
-								uploadProgress={uploadProgress}
-							/>
-						)}
+					{step === 4 && (
+						<ProposalStepDocuments
+							file={file}
+							setFile={(f) => setState({ file: f })}
+							uploadPhase={uploadPhase}
+							uploadProgress={uploadProgress}
+						/>
+					)}
 					</div>
 
 					<DialogFooter className="p-6 border-t border-[#ebebeb] bg-[#fcfcfc]">
