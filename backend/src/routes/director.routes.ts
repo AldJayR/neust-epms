@@ -502,21 +502,21 @@ app.openapi(moaRepositoryRoute, async (c) => {
 			case "Valid":
 				whereConditions.push(
 					and(
-						sql`${moas.validUntil} > ${now}`,
-						sql`${moas.validUntil} > ${thirtyDaysFromNow}`,
+						sql`${moas.validUntil} > ${now.toISOString()}`,
+						sql`${moas.validUntil} > ${thirtyDaysFromNow.toISOString()}`,
 					),
 				);
 				break;
 			case "Renewal Needed":
 				whereConditions.push(
 					and(
-						sql`${moas.validUntil} > ${now}`,
-						sql`${moas.validUntil} <= ${thirtyDaysFromNow}`,
+						sql`${moas.validUntil} > ${now.toISOString()}`,
+						sql`${moas.validUntil} <= ${thirtyDaysFromNow.toISOString()}`,
 					),
 				);
 				break;
 			case "Expired":
-				whereConditions.push(sql`${moas.validUntil} <= ${now}`);
+				whereConditions.push(sql`${moas.validUntil} <= ${now.toISOString()}`);
 				break;
 		}
 	}
@@ -548,14 +548,14 @@ app.openapi(moaRepositoryRoute, async (c) => {
 			.where(
 				and(
 					isNull(moas.archivedAt),
-					sql`${moas.validUntil} > ${now}`,
-					sql`${moas.validUntil} <= ${ninetyDaysFromNow}`,
+					sql`${moas.validUntil} > ${now.toISOString()}`,
+					sql`${moas.validUntil} <= ${ninetyDaysFromNow.toISOString()}`,
 				),
 			),
 		db
 			.select({ value: count() })
 			.from(moas)
-			.where(and(isNull(moas.archivedAt), sql`${moas.validUntil} > ${now}`)),
+			.where(and(isNull(moas.archivedAt), sql`${moas.validUntil} > ${now.toISOString()}`)),
 	]);
 
 	const items = rows.map((r) => {
@@ -897,8 +897,8 @@ app.openapi(dashboardRoute, async (c) => {
 
 	const expiringMoaConditions = [
 		isNull(moas.archivedAt),
-		sql`${moas.validUntil} > ${now}`,
-		sql`${moas.validUntil} <= ${twoWeeksFromNow}`,
+		sql`${moas.validUntil} > ${now.toISOString()}`,
+		sql`${moas.validUntil} <= ${twoWeeksFromNow.toISOString()}`,
 	];
 
 	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
