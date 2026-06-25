@@ -19,7 +19,7 @@ import {
 	projectHubQueryOptions,
 } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
-import { ProjectStatusBadge } from "./components/project-status-badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 interface ProjectHubPageProps {
 	user?: AuthUser | null;
@@ -124,7 +124,7 @@ export function ProjectHubPage({
 			header: "Status",
 			headerClassName: "w-[15%] font-medium text-[#666]",
 			cellClassName: "text-left",
-			cell: ({ row }) => <ProjectStatusBadge status={row.original.status} />,
+			cell: ({ row }) => <StatusBadge status={row.original.status} />,
 		},
 		{
 			id: "actions",

@@ -1,10 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-	ChevronLeft,
-	ChevronRight,
-	EllipsisVertical,
-	ListFilter,
-} from "lucide-react";
+import { EllipsisVertical, ListFilter } from "lucide-react";
 import * as React from "react";
 import { cn } from "#/lib/utils";
 import { MetricCard } from "@/components/custom/metric-card";
@@ -13,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import {
 	Popover,
 	PopoverContent,
@@ -20,7 +16,7 @@ import {
 } from "@/components/ui/popover";
 import { SearchInput } from "@/components/ui/search-input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { StatusBadge } from "@/features/admin/components/status-badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import type { AuthUser } from "@/lib/auth";
 import {
 	type FacultyInvolvement,
@@ -151,7 +147,7 @@ export function RetFacultyDirectoryPage({
 			headerClassName:
 				"w-[150px] px-4 py-2 text-[14px] font-medium text-[#666]",
 			cellClassName: "px-4 py-3",
-			cell: ({ row }) => <StatusBadge isActive={row.original.isActive} />,
+			cell: ({ row }) => <StatusBadge status={row.original.isActive ? "Active" : "Deactivated"} variant="outline" />,
 		},
 		{
 			id: "actions",
@@ -421,64 +417,14 @@ export function RetFacultyDirectoryPage({
 				</div>
 
 				{/* Pagination Section */}
-				<div className="flex items-center justify-between">
-					<p className="text-[12px] text-[#666]">
-						Showing <span className="font-bold">{filteredItems.length}</span> of{" "}
-						<span className="font-bold">{total.toLocaleString()}</span> results
-					</p>
-
-					{totalPages > 1 && (
-						<div className="flex items-center gap-1">
-							<Button
-								variant="ghost"
-								size="sm"
-								className="gap-1 text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
-								onClick={() => onPageChange(page - 1)}
-								disabled={page <= 1}
-							>
-								<ChevronLeft className="size-4" />
-								<span>Previous</span>
-							</Button>
-
-							{[...Array(totalPages)].map((_, i) => {
-								const p = i + 1;
-								if (
-									p === 1 ||
-									p === totalPages ||
-									(p >= page - 1 && p <= page + 1)
-								) {
-									return (
-										<Button
-											key={p}
-											variant={page === p ? "outline" : "ghost"}
-											size="icon"
-											onClick={() => onPageChange(p)}
-											className={
-												page === p
-													? "size-9 border-[#e5e5e5] bg-white text-[14px] font-medium text-[#0a0a0a] shadow-sm"
-													: "size-9 text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
-											}
-										>
-											{p}
-										</Button>
-									);
-								}
-								return null;
-							})}
-
-							<Button
-								variant="ghost"
-								size="sm"
-								className="gap-1 text-[14px] font-medium text-[#0a0a0a] hover:bg-transparent"
-								onClick={() => onPageChange(page + 1)}
-								disabled={page >= totalPages}
-							>
-								<span>Next</span>
-								<ChevronRight className="size-4" />
-							</Button>
-						</div>
-					)}
-				</div>
+				<PaginationBar
+					page={page}
+					totalPages={totalPages}
+					onPageChange={onPageChange}
+					total={total}
+					limit={limit}
+					isLoading={isLoading}
+				/>
 			</div>
 		</div>
 	);

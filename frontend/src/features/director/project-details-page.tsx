@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { projectDetailsQueryOptions } from "@/lib/dashboard.functions";
-import { ProjectStatusBadge } from "./components/project-status-badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 interface ProjectDetailsPageProps {
 	proposalId: string;
@@ -523,7 +523,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 				<div className="flex flex-col gap-2">
 					<h1 className="flex flex-wrap items-center gap-3 text-[22px] font-semibold text-[#11215a]">
 						<span>{data.title}</span>
-						<ProjectStatusBadge status={data.status} />
+						<StatusBadge status={data.status} />
 						<span className="text-[12px] font-normal text-[#666]">
 							Version {data.version}
 						</span>

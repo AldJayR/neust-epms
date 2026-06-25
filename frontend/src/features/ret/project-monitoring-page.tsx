@@ -15,7 +15,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProjectStatusBadge } from "@/features/director/components/project-status-badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import type { AuthUser } from "@/lib/auth";
 import {
 	directorDashboardQueryOptions,
@@ -131,7 +131,7 @@ export function ProjectMonitoringPage({
 			header: "Status",
 			headerClassName: "w-[15%] font-medium text-[#666]",
 			cellClassName: "text-left",
-			cell: ({ row }) => <ProjectStatusBadge status={row.original.status} />,
+			cell: ({ row }) => <StatusBadge status={row.original.status} />,
 		},
 		{
 			id: "actions",

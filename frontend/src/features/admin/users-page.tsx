@@ -24,7 +24,7 @@ import {
 } from "@/lib/admin.functions";
 import { formatAcademicRank } from "@/lib/utils";
 import { BulkApproveDialog } from "./bulk-approve-dialog";
-import { StatusBadge } from "./components/status-badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 interface UsersPageProps {
 	page: number;
@@ -147,7 +147,7 @@ export function UsersPage({
 			headerClassName: "text-center font-medium text-[#666]",
 			cell: ({ row }) => (
 				<div className="flex justify-center">
-					<StatusBadge isActive={row.original.isActive} />
+					<StatusBadge status={row.original.isActive ? "Active" : "Deactivated"} variant="outline" />
 				</div>
 			),
 		},

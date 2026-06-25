@@ -31,7 +31,7 @@ import {
 } from "@/lib/ret.functions";
 import { formatAcademicRank } from "@/lib/utils";
 import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
-import { ProposalStatusBadge } from "./components/proposal-status-badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 interface RETDashboardPageProps {
 	user: AuthUser;
@@ -163,7 +163,7 @@ export function RETDashboardPage({
 			cellClassName: "px-4 py-3 align-middle",
 			cell: ({ row }) => {
 				const proposal = row.original;
-				return <ProposalStatusBadge status={proposal.status} />;
+				return <StatusBadge status={proposal.status} variant="outline" />;
 			},
 			skeleton: <Skeleton className="h-6 w-24 rounded-full" />,
 		},
