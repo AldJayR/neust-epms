@@ -24,19 +24,16 @@ export function CommentHighlights({ comments }: CommentHighlightsProps) {
 						<TooltipTrigger
 							render={
 								<button
-									type="button"
-									aria-label={`Comment by ${comment.user.name}: "${comment.content}"`}
-									style={{
-										position: "absolute",
-										left: `${annot.x}%`,
-										top: `${annot.y}%`,
-										width: `${annot.width}%`,
-										height: `${annot.height}%`,
-										zIndex: 20,
-										pointerEvents: "auto",
-									}}
-									className="bg-yellow-400/25 border border-yellow-500/20 hover:bg-yellow-400/40 focus-visible:bg-yellow-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary transition-colors cursor-pointer"
-								/>
+								type="button"
+								aria-label={`Comment by ${comment.user.name}: "${comment.content}"`}
+								className="absolute z-20 pointer-events-auto bg-yellow-400/25 border border-yellow-500/20 hover:bg-yellow-400/40 focus-visible:bg-yellow-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary transition-colors cursor-pointer"
+								style={{
+									left: `${annot.x}%`,
+									top: `${annot.y}%`,
+									width: `${annot.width}%`,
+									height: `${annot.height}%`,
+								}}
+							/>
 							}
 						/>
 						<TooltipContent className="bg-zinc-950 text-white border-zinc-800 p-3 max-w-[280px] shadow-lg rounded-[8px] z-50">
