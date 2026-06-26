@@ -3,8 +3,10 @@ import { CheckCircle2, ListFilter, Loader2, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -151,10 +153,7 @@ export function UsersPage({
 				</div>
 			),
 		},
-		{
-			id: "actions",
-			header: "",
-			headerClassName: "w-[50px]",
+		createActionsColumn({
 			cell: ({ row }) => {
 				const user = row.original;
 				return (
@@ -191,7 +190,7 @@ export function UsersPage({
 					</div>
 				);
 			},
-		},
+		}),
 	];
 
 	return (
@@ -201,13 +200,13 @@ export function UsersPage({
 					User Management
 				</h1>
 				<BulkApproveDialog>
-					<Button
-						className="bg-brand-primary hover:bg-brand-primary-hover text-white rounded-[10px] shadow-[0px_1px_2px_0px_var(--shadow-card)]"
+					<BrandButton
+						className="hover:bg-brand-primary-hover shadow-[0px_1px_2px_0px_var(--shadow-card)]"
 						disabled={updateStatusMutation.isPending}
 					>
 						<CheckCircle2 className="mr-2 size-4" />
 						Bulk approve
-					</Button>
+					</BrandButton>
 				</BulkApproveDialog>
 			</div>
 

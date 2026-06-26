@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { Download, ListFilter, MoreVertical } from "lucide-react";
+import { Download, ListFilter } from "lucide-react";
 import { useState } from "react";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Badge } from "@/components/ui/badge";
+import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -121,22 +123,7 @@ export function ReportsPage() {
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => formatDate(row.original.submitted),
 		},
-		{
-			id: "actions",
-			header: "",
-			headerClassName: "w-[50px]",
-			cellClassName: "px-4 py-3 text-right",
-			cell: () => (
-				<Button
-					variant="ghost"
-					size="icon"
-					className="size-8 text-muted-foreground"
-					aria-label="More actions for report"
-				>
-					<MoreVertical className="size-4" />
-				</Button>
-			),
-		},
+		createActionsColumn(),
 	];
 
 	return (
@@ -144,10 +131,10 @@ export function ReportsPage() {
 			{/* Header Section */}
 			<div className="flex items-center justify-between">
 				<h1 className="text-2xl font-semibold text-heading">Reports</h1>
-				<Button className="bg-brand-primary text-white hover:bg-brand-primary/90 rounded-[10px] gap-2">
+				<BrandButton className="gap-2">
 					<Download className="size-4" />
 					Export Reports
-				</Button>
+				</BrandButton>
 			</div>
 
 			{/* Metric Cards Grid */}

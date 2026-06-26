@@ -5,8 +5,10 @@ import { EllipsisVertical, Filter, Plus } from "lucide-react";
 import * as React from "react";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -167,11 +169,7 @@ export function RETDashboardPage({
 			},
 			skeleton: <Skeleton className="h-6 w-24 rounded-full" />,
 		},
-		{
-			id: "actions",
-			header: "",
-			headerClassName: "w-[50px]",
-			cellClassName: "px-4 py-3 align-middle",
+		createActionsColumn({
 			cell: ({ row }) => {
 				const proposal = row.original;
 				return (
@@ -214,7 +212,7 @@ export function RETDashboardPage({
 				);
 			},
 			skeleton: <Skeleton className="size-8 rounded-md ml-auto" />,
-		},
+		}),
 	];
 
 	return (
@@ -229,13 +227,13 @@ export function RETDashboardPage({
 						{user.departmentName ?? user.campusName}
 					</p>
 				</div>
-				<Button
+				<BrandButton
 					onClick={() => setIsCreateModalOpen(true)}
-					className="bg-brand-primary hover:bg-brand-primary/90 text-[#fafafa] rounded-[10px] h-9 gap-1.5 px-[10px] py-2 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
+					className="h-9 gap-1.5 px-[10px] py-2 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
 				>
 					<Plus className="size-4" />
 					<span className="font-medium">Start New Project Proposal</span>
-				</Button>
+				</BrandButton>
 			</div>
 
 			{/* Stats Cards */}

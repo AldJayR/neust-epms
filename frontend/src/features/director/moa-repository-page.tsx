@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClientOnly } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { EllipsisVertical, ListFilter, Plus } from "lucide-react";
+import { ListFilter, Plus } from "lucide-react";
 import { MetricCard } from "@/components/custom/metric-card";
+import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -106,22 +108,7 @@ export function MoaRepositoryPage({
 				</div>
 			),
 		},
-		{
-			id: "actions",
-			header: "",
-			headerClassName: "w-[50px]",
-			cellClassName: "px-4 py-3 text-right",
-			cell: () => (
-				<Button
-					variant="ghost"
-					size="icon"
-					className="size-8"
-					aria-label="More actions for MOA"
-				>
-					<EllipsisVertical className="size-4 text-muted-foreground" />
-				</Button>
-			),
-		},
+		createActionsColumn(),
 	];
 
 	return (
@@ -131,10 +118,10 @@ export function MoaRepositoryPage({
 					Memoranda of Agreements
 				</h1>
 				{isAdminOrDirector(user) ? (
-					<Button className="flex items-center gap-1.5 rounded-[10px] bg-brand-primary px-[10px] py-2 text-[#fafafa] shadow-sm hover:bg-brand-primary-hover">
+					<BrandButton className="flex items-center gap-1.5 px-[10px] py-2 shadow-sm hover:bg-brand-primary-hover">
 						<Plus className="size-4" />
 						<span className="text-sm font-medium">Create MOA</span>
-					</Button>
+					</BrandButton>
 				) : null}
 			</div>
 

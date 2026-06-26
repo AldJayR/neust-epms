@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { EllipsisVertical, ListFilter } from "lucide-react";
+import { ListFilter } from "lucide-react";
 import * as React from "react";
 import { cn } from "#/lib/utils";
 import { MetricCard } from "@/components/custom/metric-card";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import {
 	Popover,
@@ -149,22 +150,7 @@ export function RetFacultyDirectoryPage({
 			cellClassName: "px-4 py-3",
 			cell: ({ row }) => <StatusBadge status={row.original.isActive ? "Active" : "Deactivated"} variant="outline" />,
 		},
-		{
-			id: "actions",
-			header: "",
-			headerClassName: "w-[50px]",
-			cellClassName: "px-4 py-3 text-right",
-			cell: () => (
-				<Button
-					variant="ghost"
-					size="icon"
-					className="size-8 text-muted-foreground"
-					aria-label="More actions for faculty member"
-				>
-					<EllipsisVertical className="size-4" />
-				</Button>
-			),
-		},
+		createActionsColumn(),
 	];
 
 	return (

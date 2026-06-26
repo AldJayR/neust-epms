@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { format } from "date-fns";
-import { Calendar, Download, EllipsisVertical, Filter } from "lucide-react";
+import { Calendar, Download, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { BrandButton } from "@/components/custom/brand-button";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -297,22 +298,7 @@ export function FacultyDirectoryPage({
 				"px-4 py-3 text-right text-sm font-medium text-foreground",
 			cell: ({ row }) => row.original.totalInvolvement,
 		},
-		{
-			id: "actions",
-			header: "",
-			headerClassName: "w-[50px]",
-			cellClassName: "px-4 py-3 text-right",
-			cell: () => (
-				<Button
-					variant="ghost"
-					size="icon"
-					className="size-8 text-muted-foreground"
-					aria-label="More actions for faculty member"
-				>
-					<EllipsisVertical className="size-4" />
-				</Button>
-			),
-		},
+		createActionsColumn(),
 	];
 
 	return (
@@ -331,10 +317,10 @@ export function FacultyDirectoryPage({
 					<DropdownMenu>
 						<DropdownMenuTrigger
 							render={
-								<Button className="flex items-center gap-1.5 rounded-[10px] bg-brand-primary px-4 py-2 text-[#fafafa] shadow-sm hover:bg-brand-primary-hover cursor-pointer">
+								<BrandButton className="flex items-center gap-1.5 px-4 py-2 shadow-sm hover:bg-brand-primary-hover cursor-pointer">
 									<Download className="size-4" />
 									<span className="text-sm font-medium">Export Report</span>
-								</Button>
+								</BrandButton>
 							}
 						/>
 						<DropdownMenuContent

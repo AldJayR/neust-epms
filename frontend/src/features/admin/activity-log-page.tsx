@@ -6,15 +6,17 @@ import {
 	Download,
 	ListFilter,
 	LogIn,
-	MoreVertical,
+
 	Settings,
 	UserCircle,
 } from "lucide-react";
 import * as React from "react";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Badge } from "@/components/ui/badge";
+import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -193,35 +195,20 @@ export function ActivityLogPage({
 				);
 			},
 		},
-		{
-			id: "actions",
-			header: "",
-			headerClassName: "w-[50px] py-2.5",
-			cellClassName: "py-2.5 text-center",
-			cell: () => (
-				<Button
-					variant="ghost"
-					size="icon"
-					className="size-8"
-					aria-label="More actions for log entry"
-				>
-					<MoreVertical className="size-4" />
-				</Button>
-			),
-		},
+		createActionsColumn(),
 	];
 
 	return (
 		<div className="flex flex-col gap-8">
 			<div className="flex items-center justify-between">
 				<h1 className="text-2xl font-semibold text-heading">Activity Log</h1>
-				<Button
+				<BrandButton
 					onClick={exportToCsv}
-					className="bg-brand-primary hover:bg-brand-primary-hover text-white rounded-[10px] shadow-[0px_1px_2px_0px_var(--shadow-card)] h-9 px-3 gap-1.5"
+					className="hover:bg-brand-primary-hover shadow-[0px_1px_2px_0px_var(--shadow-card)] h-9 px-3 gap-1.5"
 				>
 					<Download className="size-4" />
 					<span>Export CSV</span>
-				</Button>
+				</BrandButton>
 			</div>
 
 			<div className="grid gap-6 md:grid-cols-4">

@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClientOnly, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { EllipsisVertical, Filter } from "lucide-react";
+import { Filter } from "lucide-react";
 import { MetricCard } from "@/components/custom/metric-card";
-import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import {
@@ -133,22 +133,7 @@ export function ProjectMonitoringPage({
 			cellClassName: "text-left",
 			cell: ({ row }) => <StatusBadge status={row.original.status} />,
 		},
-		{
-			id: "actions",
-			header: "",
-			headerClassName: "w-[5%]",
-			cellClassName: "text-right",
-			cell: () => (
-				<Button
-					variant="ghost"
-					size="icon"
-					className="size-8"
-					aria-label="More actions for project"
-				>
-					<EllipsisVertical className="size-4 text-muted-foreground" />
-				</Button>
-			),
-		},
+		createActionsColumn(),
 	];
 
 	return (
