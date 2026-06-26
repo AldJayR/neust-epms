@@ -322,7 +322,7 @@ export function FacultyDirectoryPage({
 					Faculty Directory
 				</h1>
 				<div className="flex items-center gap-4">
-					<div className="flex h-9 items-center gap-2 rounded-lg border border-border bg-white px-3 shadow-sm">
+					<div className="flex h-9 items-center gap-2 rounded-lg border border-border bg-background px-3 shadow-sm">
 						<Calendar className="size-4 text-foreground" />
 						<span className="text-sm font-medium text-foreground">
 							A.Y. 2024-2025
@@ -339,7 +339,7 @@ export function FacultyDirectoryPage({
 						/>
 						<DropdownMenuContent
 							align="end"
-							className="bg-white border border-border p-1 rounded-lg shadow-md min-w-[200px]"
+							className="bg-background border border-border p-1 rounded-lg shadow-md min-w-[200px]"
 						>
 							<DropdownMenuItem
 								className="cursor-pointer"
@@ -398,7 +398,7 @@ export function FacultyDirectoryPage({
 						onCollegeChange(val === "all" ? "" : val || "")
 					}
 				>
-					<SelectTrigger className="h-9 w-[180px] rounded-lg border border-border bg-white shadow-sm text-muted-foreground">
+					<SelectTrigger className="h-9 w-[180px] rounded-lg border border-border bg-background shadow-sm text-muted-foreground">
 						<div className="flex items-center gap-2">
 							<Filter className="size-4" />
 							<SelectValue placeholder="All Colleges" />
@@ -414,7 +414,7 @@ export function FacultyDirectoryPage({
 				</Select>
 			</div>
 
-			<div className="overflow-hidden rounded-[12px] border border-border bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+			<div className="overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 				<DataTable
 					columns={columns}
 					data={items}

@@ -109,7 +109,7 @@ function LoginPage() {
 	}
 
 	return (
-		<main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8">
+		<main className="flex min-h-dvh items-center justify-center bg-muted px-4 py-8">
 			<section className="w-full max-w-[480px] rounded-xl px-6 py-6">
 				<header className="flex flex-col gap-2">
 					<h1 className="text-base leading-6 font-semibold text-black">

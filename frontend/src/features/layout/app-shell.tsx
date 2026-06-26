@@ -11,10 +11,10 @@ export function AppShell({ children }: AppShellProps) {
 	return (
 		<SidebarProvider>
 			<AppSidebar />
-			<SidebarInset className="bg-white">
+			<SidebarInset className="bg-background">
 				<a
 					href="#main-content"
-					className="sr-only focus:not-sr-only focus:absolute focus:z-[9999] focus:bg-white focus:p-2 focus:ring-2 focus:ring-ring"
+					className="sr-only focus:not-sr-only focus:absolute focus:z-[9999] focus:bg-background focus:p-2 focus:ring-2 focus:ring-ring"
 				>
 					Skip to content
 				</a>

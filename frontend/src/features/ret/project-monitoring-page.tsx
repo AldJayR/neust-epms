@@ -194,7 +194,7 @@ export function ProjectMonitoringPage({
 							onStatusChange(val === "all" ? "" : (val ?? ""))
 						}
 					>
-						<SelectTrigger className="h-9 w-full rounded-lg border-border bg-white shadow-sm sm:w-[180px]">
+						<SelectTrigger className="h-9 w-full rounded-lg border-border bg-background shadow-sm sm:w-[180px]">
 							<div className="flex items-center gap-2">
 								<Filter className="size-4 text-muted-foreground" />
 								<SelectValue placeholder="All Statuses" />
@@ -211,8 +211,8 @@ export function ProjectMonitoringPage({
 				</div>
 			</div>
 
-			<div className="overflow-hidden rounded-[12px] border border-border bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-				<div className="border-b border-border bg-white p-2">
+			<div className="overflow-hidden rounded-[12px] border border-border bg-muted shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+				<div className="border-b border-border bg-background p-2">
 					<Tabs
 						value={myProjectsOnly ? "my" : "all"}
 						onValueChange={(val) => {
@@ -220,16 +220,16 @@ export function ProjectMonitoringPage({
 						}}
 						className="w-fit"
 					>
-						<TabsList className="bg-[#fafafa]">
+						<TabsList className="bg-muted">
 							<TabsTrigger
 								value="all"
-								className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+								className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
 							>
 								{user?.isMainCampus ? "Department Projects" : "Campus Projects"}
 							</TabsTrigger>
 							<TabsTrigger
 								value="my"
-								className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+								className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
 							>
 								My Projects
 							</TabsTrigger>
@@ -237,7 +237,7 @@ export function ProjectMonitoringPage({
 					</Tabs>
 				</div>
 
-				<div className="bg-white">
+				<div className="bg-background">
 					<DataTable
 						columns={columns}
 						data={items}

@@ -95,7 +95,7 @@ export function CommentCreationPopover({
 	return (
 		<div
 			style={popoverStyle}
-			className="bg-white border border-border rounded-xl shadow-xl p-4 w-[280px] flex flex-col gap-3 z-50"
+			className="bg-background border border-border rounded-xl shadow-xl p-4 w-[280px] flex flex-col gap-3 z-50"
 		>
 			<div className="flex flex-col gap-0.5">
 				<span className="text-[12px] font-semibold text-black">

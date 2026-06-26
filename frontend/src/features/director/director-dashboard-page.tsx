@@ -20,7 +20,7 @@ function RecentActivitiesCard({
 	activities: { title: string; description: string; time: string }[];
 }) {
 	return (
-		<div className="flex h-[370px] flex-col overflow-hidden rounded-[12px] border border-border bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+		<div className="flex h-[370px] flex-col overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
 				<h2 className="text-[14px] font-semibold leading-5 text-[#11215a]">
 					Recent Activities
@@ -78,7 +78,7 @@ function ExpiringMoasCard({
 	moas: { name: string; dueText: string }[];
 }) {
 	return (
-		<div className="flex h-[148px] flex-col overflow-hidden rounded-[12px] border border-border bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+		<div className="flex h-[148px] flex-col overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
 				<h2 className="text-[14px] font-semibold leading-5 text-[#11215a]">
 					Expiring MOAs
@@ -161,7 +161,7 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 				<div className="grid gap-8 lg:grid-cols-[minmax(0,630px)_minmax(0,1fr)]">
 					<React.Suspense
 						fallback={
-							<div className="h-[370px] animate-pulse rounded-[12px] border border-border bg-white" />
+							<div className="h-[370px] animate-pulse rounded-[12px] border border-border bg-background" />
 						}
 					>
 						<ProjectsChartCard

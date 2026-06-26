@@ -269,7 +269,7 @@ function ProposalDetailsTab({
 			)}
 
 			<Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-				<DialogContent className="sm:max-w-[425px] rounded-[12px] p-6 bg-white gap-4">
+				<DialogContent className="sm:max-w-[425px] rounded-[12px] p-6 bg-background gap-4">
 					<DialogHeader className="pb-2">
 						<DialogTitle className="text-[16px] font-semibold text-[#11215a]">
 							Endorse Proposal
@@ -392,7 +392,7 @@ function CommentsTab({
 			</div>
 
 			{/* Bottom panel */}
-			<div className="border-t border-border p-5 bg-white space-y-4">
+			<div className="border-t border-border p-5 bg-background space-y-4">
 				<div className="flex justify-between items-center text-[13px] text-muted-foreground">
 					<span>Attached Documents</span>
 					<span className="font-semibold text-black">
@@ -556,7 +556,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 					{data?.status && (
 						<Badge
 							variant="outline"
-							className="bg-white border-border text-muted-foreground font-medium rounded-lg px-2.5 py-0.5 text-[12px]"
+							className="bg-background border-border text-muted-foreground font-medium rounded-lg px-2.5 py-0.5 text-[12px]"
 						>
 							{data.status}
 						</Badge>
@@ -589,7 +589,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 					<div
 						className={`${isTheaterMode ? "lg:col-span-12 w-full" : "lg:col-span-8"} flex flex-col gap-4`}
 					>
-						<div className="bg-[#f9f9f9] border border-border rounded-[12px] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] overflow-hidden h-[844px]">
+						<div className="bg-muted border border-border rounded-[12px] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] overflow-hidden h-[844px]">
 							{currentDoc ? (
 								<PdfViewer
 									ref={pdfViewerRef}

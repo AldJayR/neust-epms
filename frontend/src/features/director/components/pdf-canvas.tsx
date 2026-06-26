@@ -354,7 +354,7 @@ export function PdfPageCanvas({
 
 	return (
 		<div
-			className="relative flex items-center justify-center bg-white rounded shadow-sm overflow-hidden"
+			className="relative flex items-center justify-center bg-background rounded shadow-sm overflow-hidden"
 			style={{
 				width: width * scale,
 				height: width * aspectRatio * scale,

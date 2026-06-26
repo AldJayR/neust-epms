@@ -116,7 +116,7 @@ export function StatusBadge({
 		<Badge
 			variant={variant}
 			className={cn(
-				"flex w-fit items-center gap-1 border-border px-2 py-0.5 text-xs font-medium text-muted-foreground bg-white",
+				"flex w-fit items-center gap-1 border-border px-2 py-0.5 text-xs font-medium text-muted-foreground bg-background",
 				variant === "outline" && "h-[22px] rounded-lg px-1.5 py-0.5",
 				className,
 			)}

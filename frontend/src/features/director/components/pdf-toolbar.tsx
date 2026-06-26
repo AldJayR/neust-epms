@@ -49,7 +49,7 @@ export function PdfToolbar({
 		<>
 			{/* Floating Tool Mode Toolbar */}
 			{showCommentTools && (
-				<div className="absolute top-4 left-4 z-40 bg-white/95 border border-border px-2 py-1 rounded-full flex items-center gap-1 shadow-md backdrop-blur-md select-none">
+				<div className="absolute top-4 left-4 z-40 bg-background/95 border border-border px-2 py-1 rounded-full flex items-center gap-1 shadow-md backdrop-blur-md select-none">
 					<Tooltip>
 						<TooltipTrigger
 							render={
@@ -130,7 +130,7 @@ export function PdfToolbar({
 			</div>
 
 			{/* Bottom Zoom Controls */}
-			<div className="flex items-center justify-center border-t border-border bg-white px-4 py-2 order-10">
+			<div className="flex items-center justify-center border-t border-border bg-background px-4 py-2 order-10">
 				<div className="flex items-center gap-1.5">
 					<Tooltip>
 						<TooltipTrigger

@@ -118,7 +118,7 @@ function DashboardPage() {
 					{[1, 2, 3].map((i) => (
 						<div
 							key={i}
-							className="h-[104px] rounded-[12px] border border-[#ebebeb] bg-white p-4 flex flex-col gap-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]"
+							className="h-[104px] rounded-[12px] border border-[#ebebeb] bg-background p-4 flex flex-col gap-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]"
 						>
 							<Skeleton className="h-4 w-1/3 rounded-md" />
 							<Skeleton className="h-9 w-1/4 rounded-md" />
@@ -133,7 +133,7 @@ function DashboardPage() {
 				</div>
 
 				{/* Proposals Table Skeleton */}
-				<div className="rounded-[12px] border border-[#ebebeb] bg-white overflow-hidden min-h-[400px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] p-4 flex flex-col gap-4">
+				<div className="rounded-[12px] border border-[#ebebeb] bg-background overflow-hidden min-h-[400px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] p-4 flex flex-col gap-4">
 					<div className="flex justify-between border-b pb-4">
 						<Skeleton className="h-4 w-1/4 rounded-md" />
 						<Skeleton className="h-4 w-1/5 rounded-md" />

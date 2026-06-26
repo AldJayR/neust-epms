@@ -201,7 +201,7 @@ export function ReportsPage() {
 			</div>
 
 			{/* Data Table */}
-			<div className="overflow-hidden rounded-[12px] border border-border bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+			<div className="overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 				<DataTable
 					columns={columns}
 					data={filteredReports}

@@ -277,7 +277,7 @@ export function ActivityLogPage({
 				</DropdownMenu>
 			</div>
 
-			<div className="border border-border rounded-[12px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden bg-white">
+			<div className="border border-border rounded-[12px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden bg-background">
 				<DataTable
 					columns={columns}
 					data={logs}

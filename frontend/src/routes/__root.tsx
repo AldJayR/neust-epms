@@ -98,7 +98,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
 			disconnectToastId = toast.custom(
 				() => (
-					<div className="relative flex items-center gap-4 border border-[#ebebeb] bg-white rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
+					<div className="relative flex items-center gap-4 border border-[#ebebeb] bg-background rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
 						<div className="flex size-9 items-center justify-center rounded-full bg-red-50 text-red-500 shrink-0">
 							<WifiOff className="size-5" />
 						</div>
@@ -127,7 +127,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				}
 				toast.custom(
 					() => (
-						<div className="relative flex items-center gap-4 border border-[#ebebeb] bg-white rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
+						<div className="relative flex items-center gap-4 border border-[#ebebeb] bg-background rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
 							<div className="flex size-9 items-center justify-center rounded-full bg-red-50 text-red-500 shrink-0">
 								<WifiOff className="size-5" />
 							</div>
@@ -163,7 +163,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			}
 			toast.custom(
 				() => (
-					<div className="relative flex items-center gap-4 border border-[#ebebeb] bg-white rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
+					<div className="relative flex items-center gap-4 border border-[#ebebeb] bg-background rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
 						<div className="flex size-9 items-center justify-center rounded-full bg-green-50 text-green-600 shrink-0">
 							<Wifi className="size-5" />
 						</div>

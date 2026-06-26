@@ -289,7 +289,7 @@ export function CreateProposalModal({
 					)}
 					</div>
 
-					<DialogFooter className="p-6 border-t border-border bg-[#fcfcfc]">
+					<DialogFooter className="p-6 border-t border-border bg-card">
 						<div className="flex items-center justify-between w-full">
 							{step > 1 ? (
 								<Button type="button" variant="outline" onClick={prevStep}>

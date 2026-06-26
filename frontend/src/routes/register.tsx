@@ -68,7 +68,7 @@ function RegisterRoute() {
 
 	return (
 		<LazyMotion features={domMax}>
-			<main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8">
+			<main className="flex min-h-dvh items-center justify-center bg-muted px-4 py-8">
 				<AnimatePresence mode="wait" initial={false}>
 					<m.div
 						key={pathname}

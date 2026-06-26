@@ -126,7 +126,7 @@ export function RetFacultyDirectoryPage({
 				return (
 					<Badge
 						variant="outline"
-						className="rounded-lg border-border px-2 py-0.5 font-medium text-muted-foreground bg-white"
+						className="rounded-lg border-border px-2 py-0.5 font-medium text-muted-foreground bg-background"
 					>
 						{formatAcademicRank(faculty.academicRank)}
 					</Badge>
@@ -215,7 +215,7 @@ export function RetFacultyDirectoryPage({
 								variant="outline"
 								size="icon"
 								className={cn(
-									"size-9 rounded-lg border-border bg-white shadow-sm relative transition-all duration-200",
+									"size-9 rounded-lg border-border bg-background shadow-sm relative transition-all duration-200",
 									activeFilterCount > 0 &&
 										"border-brand-primary ring-1 ring-brand-primary",
 								)}
@@ -230,7 +230,7 @@ export function RetFacultyDirectoryPage({
 					/>
 					<PopoverContent
 						align="end"
-						className="w-[320px] p-4 bg-white border border-border rounded-xl shadow-lg gap-4 flex flex-col z-50"
+						className="w-[320px] p-4 bg-background border border-border rounded-xl shadow-lg gap-4 flex flex-col z-50"
 					>
 						<div className="flex flex-col gap-1">
 							<h4 className="font-semibold text-sm text-[#11215a]">
@@ -250,7 +250,7 @@ export function RetFacultyDirectoryPage({
 								<Button
 									variant="secondary"
 									size="sm"
-									className="h-7 text-xs bg-[#f4f7fc] text-brand-primary border border-brand-primary/20 hover:bg-[#eaf1fd] rounded-md px-2.5 font-medium cursor-pointer"
+									className="h-7 text-xs bg-primary/5 text-brand-primary border border-brand-primary/20 hover:bg-[#eaf1fd] rounded-md px-2.5 font-medium cursor-pointer"
 									onClick={() => {
 										setSelectedLoads(["0"]);
 										setSelectedRanks([]);
@@ -375,9 +375,9 @@ export function RetFacultyDirectoryPage({
 
 			{/* Content Section with Tabs and Table */}
 			<div className="flex flex-col gap-6">
-				<div className="overflow-hidden rounded-[12px] border border-border bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+				<div className="overflow-hidden rounded-[12px] border border-border bg-muted shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 					{/* Tabs Header */}
-					<div className="border-b border-border bg-white p-2">
+					<div className="border-b border-border bg-background p-2">
 						<Tabs
 							value={activeTab}
 							onValueChange={(val) => {
@@ -386,16 +386,16 @@ export function RetFacultyDirectoryPage({
 							}}
 							className="w-fit"
 						>
-							<TabsList className="bg-[#fafafa]">
+							<TabsList className="bg-muted">
 								<TabsTrigger
 									value="department"
-									className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+									className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
 								>
 									Department Directory
 								</TabsTrigger>
 								<TabsTrigger
 									value="pending"
-									className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+									className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
 								>
 									Pending Verifications
 								</TabsTrigger>
@@ -404,7 +404,7 @@ export function RetFacultyDirectoryPage({
 					</div>
 
 					{/* Table */}
-					<div className="bg-white">
+					<div className="bg-background">
 						<DataTable
 							columns={columns}
 							data={filteredItems}

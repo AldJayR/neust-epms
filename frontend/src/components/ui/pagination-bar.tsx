@@ -73,7 +73,7 @@ export function PaginationBar({
 										onClick={() => onPageChange(p)}
 										className={
 											page === p
-												? "border-border bg-white text-foreground shadow-sm"
+												? "border-border bg-background text-foreground shadow-sm"
 												: "border-transparent text-foreground hover:bg-transparent"
 										}
 									>

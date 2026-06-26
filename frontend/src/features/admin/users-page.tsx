@@ -263,9 +263,9 @@ export function UsersPage({
 				</DropdownMenu>
 			</div>
 
-			<div className="rounded-[12px] border border-border bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden min-h-[400px] relative">
+			<div className="rounded-[12px] border border-border bg-muted shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden min-h-[400px] relative">
 				{isUsersFetching && (
-					<div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center backdrop-blur-[1px]">
+					<div className="absolute inset-0 bg-background/50 z-10 flex items-center justify-center backdrop-blur-[1px]">
 						<Loader2 className="h-8 w-8 animate-spin text-primary" />
 					</div>
 				)}

@@ -59,7 +59,7 @@ function DataTable<TData, TValue>({
 	return (
 		<Table className={className} aria-label={ariaLabel}>
 			{showHeader && (
-				<TableHeader className="bg-white">
+				<TableHeader className="bg-background">
 					{table.getHeaderGroups().map((headerGroup) => (
 						<TableRow
 							key={headerGroup.id}
@@ -93,7 +93,7 @@ function DataTable<TData, TValue>({
 					Array.from({ length: 5 }).map((_, rowIndex) => (
 						<TableRow
 							key={`skeleton-row-${rowIndex}`}
-							className="bg-white border-b border-border last:border-0 hover:bg-transparent"
+							className="bg-background border-b border-border last:border-0 hover:bg-transparent"
 						>
 							{columns.map((column, colIndex) => (
 								<TableCell
@@ -137,7 +137,7 @@ function DataTable<TData, TValue>({
 							key={row.id}
 							data-state={row.getIsSelected() && "selected"}
 							className={cn(
-								"bg-white border-b border-border hover:bg-[#fcfcfc]",
+								"bg-background border-b border-border hover:bg-card",
 								onRowClick && "cursor-pointer",
 							)}
 							onClick={

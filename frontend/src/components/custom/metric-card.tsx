@@ -53,7 +53,7 @@ export function MetricCard({
 	return (
 		<div
 			className={cn(
-				"flex flex-col gap-4 overflow-hidden rounded-[12px] border border-border bg-white p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]",
+				"flex flex-col gap-4 overflow-hidden rounded-[12px] border border-border bg-background p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]",
 				isFacultyCustom ? "h-[116px]" : "h-[104px]",
 				className,
 			)}
@@ -104,7 +104,7 @@ export function MetricCard({
 						{value}
 					</p>
 					{trend && (
-						<div className="flex h-[22px] items-center gap-1 rounded-lg border border-border bg-white px-1.5 py-0.5 shadow-sm">
+						<div className="flex h-[22px] items-center gap-1 rounded-lg border border-border bg-background px-1.5 py-0.5 shadow-sm">
 							<TrendingUp className="size-3 text-[#22c55e]" />
 							<span className="text-[12px] font-medium text-[#22c55e]">
 								{trend}
