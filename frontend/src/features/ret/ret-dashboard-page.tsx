@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { EllipsisVertical, Filter, Plus } from "lucide-react";
+import { EllipsisVertical, Plus } from "lucide-react";
 import * as React from "react";
+import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageCard } from "@/components/custom/page-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,13 +19,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AuthUser } from "@/lib/auth";
 import {
@@ -87,8 +81,6 @@ export function RETDashboardPage({
 	const proposals = proposalsData?.items ?? [];
 	const total = proposalsData?.total ?? 0;
 	const isLoading = isProposalsLoading || isStatsLoading;
-	const showTableHeader =
-		proposals.length > 0 || (search ?? "").trim().length > 0;
 
 	const columns: DataTableColumnDef<ProposalItem>[] = [
 		{
@@ -259,7 +251,7 @@ export function RETDashboardPage({
 					className="max-w-[352px]"
 				/>
 				<div className="flex items-center gap-2">
-					<Select
+					<DataTableFilter
 						value={statusFilter}
 						onValueChange={(v) => {
 							if (v) {
@@ -267,31 +259,27 @@ export function RETDashboardPage({
 								onPageChange(1);
 							}
 						}}
-					>
-						<SelectTrigger className="h-9 w-[180px] rounded-lg border-border bg-background text-muted-foreground shadow-[0px_1px_1px_0px_var(--shadow-card)]">
-							<Filter className="mr-2 size-4 text-muted-foreground" />
-							<SelectValue placeholder="All Statuses" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">All Statuses</SelectItem>
-							<SelectItem value="submitted">Pending</SelectItem>
-							<SelectItem value="endorsed">For Endorsement</SelectItem>
-							<SelectItem value="approved">Approved</SelectItem>
-						</SelectContent>
-					</Select>
+						placeholder="All Statuses"
+						options={[
+							{ value: "all", label: "All Statuses" },
+							{ value: "submitted", label: "Pending" },
+							{ value: "endorsed", label: "For Endorsement" },
+							{ value: "approved", label: "Approved" },
+						]}
+					/>
 				</div>
 			</div>
 
 			{/* Proposals Table */}
 			<PageCard className="min-h-[400px]">
-				<DataTable
-					columns={columns}
-					data={proposals}
-					isLoading={isProposalsLoading}
-					emptyMessage="No proposals found."
-					ariaLabel="Proposals table"
-					showHeader={showTableHeader}
-				/>
+			<DataTable
+				columns={columns}
+				data={proposals}
+				activeFilters={{ search, statusFilter }}
+				isLoading={isProposalsLoading}
+				emptyMessage="No proposals found."
+				ariaLabel="Proposals table"
+			/>
 			</PageCard>
 
 			<PaginationBar

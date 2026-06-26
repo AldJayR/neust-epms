@@ -58,10 +58,6 @@ export function MoaRepositoryPage({
 		activePartnerships: 0,
 	};
 	const totalPages = Math.ceil(total / limit);
-	const showTableHeader =
-		items.length > 0 ||
-		(search ?? "").trim().length > 0 ||
-		(status ?? "").trim().length > 0;
 
 	const columns: DataTableColumnDef<MoaItem>[] = [
 		{
@@ -187,14 +183,14 @@ export function MoaRepositoryPage({
 
 			<PageCard className="bg-muted">
 				<div className="bg-background">
-					<DataTable
-						columns={columns}
-						data={items}
-						isLoading={isLoading}
-						emptyMessage="No MOAs found."
-						ariaLabel="Memoranda of Agreements"
-						showHeader={showTableHeader}
-					/>
+				<DataTable
+					columns={columns}
+					data={items}
+					activeFilters={{ search }}
+					isLoading={isLoading}
+					emptyMessage="No MOAs found."
+					ariaLabel="Memoranda of Agreements"
+				/>
 				</div>
 			</PageCard>
 

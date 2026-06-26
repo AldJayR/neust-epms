@@ -65,9 +65,6 @@ export function ReportsPage() {
 	const isLoading = statsLoading || listLoading;
 	const totalPages = Math.max(1, Math.ceil(totalReports / limit));
 
-	const showTableHeader =
-		filteredReports.length > 0 || search.trim().length > 0;
-
 	const columns: DataTableColumnDef<ReportItem>[] = [
 		{
 			id: "project",
@@ -190,15 +187,15 @@ export function ReportsPage() {
 
 			{/* Data Table */}
 			<PageCard>
-				<DataTable
-					columns={columns}
-					data={filteredReports}
-					showHeader={showTableHeader}
-					isLoading={isLoading}
-					error={error ? "Failed to load reports." : null}
-					emptyMessage="No reports found."
-					ariaLabel="Reports"
-				/>
+			<DataTable
+				columns={columns}
+				data={filteredReports}
+				activeFilters={{ search }}
+				isLoading={isLoading}
+				error={error ? "Failed to load reports." : null}
+				emptyMessage="No reports found."
+				ariaLabel="Reports"
+			/>
 			</PageCard>
 
 			<PaginationBar

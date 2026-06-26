@@ -97,9 +97,7 @@ export function UsersPage({
 
 	const isLoading = isUsersLoading || isStatsLoading;
 	const users = usersData?.users ?? [];
-	const hasUsers = users.length > 0;
 	const hasSearch = !!search?.trim();
-	const showTableHeader = hasUsers || hasSearch;
 
 	const columns: DataTableColumnDef<UserResponse>[] = [
 		{
@@ -272,9 +270,9 @@ export function UsersPage({
 				<DataTable
 					columns={columns}
 					data={users}
+					activeFilters={{ search }}
 					isLoading={isLoading}
 					ariaLabel="User management"
-					showHeader={showTableHeader}
 					emptyMessage={
 						hasSearch
 							? "Try adjusting your search term to find matching accounts."

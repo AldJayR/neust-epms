@@ -1,20 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClientOnly, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { Filter } from "lucide-react";
+import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageCard } from "@/components/custom/page-card";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { AuthUser } from "@/lib/auth";
@@ -66,10 +59,6 @@ export function ProjectMonitoringPage({
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
 	const totalPages = Math.ceil(total / limit);
-	const showTableHeader =
-		items.length > 0 ||
-		(search ?? "").trim().length > 0 ||
-		(status ?? "").trim().length > 0;
 
 	const columns: DataTableColumnDef<HubProject>[] = [
 		{
@@ -174,26 +163,20 @@ export function ProjectMonitoringPage({
 					className="max-w-[352px]"
 				/>
 				<div className="flex w-full items-center gap-4 sm:w-auto">
-					<Select
+					<DataTableFilter
 						value={status || "all"}
 						onValueChange={(val: string | null) =>
 							onStatusChange(val === "all" ? "" : (val ?? ""))
 						}
-					>
-						<SelectTrigger className="h-9 w-full rounded-lg border-border bg-background shadow-sm sm:w-[180px]">
-							<div className="flex items-center gap-2">
-								<Filter className="size-4 text-muted-foreground" />
-								<SelectValue placeholder="All Statuses" />
-							</div>
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">All Statuses</SelectItem>
-							<SelectItem value="Approved">Approved</SelectItem>
-							<SelectItem value="Ongoing">Ongoing</SelectItem>
-							<SelectItem value="Pending Closure">Pending Closure</SelectItem>
-							<SelectItem value="Overdue">Overdue</SelectItem>
-						</SelectContent>
-					</Select>
+						placeholder="All Statuses"
+						options={[
+							{ value: "all", label: "All Statuses" },
+							{ value: "Approved", label: "Approved" },
+							{ value: "Ongoing", label: "Ongoing" },
+							{ value: "Pending Closure", label: "Pending Closure" },
+							{ value: "Overdue", label: "Overdue" },
+						]}
+					/>
 				</div>
 			</div>
 
@@ -224,15 +207,15 @@ export function ProjectMonitoringPage({
 				</div>
 
 				<div className="bg-background">
-					<DataTable
-						columns={columns}
-						data={items}
-						showHeader={showTableHeader}
-						isLoading={isLoading}
-						emptyMessage="No projects found."
-						ariaLabel="Projects"
-						onRowClick={(project) => onProjectClick?.(project.id)}
-					/>
+				<DataTable
+					columns={columns}
+					data={items}
+					activeFilters={{ search, status }}
+					isLoading={isLoading}
+					emptyMessage="No projects found."
+					ariaLabel="Projects"
+					onRowClick={(project) => onProjectClick?.(project.id)}
+				/>
 				</div>
 			</PageCard>
 

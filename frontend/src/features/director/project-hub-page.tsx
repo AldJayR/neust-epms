@@ -1,18 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClientOnly, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { Filter } from "lucide-react";
+import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import type { AuthUser } from "@/lib/auth";
 import {
 	type HubProject,
@@ -54,11 +47,6 @@ export function ProjectHubPage({
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
 	const totalPages = Math.ceil(total / limit);
-	const showTableHeader =
-		items.length > 0 ||
-		(search ?? "").trim().length > 0 ||
-		(college ?? "").trim().length > 0 ||
-		(status ?? "").trim().length > 0;
 
 	const columns: DataTableColumnDef<HubProject>[] = [
 		{
@@ -146,60 +134,47 @@ export function ProjectHubPage({
 					className="max-w-[352px]"
 				/>
 				<div className="flex w-full items-center gap-4 sm:w-auto">
-					<Select
+					<DataTableFilter
 						value={college || "all"}
 						onValueChange={(val: string | null) =>
 							onCollegeChange(val === "all" ? "" : (val ?? ""))
 						}
-					>
-						<SelectTrigger className="h-9 w-full rounded-lg border-border bg-background shadow-sm sm:w-[180px]">
-							<div className="flex items-center gap-2">
-								<Filter className="size-4 text-muted-foreground" />
-								<SelectValue placeholder="All Colleges" />
-							</div>
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">All Colleges</SelectItem>
-							<SelectItem value="CICT">CICT</SelectItem>
-							<SelectItem value="COE">Engineering</SelectItem>
-							<SelectItem value="CAS">Arts & Sciences</SelectItem>
-						</SelectContent>
-					</Select>
-
-					<Select
+						placeholder="All Colleges"
+						options={[
+							{ value: "all", label: "All Colleges" },
+							{ value: "CICT", label: "CICT" },
+							{ value: "COE", label: "Engineering" },
+							{ value: "CAS", label: "Arts & Sciences" },
+						]}
+					/>
+					<DataTableFilter
 						value={status || "all"}
 						onValueChange={(val: string | null) =>
 							onStatusChange(val === "all" ? "" : (val ?? ""))
 						}
-					>
-						<SelectTrigger className="h-9 w-full rounded-lg border-border bg-background shadow-sm sm:w-[180px]">
-							<div className="flex items-center gap-2">
-								<Filter className="size-4 text-muted-foreground" />
-								<SelectValue placeholder="All Statuses" />
-							</div>
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">All Statuses</SelectItem>
-							<SelectItem value="Approved">Approved</SelectItem>
-							<SelectItem value="Pending Review">For Review</SelectItem>
-							<SelectItem value="Returned">Needs Revision</SelectItem>
-							<SelectItem value="Ongoing">Ongoing</SelectItem>
-							<SelectItem value="Completed">Completed</SelectItem>
-						</SelectContent>
-					</Select>
+						placeholder="All Statuses"
+						options={[
+							{ value: "all", label: "All Statuses" },
+							{ value: "Approved", label: "Approved" },
+							{ value: "Pending Review", label: "For Review" },
+							{ value: "Returned", label: "Needs Revision" },
+							{ value: "Ongoing", label: "Ongoing" },
+							{ value: "Completed", label: "Completed" },
+						]}
+					/>
 				</div>
 			</div>
 
 			<div className="rounded-lg border border-border bg-background shadow-sm overflow-hidden min-h-[400px]">
-				<DataTable
-					columns={columns}
-					data={items}
-					showHeader={showTableHeader}
-					isLoading={isLoading}
-					emptyMessage="No projects found."
-					ariaLabel="Projects"
-					onRowClick={(project) => onProjectClick?.(project.id)}
-				/>
+			<DataTable
+				columns={columns}
+				data={items}
+				activeFilters={{ search, college, status }}
+				isLoading={isLoading}
+				emptyMessage="No projects found."
+				ariaLabel="Projects"
+				onRowClick={(project) => onProjectClick?.(project.id)}
+			/>
 			</div>
 
 			<PaginationBar

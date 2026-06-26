@@ -99,8 +99,6 @@ export function ActivityLogPage({
 		});
 	}, [allLogs, typeFilter]);
 
-	const showTableHeader = logs.length > 0 || (search ?? "").trim().length > 0;
-
 	const stats = [
 		{
 			label: "Total actions today",
@@ -272,7 +270,7 @@ export function ActivityLogPage({
 					isLoading={isLogsLoading}
 					emptyMessage="No activities found."
 					ariaLabel="Activity log"
-					showHeader={showTableHeader}
+					activeFilters={{ search, typeFilter }}
 				/>
 			</PageCard>
 

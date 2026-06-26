@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { format } from "date-fns";
-import { Calendar, Download, Filter } from "lucide-react";
+import { Calendar, Download } from "lucide-react";
 import { toast } from "sonner";
+import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageCard } from "@/components/custom/page-card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -17,13 +18,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchInput } from "@/components/ui/search-input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import type { AuthUser } from "@/lib/auth";
 import {
 	emailReportFn,
@@ -207,10 +201,6 @@ export function FacultyDirectoryPage({
 		mostActiveCollege: { name: "...", contributors: 0 },
 	};
 	const totalPages = Math.ceil(total / limit);
-	const showTableHeader =
-		items.length > 0 ||
-		(search ?? "").trim().length > 0 ||
-		(college ?? "").trim().length > 0;
 
 	const columns: DataTableColumnDef<FacultyInvolvement>[] = [
 		{
@@ -379,37 +369,31 @@ export function FacultyDirectoryPage({
 					ariaLabel="Search faculty directory"
 					className="max-w-[352px]"
 				/>
-				<Select
+				<DataTableFilter
 					value={college || "all"}
 					onValueChange={(val) =>
 						onCollegeChange(val === "all" ? "" : val || "")
 					}
-				>
-					<SelectTrigger className="h-9 w-[180px] rounded-lg border border-border bg-background shadow-sm text-muted-foreground">
-						<div className="flex items-center gap-2">
-							<Filter className="size-4" />
-							<SelectValue placeholder="All Colleges" />
-						</div>
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="all">All Colleges</SelectItem>
-						<SelectItem value="CICT">CICT</SelectItem>
-						<SelectItem value="COE">Engineering</SelectItem>
-						<SelectItem value="CAS">Arts & Sciences</SelectItem>
-						<SelectItem value="COA">Agriculture</SelectItem>
-					</SelectContent>
-				</Select>
+					placeholder="All Colleges"
+					options={[
+						{ value: "all", label: "All Colleges" },
+						{ value: "CICT", label: "CICT" },
+						{ value: "COE", label: "Engineering" },
+						{ value: "CAS", label: "Arts & Sciences" },
+						{ value: "COA", label: "Agriculture" },
+					]}
+				/>
 			</div>
 
 			<PageCard>
-				<DataTable
-					columns={columns}
-					data={items}
-					showHeader={showTableHeader}
-					isLoading={isLoading}
-					emptyMessage="No faculty records found."
-					ariaLabel="Faculty directory"
-				/>
+			<DataTable
+				columns={columns}
+				data={items}
+				activeFilters={{ search, college }}
+				isLoading={isLoading}
+				emptyMessage="No faculty records found."
+				ariaLabel="Faculty directory"
+			/>
 			</PageCard>
 
 			<PaginationBar

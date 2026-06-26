@@ -90,8 +90,6 @@ export function RetFacultyDirectoryPage({
 	// metrics from existing API might need extension later to match the design's specific stats
 	const metrics = data?.metrics;
 	const totalPages = Math.ceil(total / limit);
-	const showTableHeader =
-		filteredItems.length > 0 || (search ?? "").trim().length > 0;
 
 	const columns: DataTableColumnDef<FacultyInvolvement>[] = [
 		{
@@ -392,14 +390,14 @@ export function RetFacultyDirectoryPage({
 
 					{/* Table */}
 					<div className="bg-background">
-						<DataTable
-							columns={columns}
-							data={filteredItems}
-							isLoading={isLoading}
-							emptyMessage="No faculty records found."
-							ariaLabel="Faculty directory"
-							showHeader={showTableHeader}
-						/>
+					<DataTable
+						columns={columns}
+						data={filteredItems}
+						activeFilters={{ search }}
+						isLoading={isLoading}
+						emptyMessage="No faculty records found."
+						ariaLabel="Faculty directory"
+					/>
 					</div>
 				</PageCard>
 

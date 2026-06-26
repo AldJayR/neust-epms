@@ -31,6 +31,8 @@ interface DataTableProps<TData, TValue> {
 	emptyMessage?: string;
 	errorMessage?: string;
 	showHeader?: boolean;
+	/** Active filters — used to auto-determine if header should show when showHeader is not provided */
+	activeFilters?: Record<string, unknown>;
 	className?: string;
 	ariaLabel?: string;
 	onRowClick?: (item: TData) => void;
@@ -43,11 +45,19 @@ function DataTable<TData, TValue>({
 	error = null,
 	emptyMessage = "No records found.",
 	errorMessage = "Something went wrong.",
-	showHeader = true,
+	showHeader: showHeaderProp,
+	activeFilters,
 	className,
 	ariaLabel,
 	onRowClick,
 }: DataTableProps<TData, TValue>) {
+	// Auto-compute showHeader if not explicitly provided
+	const showHeader = showHeaderProp ?? (
+		data.length > 0 ||
+		Object.values(activeFilters ?? {}).some(
+			(v) => v != null && String(v).trim().length > 0,
+		)
+	);
 	const table = useReactTable({
 		data,
 		columns,
