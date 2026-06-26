@@ -69,7 +69,7 @@ export function ReportsPage() {
 		{
 			id: "project",
 			header: "Project",
-			headerClassName: "px-4 py-2 text-[14px] font-medium text-muted-foreground",
+			headerClassName: "px-4 py-2 text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 font-bold text-foreground",
 			cell: ({ row }) => (
 				<div className="truncate max-w-[280px]" title={row.original.project}>
@@ -80,29 +80,29 @@ export function ReportsPage() {
 		{
 			id: "leader",
 			header: "Leader",
-			headerClassName: "px-4 py-2 text-[14px] font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-[14px] text-foreground",
+			headerClassName: "px-4 py-2 text-sm font-medium text-muted-foreground",
+			cellClassName: "px-4 py-3 text-sm text-foreground",
 			cell: ({ row }) => row.original.leader,
 		},
 		{
 			id: "department",
 			header: "Department",
-			headerClassName: "px-4 py-2 text-[14px] font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-[14px] text-foreground",
+			headerClassName: "px-4 py-2 text-sm font-medium text-muted-foreground",
+			cellClassName: "px-4 py-3 text-sm text-foreground",
 			cell: ({ row }) => row.original.department ?? "—",
 		},
 		{
 			id: "reportType",
 			header: () => <div className="text-center">Report Type</div>,
 			headerClassName:
-				"px-4 py-2 text-center text-[14px] font-medium text-muted-foreground",
+				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center",
 			cell: ({ row }) => {
 				const type = row.original.reportType;
 				return (
 					<Badge
 						variant="outline"
-						className={`rounded-md font-medium text-[12px] px-2 py-0.5 border ${
+						className={`rounded-md font-medium text-xs px-2 py-0.5 border ${
 							type === "Terminal"
 								? "bg-[#ffee9c] text-amber-700 border-[#e2a336]"
 								: "bg-[#c4e8d1] text-[#218358] border-[#2b9a66]"
@@ -117,8 +117,8 @@ export function ReportsPage() {
 			id: "submitted",
 			header: () => <div className="text-center">Submitted</div>,
 			headerClassName:
-				"px-4 py-2 text-center text-[14px] font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-center text-[14px] text-foreground",
+				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => formatDate(row.original.submitted),
 		},
 		{

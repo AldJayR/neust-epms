@@ -101,10 +101,10 @@ export function ProjectMonitoringPage({
 				const project = row.original;
 				return (
 					<div className="flex flex-col text-left">
-						<span className="text-[14px] text-foreground">
+						<span className="text-sm text-foreground">
 							{project.leaderName}
 						</span>
-						<span className="text-[12px] text-muted-foreground">
+						<span className="text-xs text-muted-foreground">
 							{project.leaderRank}
 						</span>
 					</div>
@@ -154,7 +154,7 @@ export function ProjectMonitoringPage({
 	return (
 		<div className="flex flex-col gap-8">
 			<div>
-				<h1 className="text-[24px] font-semibold leading-[35px] text-heading">
+				<h1 className="text-xl font-semibold leading-[35px] text-heading">
 					Project Monitoring
 				</h1>
 			</div>

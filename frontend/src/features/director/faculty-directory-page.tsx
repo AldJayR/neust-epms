@@ -215,16 +215,16 @@ export function FacultyDirectoryPage({
 			id: "rank",
 			header: () => <div className="text-center">Rank</div>,
 			headerClassName:
-				"w-[60px] px-4 py-2 text-center text-[14px] font-medium text-muted-foreground",
+				"w-[60px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName:
-				"px-4 py-3 text-center text-[14px] font-bold text-foreground",
+				"px-4 py-3 text-center text-sm font-bold text-foreground",
 			cell: ({ row }) => (page - 1) * limit + row.index + 1,
 		},
 		{
 			id: "name",
 			header: "Faculty Name",
 			headerClassName:
-				"w-[300px] px-4 py-2 text-[14px] font-medium text-muted-foreground",
+				"w-[300px] px-4 py-2 text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3",
 			cell: ({ row }) => {
 				const faculty = row.original;
@@ -237,10 +237,10 @@ export function FacultyDirectoryPage({
 							</AvatarFallback>
 						</Avatar>
 						<div className="flex flex-col text-left">
-							<span className="text-[14px] font-normal text-foreground">
+							<span className="text-sm font-normal text-foreground">
 								{faculty.firstName} {faculty.lastName}
 							</span>
-							<span className="text-[12px] text-muted-foreground">
+							<span className="text-xs text-muted-foreground">
 								{formatAcademicRank(faculty.academicRank)}
 							</span>
 						</div>
@@ -252,8 +252,8 @@ export function FacultyDirectoryPage({
 			id: "college",
 			header: "Department",
 			headerClassName:
-				"w-[200px] px-4 py-2 text-[14px] font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-[14px]",
+				"w-[200px] px-4 py-2 text-sm font-medium text-muted-foreground",
+			cellClassName: "px-4 py-3 text-sm",
 			cell: ({ row }) => {
 				const faculty = row.original;
 				return (
@@ -262,7 +262,7 @@ export function FacultyDirectoryPage({
 							{faculty.departmentCode ?? faculty.college}
 						</span>
 						{faculty.isMainCampus === false && faculty.campusName && (
-							<span className="text-[12px] text-muted-foreground leading-4 mt-0.5">
+							<span className="text-xs text-muted-foreground leading-4 mt-0.5">
 								{faculty.campusName}
 							</span>
 						)}
@@ -274,27 +274,27 @@ export function FacultyDirectoryPage({
 			id: "leadProjects",
 			header: () => <div className="text-right">Lead Projects</div>,
 			headerClassName:
-				"w-[120px] px-4 py-2 text-right text-[14px] font-medium text-muted-foreground",
+				"w-[120px] px-4 py-2 text-right text-sm font-medium text-muted-foreground",
 			cellClassName:
-				"px-4 py-3 text-right text-[14px] font-medium text-foreground",
+				"px-4 py-3 text-right text-sm font-medium text-foreground",
 			cell: ({ row }) => row.original.leadProjects,
 		},
 		{
 			id: "collaboratorProjects",
 			header: () => <div className="text-right">Collaborator Projects</div>,
 			headerClassName:
-				"w-[150px] px-4 py-2 text-right text-[14px] font-medium text-muted-foreground",
+				"w-[150px] px-4 py-2 text-right text-sm font-medium text-muted-foreground",
 			cellClassName:
-				"px-4 py-3 text-right text-[14px] font-medium text-foreground",
+				"px-4 py-3 text-right text-sm font-medium text-foreground",
 			cell: ({ row }) => row.original.collaboratorProjects,
 		},
 		{
 			id: "totalInvolvement",
 			header: () => <div className="text-right">Total Involvement</div>,
 			headerClassName:
-				"w-[150px] px-4 py-2 text-right text-[14px] font-medium text-muted-foreground",
+				"w-[150px] px-4 py-2 text-right text-sm font-medium text-muted-foreground",
 			cellClassName:
-				"px-4 py-3 text-right text-[14px] font-medium text-foreground",
+				"px-4 py-3 text-right text-sm font-medium text-foreground",
 			cell: ({ row }) => row.original.totalInvolvement,
 		},
 		{
@@ -318,7 +318,7 @@ export function FacultyDirectoryPage({
 	return (
 		<div className="flex flex-col gap-8">
 			<div className="flex items-center justify-between">
-				<h1 className="text-[24px] font-semibold leading-[35px] text-heading">
+				<h1 className="text-xl font-semibold leading-[35px] text-heading">
 					Faculty Directory
 				</h1>
 				<div className="flex items-center gap-4">
@@ -333,7 +333,7 @@ export function FacultyDirectoryPage({
 							render={
 								<Button className="flex items-center gap-1.5 rounded-[10px] bg-brand-primary px-4 py-2 text-[#fafafa] shadow-sm hover:bg-brand-primary-hover cursor-pointer">
 									<Download className="size-4" />
-									<span className="text-[14px] font-medium">Export Report</span>
+									<span className="text-sm font-medium">Export Report</span>
 								</Button>
 							}
 						/>

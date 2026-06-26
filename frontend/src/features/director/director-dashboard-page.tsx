@@ -22,12 +22,12 @@ function RecentActivitiesCard({
 	return (
 		<div className="flex h-[370px] flex-col overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
 			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
-				<h2 className="text-[14px] font-semibold leading-5 text-heading">
+				<h2 className="text-sm font-semibold leading-5 text-heading">
 					Recent Activities
 				</h2>
 				<button
 					type="button"
-					className="text-[12px] font-medium leading-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm"
+					className="text-xs font-medium leading-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm"
 				>
 					View All
 				</button>
@@ -46,15 +46,15 @@ function RecentActivitiesCard({
 											className={`size-2 shrink-0 rounded-full ${["bg-brand-primary", "bg-green-600", "bg-amber-500"][index % 3]}`}
 											aria-hidden="true"
 										/>
-										<p className="text-[14px] font-medium leading-5 text-foreground">
+										<p className="text-sm font-medium leading-5 text-foreground">
 											{activity.title}
 										</p>
 									</div>
-									<p className="text-[12px] leading-[14px] text-muted-foreground">
+									<p className="text-xs leading-[14px] text-muted-foreground">
 										{activity.description}
 									</p>
 								</div>
-								<p className="text-[12px] leading-[14px] text-muted-foreground">
+								<p className="text-xs leading-[14px] text-muted-foreground">
 									{activity.time}
 								</p>
 							</div>
@@ -62,7 +62,7 @@ function RecentActivitiesCard({
 					))
 				) : (
 					<li className="flex flex-1 items-center justify-center px-4">
-						<p className="text-[14px] text-muted-foreground italic">
+						<p className="text-sm text-muted-foreground italic">
 							No recent activities.
 						</p>
 					</li>
@@ -80,12 +80,12 @@ function ExpiringMoasCard({
 	return (
 		<div className="flex h-[148px] flex-col overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
 			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
-				<h2 className="text-[14px] font-semibold leading-5 text-heading">
+				<h2 className="text-sm font-semibold leading-5 text-heading">
 					Expiring MOAs
 				</h2>
 				<button
 					type="button"
-					className="text-[12px] font-medium leading-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm"
+					className="text-xs font-medium leading-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm"
 				>
 					View All
 				</button>
@@ -98,10 +98,10 @@ function ExpiringMoasCard({
 							className="border-t border-border p-4"
 						>
 							<div className="flex items-center justify-between gap-4">
-								<p className="text-[14px] font-medium leading-5 text-foreground">
+								<p className="text-sm font-medium leading-5 text-foreground">
 									{moa.name}
 								</p>
-								<p className="text-[14px] leading-5 text-red-600">
+								<p className="text-sm leading-5 text-red-600">
 									{moa.dueText}
 								</p>
 							</div>
@@ -109,7 +109,7 @@ function ExpiringMoasCard({
 					))
 				) : (
 					<li className="flex flex-1 items-center justify-center border-t border-border px-4 pb-2">
-						<p className="text-[14px] text-muted-foreground italic">
+						<p className="text-sm text-muted-foreground italic">
 							No MOAs expiring soon.
 						</p>
 					</li>
@@ -145,7 +145,7 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 		<section>
 			<div className="flex min-h-full flex-col gap-8">
 				<div>
-					<h1 className="text-[24px] font-semibold leading-[35px] text-heading">
+					<h1 className="text-xl font-semibold leading-[35px] text-heading">
 						Welcome, {user?.firstName ? `${user.firstName}!` : "Director"}!
 					</h1>
 				</div>

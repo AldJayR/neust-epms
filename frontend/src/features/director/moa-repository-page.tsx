@@ -65,17 +65,17 @@ export function MoaRepositoryPage({
 			id: "partner",
 			header: "Partner Organization",
 			headerClassName:
-				"w-[320px] px-4 py-2 text-[14px] font-medium text-muted-foreground",
+				"w-[320px] px-4 py-2 text-sm font-medium text-muted-foreground",
 			cellClassName:
-				"px-4 py-3 text-[14px] font-semibold text-foreground text-left",
+				"px-4 py-3 text-sm font-semibold text-foreground text-left",
 			cell: ({ row }) => row.original.partnerOrganization,
 		},
 		{
 			id: "dateSigned",
 			header: () => <div className="text-center">Date Signed</div>,
 			headerClassName:
-				"w-[223px] px-4 py-2 text-center text-[14px] font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-center text-[14px] text-foreground",
+				"w-[223px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => (
 				<ClientOnly fallback="...">
 					{format(new Date(row.original.dateSigned), "MMM dd, yyyy")}
@@ -86,8 +86,8 @@ export function MoaRepositoryPage({
 			id: "daysToExpiry",
 			header: () => <div className="text-center">Days to Expiry</div>,
 			headerClassName:
-				"w-[255px] px-4 py-2 text-center text-[14px] font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-center text-[14px] text-foreground",
+				"w-[255px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => (
 				<>
 					{row.original.daysToExpiry}{" "}
@@ -99,7 +99,7 @@ export function MoaRepositoryPage({
 			id: "status",
 			header: () => <div className="text-center">Status</div>,
 			headerClassName:
-				"w-[129px] px-4 py-2 text-center text-[14px] font-medium text-muted-foreground",
+				"w-[129px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cell: ({ row }) => (
 				<div className="flex justify-center">
 					<StatusBadge status={row.original.status} />
@@ -127,13 +127,13 @@ export function MoaRepositoryPage({
 	return (
 		<div className="flex flex-col gap-8">
 			<div className="flex items-center justify-between bg-background">
-				<h1 className="text-[24px] font-semibold leading-[35px] text-heading">
+				<h1 className="text-xl font-semibold leading-[35px] text-heading">
 					Memoranda of Agreements
 				</h1>
 				{isAdminOrDirector(user) ? (
 					<Button className="flex items-center gap-1.5 rounded-[10px] bg-brand-primary px-[10px] py-2 text-[#fafafa] shadow-sm hover:bg-brand-primary-hover">
 						<Plus className="size-4" />
-						<span className="text-[14px] font-medium">Create MOA</span>
+						<span className="text-sm font-medium">Create MOA</span>
 					</Button>
 				) : null}
 			</div>

@@ -125,7 +125,7 @@ export function PdfToolbar({
 			)}
 
 			{/* Floating Page Indicator Pill */}
-			<div className="absolute top-4 right-4 z-40 bg-zinc-900/80 text-white px-3 py-1.5 rounded-full text-[12px] font-semibold tracking-wide backdrop-blur-md shadow-md border border-white/10 select-none">
+			<div className="absolute top-4 right-4 z-40 bg-zinc-900/80 text-white px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide backdrop-blur-md shadow-md border border-white/10 select-none">
 				Page {currentPage} of {numPages || "–"}
 			</div>
 

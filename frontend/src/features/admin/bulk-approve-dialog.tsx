@@ -221,12 +221,12 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 							</AvatarFallback>
 						</Avatar>
 						<div className="flex min-w-0 flex-col text-left">
-							<span className="truncate text-[14px] font-medium leading-5 text-foreground">
+							<span className="truncate text-sm font-medium leading-5 text-foreground">
 								{user.firstName}{" "}
 								{user.middleName ? `${user.middleName.charAt(0)}. ` : ""}{" "}
 								{user.lastName}
 							</span>
-							<span className="truncate text-[12px] leading-4 text-muted-foreground">
+							<span className="truncate text-xs leading-4 text-muted-foreground">
 								{user.campusName}
 							</span>
 						</div>
@@ -238,7 +238,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 			id: "department",
 			header: () => <div className="text-center">Department</div>,
 			headerClassName: "min-w-[200px] text-center font-medium text-foreground",
-			cellClassName: "text-center text-[14px] text-foreground",
+			cellClassName: "text-center text-sm text-foreground",
 			cell: ({ row }) => row.original.departmentName ?? "-",
 		},
 		{
@@ -349,7 +349,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 						<Button
 							onClick={handleApprove}
 							disabled={selectedUsers.size === 0 || approveMutation.isPending}
-							className="h-9 rounded-[10px] bg-brand-primary px-[10px] text-[14px] font-medium shadow-[0px_1px_2px_0px_var(--shadow-card)] transition-all hover:bg-brand-primary-hover active:scale-[0.98]"
+							className="h-9 rounded-[10px] bg-brand-primary px-[10px] text-sm font-medium shadow-[0px_1px_2px_0px_var(--shadow-card)] transition-all hover:bg-brand-primary-hover active:scale-[0.98]"
 						>
 							{approveMutation.isPending ? (
 								<>

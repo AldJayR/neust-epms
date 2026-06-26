@@ -96,7 +96,7 @@ export function RetFacultyDirectoryPage({
 			id: "name",
 			header: "Faculty Name",
 			headerClassName:
-				"w-[320px] px-4 py-2 text-[14px] font-medium text-muted-foreground",
+				"w-[320px] px-4 py-2 text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3",
 			cell: ({ row }) => {
 				const faculty = row.original;
@@ -108,7 +108,7 @@ export function RetFacultyDirectoryPage({
 								{faculty.lastName?.charAt(0) ?? ""}
 							</AvatarFallback>
 						</Avatar>
-						<span className="text-[14px] font-normal text-foreground">
+						<span className="text-sm font-normal text-foreground">
 							{faculty.firstName} {faculty.lastName}
 						</span>
 					</div>
@@ -119,7 +119,7 @@ export function RetFacultyDirectoryPage({
 			id: "rank",
 			header: "Rank",
 			headerClassName:
-				"w-[200px] px-4 py-2 text-[14px] font-medium text-muted-foreground",
+				"w-[200px] px-4 py-2 text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3",
 			cell: ({ row }) => {
 				const faculty = row.original;
@@ -137,15 +137,15 @@ export function RetFacultyDirectoryPage({
 			id: "totalProjects",
 			header: "Total Projects",
 			headerClassName:
-				"w-[150px] px-4 py-2 text-[14px] font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-[14px] text-foreground",
+				"w-[150px] px-4 py-2 text-sm font-medium text-muted-foreground",
+			cellClassName: "px-4 py-3 text-sm text-foreground",
 			cell: ({ row }) => row.original.totalInvolvement,
 		},
 		{
 			id: "status",
 			header: "Account Status",
 			headerClassName:
-				"w-[150px] px-4 py-2 text-[14px] font-medium text-muted-foreground",
+				"w-[150px] px-4 py-2 text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3",
 			cell: ({ row }) => <StatusBadge status={row.original.isActive ? "Active" : "Deactivated"} variant="outline" />,
 		},
@@ -171,10 +171,10 @@ export function RetFacultyDirectoryPage({
 		<div className="flex flex-col gap-8">
 			{/* Page Header */}
 			<div className="flex flex-col gap-2">
-				<h1 className="text-[24px] font-semibold leading-[35px] text-heading">
+				<h1 className="text-xl font-semibold leading-[35px] text-heading">
 					Faculty Directory
 				</h1>
-				<p className="text-[14px] font-normal leading-4 text-brand-primary">
+				<p className="text-sm font-normal leading-4 text-brand-primary">
 					{user?.departmentName ||
 						"College of Information and Communications Technology"}
 				</p>

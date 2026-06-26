@@ -58,7 +58,7 @@ export function MetricCard({
 				className,
 			)}
 		>
-			<p className="text-[14px] leading-4 text-muted-foreground">{label}</p>
+			<p className="text-sm leading-4 text-muted-foreground">{label}</p>
 			{isLoading ? (
 				isFacultyCustom ? (
 					<div className="flex flex-col gap-2">
@@ -82,7 +82,7 @@ export function MetricCard({
 				)
 			) : isFacultyCustom ? (
 				<div className="flex flex-col gap-1">
-					<p className="text-[16px] font-medium leading-5 text-heading truncate">
+					<p className="text-base font-medium leading-5 text-heading truncate">
 						{college}
 					</p>
 					<div className="flex items-center gap-2">
@@ -93,7 +93,7 @@ export function MetricCard({
 								</Avatar>
 							))}
 						</div>
-						<p className="text-[14px] text-muted-foreground">
+						<p className="text-sm text-muted-foreground">
 							+{contributors} Contributors
 						</p>
 					</div>
@@ -106,7 +106,7 @@ export function MetricCard({
 					{trend && (
 						<div className="flex h-[22px] items-center gap-1 rounded-lg border border-border bg-background px-1.5 py-0.5 shadow-sm">
 							<TrendingUp className="size-3 text-green-500" />
-							<span className="text-[12px] font-medium text-green-500">
+							<span className="text-xs font-medium text-green-500">
 								{trend}
 							</span>
 						</div>

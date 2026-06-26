@@ -95,7 +95,7 @@ export function CommentCreationPopover({
 			className="bg-background border border-border rounded-xl shadow-xl p-4 w-[280px] flex flex-col gap-3 z-50"
 		>
 			<div className="flex flex-col gap-0.5">
-				<span className="text-[12px] font-semibold text-black">
+				<span className="text-xs font-semibold text-black">
 					Add Remark / Comment
 				</span>
 				<span className="text-[10px] text-muted-foreground">
@@ -107,7 +107,7 @@ export function CommentCreationPopover({
 					if (el) el.focus();
 				}}
 				aria-label="Feedback comment text"
-				className="w-full h-20 text-[12px] p-2 border border-border rounded-[6px] focus:outline-none focus:border-brand-primary resize-none"
+				className="w-full h-20 text-xs p-2 border border-border rounded-[6px] focus:outline-none focus:border-brand-primary resize-none"
 				placeholder="Type your feedback here..."
 				value={commentText}
 				onChange={(e) => onCommentTextChange(e.target.value)}
