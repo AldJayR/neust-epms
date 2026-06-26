@@ -40,6 +40,19 @@ export function ProposalStepMembers({ form, user }: ProposalStepMembersProps) {
 		name: "members",
 	});
 
+	function handleAddMember(u: { userId: string; firstName: string; lastName: string }) {
+		if (!memberFields.some((m) => m.userId === u.userId)) {
+			appendMember({
+				userId: u.userId,
+				projectRole: "Member",
+				name: `${u.firstName} ${u.lastName}`,
+			});
+		} else {
+			toast.error("User is already a team member");
+		}
+		setUserSearch("");
+	}
+
 	return (
 		<div className="space-y-4">
 			<div className="space-y-2">
@@ -60,18 +73,7 @@ export function ProposalStepMembers({ form, user }: ProposalStepMembersProps) {
 								key={u.userId}
 								type="button"
 								className="w-full text-left p-2 flex items-center justify-between hover:bg-slate-50 cursor-pointer"
-								onClick={() => {
-									if (!memberFields.some((m) => m.userId === u.userId)) {
-										appendMember({
-											userId: u.userId,
-											projectRole: "Member",
-											name: `${u.firstName} ${u.lastName}`,
-										});
-									} else {
-										toast.error("User is already a team member");
-									}
-									setUserSearch("");
-								}}
+								onClick={() => handleAddMember(u)}
 							>
 								<div className="text-sm">
 									<p className="font-medium">
