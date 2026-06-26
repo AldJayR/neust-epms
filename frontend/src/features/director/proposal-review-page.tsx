@@ -148,7 +148,7 @@ function ProposalDetailsTab({
 				<>
 					<div className="p-5 space-y-4">
 						<h2 className="text-[14px] font-medium text-black">Endorsement</h2>
-						<div className="rounded-[10px] border border-[#e5e5e5] p-3 space-y-1">
+						<div className="rounded-[10px] border border-border p-3 space-y-1">
 							<div className="flex items-center gap-3">
 								<CheckCircle2 className="size-4 text-black" />
 								<span className="text-[14px] font-medium text-black">
@@ -167,7 +167,7 @@ function ProposalDetailsTab({
 								<h2 className="text-[14px] font-medium text-black mt-6">
 									Remarks
 								</h2>
-								<div className="rounded-[10px] border border-[#e5e5e5] p-3">
+								<div className="rounded-[10px] border border-border p-3">
 									<p className="text-[14px] text-black font-light leading-relaxed">
 										"{endorsement.comment}"
 									</p>
@@ -239,7 +239,7 @@ function ProposalDetailsTab({
 				<div className="p-5 flex gap-3">
 					<Button
 						variant="outline"
-						className="flex-1 border border-[#e5e5e5] rounded-[10px] text-[#e54d2e] font-medium h-9 text-sm shadow-sm"
+						className="flex-1 border border-border rounded-[10px] text-[#e54d2e] font-medium h-9 text-sm shadow-sm"
 						onClick={handleDeny}
 						disabled={isPending}
 					>
@@ -285,14 +285,14 @@ function ProposalDetailsTab({
 							placeholder="Write final comments/remarks here (optional)..."
 							value={commentsText}
 							onChange={(e) => setCommentsText(e.target.value)}
-							className="w-full min-h-[100px] border border-[#e5e5e5] rounded-[8px] p-3 text-sm focus-visible:ring-1 focus-visible:ring-[#14369c]"
+							className="w-full min-h-[100px] border border-border rounded-[8px] p-3 text-sm focus-visible:ring-1 focus-visible:ring-[#14369c]"
 						/>
 					</div>
 
 					<DialogFooter className="flex gap-3 mt-4">
 						<Button
 							variant="outline"
-							className="flex-1 border border-[#e5e5e5] rounded-[10px] text-gray-500 font-medium h-9 text-sm shadow-sm cursor-pointer"
+							className="flex-1 border border-border rounded-[10px] text-gray-500 font-medium h-9 text-sm shadow-sm cursor-pointer"
 							onClick={() => setIsConfirmOpen(false)}
 						>
 							Cancel
@@ -357,7 +357,7 @@ function CommentsTab({
 						<button
 							type="button"
 							key={comment.commentId}
-							className="w-full border border-[#ebebeb] rounded-xl p-4 bg-gray-50 hover:bg-gray-100/70 transition-colors space-y-2 cursor-pointer text-left block"
+							className="w-full border border-border rounded-xl p-4 bg-gray-50 hover:bg-gray-100/70 transition-colors space-y-2 cursor-pointer text-left block"
 							onClick={() => {
 								const annot = comment.annotationJson;
 								if (annot?.page) {
@@ -392,7 +392,7 @@ function CommentsTab({
 			</div>
 
 			{/* Bottom panel */}
-			<div className="border-t border-[#ebebeb] p-5 bg-white space-y-4">
+			<div className="border-t border-border p-5 bg-white space-y-4">
 				<div className="flex justify-between items-center text-[13px] text-muted-foreground">
 					<span>Attached Documents</span>
 					<span className="font-semibold text-black">
@@ -556,7 +556,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 					{data?.status && (
 						<Badge
 							variant="outline"
-							className="bg-white border-[#e5e5e5] text-muted-foreground font-medium rounded-lg px-2.5 py-0.5 text-[12px]"
+							className="bg-white border-border text-muted-foreground font-medium rounded-lg px-2.5 py-0.5 text-[12px]"
 						>
 							{data.status}
 						</Badge>
@@ -589,7 +589,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 					<div
 						className={`${isTheaterMode ? "lg:col-span-12 w-full" : "lg:col-span-8"} flex flex-col gap-4`}
 					>
-						<div className="bg-[#f9f9f9] border border-[#ebebeb] rounded-[12px] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] overflow-hidden h-[844px]">
+						<div className="bg-[#f9f9f9] border border-border rounded-[12px] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] overflow-hidden h-[844px]">
 							{currentDoc ? (
 								<PdfViewer
 									ref={pdfViewerRef}
@@ -624,7 +624,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 								onValueChange={(v) => setActiveTab(v as "details" | "comments")}
 								className="w-full"
 							>
-								<Card className="border-[#ebebeb] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] rounded-[12px] overflow-hidden pt-2 pb-0 gap-0">
+								<Card className="border-border shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] rounded-[12px] overflow-hidden pt-2 pb-0 gap-0">
 									<TabsList variant="line" className="w-full justify-start rounded-none gap-0 px-0">
 										<div className="relative w-full flex">
 											<TabsTrigger

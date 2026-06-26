@@ -126,7 +126,7 @@ export function RetFacultyDirectoryPage({
 				return (
 					<Badge
 						variant="outline"
-						className="rounded-lg border-[#e5e5e5] px-2 py-0.5 font-medium text-muted-foreground bg-white"
+						className="rounded-lg border-border px-2 py-0.5 font-medium text-muted-foreground bg-white"
 					>
 						{formatAcademicRank(faculty.academicRank)}
 					</Badge>
@@ -215,7 +215,7 @@ export function RetFacultyDirectoryPage({
 								variant="outline"
 								size="icon"
 								className={cn(
-									"size-9 rounded-lg border-[#e5e5e5] bg-white shadow-sm relative transition-all duration-200",
+									"size-9 rounded-lg border-border bg-white shadow-sm relative transition-all duration-200",
 									activeFilterCount > 0 &&
 										"border-brand-primary ring-1 ring-brand-primary",
 								)}
@@ -230,7 +230,7 @@ export function RetFacultyDirectoryPage({
 					/>
 					<PopoverContent
 						align="end"
-						className="w-[320px] p-4 bg-white border border-[#ebebeb] rounded-xl shadow-lg gap-4 flex flex-col z-50"
+						className="w-[320px] p-4 bg-white border border-border rounded-xl shadow-lg gap-4 flex flex-col z-50"
 					>
 						<div className="flex flex-col gap-1">
 							<h4 className="font-semibold text-sm text-[#11215a]">
@@ -242,7 +242,7 @@ export function RetFacultyDirectoryPage({
 						</div>
 
 						{/* Presets / Quick Filters */}
-						<div className="flex flex-col gap-2 border-t border-[#ebebeb] pt-3">
+						<div className="flex flex-col gap-2 border-t border-border pt-3">
 							<span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
 								Quick Actions
 							</span>
@@ -273,7 +273,7 @@ export function RetFacultyDirectoryPage({
 						</div>
 
 						{/* Rank Select */}
-						<div className="flex flex-col gap-2 border-t border-[#ebebeb] pt-3">
+						<div className="flex flex-col gap-2 border-t border-border pt-3">
 							<span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
 								Academic Ranks
 							</span>
@@ -314,7 +314,7 @@ export function RetFacultyDirectoryPage({
 						</div>
 
 						{/* Project Load Select */}
-						<div className="flex flex-col gap-2 border-t border-[#ebebeb] pt-3">
+						<div className="flex flex-col gap-2 border-t border-border pt-3">
 							<span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
 								Project Involvement
 							</span>
@@ -355,7 +355,7 @@ export function RetFacultyDirectoryPage({
 
 						{/* Reset Footer */}
 						{activeFilterCount > 0 && (
-							<div className="flex justify-end items-center border-t border-[#ebebeb] pt-3 mt-1">
+							<div className="flex justify-end items-center border-t border-border pt-3 mt-1">
 								<Button
 									variant="ghost"
 									size="sm"
@@ -375,9 +375,9 @@ export function RetFacultyDirectoryPage({
 
 			{/* Content Section with Tabs and Table */}
 			<div className="flex flex-col gap-6">
-				<div className="overflow-hidden rounded-[12px] border border-[#ebebeb] bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+				<div className="overflow-hidden rounded-[12px] border border-border bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 					{/* Tabs Header */}
-					<div className="border-b border-[#ebebeb] bg-white p-2">
+					<div className="border-b border-border bg-white p-2">
 						<Tabs
 							value={activeTab}
 							onValueChange={(val) => {

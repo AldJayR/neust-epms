@@ -184,7 +184,7 @@ export function ActivityLogPage({
 					<div className="flex justify-center">
 						<Badge
 							variant="outline"
-							className="font-medium text-muted-foreground border-[#e5e5e5] h-[22px] px-1.5 gap-1 rounded-[8px]"
+							className="font-medium text-muted-foreground border-border h-[22px] px-1.5 gap-1 rounded-[8px]"
 						>
 							{typeInfo.icon}
 							<span>{typeInfo.label}</span>
@@ -244,7 +244,7 @@ export function ActivityLogPage({
 							<Button
 								variant="outline"
 								size="icon"
-								className="h-9 w-9 border-[#e5e5e5] rounded-[8px] shadow-sm"
+								className="h-9 w-9 border-border rounded-[8px] shadow-sm"
 								aria-label="Filter activity log"
 							>
 								<ListFilter className="size-4" />
@@ -277,7 +277,7 @@ export function ActivityLogPage({
 				</DropdownMenu>
 			</div>
 
-			<div className="border border-[#ebebeb] rounded-[12px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden bg-white">
+			<div className="border border-border rounded-[12px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden bg-white">
 				<DataTable
 					columns={columns}
 					data={logs}

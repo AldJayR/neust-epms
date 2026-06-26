@@ -167,7 +167,7 @@ export function ProjectHubPage({
 							onCollegeChange(val === "all" ? "" : (val ?? ""))
 						}
 					>
-						<SelectTrigger className="h-9 w-full rounded-lg border-[#e5e5e5] bg-white shadow-sm sm:w-[180px]">
+						<SelectTrigger className="h-9 w-full rounded-lg border-border bg-white shadow-sm sm:w-[180px]">
 							<div className="flex items-center gap-2">
 								<Filter className="size-4 text-muted-foreground" />
 								<SelectValue placeholder="All Colleges" />
@@ -187,7 +187,7 @@ export function ProjectHubPage({
 							onStatusChange(val === "all" ? "" : (val ?? ""))
 						}
 					>
-						<SelectTrigger className="h-9 w-full rounded-lg border-[#e5e5e5] bg-white shadow-sm sm:w-[180px]">
+						<SelectTrigger className="h-9 w-full rounded-lg border-border bg-white shadow-sm sm:w-[180px]">
 							<div className="flex items-center gap-2">
 								<Filter className="size-4 text-muted-foreground" />
 								<SelectValue placeholder="All Statuses" />
@@ -205,7 +205,7 @@ export function ProjectHubPage({
 				</div>
 			</div>
 
-			<div className="rounded-lg border border-[#ebebeb] bg-white shadow-sm overflow-hidden min-h-[400px]">
+			<div className="rounded-lg border border-border bg-white shadow-sm overflow-hidden min-h-[400px]">
 				<DataTable
 					columns={columns}
 					data={items}

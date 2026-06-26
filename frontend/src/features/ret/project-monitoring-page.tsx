@@ -194,7 +194,7 @@ export function ProjectMonitoringPage({
 							onStatusChange(val === "all" ? "" : (val ?? ""))
 						}
 					>
-						<SelectTrigger className="h-9 w-full rounded-lg border-[#e5e5e5] bg-white shadow-sm sm:w-[180px]">
+						<SelectTrigger className="h-9 w-full rounded-lg border-border bg-white shadow-sm sm:w-[180px]">
 							<div className="flex items-center gap-2">
 								<Filter className="size-4 text-muted-foreground" />
 								<SelectValue placeholder="All Statuses" />
@@ -211,8 +211,8 @@ export function ProjectMonitoringPage({
 				</div>
 			</div>
 
-			<div className="overflow-hidden rounded-[12px] border border-[#ebebeb] bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-				<div className="border-b border-[#ebebeb] bg-white p-2">
+			<div className="overflow-hidden rounded-[12px] border border-border bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+				<div className="border-b border-border bg-white p-2">
 					<Tabs
 						value={myProjectsOnly ? "my" : "all"}
 						onValueChange={(val) => {

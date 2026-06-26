@@ -66,8 +66,8 @@ function ProjectDetailsSkeleton() {
 				{/* Main Column */}
 				<div className="lg:col-span-8 flex flex-col gap-6">
 					{/* Project Overview */}
-					<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
-						<div className="bg-[#fcfcfc] border-b border-[#ebebeb] px-6 py-3">
+					<div className="rounded-[12px] border border-border bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
+						<div className="bg-[#fcfcfc] border-b border-border px-6 py-3">
 							<Skeleton className="h-4 w-32" />
 						</div>
 						<div className="divide-y divide-[#ebebeb]">
@@ -112,8 +112,8 @@ function ProjectDetailsSkeleton() {
 					</div>
 
 					{/* Document History */}
-					<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-						<div className="px-6 py-3 border-b border-[#ebebeb]">
+					<div className="rounded-[12px] border border-border bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+						<div className="px-6 py-3 border-b border-border">
 							<Skeleton className="h-4 w-32" />
 						</div>
 						<div className="px-6 py-4">
@@ -141,15 +141,15 @@ function ProjectDetailsSkeleton() {
 				{/* Sidebar */}
 				<div className="lg:col-span-4 flex flex-col gap-6">
 					{/* Attachments */}
-					<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
-						<div className="bg-[#fcfcfc] border-b border-[#ebebeb] px-6 py-3">
+					<div className="rounded-[12px] border border-border bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
+						<div className="bg-[#fcfcfc] border-b border-border px-6 py-3">
 							<Skeleton className="h-4 w-24" />
 						</div>
 						<div className="p-4 flex flex-col gap-3">
 							{[1].map((i) => (
 								<div
 									key={i}
-									className="flex flex-col gap-3 rounded-[10px] border border-[#e5e5e5] bg-[#fcfcfc] p-3"
+									className="flex flex-col gap-3 rounded-[10px] border border-border bg-[#fcfcfc] p-3"
 								>
 									<div className="flex items-center gap-3">
 										<Skeleton className="size-10 rounded-[8px]" />
@@ -198,8 +198,8 @@ interface ProjectOverviewCardProps {
 
 function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 	return (
-		<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
-			<div className="bg-[#fcfcfc] border-b border-[#ebebeb] px-6 py-3">
+		<div className="rounded-[12px] border border-border bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
+			<div className="bg-[#fcfcfc] border-b border-border px-6 py-3">
 				<h2 className="text-[14px] font-semibold text-[#11215a]">
 					Project Overview
 				</h2>
@@ -208,7 +208,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 				<div className="flex items-center justify-between px-6 py-3">
 					<span className="text-[14px] text-muted-foreground">Project Leader</span>
 					<div className="flex items-center gap-3">
-						<Avatar className="size-8 border border-[#ebebeb]">
+						<Avatar className="size-8 border border-border">
 							<AvatarImage
 								src={metadata.leader.avatarUrl}
 								alt={metadata.leader.name}
@@ -305,7 +305,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 									key={member.userId}
 									className="flex items-center gap-3 p-2 rounded-[8px] transition-colors hover:bg-[#fcfcfc]"
 								>
-									<Avatar className="size-9 border border-[#ebebeb]">
+									<Avatar className="size-9 border border-border">
 										<AvatarImage src={member.avatarUrl} alt={member.name} />
 										<AvatarFallback className="bg-gray-100 text-gray-600">
 											<User className="size-4" />
@@ -342,8 +342,8 @@ interface DocumentHistoryCardProps {
 
 function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 	return (
-		<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-			<div className="px-6 py-3 border-b border-[#ebebeb]">
+		<div className="rounded-[12px] border border-border bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+			<div className="px-6 py-3 border-b border-border">
 				<h2 className="text-[14px] font-semibold text-[#11215a]">
 					Document History
 				</h2>
@@ -383,7 +383,7 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 										: `Uploaded by ${item.actorName}`}
 								</p>
 								{item.comment && (
-									<div className="rounded-[8px] border border-dashed border-[#e5e5e5] bg-[#fcfcfc] p-3 text-[12px] italic text-muted-foreground">
+									<div className="rounded-[8px] border border-dashed border-border bg-[#fcfcfc] p-3 text-[12px] italic text-muted-foreground">
 										"{item.comment}"
 									</div>
 								)}
@@ -391,7 +391,7 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 									<Button
 										variant="outline"
 										size="sm"
-										className="w-fit gap-1.5 rounded-[8px] border-[#e5e5e5] h-7 text-[12px] font-medium text-muted-foreground hover:bg-[#fcfcfc]"
+										className="w-fit gap-1.5 rounded-[8px] border-border h-7 text-[12px] font-medium text-muted-foreground hover:bg-[#fcfcfc]"
 									>
 										<FileText className="size-3" />
 										View Version
@@ -418,8 +418,8 @@ interface AttachmentsCardProps {
 
 function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 	return (
-		<div className="rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
-			<div className="bg-[#fcfcfc] border-b border-[#ebebeb] px-6 py-3">
+		<div className="rounded-[12px] border border-border bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
+			<div className="bg-[#fcfcfc] border-b border-border px-6 py-3">
 				<h2 className="text-[14px] font-semibold text-[#11215a]">
 					Attachments
 				</h2>
@@ -428,7 +428,7 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 				{attachments.map((attachment) => (
 					<li
 						key={attachment.id}
-						className="flex flex-col gap-3 rounded-[10px] border border-[#e5e5e5] bg-[#fcfcfc] p-3 transition-colors hover:border-brand-primary/30"
+						className="flex flex-col gap-3 rounded-[10px] border border-border bg-[#fcfcfc] p-3 transition-colors hover:border-brand-primary/30"
 					>
 						<div className="flex items-center gap-3">
 							<div className="flex size-10 items-center justify-center rounded-[8px] bg-red-50 text-red-500">
@@ -447,7 +447,7 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 							<Button
 								nativeButton={false}
 								variant="outline"
-								className="h-8 rounded-[8px] border-[#e5e5e5] text-[12px] font-medium text-muted-foreground hover:bg-white"
+								className="h-8 rounded-[8px] border-border text-[12px] font-medium text-muted-foreground hover:bg-white"
 								render={
 									<a
 										href={attachment.url}
@@ -464,7 +464,7 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 							<Button
 								nativeButton={false}
 								variant="outline"
-								className="h-8 rounded-[8px] border-[#e5e5e5] text-[12px] font-medium text-muted-foreground hover:bg-white"
+								className="h-8 rounded-[8px] border-border text-[12px] font-medium text-muted-foreground hover:bg-white"
 								render={
 									<a href={attachment.url} download>
 										Download Attachment

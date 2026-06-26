@@ -29,7 +29,7 @@ export function ProposalStepDocuments({
 	return (
 		<div className="space-y-6">
 			{uploadPhase !== "idle" ? (
-				<div className="border-2 border-dashed border-[#e5e5e5] rounded-xl p-8 flex flex-col items-center justify-center gap-4 bg-[#fcfcfc]">
+				<div className="border-2 border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center gap-4 bg-[#fcfcfc]">
 					<div className="flex flex-col items-center gap-3 w-full max-w-xs">
 						<div className="p-3 bg-primary/10 rounded-full">
 							<Loader2 className="size-8 text-primary animate-spin" />
@@ -55,7 +55,7 @@ export function ProposalStepDocuments({
 						toast.error(message);
 					}}
 				>
-					<FileUploadDropzone className="border-2 border-dashed border-[#e5e5e5] rounded-xl p-8 bg-[#fcfcfc] hover:bg-primary/5">
+					<FileUploadDropzone className="border-2 border-dashed border-border rounded-xl p-8 bg-[#fcfcfc] hover:bg-primary/5">
 						<div className="p-4 bg-primary/10 rounded-full">
 							<Upload className="size-8 text-primary" />
 						</div>

@@ -213,7 +213,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 				const user = row.original;
 				return (
 					<div className="flex items-center gap-[10px]">
-						<Avatar className="size-9 border border-[#e5e5e5]">
+						<Avatar className="size-9 border border-border">
 							<AvatarImage src="" alt={`${user.firstName} ${user.lastName}`} />
 							<AvatarFallback className="bg-primary/5 text-xs font-medium text-primary">
 								{user.firstName?.charAt(0) ?? ""}
@@ -256,7 +256,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 								handleRoleChange(user.userId, val as string)
 							}
 						>
-							<SelectTrigger className="h-[30px] w-[160px] rounded-md border-[#e5e5e5] bg-white px-3 shadow-[0px_1px_1px_rgba(0,0,0,0.1)]">
+							<SelectTrigger className="h-[30px] w-[160px] rounded-md border-border bg-white px-3 shadow-[0px_1px_1px_rgba(0,0,0,0.1)]">
 								<SelectValue placeholder="Select role" />
 							</SelectTrigger>
 							<SelectContent className="rounded-md shadow-lg">
@@ -286,7 +286,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 			/>
 			<DialogContent
 				showCloseButton={false}
-				className="left-1/2 top-1/2 h-[540px] max-h-[calc(100vh-2rem)] w-[95vw] max-w-[1000px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[10px] border border-[#e5e5e5] bg-white p-0 shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] ring-0 sm:max-w-[1000px]"
+				className="left-1/2 top-1/2 h-[540px] max-h-[calc(100vh-2rem)] w-[95vw] max-w-[1000px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[10px] border border-border bg-white p-0 shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] ring-0 sm:max-w-[1000px]"
 			>
 				<div className="flex h-full flex-col gap-6 p-6">
 					<DialogHeader className="flex flex-row items-center justify-between gap-4">
@@ -318,7 +318,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 							className="max-w-[360px]"
 						/>
 
-						<div className="relative flex-1 overflow-hidden rounded-md border border-[#e5e5e5] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+						<div className="relative flex-1 overflow-hidden rounded-md border border-border bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 							{isUsersFetching && (
 								<div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
 									<Loader2 className="size-8 animate-spin text-primary" />

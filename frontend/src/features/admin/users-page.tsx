@@ -236,7 +236,7 @@ export function UsersPage({
 							<Button
 								variant="outline"
 								size="icon"
-								className="h-9 w-9 rounded-lg border-[#e5e5e5]"
+								className="h-9 w-9 rounded-lg border-border"
 							>
 								<ListFilter className="size-4" />
 							</Button>
@@ -263,7 +263,7 @@ export function UsersPage({
 				</DropdownMenu>
 			</div>
 
-			<div className="rounded-[12px] border border-[#ebebeb] bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden min-h-[400px] relative">
+			<div className="rounded-[12px] border border-border bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden min-h-[400px] relative">
 				{isUsersFetching && (
 					<div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center backdrop-blur-[1px]">
 						<Loader2 className="h-8 w-8 animate-spin text-primary" />

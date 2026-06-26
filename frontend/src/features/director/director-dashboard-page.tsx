@@ -20,7 +20,7 @@ function RecentActivitiesCard({
 	activities: { title: string; description: string; time: string }[];
 }) {
 	return (
-		<div className="flex h-[370px] flex-col overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+		<div className="flex h-[370px] flex-col overflow-hidden rounded-[12px] border border-border bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
 				<h2 className="text-[14px] font-semibold leading-5 text-[#11215a]">
 					Recent Activities
@@ -37,7 +37,7 @@ function RecentActivitiesCard({
 					activities.map((activity, index) => (
 						<li
 							key={`${activity.title}-${activity.time}`}
-							className="border-t border-[#ebebeb] p-4"
+							className="border-t border-border p-4"
 						>
 							<div className="flex flex-col gap-6">
 								<div className="flex flex-col gap-1">
@@ -78,7 +78,7 @@ function ExpiringMoasCard({
 	moas: { name: string; dueText: string }[];
 }) {
 	return (
-		<div className="flex h-[148px] flex-col overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+		<div className="flex h-[148px] flex-col overflow-hidden rounded-[12px] border border-border bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
 				<h2 className="text-[14px] font-semibold leading-5 text-[#11215a]">
 					Expiring MOAs
@@ -95,7 +95,7 @@ function ExpiringMoasCard({
 					moas.map((moa) => (
 						<li
 							key={`${moa.name}-${moa.dueText}`}
-							className="border-t border-[#ebebeb] p-4"
+							className="border-t border-border p-4"
 						>
 							<div className="flex items-center justify-between gap-4">
 								<p className="text-[14px] font-medium leading-5 text-foreground">
@@ -108,7 +108,7 @@ function ExpiringMoasCard({
 						</li>
 					))
 				) : (
-					<li className="flex flex-1 items-center justify-center border-t border-[#ebebeb] px-4 pb-2">
+					<li className="flex flex-1 items-center justify-center border-t border-border px-4 pb-2">
 						<p className="text-[14px] text-muted-foreground italic">
 							No MOAs expiring soon.
 						</p>
@@ -161,7 +161,7 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 				<div className="grid gap-8 lg:grid-cols-[minmax(0,630px)_minmax(0,1fr)]">
 					<React.Suspense
 						fallback={
-							<div className="h-[370px] animate-pulse rounded-[12px] border border-[#ebebeb] bg-white" />
+							<div className="h-[370px] animate-pulse rounded-[12px] border border-border bg-white" />
 						}
 					>
 						<ProjectsChartCard

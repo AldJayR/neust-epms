@@ -174,7 +174,7 @@ export function ReportsPage() {
 						render={
 							<Button
 								variant="outline"
-								className="h-9 w-9 p-0 border-[#e5e5e5] rounded-[8px] shadow-sm animate-fade-in"
+								className="h-9 w-9 p-0 border-border rounded-[8px] shadow-sm animate-fade-in"
 								aria-label="Filter reports"
 							>
 								<ListFilter className="size-4" />
@@ -201,7 +201,7 @@ export function ReportsPage() {
 			</div>
 
 			{/* Data Table */}
-			<div className="overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+			<div className="overflow-hidden rounded-[12px] border border-border bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 				<DataTable
 					columns={columns}
 					data={filteredReports}

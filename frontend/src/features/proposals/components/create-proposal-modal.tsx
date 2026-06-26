@@ -254,7 +254,7 @@ export function CreateProposalModal({
 					onSubmit={(e) => e.preventDefault()}
 					className="flex flex-col h-full"
 				>
-					<DialogHeader className="py-4 px-6 border-b border-[#ebebeb]">
+					<DialogHeader className="py-4 px-6 border-b border-border">
 						<DialogTitle className="text-xl font-semibold text-[#11215a]">
 							Start New Project Proposal
 						</DialogTitle>
@@ -289,7 +289,7 @@ export function CreateProposalModal({
 					)}
 					</div>
 
-					<DialogFooter className="p-6 border-t border-[#ebebeb] bg-[#fcfcfc]">
+					<DialogFooter className="p-6 border-t border-border bg-[#fcfcfc]">
 						<div className="flex items-center justify-between w-full">
 							{step > 1 ? (
 								<Button type="button" variant="outline" onClick={prevStep}>

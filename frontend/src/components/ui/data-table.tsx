@@ -63,7 +63,7 @@ function DataTable<TData, TValue>({
 					{table.getHeaderGroups().map((headerGroup) => (
 						<TableRow
 							key={headerGroup.id}
-							className="border-b-[#e5e5e5] hover:bg-transparent"
+							className="border-b-border hover:bg-transparent"
 						>
 							{headerGroup.headers.map((header) => {
 								const columnDef = header.column.columnDef as DataTableColumnDef<
@@ -93,7 +93,7 @@ function DataTable<TData, TValue>({
 					Array.from({ length: 5 }).map((_, rowIndex) => (
 						<TableRow
 							key={`skeleton-row-${rowIndex}`}
-							className="bg-white border-b border-[#ebebeb] last:border-0 hover:bg-transparent"
+							className="bg-white border-b border-border last:border-0 hover:bg-transparent"
 						>
 							{columns.map((column, colIndex) => (
 								<TableCell
@@ -137,7 +137,7 @@ function DataTable<TData, TValue>({
 							key={row.id}
 							data-state={row.getIsSelected() && "selected"}
 							className={cn(
-								"bg-white border-b border-[#ebebeb] hover:bg-[#fcfcfc]",
+								"bg-white border-b border-border hover:bg-[#fcfcfc]",
 								onRowClick && "cursor-pointer",
 							)}
 							onClick={

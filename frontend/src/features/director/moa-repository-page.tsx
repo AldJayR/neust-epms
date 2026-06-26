@@ -170,7 +170,7 @@ export function MoaRepositoryPage({
 							<Button
 								variant="outline"
 								size="icon"
-								className="h-9 w-9 border-[#e5e5e5] bg-white shadow-sm"
+								className="h-9 w-9 border-border bg-white shadow-sm"
 								aria-label="Filter MOAs"
 							>
 								<ListFilter className="size-4 text-foreground" />
@@ -197,7 +197,7 @@ export function MoaRepositoryPage({
 				</DropdownMenu>
 			</div>
 
-			<div className="overflow-hidden rounded-[12px] border border-[#ebebeb] bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+			<div className="overflow-hidden rounded-[12px] border border-border bg-[#f9f9f9] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 				<div className="bg-white">
 					<DataTable
 						columns={columns}
