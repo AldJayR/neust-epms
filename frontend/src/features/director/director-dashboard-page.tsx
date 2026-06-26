@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 import { MetricCard } from "@/components/custom/metric-card";
+import { PageCard } from "@/components/custom/page-card";
 import type { AuthUser } from "@/lib/auth";
 import { getCampusesFn } from "@/lib/auth.functions";
 import { directorDashboardQueryOptions } from "@/lib/dashboard.functions";
@@ -20,7 +21,7 @@ function RecentActivitiesCard({
 	activities: { title: string; description: string; time: string }[];
 }) {
 	return (
-		<div className="flex h-[370px] flex-col overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
+		<PageCard className="flex h-[370px] flex-col">
 			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
 				<h2 className="text-sm font-semibold leading-5 text-heading">
 					Recent Activities
@@ -68,7 +69,7 @@ function RecentActivitiesCard({
 					</li>
 				)}
 			</ul>
-		</div>
+		</PageCard>
 	);
 }
 
@@ -78,7 +79,7 @@ function ExpiringMoasCard({
 	moas: { name: string; dueText: string }[];
 }) {
 	return (
-		<div className="flex h-[148px] flex-col overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
+		<PageCard className="flex h-[148px] flex-col">
 			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
 				<h2 className="text-sm font-semibold leading-5 text-heading">
 					Expiring MOAs
@@ -115,7 +116,7 @@ function ExpiringMoasCard({
 					</li>
 				)}
 			</ul>
-		</div>
+		</PageCard>
 	);
 }
 

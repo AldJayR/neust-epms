@@ -3,6 +3,7 @@ import { ListFilter } from "lucide-react";
 import * as React from "react";
 import { cn } from "#/lib/utils";
 import { MetricCard } from "@/components/custom/metric-card";
+import { PageCard } from "@/components/custom/page-card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -361,7 +362,7 @@ export function RetFacultyDirectoryPage({
 
 			{/* Content Section with Tabs and Table */}
 			<div className="flex flex-col gap-6">
-				<div className="overflow-hidden rounded-[12px] border border-border bg-muted shadow-[0px_1px_3px_0px_var(--shadow-card)]">
+				<PageCard className="bg-muted">
 					{/* Tabs Header */}
 					<div className="border-b border-border bg-background p-2">
 						<Tabs
@@ -400,7 +401,7 @@ export function RetFacultyDirectoryPage({
 							showHeader={showTableHeader}
 						/>
 					</div>
-				</div>
+				</PageCard>
 
 				{/* Pagination Section */}
 				<PaginationBar

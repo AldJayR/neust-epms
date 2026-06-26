@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, ListFilter, Loader2, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { MetricCard } from "@/components/custom/metric-card";
+import { PageCard } from "@/components/custom/page-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
@@ -262,7 +263,7 @@ export function UsersPage({
 				</DropdownMenu>
 			</div>
 
-			<div className="rounded-[12px] border border-border bg-muted shadow-[0px_1px_3px_0px_var(--shadow-card)] overflow-hidden min-h-[400px] relative">
+			<PageCard className="bg-muted min-h-[400px] relative">
 				{isUsersFetching && (
 					<div className="absolute inset-0 bg-background/50 z-10 flex items-center justify-center backdrop-blur-[1px]">
 						<Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -280,7 +281,7 @@ export function UsersPage({
 							: "No user accounts are available yet."
 					}
 				/>
-			</div>
+			</PageCard>
 
 			<PaginationBar
 				page={page}

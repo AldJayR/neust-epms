@@ -8,6 +8,7 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageCard } from "@/components/custom/page-card";
 
 export function ProjectDetailsSkeleton() {
 	return (
@@ -47,7 +48,7 @@ export function ProjectDetailsSkeleton() {
 				{/* Main Column */}
 				<div className="lg:col-span-8 flex flex-col gap-6">
 					{/* Project Overview */}
-					<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)] overflow-hidden">
+					<PageCard>
 						<div className="bg-card border-b border-border px-6 py-3">
 							<Skeleton className="h-4 w-32" />
 						</div>
@@ -90,10 +91,10 @@ export function ProjectDetailsSkeleton() {
 								</div>
 							</div>
 						</div>
-					</div>
+					</PageCard>
 
 					{/* Document History */}
-					<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
+					<PageCard noOverflow>
 						<div className="px-6 py-3 border-b border-border">
 							<Skeleton className="h-4 w-32" />
 						</div>
@@ -116,13 +117,13 @@ export function ProjectDetailsSkeleton() {
 								))}
 							</div>
 						</div>
-					</div>
+					</PageCard>
 				</div>
 
 				{/* Sidebar */}
 				<div className="lg:col-span-4 flex flex-col gap-6">
 					{/* Attachments */}
-					<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)] overflow-hidden">
+					<PageCard>
 						<div className="bg-card border-b border-border px-6 py-3">
 							<Skeleton className="h-4 w-24" />
 						</div>
@@ -146,7 +147,7 @@ export function ProjectDetailsSkeleton() {
 								</div>
 							))}
 						</div>
-					</div>
+					</PageCard>
 				</div>
 			</div>
 		</div>

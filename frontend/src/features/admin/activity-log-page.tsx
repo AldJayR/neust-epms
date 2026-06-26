@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { MetricCard } from "@/components/custom/metric-card";
+import { PageCard } from "@/components/custom/page-card";
 import { Badge } from "@/components/ui/badge";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
@@ -264,7 +265,7 @@ export function ActivityLogPage({
 				</DropdownMenu>
 			</div>
 
-			<div className="border border-border rounded-[12px] shadow-[0px_1px_3px_0px_var(--shadow-card)] overflow-hidden bg-background">
+			<PageCard>
 				<DataTable
 					columns={columns}
 					data={logs}
@@ -273,7 +274,7 @@ export function ActivityLogPage({
 					ariaLabel="Activity log"
 					showHeader={showTableHeader}
 				/>
-			</div>
+			</PageCard>
 
 			<PaginationBar
 				page={page}

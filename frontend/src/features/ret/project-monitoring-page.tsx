@@ -3,6 +3,7 @@ import { ClientOnly, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Filter } from "lucide-react";
 import { MetricCard } from "@/components/custom/metric-card";
+import { PageCard } from "@/components/custom/page-card";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { PaginationBar } from "@/components/ui/pagination-bar";
@@ -196,7 +197,7 @@ export function ProjectMonitoringPage({
 				</div>
 			</div>
 
-			<div className="overflow-hidden rounded-[12px] border border-border bg-muted shadow-[0px_1px_3px_0px_var(--shadow-card)]">
+			<PageCard className="bg-muted">
 				<div className="border-b border-border bg-background p-2">
 					<Tabs
 						value={myProjectsOnly ? "my" : "all"}
@@ -233,7 +234,7 @@ export function ProjectMonitoringPage({
 						onRowClick={(project) => onProjectClick?.(project.id)}
 					/>
 				</div>
-			</div>
+			</PageCard>
 
 			<PaginationBar
 				page={page}
