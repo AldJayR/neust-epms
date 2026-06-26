@@ -98,19 +98,19 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
 			disconnectToastId = toast.custom(
 				() => (
-					<div className="relative flex items-center gap-4 border border-[#ebebeb] bg-background rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
+					<div className="relative flex items-center gap-4 border border-border bg-background rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
 						<div className="flex size-9 items-center justify-center rounded-full bg-red-50 text-red-500 shrink-0">
 							<WifiOff className="size-5" />
 						</div>
 						<div className="flex flex-col text-left">
-							<span className="text-[14px] font-semibold text-[#0a0a0a] leading-tight">
+							<span className="text-[14px] font-semibold text-foreground leading-tight">
 								Connection Lost
 							</span>
-							<span className="text-[12px] text-[#737373] mt-1 leading-tight">
+							<span className="text-[12px] text-muted-foreground mt-1 leading-tight">
 								Reconnecting in {remainingSeconds} seconds...
 							</span>
 						</div>
-						<div className="ml-auto shrink-0 text-[#737373]">
+						<div className="ml-auto shrink-0 text-muted-foreground">
 							<Loader2 className="size-4 animate-spin" />
 						</div>
 					</div>
@@ -127,19 +127,19 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				}
 				toast.custom(
 					() => (
-						<div className="relative flex items-center gap-4 border border-[#ebebeb] bg-background rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
+						<div className="relative flex items-center gap-4 border border-border bg-background rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
 							<div className="flex size-9 items-center justify-center rounded-full bg-red-50 text-red-500 shrink-0">
 								<WifiOff className="size-5" />
 							</div>
 							<div className="flex flex-col text-left">
-								<span className="text-[14px] font-semibold text-[#0a0a0a] leading-tight">
+								<span className="text-[14px] font-semibold text-foreground leading-tight">
 									Connection Lost
 								</span>
-								<span className="text-[12px] text-[#737373] mt-1 leading-tight">
+								<span className="text-[12px] text-muted-foreground mt-1 leading-tight">
 									Reconnecting in {remainingSeconds} seconds...
 								</span>
 							</div>
-							<div className="ml-auto shrink-0 text-[#737373]">
+							<div className="ml-auto shrink-0 text-muted-foreground">
 								<Loader2 className="size-4 animate-spin" />
 							</div>
 						</div>
@@ -163,15 +163,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			}
 			toast.custom(
 				() => (
-					<div className="relative flex items-center gap-4 border border-[#ebebeb] bg-background rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
+					<div className="relative flex items-center gap-4 border border-border bg-background rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
 						<div className="flex size-9 items-center justify-center rounded-full bg-green-50 text-green-600 shrink-0">
 							<Wifi className="size-5" />
 						</div>
 						<div className="flex flex-col text-left">
-							<span className="text-[14px] font-semibold text-[#0a0a0a] leading-tight">
+							<span className="text-[14px] font-semibold text-foreground leading-tight">
 								Connection Restored
 							</span>
-							<span className="text-[12px] text-[#737373] mt-1 leading-tight">
+							<span className="text-[12px] text-muted-foreground mt-1 leading-tight">
 								You are back online.
 							</span>
 						</div>
