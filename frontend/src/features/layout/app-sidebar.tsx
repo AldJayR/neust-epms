@@ -194,8 +194,8 @@ export function AppSidebar({
 						/>
 					</div>
 					<div className="grid flex-1 text-left text-sm leading-tight">
-						<span className="truncate font-semibold text-[#0a0a0a]">NEUST</span>
-						<span className="truncate text-xs text-[#0a0a0a]">
+						<span className="truncate font-semibold text-foreground">NEUST</span>
+						<span className="truncate text-xs text-foreground">
 							Extension Services
 						</span>
 					</div>

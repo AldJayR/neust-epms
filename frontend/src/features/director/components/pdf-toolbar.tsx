@@ -57,7 +57,7 @@ export function PdfToolbar({
 									variant={toolMode === "hand" ? "secondary" : "ghost"}
 									size="icon"
 									aria-label="Hand Tool (Pan and select text)"
-									className={`size-8 rounded-full cursor-pointer ${toolMode === "hand" ? "bg-brand-primary/10 text-brand-primary" : "text-[#555]"}`}
+									className={`size-8 rounded-full cursor-pointer ${toolMode === "hand" ? "bg-brand-primary/10 text-brand-primary" : "text-muted-foreground"}`}
 									onClick={() => onToolModeChange("hand")}
 								>
 									<Hand className="size-4" />
@@ -76,7 +76,7 @@ export function PdfToolbar({
 									variant={toolMode === "comment" ? "secondary" : "ghost"}
 									size="icon"
 									aria-label="Comment Tool (Drag on page to add remark)"
-									className={`size-8 rounded-full cursor-pointer ${toolMode === "comment" ? "bg-brand-primary/10 text-brand-primary" : "text-[#555]"}`}
+									className={`size-8 rounded-full cursor-pointer ${toolMode === "comment" ? "bg-brand-primary/10 text-brand-primary" : "text-muted-foreground"}`}
 									onClick={() => onToolModeChange("comment")}
 								>
 									<MessageSquare className="size-4" />
@@ -102,7 +102,7 @@ export function PdfToolbar({
 													? "Exit Theater Mode"
 													: "Enter Theater Mode"
 											}
-											className="size-8 rounded-full cursor-pointer text-[#555] hover:bg-gray-100"
+											className="size-8 rounded-full cursor-pointer text-muted-foreground hover:bg-gray-100"
 											onClick={onToggleTheaterMode}
 										>
 											{isTheaterMode ? (
@@ -155,7 +155,7 @@ export function PdfToolbar({
 					<button
 						type="button"
 						onClick={onResetZoom}
-						className="text-[13px] text-[#666] tabular-nums w-[48px] text-center hover:text-[#11215a] cursor-pointer"
+						className="text-[13px] text-muted-foreground tabular-nums w-[48px] text-center hover:text-[#11215a] cursor-pointer"
 					>
 						{Math.round(scale * 100)}%
 					</button>
@@ -188,7 +188,7 @@ export function PdfToolbar({
 										variant="ghost"
 										size="icon"
 										aria-label="Reset Zoom"
-										className="size-8 rounded-[8px] text-[#666] hover:text-[#11215a]"
+										className="size-8 rounded-[8px] text-muted-foreground hover:text-[#11215a]"
 										onClick={onResetZoom}
 									>
 										<RotateCcw className="size-3.5" />

@@ -96,19 +96,19 @@ export function RetFacultyDirectoryPage({
 			id: "name",
 			header: "Faculty Name",
 			headerClassName:
-				"w-[320px] px-4 py-2 text-[14px] font-medium text-[#666]",
+				"w-[320px] px-4 py-2 text-[14px] font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3",
 			cell: ({ row }) => {
 				const faculty = row.original;
 				return (
 					<div className="flex items-center gap-3">
 						<Avatar className="size-9">
-							<AvatarFallback className="bg-[#ddd] text-[#666]">
+							<AvatarFallback className="bg-[#ddd] text-muted-foreground">
 								{faculty.firstName?.charAt(0) ?? ""}
 								{faculty.lastName?.charAt(0) ?? ""}
 							</AvatarFallback>
 						</Avatar>
-						<span className="text-[14px] font-normal text-[#0a0a0a]">
+						<span className="text-[14px] font-normal text-foreground">
 							{faculty.firstName} {faculty.lastName}
 						</span>
 					</div>
@@ -119,7 +119,7 @@ export function RetFacultyDirectoryPage({
 			id: "rank",
 			header: "Rank",
 			headerClassName:
-				"w-[200px] px-4 py-2 text-[14px] font-medium text-[#666]",
+				"w-[200px] px-4 py-2 text-[14px] font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3",
 			cell: ({ row }) => {
 				const faculty = row.original;
@@ -137,15 +137,15 @@ export function RetFacultyDirectoryPage({
 			id: "totalProjects",
 			header: "Total Projects",
 			headerClassName:
-				"w-[150px] px-4 py-2 text-[14px] font-medium text-[#666]",
-			cellClassName: "px-4 py-3 text-[14px] text-[#0a0a0a]",
+				"w-[150px] px-4 py-2 text-[14px] font-medium text-muted-foreground",
+			cellClassName: "px-4 py-3 text-[14px] text-foreground",
 			cell: ({ row }) => row.original.totalInvolvement,
 		},
 		{
 			id: "status",
 			header: "Account Status",
 			headerClassName:
-				"w-[150px] px-4 py-2 text-[14px] font-medium text-[#666]",
+				"w-[150px] px-4 py-2 text-[14px] font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3",
 			cell: ({ row }) => <StatusBadge status={row.original.isActive ? "Active" : "Deactivated"} variant="outline" />,
 		},
@@ -158,7 +158,7 @@ export function RetFacultyDirectoryPage({
 				<Button
 					variant="ghost"
 					size="icon"
-					className="size-8 text-[#737373]"
+					className="size-8 text-muted-foreground"
 					aria-label="More actions for faculty member"
 				>
 					<EllipsisVertical className="size-4" />
@@ -243,7 +243,7 @@ export function RetFacultyDirectoryPage({
 
 						{/* Presets / Quick Filters */}
 						<div className="flex flex-col gap-2 border-t border-[#ebebeb] pt-3">
-							<span className="text-[10px] font-bold uppercase tracking-wider text-[#666]">
+							<span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
 								Quick Actions
 							</span>
 							<div className="flex flex-wrap gap-1.5">
@@ -274,7 +274,7 @@ export function RetFacultyDirectoryPage({
 
 						{/* Rank Select */}
 						<div className="flex flex-col gap-2 border-t border-[#ebebeb] pt-3">
-							<span className="text-[10px] font-bold uppercase tracking-wider text-[#666]">
+							<span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
 								Academic Ranks
 							</span>
 							<div className="grid grid-cols-2 gap-x-4 gap-y-2">
@@ -315,7 +315,7 @@ export function RetFacultyDirectoryPage({
 
 						{/* Project Load Select */}
 						<div className="flex flex-col gap-2 border-t border-[#ebebeb] pt-3">
-							<span className="text-[10px] font-bold uppercase tracking-wider text-[#666]">
+							<span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
 								Project Involvement
 							</span>
 							<div className="grid grid-cols-2 gap-x-4 gap-y-2">

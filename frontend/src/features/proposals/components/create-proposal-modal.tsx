@@ -258,7 +258,7 @@ export function CreateProposalModal({
 						<DialogTitle className="text-xl font-semibold text-[#11215a]">
 							Start New Project Proposal
 						</DialogTitle>
-						<DialogDescription className="text-sm text-[#666]">
+						<DialogDescription className="text-sm text-muted-foreground">
 							Step {step} of 4:{" "}
 							{step === 1
 								? "Project Overview"

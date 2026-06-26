@@ -43,13 +43,13 @@ export default function ProjectsChart({ chartData }: ProjectsChartProps) {
 						dataKey="label"
 						axisLine={false}
 						tickLine={false}
-						tick={{ fill: "#737373", fontSize: 12 }}
+						tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
 						dy={10}
 					/>
 					<YAxis
 						axisLine={false}
 						tickLine={false}
-						tick={{ fill: "#737373", fontSize: 12 }}
+						tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
 					/>
 					<Tooltip
 						cursor={{ fill: "transparent" }}

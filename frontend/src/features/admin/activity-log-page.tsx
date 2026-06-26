@@ -121,7 +121,7 @@ export function ActivityLogPage({
 		{
 			id: "time",
 			header: "Time",
-			headerClassName: "w-[140px] font-medium text-[#666] text-sm py-2.5",
+			headerClassName: "w-[140px] font-medium text-muted-foreground text-sm py-2.5",
 			cellClassName: "py-2.5 text-left",
 			cell: ({ row }) => {
 				const createdAt = new Date(row.original.createdAt);
@@ -130,15 +130,15 @@ export function ActivityLogPage({
 						<ClientOnly
 							fallback={
 								<div className="flex flex-col">
-									<span className="text-sm text-[#0a0a0a]">...</span>
-									<span className="text-xs text-[#666]">...</span>
+									<span className="text-sm text-foreground">...</span>
+									<span className="text-xs text-muted-foreground">...</span>
 								</div>
 							}
 						>
-							<span className="text-sm text-[#0a0a0a]">
+							<span className="text-sm text-foreground">
 								{dateFormatter.format(createdAt)}
 							</span>
-							<span className="text-xs text-[#666]">
+							<span className="text-xs text-muted-foreground">
 								{timeFormatter.format(createdAt)}
 							</span>
 						</ClientOnly>
@@ -149,18 +149,18 @@ export function ActivityLogPage({
 		{
 			id: "action",
 			header: "Action",
-			headerClassName: "font-medium text-[#666] text-sm py-2.5",
-			cellClassName: "py-2.5 text-sm text-[#0a0a0a] leading-normal text-left",
+			headerClassName: "font-medium text-muted-foreground text-sm py-2.5",
+			cellClassName: "py-2.5 text-sm text-foreground leading-normal text-left",
 			cell: ({ row }) => row.original.action,
 		},
 		{
 			id: "actor",
 			header: "Actor",
-			headerClassName: "w-[200px] font-medium text-[#666] text-sm py-2.5",
+			headerClassName: "w-[200px] font-medium text-muted-foreground text-sm py-2.5",
 			cellClassName: "py-2.5 text-left",
 			cell: ({ row }) => (
 				<div className="flex flex-col">
-					<span className="text-sm text-[#0a0a0a]">
+					<span className="text-sm text-foreground">
 						{row.original.actorName ?? "System"}
 					</span>
 					<span className="text-xs text-muted-foreground">
@@ -173,7 +173,7 @@ export function ActivityLogPage({
 			id: "type",
 			header: () => <div className="text-center">Type</div>,
 			headerClassName:
-				"w-[130px] font-medium text-[#666] text-sm py-2.5 text-center",
+				"w-[130px] font-medium text-muted-foreground text-sm py-2.5 text-center",
 			cellClassName: "py-2.5 text-center",
 			cell: ({ row }) => {
 				const typeInfo = getActionTypeInfo(
@@ -184,7 +184,7 @@ export function ActivityLogPage({
 					<div className="flex justify-center">
 						<Badge
 							variant="outline"
-							className="font-medium text-[#737373] border-[#e5e5e5] h-[22px] px-1.5 gap-1 rounded-[8px]"
+							className="font-medium text-muted-foreground border-[#e5e5e5] h-[22px] px-1.5 gap-1 rounded-[8px]"
 						>
 							{typeInfo.icon}
 							<span>{typeInfo.label}</span>

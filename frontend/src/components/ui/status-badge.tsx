@@ -104,7 +104,7 @@ export function StatusBadge({
 
 	if (!config) {
 		return (
-			<Badge variant="outline" className={cn("text-[#737373]", className)}>
+			<Badge variant="outline" className={cn("text-muted-foreground", className)}>
 				{status}
 			</Badge>
 		);
@@ -116,7 +116,7 @@ export function StatusBadge({
 		<Badge
 			variant={variant}
 			className={cn(
-				"flex w-fit items-center gap-1 border-[#e5e5e5] px-2 py-0.5 text-xs font-medium text-[#737373] bg-white",
+				"flex w-fit items-center gap-1 border-[#e5e5e5] px-2 py-0.5 text-xs font-medium text-muted-foreground bg-white",
 				variant === "outline" && "h-[22px] rounded-lg px-1.5 py-0.5",
 				className,
 			)}

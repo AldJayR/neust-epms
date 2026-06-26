@@ -122,9 +122,9 @@ function DataTable<TData, TValue>({
 							<Empty className="border-0 py-12">
 								<EmptyContent>
 									<EmptyMedia variant="icon">
-										<FolderOpen className="size-5 text-[#666]" />
+										<FolderOpen className="size-5 text-muted-foreground" />
 									</EmptyMedia>
-									<EmptyDescription className="text-sm text-[#666]">
+									<EmptyDescription className="text-sm text-muted-foreground">
 										{emptyMessage}
 									</EmptyDescription>
 								</EmptyContent>

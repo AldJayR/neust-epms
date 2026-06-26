@@ -109,31 +109,31 @@ function ProposalDetailsTab({
 		<CardContent className="p-0">
 			<div className="p-5 space-y-4">
 				<div className="flex justify-between items-center text-[14px]">
-					<span className="text-[#737373] font-medium">Submitted by</span>
+					<span className="text-muted-foreground font-medium">Submitted by</span>
 					<span className="text-black font-medium">
 						{data.metadata.leader.name}
 					</span>
 				</div>
 				<div className="flex justify-between items-center text-[14px]">
-					<span className="text-[#737373] font-medium">Department</span>
+					<span className="text-muted-foreground font-medium">Department</span>
 					<span className="text-black font-medium">
 						{data.metadata.departmentCode}
 					</span>
 				</div>
 				<div className="flex justify-between items-center text-[14px]">
-					<span className="text-[#737373] font-medium">Duration</span>
+					<span className="text-muted-foreground font-medium">Duration</span>
 					<span className="text-black font-medium">
 						{data.metadata.duration}
 					</span>
 				</div>
 				<div className="flex justify-between items-center text-[14px]">
-					<span className="text-[#737373] font-medium">Budget (NEUST)</span>
+					<span className="text-muted-foreground font-medium">Budget (NEUST)</span>
 					<span className="text-black font-medium">
 						{formatBudget(data.metadata.budget.neust)}
 					</span>
 				</div>
 				<div className="flex justify-between items-center text-[14px]">
-					<span className="text-[#737373] font-medium">SDGs</span>
+					<span className="text-muted-foreground font-medium">SDGs</span>
 					<span className="text-black font-medium">
 						{data.metadata.sdgs ?? "None"}
 					</span>
@@ -156,7 +156,7 @@ function ProposalDetailsTab({
 								</span>
 							</div>
 							<div className="pl-7">
-								<span className="text-[12px] text-[#737373] font-light">
+								<span className="text-[12px] text-muted-foreground font-light">
 									{formatReviewDate(endorsement.date)}
 								</span>
 							</div>
@@ -212,7 +212,7 @@ function ProposalDetailsTab({
 								>
 									{file.name}
 								</span>
-								<span className="text-[11px] text-[#737373]">
+								<span className="text-[11px] text-muted-foreground">
 									{file.version} {isActive && "· Currently Viewing"}
 								</span>
 							</button>
@@ -227,7 +227,7 @@ function ProposalDetailsTab({
 						<Separator className="bg-[#ebebeb]" />
 					</div>
 					<div className="px-5 pt-2">
-						<p className="text-[12px] text-[#737373] font-light leading-relaxed">
+						<p className="text-[12px] text-muted-foreground font-light leading-relaxed">
 							Approving will forward this proposal to the Director/Admin for
 							final review.
 						</p>
@@ -274,7 +274,7 @@ function ProposalDetailsTab({
 						<DialogTitle className="text-[16px] font-semibold text-[#11215a]">
 							Endorse Proposal
 						</DialogTitle>
-						<DialogDescription className="text-sm text-[#737373] font-light">
+						<DialogDescription className="text-sm text-muted-foreground font-light">
 							Please enter any final comments or remarks before endorsing this
 							proposal (optional).
 						</DialogDescription>
@@ -348,7 +348,7 @@ function CommentsTab({
 					<div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted-foreground gap-2">
 						<MessageSquare className="size-8 text-gray-300 animate-pulse" />
 						<p className="text-sm font-semibold">No comments yet</p>
-						<p className="text-xs text-[#737373] font-light">
+						<p className="text-xs text-muted-foreground font-light">
 							Drag on the PDF page in comment mode to add remarks.
 						</p>
 					</div>
@@ -370,15 +370,15 @@ function CommentsTab({
 									<span className="text-xs font-semibold text-black">
 										{comment.user.name}
 									</span>
-									<span className="text-[10px] text-[#737373]">
+									<span className="text-[10px] text-muted-foreground">
 										{comment.user.roleName}
 									</span>
 								</div>
-								<span className="text-[10px] text-[#999]">
+								<span className="text-[10px] text-muted-foreground/60">
 									{new Date(comment.createdAt).toLocaleDateString()}
 								</span>
 							</div>
-							<p className="text-xs text-[#333] leading-relaxed break-words">
+							<p className="text-xs text-foreground/80 leading-relaxed break-words">
 								{comment.content}
 							</p>
 							{comment.annotationJson && (
@@ -393,7 +393,7 @@ function CommentsTab({
 
 			{/* Bottom panel */}
 			<div className="border-t border-[#ebebeb] p-5 bg-white space-y-4">
-				<div className="flex justify-between items-center text-[13px] text-[#737373]">
+				<div className="flex justify-between items-center text-[13px] text-muted-foreground">
 					<span>Attached Documents</span>
 					<span className="font-semibold text-black">
 						{attachmentsCount} files
@@ -556,7 +556,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 					{data?.status && (
 						<Badge
 							variant="outline"
-							className="bg-white border-[#e5e5e5] text-[#737373] font-medium rounded-lg px-2.5 py-0.5 text-[12px]"
+							className="bg-white border-[#e5e5e5] text-muted-foreground font-medium rounded-lg px-2.5 py-0.5 text-[12px]"
 						>
 							{data.status}
 						</Badge>
@@ -608,7 +608,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 									onToggleTheaterMode={() => setIsTheaterMode(!isTheaterMode)}
 								/>
 							) : (
-								<div className="flex items-center justify-center h-full text-[#737373]">
+								<div className="flex items-center justify-center h-full text-muted-foreground">
 									No document available
 								</div>
 							)}
@@ -640,7 +640,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 												Comments
 												{comments.length > 0 && (
 													<span
-														className={`px-1.5 py-0.5 rounded-full text-[10px] transition-colors ${activeTab === "comments" ? "bg-[#14369c] text-white" : "bg-gray-100 text-[#737373]"}`}
+														className={`px-1.5 py-0.5 rounded-full text-[10px] transition-colors ${activeTab === "comments" ? "bg-[#14369c] text-white" : "bg-gray-100 text-muted-foreground"}`}
 													>
 														{comments.length}
 													</span>

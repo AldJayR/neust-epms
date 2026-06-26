@@ -69,7 +69,7 @@ function SearchInput({
 				placeholder={placeholder}
 				aria-label={ariaLabel}
 				className={cn(
-					"h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-none placeholder:text-[#737373]",
+					"h-9 rounded-lg border-[#e5e5e5] bg-white pl-9 shadow-none placeholder:text-muted-foreground",
 					className,
 				)}
 				value={displayValue}

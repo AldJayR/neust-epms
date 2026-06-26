@@ -208,7 +208,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 		{
 			id: "name",
 			header: "Name",
-			headerClassName: "min-w-[250px] font-medium text-[#0a0a0a] text-left",
+			headerClassName: "min-w-[250px] font-medium text-foreground text-left",
 			cell: ({ row }) => {
 				const user = row.original;
 				return (
@@ -221,12 +221,12 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 							</AvatarFallback>
 						</Avatar>
 						<div className="flex min-w-0 flex-col text-left">
-							<span className="truncate text-[14px] font-medium leading-5 text-[#0a0a0a]">
+							<span className="truncate text-[14px] font-medium leading-5 text-foreground">
 								{user.firstName}{" "}
 								{user.middleName ? `${user.middleName.charAt(0)}. ` : ""}{" "}
 								{user.lastName}
 							</span>
-							<span className="truncate text-[12px] leading-4 text-[#666]">
+							<span className="truncate text-[12px] leading-4 text-muted-foreground">
 								{user.campusName}
 							</span>
 						</div>
@@ -237,14 +237,14 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 		{
 			id: "department",
 			header: () => <div className="text-center">Department</div>,
-			headerClassName: "min-w-[200px] text-center font-medium text-[#0a0a0a]",
-			cellClassName: "text-center text-[14px] text-[#0a0a0a]",
+			headerClassName: "min-w-[200px] text-center font-medium text-foreground",
+			cellClassName: "text-center text-[14px] text-foreground",
 			cell: ({ row }) => row.original.departmentName ?? "-",
 		},
 		{
 			id: "role",
 			header: () => <div className="text-right">Assign role</div>,
-			headerClassName: "w-[200px] pr-6 text-right font-medium text-[#0a0a0a]",
+			headerClassName: "w-[200px] pr-6 text-right font-medium text-foreground",
 			cellClassName: "pr-6",
 			cell: ({ row }) => {
 				const user = row.original;
@@ -290,7 +290,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 			>
 				<div className="flex h-full flex-col gap-6 p-6">
 					<DialogHeader className="flex flex-row items-center justify-between gap-4">
-						<DialogTitle className="text-[20px] font-semibold leading-5 text-[#0a0a0a]">
+						<DialogTitle className="text-[20px] font-semibold leading-5 text-foreground">
 							Bulk Approve
 						</DialogTitle>
 						<DialogClose
@@ -298,7 +298,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 								<button
 									type="button"
 									aria-label="Close"
-									className="inline-flex h-4 w-4 items-center justify-center text-[#737373] transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+									className="inline-flex h-4 w-4 items-center justify-center text-muted-foreground transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 								/>
 							}
 						>

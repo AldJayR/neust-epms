@@ -74,8 +74,8 @@ export function ProjectMonitoringPage({
 		{
 			id: "title",
 			header: "Project Name",
-			headerClassName: "w-[35%] font-medium text-[#666]",
-			cellClassName: "font-bold text-[#0a0a0a]",
+			headerClassName: "w-[35%] font-medium text-muted-foreground",
+			cellClassName: "font-bold text-foreground",
 			cell: ({ row }) => {
 				const project = row.original;
 				return (
@@ -96,15 +96,15 @@ export function ProjectMonitoringPage({
 		{
 			id: "leader",
 			header: "Project Leader",
-			headerClassName: "w-[25%] font-medium text-[#666]",
+			headerClassName: "w-[25%] font-medium text-muted-foreground",
 			cell: ({ row }) => {
 				const project = row.original;
 				return (
 					<div className="flex flex-col text-left">
-						<span className="text-[14px] text-[#0a0a0a]">
+						<span className="text-[14px] text-foreground">
 							{project.leaderName}
 						</span>
-						<span className="text-[12px] text-[#666]">
+						<span className="text-[12px] text-muted-foreground">
 							{project.leaderRank}
 						</span>
 					</div>
@@ -114,14 +114,14 @@ export function ProjectMonitoringPage({
 		{
 			id: "lastReport",
 			header: "Last Report",
-			headerClassName: "w-[20%] font-medium text-[#666]",
-			cellClassName: "text-[#0a0a0a] text-left",
+			headerClassName: "w-[20%] font-medium text-muted-foreground",
+			cellClassName: "text-foreground text-left",
 			cell: ({ row }) => (
 				<ClientOnly fallback="...">
 					{row.original.lastReportDate ? (
 						format(new Date(row.original.lastReportDate), "MMM dd, yyyy")
 					) : (
-						<span className="text-[#999]">—</span>
+						<span className="text-muted-foreground/60">—</span>
 					)}
 				</ClientOnly>
 			),
@@ -129,7 +129,7 @@ export function ProjectMonitoringPage({
 		{
 			id: "status",
 			header: "Status",
-			headerClassName: "w-[15%] font-medium text-[#666]",
+			headerClassName: "w-[15%] font-medium text-muted-foreground",
 			cellClassName: "text-left",
 			cell: ({ row }) => <StatusBadge status={row.original.status} />,
 		},
@@ -145,7 +145,7 @@ export function ProjectMonitoringPage({
 					className="size-8"
 					aria-label="More actions for project"
 				>
-					<EllipsisVertical className="size-4 text-[#737373]" />
+					<EllipsisVertical className="size-4 text-muted-foreground" />
 				</Button>
 			),
 		},
@@ -196,7 +196,7 @@ export function ProjectMonitoringPage({
 					>
 						<SelectTrigger className="h-9 w-full rounded-lg border-[#e5e5e5] bg-white shadow-sm sm:w-[180px]">
 							<div className="flex items-center gap-2">
-								<Filter className="size-4 text-[#737373]" />
+								<Filter className="size-4 text-muted-foreground" />
 								<SelectValue placeholder="All Statuses" />
 							</div>
 						</SelectTrigger>

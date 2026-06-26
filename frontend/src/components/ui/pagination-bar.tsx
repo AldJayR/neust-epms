@@ -35,7 +35,7 @@ export function PaginationBar({
 		<div
 			className={`flex flex-col items-center justify-between gap-4 border-t border-transparent pt-4 sm:flex-row ${className}`}
 		>
-			<p className="text-xs text-[#666]">
+			<p className="text-xs text-muted-foreground">
 				Showing <span className="font-bold">{from}</span> to{" "}
 				<span className="font-bold">{to}</span> of{" "}
 				<span className="font-bold">{total}</span> results
@@ -48,7 +48,7 @@ export function PaginationBar({
 							<Button
 								variant="ghost"
 								size="sm"
-								className="gap-1 pl-2.5 text-[#0a0a0a] hover:bg-transparent"
+								className="gap-1 pl-2.5 text-foreground hover:bg-transparent"
 								onClick={() => onPageChange(page - 1)}
 								disabled={page <= 1 || isLoading}
 							>
@@ -73,8 +73,8 @@ export function PaginationBar({
 										onClick={() => onPageChange(p)}
 										className={
 											page === p
-												? "border-[#e5e5e5] bg-white text-[#0a0a0a] shadow-sm"
-												: "border-transparent text-[#0a0a0a] hover:bg-transparent"
+												? "border-[#e5e5e5] bg-white text-foreground shadow-sm"
+												: "border-transparent text-foreground hover:bg-transparent"
 										}
 									>
 										{p}
@@ -87,7 +87,7 @@ export function PaginationBar({
 							<Button
 								variant="ghost"
 								size="sm"
-								className="gap-1 pr-2.5 text-[#0a0a0a] hover:bg-transparent"
+								className="gap-1 pr-2.5 text-foreground hover:bg-transparent"
 								onClick={() => onPageChange(page + 1)}
 								disabled={page >= totalPages || isLoading}
 							>

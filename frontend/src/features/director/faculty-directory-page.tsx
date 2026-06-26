@@ -215,32 +215,32 @@ export function FacultyDirectoryPage({
 			id: "rank",
 			header: () => <div className="text-center">Rank</div>,
 			headerClassName:
-				"w-[60px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+				"w-[60px] px-4 py-2 text-center text-[14px] font-medium text-muted-foreground",
 			cellClassName:
-				"px-4 py-3 text-center text-[14px] font-bold text-[#0a0a0a]",
+				"px-4 py-3 text-center text-[14px] font-bold text-foreground",
 			cell: ({ row }) => (page - 1) * limit + row.index + 1,
 		},
 		{
 			id: "name",
 			header: "Faculty Name",
 			headerClassName:
-				"w-[300px] px-4 py-2 text-[14px] font-medium text-[#666]",
+				"w-[300px] px-4 py-2 text-[14px] font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3",
 			cell: ({ row }) => {
 				const faculty = row.original;
 				return (
 					<div className="flex items-center gap-3">
 						<Avatar className="size-9">
-							<AvatarFallback className="bg-[#ddd] text-[#666]">
+							<AvatarFallback className="bg-[#ddd] text-muted-foreground">
 								{faculty.firstName?.charAt(0) ?? ""}
 								{faculty.lastName?.charAt(0) ?? ""}
 							</AvatarFallback>
 						</Avatar>
 						<div className="flex flex-col text-left">
-							<span className="text-[14px] font-normal text-[#0a0a0a]">
+							<span className="text-[14px] font-normal text-foreground">
 								{faculty.firstName} {faculty.lastName}
 							</span>
-							<span className="text-[12px] text-[#666]">
+							<span className="text-[12px] text-muted-foreground">
 								{formatAcademicRank(faculty.academicRank)}
 							</span>
 						</div>
@@ -252,13 +252,13 @@ export function FacultyDirectoryPage({
 			id: "college",
 			header: "Department",
 			headerClassName:
-				"w-[200px] px-4 py-2 text-[14px] font-medium text-[#666]",
+				"w-[200px] px-4 py-2 text-[14px] font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-[14px]",
 			cell: ({ row }) => {
 				const faculty = row.original;
 				return (
 					<div className="flex flex-col text-left">
-						<span className="font-normal text-[#0a0a0a]">
+						<span className="font-normal text-foreground">
 							{faculty.departmentCode ?? faculty.college}
 						</span>
 						{faculty.isMainCampus === false && faculty.campusName && (
@@ -274,27 +274,27 @@ export function FacultyDirectoryPage({
 			id: "leadProjects",
 			header: () => <div className="text-right">Lead Projects</div>,
 			headerClassName:
-				"w-[120px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
+				"w-[120px] px-4 py-2 text-right text-[14px] font-medium text-muted-foreground",
 			cellClassName:
-				"px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]",
+				"px-4 py-3 text-right text-[14px] font-medium text-foreground",
 			cell: ({ row }) => row.original.leadProjects,
 		},
 		{
 			id: "collaboratorProjects",
 			header: () => <div className="text-right">Collaborator Projects</div>,
 			headerClassName:
-				"w-[150px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
+				"w-[150px] px-4 py-2 text-right text-[14px] font-medium text-muted-foreground",
 			cellClassName:
-				"px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]",
+				"px-4 py-3 text-right text-[14px] font-medium text-foreground",
 			cell: ({ row }) => row.original.collaboratorProjects,
 		},
 		{
 			id: "totalInvolvement",
 			header: () => <div className="text-right">Total Involvement</div>,
 			headerClassName:
-				"w-[150px] px-4 py-2 text-right text-[14px] font-medium text-[#666]",
+				"w-[150px] px-4 py-2 text-right text-[14px] font-medium text-muted-foreground",
 			cellClassName:
-				"px-4 py-3 text-right text-[14px] font-medium text-[#0a0a0a]",
+				"px-4 py-3 text-right text-[14px] font-medium text-foreground",
 			cell: ({ row }) => row.original.totalInvolvement,
 		},
 		{
@@ -306,7 +306,7 @@ export function FacultyDirectoryPage({
 				<Button
 					variant="ghost"
 					size="icon"
-					className="size-8 text-[#737373]"
+					className="size-8 text-muted-foreground"
 					aria-label="More actions for faculty member"
 				>
 					<EllipsisVertical className="size-4" />
@@ -323,8 +323,8 @@ export function FacultyDirectoryPage({
 				</h1>
 				<div className="flex items-center gap-4">
 					<div className="flex h-9 items-center gap-2 rounded-lg border border-[#e5e5e5] bg-white px-3 shadow-sm">
-						<Calendar className="size-4 text-[#0a0a0a]" />
-						<span className="text-sm font-medium text-[#0a0a0a]">
+						<Calendar className="size-4 text-foreground" />
+						<span className="text-sm font-medium text-foreground">
 							A.Y. 2024-2025
 						</span>
 					</div>
@@ -398,7 +398,7 @@ export function FacultyDirectoryPage({
 						onCollegeChange(val === "all" ? "" : val || "")
 					}
 				>
-					<SelectTrigger className="h-9 w-[180px] rounded-lg border border-[#e5e5e5] bg-white shadow-sm text-[#737373]">
+					<SelectTrigger className="h-9 w-[180px] rounded-lg border border-[#e5e5e5] bg-white shadow-sm text-muted-foreground">
 						<div className="flex items-center gap-2">
 							<Filter className="size-4" />
 							<SelectValue placeholder="All Colleges" />

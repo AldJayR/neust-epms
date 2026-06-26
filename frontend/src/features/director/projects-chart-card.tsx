@@ -28,10 +28,10 @@ export default function ProjectsChartCard({
 		<div className="h-[370px] overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex h-[72px] items-start justify-between border-b border-white px-6 pt-4 pb-3">
 				<div className="leading-tight">
-					<p className="text-[14px] font-semibold leading-5 text-[#0a0a0a]">
+					<p className="text-[14px] font-semibold leading-5 text-foreground">
 						Total Projects
 					</p>
-					<p className="text-[14px] leading-5 text-[#666]">per college</p>
+					<p className="text-[14px] leading-5 text-muted-foreground">per college</p>
 				</div>
 				<Select
 					value={selectedCampus}
@@ -40,7 +40,7 @@ export default function ProjectsChartCard({
 					}}
 					modal={false}
 				>
-					<SelectTrigger className="h-9 w-[200px] rounded-md border border-[#e5e5e5] bg-white px-3 text-[14px] text-[#737373] shadow-[0px_1px_1px_rgba(0,0,0,0.1)]">
+					<SelectTrigger className="h-9 w-[200px] rounded-md border border-[#e5e5e5] bg-white px-3 text-[14px] text-muted-foreground shadow-[0px_1px_1px_rgba(0,0,0,0.1)]">
 						<SelectValue placeholder="Select campus..." />
 					</SelectTrigger>
 					<SelectContent

@@ -91,12 +91,12 @@ export function RETDashboardPage({
 		{
 			id: "title",
 			header: "Project Title",
-			headerClassName: "w-[352px] font-medium text-[#666] px-4",
+			headerClassName: "w-[352px] font-medium text-muted-foreground px-4",
 			cellClassName: "px-4 py-3 align-middle",
 			cell: ({ row }) => {
 				const proposal = row.original;
 				return (
-					<p className="text-sm font-medium text-[#0a0a0a] line-clamp-2 leading-5">
+					<p className="text-sm font-medium text-foreground line-clamp-2 leading-5">
 						{proposal.title}
 					</p>
 				);
@@ -111,7 +111,7 @@ export function RETDashboardPage({
 		{
 			id: "leader",
 			header: "Project Leader",
-			headerClassName: "w-[228px] font-medium text-[#666] px-4",
+			headerClassName: "w-[228px] font-medium text-muted-foreground px-4",
 			cellClassName: "px-4 py-3 align-middle",
 			cell: ({ row }) => {
 				const proposal = row.original;
@@ -125,10 +125,10 @@ export function RETDashboardPage({
 							</AvatarFallback>
 						</Avatar>
 						<div className="flex flex-col gap-[2px]">
-							<span className="text-sm font-normal text-[#0a0a0a] leading-5">
+							<span className="text-sm font-normal text-foreground leading-5">
 								{proposal.leaderFirstName} {proposal.leaderLastName}
 							</span>
-							<span className="text-xs text-[#666] leading-[14px]">
+							<span className="text-xs text-muted-foreground leading-[14px]">
 								{formatAcademicRank(proposal.leaderAcademicRank ?? null)}
 							</span>
 						</div>
@@ -148,8 +148,8 @@ export function RETDashboardPage({
 		{
 			id: "dateSubmitted",
 			header: "Date Submitted",
-			headerClassName: "w-[134px] font-medium text-[#666] px-4",
-			cellClassName: "px-4 py-3 align-middle text-sm text-[#0a0a0a]",
+			headerClassName: "w-[134px] font-medium text-muted-foreground px-4",
+			cellClassName: "px-4 py-3 align-middle text-sm text-foreground",
 			cell: ({ row }) => {
 				const proposal = row.original;
 				return format(new Date(proposal.createdAt), "MMM dd, yyyy");
@@ -159,7 +159,7 @@ export function RETDashboardPage({
 		{
 			id: "status",
 			header: "Status",
-			headerClassName: "w-[188px] font-medium text-[#666] px-4",
+			headerClassName: "w-[188px] font-medium text-muted-foreground px-4",
 			cellClassName: "px-4 py-3 align-middle",
 			cell: ({ row }) => {
 				const proposal = row.original;
@@ -181,7 +181,7 @@ export function RETDashboardPage({
 								<Button
 									variant="ghost"
 									size="icon"
-									className="size-8 text-[#666]"
+									className="size-8 text-muted-foreground"
 								/>
 							}
 							aria-label="Open proposal actions"
@@ -269,8 +269,8 @@ export function RETDashboardPage({
 							}
 						}}
 					>
-						<SelectTrigger className="h-9 w-[180px] rounded-lg border-[#e5e5e5] bg-white text-[#737373] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1)]">
-							<Filter className="mr-2 size-4 text-[#737373]" />
+						<SelectTrigger className="h-9 w-[180px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1)]">
+							<Filter className="mr-2 size-4 text-muted-foreground" />
 							<SelectValue placeholder="All Statuses" />
 						</SelectTrigger>
 						<SelectContent>

@@ -102,7 +102,7 @@ export function UsersPage({
 		{
 			id: "name",
 			header: "Faculty Name",
-			headerClassName: "w-[320px] font-medium text-[#666]",
+			headerClassName: "w-[320px] font-medium text-muted-foreground",
 			cellClassName: "py-4",
 			cell: ({ row }) => {
 				const user = row.original;
@@ -116,10 +116,10 @@ export function UsersPage({
 							</AvatarFallback>
 						</Avatar>
 						<div className="flex flex-col text-left">
-							<span className="text-sm font-normal text-[#0a0a0a]">
+							<span className="text-sm font-normal text-foreground">
 								{user.firstName} {user.lastName}
 							</span>
-							<span className="text-xs text-[#666]">
+							<span className="text-xs text-muted-foreground">
 								{formatAcademicRank(user.academicRank)}
 							</span>
 						</div>
@@ -130,21 +130,21 @@ export function UsersPage({
 		{
 			id: "department",
 			header: () => <div className="text-center">Department</div>,
-			headerClassName: "text-center font-medium text-[#666]",
-			cellClassName: "text-center text-sm text-[#0a0a0a]",
+			headerClassName: "text-center font-medium text-muted-foreground",
+			cellClassName: "text-center text-sm text-foreground",
 			cell: ({ row }) => row.original.departmentName ?? row.original.campusName,
 		},
 		{
 			id: "role",
 			header: () => <div className="text-center">Role</div>,
-			headerClassName: "text-center font-medium text-[#666]",
-			cellClassName: "text-center text-sm text-[#0a0a0a]",
+			headerClassName: "text-center font-medium text-muted-foreground",
+			cellClassName: "text-center text-sm text-foreground",
 			cell: ({ row }) => row.original.roleName,
 		},
 		{
 			id: "status",
 			header: () => <div className="text-center">Status</div>,
-			headerClassName: "text-center font-medium text-[#666]",
+			headerClassName: "text-center font-medium text-muted-foreground",
 			cell: ({ row }) => (
 				<div className="flex justify-center">
 					<StatusBadge status={row.original.isActive ? "Active" : "Deactivated"} variant="outline" />

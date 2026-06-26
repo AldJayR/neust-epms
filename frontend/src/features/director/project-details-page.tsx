@@ -206,7 +206,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 			</div>
 			<div className="divide-y divide-[#ebebeb]">
 				<div className="flex items-center justify-between px-6 py-3">
-					<span className="text-[14px] text-[#666]">Project Leader</span>
+					<span className="text-[14px] text-muted-foreground">Project Leader</span>
 					<div className="flex items-center gap-3">
 						<Avatar className="size-8 border border-[#ebebeb]">
 							<AvatarImage
@@ -220,36 +220,36 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 									.join("")}
 							</AvatarFallback>
 						</Avatar>
-						<span className="text-[14px] font-medium text-[#0a0a0a]">
+						<span className="text-[14px] font-medium text-foreground">
 							{metadata.leader.name}
 						</span>
 					</div>
 				</div>
 				<div className="flex items-center justify-between px-6 py-3">
-					<span className="text-[14px] text-[#666]">Department / Unit</span>
-					<span className="text-[14px] font-medium text-[#0a0a0a]">
+					<span className="text-[14px] text-muted-foreground">Department / Unit</span>
+					<span className="text-[14px] font-medium text-foreground">
 						{metadata.department}
 					</span>
 				</div>
 				<div className="flex items-center justify-between px-6 py-3">
-					<span className="text-[14px] text-[#666]">Duration</span>
-					<span className="text-[14px] font-medium text-[#0a0a0a]">
+					<span className="text-[14px] text-muted-foreground">Duration</span>
+					<span className="text-[14px] font-medium text-foreground">
 						{metadata.duration}
 					</span>
 				</div>
 				<div className="flex items-center justify-between px-6 py-3">
-					<span className="text-[14px] text-[#666]">SDGs</span>
-					<span className="text-[14px] font-medium text-[#0a0a0a]">
+					<span className="text-[14px] text-muted-foreground">SDGs</span>
+					<span className="text-[14px] font-medium text-foreground">
 						{metadata.sdgs ?? "None"}
 					</span>
 				</div>
 				<div className="flex items-center justify-between px-6 py-3">
-					<span className="text-[14px] text-[#666]">Total Budget</span>
+					<span className="text-[14px] text-muted-foreground">Total Budget</span>
 					<div className="flex flex-col items-end">
 						<span className="text-[14px] font-semibold text-[#11215a]">
 							₱{metadata.budget.total.toLocaleString()}
 						</span>
-						<span className="text-[12px] text-[#666]">
+						<span className="text-[12px] text-muted-foreground">
 							NEUST: ₱{metadata.budget.neust.toLocaleString()} | Partner: ₱
 							{metadata.budget.partner.toLocaleString()}
 						</span>
@@ -267,7 +267,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 							/>
 						}
 					>
-						<span className="text-[14px] text-[#666]">Project Team</span>
+						<span className="text-[14px] text-muted-foreground">Project Team</span>
 						<div className="flex items-center gap-4">
 							<div className="flex -space-x-2">
 								{members.slice(0, 4).map((member) => (
@@ -285,12 +285,12 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 									</Avatar>
 								))}
 								{members.length > 4 && (
-									<div className="flex size-8 items-center justify-center rounded-full border-2 border-white bg-gray-50 text-[10px] font-bold text-[#666] ring-1 ring-[#ebebeb]">
+									<div className="flex size-8 items-center justify-center rounded-full border-2 border-white bg-gray-50 text-[10px] font-bold text-muted-foreground ring-1 ring-[#ebebeb]">
 										+{members.length - 4}
 									</div>
 								)}
 							</div>
-							<ChevronRight className="size-4 text-[#999]" />
+							<ChevronRight className="size-4 text-muted-foreground/60" />
 						</div>
 					</DialogTrigger>
 					<DialogContent className="sm:max-w-[425px] rounded-[12px] p-6">
@@ -312,10 +312,10 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 										</AvatarFallback>
 									</Avatar>
 									<div className="flex flex-col">
-										<span className="text-[14px] font-medium text-[#0a0a0a]">
+										<span className="text-[14px] font-medium text-foreground">
 											{member.name}
 										</span>
-										<span className="text-[12px] text-[#666]">
+										<span className="text-[12px] text-muted-foreground">
 											{member.role}
 										</span>
 									</div>
@@ -358,7 +358,7 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 							<div className="flex flex-1 flex-col gap-1">
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2">
-										<span className="text-[14px] font-medium text-[#0a0a0a]">
+										<span className="text-[14px] font-medium text-foreground">
 											Version {item.version}
 										</span>
 										<Badge
@@ -373,17 +373,17 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 											{item.status}
 										</Badge>
 									</div>
-									<span className="text-[12px] text-[#666]">
+									<span className="text-[12px] text-muted-foreground">
 										{format(new Date(item.date), "MMM dd, yyyy · hh:mm a")}
 									</span>
 								</div>
-								<p className="text-[13px] text-[#666]">
+								<p className="text-[13px] text-muted-foreground">
 									{item.status === "Returned"
 										? "Returned by Technical Panel"
 										: `Uploaded by ${item.actorName}`}
 								</p>
 								{item.comment && (
-									<div className="rounded-[8px] border border-dashed border-[#e5e5e5] bg-[#fcfcfc] p-3 text-[12px] italic text-[#737373]">
+									<div className="rounded-[8px] border border-dashed border-[#e5e5e5] bg-[#fcfcfc] p-3 text-[12px] italic text-muted-foreground">
 										"{item.comment}"
 									</div>
 								)}
@@ -391,7 +391,7 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 									<Button
 										variant="outline"
 										size="sm"
-										className="w-fit gap-1.5 rounded-[8px] border-[#e5e5e5] h-7 text-[12px] font-medium text-[#737373] hover:bg-[#fcfcfc]"
+										className="w-fit gap-1.5 rounded-[8px] border-[#e5e5e5] h-7 text-[12px] font-medium text-muted-foreground hover:bg-[#fcfcfc]"
 									>
 										<FileText className="size-3" />
 										View Version
@@ -435,10 +435,10 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 								<FileText className="size-5" />
 							</div>
 							<div className="flex flex-1 flex-col overflow-hidden">
-								<span className="truncate text-[14px] font-medium text-[#0a0a0a]">
+								<span className="truncate text-[14px] font-medium text-foreground">
 									{attachment.name}
 								</span>
-								<span className="text-[12px] text-[#666]">
+								<span className="text-[12px] text-muted-foreground">
 									{attachment.type} · v{attachment.version}
 								</span>
 							</div>
@@ -447,7 +447,7 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 							<Button
 								nativeButton={false}
 								variant="outline"
-								className="h-8 rounded-[8px] border-[#e5e5e5] text-[12px] font-medium text-[#666] hover:bg-white"
+								className="h-8 rounded-[8px] border-[#e5e5e5] text-[12px] font-medium text-muted-foreground hover:bg-white"
 								render={
 									<a
 										href={attachment.url}
@@ -464,7 +464,7 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 							<Button
 								nativeButton={false}
 								variant="outline"
-								className="h-8 rounded-[8px] border-[#e5e5e5] text-[12px] font-medium text-[#666] hover:bg-white"
+								className="h-8 rounded-[8px] border-[#e5e5e5] text-[12px] font-medium text-muted-foreground hover:bg-white"
 								render={
 									<a href={attachment.url} download>
 										Download Attachment
@@ -524,7 +524,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 					<h1 className="flex flex-wrap items-center gap-3 text-[22px] font-semibold text-[#11215a]">
 						<span>{data.title}</span>
 						<StatusBadge status={data.status} />
-						<span className="text-[12px] font-normal text-[#666]">
+						<span className="text-[12px] font-normal text-muted-foreground">
 							Version {data.version}
 						</span>
 					</h1>

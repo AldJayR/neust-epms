@@ -430,7 +430,7 @@ const PdfInner = ({
 
 	if (error) {
 		return (
-			<div className="flex h-full items-center justify-center text-[#737373]">
+			<div className="flex h-full items-center justify-center text-muted-foreground">
 				{error}
 			</div>
 		);

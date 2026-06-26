@@ -111,7 +111,7 @@ export function RoleSidebar({
 			<SidebarContent>
 				{groups.map((group) => (
 					<SidebarGroup key={group.title}>
-						<SidebarGroupLabel className="text-[#0a0a0a] opacity-70">
+						<SidebarGroupLabel className="text-foreground opacity-70">
 							{group.title}
 						</SidebarGroupLabel>
 						<SidebarGroupContent>
@@ -125,7 +125,7 @@ export function RoleSidebar({
 											className="hover:bg-[#f5f5f5] active:bg-[#f5f5f5]"
 										>
 											<item.icon className="size-4" />
-											<span className="text-[#0a0a0a]">{item.title}</span>
+											<span className="text-foreground">{item.title}</span>
 										</SidebarMenuButton>
 									</SidebarMenuItem>
 								))}
@@ -150,10 +150,10 @@ export function RoleSidebar({
 									</AvatarFallback>
 								</Avatar>
 								<div className="grid flex-1 text-left text-sm leading-tight">
-									<span className="truncate font-semibold text-[#0a0a0a]">
+									<span className="truncate font-semibold text-foreground">
 										{fullName}
 									</span>
-									<span className="truncate text-xs text-[#0a0a0a]">
+									<span className="truncate text-xs text-foreground">
 										{roleLabel}
 									</span>
 								</div>

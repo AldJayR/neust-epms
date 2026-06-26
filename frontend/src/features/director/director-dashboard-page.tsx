@@ -21,7 +21,7 @@ function RecentActivitiesCard({
 }) {
 	return (
 		<div className="flex h-[370px] flex-col overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-			<div className="flex items-center justify-between px-4 py-2 text-[#666]">
+			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
 				<h2 className="text-[14px] font-semibold leading-5 text-[#11215a]">
 					Recent Activities
 				</h2>
@@ -46,15 +46,15 @@ function RecentActivitiesCard({
 											className={`size-2 shrink-0 rounded-full ${["bg-brand-primary", "bg-[#16a34a]", "bg-[#f59e0b]"][index % 3]}`}
 											aria-hidden="true"
 										/>
-										<p className="text-[14px] font-medium leading-5 text-[#0a0a0a]">
+										<p className="text-[14px] font-medium leading-5 text-foreground">
 											{activity.title}
 										</p>
 									</div>
-									<p className="text-[12px] leading-[14px] text-[#666]">
+									<p className="text-[12px] leading-[14px] text-muted-foreground">
 										{activity.description}
 									</p>
 								</div>
-								<p className="text-[12px] leading-[14px] text-[#666]">
+								<p className="text-[12px] leading-[14px] text-muted-foreground">
 									{activity.time}
 								</p>
 							</div>
@@ -62,7 +62,7 @@ function RecentActivitiesCard({
 					))
 				) : (
 					<li className="flex flex-1 items-center justify-center px-4">
-						<p className="text-[14px] text-[#737373] italic">
+						<p className="text-[14px] text-muted-foreground italic">
 							No recent activities.
 						</p>
 					</li>
@@ -79,7 +79,7 @@ function ExpiringMoasCard({
 }) {
 	return (
 		<div className="flex h-[148px] flex-col overflow-hidden rounded-[12px] border border-[#ebebeb] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-			<div className="flex items-center justify-between px-4 py-2 text-[#666]">
+			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
 				<h2 className="text-[14px] font-semibold leading-5 text-[#11215a]">
 					Expiring MOAs
 				</h2>
@@ -98,7 +98,7 @@ function ExpiringMoasCard({
 							className="border-t border-[#ebebeb] p-4"
 						>
 							<div className="flex items-center justify-between gap-4">
-								<p className="text-[14px] font-medium leading-5 text-[#0a0a0a]">
+								<p className="text-[14px] font-medium leading-5 text-foreground">
 									{moa.name}
 								</p>
 								<p className="text-[14px] leading-5 text-[#dc2626]">
@@ -109,7 +109,7 @@ function ExpiringMoasCard({
 					))
 				) : (
 					<li className="flex flex-1 items-center justify-center border-t border-[#ebebeb] px-4 pb-2">
-						<p className="text-[14px] text-[#737373] italic">
+						<p className="text-[14px] text-muted-foreground italic">
 							No MOAs expiring soon.
 						</p>
 					</li>

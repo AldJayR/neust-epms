@@ -65,17 +65,17 @@ export function MoaRepositoryPage({
 			id: "partner",
 			header: "Partner Organization",
 			headerClassName:
-				"w-[320px] px-4 py-2 text-[14px] font-medium text-[#666]",
+				"w-[320px] px-4 py-2 text-[14px] font-medium text-muted-foreground",
 			cellClassName:
-				"px-4 py-3 text-[14px] font-semibold text-[#0a0a0a] text-left",
+				"px-4 py-3 text-[14px] font-semibold text-foreground text-left",
 			cell: ({ row }) => row.original.partnerOrganization,
 		},
 		{
 			id: "dateSigned",
 			header: () => <div className="text-center">Date Signed</div>,
 			headerClassName:
-				"w-[223px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
-			cellClassName: "px-4 py-3 text-center text-[14px] text-[#0a0a0a]",
+				"w-[223px] px-4 py-2 text-center text-[14px] font-medium text-muted-foreground",
+			cellClassName: "px-4 py-3 text-center text-[14px] text-foreground",
 			cell: ({ row }) => (
 				<ClientOnly fallback="...">
 					{format(new Date(row.original.dateSigned), "MMM dd, yyyy")}
@@ -86,8 +86,8 @@ export function MoaRepositoryPage({
 			id: "daysToExpiry",
 			header: () => <div className="text-center">Days to Expiry</div>,
 			headerClassName:
-				"w-[255px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
-			cellClassName: "px-4 py-3 text-center text-[14px] text-[#0a0a0a]",
+				"w-[255px] px-4 py-2 text-center text-[14px] font-medium text-muted-foreground",
+			cellClassName: "px-4 py-3 text-center text-[14px] text-foreground",
 			cell: ({ row }) => (
 				<>
 					{row.original.daysToExpiry}{" "}
@@ -99,7 +99,7 @@ export function MoaRepositoryPage({
 			id: "status",
 			header: () => <div className="text-center">Status</div>,
 			headerClassName:
-				"w-[129px] px-4 py-2 text-center text-[14px] font-medium text-[#666]",
+				"w-[129px] px-4 py-2 text-center text-[14px] font-medium text-muted-foreground",
 			cell: ({ row }) => (
 				<div className="flex justify-center">
 					<StatusBadge status={row.original.status} />
@@ -118,7 +118,7 @@ export function MoaRepositoryPage({
 					className="size-8"
 					aria-label="More actions for MOA"
 				>
-					<EllipsisVertical className="size-4 text-[#737373]" />
+					<EllipsisVertical className="size-4 text-muted-foreground" />
 				</Button>
 			),
 		},
@@ -173,7 +173,7 @@ export function MoaRepositoryPage({
 								className="h-9 w-9 border-[#e5e5e5] bg-white shadow-sm"
 								aria-label="Filter MOAs"
 							>
-								<ListFilter className="size-4 text-[#0a0a0a]" />
+								<ListFilter className="size-4 text-foreground" />
 							</Button>
 						}
 					/>

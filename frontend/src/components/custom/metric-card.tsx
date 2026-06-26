@@ -34,7 +34,7 @@ export function MetricCard({
 				)}
 			>
 				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-					<CardTitle className="text-sm font-normal text-[#666]">
+					<CardTitle className="text-sm font-normal text-muted-foreground">
 						{label}
 					</CardTitle>
 				</CardHeader>
@@ -58,7 +58,7 @@ export function MetricCard({
 				className,
 			)}
 		>
-			<p className="text-[14px] leading-4 text-[#666]">{label}</p>
+			<p className="text-[14px] leading-4 text-muted-foreground">{label}</p>
 			{isLoading ? (
 				isFacultyCustom ? (
 					<div className="flex flex-col gap-2">
@@ -93,7 +93,7 @@ export function MetricCard({
 								</Avatar>
 							))}
 						</div>
-						<p className="text-[14px] text-[#666]">
+						<p className="text-[14px] text-muted-foreground">
 							+{contributors} Contributors
 						</p>
 					</div>
