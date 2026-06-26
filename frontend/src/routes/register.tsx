@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-router";
 import { AnimatePresence, domMax, LazyMotion, m } from "motion/react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 import {
 	RHFSelectField,
@@ -120,7 +121,7 @@ function RegisterStepOneForm() {
 				try {
 					return JSON.parse(saved);
 				} catch (e) {
-					console.error("Failed to parse saved registration data", e);
+					toast.error("Failed to restore registration data.");
 				}
 			}
 			return {

@@ -71,7 +71,7 @@ const getActionTypeInfo = (action: string, table: string) => {
 
 const exportToCsv = () => {
 	// Placeholder for CSV export
-	console.log("Exporting to CSV...");
+	
 };
 
 export function ActivityLogPage({

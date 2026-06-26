@@ -8,6 +8,7 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronRight, Loader2, LogOut, type LucideIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
+import { toast } from "sonner";
 import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -92,7 +93,7 @@ export function RoleSidebar({
 			if (isRedirect(error)) {
 				throw error;
 			}
-			console.error("Logout failed:", error);
+			toast.error("Logout failed.");
 			setIsLoggingOut(false);
 		}
 	};

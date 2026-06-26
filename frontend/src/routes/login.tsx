@@ -76,8 +76,7 @@ function LoginPage() {
 		try {
 			result = await loginFn({ data });
 		} catch (err) {
-			console.error(err);
-			toast.error("An unexpected error occurred");
+			toast.error("Login failed. Please try again.");
 			return;
 		}
 

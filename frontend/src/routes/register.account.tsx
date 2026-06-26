@@ -75,7 +75,7 @@ function RegisterStepTwo() {
 				});
 			}
 		} catch (err) {
-			console.error("Failed to check password safety:", err);
+			toast.error("Failed to check password safety.");
 		}
 		setPasswordChecking(false);
 	}
