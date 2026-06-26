@@ -231,7 +231,7 @@ export function RETDashboardPage({
 				</div>
 				<Button
 					onClick={() => setIsCreateModalOpen(true)}
-					className="bg-brand-primary hover:bg-brand-primary/90 text-[#fafafa] rounded-[10px] h-9 gap-1.5 px-[10px] py-2 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
+					className="bg-brand-primary hover:bg-brand-primary/90 text-[#fafafa] rounded-[10px] h-9 gap-1.5 px-[10px] py-2 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
 				>
 					<Plus className="size-4" />
 					<span className="font-medium">Start New Project Proposal</span>
@@ -269,7 +269,7 @@ export function RETDashboardPage({
 							}
 						}}
 					>
-						<SelectTrigger className="h-9 w-[180px] rounded-lg border-border bg-background text-muted-foreground shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1)]">
+						<SelectTrigger className="h-9 w-[180px] rounded-lg border-border bg-background text-muted-foreground shadow-[0px_1px_1px_0px_var(--shadow-card)]">
 							<Filter className="mr-2 size-4 text-muted-foreground" />
 							<SelectValue placeholder="All Statuses" />
 						</SelectTrigger>
@@ -284,7 +284,7 @@ export function RETDashboardPage({
 			</div>
 
 			{/* Proposals Table */}
-			<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden min-h-[400px]">
+			<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)] overflow-hidden min-h-[400px]">
 				<DataTable
 					columns={columns}
 					data={proposals}

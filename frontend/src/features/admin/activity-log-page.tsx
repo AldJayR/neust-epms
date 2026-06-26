@@ -217,7 +217,7 @@ export function ActivityLogPage({
 				<h1 className="text-2xl font-semibold text-heading">Activity Log</h1>
 				<Button
 					onClick={exportToCsv}
-					className="bg-brand-primary hover:bg-brand-primary-hover text-white rounded-[10px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] h-9 px-3 gap-1.5"
+					className="bg-brand-primary hover:bg-brand-primary-hover text-white rounded-[10px] shadow-[0px_1px_2px_0px_var(--shadow-card)] h-9 px-3 gap-1.5"
 				>
 					<Download className="size-4" />
 					<span>Export CSV</span>
@@ -277,7 +277,7 @@ export function ActivityLogPage({
 				</DropdownMenu>
 			</div>
 
-			<div className="border border-border rounded-[12px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden bg-background">
+			<div className="border border-border rounded-[12px] shadow-[0px_1px_3px_0px_var(--shadow-card)] overflow-hidden bg-background">
 				<DataTable
 					columns={columns}
 					data={logs}

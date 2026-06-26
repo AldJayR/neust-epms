@@ -211,7 +211,7 @@ export function ProjectMonitoringPage({
 				</div>
 			</div>
 
-			<div className="overflow-hidden rounded-[12px] border border-border bg-muted shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+			<div className="overflow-hidden rounded-[12px] border border-border bg-muted shadow-[0px_1px_3px_0px_var(--shadow-card)]">
 				<div className="border-b border-border bg-background p-2">
 					<Tabs
 						value={myProjectsOnly ? "my" : "all"}

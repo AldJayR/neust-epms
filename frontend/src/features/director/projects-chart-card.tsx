@@ -25,7 +25,7 @@ export default function ProjectsChartCard({
 	onCampusChange,
 }: ProjectsChartCardProps) {
 	return (
-		<div className="h-[370px] overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+		<div className="h-[370px] overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
 			<div className="flex h-[72px] items-start justify-between border-b border-white px-6 pt-4 pb-3">
 				<div className="leading-tight">
 					<p className="text-[14px] font-semibold leading-5 text-foreground">
@@ -40,7 +40,7 @@ export default function ProjectsChartCard({
 					}}
 					modal={false}
 				>
-					<SelectTrigger className="h-9 w-[200px] rounded-md border border-border bg-background px-3 text-[14px] text-muted-foreground shadow-[0px_1px_1px_rgba(0,0,0,0.1)]">
+					<SelectTrigger className="h-9 w-[200px] rounded-md border border-border bg-background px-3 text-[14px] text-muted-foreground shadow-[0px_1px_1px_var(--shadow-card)]">
 						<SelectValue placeholder="Select campus..." />
 					</SelectTrigger>
 					<SelectContent

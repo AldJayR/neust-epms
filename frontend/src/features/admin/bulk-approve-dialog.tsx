@@ -256,7 +256,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 								handleRoleChange(user.userId, val as string)
 							}
 						>
-							<SelectTrigger className="h-[30px] w-[160px] rounded-md border-border bg-background px-3 shadow-[0px_1px_1px_rgba(0,0,0,0.1)]">
+							<SelectTrigger className="h-[30px] w-[160px] rounded-md border-border bg-background px-3 shadow-[0px_1px_1px_var(--shadow-card)]">
 								<SelectValue placeholder="Select role" />
 							</SelectTrigger>
 							<SelectContent className="rounded-md shadow-lg">
@@ -286,7 +286,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 			/>
 			<DialogContent
 				showCloseButton={false}
-				className="left-1/2 top-1/2 h-[540px] max-h-[calc(100vh-2rem)] w-[95vw] max-w-[1000px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[10px] border border-border bg-background p-0 shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] ring-0 sm:max-w-[1000px]"
+				className="left-1/2 top-1/2 h-[540px] max-h-[calc(100vh-2rem)] w-[95vw] max-w-[1000px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[10px] border border-border bg-background p-0 shadow-[0px_10px_15px_-3px_var(--shadow-card),0px_4px_6px_-4px_var(--shadow-card)] ring-0 sm:max-w-[1000px]"
 			>
 				<div className="flex h-full flex-col gap-6 p-6">
 					<DialogHeader className="flex flex-row items-center justify-between gap-4">
@@ -318,7 +318,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 							className="max-w-[360px]"
 						/>
 
-						<div className="relative flex-1 overflow-hidden rounded-md border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+						<div className="relative flex-1 overflow-hidden rounded-md border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
 							{isUsersFetching && (
 								<div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-[1px]">
 									<Loader2 className="size-8 animate-spin text-primary" />
@@ -349,7 +349,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 						<Button
 							onClick={handleApprove}
 							disabled={selectedUsers.size === 0 || approveMutation.isPending}
-							className="h-9 rounded-[10px] bg-brand-primary px-[10px] text-[14px] font-medium shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] transition-all hover:bg-brand-primary-hover active:scale-[0.98]"
+							className="h-9 rounded-[10px] bg-brand-primary px-[10px] text-[14px] font-medium shadow-[0px_1px_2px_0px_var(--shadow-card)] transition-all hover:bg-brand-primary-hover active:scale-[0.98]"
 						>
 							{approveMutation.isPending ? (
 								<>

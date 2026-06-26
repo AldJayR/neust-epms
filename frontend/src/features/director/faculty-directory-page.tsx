@@ -414,7 +414,7 @@ export function FacultyDirectoryPage({
 				</Select>
 			</div>
 
-			<div className="overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+			<div className="overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
 				<DataTable
 					columns={columns}
 					data={items}

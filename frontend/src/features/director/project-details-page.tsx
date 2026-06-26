@@ -66,7 +66,7 @@ function ProjectDetailsSkeleton() {
 				{/* Main Column */}
 				<div className="lg:col-span-8 flex flex-col gap-6">
 					{/* Project Overview */}
-					<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
+					<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)] overflow-hidden">
 						<div className="bg-card border-b border-border px-6 py-3">
 							<Skeleton className="h-4 w-32" />
 						</div>
@@ -112,7 +112,7 @@ function ProjectDetailsSkeleton() {
 					</div>
 
 					{/* Document History */}
-					<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+					<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
 						<div className="px-6 py-3 border-b border-border">
 							<Skeleton className="h-4 w-32" />
 						</div>
@@ -141,7 +141,7 @@ function ProjectDetailsSkeleton() {
 				{/* Sidebar */}
 				<div className="lg:col-span-4 flex flex-col gap-6">
 					{/* Attachments */}
-					<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
+					<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)] overflow-hidden">
 						<div className="bg-card border-b border-border px-6 py-3">
 							<Skeleton className="h-4 w-24" />
 						</div>
@@ -198,7 +198,7 @@ interface ProjectOverviewCardProps {
 
 function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 	return (
-		<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
+		<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)] overflow-hidden">
 			<div className="bg-card border-b border-border px-6 py-3">
 				<h2 className="text-[14px] font-semibold text-heading">
 					Project Overview
@@ -342,7 +342,7 @@ interface DocumentHistoryCardProps {
 
 function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 	return (
-		<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+		<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
 			<div className="px-6 py-3 border-b border-border">
 				<h2 className="text-[14px] font-semibold text-heading">
 					Document History
@@ -418,7 +418,7 @@ interface AttachmentsCardProps {
 
 function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 	return (
-		<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
+		<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)] overflow-hidden">
 			<div className="bg-card border-b border-border px-6 py-3">
 				<h2 className="text-[14px] font-semibold text-heading">
 					Attachments
@@ -531,7 +531,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 				</div>
 				<Button
 					nativeButton={false}
-					className="flex w-fit items-center gap-2 rounded-[10px] bg-brand-primary px-5 h-9 !text-white hover:!text-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-brand-primary-hover"
+					className="flex w-fit items-center gap-2 rounded-[10px] bg-brand-primary px-5 h-9 !text-white hover:!text-white shadow-[0px_1px_2px_0px_var(--shadow-card)] hover:bg-brand-primary-hover"
 					render={<Link to="/proposals/$proposalId" params={{ proposalId }} />}
 				>
 					<Eye className="size-4" />

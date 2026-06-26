@@ -29,7 +29,7 @@ export function MetricCard({
 		return (
 			<Card
 				className={cn(
-					"border-border shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] rounded-[12px]",
+					"border-border shadow-[0px_1px_3px_0px_var(--shadow-card)] rounded-[12px]",
 					className,
 				)}
 			>
@@ -53,7 +53,7 @@ export function MetricCard({
 	return (
 		<div
 			className={cn(
-				"flex flex-col gap-4 overflow-hidden rounded-[12px] border border-border bg-background p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]",
+				"flex flex-col gap-4 overflow-hidden rounded-[12px] border border-border bg-background p-4 shadow-[0px_1px_3px_0px_var(--shadow-card)]",
 				isFacultyCustom ? "h-[116px]" : "h-[104px]",
 				className,
 			)}

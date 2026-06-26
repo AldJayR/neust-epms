@@ -20,7 +20,7 @@ function RecentActivitiesCard({
 	activities: { title: string; description: string; time: string }[];
 }) {
 	return (
-		<div className="flex h-[370px] flex-col overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+		<div className="flex h-[370px] flex-col overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
 			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
 				<h2 className="text-[14px] font-semibold leading-5 text-heading">
 					Recent Activities
@@ -78,7 +78,7 @@ function ExpiringMoasCard({
 	moas: { name: string; dueText: string }[];
 }) {
 	return (
-		<div className="flex h-[148px] flex-col overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+		<div className="flex h-[148px] flex-col overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
 			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
 				<h2 className="text-[14px] font-semibold leading-5 text-heading">
 					Expiring MOAs

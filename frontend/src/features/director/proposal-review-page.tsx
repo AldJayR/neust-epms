@@ -589,7 +589,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 					<div
 						className={`${isTheaterMode ? "lg:col-span-12 w-full" : "lg:col-span-8"} flex flex-col gap-4`}
 					>
-						<div className="bg-muted border border-border rounded-[12px] shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] overflow-hidden h-[844px]">
+						<div className="bg-muted border border-border rounded-[12px] shadow-[0_1px_3px_0_var(--shadow-card)] overflow-hidden h-[844px]">
 							{currentDoc ? (
 								<PdfViewer
 									ref={pdfViewerRef}
@@ -624,7 +624,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 								onValueChange={(v) => setActiveTab(v as "details" | "comments")}
 								className="w-full"
 							>
-								<Card className="border-border shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] rounded-[12px] overflow-hidden pt-2 pb-0 gap-0">
+								<Card className="border-border shadow-[0_1px_3px_0_var(--shadow-card)] rounded-[12px] overflow-hidden pt-2 pb-0 gap-0">
 									<TabsList variant="line" className="w-full justify-start rounded-none gap-0 px-0">
 										<div className="relative w-full flex">
 											<TabsTrigger

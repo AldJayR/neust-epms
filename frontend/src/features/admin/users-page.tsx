@@ -202,7 +202,7 @@ export function UsersPage({
 				</h1>
 				<BulkApproveDialog>
 					<Button
-						className="bg-brand-primary hover:bg-brand-primary-hover text-white rounded-[10px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
+						className="bg-brand-primary hover:bg-brand-primary-hover text-white rounded-[10px] shadow-[0px_1px_2px_0px_var(--shadow-card)]"
 						disabled={updateStatusMutation.isPending}
 					>
 						<CheckCircle2 className="mr-2 size-4" />
@@ -263,7 +263,7 @@ export function UsersPage({
 				</DropdownMenu>
 			</div>
 
-			<div className="rounded-[12px] border border-border bg-muted shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden min-h-[400px] relative">
+			<div className="rounded-[12px] border border-border bg-muted shadow-[0px_1px_3px_0px_var(--shadow-card)] overflow-hidden min-h-[400px] relative">
 				{isUsersFetching && (
 					<div className="absolute inset-0 bg-background/50 z-10 flex items-center justify-center backdrop-blur-[1px]">
 						<Loader2 className="h-8 w-8 animate-spin text-primary" />
