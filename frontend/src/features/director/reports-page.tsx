@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Download, ListFilter } from "lucide-react";
 import { useState } from "react";
 import { MetricCard } from "@/components/custom/metric-card";
+import { PageCard } from "@/components/custom/page-card";
 import { Badge } from "@/components/ui/badge";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
@@ -188,7 +189,7 @@ export function ReportsPage() {
 			</div>
 
 			{/* Data Table */}
-			<div className="overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
+			<PageCard>
 				<DataTable
 					columns={columns}
 					data={filteredReports}
@@ -198,7 +199,7 @@ export function ReportsPage() {
 					emptyMessage="No reports found."
 					ariaLabel="Reports"
 				/>
-			</div>
+			</PageCard>
 
 			<PaginationBar
 				page={page}

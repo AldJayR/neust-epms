@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { Calendar, Download, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { MetricCard } from "@/components/custom/metric-card";
+import { PageCard } from "@/components/custom/page-card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { BrandButton } from "@/components/custom/brand-button";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
@@ -400,7 +401,7 @@ export function FacultyDirectoryPage({
 				</Select>
 			</div>
 
-			<div className="overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
+			<PageCard>
 				<DataTable
 					columns={columns}
 					data={items}
@@ -409,7 +410,7 @@ export function FacultyDirectoryPage({
 					emptyMessage="No faculty records found."
 					ariaLabel="Faculty directory"
 				/>
-			</div>
+			</PageCard>
 
 			<PaginationBar
 				page={page}

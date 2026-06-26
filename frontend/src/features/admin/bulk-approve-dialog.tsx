@@ -4,7 +4,7 @@ import { Loader2, XIcon } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { BrandButton } from "@/components/custom/brand-button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import {
@@ -346,10 +346,10 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 					</div>
 
 					<div className="flex justify-end">
-						<Button
+						<BrandButton
 							onClick={handleApprove}
 							disabled={selectedUsers.size === 0 || approveMutation.isPending}
-							className="h-9 rounded-[10px] bg-brand-primary px-[10px] text-sm font-medium shadow-[0px_1px_2px_0px_var(--shadow-card)] transition-all hover:bg-brand-primary-hover active:scale-[0.98]"
+							className="h-9 px-[10px] text-sm font-medium shadow-[0px_1px_2px_0px_var(--shadow-card)] transition-all hover:bg-brand-primary-hover active:scale-[0.98]"
 						>
 							{approveMutation.isPending ? (
 								<>
@@ -359,7 +359,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 							) : (
 								"Approve"
 							)}
-						</Button>
+						</BrandButton>
 					</div>
 				</div>
 			</DialogContent>

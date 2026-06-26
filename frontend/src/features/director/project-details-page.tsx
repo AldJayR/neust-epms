@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { ChevronRight, Download, Eye, FileText, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { PageCard } from "@/components/custom/page-card";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -12,6 +13,7 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -54,7 +56,7 @@ interface ProjectOverviewCardProps {
 
 function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 	return (
-		<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)] overflow-hidden">
+		<PageCard>
 			<div className="bg-card border-b border-border px-6 py-3">
 				<h2 className="text-sm font-semibold text-heading">
 					Project Overview
@@ -181,7 +183,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 					</DialogContent>
 				</Dialog>
 			</div>
-		</div>
+		</PageCard>
 	);
 }
 
@@ -198,7 +200,7 @@ interface DocumentHistoryCardProps {
 
 function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 	return (
-		<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
+		<PageCard noOverflow>
 			<div className="px-6 py-3 border-b border-border">
 				<h2 className="text-sm font-semibold text-heading">
 					Document History
@@ -258,7 +260,7 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 					))}
 				</ul>
 			</div>
-		</div>
+		</PageCard>
 	);
 }
 
@@ -274,7 +276,7 @@ interface AttachmentsCardProps {
 
 function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 	return (
-		<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)] overflow-hidden">
+		<PageCard>
 			<div className="bg-card border-b border-border px-6 py-3">
 				<h2 className="text-sm font-semibold text-heading">
 					Attachments
@@ -334,7 +336,7 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 					</li>
 				))}
 			</ul>
-		</div>
+		</PageCard>
 	);
 }
 
@@ -385,14 +387,14 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 						</span>
 					</h1>
 				</div>
-				<Button
+				<BrandButton
 					nativeButton={false}
-					className="flex w-fit items-center gap-2 rounded-[10px] bg-brand-primary px-5 h-9 !text-white hover:!text-white shadow-[0px_1px_2px_0px_var(--shadow-card)] hover:bg-brand-primary-hover"
+					className="flex w-fit items-center gap-2 px-5 h-9 !text-white hover:!text-white shadow-[0px_1px_2px_0px_var(--shadow-card)] hover:bg-brand-primary-hover"
 					render={<Link to="/proposals/$proposalId" params={{ proposalId }} />}
 				>
 					<Eye className="size-4" />
 					<span className="text-sm font-medium">Read Proposal Document</span>
-				</Button>
+				</BrandButton>
 			</div>
 
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">

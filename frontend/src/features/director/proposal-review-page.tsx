@@ -12,6 +12,7 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -245,8 +246,8 @@ function ProposalDetailsTab({
 					>
 						{isPending ? <Loader2 className="size-4 animate-spin" /> : "Return"}
 					</Button>
-					<Button
-						className="flex-1 bg-brand-primary text-white hover:bg-brand-primary/90 rounded-[10px] font-medium h-9 text-sm shadow-sm cursor-pointer"
+					<BrandButton
+						className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer"
 						onClick={() => {
 							if (isRET) {
 								setCommentsText("");
@@ -264,7 +265,7 @@ function ProposalDetailsTab({
 						) : (
 							"Approve"
 						)}
-					</Button>
+					</BrandButton>
 				</div>
 			)}
 
@@ -297,8 +298,8 @@ function ProposalDetailsTab({
 						>
 							Cancel
 						</Button>
-						<Button
-							className="flex-1 bg-brand-primary text-white hover:bg-brand-primary/90 rounded-[10px] font-medium h-9 text-sm shadow-sm cursor-pointer"
+						<BrandButton
+							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer"
 							onClick={() => {
 								handleApprove(commentsText);
 								setIsConfirmOpen(false);
@@ -310,7 +311,7 @@ function ProposalDetailsTab({
 							) : (
 								"Endorse"
 							)}
-						</Button>
+						</BrandButton>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
@@ -564,10 +565,10 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 				</div>
 				{currentDoc && (
 					<a href={currentDoc.url} target="_blank" rel="noopener noreferrer">
-						<Button className="bg-brand-primary text-white hover:bg-brand-primary/90 rounded-[10px] h-9 px-4 gap-2 text-sm font-medium">
+						<BrandButton className="h-9 px-4 gap-2 text-sm font-medium">
 							<Download className="size-4" />
 							Download
-						</Button>
+						</BrandButton>
 					</a>
 				)}
 			</div>

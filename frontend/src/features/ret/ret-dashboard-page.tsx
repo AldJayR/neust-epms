@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { EllipsisVertical, Filter, Plus } from "lucide-react";
 import * as React from "react";
 import { MetricCard } from "@/components/custom/metric-card";
+import { PageCard } from "@/components/custom/page-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
@@ -282,7 +283,7 @@ export function RETDashboardPage({
 			</div>
 
 			{/* Proposals Table */}
-			<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)] overflow-hidden min-h-[400px]">
+			<PageCard className="min-h-[400px]">
 				<DataTable
 					columns={columns}
 					data={proposals}
@@ -291,7 +292,7 @@ export function RETDashboardPage({
 					ariaLabel="Proposals table"
 					showHeader={showTableHeader}
 				/>
-			</div>
+			</PageCard>
 
 			<PaginationBar
 				page={page}

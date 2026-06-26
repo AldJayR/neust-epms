@@ -3,6 +3,7 @@ import { ClientOnly } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { ListFilter, Plus } from "lucide-react";
 import { MetricCard } from "@/components/custom/metric-card";
+import { PageCard } from "@/components/custom/page-card";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
@@ -184,7 +185,7 @@ export function MoaRepositoryPage({
 				</DropdownMenu>
 			</div>
 
-			<div className="overflow-hidden rounded-[12px] border border-border bg-muted shadow-[0px_1px_3px_0px_var(--shadow-card)]">
+			<PageCard className="bg-muted">
 				<div className="bg-background">
 					<DataTable
 						columns={columns}
@@ -195,7 +196,7 @@ export function MoaRepositoryPage({
 						showHeader={showTableHeader}
 					/>
 				</div>
-			</div>
+			</PageCard>
 
 			<PaginationBar
 				page={page}
