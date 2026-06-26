@@ -80,12 +80,12 @@ const STATUS_MAP: Record<string, StatusConfig> = {
 	Active: {
 		label: "Active",
 		icon: CheckCircle2,
-		iconClassName: "text-[#10b981]",
+		iconClassName: "text-emerald-500",
 	},
 	Deactivated: {
 		label: "Deactivated",
 		icon: XCircle,
-		iconClassName: "text-[#ef4444]",
+		iconClassName: "text-red-500",
 	},
 };
 

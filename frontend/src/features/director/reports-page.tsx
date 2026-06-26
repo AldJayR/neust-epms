@@ -104,7 +104,7 @@ export function ReportsPage() {
 						variant="outline"
 						className={`rounded-md font-medium text-[12px] px-2 py-0.5 border ${
 							type === "Terminal"
-								? "bg-[#ffee9c] text-[#ab6400] border-[#e2a336]"
+								? "bg-[#ffee9c] text-amber-700 border-[#e2a336]"
 								: "bg-[#c4e8d1] text-[#218358] border-[#2b9a66]"
 						}`}
 					>

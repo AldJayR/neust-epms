@@ -105,8 +105,8 @@ export function MetricCard({
 					</p>
 					{trend && (
 						<div className="flex h-[22px] items-center gap-1 rounded-lg border border-border bg-background px-1.5 py-0.5 shadow-sm">
-							<TrendingUp className="size-3 text-[#22c55e]" />
-							<span className="text-[12px] font-medium text-[#22c55e]">
+							<TrendingUp className="size-3 text-green-500" />
+							<span className="text-[12px] font-medium text-green-500">
 								{trend}
 							</span>
 						</div>

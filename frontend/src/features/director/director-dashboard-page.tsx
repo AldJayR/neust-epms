@@ -43,7 +43,7 @@ function RecentActivitiesCard({
 								<div className="flex flex-col gap-1">
 									<div className="flex items-center gap-1.5">
 										<span
-											className={`size-2 shrink-0 rounded-full ${["bg-brand-primary", "bg-[#16a34a]", "bg-[#f59e0b]"][index % 3]}`}
+											className={`size-2 shrink-0 rounded-full ${["bg-brand-primary", "bg-green-600", "bg-amber-500"][index % 3]}`}
 											aria-hidden="true"
 										/>
 										<p className="text-[14px] font-medium leading-5 text-foreground">
@@ -101,7 +101,7 @@ function ExpiringMoasCard({
 								<p className="text-[14px] font-medium leading-5 text-foreground">
 									{moa.name}
 								</p>
-								<p className="text-[14px] leading-5 text-[#dc2626]">
+								<p className="text-[14px] leading-5 text-red-600">
 									{moa.dueText}
 								</p>
 							</div>
