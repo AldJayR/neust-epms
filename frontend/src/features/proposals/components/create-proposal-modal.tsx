@@ -255,7 +255,7 @@ export function CreateProposalModal({
 					className="flex flex-col h-full"
 				>
 					<DialogHeader className="py-4 px-6 border-b border-border">
-						<DialogTitle className="text-xl font-semibold text-[#11215a]">
+						<DialogTitle className="text-xl font-semibold text-heading">
 							Start New Project Proposal
 						</DialogTitle>
 						<DialogDescription className="text-sm text-muted-foreground">

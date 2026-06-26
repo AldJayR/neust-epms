@@ -200,7 +200,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 	return (
 		<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
 			<div className="bg-card border-b border-border px-6 py-3">
-				<h2 className="text-[14px] font-semibold text-[#11215a]">
+				<h2 className="text-[14px] font-semibold text-heading">
 					Project Overview
 				</h2>
 			</div>
@@ -246,7 +246,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 				<div className="flex items-center justify-between px-6 py-3">
 					<span className="text-[14px] text-muted-foreground">Total Budget</span>
 					<div className="flex flex-col items-end">
-						<span className="text-[14px] font-semibold text-[#11215a]">
+						<span className="text-[14px] font-semibold text-heading">
 							₱{metadata.budget.total.toLocaleString()}
 						</span>
 						<span className="text-[12px] text-muted-foreground">
@@ -295,7 +295,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 					</DialogTrigger>
 					<DialogContent className="sm:max-w-[425px] rounded-[12px] p-6">
 						<DialogHeader className="pb-4">
-							<DialogTitle className="text-[16px] font-semibold text-[#11215a]">
+							<DialogTitle className="text-[16px] font-semibold text-heading">
 								Project Members
 							</DialogTitle>
 						</DialogHeader>
@@ -344,7 +344,7 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 	return (
 		<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="px-6 py-3 border-b border-border">
-				<h2 className="text-[14px] font-semibold text-[#11215a]">
+				<h2 className="text-[14px] font-semibold text-heading">
 					Document History
 				</h2>
 			</div>
@@ -420,7 +420,7 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 	return (
 		<div className="rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden">
 			<div className="bg-card border-b border-border px-6 py-3">
-				<h2 className="text-[14px] font-semibold text-[#11215a]">
+				<h2 className="text-[14px] font-semibold text-heading">
 					Attachments
 				</h2>
 			</div>
@@ -521,7 +521,7 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 			{/* Header */}
 			<div className="flex items-start justify-between">
 				<div className="flex flex-col gap-2">
-					<h1 className="flex flex-wrap items-center gap-3 text-[22px] font-semibold text-[#11215a]">
+					<h1 className="flex flex-wrap items-center gap-3 text-[22px] font-semibold text-heading">
 						<span>{data.title}</span>
 						<StatusBadge status={data.status} />
 						<span className="text-[12px] font-normal text-muted-foreground">

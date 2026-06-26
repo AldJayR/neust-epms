@@ -222,16 +222,16 @@ export function RETDashboardPage({
 			{/* Welcome Header */}
 			<div className="flex items-start justify-between">
 				<div className="flex flex-col gap-2">
-					<h1 className="text-2xl font-semibold text-[#11215a]">
+					<h1 className="text-2xl font-semibold text-heading">
 						Welcome, {user.firstName}!
 					</h1>
-					<p className="text-sm text-[#14369c]">
+					<p className="text-sm text-brand-primary">
 						{user.departmentName ?? user.campusName}
 					</p>
 				</div>
 				<Button
 					onClick={() => setIsCreateModalOpen(true)}
-					className="bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-[#fafafa] rounded-[10px] h-9 gap-1.5 px-[10px] py-2 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
+					className="bg-brand-primary hover:bg-brand-primary/90 text-[#fafafa] rounded-[10px] h-9 gap-1.5 px-[10px] py-2 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
 				>
 					<Plus className="size-4" />
 					<span className="font-medium">Start New Project Proposal</span>

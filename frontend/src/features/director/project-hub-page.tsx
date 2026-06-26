@@ -147,7 +147,7 @@ export function ProjectHubPage({
 	return (
 		<div className="flex flex-col gap-8">
 			<div>
-				<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
+				<h1 className="text-[24px] font-semibold leading-[35px] text-heading">
 					Project Hub
 				</h1>
 			</div>

@@ -154,7 +154,7 @@ export function ProjectMonitoringPage({
 	return (
 		<div className="flex flex-col gap-8">
 			<div>
-				<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
+				<h1 className="text-[24px] font-semibold leading-[35px] text-heading">
 					Project Monitoring
 				</h1>
 			</div>

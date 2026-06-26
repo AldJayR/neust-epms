@@ -42,7 +42,7 @@ export function MetricCard({
 					{isLoading ? (
 						<Skeleton className="h-10 w-24 rounded" />
 					) : (
-						<div className="text-4xl font-semibold text-[#11215a]">{value}</div>
+						<div className="text-4xl font-semibold text-heading">{value}</div>
 					)}
 				</CardContent>
 			</Card>
@@ -82,7 +82,7 @@ export function MetricCard({
 				)
 			) : isFacultyCustom ? (
 				<div className="flex flex-col gap-1">
-					<p className="text-[16px] font-medium leading-5 text-[#11215a] truncate">
+					<p className="text-[16px] font-medium leading-5 text-heading truncate">
 						{college}
 					</p>
 					<div className="flex items-center gap-2">
@@ -100,7 +100,7 @@ export function MetricCard({
 				</div>
 			) : (
 				<div className="flex items-end gap-4">
-					<p className="text-[36px] font-semibold leading-9 text-[#11215a]">
+					<p className="text-[36px] font-semibold leading-9 text-heading">
 						{value}
 					</p>
 					{trend && (

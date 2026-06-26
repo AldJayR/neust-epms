@@ -171,10 +171,10 @@ export function RetFacultyDirectoryPage({
 		<div className="flex flex-col gap-8">
 			{/* Page Header */}
 			<div className="flex flex-col gap-2">
-				<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
+				<h1 className="text-[24px] font-semibold leading-[35px] text-heading">
 					Faculty Directory
 				</h1>
-				<p className="text-[14px] font-normal leading-4 text-[#14369c]">
+				<p className="text-[14px] font-normal leading-4 text-brand-primary">
 					{user?.departmentName ||
 						"College of Information and Communications Technology"}
 				</p>
@@ -233,7 +233,7 @@ export function RetFacultyDirectoryPage({
 						className="w-[320px] p-4 bg-background border border-border rounded-xl shadow-lg gap-4 flex flex-col z-50"
 					>
 						<div className="flex flex-col gap-1">
-							<h4 className="font-semibold text-sm text-[#11215a]">
+							<h4 className="font-semibold text-sm text-heading">
 								Directory Filters
 							</h4>
 							<p className="text-xs text-muted-foreground">

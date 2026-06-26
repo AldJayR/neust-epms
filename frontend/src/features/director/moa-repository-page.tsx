@@ -127,7 +127,7 @@ export function MoaRepositoryPage({
 	return (
 		<div className="flex flex-col gap-8">
 			<div className="flex items-center justify-between bg-background">
-				<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
+				<h1 className="text-[24px] font-semibold leading-[35px] text-heading">
 					Memoranda of Agreements
 				</h1>
 				{isAdminOrDirector(user) ? (

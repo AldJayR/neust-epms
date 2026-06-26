@@ -318,7 +318,7 @@ export function FacultyDirectoryPage({
 	return (
 		<div className="flex flex-col gap-8">
 			<div className="flex items-center justify-between">
-				<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
+				<h1 className="text-[24px] font-semibold leading-[35px] text-heading">
 					Faculty Directory
 				</h1>
 				<div className="flex items-center gap-4">

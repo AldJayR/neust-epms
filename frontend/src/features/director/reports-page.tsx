@@ -143,8 +143,8 @@ export function ReportsPage() {
 		<div className="flex flex-col gap-8">
 			{/* Header Section */}
 			<div className="flex items-center justify-between">
-				<h1 className="text-2xl font-semibold text-[#11215a]">Reports</h1>
-				<Button className="bg-[#1e3b8a] text-white hover:bg-[#1e3b8a]/90 rounded-[10px] gap-2">
+				<h1 className="text-2xl font-semibold text-heading">Reports</h1>
+				<Button className="bg-brand-primary text-white hover:bg-brand-primary/90 rounded-[10px] gap-2">
 					<Download className="size-4" />
 					Export Reports
 				</Button>

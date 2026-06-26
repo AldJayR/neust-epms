@@ -155,7 +155,7 @@ export function PdfToolbar({
 					<button
 						type="button"
 						onClick={onResetZoom}
-						className="text-[13px] text-muted-foreground tabular-nums w-[48px] text-center hover:text-[#11215a] cursor-pointer"
+						className="text-[13px] text-muted-foreground tabular-nums w-[48px] text-center hover:text-heading cursor-pointer"
 					>
 						{Math.round(scale * 100)}%
 					</button>
@@ -188,7 +188,7 @@ export function PdfToolbar({
 										variant="ghost"
 										size="icon"
 										aria-label="Reset Zoom"
-										className="size-8 rounded-[8px] text-muted-foreground hover:text-[#11215a]"
+										className="size-8 rounded-[8px] text-muted-foreground hover:text-heading"
 										onClick={onResetZoom}
 									>
 										<RotateCcw className="size-3.5" />

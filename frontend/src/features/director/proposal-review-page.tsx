@@ -246,7 +246,7 @@ function ProposalDetailsTab({
 						{isPending ? <Loader2 className="size-4 animate-spin" /> : "Return"}
 					</Button>
 					<Button
-						className="flex-1 bg-[#14369c] text-white hover:bg-[#14369c]/90 rounded-[10px] font-medium h-9 text-sm shadow-sm cursor-pointer"
+						className="flex-1 bg-brand-primary text-white hover:bg-brand-primary/90 rounded-[10px] font-medium h-9 text-sm shadow-sm cursor-pointer"
 						onClick={() => {
 							if (isRET) {
 								setCommentsText("");
@@ -271,7 +271,7 @@ function ProposalDetailsTab({
 			<Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
 				<DialogContent className="sm:max-w-[425px] rounded-[12px] p-6 bg-background gap-4">
 					<DialogHeader className="pb-2">
-						<DialogTitle className="text-[16px] font-semibold text-[#11215a]">
+						<DialogTitle className="text-[16px] font-semibold text-heading">
 							Endorse Proposal
 						</DialogTitle>
 						<DialogDescription className="text-sm text-muted-foreground font-light">
@@ -285,7 +285,7 @@ function ProposalDetailsTab({
 							placeholder="Write final comments/remarks here (optional)..."
 							value={commentsText}
 							onChange={(e) => setCommentsText(e.target.value)}
-							className="w-full min-h-[100px] border border-border rounded-[8px] p-3 text-sm focus-visible:ring-1 focus-visible:ring-[#14369c]"
+							className="w-full min-h-[100px] border border-border rounded-[8px] p-3 text-sm focus-visible:ring-1 focus-visible:ring-brand-primary"
 						/>
 					</div>
 
@@ -298,7 +298,7 @@ function ProposalDetailsTab({
 							Cancel
 						</Button>
 						<Button
-							className="flex-1 bg-[#14369c] text-white hover:bg-[#14369c]/90 rounded-[10px] font-medium h-9 text-sm shadow-sm cursor-pointer"
+							className="flex-1 bg-brand-primary text-white hover:bg-brand-primary/90 rounded-[10px] font-medium h-9 text-sm shadow-sm cursor-pointer"
 							onClick={() => {
 								handleApprove(commentsText);
 								setIsConfirmOpen(false);
@@ -382,7 +382,7 @@ function CommentsTab({
 								{comment.content}
 							</p>
 							{comment.annotationJson && (
-								<span className="inline-block bg-[#14369c]/10 text-[#14369c] text-[9px] font-semibold px-2 py-0.5 rounded-[4px]">
+								<span className="inline-block bg-brand-primary/10 text-brand-primary text-[9px] font-semibold px-2 py-0.5 rounded-[4px]">
 									Page {comment.annotationJson.page}
 								</span>
 							)}
@@ -550,7 +550,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 			{/* Page Header */}
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-4">
-					<h1 className="text-2xl font-semibold text-[#11215a] tracking-tight">
+					<h1 className="text-2xl font-semibold text-heading tracking-tight">
 						{isLoading ? "Loading..." : (data?.title ?? "Proposal")}
 					</h1>
 					{data?.status && (
@@ -564,7 +564,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 				</div>
 				{currentDoc && (
 					<a href={currentDoc.url} target="_blank" rel="noopener noreferrer">
-						<Button className="bg-[#14369c] text-white hover:bg-[#14369c]/90 rounded-[10px] h-9 px-4 gap-2 text-sm font-medium">
+						<Button className="bg-brand-primary text-white hover:bg-brand-primary/90 rounded-[10px] h-9 px-4 gap-2 text-sm font-medium">
 							<Download className="size-4" />
 							Download
 						</Button>
@@ -574,7 +574,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 
 			{isLoading ? (
 				<div className="flex items-center justify-center h-[500px]">
-					<Loader2 className="size-8 animate-spin text-[#11215a]" />
+					<Loader2 className="size-8 animate-spin text-heading" />
 				</div>
 			) : error ? (
 				<div className="flex items-center justify-center h-[500px]">
@@ -629,25 +629,25 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 										<div className="relative w-full flex">
 											<TabsTrigger
 												value="details"
-												className="flex-1 py-3 text-xs font-semibold rounded-none cursor-pointer data-active:bg-transparent data-active:shadow-none data-active:text-[#14369c] after:!opacity-0"
+												className="flex-1 py-3 text-xs font-semibold rounded-none cursor-pointer data-active:bg-transparent data-active:shadow-none data-active:text-brand-primary after:!opacity-0"
 											>
 												Proposal Details
 											</TabsTrigger>
 											<TabsTrigger
 												value="comments"
-												className="flex-1 py-3 text-xs font-semibold rounded-none cursor-pointer data-active:bg-transparent data-active:shadow-none data-active:text-[#14369c] after:!opacity-0"
+												className="flex-1 py-3 text-xs font-semibold rounded-none cursor-pointer data-active:bg-transparent data-active:shadow-none data-active:text-brand-primary after:!opacity-0"
 											>
 												Comments
 												{comments.length > 0 && (
 													<span
-														className={`px-1.5 py-0.5 rounded-full text-[10px] transition-colors ${activeTab === "comments" ? "bg-[#14369c] text-white" : "bg-gray-100 text-muted-foreground"}`}
+														className={`px-1.5 py-0.5 rounded-full text-[10px] transition-colors ${activeTab === "comments" ? "bg-brand-primary text-white" : "bg-gray-100 text-muted-foreground"}`}
 													>
 														{comments.length}
 													</span>
 												)}
 											</TabsTrigger>
 											<div
-												className={`absolute bottom-0 left-0 h-[2px] w-1/2 bg-[#14369c] transition-all duration-300 ease-in-out ${activeTab === "details" ? "translate-x-0" : "translate-x-full"}`}
+												className={`absolute bottom-0 left-0 h-[2px] w-1/2 bg-brand-primary transition-all duration-300 ease-in-out ${activeTab === "details" ? "translate-x-0" : "translate-x-full"}`}
 											/>
 										</div>
 									</TabsList>

@@ -197,7 +197,7 @@ export function UsersPage({
 	return (
 		<div className="flex flex-col gap-8">
 			<div className="flex items-center justify-between">
-				<h1 className="text-2xl font-semibold text-[#11215a]">
+				<h1 className="text-2xl font-semibold text-heading">
 					User Management
 				</h1>
 				<BulkApproveDialog>

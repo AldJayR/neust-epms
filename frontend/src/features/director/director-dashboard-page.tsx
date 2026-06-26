@@ -22,7 +22,7 @@ function RecentActivitiesCard({
 	return (
 		<div className="flex h-[370px] flex-col overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
-				<h2 className="text-[14px] font-semibold leading-5 text-[#11215a]">
+				<h2 className="text-[14px] font-semibold leading-5 text-heading">
 					Recent Activities
 				</h2>
 				<button
@@ -80,7 +80,7 @@ function ExpiringMoasCard({
 	return (
 		<div className="flex h-[148px] flex-col overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
 			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
-				<h2 className="text-[14px] font-semibold leading-5 text-[#11215a]">
+				<h2 className="text-[14px] font-semibold leading-5 text-heading">
 					Expiring MOAs
 				</h2>
 				<button
@@ -145,7 +145,7 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 		<section>
 			<div className="flex min-h-full flex-col gap-8">
 				<div>
-					<h1 className="text-[24px] font-semibold leading-[35px] text-[#11215a]">
+					<h1 className="text-[24px] font-semibold leading-[35px] text-heading">
 						Welcome, {user?.firstName ? `${user.firstName}!` : "Director"}!
 					</h1>
 				</div>
