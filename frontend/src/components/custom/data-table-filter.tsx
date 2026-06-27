@@ -24,7 +24,7 @@ export function DataTableFilter({
   className,
 }: DataTableFilterProps) {
   return (
-    <Select value={value} onValueChange={onValueChange}>
+    <Select value={value} onValueChange={(v) => { if (v) onValueChange(v); }}>
       <SelectTrigger
         className={cn(
           "h-9 w-[180px] rounded-lg border-border bg-background shadow-sm",
