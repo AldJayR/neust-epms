@@ -5,6 +5,7 @@ import {
 	HeadContent,
 	Link,
 	Scripts,
+	useRouter,
 } from "@tanstack/react-router";
 import { Loader2, Wifi, WifiOff } from "lucide-react";
 import { useEffect } from "react";
@@ -65,8 +66,40 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 		],
 	}),
 	notFoundComponent: NotFound,
+	errorComponent: RootError,
 	shellComponent: RootDocument,
 });
+
+function RootError({ error, reset }: { error: Error; reset: () => void }) {
+	const router = useRouter();
+
+	return (
+		<div className="flex min-h-dvh flex-col items-center justify-center p-8 text-center">
+			<h1 className="text-4xl font-semibold">Something went wrong</h1>
+			<p className="mt-4 max-w-md text-muted-foreground">
+				{error.message || "An unexpected error occurred."}
+			</p>
+			<div className="mt-8 flex gap-3">
+				<button
+					type="button"
+					onClick={() => {
+						router.invalidate();
+						reset();
+					}}
+					className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+				>
+					Try again
+				</button>
+				<Link
+					to="/"
+					className="rounded-lg border border-border px-6 py-3 text-sm font-medium text-foreground hover:bg-muted"
+				>
+					Go home
+				</Link>
+			</div>
+		</div>
+	);
+}
 
 function NotFound() {
 	return (
