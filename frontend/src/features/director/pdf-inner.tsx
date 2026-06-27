@@ -97,40 +97,23 @@ const PdfInner = ({
 	const [pageAspectRatios, setPageAspectRatios] = useState<
 		Record<number, number>
 	>({});
+	const fetchedPagesRef = useRef<Set<number>>(new Set());
 
-	// Initial aspect ratio from first page after doc loads
-	useEffect(() => {
-		if (!pdfDoc) return;
-		let isDestroyed = false;
-		pdfDoc
-			.getPage(1)
-			.then((page) => {
-				if (isDestroyed) return;
-				const viewport = page.getViewport({ scale: 1 });
-				setPageAspectRatios({ 1: viewport.height / viewport.width });
-			})
-			.catch(() => {
-				if (!isDestroyed) {
-					setPageAspectRatios({ 1: Math.SQRT2 });
-				}
-			});
-		return () => {
-			isDestroyed = true;
-		};
-	}, [pdfDoc]);
-
-	// Fetch aspect ratios for newly visible pages
+	// Fetch aspect ratios for visible pages (ref tracks fetched to avoid self-triggering deps)
 	useEffect(() => {
 		if (!pdfDoc) return;
 		let isDestroyed = false;
 
-		const fetchAspectRatios = async () => {
-			const pagesToFetch = Array.from(visiblePages).filter(
-				(pageNum) => pageAspectRatios[pageNum] === undefined,
-			);
+		const pagesToFetch = Array.from(visiblePages).filter(
+			(pageNum) => !fetchedPagesRef.current.has(pageNum),
+		);
 
-			if (pagesToFetch.length === 0) return;
+		if (pagesToFetch.length === 0) return;
 
+		// Mark as in-flight immediately to prevent double-fetch on re-render
+		for (const p of pagesToFetch) fetchedPagesRef.current.add(p);
+
+		(async () => {
 			const newAspects: Record<number, number> = {};
 			await Promise.all(
 				pagesToFetch.map(async (pageNum) => {
@@ -158,14 +141,12 @@ const PdfInner = ({
 					return changed ? updated : prev;
 				});
 			}
-		};
-
-		fetchAspectRatios();
+		})();
 
 		return () => {
 			isDestroyed = true;
 		};
-	}, [pdfDoc, visiblePages, pageAspectRatios]);
+	}, [pdfDoc, visiblePages]);
 
 	useImperativeHandle(ref, () => ({
 		scrollToPage: (pageNumber: number) => {
