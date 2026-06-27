@@ -21,6 +21,7 @@ export function usePdfVisibility(
 ) {
 	const [state, dispatch] = useReducer(stateReducer, initialState);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: loadingDoc triggers re-observe after PDF loads
 	useEffect(() => {
 		const scrollEl = scrollRef.current;
 		if (!scrollEl || numPages === 0) return;
@@ -78,7 +79,6 @@ export function usePdfVisibility(
 			preloadObserver.disconnect();
 			pageTrackerObserver.disconnect();
 		};
-	// biome-ignore lint/correctness/useExhaustiveDependencies: loadingDoc triggers re-observe after PDF loads
 	}, [numPages, loadingDoc, scrollRef, pageRefs]);
 
 	return {
