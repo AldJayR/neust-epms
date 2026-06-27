@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { ProjectDetailsPage } from "@/features/director/project-details-page";
+import { ProjectDetailsSkeleton } from "@/features/director/project-details-skeleton";
 import { projectDetailsQueryOptions } from "@/lib/dashboard.functions";
 import { requireRole } from "@/lib/permissions";
 
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/_authenticated/projects/$projectId/")({
 			projectDetailsQueryOptions(params.projectId),
 		);
 	},
+	pendingComponent: ProjectDetailsSkeleton,
 	component: ProjectDetailsRoutePage,
 });
 

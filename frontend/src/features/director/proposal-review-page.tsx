@@ -27,6 +27,7 @@ import {
 import { isRETChair } from "@/lib/permissions";
 import { CommentsTab } from "./components/comments-tab";
 import { ProposalDetailsTab } from "./components/proposal-details-tab";
+import { ProjectDetailsSkeleton } from "./project-details-skeleton";
 
 interface ProposalReviewPageProps {
 	proposalId: string;
@@ -141,6 +142,10 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		});
 	};
 
+	if (isLoading) {
+		return <ProjectDetailsSkeleton />;
+	}
+
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Breadcrumb */}
@@ -179,7 +184,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-4">
 					<h1 className="text-2xl font-semibold text-heading tracking-tight">
-						{isLoading ? "Loading..." : (data?.title ?? "Proposal")}
+						{data?.title ?? "Proposal"}
 					</h1>
 					{data?.status && (
 						<Badge
@@ -200,11 +205,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 				)}
 			</div>
 
-			{isLoading ? (
-				<div className="flex items-center justify-center h-[500px]">
-					<Loader2 className="size-8 animate-spin text-heading" />
-				</div>
-			) : error ? (
+			{error ? (
 				<div className="flex items-center justify-center h-[500px]">
 					<p className="text-muted-foreground">
 						Failed to load proposal details.
