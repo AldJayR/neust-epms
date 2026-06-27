@@ -38,7 +38,7 @@ export default function ProjectsChart({ chartData }: ProjectsChartProps) {
 					data={chartData}
 					margin={{ top: 0, right: 0, left: -30, bottom: 0 }}
 				>
-					<CartesianGrid vertical={false} stroke="#ebebeb" />
+					<CartesianGrid vertical={false} stroke="var(--border)" />
 					<XAxis
 						dataKey="label"
 						axisLine={false}
@@ -53,7 +53,7 @@ export default function ProjectsChart({ chartData }: ProjectsChartProps) {
 					/>
 					<Tooltip
 						cursor={{ fill: "transparent" }}
-						contentStyle={{ borderRadius: "8px", border: "1px solid #ebebeb" }}
+						contentStyle={{ borderRadius: "8px", border: "1px solid var(--border)" }}
 					/>
 					<Bar
 						dataKey="value"

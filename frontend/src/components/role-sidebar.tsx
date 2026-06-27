@@ -123,7 +123,7 @@ export function RoleSidebar({
 											render={item.href ? <Link to={item.href} /> : undefined}
 											tooltip={item.title}
 											isActive={item.active}
-											className="hover:bg-[#f5f5f5] active:bg-[#f5f5f5]"
+											className="hover:bg-muted active:bg-muted"
 										>
 											<item.icon className="size-4" />
 											<span className="text-foreground">{item.title}</span>

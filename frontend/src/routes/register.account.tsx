@@ -178,7 +178,7 @@ function RegisterStepTwo() {
 					<div className="flex items-center gap-2">
 						<m.span
 							layoutId="reg-step-1"
-							className="size-2 cursor-pointer rounded-[12px] bg-[#d9d9d9] transition-colors hover:bg-zinc-400"
+							className="size-2 cursor-pointer rounded-[12px] bg-zinc-300 transition-colors hover:bg-zinc-400"
 							onClick={() => navigate({ to: "/register" })}
 							onKeyDown={(e: React.KeyboardEvent<HTMLSpanElement>) => {
 								if (e.key === "Enter" || e.key === " ") {
@@ -250,7 +250,7 @@ function RegisterStepTwo() {
 					<RHFSubmitButton
 						label="Register"
 						isSubmitting={form.formState.isSubmitting}
-						className="h-9 w-full rounded-[10px] bg-brand-primary text-sm font-medium text-[#fafafa] hover:bg-brand-primary-hover"
+						className="h-9 w-full rounded-[10px] bg-brand-primary text-sm font-medium text-primary-foreground hover:bg-brand-primary-hover"
 					/>
 				</div>
 			</form>

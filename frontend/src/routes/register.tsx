@@ -156,7 +156,7 @@ function RegisterStepOneForm() {
 						/>
 						<m.span
 							layoutId="reg-step-2"
-							className="size-2 rounded-[12px] bg-[#d9d9d9]"
+							className="size-2 rounded-[12px] bg-zinc-300"
 						/>
 					</div>
 				</div>
@@ -220,7 +220,7 @@ function RegisterStepOneForm() {
 					<RHFSubmitButton
 						label="Next"
 						isSubmitting={form.formState.isSubmitting}
-						className="h-9 w-full rounded-[10px] bg-brand-primary text-sm font-medium text-[#fafafa] hover:bg-brand-primary-hover"
+						className="h-9 w-full rounded-[10px] bg-brand-primary text-sm font-medium text-primary-foreground hover:bg-brand-primary-hover"
 					/>
 				</div>
 			</form>

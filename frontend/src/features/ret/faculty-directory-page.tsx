@@ -99,7 +99,7 @@ export function RetFacultyDirectoryPage({
 				return (
 					<div className="flex items-center gap-3">
 						<Avatar className="size-9">
-							<AvatarFallback className="bg-[#ddd] text-muted-foreground">
+							<AvatarFallback className="bg-muted text-muted-foreground">
 								{faculty.firstName?.charAt(0) ?? ""}
 								{faculty.lastName?.charAt(0) ?? ""}
 							</AvatarFallback>

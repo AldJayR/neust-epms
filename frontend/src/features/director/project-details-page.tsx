@@ -63,7 +63,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 					Project Overview
 				</h2>
 			</div>
-			<div className="divide-y divide-[#ebebeb]">
+			<div className="divide-y divide-border">
 				<div className="flex items-center justify-between px-6 py-3">
 					<span className="text-sm text-muted-foreground">Project Leader</span>
 					<div className="flex items-center gap-3">
@@ -132,7 +132,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 								{members.slice(0, 4).map((member) => (
 									<Avatar
 										key={member.userId}
-										className="size-8 border-2 border-white ring-1 ring-[#ebebeb]"
+										className="size-8 border-2 border-white ring-1 ring-border"
 									>
 										<AvatarImage src={member.avatarUrl} alt={member.name} />
 										<AvatarFallback className="bg-gray-100 text-gray-600 text-[10px]">
@@ -144,7 +144,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 									</Avatar>
 								))}
 								{members.length > 4 && (
-									<div className="flex size-8 items-center justify-center rounded-full border-2 border-white bg-gray-50 text-[10px] font-bold text-muted-foreground ring-1 ring-[#ebebeb]">
+									<div className="flex size-8 items-center justify-center rounded-full border-2 border-white bg-gray-50 text-[10px] font-bold text-muted-foreground ring-1 ring-border">
 										+{members.length - 4}
 									</div>
 								)}
@@ -208,11 +208,11 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 				</h2>
 			</div>
 			<div className="px-6 py-4">
-				<ul className="relative space-y-6 before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-[#ebebeb]">
+				<ul className="relative space-y-6 before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-border">
 					{history.map((item, idx) => (
 						<li key={item.id} className="relative flex items-start gap-4 pl-8">
 							<div
-								className={`absolute left-0 mt-1 size-[22px] rounded-full border-[3px] border-white shadow-sm ring-1 ring-[#ebebeb] ${idx === 0 ? "bg-brand-primary" : "bg-background"}`}
+								className={`absolute left-0 mt-1 size-[22px] rounded-full border-[3px] border-white shadow-sm ring-1 ring-border ${idx === 0 ? "bg-brand-primary" : "bg-background"}`}
 							/>
 							<div className="flex flex-1 flex-col gap-1">
 								<div className="flex items-center justify-between">

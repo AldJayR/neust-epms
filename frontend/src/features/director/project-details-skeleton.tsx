@@ -53,7 +53,7 @@ export function ProjectDetailsSkeleton() {
 						<div className="bg-card border-b border-border px-6 py-3">
 							<Skeleton className="h-4 w-32" />
 						</div>
-						<div className="divide-y divide-[#ebebeb]">
+						<div className="divide-y divide-border">
 							<div className="flex items-center justify-between px-6 py-3">
 								<Skeleton className="h-4 w-28" />
 								<div className="flex items-center gap-3">
@@ -100,7 +100,7 @@ export function ProjectDetailsSkeleton() {
 							<Skeleton className="h-4 w-32" />
 						</div>
 						<div className="px-6 py-4">
-							<div className="relative space-y-6 before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-[#ebebeb]">
+							<div className="relative space-y-6 before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-border">
 								{[1, 2].map((i) => (
 									<div key={i} className="relative flex items-start gap-4 pl-8">
 										<Skeleton className="absolute left-0 mt-1 size-[22px] rounded-full" />

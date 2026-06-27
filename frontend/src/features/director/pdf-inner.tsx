@@ -507,7 +507,7 @@ const PdfInner = ({
 											/>
 										) : (
 											<div
-												className="rounded bg-[#f5f5f5] animate-pulse flex items-center justify-center"
+												className="rounded bg-muted animate-pulse flex items-center justify-center"
 												style={{
 													width: pageWidth * scale,
 													height: pageWidth * aspect * scale,

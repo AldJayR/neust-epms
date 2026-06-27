@@ -396,7 +396,7 @@ export function PdfPageCanvas({
 
 			{(!hasRendered || isLoading) && (
 				<div
-					className={`absolute inset-0 flex items-center justify-center bg-[#f5f5f5]/80 ${!hasRendered ? "animate-pulse" : ""}`}
+					className={`absolute inset-0 flex items-center justify-center bg-muted/80 ${!hasRendered ? "animate-pulse" : ""}`}
 				>
 					{!hasRendered && (
 						<div className="size-6 animate-spin rounded-full border-2 border-brand-primary border-t-transparent" />
@@ -404,7 +404,7 @@ export function PdfPageCanvas({
 				</div>
 			)}
 			{error && (
-				<div className="absolute inset-0 flex items-center justify-center text-xs text-red-500 bg-[#f5f5f5] p-4 text-center">
+				<div className="absolute inset-0 flex items-center justify-center text-xs text-red-500 bg-muted p-4 text-center">
 					{error}
 				</div>
 			)}

@@ -115,10 +115,10 @@ export function ProposalDetailsTab({
 			</div>
 
 			<div className="px-5 py-2">
-				<Separator className="bg-[#ebebeb]" />
-			</div>
+			<Separator />
+		</div>
 
-			{endorsement && (
+		{endorsement && (
 				<>
 					<div className="p-5 space-y-4">
 						<h2 className="text-sm font-medium text-black">Endorsement</h2>
@@ -151,12 +151,12 @@ export function ProposalDetailsTab({
 					</div>
 
 					<div className="px-5 py-2">
-						<Separator className="bg-[#ebebeb]" />
-					</div>
-				</>
-			)}
+					<Separator />
+				</div>
+			</>
+		)}
 
-			<div className="p-5 space-y-3">
+		<div className="p-5 space-y-3">
 				<h2 className="text-sm font-medium text-black">
 					Attached documents
 				</h2>
@@ -198,9 +198,9 @@ export function ProposalDetailsTab({
 			{isReviewable && isRET && (
 				<>
 					<div className="px-5 py-2">
-						<Separator className="bg-[#ebebeb]" />
-					</div>
-					<div className="px-5 pt-2">
+					<Separator />
+				</div>
+				<div className="px-5 pt-2">
 						<p className="text-xs text-muted-foreground font-light leading-relaxed">
 							Approving will forward this proposal to the Director/Admin for
 							final review.

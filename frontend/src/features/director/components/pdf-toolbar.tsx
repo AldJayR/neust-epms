@@ -90,7 +90,7 @@ export function PdfToolbar({
 
 					{onToggleTheaterMode && (
 						<>
-							<div className="w-px h-4 bg-[#ebebeb] mx-1" />
+							<div className="w-px h-4 bg-border mx-1" />
 							<Tooltip>
 								<TooltipTrigger
 									render={

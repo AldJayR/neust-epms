@@ -89,7 +89,7 @@ export function MetricCard({
 						<div className="flex -space-x-2">
 							{[1, 2, 3].map((i) => (
 								<Avatar key={i} className="size-6 border-2 border-white">
-									<AvatarFallback className="bg-[#ddd] text-[8px]" />
+									<AvatarFallback className="bg-muted text-[8px]" />
 								</Avatar>
 							))}
 						</div>

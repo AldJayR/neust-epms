@@ -66,13 +66,13 @@ export function FacultyDirectoryPage({
 						<head>
 							<title>Faculty Directory Report</title>
 							<style>
-								body { font-family: sans-serif; padding: 30px; color: #333; line-height: 1.4; }
-								h1 { color: #11215a; margin-bottom: 2px; font-size: 24px; }
-								p { color: #666; margin-bottom: 24px; font-size: 14px; }
+								body { font-family: sans-serif; padding: 30px; color: var(--foreground); line-height: 1.4; }
+								h1 { color: var(--heading); margin-bottom: 2px; font-size: 24px; }
+								p { color: var(--muted-foreground); margin-bottom: 24px; font-size: 14px; }
 								table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-								th, td { border: 1px solid #ddd; padding: 10px 12px; text-align: left; font-size: 12px; }
-								th { background-color: #f4f7fc; color: #11215a; font-weight: bold; }
-								tr:nth-child(even) { background-color: #f9f9f9; }
+								th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; font-size: 12px; }
+								th { background-color: var(--muted); color: var(--heading); font-weight: bold; }
+								tr:nth-child(even) { background-color: var(--muted); }
 								.text-right { text-align: right; }
 							</style>
 						</head>
@@ -217,7 +217,7 @@ export function FacultyDirectoryPage({
 				return (
 					<div className="flex items-center gap-3">
 						<Avatar className="size-9">
-							<AvatarFallback className="bg-[#ddd] text-muted-foreground">
+							<AvatarFallback className="bg-muted text-muted-foreground">
 								{faculty.firstName?.charAt(0) ?? ""}
 								{faculty.lastName?.charAt(0) ?? ""}
 							</AvatarFallback>
