@@ -18,6 +18,14 @@ import {
 
 import { DEFAULT_SCALE, ZOOM_STEPS } from "./pdf-constants";
 
+function PdfTooltipContent({ children }: { children: React.ReactNode }) {
+	return (
+		<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-md z-50">
+			{children}
+		</TooltipContent>
+	);
+}
+
 interface PdfToolbarProps {
 	toolMode: "hand" | "comment";
 	onToolModeChange: (mode: "hand" | "comment") => void;
@@ -64,9 +72,7 @@ export function PdfToolbar({
 								</Button>
 							}
 						/>
-						<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
-							View & Select Text
-						</TooltipContent>
+						<PdfTooltipContent>View & Select Text</PdfTooltipContent>
 					</Tooltip>
 
 					<Tooltip>
@@ -83,9 +89,7 @@ export function PdfToolbar({
 								</Button>
 							}
 						/>
-						<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
-							Add Remark (Drag on page)
-						</TooltipContent>
+						<PdfTooltipContent>Add Remark (Drag on page)</PdfTooltipContent>
 					</Tooltip>
 
 					{onToggleTheaterMode && (
@@ -113,11 +117,11 @@ export function PdfToolbar({
 										</Button>
 									}
 								/>
-								<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
-									{isTheaterMode
-										? "Exit Theater Mode"
-										: "Theater Mode (Maximize View)"}
-								</TooltipContent>
+							<PdfTooltipContent>
+								{isTheaterMode
+									? "Exit Theater Mode"
+									: "Theater Mode (Maximize View)"}
+							</PdfTooltipContent>
 							</Tooltip>
 						</>
 					)}
@@ -147,9 +151,7 @@ export function PdfToolbar({
 								</Button>
 							}
 						/>
-						<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
-							Zoom Out
-						</TooltipContent>
+						<PdfTooltipContent>Zoom Out</PdfTooltipContent>
 					</Tooltip>
 
 					<button
@@ -175,9 +177,7 @@ export function PdfToolbar({
 								</Button>
 							}
 						/>
-						<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
-							Zoom In
-						</TooltipContent>
+						<PdfTooltipContent>Zoom In</PdfTooltipContent>
 					</Tooltip>
 
 					{scale !== DEFAULT_SCALE && (
@@ -195,9 +195,7 @@ export function PdfToolbar({
 									</Button>
 								}
 							/>
-							<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-[6px] z-50">
-								Reset Zoom
-							</TooltipContent>
+							<PdfTooltipContent>Reset Zoom</PdfTooltipContent>
 						</Tooltip>
 					)}
 				</div>
