@@ -203,7 +203,7 @@ export function FacultyDirectoryPage({
 		<div className="flex flex-col gap-8">
 			<PageHeader
 				title={
-					<h1 className="text-xl font-semibold leading-[35px] text-heading">
+					<h1 className="text-2xl font-semibold text-heading">
 						Faculty Directory
 					</h1>
 				}

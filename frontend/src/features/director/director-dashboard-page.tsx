@@ -146,7 +146,7 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 			<div className="flex min-h-full flex-col gap-8">
 				<PageHeader
 					title={
-						<h1 className="text-xl font-semibold leading-[35px] text-heading">
+						<h1 className="text-2xl font-semibold text-heading">
 							Welcome, {user?.firstName ? `${user.firstName}!` : "Director"}!
 						</h1>
 					}

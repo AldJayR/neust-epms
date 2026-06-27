@@ -126,7 +126,7 @@ export function ProjectMonitoringPage({
 	return (
 		<div className="flex flex-col gap-8">
 			<div>
-				<h1 className="text-xl font-semibold leading-[35px] text-heading">
+				<h1 className="text-2xl font-semibold text-heading">
 					Project Monitoring
 				</h1>
 			</div>

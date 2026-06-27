@@ -118,7 +118,7 @@ export function ProjectHubPage({
 	return (
 		<DataTablePage
 			title={
-				<h1 className="text-xl font-semibold leading-[35px] text-heading">
+				<h1 className="text-2xl font-semibold text-heading">
 					Project Hub
 				</h1>
 			}

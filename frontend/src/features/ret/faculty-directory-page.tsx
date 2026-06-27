@@ -84,7 +84,7 @@ export function RetFacultyDirectoryPage({
 		<div className="flex flex-col gap-8">
 			{/* Page Header */}
 			<div className="flex flex-col gap-2">
-				<h1 className="text-xl font-semibold leading-[35px] text-heading">
+				<h1 className="text-2xl font-semibold text-heading">
 					Faculty Directory
 				</h1>
 				<p className="text-sm font-normal leading-4 text-brand-primary">
