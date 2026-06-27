@@ -5,7 +5,6 @@ import {
 	redirect,
 	useNavigate,
 } from "@tanstack/react-router";
-import { m } from "motion/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -184,26 +183,15 @@ function RegisterStepTwo() {
 				</>
 			}
 		>
-			<div className="flex items-center justify-end gap-2 pt-4">
-				<m.span
-					layoutId="reg-step-1"
-					className="size-2 cursor-pointer rounded-xl bg-zinc-300 transition-colors hover:bg-zinc-400"
-					onClick={() => navigate({ to: "/register" })}
-					onKeyDown={(e: React.KeyboardEvent<HTMLSpanElement>) => {
-						if (e.key === "Enter" || e.key === " ") {
-							e.preventDefault();
-							navigate({ to: "/register" });
-						}
-					}}
-					role="button"
-					tabIndex={0}
-					aria-label="Go to step 1"
-				/>
-				<m.span
-					layoutId="reg-step-2"
-					className="h-2 w-6 rounded-xl bg-brand-primary"
-				/>
-			</div>
+		<div className="flex items-center justify-end gap-2 pt-4">
+			<AuthStepIndicator
+				steps={2}
+				currentStep={1}
+				onStepClick={(step) => {
+					if (step === 0) navigate({ to: "/register" });
+				}}
+			/>
+		</div>
 
 			<form
 				className="mt-6"
