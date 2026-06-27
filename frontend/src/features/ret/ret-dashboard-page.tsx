@@ -3,14 +3,15 @@ import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { EllipsisVertical, Plus } from "lucide-react";
 import * as React from "react";
-import { DataTableFilter } from "@/components/custom/data-table-filter";
-import { MetricCard } from "@/components/custom/metric-card";
-import { DataTablePage } from "@/components/custom/data-table-page";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandButton } from "@/components/custom/brand-button";
+import { createActionsColumn } from "@/components/custom/data-table-columns";
+import { DataTableFilter } from "@/components/custom/data-table-filter";
+import { DataTablePage } from "@/components/custom/data-table-page";
+import { MetricCard } from "@/components/custom/metric-card";
+import { PageHeader } from "@/components/custom/page-header";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
-import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -18,6 +19,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatusBadge } from "@/components/ui/status-badge";
 import type { AuthUser } from "@/lib/auth";
 import {
 	type ProposalItem,
@@ -25,9 +27,7 @@ import {
 	retProposalsQueryOptions,
 } from "@/lib/ret.functions";
 import { formatAcademicRank } from "@/lib/utils";
-import { PageHeader } from "@/components/custom/page-header";
 import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
-import { StatusBadge } from "@/components/ui/status-badge";
 
 interface RETDashboardPageProps {
 	user: AuthUser;

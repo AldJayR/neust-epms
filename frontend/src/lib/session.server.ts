@@ -92,10 +92,10 @@ export async function getValidAccessToken(): Promise<string> {
 	if (!refreshPromise) {
 		refreshPromise = (async () => {
 			try {
-			const supabase = createClient(
-				process.env.SUPABASE_URL ?? "",
-				process.env.SUPABASE_ANON_KEY ?? "",
-			);
+				const supabase = createClient(
+					process.env.SUPABASE_URL ?? "",
+					process.env.SUPABASE_ANON_KEY ?? "",
+				);
 				const { data, error } = await supabase.auth.refreshSession({
 					refresh_token: refreshToken,
 				});

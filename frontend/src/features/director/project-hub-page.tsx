@@ -1,17 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClientOnly, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
+import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { DataTablePage } from "@/components/custom/data-table-page";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
-import { createActionsColumn } from "@/components/custom/data-table-columns";
+import { StatusBadge } from "@/components/ui/status-badge";
 import type { AuthUser } from "@/lib/auth";
 import {
 	type HubProject,
 	projectHubQueryOptions,
 } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
-import { StatusBadge } from "@/components/ui/status-badge";
 
 interface ProjectHubPageProps {
 	user?: AuthUser | null;

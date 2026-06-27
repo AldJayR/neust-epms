@@ -10,12 +10,12 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { isSuperAdmin } from "@/lib/permissions";
+import { AuthPageLayout } from "../components/custom/auth-page-layout";
 import {
 	RHFPasswordField,
 	RHFSubmitButton,
 	RHFTextField,
 } from "../components/rhf-auth-fields";
-import { AuthPageLayout } from "../components/custom/auth-page-layout";
 import { FieldGroup } from "../components/ui/field";
 import {
 	adminStatsQueryOptions,

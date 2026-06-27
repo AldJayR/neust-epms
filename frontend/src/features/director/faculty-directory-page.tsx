@@ -3,10 +3,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { format } from "date-fns";
 import { Calendar, Download } from "lucide-react";
 import { toast } from "sonner";
-import { DataTableFilter } from "@/components/custom/data-table-filter";
-import { MetricCard } from "@/components/custom/metric-card";
-import { DataTablePage } from "@/components/custom/data-table-page";
 import { BrandButton } from "@/components/custom/brand-button";
+import { DataTableFilter } from "@/components/custom/data-table-filter";
+import { DataTablePage } from "@/components/custom/data-table-page";
+import { MetricCard } from "@/components/custom/metric-card";
+import { PageHeader } from "@/components/custom/page-header";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -19,7 +20,6 @@ import {
 	facultyDirectoryQueryOptions,
 } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
-import { PageHeader } from "@/components/custom/page-header";
 import { getFacultyDirectoryColumns } from "./components/faculty-directory-columns";
 
 interface FacultyDirectoryPageProps {

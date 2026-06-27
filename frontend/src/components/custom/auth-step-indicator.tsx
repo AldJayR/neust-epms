@@ -16,8 +16,8 @@ export function AuthStepIndicator({
 			{Array.from({ length: steps }, (_, i) => {
 				const isActive = i === currentStep;
 				return (
-					// biome-ignore lint/suspicious/noArrayIndexKey: fixed non-reorderable step list
 					<m.span
+						// biome-ignore lint/suspicious/noArrayIndexKey: fixed non-reorderable step list
 						key={i}
 						layoutId={`reg-step-${i + 1}`}
 						className={

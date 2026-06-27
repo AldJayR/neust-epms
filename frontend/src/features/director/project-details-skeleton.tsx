@@ -1,4 +1,7 @@
 import { Link } from "@tanstack/react-router";
+import { DetailsRow } from "@/components/custom/details-row";
+import { PageCard } from "@/components/custom/page-card";
+import { PageHeader } from "@/components/custom/page-header";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -8,9 +11,6 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PageCard } from "@/components/custom/page-card";
-import { PageHeader } from "@/components/custom/page-header";
-import { DetailsRow } from "@/components/custom/details-row";
 
 export function ProjectDetailsSkeleton() {
 	return (

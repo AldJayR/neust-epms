@@ -14,12 +14,12 @@ import {
 import type { PdfViewerRef } from "@/components/pdf-viewer";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { AnnotationData, ProposalComment } from "@/lib/comments.functions";
-import { PdfPageCanvas } from "./components/pdf-canvas";
 import { useHandDrag } from "./components/hooks/use-hand-drag";
 import { usePdfDocument } from "./components/hooks/use-pdf-document";
 import { usePdfKeyboard } from "./components/hooks/use-pdf-keyboard";
 import { usePdfVisibility } from "./components/hooks/use-pdf-visibility";
 import { usePdfZoom } from "./components/hooks/use-pdf-zoom";
+import { PdfPageCanvas } from "./components/pdf-canvas";
 import { PdfToolbar } from "./components/pdf-toolbar";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -68,9 +68,9 @@ const PdfInner = ({
 	const scrollRef = useRef<HTMLDivElement>(null);
 	// biome-ignore lint/style/noNonNullAssertion: initialized on first render below
 	const pageRefs = useRef<Map<number, HTMLDivElement>>(null!);
-		if (pageRefs.current === null) {
-			pageRefs.current = new Map();
-		}
+	if (pageRefs.current === null) {
+		pageRefs.current = new Map();
+	}
 
 	const { visiblePages, currentPage } = usePdfVisibility(
 		scrollRef,

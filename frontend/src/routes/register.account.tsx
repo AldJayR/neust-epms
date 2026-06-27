@@ -9,14 +9,14 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { AuthPageLayout } from "../components/custom/auth-page-layout";
+import { AuthStepIndicator } from "../components/custom/auth-step-indicator";
 import {
 	RHFCheckboxField,
 	RHFPasswordField,
 	RHFSubmitButton,
 	RHFTextField,
 } from "../components/rhf-auth-fields";
-import { AuthPageLayout } from "../components/custom/auth-page-layout";
-import { AuthStepIndicator } from "../components/custom/auth-step-indicator";
 import { FieldGroup } from "../components/ui/field";
 import { checkPasswordFn, signupFn } from "../lib/auth.functions";
 

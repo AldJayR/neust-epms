@@ -91,11 +91,11 @@ export function ProposalStepDocuments({
 											size="icon"
 											className="size-8 text-muted-foreground hover:text-destructive"
 										/>
-								}
-							>
-								✕
-							</FileUploadItemDelete>
-						</FileUploadItem>
+									}
+								>
+									✕
+								</FileUploadItemDelete>
+							</FileUploadItem>
 						)}
 					</FileUploadList>
 				</FileUpload>

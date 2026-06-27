@@ -1,7 +1,7 @@
+import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
-import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { FacultyInvolvement } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";

@@ -1,13 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, ListFilter, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
-import { MetricCard } from "@/components/custom/metric-card";
-import { DataTablePage } from "@/components/custom/data-table-page";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandButton } from "@/components/custom/brand-button";
+import { createActionsColumn } from "@/components/custom/data-table-columns";
+import { DataTablePage } from "@/components/custom/data-table-page";
+import { MetricCard } from "@/components/custom/metric-card";
+import { PageHeader } from "@/components/custom/page-header";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
-import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -17,6 +18,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { StatusBadge } from "@/components/ui/status-badge";
 import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
@@ -25,8 +27,6 @@ import {
 } from "@/lib/admin.functions";
 import { formatAcademicRank } from "@/lib/utils";
 import { BulkApproveDialog } from "./bulk-approve-dialog";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { PageHeader } from "@/components/custom/page-header";
 
 interface UsersPageProps {
 	page: number;

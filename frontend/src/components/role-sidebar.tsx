@@ -8,8 +8,8 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronRight, Loader2, LogOut, type LucideIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
-import { toast } from "sonner";
 import * as React from "react";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,

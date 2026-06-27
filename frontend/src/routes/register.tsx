@@ -12,13 +12,13 @@ import { AnimatePresence, domMax, LazyMotion, m } from "motion/react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { AuthPageLayout } from "../components/custom/auth-page-layout";
+import { AuthStepIndicator } from "../components/custom/auth-step-indicator";
 import {
 	RHFSelectField,
 	RHFSubmitButton,
 	RHFTextField,
 } from "../components/rhf-auth-fields";
-import { AuthPageLayout } from "../components/custom/auth-page-layout";
-import { AuthStepIndicator } from "../components/custom/auth-step-indicator";
 import { FieldGroup } from "../components/ui/field";
 import { getCampusesFn, getDepartmentsFn } from "../lib/auth.functions";
 

@@ -2,9 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { ChevronRight, Download, Eye, FileText, User } from "lucide-react";
+import { BrandButton } from "@/components/custom/brand-button";
+import { DetailsRow } from "@/components/custom/details-row";
+import { PageCard } from "@/components/custom/page-card";
+import { PageHeader } from "@/components/custom/page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { PageCard } from "@/components/custom/page-card";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -13,8 +16,6 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { BrandButton } from "@/components/custom/brand-button";
-import { DetailsRow } from "@/components/custom/details-row";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -23,10 +24,9 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { projectDetailsQueryOptions } from "@/lib/dashboard.functions";
 import { ProjectDetailsSkeleton } from "./project-details-skeleton";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { PageHeader } from "@/components/custom/page-header";
 
 interface ProjectDetailsPageProps {
 	proposalId: string;

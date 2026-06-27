@@ -1,7 +1,7 @@
 import type { ComponentProps, Ref } from "react";
+import { cn } from "#/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { cn } from "#/lib/utils";
 
 interface LoadingButtonProps extends ComponentProps<typeof Button> {
 	loading?: boolean;

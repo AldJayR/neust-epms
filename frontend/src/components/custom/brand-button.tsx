@@ -1,6 +1,6 @@
 import type { ComponentProps, Ref } from "react";
-import { Button } from "@/components/ui/button";
 import { cn } from "#/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface BrandButtonProps extends ComponentProps<typeof Button> {
 	ref?: Ref<HTMLButtonElement>;

@@ -1,13 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { Download, ListFilter } from "lucide-react";
 import { useState } from "react";
-import { MetricCard } from "@/components/custom/metric-card";
-import { DataTablePage } from "@/components/custom/data-table-page";
-import { Badge } from "@/components/ui/badge";
 import { BrandButton } from "@/components/custom/brand-button";
+import { createActionsColumn } from "@/components/custom/data-table-columns";
+import { DataTablePage } from "@/components/custom/data-table-page";
+import { MetricCard } from "@/components/custom/metric-card";
+import { PageHeader } from "@/components/custom/page-header";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
-import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -20,7 +21,6 @@ import {
 	reportsListQueryOptions,
 	reportsQueryOptions,
 } from "@/lib/dashboard.functions";
-import { PageHeader } from "@/components/custom/page-header";
 
 const formatDate = (dateStr: string) => {
 	try {
@@ -168,7 +168,9 @@ export function ReportsPage() {
 						<DropdownMenuContent align="end" className="w-48">
 							<DropdownMenuRadioGroup
 								value={typeFilter}
-								onValueChange={(val) => setTypeFilter(val as "All" | "Progress" | "Terminal")}
+								onValueChange={(val) =>
+									setTypeFilter(val as "All" | "Progress" | "Terminal")
+								}
 							>
 								<DropdownMenuRadioItem value="All">
 									All Types
