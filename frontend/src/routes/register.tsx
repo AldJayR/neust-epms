@@ -17,6 +17,7 @@ import {
 	RHFSubmitButton,
 	RHFTextField,
 } from "../components/rhf-auth-fields";
+import { AuthPageLayout } from "../components/custom/auth-page-layout";
 import { FieldGroup } from "../components/ui/field";
 import { getCampusesFn, getDepartmentsFn } from "../lib/auth.functions";
 
@@ -69,20 +70,18 @@ function RegisterRoute() {
 
 	return (
 		<LazyMotion features={domMax}>
-			<main className="flex min-h-dvh items-center justify-center bg-muted px-4 py-8">
-				<AnimatePresence mode="wait" initial={false}>
-					<m.div
-						key={pathname}
-						initial={{ opacity: 0, x: 20 }}
-						animate={{ opacity: 1, x: 0 }}
-						exit={{ opacity: 0, x: -20 }}
-						transition={{ duration: 0.3, ease: "easeInOut" }}
-						className="w-full max-w-[480px]"
-					>
-						{pathname !== "/register" ? <Outlet /> : <RegisterStepOneForm />}
-					</m.div>
-				</AnimatePresence>
-			</main>
+			<AnimatePresence mode="wait" initial={false}>
+				<m.div
+					key={pathname}
+					initial={{ opacity: 0, x: 20 }}
+					animate={{ opacity: 1, x: 0 }}
+					exit={{ opacity: 0, x: -20 }}
+					transition={{ duration: 0.3, ease: "easeInOut" }}
+					className="w-full max-w-[480px]"
+				>
+					{pathname !== "/register" ? <Outlet /> : <RegisterStepOneForm />}
+				</m.div>
+			</AnimatePresence>
 		</LazyMotion>
 	);
 }
@@ -141,29 +140,31 @@ function RegisterStepOneForm() {
 	}
 
 	return (
-		<section className="w-full rounded-xl p-6">
-			<header className="flex flex-col gap-2">
-				<div className="flex items-center gap-2">
-					<div className="min-w-0 flex-1">
-						<h1 className="text-base leading-6 font-semibold text-black">
-							Create your account
-						</h1>
-					</div>
-					<div className="flex items-center gap-2">
-						<m.span
-							layoutId="reg-step-1"
-							className="h-2 w-6 rounded-[12px] bg-brand-primary"
-						/>
-						<m.span
-							layoutId="reg-step-2"
-							className="size-2 rounded-[12px] bg-zinc-300"
-						/>
-					</div>
-				</div>
-				<p className="text-sm leading-5 text-zinc-600">
-					Fill in your faculty profile details
-				</p>
-			</header>
+		<AuthPageLayout
+			title="Create your account"
+			description="Fill in your faculty profile details"
+			footer={
+				<>
+					Already have an account?{" "}
+					<Link
+						to="/login"
+						className="text-black hover:text-black underline underline-offset-2"
+					>
+						Log in
+					</Link>
+				</>
+			}
+		>
+			<div className="flex items-center justify-end gap-2 pt-4">
+				<m.span
+					layoutId="reg-step-1"
+					className="h-2 w-6 rounded-[12px] bg-brand-primary"
+				/>
+				<m.span
+					layoutId="reg-step-2"
+					className="size-2 rounded-[12px] bg-zinc-300"
+				/>
+			</div>
 
 			<form
 				className="mt-6"
@@ -224,16 +225,6 @@ function RegisterStepOneForm() {
 					/>
 				</div>
 			</form>
-
-			<p className="pt-4 text-center text-sm leading-5 text-zinc-600">
-				Already have an account?{" "}
-				<Link
-					to="/login"
-					className="text-black hover:text-black underline underline-offset-2"
-				>
-					Log in
-				</Link>
-			</p>
-		</section>
+		</AuthPageLayout>
 	);
 }

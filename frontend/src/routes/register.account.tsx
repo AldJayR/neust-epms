@@ -16,7 +16,7 @@ import {
 	RHFSubmitButton,
 	RHFTextField,
 } from "../components/rhf-auth-fields";
-import { Alert } from "../components/ui/alert";
+import { AuthPageLayout } from "../components/custom/auth-page-layout";
 import { FieldGroup } from "../components/ui/field";
 import { checkPasswordFn, signupFn } from "../lib/auth.functions";
 
@@ -167,45 +167,42 @@ function RegisterStepTwo() {
 	}
 
 	return (
-		<section className="w-full rounded-xl p-6">
-			<header className="flex flex-col gap-2">
-				<div className="flex items-center gap-2">
-					<div className="min-w-0 flex-1">
-						<h1 className="text-base leading-6 font-semibold text-black">
-							Create your account
-						</h1>
-					</div>
-					<div className="flex items-center gap-2">
-						<m.span
-							layoutId="reg-step-1"
-							className="size-2 cursor-pointer rounded-[12px] bg-zinc-300 transition-colors hover:bg-zinc-400"
-							onClick={() => navigate({ to: "/register" })}
-							onKeyDown={(e: React.KeyboardEvent<HTMLSpanElement>) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									navigate({ to: "/register" });
-								}
-							}}
-							role="button"
-							tabIndex={0}
-							aria-label="Go to step 1"
-						/>
-						<m.span
-							layoutId="reg-step-2"
-							className="h-2 w-6 rounded-[12px] bg-brand-primary"
-						/>
-					</div>
-				</div>
-				<p className="text-sm leading-5 text-zinc-600">
-					Set up your login credentials
-				</p>
-			</header>
-
-			{serverError && (
-				<Alert variant="destructive" className="mt-4">
-					{serverError}
-				</Alert>
-			)}
+		<AuthPageLayout
+			title="Create your account"
+			description="Set up your login credentials"
+			error={serverError}
+			footer={
+				<>
+					Already have an account?{" "}
+					<Link
+						to="/login"
+						className="text-black hover:text-black underline underline-offset-2"
+					>
+						Log in
+					</Link>
+				</>
+			}
+		>
+			<div className="flex items-center justify-end gap-2 pt-4">
+				<m.span
+					layoutId="reg-step-1"
+					className="size-2 cursor-pointer rounded-[12px] bg-zinc-300 transition-colors hover:bg-zinc-400"
+					onClick={() => navigate({ to: "/register" })}
+					onKeyDown={(e: React.KeyboardEvent<HTMLSpanElement>) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							navigate({ to: "/register" });
+						}
+					}}
+					role="button"
+					tabIndex={0}
+					aria-label="Go to step 1"
+				/>
+				<m.span
+					layoutId="reg-step-2"
+					className="h-2 w-6 rounded-[12px] bg-brand-primary"
+				/>
+			</div>
 
 			<form
 				className="mt-6"
@@ -254,16 +251,6 @@ function RegisterStepTwo() {
 					/>
 				</div>
 			</form>
-
-			<p className="pt-4 text-center text-sm leading-5 text-zinc-600">
-				Already have an account?{" "}
-				<Link
-					to="/login"
-					className="text-black hover:text-black underline underline-offset-2"
-				>
-					Log in
-				</Link>
-			</p>
-		</section>
+		</AuthPageLayout>
 	);
 }

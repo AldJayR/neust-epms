@@ -15,7 +15,7 @@ import {
 	RHFSubmitButton,
 	RHFTextField,
 } from "../components/rhf-auth-fields";
-import { Alert } from "../components/ui/alert";
+import { AuthPageLayout } from "../components/custom/auth-page-layout";
 import { FieldGroup } from "../components/ui/field";
 import {
 	adminStatsQueryOptions,
@@ -108,61 +108,12 @@ function LoginPage() {
 	}
 
 	return (
-		<main className="flex min-h-dvh items-center justify-center bg-muted px-4 py-8">
-			<section className="w-full max-w-[480px] rounded-xl px-6 py-6">
-				<header className="flex flex-col gap-2">
-					<h1 className="text-base leading-6 font-semibold text-black">
-						Login to your account
-					</h1>
-					<p className="text-sm leading-5 text-zinc-600">
-						Enter your email below to login to your account
-					</p>
-				</header>
-
-				{serverError && (
-					<Alert variant="destructive" className="mt-4">
-						{serverError}
-					</Alert>
-				)}
-
-				<form
-					className="mt-6"
-					method="POST"
-					onSubmit={form.handleSubmit(onSubmit)}
-				>
-					<FieldGroup>
-						<RHFTextField
-							control={form.control}
-							name="email"
-							label="Email"
-							type="email"
-							placeholder="m@example.com"
-						/>
-						<RHFPasswordField
-							control={form.control}
-							name="password"
-							label="Password"
-							labelAction={
-								<Link
-									to="/login"
-									className="text-sm leading-5 text-black hover:text-black hover:underline"
-								>
-									Forgot password?
-								</Link>
-							}
-						/>
-					</FieldGroup>
-
-					<div className="mt-7">
-						<RHFSubmitButton
-							label="Login"
-							isSubmitting={form.formState.isSubmitting}
-							className="h-9 w-full rounded-[10px] bg-brand-primary text-sm font-medium text-primary-foreground hover:bg-brand-primary-hover"
-						/>
-					</div>
-				</form>
-
-				<p className="pt-4 text-center text-sm leading-5 text-zinc-600">
+		<AuthPageLayout
+			title="Sign In"
+			description="Welcome back to NEUST-EPMS"
+			error={serverError}
+			footer={
+				<>
 					Don&apos;t have an account?{" "}
 					<Link
 						to="/register"
@@ -170,8 +121,45 @@ function LoginPage() {
 					>
 						Register
 					</Link>
-				</p>
-			</section>
-		</main>
+				</>
+			}
+		>
+			<form
+				className="mt-6"
+				method="POST"
+				onSubmit={form.handleSubmit(onSubmit)}
+			>
+				<FieldGroup>
+					<RHFTextField
+						control={form.control}
+						name="email"
+						label="Email"
+						type="email"
+						placeholder="m@example.com"
+					/>
+					<RHFPasswordField
+						control={form.control}
+						name="password"
+						label="Password"
+						labelAction={
+							<Link
+								to="/login"
+								className="text-sm leading-5 text-black hover:text-black hover:underline"
+							>
+								Forgot password?
+							</Link>
+						}
+					/>
+				</FieldGroup>
+
+				<div className="mt-7">
+					<RHFSubmitButton
+						label="Login"
+						isSubmitting={form.formState.isSubmitting}
+						className="h-9 w-full rounded-[10px] bg-brand-primary text-sm font-medium text-primary-foreground hover:bg-brand-primary-hover"
+					/>
+				</div>
+			</form>
+		</AuthPageLayout>
 	);
 }
