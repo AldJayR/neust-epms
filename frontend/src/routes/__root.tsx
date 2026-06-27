@@ -6,6 +6,7 @@ import {
 	Link,
 	Scripts,
 	useRouter,
+	useRouterState,
 } from "@tanstack/react-router";
 import { Loader2, Wifi, WifiOff } from "lucide-react";
 import { useEffect } from "react";
@@ -119,6 +120,8 @@ function NotFound() {
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+	const isPending = useRouterState({ select: (s) => s.status === "pending" });
+
 	useEffect(() => {
 		let disconnectToastId: string | number | undefined;
 		let countdownInterval: ReturnType<typeof setInterval> | undefined;
@@ -239,6 +242,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<HeadContent />
 			</head>
 			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
+				{isPending && <div className="global-loading-bar" />}
 				{children}
 				<Toaster position="top-right" />
 				<Devtools />
