@@ -10,6 +10,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
+import { DetailsRow } from "@/components/custom/details-row";
 
 export function ProjectDetailsSkeleton() {
 	return (
@@ -54,34 +55,28 @@ export function ProjectDetailsSkeleton() {
 							<Skeleton className="h-4 w-32" />
 						</div>
 						<div className="divide-y divide-border">
-							<div className="flex items-center justify-between px-6 py-3">
-								<Skeleton className="h-4 w-28" />
+							<DetailsRow label={<Skeleton className="h-4 w-28" />}>
 								<div className="flex items-center gap-3">
 									<Skeleton className="size-8 rounded-full" />
 									<Skeleton className="h-4 w-32" />
 								</div>
-							</div>
-							<div className="flex items-center justify-between px-6 py-3">
-								<Skeleton className="h-4 w-32" />
+							</DetailsRow>
+							<DetailsRow label={<Skeleton className="h-4 w-32" />}>
 								<Skeleton className="h-4 w-40" />
-							</div>
-							<div className="flex items-center justify-between px-6 py-3">
-								<Skeleton className="h-4 w-20" />
+							</DetailsRow>
+							<DetailsRow label={<Skeleton className="h-4 w-20" />}>
 								<Skeleton className="h-4 w-36" />
-							</div>
-							<div className="flex items-center justify-between px-6 py-3">
-								<Skeleton className="h-4 w-24" />
+							</DetailsRow>
+							<DetailsRow label={<Skeleton className="h-4 w-24" />}>
 								<Skeleton className="h-4 w-20" />
-							</div>
-							<div className="flex items-center justify-between px-6 py-3">
-								<Skeleton className="h-4 w-24" />
+							</DetailsRow>
+							<DetailsRow label={<Skeleton className="h-4 w-24" />}>
 								<div className="flex flex-col items-end gap-1">
 									<Skeleton className="h-5 w-28" />
 									<Skeleton className="h-3 w-48" />
 								</div>
-							</div>
-							<div className="flex items-center justify-between px-6 py-3">
-								<Skeleton className="h-4 w-28" />
+							</DetailsRow>
+							<DetailsRow label={<Skeleton className="h-4 w-28" />}>
 								<div className="flex items-center gap-4">
 									<div className="flex -space-x-2">
 										<Skeleton className="size-8 rounded-full" />
@@ -90,7 +85,7 @@ export function ProjectDetailsSkeleton() {
 									</div>
 									<Skeleton className="size-4" />
 								</div>
-							</div>
+							</DetailsRow>
 						</div>
 					</PageCard>
 

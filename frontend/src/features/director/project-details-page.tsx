@@ -14,6 +14,7 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { BrandButton } from "@/components/custom/brand-button";
+import { DetailsRow } from "@/components/custom/details-row";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -64,8 +65,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 				</h2>
 			</div>
 			<div className="divide-y divide-border">
-				<div className="flex items-center justify-between px-6 py-3">
-					<span className="text-sm text-muted-foreground">Project Leader</span>
+				<DetailsRow label="Project Leader">
 					<div className="flex items-center gap-3">
 						<Avatar className="size-8 border border-border">
 							<AvatarImage
@@ -83,27 +83,17 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 							{metadata.leader.name}
 						</span>
 					</div>
-				</div>
-				<div className="flex items-center justify-between px-6 py-3">
-					<span className="text-sm text-muted-foreground">Department / Unit</span>
-					<span className="text-sm font-medium text-foreground">
-						{metadata.department}
-					</span>
-				</div>
-				<div className="flex items-center justify-between px-6 py-3">
-					<span className="text-sm text-muted-foreground">Duration</span>
-					<span className="text-sm font-medium text-foreground">
-						{metadata.duration}
-					</span>
-				</div>
-				<div className="flex items-center justify-between px-6 py-3">
-					<span className="text-sm text-muted-foreground">SDGs</span>
-					<span className="text-sm font-medium text-foreground">
-						{metadata.sdgs ?? "None"}
-					</span>
-				</div>
-				<div className="flex items-center justify-between px-6 py-3">
-					<span className="text-sm text-muted-foreground">Total Budget</span>
+				</DetailsRow>
+				<DetailsRow label="Department / Unit">
+					{metadata.department}
+				</DetailsRow>
+				<DetailsRow label="Duration">
+					{metadata.duration}
+				</DetailsRow>
+				<DetailsRow label="SDGs">
+					{metadata.sdgs ?? "None"}
+				</DetailsRow>
+				<DetailsRow label="Total Budget">
 					<div className="flex flex-col items-end">
 						<span className="text-sm font-semibold text-heading">
 							₱{metadata.budget.total.toLocaleString()}
@@ -113,7 +103,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 							{metadata.budget.partner.toLocaleString()}
 						</span>
 					</div>
-				</div>
+				</DetailsRow>
 
 				{/* Team Members */}
 				<Dialog>
