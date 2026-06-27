@@ -12,11 +12,11 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { MetricCard } from "@/components/custom/metric-card";
-import { PageCard } from "@/components/custom/page-card";
+import { DataTablePage } from "@/components/custom/data-table-page";
 import { Badge } from "@/components/ui/badge";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
-import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { type DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
@@ -25,8 +25,6 @@ import {
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PaginationBar } from "@/components/ui/pagination-bar";
-import { SearchInput } from "@/components/ui/search-input";
 import {
 	type AuditLog,
 	auditLogsQueryOptions,
@@ -221,71 +219,59 @@ export function ActivityLogPage({
 				))}
 			</div>
 
-			<div className="flex items-center justify-between">
-				<SearchInput
-					value={search ?? ""}
-					onChange={(val) => onSearch(val || undefined)}
-					placeholder="Search by users or email"
-					ariaLabel="Search activity log"
-					className="max-w-[352px]"
-				/>
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={
-							<Button
-								variant="outline"
-								size="icon"
-								className="h-9 w-9 border-border rounded-[8px] shadow-sm"
-								aria-label="Filter activity log"
-							>
-								<ListFilter className="size-4" />
-							</Button>
-						}
-					/>
-					<DropdownMenuContent align="end" className="w-48">
-						<DropdownMenuRadioGroup
-							value={typeFilter}
-							onValueChange={(val) => setTypeFilter(val)}
-						>
-							<DropdownMenuRadioItem value="all">
-								All Actions
-							</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="approval">
-								Approval
-							</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="upload">
-								Upload
-							</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="login">Login</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="status">
-								Status
-							</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="account">
-								Account
-							</DropdownMenuRadioItem>
-						</DropdownMenuRadioGroup>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			</div>
-
-			<PageCard>
-				<DataTable
-					columns={columns}
-					data={logs}
-					isLoading={isLogsLoading}
-					emptyMessage="No activities found."
-					ariaLabel="Activity log"
-					activeFilters={{ search, typeFilter }}
-				/>
-			</PageCard>
-
-			<PaginationBar
-				page={page}
-				totalPages={Math.ceil((logsData?.total ?? 0) / limit)}
-				onPageChange={onPageChange}
+			<DataTablePage
+				columns={columns}
+				data={logs}
 				total={logsData?.total ?? 0}
-				limit={limit}
 				isLoading={isLogsLoading}
+				page={page}
+				pageSize={limit}
+				onPageChange={onPageChange}
+				search={search}
+				onSearch={(val) => onSearch(val || undefined)}
+				searchPlaceholder="Search by users or email"
+				filters={
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={
+								<Button
+									variant="outline"
+									size="icon"
+									className="h-9 w-9 border-border rounded-[8px] shadow-sm"
+									aria-label="Filter activity log"
+								>
+									<ListFilter className="size-4" />
+								</Button>
+							}
+						/>
+						<DropdownMenuContent align="end" className="w-48">
+							<DropdownMenuRadioGroup
+								value={typeFilter}
+								onValueChange={(val) => setTypeFilter(val)}
+							>
+								<DropdownMenuRadioItem value="all">
+									All Actions
+								</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="approval">
+									Approval
+								</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="upload">
+									Upload
+								</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="login">Login</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="status">
+									Status
+								</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="account">
+									Account
+								</DropdownMenuRadioItem>
+							</DropdownMenuRadioGroup>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				}
+				activeFilters={{ search, typeFilter }}
+				emptyMessage="No activities found."
+				ariaLabel="Activity log"
 			/>
 		</div>
 	);

@@ -3,10 +3,10 @@ import { ClientOnly } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { ListFilter, Plus } from "lucide-react";
 import { MetricCard } from "@/components/custom/metric-card";
-import { PageCard } from "@/components/custom/page-card";
+import { DataTablePage } from "@/components/custom/data-table-page";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
-import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { type DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
@@ -15,8 +15,6 @@ import {
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PaginationBar } from "@/components/ui/pagination-bar";
-import { SearchInput } from "@/components/ui/search-input";
 import type { AuthUser } from "@/lib/auth";
 import {
 	type MoaItem,
@@ -58,7 +56,6 @@ export function MoaRepositoryPage({
 		expiringWithin90Days: 0,
 		activePartnerships: 0,
 	};
-	const totalPages = Math.ceil(total / limit);
 
 	const columns: DataTableColumnDef<MoaItem>[] = [
 		{
@@ -146,67 +143,54 @@ export function MoaRepositoryPage({
 				/>
 			</div>
 
-			<div className="flex items-center justify-between">
-				<SearchInput
-					value={search ?? ""}
-					onChange={onSearchChange}
-					placeholder="Search MOAs"
-					ariaLabel="Search MOAs"
-					className="max-w-[352px]"
-				/>
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={
-							<Button
-								variant="outline"
-								size="icon"
-								className="h-9 w-9 border-border bg-background shadow-sm"
-								aria-label="Filter MOAs"
-							>
-								<ListFilter className="size-4 text-foreground" />
-							</Button>
-						}
-					/>
-					<DropdownMenuContent align="end" className="w-48">
-						<DropdownMenuRadioGroup
-							value={status || "all"}
-							onValueChange={(val) => onStatusChange(val === "all" ? "" : val)}
-						>
-							<DropdownMenuRadioItem value="all">
-								All Statuses
-							</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="Valid">Valid</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="Renewal Needed">
-								Renewal Needed
-							</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="Expired">
-								Expired
-							</DropdownMenuRadioItem>
-						</DropdownMenuRadioGroup>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			</div>
-
-			<PageCard className="bg-muted">
-				<div className="bg-background">
-				<DataTable
-					columns={columns}
-					data={items}
-					activeFilters={{ search }}
-					isLoading={isLoading}
-					emptyMessage="No MOAs found."
-					ariaLabel="Memoranda of Agreements"
-				/>
-				</div>
-			</PageCard>
-
-			<PaginationBar
-				page={page}
-				totalPages={totalPages}
-				onPageChange={onPageChange}
+			<DataTablePage
+				columns={columns}
+				data={items}
 				total={total}
-				limit={limit}
 				isLoading={isLoading}
+				page={page}
+				pageSize={limit}
+				onPageChange={onPageChange}
+				search={search}
+				onSearch={onSearchChange}
+				searchPlaceholder="Search MOAs"
+				filters={
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={
+								<Button
+									variant="outline"
+									size="icon"
+									className="h-9 w-9 border-border bg-background shadow-sm"
+									aria-label="Filter MOAs"
+								>
+									<ListFilter className="size-4 text-foreground" />
+								</Button>
+							}
+						/>
+						<DropdownMenuContent align="end" className="w-48">
+							<DropdownMenuRadioGroup
+								value={status || "all"}
+								onValueChange={(val) => onStatusChange(val === "all" ? "" : val)}
+							>
+								<DropdownMenuRadioItem value="all">
+									All Statuses
+								</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="Valid">Valid</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="Renewal Needed">
+									Renewal Needed
+								</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="Expired">
+									Expired
+								</DropdownMenuRadioItem>
+							</DropdownMenuRadioGroup>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				}
+				activeFilters={{ search }}
+				emptyMessage="No MOAs found."
+				ariaLabel="Memoranda of Agreements"
+				cardClassName="bg-muted"
 			/>
 		</div>
 	);

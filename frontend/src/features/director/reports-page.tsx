@@ -2,11 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Download, ListFilter } from "lucide-react";
 import { useState } from "react";
 import { MetricCard } from "@/components/custom/metric-card";
-import { PageCard } from "@/components/custom/page-card";
+import { DataTablePage } from "@/components/custom/data-table-page";
 import { Badge } from "@/components/ui/badge";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
-import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { type DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
@@ -15,8 +15,6 @@ import {
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PaginationBar } from "@/components/ui/pagination-bar";
-import { SearchInput } from "@/components/ui/search-input";
 import {
 	type ReportItem,
 	reportsListQueryOptions,
@@ -50,7 +48,6 @@ export function ReportsPage() {
 	const {
 		data: listData,
 		isLoading: listLoading,
-		error,
 	} = useQuery(
 		reportsListQueryOptions({ page, limit, search: search || undefined }),
 	);
@@ -64,7 +61,6 @@ export function ReportsPage() {
 	const progressCount = stats?.progress ?? 0;
 	const terminalCount = stats?.terminal ?? 0;
 	const isLoading = statsLoading || listLoading;
-	const totalPages = Math.max(1, Math.ceil(totalReports / limit));
 
 	const columns: DataTableColumnDef<ReportItem>[] = [
 		{
@@ -147,69 +143,54 @@ export function ReportsPage() {
 				<MetricCard label="Terminal Reports" value={terminalCount} />
 			</div>
 
-			{/* Search and Filters */}
-			<div className="flex items-center justify-between">
-				<SearchInput
-					value={search}
-					onChange={(val) => {
-						setSearch(val);
-						setPage(1);
-					}}
-					placeholder="Search reports"
-					ariaLabel="Search reports"
-					className="max-w-[352px]"
-				/>
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={
-							<Button
-								variant="outline"
-								className="h-9 w-9 p-0 border-border rounded-[8px] shadow-sm animate-fade-in"
-								aria-label="Filter reports"
-							>
-								<ListFilter className="size-4" />
-							</Button>
-						}
-					/>
-					<DropdownMenuContent align="end" className="w-48">
-						<DropdownMenuRadioGroup
-							value={typeFilter}
-							onValueChange={(val) => setTypeFilter(val as any)}
-						>
-							<DropdownMenuRadioItem value="All">
-								All Types
-							</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="Progress">
-								Progress Reports
-							</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="Terminal">
-								Terminal Reports
-							</DropdownMenuRadioItem>
-						</DropdownMenuRadioGroup>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			</div>
-
-			{/* Data Table */}
-			<PageCard>
-			<DataTable
+			<DataTablePage
 				columns={columns}
 				data={filteredReports}
-				activeFilters={{ search }}
+				total={totalReports}
 				isLoading={isLoading}
-				error={error ? "Failed to load reports." : null}
+				page={page}
+				pageSize={limit}
+				onPageChange={setPage}
+				search={search}
+				onSearch={(val) => {
+					setSearch(val);
+					setPage(1);
+				}}
+				searchPlaceholder="Search reports"
+				filters={
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={
+								<Button
+									variant="outline"
+									className="h-9 w-9 p-0 border-border rounded-[8px] shadow-sm animate-fade-in"
+									aria-label="Filter reports"
+								>
+									<ListFilter className="size-4" />
+								</Button>
+							}
+						/>
+						<DropdownMenuContent align="end" className="w-48">
+							<DropdownMenuRadioGroup
+								value={typeFilter}
+								onValueChange={(val) => setTypeFilter(val as any)}
+							>
+								<DropdownMenuRadioItem value="All">
+									All Types
+								</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="Progress">
+									Progress Reports
+								</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="Terminal">
+									Terminal Reports
+								</DropdownMenuRadioItem>
+							</DropdownMenuRadioGroup>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				}
+				activeFilters={{ search }}
 				emptyMessage="No reports found."
 				ariaLabel="Reports"
-			/>
-			</PageCard>
-
-			<PaginationBar
-				page={page}
-				totalPages={totalPages}
-				onPageChange={setPage}
-				total={totalReports}
-				limit={limit}
-				isLoading={isLoading}
 			/>
 		</div>
 	);

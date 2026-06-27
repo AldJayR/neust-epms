@@ -5,10 +5,10 @@ import { Calendar, Download } from "lucide-react";
 import { toast } from "sonner";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { MetricCard } from "@/components/custom/metric-card";
-import { PageCard } from "@/components/custom/page-card";
+import { DataTablePage } from "@/components/custom/data-table-page";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { BrandButton } from "@/components/custom/brand-button";
-import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { type DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
@@ -16,8 +16,6 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PaginationBar } from "@/components/ui/pagination-bar";
-import { SearchInput } from "@/components/ui/search-input";
 import type { AuthUser } from "@/lib/auth";
 import {
 	emailReportFn,
@@ -201,7 +199,6 @@ export function FacultyDirectoryPage({
 		averageProjectsPerFaculty: 0,
 		mostActiveCollege: { name: "...", contributors: 0 },
 	};
-	const totalPages = Math.ceil(total / limit);
 
 	const columns: DataTableColumnDef<FacultyInvolvement>[] = [
 		{
@@ -366,48 +363,36 @@ export function FacultyDirectoryPage({
 				/>
 			</div>
 
-			<div className="flex items-center justify-between">
-				<SearchInput
-					value={search ?? ""}
-					onChange={onSearchChange}
-					placeholder="Search by project title or faculty name..."
-					ariaLabel="Search faculty directory"
-					className="max-w-[352px]"
-				/>
-				<DataTableFilter
-					value={college || "all"}
-					onValueChange={(val) =>
-						onCollegeChange(val === "all" ? "" : val || "")
-					}
-					placeholder="All Colleges"
-					options={[
-						{ value: "all", label: "All Colleges" },
-						{ value: "CICT", label: "CICT" },
-						{ value: "COE", label: "Engineering" },
-						{ value: "CAS", label: "Arts & Sciences" },
-						{ value: "COA", label: "Agriculture" },
-					]}
-				/>
-			</div>
-
-			<PageCard>
-			<DataTable
+			<DataTablePage
 				columns={columns}
 				data={items}
-				activeFilters={{ search, college }}
+				total={total}
 				isLoading={isLoading}
+				page={page}
+				pageSize={limit}
+				onPageChange={onPageChange}
+				search={search}
+				onSearch={onSearchChange}
+				searchPlaceholder="Search by project title or faculty name..."
+				filters={
+					<DataTableFilter
+						value={college || "all"}
+						onValueChange={(val) =>
+							onCollegeChange(val === "all" ? "" : val || "")
+						}
+						placeholder="All Colleges"
+						options={[
+							{ value: "all", label: "All Colleges" },
+							{ value: "CICT", label: "CICT" },
+							{ value: "COE", label: "Engineering" },
+							{ value: "CAS", label: "Arts & Sciences" },
+							{ value: "COA", label: "Agriculture" },
+						]}
+					/>
+				}
+				activeFilters={{ search, college }}
 				emptyMessage="No faculty records found."
 				ariaLabel="Faculty directory"
-			/>
-			</PageCard>
-
-			<PaginationBar
-				page={page}
-				totalPages={totalPages}
-				onPageChange={onPageChange}
-				total={total}
-				limit={limit}
-				isLoading={isLoading}
 			/>
 		</div>
 	);

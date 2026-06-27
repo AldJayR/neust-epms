@@ -3,11 +3,9 @@ import { ClientOnly, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { MetricCard } from "@/components/custom/metric-card";
-import { PageCard } from "@/components/custom/page-card";
-import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { DataTablePage } from "@/components/custom/data-table-page";
+import { type DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
-import { PaginationBar } from "@/components/ui/pagination-bar";
-import { SearchInput } from "@/components/ui/search-input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { AuthUser } from "@/lib/auth";
@@ -16,7 +14,6 @@ import {
 	type HubProject,
 	projectHubQueryOptions,
 } from "@/lib/dashboard.functions";
-import { PageHeader } from "@/components/custom/page-header";
 
 interface ProjectMonitoringPageProps {
 	user?: AuthUser | null;
@@ -59,7 +56,6 @@ export function ProjectMonitoringPage({
 
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
-	const totalPages = Math.ceil(total / limit);
 
 	const columns: DataTableColumnDef<HubProject>[] = [
 		{
@@ -129,13 +125,11 @@ export function ProjectMonitoringPage({
 
 	return (
 		<div className="flex flex-col gap-8">
-			<PageHeader
-				title={
-					<h1 className="text-xl font-semibold leading-[35px] text-heading">
-						Project Monitoring
-					</h1>
-				}
-			/>
+			<div>
+				<h1 className="text-xl font-semibold leading-[35px] text-heading">
+					Project Monitoring
+				</h1>
+			</div>
 
 			{/* Stats Cards */}
 			<div className="grid gap-6 sm:grid-cols-2 md:grid-cols-4">
@@ -157,15 +151,18 @@ export function ProjectMonitoringPage({
 				/>
 			</div>
 
-			<div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-				<SearchInput
-					value={search ?? ""}
-					onChange={onSearchChange}
-					placeholder="Search by project title or faculty name..."
-					ariaLabel="Search projects"
-					className="max-w-[352px]"
-				/>
-				<div className="flex w-full items-center gap-4 sm:w-auto">
+			<DataTablePage
+				columns={columns}
+				data={items}
+				total={total}
+				isLoading={isLoading}
+				page={page}
+				pageSize={limit}
+				onPageChange={onPageChange}
+				search={search}
+				onSearch={onSearchChange}
+				searchPlaceholder="Search by project title or faculty name..."
+				filters={
 					<DataTableFilter
 						value={status || "all"}
 						onValueChange={(val: string | null) =>
@@ -180,55 +177,38 @@ export function ProjectMonitoringPage({
 							{ value: "Overdue", label: "Overdue" },
 						]}
 					/>
-				</div>
-			</div>
-
-			<PageCard className="bg-muted">
-				<div className="border-b border-border bg-background p-2">
-					<Tabs
-						value={myProjectsOnly ? "my" : "all"}
-						onValueChange={(val) => {
-							onMyProjectsOnlyChange(val === "my");
-						}}
-						className="w-fit"
-					>
-						<TabsList className="bg-muted">
-							<TabsTrigger
-								value="all"
-								className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
-							>
-								{user?.isMainCampus ? "Department Projects" : "Campus Projects"}
-							</TabsTrigger>
-							<TabsTrigger
-								value="my"
-								className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
-							>
-								My Projects
-							</TabsTrigger>
-						</TabsList>
-					</Tabs>
-				</div>
-
-				<div className="bg-background">
-				<DataTable
-					columns={columns}
-					data={items}
-					activeFilters={{ search, status }}
-					isLoading={isLoading}
-					emptyMessage="No projects found."
-					ariaLabel="Projects"
-					onRowClick={(project) => onProjectClick?.(project.id)}
-				/>
-				</div>
-			</PageCard>
-
-			<PaginationBar
-				page={page}
-				totalPages={totalPages}
-				onPageChange={onPageChange}
-				total={total}
-				limit={limit}
-				isLoading={isLoading}
+				}
+				activeFilters={{ search, status }}
+				emptyMessage="No projects found."
+				ariaLabel="Projects"
+				onRowClick={(project) => onProjectClick?.(project.id)}
+				cardClassName="bg-muted"
+				cardHeader={
+					<div className="border-b border-border bg-background p-2">
+						<Tabs
+							value={myProjectsOnly ? "my" : "all"}
+							onValueChange={(val) => {
+								onMyProjectsOnlyChange(val === "my");
+							}}
+							className="w-fit"
+						>
+							<TabsList className="bg-muted">
+								<TabsTrigger
+									value="all"
+									className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+								>
+									{user?.isMainCampus ? "Department Projects" : "Campus Projects"}
+								</TabsTrigger>
+								<TabsTrigger
+									value="my"
+									className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+								>
+									My Projects
+								</TabsTrigger>
+							</TabsList>
+						</Tabs>
+					</div>
+				}
 			/>
 		</div>
 	);

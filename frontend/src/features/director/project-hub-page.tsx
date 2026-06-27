@@ -12,7 +12,6 @@ import {
 } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { PageHeader } from "@/components/custom/page-header";
 
 interface ProjectHubPageProps {
 	user?: AuthUser | null;
@@ -46,7 +45,6 @@ export function ProjectHubPage({
 
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
-	const totalPages = Math.ceil(total / limit);
 
 	const columns: DataTableColumnDef<HubProject>[] = [
 		{
@@ -118,24 +116,24 @@ export function ProjectHubPage({
 	];
 
 	return (
-		<div className="flex flex-col gap-8">
-			<PageHeader
-				title={
-					<h1 className="text-xl font-semibold leading-[35px] text-heading">
-						Project Hub
-					</h1>
-				}
-			/>
-
-			<div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-				<SearchInput
-					value={search ?? ""}
-					onChange={onSearchChange}
-					placeholder="Search by project title or faculty name..."
-					ariaLabel="Search projects"
-					className="max-w-[352px]"
-				/>
-				<div className="flex w-full items-center gap-4 sm:w-auto">
+		<DataTablePage
+			title={
+				<h1 className="text-xl font-semibold leading-[35px] text-heading">
+					Project Hub
+				</h1>
+			}
+			columns={columns}
+			data={items}
+			total={total}
+			isLoading={isLoading}
+			page={page}
+			pageSize={limit}
+			onPageChange={onPageChange}
+			search={search}
+			onSearch={onSearchChange}
+			searchPlaceholder="Search by project title or faculty name..."
+			filters={
+				<>
 					<DataTableFilter
 						value={college || "all"}
 						onValueChange={(val: string | null) =>
@@ -164,29 +162,12 @@ export function ProjectHubPage({
 							{ value: "Completed", label: "Completed" },
 						]}
 					/>
-				</div>
-			</div>
-
-			<div className="rounded-lg border border-border bg-background shadow-sm overflow-hidden min-h-[400px]">
-			<DataTable
-				columns={columns}
-				data={items}
-				activeFilters={{ search, college, status }}
-				isLoading={isLoading}
-				emptyMessage="No projects found."
-				ariaLabel="Projects"
-				onRowClick={(project) => onProjectClick?.(project.id)}
-			/>
-			</div>
-
-			<PaginationBar
-				page={page}
-				totalPages={totalPages}
-				onPageChange={onPageChange}
-				total={total}
-				limit={limit}
-				isLoading={isLoading}
-			/>
-		</div>
+				</>
+			}
+			activeFilters={{ search, college, status }}
+			emptyMessage="No projects found."
+			ariaLabel="Projects"
+			onRowClick={(project) => onProjectClick?.(project.id)}
+		/>
 	);
 }

@@ -5,11 +5,11 @@ import { EllipsisVertical, Plus } from "lucide-react";
 import * as React from "react";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { MetricCard } from "@/components/custom/metric-card";
-import { PageCard } from "@/components/custom/page-card";
+import { DataTablePage } from "@/components/custom/data-table-page";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
-import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { type DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
@@ -17,8 +17,6 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PaginationBar } from "@/components/ui/pagination-bar";
-import { SearchInput } from "@/components/ui/search-input";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AuthUser } from "@/lib/auth";
 import {
@@ -205,7 +203,6 @@ export function RETDashboardPage({
 					</DropdownMenu>
 				);
 			},
-			skeleton: <Skeleton className="size-8 rounded-md ml-auto" />,
 		}),
 	];
 
@@ -246,16 +243,18 @@ export function RETDashboardPage({
 				))}
 			</div>
 
-			{/* Filters */}
-			<div className="flex items-center justify-between gap-4">
-				<SearchInput
-					value={search ?? ""}
-					onChange={(val) => onSearch(val || undefined)}
-					placeholder="Search by project proposals"
-					ariaLabel="Search by project proposals"
-					className="max-w-[352px]"
-				/>
-				<div className="flex items-center gap-2">
+			<DataTablePage
+				columns={columns}
+				data={proposals}
+				total={total}
+				isLoading={isLoading}
+				page={page}
+				pageSize={pageSize}
+				onPageChange={onPageChange}
+				search={search}
+				onSearch={(val) => onSearch(val || undefined)}
+				searchPlaceholder="Search by project proposals"
+				filters={
 					<DataTableFilter
 						value={statusFilter}
 						onValueChange={(v) => {
@@ -272,28 +271,11 @@ export function RETDashboardPage({
 							{ value: "approved", label: "Approved" },
 						]}
 					/>
-				</div>
-			</div>
-
-			{/* Proposals Table */}
-			<PageCard className="min-h-[400px]">
-			<DataTable
-				columns={columns}
-				data={proposals}
+				}
 				activeFilters={{ search, statusFilter }}
-				isLoading={isProposalsLoading}
 				emptyMessage="No proposals found."
 				ariaLabel="Proposals table"
-			/>
-			</PageCard>
-
-			<PaginationBar
-				page={page}
-				totalPages={Math.ceil(total / pageSize)}
-				onPageChange={onPageChange}
-				total={total}
-				limit={pageSize}
-				isLoading={isLoading}
+				cardClassName="min-h-[400px]"
 			/>
 
 			<CreateProposalModal

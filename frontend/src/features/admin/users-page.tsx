@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, ListFilter, Loader2, MoreVertical } from "lucide-react";
+import { CheckCircle2, ListFilter, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { MetricCard } from "@/components/custom/metric-card";
-import { PageCard } from "@/components/custom/page-card";
+import { DataTablePage } from "@/components/custom/data-table-page";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
-import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { type DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
@@ -17,8 +17,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PaginationBar } from "@/components/ui/pagination-bar";
-import { SearchInput } from "@/components/ui/search-input";
 import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
@@ -60,7 +58,6 @@ export function UsersPage({
 	const {
 		data: usersData,
 		isLoading: isUsersLoading,
-		isFetching: isUsersFetching,
 	} = useQuery(adminUsersQueryOptions({ page, pageSize, search, isActive }));
 
 	// ── Mutations ────────────────────────────────────────────
@@ -225,74 +222,58 @@ export function UsersPage({
 				))}
 			</div>
 
-			<div className="flex items-center justify-between gap-4">
-				<SearchInput
-					value={search ?? ""}
-					onChange={(val) => onSearch(val || undefined)}
-					placeholder="Search users"
-					ariaLabel="Search users"
-					className="max-w-[352px]"
-				/>
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={
-							<Button
-								variant="outline"
-								size="icon"
-								className="h-9 w-9 rounded-lg border-border"
-							>
-								<ListFilter className="size-4" />
-							</Button>
-						}
-					/>
-					<DropdownMenuContent align="end" className="w-48">
-						<DropdownMenuRadioGroup
-							value={isActive || "all"}
-							onValueChange={(val) =>
-								onIsActiveChange(val === "all" ? undefined : val)
-							}
-						>
-							<DropdownMenuRadioItem value="all">
-								All Statuses
-							</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="true">
-								Active Only
-							</DropdownMenuRadioItem>
-							<DropdownMenuRadioItem value="false">
-								Inactive Only
-							</DropdownMenuRadioItem>
-						</DropdownMenuRadioGroup>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			</div>
-
-			<PageCard className="bg-muted min-h-[400px] relative">
-				{isUsersFetching && (
-					<div className="absolute inset-0 bg-background/50 z-10 flex items-center justify-center backdrop-blur-[1px]">
-						<Loader2 className="h-8 w-8 animate-spin text-primary" />
-					</div>
-				)}
-				<DataTable
-					columns={columns}
-					data={users}
-					activeFilters={{ search }}
-					isLoading={isLoading}
-					ariaLabel="User management"
-					emptyMessage={
-						hasSearch
-							? "Try adjusting your search term to find matching accounts."
-							: "No user accounts are available yet."
-					}
-				/>
-			</PageCard>
-
-			<PaginationBar
-				page={page}
-				totalPages={Math.ceil((usersData?.total ?? 0) / pageSize)}
-				onPageChange={onPageChange}
+			<DataTablePage
+				columns={columns}
+				data={users}
 				total={usersData?.total ?? 0}
-				limit={pageSize}
 				isLoading={isLoading}
+				page={page}
+				pageSize={pageSize}
+				onPageChange={onPageChange}
+				search={search}
+				onSearch={(val) => onSearch(val || undefined)}
+				searchPlaceholder="Search users"
+				filters={
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={
+								<Button
+									variant="outline"
+									size="icon"
+									className="h-9 w-9 rounded-lg border-border"
+								>
+									<ListFilter className="size-4" />
+								</Button>
+							}
+						/>
+						<DropdownMenuContent align="end" className="w-48">
+							<DropdownMenuRadioGroup
+								value={isActive || "all"}
+								onValueChange={(val) =>
+									onIsActiveChange(val === "all" ? undefined : val)
+								}
+							>
+								<DropdownMenuRadioItem value="all">
+									All Statuses
+								</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="true">
+									Active Only
+								</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="false">
+									Inactive Only
+								</DropdownMenuRadioItem>
+							</DropdownMenuRadioGroup>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				}
+				activeFilters={{ search }}
+				ariaLabel="User management"
+				emptyMessage={
+					hasSearch
+						? "Try adjusting your search term to find matching accounts."
+						: "No user accounts are available yet."
+				}
+				cardClassName="bg-muted min-h-[400px]"
 			/>
 		</div>
 	);
