@@ -31,6 +31,149 @@ import {
 	type UserResponse,
 } from "@/lib/admin.functions";
 
+interface UserApprovalListProps {
+	users: UserResponse[];
+	selectedUsers: Set<string>;
+	allVisibleSelected: boolean;
+	onSelectAll: (checked: boolean) => void;
+	onSelectRow: (userId: string, checked: boolean) => void;
+	userRoles: Record<string, string>;
+	onRoleChange: (userId: string, roleName: string) => void;
+	roles: { roleId: number; roleName: string }[] | undefined;
+	isLoading: boolean;
+	showHeader: boolean;
+}
+
+function UserApprovalList({
+	users,
+	selectedUsers,
+	allVisibleSelected,
+	onSelectAll,
+	onSelectRow,
+	userRoles,
+	onRoleChange,
+	roles,
+	isLoading,
+	showHeader,
+}: UserApprovalListProps) {
+	const columns: DataTableColumnDef<UserResponse>[] = [
+		{
+			id: "select",
+			header: () => (
+				<div className="flex justify-center">
+					<Checkbox
+						checked={allVisibleSelected}
+						onCheckedChange={onSelectAll}
+						aria-label="Select all"
+					/>
+				</div>
+			),
+			headerClassName: "w-[50px] px-4 text-center",
+			cellClassName: "px-4 text-center",
+			cell: ({ row }) => (
+				<div className="flex justify-center">
+					<Checkbox
+						checked={selectedUsers.has(row.original.userId)}
+						onCheckedChange={(checked) =>
+							onSelectRow(row.original.userId, checked as boolean)
+						}
+						aria-label={`Select ${row.original.firstName}`}
+					/>
+				</div>
+			),
+		},
+		{
+			id: "name",
+			header: "Name",
+			headerClassName: "min-w-[250px] font-medium text-foreground text-left",
+			cell: ({ row }) => {
+				const user = row.original;
+				return (
+					<div className="flex items-center gap-[10px]">
+						<Avatar className="size-9 border border-border">
+							<AvatarImage src="" alt={`${user.firstName} ${user.lastName}`} />
+							<AvatarFallback className="bg-primary/5 text-xs font-medium text-primary">
+								{user.firstName?.charAt(0) ?? ""}
+								{user.lastName?.charAt(0) ?? ""}
+							</AvatarFallback>
+						</Avatar>
+						<div className="flex min-w-0 flex-col text-left">
+							<span className="truncate text-sm font-medium leading-5 text-foreground">
+								{user.firstName}{" "}
+								{user.middleName ? `${user.middleName.charAt(0)}. ` : ""}{" "}
+								{user.lastName}
+							</span>
+							<span className="truncate text-xs leading-4 text-muted-foreground">
+								{user.campusName}
+							</span>
+						</div>
+					</div>
+				);
+			},
+		},
+		{
+			id: "department",
+			header: () => <div className="text-center">Department</div>,
+			headerClassName: "min-w-[200px] text-center font-medium text-foreground",
+			cellClassName: "text-center text-sm text-foreground",
+			cell: ({ row }) => row.original.departmentName ?? "-",
+		},
+		{
+			id: "role",
+			header: () => <div className="text-right">Assign role</div>,
+			headerClassName: "w-[200px] pr-6 text-right font-medium text-foreground",
+			cellClassName: "pr-6",
+			cell: ({ row }) => {
+				const user = row.original;
+				return (
+					<div className="flex justify-end">
+						<Select
+							value={userRoles[user.userId]}
+							onValueChange={(val) =>
+								onRoleChange(user.userId, val as string)
+							}
+						>
+							<SelectTrigger className="h-[30px] w-[160px] rounded-md border-border bg-background px-3 shadow-[0px_1px_1px_var(--shadow-card)]">
+								<SelectValue placeholder="Select role" />
+							</SelectTrigger>
+							<SelectContent className="rounded-md shadow-lg">
+								{roles?.map((role) => (
+									<SelectItem
+										key={role.roleId}
+										value={role.roleName}
+										className="text-sm"
+									>
+										{role.roleName}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+				);
+			},
+		},
+	];
+
+	return (
+		<div className="relative flex-1 overflow-hidden rounded-md border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
+			{isLoading && (
+				<div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-[1px]">
+					<Loader2 className="size-8 animate-spin text-primary" />
+				</div>
+			)}
+			<div className="h-full overflow-auto">
+				<DataTable
+					columns={columns}
+					data={users}
+					emptyMessage="No pending users found."
+					ariaLabel="Pending users for approval"
+					showHeader={showHeader}
+				/>
+			</div>
+		</div>
+	);
+}
+
 interface BulkApproveDialogProps {
 	children: React.ReactNode;
 }
@@ -179,104 +322,6 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 	const allVisibleUsersSelected =
 		users.length > 0 && users.every((u) => selectedUsers.has(u.userId));
 
-	const columns: DataTableColumnDef<UserResponse>[] = [
-		{
-			id: "select",
-			header: () => (
-				<div className="flex justify-center">
-					<Checkbox
-						checked={allVisibleUsersSelected}
-						onCheckedChange={handleSelectAll}
-						aria-label="Select all"
-					/>
-				</div>
-			),
-			headerClassName: "w-[50px] px-4 text-center",
-			cellClassName: "px-4 text-center",
-			cell: ({ row }) => (
-				<div className="flex justify-center">
-					<Checkbox
-						checked={selectedUsers.has(row.original.userId)}
-						onCheckedChange={(checked) =>
-							handleSelectRow(row.original.userId, checked as boolean)
-						}
-						aria-label={`Select ${row.original.firstName}`}
-					/>
-				</div>
-			),
-		},
-		{
-			id: "name",
-			header: "Name",
-			headerClassName: "min-w-[250px] font-medium text-foreground text-left",
-			cell: ({ row }) => {
-				const user = row.original;
-				return (
-					<div className="flex items-center gap-[10px]">
-						<Avatar className="size-9 border border-border">
-							<AvatarImage src="" alt={`${user.firstName} ${user.lastName}`} />
-							<AvatarFallback className="bg-primary/5 text-xs font-medium text-primary">
-								{user.firstName?.charAt(0) ?? ""}
-								{user.lastName?.charAt(0) ?? ""}
-							</AvatarFallback>
-						</Avatar>
-						<div className="flex min-w-0 flex-col text-left">
-							<span className="truncate text-sm font-medium leading-5 text-foreground">
-								{user.firstName}{" "}
-								{user.middleName ? `${user.middleName.charAt(0)}. ` : ""}{" "}
-								{user.lastName}
-							</span>
-							<span className="truncate text-xs leading-4 text-muted-foreground">
-								{user.campusName}
-							</span>
-						</div>
-					</div>
-				);
-			},
-		},
-		{
-			id: "department",
-			header: () => <div className="text-center">Department</div>,
-			headerClassName: "min-w-[200px] text-center font-medium text-foreground",
-			cellClassName: "text-center text-sm text-foreground",
-			cell: ({ row }) => row.original.departmentName ?? "-",
-		},
-		{
-			id: "role",
-			header: () => <div className="text-right">Assign role</div>,
-			headerClassName: "w-[200px] pr-6 text-right font-medium text-foreground",
-			cellClassName: "pr-6",
-			cell: ({ row }) => {
-				const user = row.original;
-				return (
-					<div className="flex justify-end">
-						<Select
-							value={userRoles[user.userId]}
-							onValueChange={(val) =>
-								handleRoleChange(user.userId, val as string)
-							}
-						>
-							<SelectTrigger className="h-[30px] w-[160px] rounded-md border-border bg-background px-3 shadow-[0px_1px_1px_var(--shadow-card)]">
-								<SelectValue placeholder="Select role" />
-							</SelectTrigger>
-							<SelectContent className="rounded-md shadow-lg">
-								{rolesData?.map((role) => (
-									<SelectItem
-										key={role.roleId}
-										value={role.roleName}
-										className="text-sm"
-									>
-										{role.roleName}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-				);
-			},
-		},
-	];
-
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogTrigger
@@ -318,22 +363,18 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 							className="max-w-[360px]"
 						/>
 
-						<div className="relative flex-1 overflow-hidden rounded-md border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
-							{isUsersFetching && (
-								<div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-[1px]">
-									<Loader2 className="size-8 animate-spin text-primary" />
-								</div>
-							)}
-							<div className="h-full overflow-auto">
-								<DataTable
-									columns={columns}
-									data={users}
-									emptyMessage="No pending users found."
-									ariaLabel="Pending users for approval"
-									showHeader={showTableHeader}
-								/>
-							</div>
-						</div>
+						<UserApprovalList
+							users={users}
+							selectedUsers={selectedUsers}
+							allVisibleSelected={allVisibleUsersSelected}
+							onSelectAll={handleSelectAll}
+							onSelectRow={handleSelectRow}
+							userRoles={userRoles}
+							onRoleChange={handleRoleChange}
+							roles={rolesData}
+							isLoading={isUsersFetching}
+							showHeader={showTableHeader}
+						/>
 
 						<PaginationBar
 							page={page}
