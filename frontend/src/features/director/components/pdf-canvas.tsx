@@ -1,9 +1,9 @@
 "use client";
 
-import "../pdf-ssr-polyfill";
 import * as pdfjsLib from "pdfjs-dist";
 import { useEffect, useReducer, useRef } from "react";
 import type { AnnotationData, ProposalComment } from "@/lib/comments.functions";
+import { stateReducer } from "@/lib/state-reducer";
 import { CommentCreationPopover, CommentHighlights } from "./pdf-annotations";
 
 interface PdfPageCanvasProps {
@@ -33,14 +33,6 @@ interface State {
 	lastRendered: { width: number; scale: number };
 }
 
-function stateReducer(
-	state: State,
-	action: Partial<State> | ((prev: State) => Partial<State>),
-): State {
-	const next = typeof action === "function" ? action(state) : action;
-	return { ...state, ...next };
-}
-
 export function PdfPageCanvas({
 	pdfDoc,
 	pageNumber,
@@ -55,7 +47,7 @@ export function PdfPageCanvas({
 	const canvasRef2 = useRef<HTMLCanvasElement>(null);
 	const textLayerRef = useRef<HTMLDivElement>(null);
 
-	const [state, dispatch] = useReducer(stateReducer, undefined, () => ({
+	const [state, dispatch] = useReducer(stateReducer<State>, undefined, () => ({
 		activeCanvas: 1 as 1 | 2,
 		isLoading: true,
 		hasRendered: false,

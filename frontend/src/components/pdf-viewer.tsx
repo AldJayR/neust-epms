@@ -11,8 +11,6 @@ export interface PdfViewerRef {
 interface PdfViewerProps {
 	url: string;
 	className?: string;
-	proposalId?: string;
-	documentId?: string;
 	comments?: ProposalComment[];
 	onAddComment?: (
 		content: string,
@@ -26,8 +24,6 @@ interface PdfViewerProps {
 export function PdfViewer({
 	url,
 	className,
-	proposalId,
-	documentId,
 	comments,
 	onAddComment,
 	isTheaterMode,
@@ -49,8 +45,6 @@ export function PdfViewer({
 				<PdfInner
 					ref={ref}
 					url={url}
-					proposalId={proposalId}
-					documentId={documentId}
 					comments={comments}
 					onAddComment={onAddComment}
 					isTheaterMode={isTheaterMode}

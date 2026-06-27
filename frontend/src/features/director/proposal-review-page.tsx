@@ -223,8 +223,6 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 									ref={pdfViewerRef}
 									url={currentDoc.url}
 									className="h-full"
-									proposalId={proposalId}
-									documentId={currentDoc.id}
 									comments={comments}
 									onAddComment={async (content, annotation) => {
 										await addCommentMutation.mutateAsync({
