@@ -1,6 +1,6 @@
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { useState } from "react";
-import { BrandButton } from "@/components/custom/brand-button";
+import { LoadingButton } from "@/components/custom/loading-button";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -211,16 +211,16 @@ export function ProposalDetailsTab({
 
 			{isReviewable && (
 				<div className="p-5 flex gap-3">
-					<Button
+					<LoadingButton
 						variant="outline"
 						className="flex-1 border border-border rounded-[10px] text-[#e54d2e] font-medium h-9 text-sm shadow-sm"
 						onClick={handleDeny}
-						disabled={isPending}
+						loading={isPending}
 					>
-						{isPending ? <Loader2 className="size-4 animate-spin" /> : "Return"}
-					</Button>
-					<BrandButton
-						className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer"
+						Return
+					</LoadingButton>
+					<LoadingButton
+						className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-brand-primary text-white hover:bg-brand-primary/90 rounded-[10px]"
 						onClick={() => {
 							if (isRET) {
 								setCommentsText("");
@@ -229,16 +229,10 @@ export function ProposalDetailsTab({
 								handleApprove();
 							}
 						}}
-						disabled={isPending}
+						loading={isPending}
 					>
-						{isPending ? (
-							<Loader2 className="size-4 animate-spin" />
-						) : isRET ? (
-							"Endorse"
-						) : (
-							"Approve"
-						)}
-					</BrandButton>
+						{isRET ? "Endorse" : "Approve"}
+					</LoadingButton>
 				</div>
 			)}
 
@@ -271,20 +265,16 @@ export function ProposalDetailsTab({
 						>
 							Cancel
 						</Button>
-						<BrandButton
-							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer"
+						<LoadingButton
+							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-brand-primary text-white hover:bg-brand-primary/90 rounded-[10px]"
 							onClick={() => {
 								handleApprove(commentsText);
 								setIsConfirmOpen(false);
 							}}
-							disabled={isPending}
+							loading={isPending}
 						>
-							{isPending ? (
-								<Loader2 className="size-4 animate-spin" />
-							) : (
-								"Endorse"
-							)}
-						</BrandButton>
+							Endorse
+						</LoadingButton>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
