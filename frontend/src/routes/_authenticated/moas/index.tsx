@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { MoaRepositoryPage } from "@/features/director/moa-repository-page";
+import { PageSkeleton } from "@/components/custom/page-skeleton";
 import { moaRepositoryQueryOptions } from "@/lib/dashboard.functions";
 import { requireRole } from "@/lib/permissions";
 
@@ -10,6 +11,14 @@ const moasSearchSchema = z.object({
 	search: z.string().optional(),
 	status: z.string().optional(),
 });
+
+const MoasPendingComponent = () => (
+	<PageSkeleton
+		title="Memoranda of Agreements (MOA)"
+		actionText="Add New MOA"
+		columnWidths={["w-[250px]", "w-[150px]", "w-[150px]", "w-[120px]"]}
+	/>
+);
 
 export const Route = createFileRoute("/_authenticated/moas/")({
 	validateSearch: (search) => moasSearchSchema.parse(search),
@@ -39,6 +48,7 @@ export const Route = createFileRoute("/_authenticated/moas/")({
 			}),
 		);
 	},
+	pendingComponent: MoasPendingComponent,
 	component: MoasIndexPage,
 });
 

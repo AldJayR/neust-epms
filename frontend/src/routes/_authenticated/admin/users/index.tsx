@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { UsersPage } from "@/features/admin/users-page";
+import { PageSkeleton } from "@/components/custom/page-skeleton";
 import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
@@ -13,6 +14,14 @@ const usersSearchSchema = z.object({
 	search: z.string().optional(),
 	isActive: z.string().optional(),
 });
+
+const UsersPendingComponent = () => (
+	<PageSkeleton
+		title="User Management"
+		actionText="Bulk Approval"
+		columnWidths={["w-[320px]", "w-[200px]", "w-[180px]", "w-[150px]"]}
+	/>
+);
 
 export const Route = createFileRoute("/_authenticated/admin/users/")({
 	validateSearch: usersSearchSchema,
@@ -47,6 +56,7 @@ export const Route = createFileRoute("/_authenticated/admin/users/")({
 			),
 		]);
 	},
+	pendingComponent: UsersPendingComponent,
 	component: UsersPageRoute,
 });
 

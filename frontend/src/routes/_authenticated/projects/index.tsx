@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { ProjectHubPage } from "@/features/director/project-hub-page";
 import { ProjectMonitoringPage } from "@/features/ret/project-monitoring-page";
+import { PageSkeleton } from "@/components/custom/page-skeleton";
 import {
 	directorDashboardQueryOptions,
 	projectHubQueryOptions,
@@ -21,6 +22,29 @@ const projectsSearchSchema = z.object({
 	status: z.string().optional(),
 	myProjectsOnly: z.boolean().optional(),
 });
+
+const ProjectsPendingComponent = () => {
+	const context = Route.useRouteContext();
+	const user = context.auth?.user;
+
+	if (isDirector(user)) {
+		return (
+			<PageSkeleton
+				title="Project Hub"
+				actionText="Create Proposal"
+				columnWidths={["w-[350px]", "w-[200px]", "w-[180px]", "w-[150px]"]}
+			/>
+		);
+	}
+
+	return (
+		<PageSkeleton
+			title="Project Monitoring"
+			actionText="Add New Project"
+			columnWidths={["w-[350px]", "w-[180px]", "w-[150px]"]}
+		/>
+	);
+};
 
 export const Route = createFileRoute("/_authenticated/projects/")({
 	validateSearch: (search) => projectsSearchSchema.parse(search),
@@ -59,6 +83,7 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 			context.queryClient.ensureQueryData(directorDashboardQueryOptions()),
 		]);
 	},
+	pendingComponent: ProjectsPendingComponent,
 	component: ProjectsIndexPage,
 });
 

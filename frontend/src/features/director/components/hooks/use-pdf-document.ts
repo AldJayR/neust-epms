@@ -20,6 +20,11 @@ export function usePdfDocument(url: string) {
 	const [state, dispatch] = useReducer(stateReducer, initialState);
 
 	useEffect(() => {
+		if (!url) {
+			dispatch({ pdfDoc: null, numPages: 0, loadingDoc: false, error: null });
+			return;
+		}
+
 		let isDestroyed = false;
 		// biome-ignore lint/suspicious/noExplicitAny: PDF.js Internal getDocument task type is complex
 		let loadingTask: any = null;

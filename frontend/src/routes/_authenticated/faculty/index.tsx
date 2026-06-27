@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { FacultyDirectoryPage } from "@/features/director/faculty-directory-page";
 import { RetFacultyDirectoryPage } from "@/features/ret/faculty-directory-page";
+import { PageSkeleton } from "@/components/custom/page-skeleton";
 import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
 import { isRETChair, requireRole } from "@/lib/permissions";
 
@@ -11,6 +12,14 @@ const facultySearchSchema = z.object({
 	search: z.string().optional(),
 	college: z.string().optional(),
 });
+
+const FacultyPendingComponent = () => (
+	<PageSkeleton
+		title="Faculty Directory"
+		actionText="Export Directory"
+		columnWidths={["w-[320px]", "w-[200px]", "w-[150px]", "w-[150px]"]}
+	/>
+);
 
 export const Route = createFileRoute("/_authenticated/faculty/")({
 	validateSearch: (search) => facultySearchSchema.parse(search),
@@ -40,6 +49,7 @@ export const Route = createFileRoute("/_authenticated/faculty/")({
 			}),
 		);
 	},
+	pendingComponent: FacultyPendingComponent,
 	component: FacultyIndexPage,
 });
 
