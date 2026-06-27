@@ -1,10 +1,18 @@
+import { useEffect, useRef } from "react";
 import { FolderOpen } from "lucide-react";
 import {
 	flexRender,
 	getCoreRowModel,
+	getSortedRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
-import type { ColumnDef } from "@tanstack/react-table";
+import type {
+	ColumnDef,
+	RowSelectionState,
+	SortingState,
+	VisibilityState,
+} from "@tanstack/react-table";
+import type { Table as ReactTable } from "@tanstack/react-table";
 
 import {
 	Table,
@@ -31,11 +39,20 @@ interface DataTableProps<TData, TValue> {
 	emptyMessage?: string;
 	errorMessage?: string;
 	showHeader?: boolean;
-	/** Active filters — used to auto-determine if header should show when showHeader is not provided */
 	activeFilters?: Record<string, unknown>;
 	className?: string;
 	ariaLabel?: string;
 	onRowClick?: (item: TData) => void;
+	sorting?: SortingState;
+	onSortingChange?: (sorting: SortingState) => void;
+	columnVisibility?: VisibilityState;
+	onColumnVisibilityChange?: (visibility: VisibilityState) => void;
+	rowSelection?: RowSelectionState;
+	onRowSelectionChange?: (selection: RowSelectionState) => void;
+	enableSorting?: boolean;
+	enableVisibility?: boolean;
+	enableSelection?: boolean;
+	onTableReady?: (table: ReactTable<TData>) => void;
 }
 
 function DataTable<TData, TValue>({
@@ -50,132 +67,180 @@ function DataTable<TData, TValue>({
 	className,
 	ariaLabel,
 	onRowClick,
+	sorting,
+	onSortingChange,
+	columnVisibility,
+	onColumnVisibilityChange,
+	rowSelection,
+	onRowSelectionChange,
+	enableSorting = false,
+	enableVisibility = false,
+	enableSelection = false,
+	onTableReady,
 }: DataTableProps<TData, TValue>) {
-	// Auto-compute showHeader if not explicitly provided
 	const showHeader = showHeaderProp ?? (
 		data.length > 0 ||
 		Object.values(activeFilters ?? {}).some(
 			(v) => v != null && String(v).trim().length > 0,
 		)
 	);
+
 	const table = useReactTable({
 		data,
 		columns,
 		getCoreRowModel: getCoreRowModel(),
+		...(enableSorting && {
+			onSortingChange: (updater) => {
+				const next = typeof updater === "function" ? updater(sorting ?? []) : updater;
+				onSortingChange?.(next);
+			},
+			getSortedRowModel: getSortedRowModel(),
+			state: { sorting: sorting ?? [] },
+		}),
+		...(enableVisibility && {
+			onColumnVisibilityChange: (updater) => {
+				const next = typeof updater === "function" ? updater(columnVisibility ?? {}) : updater;
+				onColumnVisibilityChange?.(next);
+			},
+			state: { columnVisibility: columnVisibility ?? {} },
+		}),
+		...(enableSelection && {
+			onRowSelectionChange: (updater) => {
+				const next = typeof updater === "function" ? updater(rowSelection ?? {}) : updater;
+				onRowSelectionChange?.(next);
+			},
+			enableRowSelection: true,
+			state: { rowSelection: rowSelection ?? {} },
+		}),
 	});
+
+	const tableRef = useRef<ReactTable<TData>>(null);
+	tableRef.current = table;
+
+	useEffect(() => {
+		onTableReady?.(tableRef.current!);
+	}, [onTableReady]);
 
 	const colSpan = columns.length;
 
 	return (
-		<Table className={className} aria-label={ariaLabel}>
-			{showHeader && (
-				<TableHeader className="bg-background">
-					{table.getHeaderGroups().map((headerGroup) => (
-						<TableRow
-							key={headerGroup.id}
-							className="border-b-border hover:bg-transparent"
-						>
-							{headerGroup.headers.map((header) => {
-								const columnDef = header.column.columnDef as DataTableColumnDef<
-									TData,
-									TValue
-								>;
-								return (
-									<TableHead
-										key={header.id}
-										className={columnDef.headerClassName}
-									>
-										{header.isPlaceholder
-											? null
-											: flexRender(
-													header.column.columnDef.header,
-													header.getContext(),
-												)}
-									</TableHead>
-								);
-							})}
-						</TableRow>
-					))}
-				</TableHeader>
-			)}
-			<TableBody>
-				{isLoading ? (
-					Array.from({ length: 5 }).map((_, rowIndex) => (
-						<TableRow
-							key={`skeleton-row-${rowIndex}`}
-							className="bg-background border-b border-border last:border-0 hover:bg-transparent"
-						>
-							{columns.map((column, colIndex) => (
-								<TableCell
-									key={`skeleton-cell-${rowIndex}-${colIndex}`}
-									className={column.cellClassName}
-								>
-									{column.skeleton ?? (
-										<Skeleton className="h-4 w-[80%] rounded" />
-									)}
-								</TableCell>
-							))}
-						</TableRow>
-					))
-				) : error ? (
-					<TableRow>
-						<TableCell
-							colSpan={colSpan}
-							className="h-24 text-center text-muted-foreground"
-						>
-							{errorMessage}
-						</TableCell>
-					</TableRow>
-				) : data.length === 0 ? (
-					<TableRow>
-						<TableCell colSpan={colSpan} className="p-0">
-							<Empty className="border-0 py-12">
-								<EmptyContent>
-									<EmptyMedia variant="icon">
-										<FolderOpen className="size-5 text-muted-foreground" />
-									</EmptyMedia>
-									<EmptyDescription className="text-sm text-muted-foreground">
-										{emptyMessage}
-									</EmptyDescription>
-								</EmptyContent>
-							</Empty>
-						</TableCell>
-					</TableRow>
-				) : (
-					table.getRowModel().rows.map((row) => (
-						<TableRow
-							key={row.id}
-							data-state={row.getIsSelected() && "selected"}
-							className={cn(
-								"bg-background border-b border-border hover:bg-card",
-								onRowClick && "cursor-pointer",
-							)}
-							onClick={
-								onRowClick ? () => onRowClick(row.original) : undefined
-							}
-						>
-							{row.getVisibleCells().map((cell) => {
-								const columnDef = cell.column.columnDef as DataTableColumnDef<
-									TData,
-									TValue
-								>;
-								return (
+		<>
+			<Table className={className} aria-label={ariaLabel}>
+				{showHeader && (
+					<TableHeader className="bg-background">
+						{table.getHeaderGroups().map((headerGroup) => (
+							<TableRow
+								key={headerGroup.id}
+								className="border-b-border hover:bg-transparent"
+							>
+								{headerGroup.headers.map((header) => {
+									const columnDef = header.column.columnDef as DataTableColumnDef<
+										TData,
+										TValue
+									>;
+									return (
+										<TableHead
+											key={header.id}
+											className={columnDef.headerClassName}
+										>
+											{header.isPlaceholder
+												? null
+												: flexRender(
+														header.column.columnDef.header,
+														header.getContext(),
+													)}
+										</TableHead>
+									);
+								})}
+							</TableRow>
+						))}
+					</TableHeader>
+				)}
+				<TableBody>
+					{isLoading ? (
+						Array.from({ length: 5 }).map((_, rowIndex) => (
+							<TableRow
+								key={`skeleton-row-${rowIndex}`}
+								className="bg-background border-b border-border last:border-0 hover:bg-transparent"
+							>
+								{columns.map((column, colIndex) => (
 									<TableCell
-										key={cell.id}
-										className={columnDef.cellClassName}
+										key={`skeleton-cell-${rowIndex}-${colIndex}`}
+										className={column.cellClassName}
 									>
-										{flexRender(
-											cell.column.columnDef.cell,
-											cell.getContext(),
+										{column.skeleton ?? (
+											<Skeleton className="h-4 w-[80%] rounded" />
 										)}
 									</TableCell>
-								);
-							})}
+								))}
+							</TableRow>
+						))
+					) : error ? (
+						<TableRow>
+							<TableCell
+								colSpan={colSpan}
+								className="h-24 text-center text-muted-foreground"
+							>
+								{errorMessage}
+							</TableCell>
 						</TableRow>
-					))
-				)}
-			</TableBody>
-		</Table>
+					) : data.length === 0 ? (
+						<TableRow>
+							<TableCell colSpan={colSpan} className="p-0">
+								<Empty className="border-0 py-12">
+									<EmptyContent>
+										<EmptyMedia variant="icon">
+											<FolderOpen className="size-5 text-muted-foreground" />
+										</EmptyMedia>
+										<EmptyDescription className="text-sm text-muted-foreground">
+											{emptyMessage}
+										</EmptyDescription>
+									</EmptyContent>
+								</Empty>
+							</TableCell>
+						</TableRow>
+					) : (
+						table.getRowModel().rows.map((row) => (
+							<TableRow
+								key={row.id}
+								data-state={row.getIsSelected() && "selected"}
+								className={cn(
+									"bg-background border-b border-border hover:bg-card",
+									onRowClick && "cursor-pointer",
+								)}
+								onClick={
+									onRowClick ? () => onRowClick(row.original) : undefined
+								}
+							>
+								{row.getVisibleCells().map((cell) => {
+									const columnDef = cell.column.columnDef as DataTableColumnDef<
+										TData,
+										TValue
+									>;
+									return (
+										<TableCell
+											key={cell.id}
+											className={columnDef.cellClassName}
+										>
+											{flexRender(
+												cell.column.columnDef.cell,
+												cell.getContext(),
+											)}
+										</TableCell>
+									);
+								})}
+							</TableRow>
+						))
+					)}
+				</TableBody>
+			</Table>
+			{enableSelection && (
+				<div className="flex-1 text-sm text-muted-foreground px-2 py-2">
+					{table.getFilteredSelectedRowModel().rows.length} of{" "}
+					{table.getFilteredRowModel().rows.length} row(s) selected.
+				</div>
+			)}
+		</>
 	);
 }
 
