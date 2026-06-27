@@ -1,9 +1,13 @@
-import { forwardRef, type ComponentProps } from "react";
+import type { ComponentProps, Ref } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "#/lib/utils";
 
-export const BrandButton = forwardRef<HTMLButtonElement, ComponentProps<typeof Button>>(
-	({ className, children, ...props }, ref) => (
+interface BrandButtonProps extends ComponentProps<typeof Button> {
+	ref?: Ref<HTMLButtonElement>;
+}
+
+export function BrandButton({ className, children, ref, ...props }: BrandButtonProps) {
+	return (
 		<Button
 			ref={ref}
 			className={cn(
@@ -14,6 +18,5 @@ export const BrandButton = forwardRef<HTMLButtonElement, ComponentProps<typeof B
 		>
 			{children}
 		</Button>
-	),
-);
-BrandButton.displayName = "BrandButton";
+	);
+}

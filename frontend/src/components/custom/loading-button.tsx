@@ -1,14 +1,15 @@
-import { forwardRef, type ComponentProps } from "react";
+import type { ComponentProps, Ref } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "#/lib/utils";
 
 interface LoadingButtonProps extends ComponentProps<typeof Button> {
 	loading?: boolean;
+	ref?: Ref<HTMLButtonElement>;
 }
 
-export const LoadingButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(
-	({ loading, disabled, className, children, ...props }, ref) => (
+export function LoadingButton({ loading, disabled, className, children, ref, ...props }: LoadingButtonProps) {
+	return (
 		<Button
 			ref={ref}
 			disabled={disabled || loading}
@@ -18,6 +19,5 @@ export const LoadingButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(
 			{loading && <Spinner className="size-4" />}
 			{children}
 		</Button>
-	),
-);
-LoadingButton.displayName = "LoadingButton";
+	);
+}
