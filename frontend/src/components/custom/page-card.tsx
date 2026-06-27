@@ -12,7 +12,7 @@ export function PageCard({ children, className, noOverflow }: PageCardProps) {
   return (
     <div
       className={cn(
-        "rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]",
+        "rounded-xl border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]",
         !noOverflow && "overflow-hidden",
         className,
       )}

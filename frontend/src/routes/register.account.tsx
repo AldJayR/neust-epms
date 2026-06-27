@@ -17,6 +17,7 @@ import {
 	RHFTextField,
 } from "../components/rhf-auth-fields";
 import { AuthPageLayout } from "../components/custom/auth-page-layout";
+import { AuthStepIndicator } from "../components/custom/auth-step-indicator";
 import { FieldGroup } from "../components/ui/field";
 import { checkPasswordFn, signupFn } from "../lib/auth.functions";
 
@@ -158,7 +159,7 @@ function RegisterStepTwo() {
 				</p>
 				<Link
 					to="/login"
-					className="mt-6 inline-block rounded-[10px] bg-brand-primary px-6 py-2 text-sm font-medium text-white hover:bg-brand-primary-hover"
+					className="mt-6 inline-block rounded-lg bg-brand-primary px-6 py-2 text-sm font-medium text-white hover:bg-brand-primary-hover"
 				>
 					Go to Login
 				</Link>
@@ -186,7 +187,7 @@ function RegisterStepTwo() {
 			<div className="flex items-center justify-end gap-2 pt-4">
 				<m.span
 					layoutId="reg-step-1"
-					className="size-2 cursor-pointer rounded-[12px] bg-zinc-300 transition-colors hover:bg-zinc-400"
+					className="size-2 cursor-pointer rounded-xl bg-zinc-300 transition-colors hover:bg-zinc-400"
 					onClick={() => navigate({ to: "/register" })}
 					onKeyDown={(e: React.KeyboardEvent<HTMLSpanElement>) => {
 						if (e.key === "Enter" || e.key === " ") {
@@ -200,7 +201,7 @@ function RegisterStepTwo() {
 				/>
 				<m.span
 					layoutId="reg-step-2"
-					className="h-2 w-6 rounded-[12px] bg-brand-primary"
+					className="h-2 w-6 rounded-xl bg-brand-primary"
 				/>
 			</div>
 
@@ -247,7 +248,7 @@ function RegisterStepTwo() {
 					<RHFSubmitButton
 						label="Register"
 						isSubmitting={form.formState.isSubmitting}
-						className="h-9 w-full rounded-[10px] bg-brand-primary text-sm font-medium text-primary-foreground hover:bg-brand-primary-hover"
+						className="h-9 w-full rounded-lg bg-brand-primary text-sm font-medium text-primary-foreground hover:bg-brand-primary-hover"
 					/>
 				</div>
 			</form>

@@ -143,7 +143,7 @@ export function PdfToolbar({
 									variant="outline"
 									size="icon"
 									aria-label="Zoom Out"
-									className="size-8 rounded-[8px] border-border"
+									className="size-8 rounded-lg border-border"
 									onClick={onZoomOut}
 									disabled={scale <= ZOOM_STEPS[0]}
 								>
@@ -169,7 +169,7 @@ export function PdfToolbar({
 									variant="outline"
 									size="icon"
 									aria-label="Zoom In"
-									className="size-8 rounded-[8px] border-border"
+									className="size-8 rounded-lg border-border"
 									onClick={onZoomIn}
 									disabled={scale >= ZOOM_STEPS[ZOOM_STEPS.length - 1]}
 								>
@@ -188,7 +188,7 @@ export function PdfToolbar({
 										variant="ghost"
 										size="icon"
 										aria-label="Reset Zoom"
-										className="size-8 rounded-[8px] text-muted-foreground hover:text-heading"
+										className="size-8 rounded-lg text-muted-foreground hover:text-heading"
 										onClick={onResetZoom}
 									>
 										<RotateCcw className="size-3.5" />

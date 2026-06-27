@@ -39,11 +39,11 @@ export function ProjectDetailsSkeleton() {
 				title={
 					<div className="flex items-center gap-3">
 						<Skeleton className="h-7 w-80" />
-						<Skeleton className="h-5 w-20 rounded-[6px]" />
+						<Skeleton className="h-5 w-20 rounded-md" />
 						<Skeleton className="h-4 w-16" />
 					</div>
 				}
-				actions={<Skeleton className="h-9 w-48 rounded-[10px]" />}
+				actions={<Skeleton className="h-9 w-48 rounded-lg" />}
 			/>
 
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
@@ -103,7 +103,7 @@ export function ProjectDetailsSkeleton() {
 											<div className="flex items-center justify-between">
 												<div className="flex items-center gap-2">
 													<Skeleton className="h-4 w-20" />
-													<Skeleton className="h-5 w-16 rounded-[6px]" />
+													<Skeleton className="h-5 w-16 rounded-md" />
 												</div>
 												<Skeleton className="h-3 w-28" />
 											</div>
@@ -127,18 +127,18 @@ export function ProjectDetailsSkeleton() {
 							{[1].map((i) => (
 								<div
 									key={i}
-									className="flex flex-col gap-3 rounded-[10px] border border-border bg-card p-3"
+									className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3"
 								>
 									<div className="flex items-center gap-3">
-										<Skeleton className="size-10 rounded-[8px]" />
+										<Skeleton className="size-10 rounded-lg" />
 										<div className="flex flex-1 flex-col gap-1">
 											<Skeleton className="h-4 w-40" />
 											<Skeleton className="h-3 w-20" />
 										</div>
 									</div>
 									<div className="grid grid-cols-2 gap-2">
-										<Skeleton className="h-8 rounded-[8px]" />
-										<Skeleton className="h-8 rounded-[8px]" />
+										<Skeleton className="h-8 rounded-lg" />
+										<Skeleton className="h-8 rounded-lg" />
 									</div>
 								</div>
 							))}

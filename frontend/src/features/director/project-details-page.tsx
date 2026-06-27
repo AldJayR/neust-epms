@@ -142,7 +142,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 							<ChevronRight className="size-4 text-muted-foreground/60" />
 						</div>
 					</DialogTrigger>
-					<DialogContent className="sm:max-w-[425px] rounded-[12px] p-6">
+					<DialogContent className="sm:max-w-[425px] rounded-xl p-6">
 						<DialogHeader className="pb-4">
 							<DialogTitle className="text-base font-semibold text-heading">
 								Project Members
@@ -152,7 +152,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 							{members.map((member) => (
 								<li
 									key={member.userId}
-									className="flex items-center gap-3 p-2 rounded-[8px] transition-colors hover:bg-card"
+									className="flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-card"
 								>
 									<Avatar className="size-9 border border-border">
 										<AvatarImage src={member.avatarUrl} alt={member.name} />
@@ -217,7 +217,7 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 													: item.status === "Returned"
 														? "bg-red-50 text-red-600 border-red-100"
 														: "bg-gray-50 text-gray-600 border-gray-100"
-											} rounded-[6px] px-2 py-0 h-5 text-[10px] font-semibold uppercase`}
+											} rounded-md px-2 py-0 h-5 text-[10px] font-semibold uppercase`}
 										>
 											{item.status}
 										</Badge>
@@ -232,7 +232,7 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 										: `Uploaded by ${item.actorName}`}
 								</p>
 								{item.comment && (
-									<div className="rounded-[8px] border border-dashed border-border bg-card p-3 text-xs italic text-muted-foreground">
+									<div className="rounded-lg border border-dashed border-border bg-card p-3 text-xs italic text-muted-foreground">
 										"{item.comment}"
 									</div>
 								)}
@@ -240,7 +240,7 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 									<Button
 										variant="outline"
 										size="sm"
-										className="w-fit gap-1.5 rounded-[8px] border-border h-7 text-xs font-medium text-muted-foreground hover:bg-card"
+										className="w-fit gap-1.5 rounded-lg border-border h-7 text-xs font-medium text-muted-foreground hover:bg-card"
 									>
 										<FileText className="size-3" />
 										View Version
@@ -277,10 +277,10 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 				{attachments.map((attachment) => (
 					<li
 						key={attachment.id}
-						className="flex flex-col gap-3 rounded-[10px] border border-border bg-card p-3 transition-colors hover:border-brand-primary/30"
+						className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:border-brand-primary/30"
 					>
 						<div className="flex items-center gap-3">
-							<div className="flex size-10 items-center justify-center rounded-[8px] bg-red-50 text-red-500">
+							<div className="flex size-10 items-center justify-center rounded-lg bg-red-50 text-red-500">
 								<FileText className="size-5" />
 							</div>
 							<div className="flex flex-1 flex-col overflow-hidden">
@@ -296,7 +296,7 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 							<Button
 								nativeButton={false}
 								variant="outline"
-								className="h-8 rounded-[8px] border-border text-xs font-medium text-muted-foreground hover:bg-background"
+								className="h-8 rounded-lg border-border text-xs font-medium text-muted-foreground hover:bg-background"
 								render={
 									<a
 										href={attachment.url}
@@ -313,7 +313,7 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 							<Button
 								nativeButton={false}
 								variant="outline"
-								className="h-8 rounded-[8px] border-border text-xs font-medium text-muted-foreground hover:bg-background"
+								className="h-8 rounded-lg border-border text-xs font-medium text-muted-foreground hover:bg-background"
 								render={
 									<a href={attachment.url} download>
 										Download Attachment

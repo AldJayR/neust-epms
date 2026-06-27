@@ -122,7 +122,7 @@ export function ProposalDetailsTab({
 				<>
 					<div className="p-5 space-y-4">
 						<h2 className="text-sm font-medium text-black">Endorsement</h2>
-						<div className="rounded-[10px] border border-border p-3 space-y-1">
+						<div className="rounded-lg border border-border p-3 space-y-1">
 							<div className="flex items-center gap-3">
 								<CheckCircle2 className="size-4 text-black" />
 								<span className="text-sm font-medium text-black">
@@ -141,7 +141,7 @@ export function ProposalDetailsTab({
 								<h2 className="text-sm font-medium text-black mt-6">
 									Remarks
 								</h2>
-								<div className="rounded-[10px] border border-border p-3">
+								<div className="rounded-lg border border-border p-3">
 									<p className="text-sm text-black font-light leading-relaxed">
 										"{endorsement.comment}"
 									</p>
@@ -213,14 +213,14 @@ export function ProposalDetailsTab({
 				<div className="p-5 flex gap-3">
 					<LoadingButton
 						variant="outline"
-						className="flex-1 border border-border rounded-[10px] text-[#e54d2e] font-medium h-9 text-sm shadow-sm"
+						className="flex-1 border border-border rounded-lg text-[#e54d2e] font-medium h-9 text-sm shadow-sm"
 						onClick={handleDeny}
 						loading={isPending}
 					>
 						Return
 					</LoadingButton>
 					<LoadingButton
-						className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-brand-primary text-white hover:bg-brand-primary/90 rounded-[10px]"
+						className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-brand-primary text-white hover:bg-brand-primary/90 rounded-lg"
 						onClick={() => {
 							if (isRET) {
 								setCommentsText("");
@@ -237,7 +237,7 @@ export function ProposalDetailsTab({
 			)}
 
 			<Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-				<DialogContent className="sm:max-w-[425px] rounded-[12px] p-6 bg-background gap-4">
+				<DialogContent className="sm:max-w-[425px] rounded-xl p-6 bg-background gap-4">
 					<DialogHeader className="pb-2">
 						<DialogTitle className="text-base font-semibold text-heading">
 							Endorse Proposal
@@ -253,20 +253,20 @@ export function ProposalDetailsTab({
 							placeholder="Write final comments/remarks here (optional)..."
 							value={commentsText}
 							onChange={(e) => setCommentsText(e.target.value)}
-							className="w-full min-h-[100px] border border-border rounded-[8px] p-3 text-sm focus-visible:ring-1 focus-visible:ring-brand-primary"
+							className="w-full min-h-[100px] border border-border rounded-lg p-3 text-sm focus-visible:ring-1 focus-visible:ring-brand-primary"
 						/>
 					</div>
 
 					<DialogFooter className="flex gap-3 mt-4">
 						<Button
 							variant="outline"
-							className="flex-1 border border-border rounded-[10px] text-gray-500 font-medium h-9 text-sm shadow-sm cursor-pointer"
+							className="flex-1 border border-border rounded-lg text-gray-500 font-medium h-9 text-sm shadow-sm cursor-pointer"
 							onClick={() => setIsConfirmOpen(false)}
 						>
 							Cancel
 						</Button>
 						<LoadingButton
-							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-brand-primary text-white hover:bg-brand-primary/90 rounded-[10px]"
+							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-brand-primary text-white hover:bg-brand-primary/90 rounded-lg"
 							onClick={() => {
 								handleApprove(commentsText);
 								setIsConfirmOpen(false);

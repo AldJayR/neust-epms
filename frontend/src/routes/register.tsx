@@ -18,6 +18,7 @@ import {
 	RHFTextField,
 } from "../components/rhf-auth-fields";
 import { AuthPageLayout } from "../components/custom/auth-page-layout";
+import { AuthStepIndicator } from "../components/custom/auth-step-indicator";
 import { FieldGroup } from "../components/ui/field";
 import { getCampusesFn, getDepartmentsFn } from "../lib/auth.functions";
 
@@ -155,16 +156,9 @@ function RegisterStepOneForm() {
 				</>
 			}
 		>
-			<div className="flex items-center justify-end gap-2 pt-4">
-				<m.span
-					layoutId="reg-step-1"
-					className="h-2 w-6 rounded-[12px] bg-brand-primary"
-				/>
-				<m.span
-					layoutId="reg-step-2"
-					className="size-2 rounded-[12px] bg-zinc-300"
-				/>
-			</div>
+		<div className="flex items-center justify-end gap-2 pt-4">
+			<AuthStepIndicator steps={2} currentStep={0} />
+		</div>
 
 			<form
 				className="mt-6"
@@ -221,7 +215,7 @@ function RegisterStepOneForm() {
 					<RHFSubmitButton
 						label="Next"
 						isSubmitting={form.formState.isSubmitting}
-						className="h-9 w-full rounded-[10px] bg-brand-primary text-sm font-medium text-primary-foreground hover:bg-brand-primary-hover"
+						className="h-9 w-full rounded-lg bg-brand-primary text-sm font-medium text-primary-foreground hover:bg-brand-primary-hover"
 					/>
 				</div>
 			</form>

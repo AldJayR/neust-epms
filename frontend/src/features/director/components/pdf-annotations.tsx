@@ -36,7 +36,7 @@ export function CommentHighlights({ comments }: CommentHighlightsProps) {
 							/>
 							}
 						/>
-						<TooltipContent className="bg-zinc-950 text-white border-zinc-800 p-3 max-w-[280px] shadow-lg rounded-[8px] z-50">
+						<TooltipContent className="bg-zinc-950 text-white border-zinc-800 p-3 max-w-[280px] shadow-lg rounded-lg z-50">
 							<div className="space-y-1">
 								<div className="flex items-center justify-between gap-4">
 									<span className="font-semibold text-xs text-white">
@@ -107,7 +107,7 @@ export function CommentCreationPopover({
 					if (el) el.focus();
 				}}
 				aria-label="Feedback comment text"
-				className="w-full h-20 text-xs p-2 border border-border rounded-[6px] focus:outline-none focus:border-brand-primary resize-none"
+				className="w-full h-20 text-xs p-2 border border-border rounded-md focus:outline-none focus:border-brand-primary resize-none"
 				placeholder="Type your feedback here..."
 				value={commentText}
 				onChange={(e) => onCommentTextChange(e.target.value)}
@@ -116,14 +116,14 @@ export function CommentCreationPopover({
 				<Button
 					variant="outline"
 					size="sm"
-					className="h-8 rounded-[6px] text-xs cursor-pointer"
+					className="h-8 rounded-md text-xs cursor-pointer"
 					onClick={onCancel}
 				>
 					Cancel
 				</Button>
 				<Button
 					size="sm"
-					className="h-8 rounded-[6px] text-xs bg-brand-primary hover:bg-brand-primary-hover text-white cursor-pointer"
+					className="h-8 rounded-md text-xs bg-brand-primary hover:bg-brand-primary-hover text-white cursor-pointer"
 					onClick={onSave}
 					disabled={!commentText.trim()}
 				>
