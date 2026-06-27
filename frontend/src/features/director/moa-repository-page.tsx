@@ -154,47 +154,6 @@ export function MoaRepositoryPage({
 				search={search}
 				onSearch={onSearchChange}
 				searchPlaceholder="Search MOAs"
-				filters={
-					<DropdownMenu>
-						<DropdownMenuTrigger
-							render={
-								<Button
-									variant="outline"
-									size="icon"
-									className="h-9 w-9 border-border bg-background shadow-sm"
-									aria-label="Filter MOAs"
-								>
-									<ListFilter className="size-4 text-foreground" />
-								</Button>
-							}
-						/>
-						<DropdownMenuContent align="end" className="w-48">
-							<DropdownMenuRadioGroup
-								value={status || "all"}
-								onValueChange={(val) =>
-									onStatusChange(val === "all" ? "" : val)
-								}
-							>
-								<DropdownMenuRadioItem value="all">
-									All Statuses
-								</DropdownMenuRadioItem>
-								<DropdownMenuRadioItem value="Valid">
-									Valid
-								</DropdownMenuRadioItem>
-								<DropdownMenuRadioItem value="Renewal Needed">
-									Renewal Needed
-								</DropdownMenuRadioItem>
-								<DropdownMenuRadioItem value="Expired">
-									Expired
-								</DropdownMenuRadioItem>
-							</DropdownMenuRadioGroup>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				}
-				activeFilters={{ search }}
-				emptyMessage="No MOAs found."
-				ariaLabel="Memoranda of Agreements"
-				cardClassName="bg-muted"
 			/>
 		</div>
 	);

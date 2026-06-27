@@ -162,27 +162,6 @@ export function ProjectMonitoringPage({
 				search={search}
 				onSearch={onSearchChange}
 				searchPlaceholder="Search by project title or faculty name..."
-				filters={
-					<DataTableFilter
-						value={status || "all"}
-						onValueChange={(val: string | null) =>
-							onStatusChange(val === "all" ? "" : (val ?? ""))
-						}
-						placeholder="All Statuses"
-						options={[
-							{ value: "all", label: "All Statuses" },
-							{ value: "Approved", label: "Approved" },
-							{ value: "Ongoing", label: "Ongoing" },
-							{ value: "Pending Closure", label: "Pending Closure" },
-							{ value: "Overdue", label: "Overdue" },
-						]}
-					/>
-				}
-				activeFilters={{ search, status }}
-				emptyMessage="No projects found."
-				ariaLabel="Projects"
-				onRowClick={(project) => onProjectClick?.(project.id)}
-				cardClassName="bg-muted"
 				cardHeader={
 					<div className="border-b border-border bg-background p-2">
 						<Tabs
