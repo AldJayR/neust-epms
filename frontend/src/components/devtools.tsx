@@ -8,17 +8,20 @@ export function Devtools() {
 	}
 
 	return (
-		<TanStackDevtools
-			config={{
-				position: "bottom-right",
-			}}
-			plugins={[
-				{
-					name: "Tanstack Router",
-					render: <TanStackRouterDevtoolsPanel />,
-				},
-				TanStackQueryDevtools,
-			]}
-		/>
+		// biome-ignore lint/complexity/noUselessFragments: required by @tanstack/devtools-vite plugin for production stripping
+		<>
+			<TanStackDevtools
+				config={{
+					position: "bottom-right",
+				}}
+				plugins={[
+					{
+						name: "Tanstack Router",
+						render: <TanStackRouterDevtoolsPanel />,
+					},
+					TanStackQueryDevtools,
+				]}
+			/>
+		</>
 	);
 }
