@@ -55,7 +55,7 @@ export function RetFacultyDirectoryPage({
 		}),
 	);
 
-	const items = data!.items;
+	const items = data?.items ?? [];
 	const filteredItems = React.useMemo(() => {
 		let result = items;
 
@@ -84,9 +84,8 @@ export function RetFacultyDirectoryPage({
 	}, [items, selectedRanks, selectedLoads]);
 
 	const activeFilterCount = selectedRanks.length + selectedLoads.length;
-	const total = data!.total;
-	// metrics from existing API might need extension later to match the design's specific stats
-	const metrics = data!.metrics;
+	const total = data?.total ?? 0;
+	const metrics = data?.metrics ?? { totalActiveExtension: 0 };
 
 	const columns: DataTableColumnDef<FacultyInvolvement>[] = [
 		{

@@ -192,9 +192,9 @@ export function FacultyDirectoryPage({
 		}
 	};
 
-	const items = data!.items;
-	const total = data!.total;
-	const metrics = data!.metrics;
+	const items = data?.items ?? [];
+	const total = data?.total ?? 0;
+	const metrics = data?.metrics ?? { totalActiveExtension: 0, averageProjectsPerFaculty: 0, mostActiveCollege: { name: "", contributors: 0 } };
 
 	const columns: DataTableColumnDef<FacultyInvolvement>[] = [
 		{
