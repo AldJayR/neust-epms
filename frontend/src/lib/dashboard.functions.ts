@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getErrorMessage } from "./auth.functions";
@@ -493,6 +493,7 @@ export function projectHubQueryOptions(params: ProjectHubParams) {
 		queryKey: ["dashboard", "hub", "projects", params],
 		queryFn: () => getProjectHubFn({ data: params }),
 		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
+		placeholderData: keepPreviousData,
 	});
 }
 
@@ -501,6 +502,7 @@ export function moaRepositoryQueryOptions(params: MoaRepositoryParams) {
 		queryKey: ["dashboard", "moas", params],
 		queryFn: () => getMoaRepositoryFn({ data: params }),
 		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
+		placeholderData: keepPreviousData,
 	});
 }
 
@@ -509,6 +511,7 @@ export function facultyDirectoryQueryOptions(params: FacultyDirectoryParams) {
 		queryKey: ["dashboard", "faculty", params],
 		queryFn: () => getFacultyDirectoryFn({ data: params }),
 		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
+		placeholderData: keepPreviousData,
 	});
 }
 
@@ -537,6 +540,7 @@ export function reportsListQueryOptions(params: {
 		queryKey: ["dashboard", "reports", "list", params],
 		queryFn: () => getReportsListFn({ data: params }),
 		staleTime: DIRECTOR_QUERY_STALE_TIME_MS,
+		placeholderData: keepPreviousData,
 	});
 }
 

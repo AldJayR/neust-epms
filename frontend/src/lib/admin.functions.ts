@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getErrorMessage } from "./auth.functions";
@@ -324,6 +324,7 @@ export function auditLogsQueryOptions(params: {
 		queryKey: ["admin", "audit-logs", params],
 		queryFn: () => getAuditLogsFn({ data: params }),
 		staleTime: 1000 * 30, // 30 seconds
+		placeholderData: keepPreviousData,
 	});
 }
 

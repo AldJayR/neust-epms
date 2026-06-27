@@ -43,8 +43,8 @@ export function ProjectHubPage({
 		projectHubQueryOptions({ page, limit, search, college, status }),
 	);
 
-	const items = data?.items ?? [];
-	const total = data?.total ?? 0;
+	const items = data!.items;
+	const total = data!.total;
 
 	const columns: DataTableColumnDef<HubProject>[] = [
 		{

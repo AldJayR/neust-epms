@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getErrorMessage } from "./auth.functions";
@@ -262,6 +262,7 @@ export function retProposalsQueryOptions(params: RETDashboardParams) {
 		queryKey: ["ret", "dashboard", "proposals", params],
 		queryFn: () => getRETProposalsFn({ data: params }),
 		staleTime: RET_QUERY_STALE_TIME_MS,
+		placeholderData: keepPreviousData,
 	});
 }
 

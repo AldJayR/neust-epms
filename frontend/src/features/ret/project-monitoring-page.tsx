@@ -54,8 +54,8 @@ export function ProjectMonitoringPage({
 	const { data: statsData } = useQuery(directorDashboardQueryOptions());
 	const metrics = statsData?.metrics;
 
-	const items = data?.items ?? [];
-	const total = data?.total ?? 0;
+	const items = data!.items;
+	const total = data!.total;
 
 	const columns: DataTableColumnDef<HubProject>[] = [
 		{

@@ -49,13 +49,9 @@ export function MoaRepositoryPage({
 		moaRepositoryQueryOptions({ page, limit, search, status }),
 	);
 
-	const items = data?.items ?? [];
-	const total = data?.total ?? 0;
-	const metrics = data?.metrics ?? {
-		totalMoas: 0,
-		expiringWithin90Days: 0,
-		activePartnerships: 0,
-	};
+	const items = data!.items;
+	const total = data!.total;
+	const metrics = data!.metrics;
 
 	const columns: DataTableColumnDef<MoaItem>[] = [
 		{
