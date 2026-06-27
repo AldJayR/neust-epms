@@ -4,25 +4,17 @@ import * as React from "react";
 import { cn } from "#/lib/utils";
 import { MetricCard } from "@/components/custom/metric-card";
 import { DataTablePage } from "@/components/custom/data-table-page";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { type DataTableColumnDef } from "@/components/ui/data-table";
-import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { StatusBadge } from "@/components/ui/status-badge";
 import type { AuthUser } from "@/lib/auth";
-import {
-	type FacultyInvolvement,
-	facultyDirectoryQueryOptions,
-} from "@/lib/dashboard.functions";
-import { formatAcademicRank } from "@/lib/utils";
+import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
+import { retFacultyDirectoryColumns } from "./components/faculty-directory-columns";
 
 interface RetFacultyDirectoryPageProps {
 	user?: AuthUser | null;
@@ -87,66 +79,7 @@ export function RetFacultyDirectoryPage({
 	const total = data?.total ?? 0;
 	const metrics = data?.metrics ?? { totalActiveExtension: 0 };
 
-	const columns: DataTableColumnDef<FacultyInvolvement>[] = [
-		{
-			id: "name",
-			header: "Faculty Name",
-			headerClassName:
-				"w-[320px] px-4 py-2 text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3",
-			cell: ({ row }) => {
-				const faculty = row.original;
-				return (
-					<div className="flex items-center gap-3">
-						<Avatar className="size-9">
-							<AvatarFallback className="bg-muted text-muted-foreground">
-								{faculty.firstName?.charAt(0) ?? ""}
-								{faculty.lastName?.charAt(0) ?? ""}
-							</AvatarFallback>
-						</Avatar>
-						<span className="text-sm font-normal text-foreground">
-							{faculty.firstName} {faculty.lastName}
-						</span>
-					</div>
-				);
-			},
-		},
-		{
-			id: "rank",
-			header: "Rank",
-			headerClassName:
-				"w-[200px] px-4 py-2 text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3",
-			cell: ({ row }) => {
-				const faculty = row.original;
-				return (
-					<Badge
-						variant="outline"
-						className="rounded-lg border-border px-2 py-0.5 font-medium text-muted-foreground bg-background"
-					>
-						{formatAcademicRank(faculty.academicRank)}
-					</Badge>
-				);
-			},
-		},
-		{
-			id: "totalProjects",
-			header: "Total Projects",
-			headerClassName:
-				"w-[150px] px-4 py-2 text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-sm text-foreground",
-			cell: ({ row }) => row.original.totalInvolvement,
-		},
-		{
-			id: "status",
-			header: "Account Status",
-			headerClassName:
-				"w-[150px] px-4 py-2 text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3",
-			cell: ({ row }) => <StatusBadge status={row.original.isActive ? "Active" : "Deactivated"} variant="outline" />,
-		},
-		createActionsColumn(),
-	];
+	const columns = retFacultyDirectoryColumns;
 
 	return (
 		<div className="flex flex-col gap-8">

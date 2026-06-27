@@ -6,10 +6,7 @@ import { toast } from "sonner";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { MetricCard } from "@/components/custom/metric-card";
 import { DataTablePage } from "@/components/custom/data-table-page";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { BrandButton } from "@/components/custom/brand-button";
-import { type DataTableColumnDef } from "@/components/ui/data-table";
-import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -19,11 +16,11 @@ import {
 import type { AuthUser } from "@/lib/auth";
 import {
 	emailReportFn,
-	type FacultyInvolvement,
 	facultyDirectoryQueryOptions,
 } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
 import { PageHeader } from "@/components/custom/page-header";
+import { getFacultyDirectoryColumns } from "./components/faculty-directory-columns";
 
 interface FacultyDirectoryPageProps {
 	user?: AuthUser | null;
@@ -196,95 +193,7 @@ export function FacultyDirectoryPage({
 	const total = data?.total ?? 0;
 	const metrics = data?.metrics ?? { totalActiveExtension: 0, averageProjectsPerFaculty: 0, mostActiveCollege: { name: "", contributors: 0 } };
 
-	const columns: DataTableColumnDef<FacultyInvolvement>[] = [
-		{
-			id: "rank",
-			header: () => <div className="text-center">Rank</div>,
-			headerClassName:
-				"w-[60px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
-			cellClassName:
-				"px-4 py-3 text-center text-sm font-bold text-foreground",
-			cell: ({ row }) => (page - 1) * limit + row.index + 1,
-		},
-		{
-			id: "name",
-			header: "Faculty Name",
-			headerClassName:
-				"w-[300px] px-4 py-2 text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3",
-			cell: ({ row }) => {
-				const faculty = row.original;
-				return (
-					<div className="flex items-center gap-3">
-						<Avatar className="size-9">
-							<AvatarFallback className="bg-muted text-muted-foreground">
-								{faculty.firstName?.charAt(0) ?? ""}
-								{faculty.lastName?.charAt(0) ?? ""}
-							</AvatarFallback>
-						</Avatar>
-						<div className="flex flex-col text-left">
-							<span className="text-sm font-normal text-foreground">
-								{faculty.firstName} {faculty.lastName}
-							</span>
-							<span className="text-xs text-muted-foreground">
-								{formatAcademicRank(faculty.academicRank)}
-							</span>
-						</div>
-					</div>
-				);
-			},
-		},
-		{
-			id: "college",
-			header: "Department",
-			headerClassName:
-				"w-[200px] px-4 py-2 text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-sm",
-			cell: ({ row }) => {
-				const faculty = row.original;
-				return (
-					<div className="flex flex-col text-left">
-						<span className="font-normal text-foreground">
-							{faculty.departmentCode ?? faculty.college}
-						</span>
-						{faculty.isMainCampus === false && faculty.campusName && (
-							<span className="text-xs text-muted-foreground leading-4 mt-0.5">
-								{faculty.campusName}
-							</span>
-						)}
-					</div>
-				);
-			},
-		},
-		{
-			id: "leadProjects",
-			header: () => <div className="text-right">Lead Projects</div>,
-			headerClassName:
-				"w-[120px] px-4 py-2 text-right text-sm font-medium text-muted-foreground",
-			cellClassName:
-				"px-4 py-3 text-right text-sm font-medium text-foreground",
-			cell: ({ row }) => row.original.leadProjects,
-		},
-		{
-			id: "collaboratorProjects",
-			header: () => <div className="text-right">Collaborator Projects</div>,
-			headerClassName:
-				"w-[150px] px-4 py-2 text-right text-sm font-medium text-muted-foreground",
-			cellClassName:
-				"px-4 py-3 text-right text-sm font-medium text-foreground",
-			cell: ({ row }) => row.original.collaboratorProjects,
-		},
-		{
-			id: "totalInvolvement",
-			header: () => <div className="text-right">Total Involvement</div>,
-			headerClassName:
-				"w-[150px] px-4 py-2 text-right text-sm font-medium text-muted-foreground",
-			cellClassName:
-				"px-4 py-3 text-right text-sm font-medium text-foreground",
-			cell: ({ row }) => row.original.totalInvolvement,
-		},
-		createActionsColumn(),
-	];
+	const columns = getFacultyDirectoryColumns(page, limit);
 
 	return (
 		<div className="flex flex-col gap-8">
