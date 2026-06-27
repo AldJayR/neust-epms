@@ -122,7 +122,176 @@ export function RetFacultyDirectoryPage({
 				onPageChange={onPageChange}
 				search={search}
 				onSearch={onSearchChange}
-				searchPlaceholder="Search by name or department..."
+				searchPlaceholder="Search faculty"
+				filters={
+					<Popover>
+						<PopoverTrigger
+							render={
+								<Button
+									variant="outline"
+									size="icon"
+									className={cn(
+										"size-9 rounded-lg border-border bg-background shadow-sm relative transition-all duration-200",
+										activeFilterCount > 0 &&
+											"border-brand-primary ring-1 ring-brand-primary",
+									)}
+									aria-label="Filter faculty list"
+								>
+									<ListFilter className="size-4" />
+									{activeFilterCount > 0 && (
+										<span className="absolute -top-1 -right-1 flex h-2 w-2 rounded-full bg-brand-primary" />
+									)}
+								</Button>
+							}
+						/>
+						<PopoverContent
+							align="end"
+							className="w-[320px] p-4 bg-background border border-border rounded-xl shadow-lg gap-4 flex flex-col z-50"
+						>
+							<div className="flex flex-col gap-1">
+								<h4 className="font-semibold text-sm text-heading">
+									Directory Filters
+								</h4>
+								<p className="text-xs text-muted-foreground">
+									Filter faculty in your department.
+								</p>
+							</div>
+
+							{/* Presets / Quick Filters */}
+							<div className="flex flex-col gap-2 border-t border-border pt-3">
+								<span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+									Quick Actions
+								</span>
+								<div className="flex flex-wrap gap-1.5">
+									<Button
+										variant="secondary"
+										size="sm"
+										className="h-7 text-xs bg-primary/5 text-brand-primary border border-brand-primary/20 hover:bg-[#eaf1fd] rounded-md px-2.5 font-medium cursor-pointer"
+										onClick={() => {
+											setSelectedLoads(["0"]);
+											setSelectedRanks([]);
+										}}
+									>
+										Available for Assignment
+									</Button>
+									<Button
+										variant="secondary"
+										size="sm"
+										className="h-7 text-xs bg-[#fef2f2] text-destructive border border-destructive/20 hover:bg-[#fee2e2] rounded-md px-2.5 font-medium cursor-pointer"
+										onClick={() => {
+											setSelectedLoads(["3+"]);
+											setSelectedRanks([]);
+										}}
+									>
+										Highly Loaded (3+)
+									</Button>
+								</div>
+							</div>
+
+							{/* Rank Select */}
+							<div className="flex flex-col gap-2 border-t border-border pt-3">
+								<span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+									Academic Ranks
+								</span>
+								<div className="grid grid-cols-2 gap-x-4 gap-y-2">
+									{[
+										{ label: "Instructors", val: "instructor" },
+										{ label: "Assistant Prof", val: "assistant" },
+										{ label: "Associate Prof", val: "associate" },
+										{ label: "Professors", val: "professor" },
+									].map((r) => {
+										const isChecked = selectedRanks.includes(r.val);
+										const checkboxId = `rank-${r.val}`;
+										return (
+											<div
+												key={r.val}
+												className="flex items-center gap-2 text-xs font-medium text-slate-700 select-none"
+											>
+												<Checkbox
+													id={checkboxId}
+													checked={isChecked}
+													onCheckedChange={(checked) => {
+														if (checked) {
+															setSelectedRanks([...selectedRanks, r.val]);
+														} else {
+															setSelectedRanks(
+																selectedRanks.filter((x) => x !== r.val),
+															);
+														}
+													}}
+												/>
+												<label htmlFor={checkboxId} className="cursor-pointer">
+													{r.label}
+												</label>
+											</div>
+										);
+									})}
+								</div>
+							</div>
+
+							{/* Project Load Select */}
+							<div className="flex flex-col gap-2 border-t border-border pt-3">
+								<span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+									Project Involvement
+								</span>
+								<div className="grid grid-cols-2 gap-x-4 gap-y-2">
+									{[
+										{ label: "0 Projects", val: "0" },
+										{ label: "1-2 Projects", val: "1-2" },
+										{ label: "3+ Projects", val: "3+" },
+									].map((l) => {
+										const isChecked = selectedLoads.includes(l.val);
+										const checkboxId = `load-${l.val}`;
+										return (
+											<div
+												key={l.val}
+												className="flex items-center gap-2 text-xs font-medium text-slate-700 select-none"
+											>
+												<Checkbox
+													id={checkboxId}
+													checked={isChecked}
+													onCheckedChange={(checked) => {
+														if (checked) {
+															setSelectedLoads([...selectedLoads, l.val]);
+														} else {
+															setSelectedLoads(
+																selectedLoads.filter((x) => x !== l.val),
+															);
+														}
+													}}
+												/>
+												<label htmlFor={checkboxId} className="cursor-pointer">
+													{l.label}
+												</label>
+											</div>
+										);
+									})}
+								</div>
+							</div>
+
+							{/* Reset Footer */}
+							{activeFilterCount > 0 && (
+								<div className="flex justify-end items-center border-t border-border pt-3 mt-1">
+									<Button
+										variant="ghost"
+										size="sm"
+										className="h-7 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+										onClick={() => {
+											setSelectedRanks([]);
+											setSelectedLoads([]);
+										}}
+									>
+										Reset All
+									</Button>
+								</div>
+							)}
+						</PopoverContent>
+					</Popover>
+				}
+				activeFilters={{ search }}
+				emptyMessage="No faculty records found."
+				ariaLabel="Faculty directory"
+				
 				cardHeader={
 					<div className="border-b border-border bg-background p-2">
 						<Tabs

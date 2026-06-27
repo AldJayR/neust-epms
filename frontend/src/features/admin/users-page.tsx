@@ -226,14 +226,55 @@ export function UsersPage({
 
 			<DataTablePage
 				columns={columns}
-				data={items}
-				total={total}
+				data={users}
+				total={usersData?.total ?? 0}
 				isLoading={isLoading}
 				page={page}
-				pageSize={limit}
+				pageSize={pageSize}
 				onPageChange={onPageChange}
 				search={search}
-				onSearch={(val) => {
+				onSearch={(val) => onSearch(val || undefined)}
+				searchPlaceholder="Search users"
+				filters={
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={
+								<Button
+									variant="outline"
+									size="icon"
+									className="h-9 w-9 rounded-lg border-border"
+								>
+									<ListFilter className="size-4" />
+								</Button>
+							}
+						/>
+						<DropdownMenuContent align="end" className="w-48">
+							<DropdownMenuRadioGroup
+								value={isActive || "all"}
+								onValueChange={(val) =>
+									onIsActiveChange(val === "all" ? undefined : val)
+								}
+							>
+								<DropdownMenuRadioItem value="all">
+									All Statuses
+								</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="true">
+									Active Only
+								</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="false">
+									Inactive Only
+								</DropdownMenuRadioItem>
+							</DropdownMenuRadioGroup>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				}
+				activeFilters={{ search }}
+				ariaLabel="User management"
+				emptyMessage={
+					hasSearch
+						? "Try adjusting your search term to find matching accounts."
+						: "No user accounts are available yet."
+				}
 			/>
 		</div>
 	);
