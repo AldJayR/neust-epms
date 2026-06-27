@@ -25,6 +25,7 @@ import {
 import { projectDetailsQueryOptions } from "@/lib/dashboard.functions";
 import { ProjectDetailsSkeleton } from "./project-details-skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { PageHeader } from "@/components/custom/page-header";
 
 interface ProjectDetailsPageProps {
 	proposalId: string;
@@ -377,8 +378,8 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 			</Breadcrumb>
 
 			{/* Header */}
-			<div className="flex items-start justify-between">
-				<div className="flex flex-col gap-2">
+			<PageHeader
+				title={
 					<h1 className="flex flex-wrap items-center gap-3 text-[22px] font-semibold text-heading">
 						<span>{data.title}</span>
 						<StatusBadge status={data.status} />
@@ -386,16 +387,18 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 							Version {data.version}
 						</span>
 					</h1>
-				</div>
-				<BrandButton
-					nativeButton={false}
-					className="flex w-fit items-center gap-2 px-5 h-9 !text-white hover:!text-white shadow-[0px_1px_2px_0px_var(--shadow-card)] hover:bg-brand-primary-hover"
-					render={<Link to="/proposals/$proposalId" params={{ proposalId }} />}
-				>
-					<Eye className="size-4" />
-					<span className="text-sm font-medium">Read Proposal Document</span>
-				</BrandButton>
-			</div>
+				}
+				actions={
+					<BrandButton
+						nativeButton={false}
+						className="flex w-fit items-center gap-2 px-5 h-9 !text-white hover:!text-white shadow-[0px_1px_2px_0px_var(--shadow-card)] hover:bg-brand-primary-hover"
+						render={<Link to="/proposals/$proposalId" params={{ proposalId }} />}
+					>
+						<Eye className="size-4" />
+						<span className="text-sm font-medium">Read Proposal Document</span>
+					</BrandButton>
+				}
+			/>
 
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
 				{/* Main Column */}

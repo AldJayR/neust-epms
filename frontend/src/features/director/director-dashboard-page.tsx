@@ -5,6 +5,7 @@ import { PageCard } from "@/components/custom/page-card";
 import type { AuthUser } from "@/lib/auth";
 import { getCampusesFn } from "@/lib/auth.functions";
 import { directorDashboardQueryOptions } from "@/lib/dashboard.functions";
+import { PageHeader } from "@/components/custom/page-header";
 
 const ProjectsChartCard = React.lazy(() => import("./projects-chart-card"));
 
@@ -145,11 +146,13 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 	return (
 		<section>
 			<div className="flex min-h-full flex-col gap-8">
-				<div>
-					<h1 className="text-xl font-semibold leading-[35px] text-heading">
-						Welcome, {user?.firstName ? `${user.firstName}!` : "Director"}!
-					</h1>
-				</div>
+				<PageHeader
+					title={
+						<h1 className="text-xl font-semibold leading-[35px] text-heading">
+							Welcome, {user?.firstName ? `${user.firstName}!` : "Director"}!
+						</h1>
+					}
+				/>
 				<div className="grid gap-6 xl:grid-cols-4">
 					{metricCards.map((card) => (
 						<MetricCard

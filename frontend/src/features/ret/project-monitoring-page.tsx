@@ -16,6 +16,7 @@ import {
 	type HubProject,
 	projectHubQueryOptions,
 } from "@/lib/dashboard.functions";
+import { PageHeader } from "@/components/custom/page-header";
 
 interface ProjectMonitoringPageProps {
 	user?: AuthUser | null;
@@ -128,11 +129,13 @@ export function ProjectMonitoringPage({
 
 	return (
 		<div className="flex flex-col gap-8">
-			<div>
-				<h1 className="text-xl font-semibold leading-[35px] text-heading">
-					Project Monitoring
-				</h1>
-			</div>
+			<PageHeader
+				title={
+					<h1 className="text-xl font-semibold leading-[35px] text-heading">
+						Project Monitoring
+					</h1>
+				}
+			/>
 
 			{/* Stats Cards */}
 			<div className="grid gap-6 sm:grid-cols-2 md:grid-cols-4">

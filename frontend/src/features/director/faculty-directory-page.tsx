@@ -25,6 +25,7 @@ import {
 	facultyDirectoryQueryOptions,
 } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
+import { PageHeader } from "@/components/custom/page-header";
 
 interface FacultyDirectoryPageProps {
 	user?: AuthUser | null;
@@ -294,24 +295,27 @@ export function FacultyDirectoryPage({
 
 	return (
 		<div className="flex flex-col gap-8">
-			<div className="flex items-center justify-between">
-				<h1 className="text-xl font-semibold leading-[35px] text-heading">
-					Faculty Directory
-				</h1>
-				<div className="flex items-center gap-4">
-					<div className="flex h-9 items-center gap-2 rounded-lg border border-border bg-background px-3 shadow-sm">
-						<Calendar className="size-4 text-foreground" />
-						<span className="text-sm font-medium text-foreground">
-							A.Y. 2024-2025
-						</span>
-					</div>
-					<DropdownMenu>
-						<DropdownMenuTrigger
-							render={
-								<BrandButton className="flex items-center gap-1.5 px-4 py-2 shadow-sm hover:bg-brand-primary-hover cursor-pointer">
-									<Download className="size-4" />
-									<span className="text-sm font-medium">Export Report</span>
-								</BrandButton>
+			<PageHeader
+				title={
+					<h1 className="text-xl font-semibold leading-[35px] text-heading">
+						Faculty Directory
+					</h1>
+				}
+				actions={
+					<div className="flex items-center gap-4">
+						<div className="flex h-9 items-center gap-2 rounded-lg border border-border bg-background px-3 shadow-sm">
+							<Calendar className="size-4 text-foreground" />
+							<span className="text-sm font-medium text-foreground">
+								A.Y. 2024-2025
+							</span>
+						</div>
+						<DropdownMenu>
+							<DropdownMenuTrigger
+								render={
+									<BrandButton className="flex items-center gap-1.5 px-4 py-2 shadow-sm hover:bg-brand-primary-hover cursor-pointer">
+										<Download className="size-4" />
+										<span className="text-sm font-medium">Export Report</span>
+									</BrandButton>
 							}
 						/>
 						<DropdownMenuContent
@@ -339,7 +343,8 @@ export function FacultyDirectoryPage({
 						</DropdownMenuContent>
 					</DropdownMenu>
 				</div>
-			</div>
+			}
+		/>
 
 			<div className="flex items-center gap-6">
 				<MetricCard

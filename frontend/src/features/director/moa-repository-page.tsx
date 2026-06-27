@@ -24,6 +24,7 @@ import {
 } from "@/lib/dashboard.functions";
 import { isAdminOrDirector } from "@/lib/permissions";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { PageHeader } from "@/components/custom/page-header";
 
 interface MoaRepositoryPageProps {
 	user?: AuthUser | null;
@@ -110,17 +111,22 @@ export function MoaRepositoryPage({
 
 	return (
 		<div className="flex flex-col gap-8">
-			<div className="flex items-center justify-between bg-background">
-				<h1 className="text-xl font-semibold leading-[35px] text-heading">
-					Memoranda of Agreements
-				</h1>
-				{isAdminOrDirector(user) ? (
-					<BrandButton className="flex items-center gap-1.5 px-[10px] py-2 shadow-sm hover:bg-brand-primary-hover">
-						<Plus className="size-4" />
-						<span className="text-sm font-medium">Create MOA</span>
-					</BrandButton>
-				) : null}
-			</div>
+			<PageHeader
+				title={
+					<h1 className="text-xl font-semibold leading-[35px] text-heading">
+						Memoranda of Agreements
+					</h1>
+				}
+				actions={
+					isAdminOrDirector(user) ? (
+						<BrandButton className="flex items-center gap-1.5 px-[10px] py-2 shadow-sm hover:bg-brand-primary-hover">
+							<Plus className="size-4" />
+							<span className="text-sm font-medium">Create MOA</span>
+						</BrandButton>
+					) : null
+				}
+				className="bg-background"
+			/>
 
 			<div className="flex items-center gap-6">
 				<MetricCard

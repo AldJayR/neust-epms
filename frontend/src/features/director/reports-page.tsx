@@ -22,6 +22,7 @@ import {
 	reportsListQueryOptions,
 	reportsQueryOptions,
 } from "@/lib/dashboard.functions";
+import { PageHeader } from "@/components/custom/page-header";
 
 const formatDate = (dateStr: string) => {
 	try {
@@ -127,13 +128,17 @@ export function ReportsPage() {
 	return (
 		<div className="flex flex-col gap-8">
 			{/* Header Section */}
-			<div className="flex items-center justify-between">
-				<h1 className="text-2xl font-semibold text-heading">Reports</h1>
-				<BrandButton className="gap-2">
-					<Download className="size-4" />
-					Export Reports
-				</BrandButton>
-			</div>
+			<PageHeader
+				title={
+					<h1 className="text-2xl font-semibold text-heading">Reports</h1>
+				}
+				actions={
+					<BrandButton className="gap-2">
+						<Download className="size-4" />
+						Export Reports
+					</BrandButton>
+				}
+			/>
 
 			{/* Metric Cards Grid */}
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-6">

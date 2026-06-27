@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/custom/page-header";
 import { UsersPage } from "@/features/admin/users-page";
 import { DirectorDashboardPage } from "@/features/director/director-dashboard-page";
 import { RETDashboardPage } from "@/features/ret/ret-dashboard-page";
@@ -105,13 +106,15 @@ function DashboardPage() {
 		return (
 			<div className="flex flex-col gap-8">
 				{/* Welcome Header Skeleton */}
-				<div className="flex items-start justify-between">
-					<div className="flex flex-col gap-2 w-1/3">
-						<Skeleton className="h-8 w-3/4 rounded-md" />
-						<Skeleton className="h-4 w-1/2 rounded-md" />
-					</div>
-					<Skeleton className="h-9 w-48 rounded-[10px]" />
-				</div>
+				<PageHeader
+					title={
+						<div className="flex flex-col gap-2 w-1/3">
+							<Skeleton className="h-8 w-3/4 rounded-md" />
+							<Skeleton className="h-4 w-1/2 rounded-md" />
+						</div>
+					}
+					actions={<Skeleton className="h-9 w-48 rounded-[10px]" />}
+				/>
 
 				{/* Stats Cards Skeleton */}
 				<div className="grid gap-6 md:grid-cols-3">

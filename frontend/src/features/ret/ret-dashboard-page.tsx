@@ -27,6 +27,7 @@ import {
 	retProposalsQueryOptions,
 } from "@/lib/ret.functions";
 import { formatAcademicRank } from "@/lib/utils";
+import { PageHeader } from "@/components/custom/page-header";
 import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
 import { StatusBadge } from "@/components/ui/status-badge";
 
@@ -211,23 +212,27 @@ export function RETDashboardPage({
 	return (
 		<div className="flex flex-col gap-8">
 			{/* Welcome Header */}
-			<div className="flex items-start justify-between">
-				<div className="flex flex-col gap-2">
-					<h1 className="text-2xl font-semibold text-heading">
-						Welcome, {user.firstName}!
-					</h1>
-					<p className="text-sm text-brand-primary">
-						{user.departmentName ?? user.campusName}
-					</p>
-				</div>
-				<BrandButton
-					onClick={() => setIsCreateModalOpen(true)}
-					className="h-9 gap-1.5 px-[10px] py-2 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
-				>
-					<Plus className="size-4" />
-					<span className="font-medium">Start New Project Proposal</span>
-				</BrandButton>
-			</div>
+			<PageHeader
+				title={
+					<div className="flex flex-col gap-2">
+						<h1 className="text-2xl font-semibold text-heading">
+							Welcome, {user.firstName}!
+						</h1>
+						<p className="text-sm text-brand-primary">
+							{user.departmentName ?? user.campusName}
+						</p>
+					</div>
+				}
+				actions={
+					<BrandButton
+						onClick={() => setIsCreateModalOpen(true)}
+						className="h-9 gap-1.5 px-[10px] py-2 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
+					>
+						<Plus className="size-4" />
+						<span className="font-medium">Start New Project Proposal</span>
+					</BrandButton>
+				}
+			/>
 
 			{/* Stats Cards */}
 			<div className="grid gap-6 md:grid-cols-3">

@@ -2,10 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { ClientOnly, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
-import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
+import { DataTablePage } from "@/components/custom/data-table-page";
+import { type DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
-import { PaginationBar } from "@/components/ui/pagination-bar";
-import { SearchInput } from "@/components/ui/search-input";
 import type { AuthUser } from "@/lib/auth";
 import {
 	type HubProject,
@@ -13,6 +12,7 @@ import {
 } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { PageHeader } from "@/components/custom/page-header";
 
 interface ProjectHubPageProps {
 	user?: AuthUser | null;
@@ -119,11 +119,13 @@ export function ProjectHubPage({
 
 	return (
 		<div className="flex flex-col gap-8">
-			<div>
-				<h1 className="text-xl font-semibold leading-[35px] text-heading">
-					Project Hub
-				</h1>
-			</div>
+			<PageHeader
+				title={
+					<h1 className="text-xl font-semibold leading-[35px] text-heading">
+						Project Hub
+					</h1>
+				}
+			/>
 
 			<div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
 				<SearchInput

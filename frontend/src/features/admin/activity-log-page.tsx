@@ -32,6 +32,7 @@ import {
 	auditLogsQueryOptions,
 	auditStatsQueryOptions,
 } from "@/lib/admin.functions";
+import { PageHeader } from "@/components/custom/page-header";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
 	month: "short",
@@ -199,16 +200,20 @@ export function ActivityLogPage({
 
 	return (
 		<div className="flex flex-col gap-8">
-			<div className="flex items-center justify-between">
-				<h1 className="text-2xl font-semibold text-heading">Activity Log</h1>
-				<BrandButton
-					onClick={exportToCsv}
-					className="hover:bg-brand-primary-hover shadow-[0px_1px_2px_0px_var(--shadow-card)] h-9 px-3 gap-1.5"
-				>
-					<Download className="size-4" />
-					<span>Export CSV</span>
-				</BrandButton>
-			</div>
+			<PageHeader
+				title={
+					<h1 className="text-2xl font-semibold text-heading">Activity Log</h1>
+				}
+				actions={
+					<BrandButton
+						onClick={exportToCsv}
+						className="hover:bg-brand-primary-hover shadow-[0px_1px_2px_0px_var(--shadow-card)] h-9 px-3 gap-1.5"
+					>
+						<Download className="size-4" />
+						<span>Export CSV</span>
+					</BrandButton>
+				}
+			/>
 
 			<div className="grid gap-6 md:grid-cols-4">
 				{stats.map((stat) => (

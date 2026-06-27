@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageCard } from "@/components/custom/page-card";
+import { PageHeader } from "@/components/custom/page-header";
 
 export function ProjectDetailsSkeleton() {
 	return (
@@ -33,16 +34,16 @@ export function ProjectDetailsSkeleton() {
 			</Breadcrumb>
 
 			{/* Header */}
-			<div className="flex items-start justify-between">
-				<div className="flex flex-col gap-2">
+			<PageHeader
+				title={
 					<div className="flex items-center gap-3">
 						<Skeleton className="h-7 w-80" />
 						<Skeleton className="h-5 w-20 rounded-[6px]" />
 						<Skeleton className="h-4 w-16" />
 					</div>
-				</div>
-				<Skeleton className="h-9 w-48 rounded-[10px]" />
-			</div>
+				}
+				actions={<Skeleton className="h-9 w-48 rounded-[10px]" />}
+			/>
 
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
 				{/* Main Column */}

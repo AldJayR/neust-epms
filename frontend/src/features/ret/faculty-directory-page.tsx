@@ -25,6 +25,7 @@ import {
 	facultyDirectoryQueryOptions,
 } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
+import { PageHeader } from "@/components/custom/page-header";
 
 interface RetFacultyDirectoryPageProps {
 	user?: AuthUser | null;
@@ -155,15 +156,19 @@ export function RetFacultyDirectoryPage({
 	return (
 		<div className="flex flex-col gap-8">
 			{/* Page Header */}
-			<div className="flex flex-col gap-2">
-				<h1 className="text-xl font-semibold leading-[35px] text-heading">
-					Faculty Directory
-				</h1>
-				<p className="text-sm font-normal leading-4 text-brand-primary">
-					{user?.departmentName ||
-						"College of Information and Communications Technology"}
-				</p>
-			</div>
+			<PageHeader
+				title={
+					<div className="flex flex-col gap-2">
+						<h1 className="text-xl font-semibold leading-[35px] text-heading">
+							Faculty Directory
+						</h1>
+						<p className="text-sm font-normal leading-4 text-brand-primary">
+							{user?.departmentName ||
+								"College of Information and Communications Technology"}
+						</p>
+					</div>
+				}
+			/>
 
 			{/* Metric Cards */}
 			<div className="flex items-center gap-6">

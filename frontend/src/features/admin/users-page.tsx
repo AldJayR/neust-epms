@@ -28,6 +28,7 @@ import {
 import { formatAcademicRank } from "@/lib/utils";
 import { BulkApproveDialog } from "./bulk-approve-dialog";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { PageHeader } from "@/components/custom/page-header";
 
 interface UsersPageProps {
 	page: number;
@@ -194,20 +195,24 @@ export function UsersPage({
 
 	return (
 		<div className="flex flex-col gap-8">
-			<div className="flex items-center justify-between">
-				<h1 className="text-2xl font-semibold text-heading">
-					User Management
-				</h1>
-				<BulkApproveDialog>
-					<BrandButton
-						className="hover:bg-brand-primary-hover shadow-[0px_1px_2px_0px_var(--shadow-card)]"
-						disabled={updateStatusMutation.isPending}
-					>
-						<CheckCircle2 className="mr-2 size-4" />
-						Bulk approve
-					</BrandButton>
-				</BulkApproveDialog>
-			</div>
+			<PageHeader
+				title={
+					<h1 className="text-2xl font-semibold text-heading">
+						User Management
+					</h1>
+				}
+				actions={
+					<BulkApproveDialog>
+						<BrandButton
+							className="hover:bg-brand-primary-hover shadow-[0px_1px_2px_0px_var(--shadow-card)]"
+							disabled={updateStatusMutation.isPending}
+						>
+							<CheckCircle2 className="mr-2 size-4" />
+							Bulk approve
+						</BrandButton>
+					</BulkApproveDialog>
+				}
+			/>
 
 			<div className="grid gap-6 md:grid-cols-3">
 				{stats.map((stat) => (
