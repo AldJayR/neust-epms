@@ -60,9 +60,7 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 	return (
 		<PageCard>
 			<div className="bg-card border-b border-border px-6 py-3">
-				<h2 className="text-sm font-semibold text-heading">
-					Project Overview
-				</h2>
+				<h2 className="text-sm font-semibold text-heading">Project Overview</h2>
 			</div>
 			<div className="divide-y divide-border">
 				<DetailsRow label="Project Leader">
@@ -84,15 +82,9 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 						</span>
 					</div>
 				</DetailsRow>
-				<DetailsRow label="Department / Unit">
-					{metadata.department}
-				</DetailsRow>
-				<DetailsRow label="Duration">
-					{metadata.duration}
-				</DetailsRow>
-				<DetailsRow label="SDGs">
-					{metadata.sdgs ?? "None"}
-				</DetailsRow>
+				<DetailsRow label="Department / Unit">{metadata.department}</DetailsRow>
+				<DetailsRow label="Duration">{metadata.duration}</DetailsRow>
+				<DetailsRow label="SDGs">{metadata.sdgs ?? "None"}</DetailsRow>
 				<DetailsRow label="Total Budget">
 					<div className="flex flex-col items-end">
 						<span className="text-sm font-semibold text-heading">
@@ -193,9 +185,7 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 	return (
 		<PageCard noOverflow>
 			<div className="px-6 py-3 border-b border-border">
-				<h2 className="text-sm font-semibold text-heading">
-					Document History
-				</h2>
+				<h2 className="text-sm font-semibold text-heading">Document History</h2>
 			</div>
 			<div className="px-6 py-4">
 				<ul className="relative space-y-6 before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-border">
@@ -269,9 +259,7 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 	return (
 		<PageCard>
 			<div className="bg-card border-b border-border px-6 py-3">
-				<h2 className="text-sm font-semibold text-heading">
-					Attachments
-				</h2>
+				<h2 className="text-sm font-semibold text-heading">Attachments</h2>
 			</div>
 			<ul className="p-4 flex flex-col gap-3">
 				{attachments.map((attachment) => (
@@ -382,7 +370,9 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 					<BrandButton
 						nativeButton={false}
 						className="flex w-fit items-center gap-2 px-5 h-9 !text-white hover:!text-white shadow-[0px_1px_2px_0px_var(--shadow-card)] hover:bg-brand-primary-hover"
-						render={<Link to="/proposals/$proposalId" params={{ proposalId }} />}
+						render={
+							<Link to="/proposals/$proposalId" params={{ proposalId }} />
+						}
 					>
 						<Eye className="size-4" />
 						<span className="text-sm font-medium">Read Proposal Document</span>

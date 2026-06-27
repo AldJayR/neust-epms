@@ -80,21 +80,23 @@ export function ProposalStepDocuments({
 					</FileUploadDropzone>
 
 					<FileUploadList>
-						<FileUploadItem value={file!}>
-							<FileUploadItemPreview className="size-10" />
-							<FileUploadItemMetadata />
-							<FileUploadItemDelete
-								render={
-									<Button
-										variant="ghost"
-										size="icon"
-										className="size-8 text-muted-foreground hover:text-destructive"
-									/>
+						{file && (
+							<FileUploadItem value={file}>
+								<FileUploadItemPreview className="size-10" />
+								<FileUploadItemMetadata />
+								<FileUploadItemDelete
+									render={
+										<Button
+											variant="ghost"
+											size="icon"
+											className="size-8 text-muted-foreground hover:text-destructive"
+										/>
 								}
 							>
 								✕
 							</FileUploadItemDelete>
 						</FileUploadItem>
+						)}
 					</FileUploadList>
 				</FileUpload>
 			)}

@@ -6,7 +6,12 @@ interface BrandButtonProps extends ComponentProps<typeof Button> {
 	ref?: Ref<HTMLButtonElement>;
 }
 
-export function BrandButton({ className, children, ref, ...props }: BrandButtonProps) {
+export function BrandButton({
+	className,
+	children,
+	ref,
+	...props
+}: BrandButtonProps) {
 	return (
 		<Button
 			ref={ref}

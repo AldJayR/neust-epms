@@ -8,7 +8,14 @@ interface LoadingButtonProps extends ComponentProps<typeof Button> {
 	ref?: Ref<HTMLButtonElement>;
 }
 
-export function LoadingButton({ loading, disabled, className, children, ref, ...props }: LoadingButtonProps) {
+export function LoadingButton({
+	loading,
+	disabled,
+	className,
+	children,
+	ref,
+	...props
+}: LoadingButtonProps) {
 	return (
 		<Button
 			ref={ref}

@@ -31,9 +31,7 @@ export function usePdfVisibility(
 				dispatch((prev) => {
 					const next = new Set(prev.visiblePages);
 					for (const entry of entries) {
-						const pg = Number(
-							(entry.target as HTMLElement).dataset.page,
-						);
+						const pg = Number((entry.target as HTMLElement).dataset.page);
 						if (entry.isIntersecting) {
 							next.add(pg);
 						} else {
@@ -55,9 +53,7 @@ export function usePdfVisibility(
 			(entries) => {
 				for (const entry of entries) {
 					if (entry.isIntersecting) {
-						const pg = Number(
-							(entry.target as HTMLElement).dataset.page,
-						);
+						const pg = Number((entry.target as HTMLElement).dataset.page);
 						dispatch({ currentPage: pg });
 					}
 				}
@@ -82,6 +78,7 @@ export function usePdfVisibility(
 			preloadObserver.disconnect();
 			pageTrackerObserver.disconnect();
 		};
+	// biome-ignore lint/correctness/useExhaustiveDependencies: loadingDoc triggers re-observe after PDF loads
 	}, [numPages, loadingDoc, scrollRef, pageRefs]);
 
 	return {

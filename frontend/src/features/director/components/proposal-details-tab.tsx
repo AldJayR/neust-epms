@@ -83,7 +83,9 @@ export function ProposalDetailsTab({
 		<CardContent className="p-0">
 			<div className="p-5 space-y-4">
 				<div className="flex justify-between items-center text-sm">
-					<span className="text-muted-foreground font-medium">Submitted by</span>
+					<span className="text-muted-foreground font-medium">
+						Submitted by
+					</span>
 					<span className="text-black font-medium">
 						{data.metadata.leader.name}
 					</span>
@@ -101,7 +103,9 @@ export function ProposalDetailsTab({
 					</span>
 				</div>
 				<div className="flex justify-between items-center text-sm">
-					<span className="text-muted-foreground font-medium">Budget (NEUST)</span>
+					<span className="text-muted-foreground font-medium">
+						Budget (NEUST)
+					</span>
 					<span className="text-black font-medium">
 						{formatBudget(data.metadata.budget.neust)}
 					</span>
@@ -115,10 +119,10 @@ export function ProposalDetailsTab({
 			</div>
 
 			<div className="px-5 py-2">
-			<Separator />
-		</div>
+				<Separator />
+			</div>
 
-		{endorsement && (
+			{endorsement && (
 				<>
 					<div className="p-5 space-y-4">
 						<h2 className="text-sm font-medium text-black">Endorsement</h2>
@@ -138,9 +142,7 @@ export function ProposalDetailsTab({
 
 						{endorsement.comment && (
 							<>
-								<h2 className="text-sm font-medium text-black mt-6">
-									Remarks
-								</h2>
+								<h2 className="text-sm font-medium text-black mt-6">Remarks</h2>
 								<div className="rounded-lg border border-border p-3">
 									<p className="text-sm text-black font-light leading-relaxed">
 										"{endorsement.comment}"
@@ -151,15 +153,13 @@ export function ProposalDetailsTab({
 					</div>
 
 					<div className="px-5 py-2">
-					<Separator />
-				</div>
-			</>
-		)}
+						<Separator />
+					</div>
+				</>
+			)}
 
-		<div className="p-5 space-y-3">
-				<h2 className="text-sm font-medium text-black">
-					Attached documents
-				</h2>
+			<div className="p-5 space-y-3">
+				<h2 className="text-sm font-medium text-black">Attached documents</h2>
 				<div className="space-y-1">
 					{data.attachments?.map((file) => {
 						const isActive =
@@ -198,9 +198,9 @@ export function ProposalDetailsTab({
 			{isReviewable && isRET && (
 				<>
 					<div className="px-5 py-2">
-					<Separator />
-				</div>
-				<div className="px-5 pt-2">
+						<Separator />
+					</div>
+					<div className="px-5 pt-2">
 						<p className="text-xs text-muted-foreground font-light leading-relaxed">
 							Approving will forward this proposal to the Director/Admin for
 							final review.

@@ -6,7 +6,6 @@ import {
 	Download,
 	ListFilter,
 	LogIn,
-
 	Settings,
 	UserCircle,
 } from "lucide-react";
@@ -16,7 +15,7 @@ import { DataTablePage } from "@/components/custom/data-table-page";
 import { Badge } from "@/components/ui/badge";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
-import { type DataTableColumnDef } from "@/components/ui/data-table";
+import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
@@ -73,7 +72,6 @@ const getActionTypeInfo = (action: string, table: string) => {
 
 const exportToCsv = () => {
 	// Placeholder for CSV export
-	
 };
 
 export function ActivityLogPage({
@@ -121,7 +119,8 @@ export function ActivityLogPage({
 		{
 			id: "time",
 			header: "Time",
-			headerClassName: "w-[140px] font-medium text-muted-foreground text-sm py-2.5",
+			headerClassName:
+				"w-[140px] font-medium text-muted-foreground text-sm py-2.5",
 			cellClassName: "py-2.5 text-left",
 			cell: ({ row }) => {
 				const createdAt = new Date(row.original.createdAt);
@@ -156,7 +155,8 @@ export function ActivityLogPage({
 		{
 			id: "actor",
 			header: "Actor",
-			headerClassName: "w-[200px] font-medium text-muted-foreground text-sm py-2.5",
+			headerClassName:
+				"w-[200px] font-medium text-muted-foreground text-sm py-2.5",
 			cellClassName: "py-2.5 text-left",
 			cell: ({ row }) => (
 				<div className="flex flex-col">
@@ -258,7 +258,9 @@ export function ActivityLogPage({
 								<DropdownMenuRadioItem value="upload">
 									Upload
 								</DropdownMenuRadioItem>
-								<DropdownMenuRadioItem value="login">Login</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="login">
+									Login
+								</DropdownMenuRadioItem>
 								<DropdownMenuRadioItem value="status">
 									Status
 								</DropdownMenuRadioItem>

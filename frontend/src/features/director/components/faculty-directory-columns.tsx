@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { type DataTableColumnDef } from "@/components/ui/data-table";
+import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import type { FacultyInvolvement } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
@@ -14,8 +14,7 @@ export function getFacultyDirectoryColumns(
 			header: () => <div className="text-center">Rank</div>,
 			headerClassName:
 				"w-[60px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
-			cellClassName:
-				"px-4 py-3 text-center text-sm font-bold text-foreground",
+			cellClassName: "px-4 py-3 text-center text-sm font-bold text-foreground",
 			cell: ({ row }) => (page - 1) * limit + row.index + 1,
 		},
 		{
@@ -73,8 +72,7 @@ export function getFacultyDirectoryColumns(
 			header: () => <div className="text-right">Lead Projects</div>,
 			headerClassName:
 				"w-[120px] px-4 py-2 text-right text-sm font-medium text-muted-foreground",
-			cellClassName:
-				"px-4 py-3 text-right text-sm font-medium text-foreground",
+			cellClassName: "px-4 py-3 text-right text-sm font-medium text-foreground",
 			cell: ({ row }) => row.original.leadProjects,
 		},
 		{
@@ -82,8 +80,7 @@ export function getFacultyDirectoryColumns(
 			header: () => <div className="text-right">Collaborator Projects</div>,
 			headerClassName:
 				"w-[150px] px-4 py-2 text-right text-sm font-medium text-muted-foreground",
-			cellClassName:
-				"px-4 py-3 text-right text-sm font-medium text-foreground",
+			cellClassName: "px-4 py-3 text-right text-sm font-medium text-foreground",
 			cell: ({ row }) => row.original.collaboratorProjects,
 		},
 		{
@@ -91,8 +88,7 @@ export function getFacultyDirectoryColumns(
 			header: () => <div className="text-right">Total Involvement</div>,
 			headerClassName:
 				"w-[150px] px-4 py-2 text-right text-sm font-medium text-muted-foreground",
-			cellClassName:
-				"px-4 py-3 text-right text-sm font-medium text-foreground",
+			cellClassName: "px-4 py-3 text-right text-sm font-medium text-foreground",
 			cell: ({ row }) => row.original.totalInvolvement,
 		},
 		createActionsColumn(),

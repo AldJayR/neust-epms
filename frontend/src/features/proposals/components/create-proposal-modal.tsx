@@ -279,14 +279,14 @@ export function CreateProposalModal({
 
 						{step === 3 && <ProposalStepMembers form={form} user={user} />}
 
-					{step === 4 && (
-						<ProposalStepDocuments
-							file={file}
-							setFile={(f) => setState({ file: f })}
-							uploadPhase={uploadPhase}
-							uploadProgress={uploadProgress}
-						/>
-					)}
+						{step === 4 && (
+							<ProposalStepDocuments
+								file={file}
+								setFile={(f) => setState({ file: f })}
+								uploadPhase={uploadPhase}
+								uploadProgress={uploadProgress}
+							/>
+						)}
 					</div>
 
 					<DialogFooter className="p-6 border-t border-border bg-card">

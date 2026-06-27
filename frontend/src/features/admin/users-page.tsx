@@ -6,7 +6,7 @@ import { DataTablePage } from "@/components/custom/data-table-page";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
-import { type DataTableColumnDef } from "@/components/ui/data-table";
+import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
@@ -55,10 +55,9 @@ export function UsersPage({
 		adminStatsQueryOptions(),
 	);
 
-	const {
-		data: usersData,
-		isLoading: isUsersLoading,
-	} = useQuery(adminUsersQueryOptions({ page, pageSize, search, isActive }));
+	const { data: usersData, isLoading: isUsersLoading } = useQuery(
+		adminUsersQueryOptions({ page, pageSize, search, isActive }),
+	);
 
 	// ── Mutations ────────────────────────────────────────────
 
@@ -146,7 +145,10 @@ export function UsersPage({
 			headerClassName: "text-center font-medium text-muted-foreground",
 			cell: ({ row }) => (
 				<div className="flex justify-center">
-					<StatusBadge status={row.original.isActive ? "Active" : "Deactivated"} variant="outline" />
+					<StatusBadge
+						status={row.original.isActive ? "Active" : "Deactivated"}
+						variant="outline"
+					/>
 				</div>
 			),
 		},

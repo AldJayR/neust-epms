@@ -29,9 +29,7 @@ interface ProjectsChartProps {
 export default function ProjectsChart({ chartData }: ProjectsChartProps) {
 	return (
 		<Suspense
-			fallback={
-				<div className="h-full w-full bg-card animate-pulse rounded" />
-			}
+			fallback={<div className="h-full w-full bg-card animate-pulse rounded" />}
 		>
 			<ResponsiveContainer width="100%" height="100%" key="projects-chart">
 				<BarChart
@@ -53,7 +51,10 @@ export default function ProjectsChart({ chartData }: ProjectsChartProps) {
 					/>
 					<Tooltip
 						cursor={{ fill: "transparent" }}
-						contentStyle={{ borderRadius: "8px", border: "1px solid var(--border)" }}
+						contentStyle={{
+							borderRadius: "8px",
+							border: "1px solid var(--border)",
+						}}
 					/>
 					<Bar
 						dataKey="value"

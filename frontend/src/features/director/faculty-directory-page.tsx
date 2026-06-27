@@ -191,7 +191,11 @@ export function FacultyDirectoryPage({
 
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
-	const metrics = data?.metrics ?? { totalActiveExtension: 0, averageProjectsPerFaculty: 0, mostActiveCollege: { name: "", contributors: 0 } };
+	const metrics = data?.metrics ?? {
+		totalActiveExtension: 0,
+		averageProjectsPerFaculty: 0,
+		mostActiveCollege: { name: "", contributors: 0 },
+	};
 
 	const columns = getFacultyDirectoryColumns(page, limit);
 
@@ -218,35 +222,35 @@ export function FacultyDirectoryPage({
 										<Download className="size-4" />
 										<span className="text-sm font-medium">Export Report</span>
 									</BrandButton>
-							}
-						/>
-						<DropdownMenuContent
-							align="end"
-							className="bg-background border border-border p-1 rounded-lg shadow-md min-w-[200px]"
-						>
-							<DropdownMenuItem
-								className="cursor-pointer"
-								onClick={() => handleExport("pdf")}
+								}
+							/>
+							<DropdownMenuContent
+								align="end"
+								className="bg-background border border-border p-1 rounded-lg shadow-md min-w-[200px]"
 							>
-								Download PDF Report
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								className="cursor-pointer"
-								onClick={() => handleExport("excel")}
-							>
-								Download Excel Spreadsheet
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								className="cursor-pointer"
-								onClick={() => handleExport("email")}
-							>
-								Send to Email
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-			}
-		/>
+								<DropdownMenuItem
+									className="cursor-pointer"
+									onClick={() => handleExport("pdf")}
+								>
+									Download PDF Report
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									className="cursor-pointer"
+									onClick={() => handleExport("excel")}
+								>
+									Download Excel Spreadsheet
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									className="cursor-pointer"
+									onClick={() => handleExport("email")}
+								>
+									Send to Email
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				}
+			/>
 
 			<div className="flex items-center gap-6">
 				<MetricCard

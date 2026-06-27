@@ -117,11 +117,11 @@ export function PdfToolbar({
 										</Button>
 									}
 								/>
-							<PdfTooltipContent>
-								{isTheaterMode
-									? "Exit Theater Mode"
-									: "Theater Mode (Maximize View)"}
-							</PdfTooltipContent>
+								<PdfTooltipContent>
+									{isTheaterMode
+										? "Exit Theater Mode"
+										: "Theater Mode (Maximize View)"}
+								</PdfTooltipContent>
 							</Tooltip>
 						</>
 					)}

@@ -66,10 +66,11 @@ const PdfInner = ({
 }: PdfInnerProps) => {
 	const { pdfDoc, numPages, loadingDoc, error } = usePdfDocument(url);
 	const scrollRef = useRef<HTMLDivElement>(null);
+	// biome-ignore lint/style/noNonNullAssertion: initialized on first render below
 	const pageRefs = useRef<Map<number, HTMLDivElement>>(null!);
-	if (pageRefs.current === null) {
-		pageRefs.current = new Map();
-	}
+		if (pageRefs.current === null) {
+			pageRefs.current = new Map();
+		}
 
 	const { visiblePages, currentPage } = usePdfVisibility(
 		scrollRef,
@@ -190,9 +191,8 @@ const PdfInner = ({
 					onResetZoom={resetZoom}
 				/>
 
-				<div
+				<section
 					ref={scrollRef}
-					role="region"
 					aria-label="PDF Page Viewer"
 					className={`flex-1 overflow-auto p-4 ${
 						toolMode === "hand"
@@ -244,7 +244,7 @@ const PdfInner = ({
 								);
 							})}
 					</div>
-				</div>
+				</section>
 			</div>
 		</TooltipProvider>
 	);

@@ -40,7 +40,11 @@ export function ProposalStepMembers({ form, user }: ProposalStepMembersProps) {
 		name: "members",
 	});
 
-	function handleAddMember(u: { userId: string; firstName: string; lastName: string }) {
+	function handleAddMember(u: {
+		userId: string;
+		firstName: string;
+		lastName: string;
+	}) {
 		if (!memberFields.some((m) => m.userId === u.userId)) {
 			appendMember({
 				userId: u.userId,
@@ -103,11 +107,14 @@ export function ProposalStepMembers({ form, user }: ProposalStepMembersProps) {
 								<div className="flex items-center gap-2">
 									{field.userId === user.userId ? (
 										<span className="text-xs text-muted-foreground bg-slate-100 px-2 py-0.5 rounded">
-											{watchedMembers?.[index]?.projectRole ?? field.projectRole}
+											{watchedMembers?.[index]?.projectRole ??
+												field.projectRole}
 										</span>
 									) : (
 										<Input
-											{...form.register(`members.${index}.projectRole` as const)}
+											{...form.register(
+												`members.${index}.projectRole` as const,
+											)}
 											placeholder="Role (e.g. Co-Leader)"
 											className="h-8 w-[180px] text-xs"
 										/>

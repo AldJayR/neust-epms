@@ -75,7 +75,7 @@ function LoginPage() {
 			| undefined;
 		try {
 			result = await loginFn({ data });
-		} catch (err) {
+		} catch {
 			toast.error("Login failed. Please try again.");
 			return;
 		}

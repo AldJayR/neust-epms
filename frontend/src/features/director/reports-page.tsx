@@ -6,7 +6,7 @@ import { DataTablePage } from "@/components/custom/data-table-page";
 import { Badge } from "@/components/ui/badge";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
-import { type DataTableColumnDef } from "@/components/ui/data-table";
+import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
@@ -45,10 +45,7 @@ export function ReportsPage() {
 	const { data: stats, isLoading: statsLoading } = useQuery(
 		reportsQueryOptions(),
 	);
-	const {
-		data: listData,
-		isLoading: listLoading,
-	} = useQuery(
+	const { data: listData, isLoading: listLoading } = useQuery(
 		reportsListQueryOptions({ page, limit, search: search || undefined }),
 	);
 
@@ -125,9 +122,7 @@ export function ReportsPage() {
 		<div className="flex flex-col gap-8">
 			{/* Header Section */}
 			<PageHeader
-				title={
-					<h1 className="text-2xl font-semibold text-heading">Reports</h1>
-				}
+				title={<h1 className="text-2xl font-semibold text-heading">Reports</h1>}
 				actions={
 					<BrandButton className="gap-2">
 						<Download className="size-4" />
@@ -173,7 +168,7 @@ export function ReportsPage() {
 						<DropdownMenuContent align="end" className="w-48">
 							<DropdownMenuRadioGroup
 								value={typeFilter}
-								onValueChange={(val) => setTypeFilter(val as any)}
+								onValueChange={(val) => setTypeFilter(val as "All" | "Progress" | "Terminal")}
 							>
 								<DropdownMenuRadioItem value="All">
 									All Types

@@ -129,9 +129,7 @@ function UserApprovalList({
 					<div className="flex justify-end">
 						<Select
 							value={userRoles[user.userId]}
-							onValueChange={(val) =>
-								onRoleChange(user.userId, val as string)
-							}
+							onValueChange={(val) => onRoleChange(user.userId, val as string)}
 						>
 							<SelectTrigger className="h-[30px] w-[160px] rounded-md border-border bg-background px-3 shadow-[0px_1px_1px_var(--shadow-card)]">
 								<SelectValue placeholder="Select role" />

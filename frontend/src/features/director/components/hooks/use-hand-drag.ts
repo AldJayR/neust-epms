@@ -39,8 +39,7 @@ export function useHandDrag({ scrollRef, toolMode }: UseHandDragOptions) {
 
 	const onMouseMove = useCallback(
 		(e: React.MouseEvent<HTMLDivElement>) => {
-			if (!isDragging || toolMode !== "hand" || !scrollRef.current)
-				return;
+			if (!isDragging || toolMode !== "hand" || !scrollRef.current) return;
 			e.preventDefault();
 
 			const dx = e.clientX - dragStartScroll.current.x;

@@ -18,6 +18,8 @@ if (typeof window === "undefined") {
 	}
 	class DOMMatrix extends DOMMatrixReadOnly {}
 
+	// biome-ignore lint/suspicious/noExplicitAny: SSR polyfill for pdfjs-dist
 	(globalThis as any).DOMMatrix = DOMMatrix;
+	// biome-ignore lint/suspicious/noExplicitAny: SSR polyfill for pdfjs-dist
 	(globalThis as any).DOMMatrixReadOnly = DOMMatrixReadOnly;
 }

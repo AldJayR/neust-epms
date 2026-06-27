@@ -6,93 +6,93 @@ import { SearchInput } from "@/components/ui/search-input";
 import { PageCard } from "./page-card";
 
 interface DataTablePageProps<TData> {
-  data: TData[];
-  total: number;
-  isLoading: boolean;
-  columns: DataTableColumnDef<TData>[];
-  emptyMessage?: string;
-  ariaLabel?: string;
-  onRowClick?: (item: TData) => void;
-  page: number;
-  pageSize: number;
-  onPageChange: (page: number) => void;
-  search?: string;
-  onSearch?: (search: string) => void;
-  searchPlaceholder?: string;
-  filters?: ReactNode;
-  title?: ReactNode;
-  actions?: ReactNode;
-  activeFilters?: Record<string, unknown>;
-  cardClassName?: string;
-  cardHeader?: ReactNode;
+	data: TData[];
+	total: number;
+	isLoading: boolean;
+	columns: DataTableColumnDef<TData>[];
+	emptyMessage?: string;
+	ariaLabel?: string;
+	onRowClick?: (item: TData) => void;
+	page: number;
+	pageSize: number;
+	onPageChange: (page: number) => void;
+	search?: string;
+	onSearch?: (search: string) => void;
+	searchPlaceholder?: string;
+	filters?: ReactNode;
+	title?: ReactNode;
+	actions?: ReactNode;
+	activeFilters?: Record<string, unknown>;
+	cardClassName?: string;
+	cardHeader?: ReactNode;
 }
 
 export function DataTablePage<TData>({
-  data,
-  total,
-  isLoading,
-  columns,
-  emptyMessage,
-  ariaLabel,
-  onRowClick,
-  page,
-  pageSize,
-  onPageChange,
-  search,
-  onSearch,
-  searchPlaceholder,
-  filters,
-  title,
-  actions,
-  activeFilters,
-  cardClassName,
-  cardHeader,
+	data,
+	total,
+	isLoading,
+	columns,
+	emptyMessage,
+	ariaLabel,
+	onRowClick,
+	page,
+	pageSize,
+	onPageChange,
+	search,
+	onSearch,
+	searchPlaceholder,
+	filters,
+	title,
+	actions,
+	activeFilters,
+	cardClassName,
+	cardHeader,
 }: DataTablePageProps<TData>) {
-  return (
-    <div className="flex flex-col gap-8">
-      {(title || actions) && (
-        <div className="flex items-start justify-between">
-          {title && <div>{title}</div>}
-          {actions && <div>{actions}</div>}
-        </div>
-      )}
+	return (
+		<div className="flex flex-col gap-8">
+			{(title || actions) && (
+				<div className="flex items-start justify-between">
+					{title && <div>{title}</div>}
+					{actions && <div>{actions}</div>}
+				</div>
+			)}
 
-      {(onSearch || filters) && (
-        <div className="flex items-center justify-between gap-4">
-          {onSearch && (
-            <SearchInput
-              value={search ?? ""}
-              onChange={onSearch}
-              placeholder={searchPlaceholder}
-              ariaLabel={searchPlaceholder}
-              className="max-w-[352px]"
-            />
-          )}
-          {filters && <div className="flex items-center gap-2">{filters}</div>}
-        </div>
-      )}
+			{(onSearch || filters) && (
+				<div className="flex items-center justify-between gap-4">
+					{onSearch && (
+						<SearchInput
+							value={search ?? ""}
+							onChange={onSearch}
+							placeholder={searchPlaceholder}
+							ariaLabel={searchPlaceholder}
+							className="max-w-[352px]"
+						/>
+					)}
+					{filters && <div className="flex items-center gap-2">{filters}</div>}
+				</div>
+			)}
 
-      <PageCard className={cardClassName}>
-        {cardHeader}
-        <DataTable
-          columns={columns}
-          data={data}
-          isLoading={isLoading}
-          emptyMessage={emptyMessage}
-          ariaLabel={ariaLabel}
-          onRowClick={onRowClick}
-          activeFilters={activeFilters}
-        />
-      </PageCard>
+			<PageCard className={cardClassName}>
+				{cardHeader}
+				<DataTable
+					columns={columns}
+					data={data}
+					isLoading={isLoading}
+					emptyMessage={emptyMessage}
+					ariaLabel={ariaLabel}
+					onRowClick={onRowClick}
+					activeFilters={activeFilters}
+				/>
+			</PageCard>
 
-      <PaginationBar
-        page={page}
-        totalPages={Math.ceil(total / pageSize)}
-        onPageChange={onPageChange}
-        total={total}
-        limit={pageSize}
-        isLoading={isLoading}
-      />
-    </div>
-  );
+			<PaginationBar
+				page={page}
+				totalPages={Math.ceil(total / pageSize)}
+				onPageChange={onPageChange}
+				total={total}
+				limit={pageSize}
+				isLoading={isLoading}
+			/>
+		</div>
+	);
 }

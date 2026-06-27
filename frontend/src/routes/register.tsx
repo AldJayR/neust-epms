@@ -120,7 +120,7 @@ function RegisterStepOneForm() {
 			if (saved) {
 				try {
 					return JSON.parse(saved);
-				} catch (e) {
+				} catch {
 					toast.error("Failed to restore registration data.");
 				}
 			}
@@ -156,9 +156,9 @@ function RegisterStepOneForm() {
 				</>
 			}
 		>
-		<div className="flex items-center justify-end gap-2 pt-4">
-			<AuthStepIndicator steps={2} currentStep={0} />
-		</div>
+			<div className="flex items-center justify-end gap-2 pt-4">
+				<AuthStepIndicator steps={2} currentStep={0} />
+			</div>
 
 			<form
 				className="mt-6"

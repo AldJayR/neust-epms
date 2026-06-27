@@ -3,7 +3,7 @@ import { ClientOnly, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { DataTablePage } from "@/components/custom/data-table-page";
-import { type DataTableColumnDef } from "@/components/ui/data-table";
+import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import type { AuthUser } from "@/lib/auth";
 import {

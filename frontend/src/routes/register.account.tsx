@@ -74,7 +74,7 @@ function RegisterStepTwo() {
 						"This password has been exposed in a data breach. Please choose a different one.",
 				});
 			}
-		} catch (err) {
+		} catch {
 			toast.error("Failed to check password safety.");
 		}
 		setPasswordChecking(false);
@@ -183,15 +183,15 @@ function RegisterStepTwo() {
 				</>
 			}
 		>
-		<div className="flex items-center justify-end gap-2 pt-4">
-			<AuthStepIndicator
-				steps={2}
-				currentStep={1}
-				onStepClick={(step) => {
-					if (step === 0) navigate({ to: "/register" });
-				}}
-			/>
-		</div>
+			<div className="flex items-center justify-end gap-2 pt-4">
+				<AuthStepIndicator
+					steps={2}
+					currentStep={1}
+					onStepClick={(step) => {
+						if (step === 0) navigate({ to: "/register" });
+					}}
+				/>
+			</div>
 
 			<form
 				className="mt-6"

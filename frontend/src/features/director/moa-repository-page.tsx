@@ -6,7 +6,7 @@ import { MetricCard } from "@/components/custom/metric-card";
 import { DataTablePage } from "@/components/custom/data-table-page";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
-import { type DataTableColumnDef } from "@/components/ui/data-table";
+import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import {
 	DropdownMenu,
@@ -51,7 +51,11 @@ export function MoaRepositoryPage({
 
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
-	const metrics = data?.metrics ?? { totalMoas: 0, expiringWithin90Days: 0, activePartnerships: 0 };
+	const metrics = data?.metrics ?? {
+		totalMoas: 0,
+		expiringWithin90Days: 0,
+		activePartnerships: 0,
+	};
 
 	const columns: DataTableColumnDef<MoaItem>[] = [
 		{
@@ -167,12 +171,16 @@ export function MoaRepositoryPage({
 						<DropdownMenuContent align="end" className="w-48">
 							<DropdownMenuRadioGroup
 								value={status || "all"}
-								onValueChange={(val) => onStatusChange(val === "all" ? "" : val)}
+								onValueChange={(val) =>
+									onStatusChange(val === "all" ? "" : val)
+								}
 							>
 								<DropdownMenuRadioItem value="all">
 									All Statuses
 								</DropdownMenuRadioItem>
-								<DropdownMenuRadioItem value="Valid">Valid</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="Valid">
+									Valid
+								</DropdownMenuRadioItem>
 								<DropdownMenuRadioItem value="Renewal Needed">
 									Renewal Needed
 								</DropdownMenuRadioItem>

@@ -103,9 +103,7 @@ function ExpiringMoasCard({
 								<p className="text-sm font-medium leading-5 text-foreground">
 									{moa.name}
 								</p>
-								<p className="text-sm leading-5 text-red-600">
-									{moa.dueText}
-								</p>
+								<p className="text-sm leading-5 text-red-600">{moa.dueText}</p>
 							</div>
 						</li>
 					))

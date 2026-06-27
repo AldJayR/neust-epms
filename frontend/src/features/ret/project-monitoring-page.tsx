@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { MetricCard } from "@/components/custom/metric-card";
 import { DataTablePage } from "@/components/custom/data-table-page";
-import { type DataTableColumnDef } from "@/components/ui/data-table";
+import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -197,7 +197,9 @@ export function ProjectMonitoringPage({
 									value="all"
 									className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
 								>
-									{user?.isMainCampus ? "Department Projects" : "Campus Projects"}
+									{user?.isMainCampus
+										? "Department Projects"
+										: "Campus Projects"}
 								</TabsTrigger>
 								<TabsTrigger
 									value="my"

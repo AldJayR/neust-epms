@@ -19,7 +19,7 @@ export async function getErrorMessage(
 ): Promise<string> {
 	try {
 		const contentType = response.headers.get("content-type");
-		if (contentType && contentType.includes("application/json")) {
+		if (contentType?.includes("application/json")) {
 			const body = (await response.json()) as ApiErrorResponse;
 			return body.error?.message ?? defaultMessage;
 		}

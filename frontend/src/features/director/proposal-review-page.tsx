@@ -251,7 +251,10 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 								className="w-full"
 							>
 								<Card className="border-border shadow-[0_1px_3px_0_var(--shadow-card)] rounded-[12px] overflow-hidden pt-2 pb-0 gap-0">
-									<TabsList variant="line" className="w-full justify-start rounded-none gap-0 px-0">
+									<TabsList
+										variant="line"
+										className="w-full justify-start rounded-none gap-0 px-0"
+									>
 										<div className="relative w-full flex">
 											<TabsTrigger
 												value="details"

@@ -26,7 +26,11 @@ export function usePdfKeyboard({
 				return;
 			}
 
-			const { zoomIn: zIn, zoomOut: zOut, resetZoom: zReset } = callbacksRef.current;
+			const {
+				zoomIn: zIn,
+				zoomOut: zOut,
+				resetZoom: zReset,
+			} = callbacksRef.current;
 
 			const isZoomIn =
 				e.key === "=" ||
