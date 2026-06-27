@@ -53,11 +53,11 @@ export function CommentsTab({
 									<span className="text-xs font-semibold text-black">
 										{comment.user.name}
 									</span>
-									<span className="text-[10px] text-muted-foreground">
+									<span className="text-3xs text-muted-foreground">
 										{comment.user.roleName}
 									</span>
 								</div>
-								<span className="text-[10px] text-muted-foreground/60">
+								<span className="text-3xs text-muted-foreground/60">
 									{new Date(comment.createdAt).toLocaleDateString()}
 								</span>
 							</div>
@@ -76,7 +76,7 @@ export function CommentsTab({
 
 			{/* Bottom panel */}
 			<div className="border-t border-border p-5 bg-background space-y-4">
-				<div className="flex justify-between items-center text-[13px] text-muted-foreground">
+				<div className="flex justify-between items-center text-sm text-muted-foreground">
 					<span>Attached Documents</span>
 					<span className="font-semibold text-black">
 						{attachmentsCount} files

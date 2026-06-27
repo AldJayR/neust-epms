@@ -186,7 +186,7 @@ export function ProposalDetailsTab({
 								>
 									{file.name}
 								</span>
-								<span className="text-[11px] text-muted-foreground">
+								<span className="text-2xs text-muted-foreground">
 									{file.version} {isActive && "· Currently Viewing"}
 								</span>
 							</button>

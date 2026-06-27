@@ -42,11 +42,11 @@ export function CommentHighlights({ comments }: CommentHighlightsProps) {
 									<span className="font-semibold text-xs text-white">
 										{comment.user.name}
 									</span>
-									<span className="text-[10px] text-zinc-400">
+									<span className="text-3xs text-zinc-400">
 										{comment.user.roleName}
 									</span>
 								</div>
-								<p className="text-[11px] leading-relaxed text-zinc-200">
+								<p className="text-2xs leading-relaxed text-zinc-200">
 									"{comment.content}"
 								</p>
 								<span className="text-[9px] block text-zinc-500 text-right">
@@ -98,7 +98,7 @@ export function CommentCreationPopover({
 				<span className="text-xs font-semibold text-black">
 					Add Remark / Comment
 				</span>
-				<span className="text-[10px] text-muted-foreground">
+				<span className="text-3xs text-muted-foreground">
 					Page {pageNumber}
 				</span>
 			</div>

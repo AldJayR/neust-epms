@@ -20,7 +20,7 @@ import { DEFAULT_SCALE, ZOOM_STEPS } from "./pdf-constants";
 
 function PdfTooltipContent({ children }: { children: React.ReactNode }) {
 	return (
-		<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-[11px] shadow-lg rounded-md z-50">
+		<TooltipContent className="bg-zinc-950 text-white border-zinc-800 px-2 py-1 text-2xs shadow-lg rounded-md z-50">
 			{children}
 		</TooltipContent>
 	);
@@ -157,7 +157,7 @@ export function PdfToolbar({
 					<button
 						type="button"
 						onClick={onResetZoom}
-						className="text-[13px] text-muted-foreground tabular-nums w-[48px] text-center hover:text-heading cursor-pointer"
+						className="text-sm text-muted-foreground tabular-nums w-[48px] text-center hover:text-heading cursor-pointer"
 					>
 						{Math.round(scale * 100)}%
 					</button>
