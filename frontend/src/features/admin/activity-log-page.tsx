@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClientOnly } from "@tanstack/react-router";
+import type { SortingState } from "@tanstack/react-table";
 import {
 	CircleCheck,
 	CloudUpload,
@@ -17,6 +18,7 @@ import { MetricCard } from "@/components/custom/metric-card";
 import { PageHeader } from "@/components/custom/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
 import {
 	DropdownMenu,
@@ -82,6 +84,7 @@ export function ActivityLogPage({
 	onPageChange,
 }: ActivityLogPageProps) {
 	const [typeFilter, setTypeFilter] = React.useState<string>("all");
+	const [sorting, setSorting] = React.useState<SortingState>([]);
 	const { data: statsData } = useQuery(auditStatsQueryOptions());
 	const { data: logsData, isLoading: isLogsLoading } = useQuery(
 		auditLogsQueryOptions({ page, limit, search }),
@@ -118,7 +121,9 @@ export function ActivityLogPage({
 	const columns: DataTableColumnDef<AuditLog>[] = [
 		{
 			id: "time",
-			header: "Time",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Time" />
+			),
 			headerClassName:
 				"w-[140px] font-medium text-muted-foreground text-sm py-2.5",
 			cellClassName: "py-2.5 text-left",
@@ -147,14 +152,18 @@ export function ActivityLogPage({
 		},
 		{
 			id: "action",
-			header: "Action",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Action" />
+			),
 			headerClassName: "font-medium text-muted-foreground text-sm py-2.5",
 			cellClassName: "py-2.5 text-sm text-foreground leading-normal text-left",
 			cell: ({ row }) => row.original.action,
 		},
 		{
 			id: "actor",
-			header: "Actor",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Actor" />
+			),
 			headerClassName:
 				"w-[200px] font-medium text-muted-foreground text-sm py-2.5",
 			cellClassName: "py-2.5 text-left",
@@ -230,6 +239,9 @@ export function ActivityLogPage({
 				search={search}
 				onSearch={(val) => onSearch(val || undefined)}
 				searchPlaceholder="Search by users or email"
+				sorting={sorting}
+				onSortingChange={setSorting}
+				enableSorting
 				filters={
 					<DropdownMenu>
 						<DropdownMenuTrigger

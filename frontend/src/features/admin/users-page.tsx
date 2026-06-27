@@ -1,8 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { RowSelectionState } from "@tanstack/react-table";
 import { CheckCircle2, ListFilter, MoreVertical } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
+import { createSelectColumn } from "@/components/custom/data-table-select-column";
 import { DataTablePage } from "@/components/custom/data-table-page";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageHeader } from "@/components/custom/page-header";
@@ -47,6 +50,8 @@ export function UsersPage({
 	onPageChange,
 	onIsActiveChange,
 }: UsersPageProps) {
+	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+
 	const queryClient = useQueryClient();
 
 	// ── Queries ──────────────────────────────────────────────
@@ -97,6 +102,7 @@ export function UsersPage({
 	const hasSearch = !!search?.trim();
 
 	const columns: DataTableColumnDef<UserResponse>[] = [
+		createSelectColumn(),
 		{
 			id: "name",
 			header: "Faculty Name",
@@ -235,6 +241,9 @@ export function UsersPage({
 				search={search}
 				onSearch={(val) => onSearch(val || undefined)}
 				searchPlaceholder="Search users"
+				rowSelection={rowSelection}
+				onRowSelectionChange={setRowSelection}
+				enableSelection
 				filters={
 					<DropdownMenu>
 						<DropdownMenuTrigger

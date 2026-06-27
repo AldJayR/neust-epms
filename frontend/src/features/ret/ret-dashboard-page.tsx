@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import type { SortingState, VisibilityState } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { EllipsisVertical, Plus } from "lucide-react";
 import * as React from "react";
@@ -11,6 +12,7 @@ import { MetricCard } from "@/components/custom/metric-card";
 import { PageHeader } from "@/components/custom/page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
 import {
 	DropdownMenu,
@@ -48,6 +50,9 @@ export function RETDashboardPage({
 }: RETDashboardPageProps) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
 	const [statusFilter, setStatusFilter] = React.useState<string>("all");
+	const [sorting, setSorting] = React.useState<SortingState>([]);
+	const [columnVisibility, setColumnVisibility] =
+		React.useState<VisibilityState>({});
 	const navigate = useNavigate();
 
 	const { data: statsData, isLoading: isStatsLoading } = useQuery(
@@ -84,7 +89,9 @@ export function RETDashboardPage({
 	const columns: DataTableColumnDef<ProposalItem>[] = [
 		{
 			id: "title",
-			header: "Project Title",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Project Title" />
+			),
 			headerClassName: "w-[352px] font-medium text-muted-foreground px-4",
 			cellClassName: "px-4 py-3 align-middle",
 			cell: ({ row }) => {
@@ -141,7 +148,9 @@ export function RETDashboardPage({
 		},
 		{
 			id: "dateSubmitted",
-			header: "Date Submitted",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Date Submitted" />
+			),
 			headerClassName: "w-[134px] font-medium text-muted-foreground px-4",
 			cellClassName: "px-4 py-3 align-middle text-sm text-foreground",
 			cell: ({ row }) => {
@@ -152,7 +161,9 @@ export function RETDashboardPage({
 		},
 		{
 			id: "status",
-			header: "Status",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Status" />
+			),
 			headerClassName: "w-[188px] font-medium text-muted-foreground px-4",
 			cellClassName: "px-4 py-3 align-middle",
 			cell: ({ row }) => {
@@ -254,6 +265,12 @@ export function RETDashboardPage({
 				search={search}
 				onSearch={(val) => onSearch(val || undefined)}
 				searchPlaceholder="Search by project proposals"
+				sorting={sorting}
+				onSortingChange={setSorting}
+				columnVisibility={columnVisibility}
+				onColumnVisibilityChange={setColumnVisibility}
+				enableSorting
+				enableVisibility
 				filters={
 					<DataTableFilter
 						value={statusFilter}

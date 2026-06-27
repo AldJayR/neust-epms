@@ -15,6 +15,7 @@ export function createActionsColumn<TData>(
 		header: "",
 		headerClassName: "w-[50px]",
 		cellClassName: "px-4 py-3 text-right",
+		enableSorting: false,
 		cell:
 			options?.cell ??
 			(() => (

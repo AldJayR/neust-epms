@@ -1,10 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClientOnly, Link } from "@tanstack/react-router";
+import type { SortingState, VisibilityState } from "@tanstack/react-table";
 import { format } from "date-fns";
+import { useState } from "react";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { DataTablePage } from "@/components/custom/data-table-page";
 import { MetricCard } from "@/components/custom/metric-card";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -42,6 +45,9 @@ export function ProjectMonitoringPage({
 	onMyProjectsOnlyChange,
 	onProjectClick,
 }: ProjectMonitoringPageProps) {
+	const [sorting, setSorting] = useState<SortingState>([]);
+	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+
 	const { data, isLoading } = useQuery(
 		projectHubQueryOptions({
 			page,
@@ -60,7 +66,9 @@ export function ProjectMonitoringPage({
 	const columns: DataTableColumnDef<HubProject>[] = [
 		{
 			id: "title",
-			header: "Project Name",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Project Name" />
+			),
 			headerClassName: "w-[35%] font-medium text-muted-foreground",
 			cellClassName: "font-bold text-foreground",
 			cell: ({ row }) => {
@@ -100,7 +108,9 @@ export function ProjectMonitoringPage({
 		},
 		{
 			id: "lastReport",
-			header: "Last Report",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Last Report" />
+			),
 			headerClassName: "w-[20%] font-medium text-muted-foreground",
 			cellClassName: "text-foreground text-left",
 			cell: ({ row }) => (
@@ -115,7 +125,9 @@ export function ProjectMonitoringPage({
 		},
 		{
 			id: "status",
-			header: "Status",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Status" />
+			),
 			headerClassName: "w-[15%] font-medium text-muted-foreground",
 			cellClassName: "text-left",
 			cell: ({ row }) => <StatusBadge status={row.original.status} />,
@@ -162,6 +174,12 @@ export function ProjectMonitoringPage({
 				search={search}
 				onSearch={onSearchChange}
 				searchPlaceholder="Search by project title or faculty name..."
+				sorting={sorting}
+				onSortingChange={setSorting}
+				columnVisibility={columnVisibility}
+				onColumnVisibilityChange={setColumnVisibility}
+				enableSorting
+				enableVisibility
 				filters={
 					<DataTableFilter
 						value={status || "all"}

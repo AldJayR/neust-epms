@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClientOnly, Link } from "@tanstack/react-router";
+import type { SortingState, VisibilityState } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { DataTablePage } from "@/components/custom/data-table-page";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { AuthUser } from "@/lib/auth";
@@ -12,6 +14,8 @@ import {
 	projectHubQueryOptions,
 } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
+
+import { useState } from "react";
 
 interface ProjectHubPageProps {
 	user?: AuthUser | null;
@@ -39,6 +43,9 @@ export function ProjectHubPage({
 	onStatusChange,
 	onProjectClick,
 }: ProjectHubPageProps) {
+	const [sorting, setSorting] = useState<SortingState>([]);
+	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+
 	const { data, isLoading } = useQuery(
 		projectHubQueryOptions({ page, limit, search, college, status }),
 	);
@@ -49,7 +56,9 @@ export function ProjectHubPage({
 	const columns: DataTableColumnDef<HubProject>[] = [
 		{
 			id: "title",
-			header: "Project Title",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Project Title" />
+			),
 			headerClassName: "w-[30%] font-medium text-muted-foreground",
 			cellClassName: "font-bold text-foreground",
 			cell: ({ row }) => {
@@ -89,14 +98,18 @@ export function ProjectHubPage({
 		},
 		{
 			id: "college",
-			header: "College",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="College" />
+			),
 			headerClassName: "w-[15%] font-medium text-muted-foreground",
 			cellClassName: "text-foreground text-left",
 			cell: ({ row }) => row.original.college,
 		},
 		{
 			id: "dateSubmitted",
-			header: "Date Submitted",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Date Submitted" />
+			),
 			headerClassName: "w-[15%] font-medium text-muted-foreground",
 			cellClassName: "text-foreground text-left",
 			cell: ({ row }) => (
@@ -107,7 +120,9 @@ export function ProjectHubPage({
 		},
 		{
 			id: "status",
-			header: "Status",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Status" />
+			),
 			headerClassName: "w-[15%] font-medium text-muted-foreground",
 			cellClassName: "text-left",
 			cell: ({ row }) => <StatusBadge status={row.original.status} />,
@@ -132,6 +147,12 @@ export function ProjectHubPage({
 			search={search}
 			onSearch={onSearchChange}
 			searchPlaceholder="Search by project title or faculty name..."
+			sorting={sorting}
+			onSortingChange={setSorting}
+			columnVisibility={columnVisibility}
+			onColumnVisibilityChange={setColumnVisibility}
+			enableSorting
+			enableVisibility
 			filters={
 				<>
 					<DataTableFilter

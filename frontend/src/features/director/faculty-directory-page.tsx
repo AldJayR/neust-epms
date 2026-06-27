@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Calendar, Download } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
@@ -42,6 +44,8 @@ export function FacultyDirectoryPage({
 	onSearchChange,
 	onCollegeChange,
 }: FacultyDirectoryPageProps) {
+	const [sorting, setSorting] = useState<SortingState>([]);
+
 	const { data, isLoading } = useQuery(
 		facultyDirectoryQueryOptions({ page, limit, search, college }),
 	);
@@ -283,6 +287,9 @@ export function FacultyDirectoryPage({
 				search={search}
 				onSearch={onSearchChange}
 				searchPlaceholder="Search by project title or faculty name..."
+				sorting={sorting}
+				onSortingChange={setSorting}
+				enableSorting
 				filters={
 					<DataTableFilter
 						value={college || "all"}

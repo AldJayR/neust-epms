@@ -1,13 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClientOnly } from "@tanstack/react-router";
+import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ListFilter, Plus } from "lucide-react";
+import { useState } from "react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { DataTablePage } from "@/components/custom/data-table-page";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageHeader } from "@/components/custom/page-header";
 import { Button } from "@/components/ui/button";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
 import {
 	DropdownMenu,
@@ -45,6 +48,8 @@ export function MoaRepositoryPage({
 	onSearchChange,
 	onStatusChange,
 }: MoaRepositoryPageProps) {
+	const [sorting, setSorting] = useState<SortingState>([]);
+
 	const { data, isLoading } = useQuery(
 		moaRepositoryQueryOptions({ page, limit, search, status }),
 	);
@@ -60,7 +65,9 @@ export function MoaRepositoryPage({
 	const columns: DataTableColumnDef<MoaItem>[] = [
 		{
 			id: "partner",
-			header: "Partner Organization",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Partner Organization" />
+			),
 			headerClassName:
 				"w-[320px] px-4 py-2 text-sm font-medium text-muted-foreground",
 			cellClassName:
@@ -69,7 +76,9 @@ export function MoaRepositoryPage({
 		},
 		{
 			id: "dateSigned",
-			header: () => <div className="text-center">Date Signed</div>,
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Date Signed" />
+			),
 			headerClassName:
 				"w-[223px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
@@ -81,7 +90,9 @@ export function MoaRepositoryPage({
 		},
 		{
 			id: "daysToExpiry",
-			header: () => <div className="text-center">Days to Expiry</div>,
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Days to Expiry" />
+			),
 			headerClassName:
 				"w-[255px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
@@ -94,7 +105,9 @@ export function MoaRepositoryPage({
 		},
 		{
 			id: "status",
-			header: () => <div className="text-center">Status</div>,
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Status" />
+			),
 			headerClassName:
 				"w-[129px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cell: ({ row }) => (
@@ -154,6 +167,9 @@ export function MoaRepositoryPage({
 				search={search}
 				onSearch={onSearchChange}
 				searchPlaceholder="Search MOAs"
+				sorting={sorting}
+				onSortingChange={setSorting}
+				enableSorting
 				filters={
 					<DropdownMenu>
 						<DropdownMenuTrigger

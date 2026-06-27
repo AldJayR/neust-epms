@@ -1,5 +1,6 @@
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
 import type { FacultyInvolvement } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
@@ -19,7 +20,9 @@ export function getFacultyDirectoryColumns(
 		},
 		{
 			id: "name",
-			header: "Faculty Name",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Faculty Name" />
+			),
 			headerClassName:
 				"w-[300px] px-4 py-2 text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3",
@@ -47,7 +50,9 @@ export function getFacultyDirectoryColumns(
 		},
 		{
 			id: "college",
-			header: "Department",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Department" />
+			),
 			headerClassName:
 				"w-[200px] px-4 py-2 text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-sm",
@@ -69,7 +74,9 @@ export function getFacultyDirectoryColumns(
 		},
 		{
 			id: "leadProjects",
-			header: () => <div className="text-right">Lead Projects</div>,
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Lead Projects" />
+			),
 			headerClassName:
 				"w-[120px] px-4 py-2 text-right text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-right text-sm font-medium text-foreground",
@@ -77,7 +84,9 @@ export function getFacultyDirectoryColumns(
 		},
 		{
 			id: "collaboratorProjects",
-			header: () => <div className="text-right">Collaborator Projects</div>,
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Collaborator Projects" />
+			),
 			headerClassName:
 				"w-[150px] px-4 py-2 text-right text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-right text-sm font-medium text-foreground",
@@ -85,7 +94,9 @@ export function getFacultyDirectoryColumns(
 		},
 		{
 			id: "totalInvolvement",
-			header: () => <div className="text-right">Total Involvement</div>,
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Total Involvement" />
+			),
 			headerClassName:
 				"w-[150px] px-4 py-2 text-right text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-right text-sm font-medium text-foreground",
