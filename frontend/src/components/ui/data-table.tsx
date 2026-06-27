@@ -89,37 +89,46 @@ function DataTable<TData, TValue>({
 		data,
 		columns,
 		getCoreRowModel: getCoreRowModel(),
+		// Sorting
 		...(enableSorting && {
 			onSortingChange: (updater) => {
 				const next = typeof updater === "function" ? updater(sorting ?? []) : updater;
 				onSortingChange?.(next);
 			},
 			getSortedRowModel: getSortedRowModel(),
-			state: { sorting: sorting ?? [] },
 		}),
+		// Visibility
 		...(enableVisibility && {
 			onColumnVisibilityChange: (updater) => {
 				const next = typeof updater === "function" ? updater(columnVisibility ?? {}) : updater;
 				onColumnVisibilityChange?.(next);
 			},
-			state: { columnVisibility: columnVisibility ?? {} },
 		}),
+		// Selection
 		...(enableSelection && {
 			onRowSelectionChange: (updater) => {
 				const next = typeof updater === "function" ? updater(rowSelection ?? {}) : updater;
 				onRowSelectionChange?.(next);
 			},
 			enableRowSelection: true,
-			state: { rowSelection: rowSelection ?? {} },
 		}),
+		// Merge all state slices into a single object to avoid overwrites
+		state: {
+			...(enableSorting && { sorting: sorting ?? [] }),
+			...(enableVisibility && { columnVisibility: columnVisibility ?? {} }),
+			...(enableSelection && { rowSelection: rowSelection ?? {} }),
+		},
 	});
 
 	const tableRef = useRef<ReactTable<TData>>(null);
 	tableRef.current = table;
 
+	const onTableReadyRef = useRef(onTableReady);
+	onTableReadyRef.current = onTableReady;
+
 	useEffect(() => {
-		onTableReady?.(tableRef.current!);
-	}, [onTableReady]);
+		onTableReadyRef.current?.(tableRef.current!);
+	}, []);
 
 	const colSpan = columns.length;
 
@@ -205,7 +214,7 @@ function DataTable<TData, TValue>({
 								key={row.id}
 								data-state={row.getIsSelected() && "selected"}
 								className={cn(
-									"bg-background border-b border-border hover:bg-card",
+									"bg-background border-b border-border hover:bg-muted/50",
 									onRowClick && "cursor-pointer",
 								)}
 								onClick={

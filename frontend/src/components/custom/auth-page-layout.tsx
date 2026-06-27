@@ -7,6 +7,7 @@ interface AuthPageLayoutProps {
 	description: string;
 	error?: string | null;
 	footer?: ReactNode;
+	headerAction?: ReactNode;
 }
 
 export function AuthPageLayout({
@@ -15,31 +16,33 @@ export function AuthPageLayout({
 	description,
 	error,
 	footer,
+	headerAction,
 }: AuthPageLayoutProps) {
 	return (
-		<main className="flex min-h-dvh items-center justify-center bg-muted px-4 py-8">
-			<section className="w-full max-w-[480px] rounded-xl p-6">
-				<header className="space-y-1">
-					<h1 className="text-2xl font-bold tracking-tight text-foreground">
+		<section className="w-full max-w-[480px] rounded-xl p-6">
+			<header className="flex items-start justify-between gap-4">
+				<div className="space-y-1">
+					<h1 className="text-base font-semibold tracking-tight text-foreground">
 						{title}
 					</h1>
 					<p className="text-sm text-muted-foreground">{description}</p>
-				</header>
+				</div>
+				{headerAction && <div className="shrink-0 pt-2.5">{headerAction}</div>}
+			</header>
 
-				{error && (
-					<Alert variant="destructive" className="mt-4">
-						{error}
-					</Alert>
-				)}
+			{error && (
+				<Alert variant="destructive" className="mt-4">
+					{error}
+				</Alert>
+			)}
 
-				{children}
+			{children}
 
-				{footer && (
-					<p className="pt-4 text-center text-sm leading-5 text-zinc-600">
-						{footer}
-					</p>
-				)}
-			</section>
-		</main>
+			{footer && (
+				<p className="pt-4 text-center text-sm leading-5 text-zinc-600">
+					{footer}
+				</p>
+			)}
+		</section>
 	);
 }

@@ -20,6 +20,7 @@ export function getFacultyDirectoryColumns(
 		},
 		{
 			id: "name",
+			accessorFn: (row) => `${row.firstName} ${row.lastName}`,
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Faculty Name" />
 			),
@@ -50,6 +51,7 @@ export function getFacultyDirectoryColumns(
 		},
 		{
 			id: "college",
+			accessorKey: "college",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Department" />
 			),
@@ -74,6 +76,7 @@ export function getFacultyDirectoryColumns(
 		},
 		{
 			id: "leadProjects",
+			accessorKey: "leadProjects",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Lead Projects" />
 			),
@@ -84,6 +87,7 @@ export function getFacultyDirectoryColumns(
 		},
 		{
 			id: "collaboratorProjects",
+			accessorKey: "collaboratorProjects",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Collaborator Projects" />
 			),
@@ -94,6 +98,7 @@ export function getFacultyDirectoryColumns(
 		},
 		{
 			id: "totalInvolvement",
+			accessorKey: "totalInvolvement",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Total Involvement" />
 			),

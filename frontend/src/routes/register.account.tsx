@@ -171,6 +171,15 @@ function RegisterStepTwo() {
 			title="Create your account"
 			description="Set up your login credentials"
 			error={serverError}
+			headerAction={
+				<AuthStepIndicator
+					steps={2}
+					currentStep={1}
+					onStepClick={(step) => {
+						if (step === 0) navigate({ to: "/register" });
+					}}
+				/>
+			}
 			footer={
 				<>
 					Already have an account?{" "}
@@ -183,16 +192,6 @@ function RegisterStepTwo() {
 				</>
 			}
 		>
-			<div className="flex items-center justify-end gap-2 pt-4">
-				<AuthStepIndicator
-					steps={2}
-					currentStep={1}
-					onStepClick={(step) => {
-						if (step === 0) navigate({ to: "/register" });
-					}}
-				/>
-			</div>
-
 			<form
 				className="mt-6"
 				method="POST"

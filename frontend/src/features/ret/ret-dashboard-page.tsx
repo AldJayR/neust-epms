@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import type { SortingState, VisibilityState } from "@tanstack/react-table";
+import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { EllipsisVertical, Plus } from "lucide-react";
 import * as React from "react";
@@ -51,8 +51,6 @@ export function RETDashboardPage({
 	const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
 	const [statusFilter, setStatusFilter] = React.useState<string>("all");
 	const [sorting, setSorting] = React.useState<SortingState>([]);
-	const [columnVisibility, setColumnVisibility] =
-		React.useState<VisibilityState>({});
 	const navigate = useNavigate();
 
 	const { data: statsData, isLoading: isStatsLoading } = useQuery(
@@ -89,6 +87,7 @@ export function RETDashboardPage({
 	const columns: DataTableColumnDef<ProposalItem>[] = [
 		{
 			id: "title",
+			accessorKey: "title",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Project Title" />
 			),
@@ -148,6 +147,7 @@ export function RETDashboardPage({
 		},
 		{
 			id: "dateSubmitted",
+			accessorKey: "createdAt",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Date Submitted" />
 			),
@@ -161,6 +161,7 @@ export function RETDashboardPage({
 		},
 		{
 			id: "status",
+			accessorKey: "status",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Status" />
 			),
@@ -267,10 +268,7 @@ export function RETDashboardPage({
 				searchPlaceholder="Search by project proposals"
 				sorting={sorting}
 				onSortingChange={setSorting}
-				columnVisibility={columnVisibility}
-				onColumnVisibilityChange={setColumnVisibility}
 				enableSorting
-				enableVisibility
 				filters={
 					<DataTableFilter
 						value={statusFilter}

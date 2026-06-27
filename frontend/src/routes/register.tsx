@@ -70,20 +70,22 @@ function RegisterRoute() {
 	});
 
 	return (
-		<LazyMotion features={domMax}>
-			<AnimatePresence mode="wait" initial={false}>
-				<m.div
-					key={pathname}
-					initial={{ opacity: 0, x: 20 }}
-					animate={{ opacity: 1, x: 0 }}
-					exit={{ opacity: 0, x: -20 }}
-					transition={{ duration: 0.3, ease: "easeInOut" }}
-					className="w-full max-w-[480px]"
-				>
-					{pathname !== "/register" ? <Outlet /> : <RegisterStepOneForm />}
-				</m.div>
-			</AnimatePresence>
-		</LazyMotion>
+		<main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8 w-full">
+			<LazyMotion features={domMax}>
+				<AnimatePresence mode="wait" initial={false}>
+					<m.div
+						key={pathname}
+						initial={{ opacity: 0, x: 20 }}
+						animate={{ opacity: 1, x: 0 }}
+						exit={{ opacity: 0, x: -20 }}
+						transition={{ duration: 0.3, ease: "easeInOut" }}
+						className="w-full flex justify-center"
+					>
+						{pathname !== "/register" ? <Outlet /> : <RegisterStepOneForm />}
+					</m.div>
+				</AnimatePresence>
+			</LazyMotion>
+		</main>
 	);
 }
 
@@ -144,6 +146,7 @@ function RegisterStepOneForm() {
 		<AuthPageLayout
 			title="Create your account"
 			description="Fill in your faculty profile details"
+			headerAction={<AuthStepIndicator steps={2} currentStep={0} />}
 			footer={
 				<>
 					Already have an account?{" "}
@@ -156,10 +159,6 @@ function RegisterStepOneForm() {
 				</>
 			}
 		>
-			<div className="flex items-center justify-end gap-2 pt-4">
-				<AuthStepIndicator steps={2} currentStep={0} />
-			</div>
-
 			<form
 				className="mt-6"
 				method="POST"

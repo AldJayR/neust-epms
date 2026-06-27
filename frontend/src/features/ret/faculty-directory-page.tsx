@@ -12,6 +12,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { SortingState } from "@tanstack/react-table";
 import type { AuthUser } from "@/lib/auth";
 import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
 import { retFacultyDirectoryColumns } from "./components/faculty-directory-columns";
@@ -36,6 +37,7 @@ export function RetFacultyDirectoryPage({
 	const [activeTab, setActiveTab] = React.useState<string>("department");
 	const [selectedRanks, setSelectedRanks] = React.useState<string[]>([]);
 	const [selectedLoads, setSelectedLoads] = React.useState<string[]>([]); // "0", "1-2", "3+"
+	const [sorting, setSorting] = React.useState<SortingState>([]);
 
 	// The RET Chair view is scoped to their college by default (handled by backend)
 	const { data, isLoading } = useQuery(
@@ -123,6 +125,9 @@ export function RetFacultyDirectoryPage({
 				search={search}
 				onSearch={onSearchChange}
 				searchPlaceholder="Search faculty"
+				sorting={sorting}
+				onSortingChange={setSorting}
+				enableSorting
 				filters={
 					<Popover>
 						<PopoverTrigger

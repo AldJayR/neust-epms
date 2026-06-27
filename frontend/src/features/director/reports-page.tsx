@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import type { SortingState } from "@tanstack/react-table";
 import { Download, ListFilter } from "lucide-react";
 import { useState } from "react";
 import { BrandButton } from "@/components/custom/brand-button";
@@ -8,6 +9,7 @@ import { MetricCard } from "@/components/custom/metric-card";
 import { PageHeader } from "@/components/custom/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
 import {
 	DropdownMenu,
@@ -40,6 +42,7 @@ export function ReportsPage() {
 	const [typeFilter, setTypeFilter] = useState<"All" | "Progress" | "Terminal">(
 		"All",
 	);
+	const [sorting, setSorting] = useState<SortingState>([]);
 	const limit = 20;
 
 	const { data: stats, isLoading: statsLoading } = useQuery(
@@ -62,7 +65,10 @@ export function ReportsPage() {
 	const columns: DataTableColumnDef<ReportItem>[] = [
 		{
 			id: "project",
-			header: "Project",
+			accessorKey: "project",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Project" />
+			),
 			headerClassName: "px-4 py-2 text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 font-bold text-foreground",
 			cell: ({ row }) => (
@@ -73,21 +79,30 @@ export function ReportsPage() {
 		},
 		{
 			id: "leader",
-			header: "Leader",
+			accessorKey: "leader",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Leader" />
+			),
 			headerClassName: "px-4 py-2 text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-sm text-foreground",
 			cell: ({ row }) => row.original.leader,
 		},
 		{
 			id: "department",
-			header: "Department",
+			accessorKey: "department",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Department" />
+			),
 			headerClassName: "px-4 py-2 text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-sm text-foreground",
 			cell: ({ row }) => row.original.department ?? "—",
 		},
 		{
 			id: "reportType",
-			header: () => <div className="text-center">Report Type</div>,
+			accessorKey: "reportType",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Report Type" className="justify-center" />
+			),
 			headerClassName:
 				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center",
@@ -109,7 +124,10 @@ export function ReportsPage() {
 		},
 		{
 			id: "submitted",
-			header: () => <div className="text-center">Submitted</div>,
+			accessorKey: "submitted",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Submitted" className="justify-center" />
+			),
 			headerClassName:
 				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
@@ -147,6 +165,9 @@ export function ReportsPage() {
 				pageSize={limit}
 				onPageChange={setPage}
 				search={search}
+				sorting={sorting}
+				onSortingChange={setSorting}
+				enableSorting
 				onSearch={(val) => {
 					setSearch(val);
 					setPage(1);

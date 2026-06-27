@@ -121,6 +121,7 @@ export function ActivityLogPage({
 	const columns: DataTableColumnDef<AuditLog>[] = [
 		{
 			id: "time",
+			accessorKey: "createdAt",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Time" />
 			),
@@ -152,6 +153,7 @@ export function ActivityLogPage({
 		},
 		{
 			id: "action",
+			accessorKey: "action",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Action" />
 			),
@@ -161,6 +163,7 @@ export function ActivityLogPage({
 		},
 		{
 			id: "actor",
+			accessorFn: (row) => row.actorName ?? "System",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Actor" />
 			),

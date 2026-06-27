@@ -1,6 +1,7 @@
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { FacultyInvolvement } from "@/lib/dashboard.functions";
@@ -10,7 +11,10 @@ export const retFacultyDirectoryColumns: DataTableColumnDef<FacultyInvolvement>[
 	[
 		{
 			id: "name",
-			header: "Faculty Name",
+			accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Faculty Name" />
+			),
 			headerClassName:
 				"w-[320px] px-4 py-2 text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3",
@@ -33,7 +37,10 @@ export const retFacultyDirectoryColumns: DataTableColumnDef<FacultyInvolvement>[
 		},
 		{
 			id: "rank",
-			header: "Rank",
+			accessorKey: "academicRank",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Rank" />
+			),
 			headerClassName:
 				"w-[200px] px-4 py-2 text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3",
@@ -51,23 +58,31 @@ export const retFacultyDirectoryColumns: DataTableColumnDef<FacultyInvolvement>[
 		},
 		{
 			id: "totalProjects",
-			header: "Total Projects",
+			accessorKey: "totalInvolvement",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Total Projects" className="justify-center" />
+			),
 			headerClassName:
-				"w-[150px] px-4 py-2 text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-sm text-foreground",
+				"w-[150px] px-4 py-2 text-sm font-medium text-muted-foreground text-center",
+			cellClassName: "px-4 py-3 text-sm text-foreground text-center",
 			cell: ({ row }) => row.original.totalInvolvement,
 		},
 		{
 			id: "status",
-			header: "Account Status",
+			accessorKey: "isActive",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Account Status" className="justify-center" />
+			),
 			headerClassName:
-				"w-[150px] px-4 py-2 text-sm font-medium text-muted-foreground",
+				"w-[150px] px-4 py-2 text-sm font-medium text-muted-foreground text-center",
 			cellClassName: "px-4 py-3",
 			cell: ({ row }) => (
-				<StatusBadge
-					status={row.original.isActive ? "Active" : "Deactivated"}
-					variant="outline"
-				/>
+				<div className="flex justify-center">
+					<StatusBadge
+						status={row.original.isActive ? "Active" : "Deactivated"}
+						variant="outline"
+					/>
+				</div>
 			),
 		},
 		createActionsColumn(),

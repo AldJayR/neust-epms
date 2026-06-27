@@ -108,58 +108,60 @@ function LoginPage() {
 	}
 
 	return (
-		<AuthPageLayout
-			title="Sign In"
-			description="Welcome back to NEUST-EPMS"
-			error={serverError}
-			footer={
-				<>
-					Don&apos;t have an account?{" "}
-					<Link
-						to="/register"
-						className="text-black hover:text-black underline underline-offset-2"
-					>
-						Register
-					</Link>
-				</>
-			}
-		>
-			<form
-				className="mt-6"
-				method="POST"
-				onSubmit={form.handleSubmit(onSubmit)}
+		<main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8">
+			<AuthPageLayout
+				title="Login to your account"
+				description="Enter your email below to login to your account"
+				error={serverError}
+				footer={
+					<>
+						Don&apos;t have an account?{" "}
+						<Link
+							to="/register"
+							className="text-black hover:text-black underline underline-offset-2"
+						>
+							Register
+						</Link>
+					</>
+				}
 			>
-				<FieldGroup>
-					<RHFTextField
-						control={form.control}
-						name="email"
-						label="Email"
-						type="email"
-						placeholder="m@example.com"
-					/>
-					<RHFPasswordField
-						control={form.control}
-						name="password"
-						label="Password"
-						labelAction={
-							<Link
-								to="/login"
-								className="text-sm leading-5 text-black hover:text-black hover:underline"
-							>
-								Forgot password?
-							</Link>
-						}
-					/>
-				</FieldGroup>
+				<form
+					className="mt-6"
+					method="POST"
+					onSubmit={form.handleSubmit(onSubmit)}
+				>
+					<FieldGroup>
+						<RHFTextField
+							control={form.control}
+							name="email"
+							label="Email"
+							type="email"
+							placeholder="m@example.com"
+						/>
+						<RHFPasswordField
+							control={form.control}
+							name="password"
+							label="Password"
+							labelAction={
+								<Link
+									to="/login"
+									className="text-sm leading-5 text-black hover:text-black hover:underline"
+								>
+									Forgot password?
+								</Link>
+							}
+						/>
+					</FieldGroup>
 
-				<div className="mt-7">
-					<RHFSubmitButton
-						label="Login"
-						isSubmitting={form.formState.isSubmitting}
-						className="h-9 w-full rounded-lg bg-brand-primary text-sm font-medium text-primary-foreground hover:bg-brand-primary-hover"
-					/>
-				</div>
-			</form>
-		</AuthPageLayout>
+					<div className="mt-7">
+						<RHFSubmitButton
+							label="Login"
+							isSubmitting={form.formState.isSubmitting}
+							className="h-9 w-full rounded-lg bg-brand-primary text-sm font-medium text-primary-foreground hover:bg-brand-primary-hover"
+						/>
+					</div>
+				</form>
+			</AuthPageLayout>
+		</main>
 	);
 }

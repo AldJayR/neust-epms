@@ -1,16 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { RowSelectionState } from "@tanstack/react-table";
 import { CheckCircle2, ListFilter, MoreVertical } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
-import { createSelectColumn } from "@/components/custom/data-table-select-column";
+import type { SortingState } from "@tanstack/react-table";
 import { DataTablePage } from "@/components/custom/data-table-page";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageHeader } from "@/components/custom/page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
 import {
 	DropdownMenu,
@@ -50,8 +50,7 @@ export function UsersPage({
 	onPageChange,
 	onIsActiveChange,
 }: UsersPageProps) {
-	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-
+	const [sorting, setSorting] = useState<SortingState>([]);
 	const queryClient = useQueryClient();
 
 	// ── Queries ──────────────────────────────────────────────
@@ -102,10 +101,12 @@ export function UsersPage({
 	const hasSearch = !!search?.trim();
 
 	const columns: DataTableColumnDef<UserResponse>[] = [
-		createSelectColumn(),
 		{
 			id: "name",
-			header: "Faculty Name",
+			accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Faculty Name" />
+			),
 			headerClassName: "w-[320px] font-medium text-muted-foreground",
 			cellClassName: "py-4",
 			cell: ({ row }) => {
@@ -133,21 +134,30 @@ export function UsersPage({
 		},
 		{
 			id: "department",
-			header: () => <div className="text-center">Department</div>,
+			accessorFn: (row) => row.departmentName ?? row.campusName,
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Department" className="justify-center" />
+			),
 			headerClassName: "text-center font-medium text-muted-foreground",
 			cellClassName: "text-center text-sm text-foreground",
 			cell: ({ row }) => row.original.departmentName ?? row.original.campusName,
 		},
 		{
 			id: "role",
-			header: () => <div className="text-center">Role</div>,
+			accessorKey: "roleName",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Role" className="justify-center" />
+			),
 			headerClassName: "text-center font-medium text-muted-foreground",
 			cellClassName: "text-center text-sm text-foreground",
 			cell: ({ row }) => row.original.roleName,
 		},
 		{
 			id: "status",
-			header: () => <div className="text-center">Status</div>,
+			accessorKey: "isActive",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Status" className="justify-center" />
+			),
 			headerClassName: "text-center font-medium text-muted-foreground",
 			cell: ({ row }) => (
 				<div className="flex justify-center">
@@ -241,9 +251,9 @@ export function UsersPage({
 				search={search}
 				onSearch={(val) => onSearch(val || undefined)}
 				searchPlaceholder="Search users"
-				rowSelection={rowSelection}
-				onRowSelectionChange={setRowSelection}
-				enableSelection
+				sorting={sorting}
+				onSortingChange={setSorting}
+				enableSorting
 				filters={
 					<DropdownMenu>
 						<DropdownMenuTrigger

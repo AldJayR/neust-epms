@@ -65,6 +65,7 @@ export function MoaRepositoryPage({
 	const columns: DataTableColumnDef<MoaItem>[] = [
 		{
 			id: "partner",
+			accessorKey: "partnerOrganization",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Partner Organization" />
 			),
@@ -76,6 +77,7 @@ export function MoaRepositoryPage({
 		},
 		{
 			id: "dateSigned",
+			accessorKey: "dateSigned",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Date Signed" />
 			),
@@ -90,6 +92,7 @@ export function MoaRepositoryPage({
 		},
 		{
 			id: "daysToExpiry",
+			accessorKey: "daysToExpiry",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Days to Expiry" />
 			),
@@ -105,6 +108,7 @@ export function MoaRepositoryPage({
 		},
 		{
 			id: "status",
+			accessorKey: "status",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Status" />
 			),

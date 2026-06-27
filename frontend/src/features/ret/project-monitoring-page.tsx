@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClientOnly, Link } from "@tanstack/react-router";
-import type { SortingState, VisibilityState } from "@tanstack/react-table";
+import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { useState } from "react";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
@@ -46,7 +46,6 @@ export function ProjectMonitoringPage({
 	onProjectClick,
 }: ProjectMonitoringPageProps) {
 	const [sorting, setSorting] = useState<SortingState>([]);
-	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
 	const { data, isLoading } = useQuery(
 		projectHubQueryOptions({
@@ -66,6 +65,7 @@ export function ProjectMonitoringPage({
 	const columns: DataTableColumnDef<HubProject>[] = [
 		{
 			id: "title",
+			accessorKey: "title",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Project Name" />
 			),
@@ -108,6 +108,7 @@ export function ProjectMonitoringPage({
 		},
 		{
 			id: "lastReport",
+			accessorKey: "lastReportDate",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Last Report" />
 			),
@@ -125,6 +126,7 @@ export function ProjectMonitoringPage({
 		},
 		{
 			id: "status",
+			accessorKey: "status",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Status" />
 			),
@@ -176,10 +178,7 @@ export function ProjectMonitoringPage({
 				searchPlaceholder="Search by project title or faculty name..."
 				sorting={sorting}
 				onSortingChange={setSorting}
-				columnVisibility={columnVisibility}
-				onColumnVisibilityChange={setColumnVisibility}
 				enableSorting
-				enableVisibility
 				filters={
 					<DataTableFilter
 						value={status || "all"}

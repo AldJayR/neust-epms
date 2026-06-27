@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClientOnly, Link } from "@tanstack/react-router";
-import type { SortingState, VisibilityState } from "@tanstack/react-table";
+import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
@@ -44,7 +44,6 @@ export function ProjectHubPage({
 	onProjectClick,
 }: ProjectHubPageProps) {
 	const [sorting, setSorting] = useState<SortingState>([]);
-	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
 	const { data, isLoading } = useQuery(
 		projectHubQueryOptions({ page, limit, search, college, status }),
@@ -56,6 +55,7 @@ export function ProjectHubPage({
 	const columns: DataTableColumnDef<HubProject>[] = [
 		{
 			id: "title",
+			accessorKey: "title",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Project Title" />
 			),
@@ -98,6 +98,7 @@ export function ProjectHubPage({
 		},
 		{
 			id: "college",
+			accessorKey: "college",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="College" />
 			),
@@ -107,6 +108,7 @@ export function ProjectHubPage({
 		},
 		{
 			id: "dateSubmitted",
+			accessorKey: "dateSubmitted",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Date Submitted" />
 			),
@@ -120,6 +122,7 @@ export function ProjectHubPage({
 		},
 		{
 			id: "status",
+			accessorKey: "status",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Status" />
 			),
@@ -149,10 +152,7 @@ export function ProjectHubPage({
 			searchPlaceholder="Search by project title or faculty name..."
 			sorting={sorting}
 			onSortingChange={setSorting}
-			columnVisibility={columnVisibility}
-			onColumnVisibilityChange={setColumnVisibility}
 			enableSorting
-			enableVisibility
 			filters={
 				<>
 					<DataTableFilter
