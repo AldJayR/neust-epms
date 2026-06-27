@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, count, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, or, type SQL, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { auditLogs } from "../db/schema/audit-logs.js";
 import { roles } from "../db/schema/roles.js";
@@ -98,14 +98,14 @@ app.openapi(statsRoute, async (c) => {
 			db
 				.select({ value: count() })
 				.from(auditLogs)
-				.where(sql`${auditLogs.createdAt} >= ${today}`),
+				.where(gte(auditLogs.createdAt, today)),
 			db
 				.select({ value: count() })
 				.from(auditLogs)
 				.where(
 					and(
 						eq(auditLogs.tableAffected, "users"),
-						sql`${auditLogs.createdAt} >= ${today}`,
+						gte(auditLogs.createdAt, today),
 					),
 				),
 			db
@@ -114,7 +114,7 @@ app.openapi(statsRoute, async (c) => {
 				.where(
 					and(
 						ilike(auditLogs.action, "%failed login%"),
-						sql`${auditLogs.createdAt} >= ${today}`,
+						gte(auditLogs.createdAt, today),
 					),
 				),
 		]);
@@ -122,7 +122,7 @@ app.openapi(statsRoute, async (c) => {
 	const [uniqueUsersResult] = await db
 		.select({ value: sql<number>`count(distinct ${auditLogs.userId})` })
 		.from(auditLogs)
-		.where(sql`${auditLogs.createdAt} >= ${today}`);
+		.where(gte(auditLogs.createdAt, today));
 	const uniqueUsersCount = Number(uniqueUsersResult?.value ?? 0);
 
 	return c.json(

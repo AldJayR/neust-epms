@@ -1,4 +1,4 @@
-import { and, eq, isNull, lte, sql } from "drizzle-orm";
+import { and, eq, gt, isNull, lte, sql } from "drizzle-orm";
 import cron from "node-cron";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
@@ -36,7 +36,7 @@ export function startMoaExpirationCron(): void {
 				.where(
 					and(
 						lte(moas.validUntil, now),
-						sql`${moas.validUntil} > ${windowStart}`,
+						gt(moas.validUntil, windowStart),
 						isNull(moas.archivedAt),
 					),
 				);
