@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface UsePdfKeyboardOptions {
 	zoomIn: () => void;
@@ -6,12 +6,14 @@ interface UsePdfKeyboardOptions {
 	resetZoom: () => void;
 }
 
-// biome-ignore lint/correctness/useExhaustiveDependencies: zoom controls are stable and shouldn't trigger listener reset
 export function usePdfKeyboard({
 	zoomIn,
 	zoomOut,
 	resetZoom,
 }: UsePdfKeyboardOptions) {
+	const callbacksRef = useRef({ zoomIn, zoomOut, resetZoom });
+	callbacksRef.current = { zoomIn, zoomOut, resetZoom };
+
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			const activeEl = document.activeElement;
@@ -23,6 +25,8 @@ export function usePdfKeyboard({
 			) {
 				return;
 			}
+
+			const { zoomIn: zIn, zoomOut: zOut, resetZoom: zReset } = callbacksRef.current;
 
 			const isZoomIn =
 				e.key === "=" ||
@@ -41,13 +45,13 @@ export function usePdfKeyboard({
 
 			if (isZoomIn) {
 				e.preventDefault();
-				zoomIn();
+				zIn();
 			} else if (isZoomOut) {
 				e.preventDefault();
-				zoomOut();
+				zOut();
 			} else if (isZoomReset) {
 				e.preventDefault();
-				resetZoom();
+				zReset();
 			}
 		};
 

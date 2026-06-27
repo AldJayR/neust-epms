@@ -47,9 +47,8 @@ export function RetFacultyDirectoryPage({
 		}),
 	);
 
-	const items = data?.items ?? [];
 	const filteredItems = React.useMemo(() => {
-		let result = items;
+		let result = data?.items ?? [];
 
 		// 1. Rank filter
 		if (selectedRanks.length > 0) {
@@ -73,7 +72,7 @@ export function RetFacultyDirectoryPage({
 		}
 
 		return result;
-	}, [items, selectedRanks, selectedLoads]);
+	}, [data?.items, selectedRanks, selectedLoads]);
 
 	const activeFilterCount = selectedRanks.length + selectedLoads.length;
 	const total = data?.total ?? 0;
