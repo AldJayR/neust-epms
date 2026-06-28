@@ -708,6 +708,7 @@ const ProjectDetailsSchema = z.object({
 	title: z.string(),
 	status: z.string(),
 	version: z.string(),
+	bypassedRetChair: z.boolean(),
 	metadata: z.object({
 		leader: z.object({
 			name: z.string(),
@@ -773,6 +774,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 			title: proposals.title,
 			status: proposals.status,
 			revisionNum: proposals.revisionNum,
+			bypassedRetChair: proposals.bypassedRetChair,
 			budgetNeust: proposals.budgetNeust,
 			budgetPartner: proposals.budgetPartner,
 			leaderFirstName: users.firstName,
@@ -1018,6 +1020,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 			title: row.title,
 			status: row.projectStatus || row.status,
 			version: `v${row.revisionNum}`,
+			bypassedRetChair: row.bypassedRetChair,
 			metadata: {
 				leader: {
 					name: `${row.leaderFirstName} ${row.leaderLastName}`,

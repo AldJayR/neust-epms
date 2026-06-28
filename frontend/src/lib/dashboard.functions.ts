@@ -193,6 +193,7 @@ export interface ProjectDetailsResponse {
 	title: string;
 	status: string;
 	version: string;
+	bypassedRetChair: boolean;
 	metadata: {
 		leader: {
 			name: string;

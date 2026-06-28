@@ -121,6 +121,8 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	const isReviewable =
 		data?.status === "Endorsed" || data?.status === "Pending Review";
 
+	const canAnnotate = !(isRETChair(user) && data?.bypassedRetChair);
+
 	const handleApprove = (comments?: string) => {
 		const decision = data?.status === "Endorsed" ? "Approved" : "Endorsed";
 		reviewMutation.mutate({
@@ -225,14 +227,14 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 									url={currentDoc.url}
 									className="h-full"
 									comments={comments}
-									onAddComment={async (content, annotation) => {
+									onAddComment={canAnnotate ? async (content, annotation) => {
 										await addCommentMutation.mutateAsync({
 											content,
 											annotationJson: annotation,
 										});
-									}}
+									} : undefined}
 									isTheaterMode={isTheaterMode}
-									onToggleTheaterMode={() => setIsTheaterMode(!isTheaterMode)}
+									onToggleTheaterMode={canAnnotate ? () => setIsTheaterMode(!isTheaterMode) : undefined}
 								/>
 							) : (
 								<div className="flex items-center justify-center h-full text-muted-foreground">
@@ -283,17 +285,18 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 									</TabsList>
 
 									<TabsContent value="details" className="mt-0">
-										<ProposalDetailsTab
-											data={data}
-											endorsement={endorsement}
-											activeAttachmentId={activeAttachmentId}
-											setActiveAttachmentId={setActiveAttachmentId}
-											isReviewable={isReviewable}
-											handleDeny={handleDeny}
-											handleApprove={handleApprove}
-											isPending={reviewMutation.isPending}
-											isRET={isRETChair(user)}
-										/>
+									<ProposalDetailsTab
+										data={data}
+										endorsement={endorsement}
+										activeAttachmentId={activeAttachmentId}
+										setActiveAttachmentId={setActiveAttachmentId}
+										isReviewable={isReviewable}
+										handleDeny={handleDeny}
+										handleApprove={handleApprove}
+										isPending={reviewMutation.isPending}
+										isRET={isRETChair(user)}
+										bypassedRetChair={data.bypassedRetChair}
+									/>
 									</TabsContent>
 
 									<TabsContent value="comments" className="mt-0">

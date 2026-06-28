@@ -63,6 +63,7 @@ interface ProposalDetailsTabProps {
 	handleApprove: (comments?: string) => void;
 	isPending: boolean;
 	isRET?: boolean;
+	bypassedRetChair?: boolean;
 }
 
 export function ProposalDetailsTab({
@@ -75,6 +76,7 @@ export function ProposalDetailsTab({
 	handleApprove,
 	isPending,
 	isRET = false,
+	bypassedRetChair = false,
 }: ProposalDetailsTabProps) {
 	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 	const [commentsText, setCommentsText] = useState("");
@@ -197,7 +199,7 @@ export function ProposalDetailsTab({
 				</div>
 			</div>
 
-			{isReviewable && isRET && (
+			{isReviewable && isRET && !bypassedRetChair && (
 				<>
 					<div className="px-5 py-2">
 						<Separator />
@@ -211,7 +213,7 @@ export function ProposalDetailsTab({
 				</>
 			)}
 
-			{isReviewable && (
+			{isReviewable && !(isRET && bypassedRetChair) && (
 				<div className="p-5 flex gap-3">
 				<LoadingButton
 					variant="outline"
