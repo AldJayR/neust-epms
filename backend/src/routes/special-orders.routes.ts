@@ -1,15 +1,37 @@
+import { randomUUID } from "node:crypto";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { createClient } from "@supabase/supabase-js";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
 import { specialOrders } from "../db/schema/special-orders.js";
+import { env } from "../env.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
+import { ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
+
+const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+
+function sanitizeFilename(fileName: string): string {
+	const normalized = fileName
+		.normalize("NFKD")
+		.replace(/[^a-zA-Z0-9._-]/g, "_")
+		.replace(/_+/g, "_")
+		.replace(/^_+|_+$/g, "");
+
+	const fallback = "document.pdf";
+	const candidate = normalized.length > 0 ? normalized : fallback;
+
+	return candidate.toLowerCase().endsWith(".pdf")
+		? candidate
+		: `${candidate}.pdf`;
+}
 
 // ── Schemas ──
 const SpecialOrderSchema = z
@@ -52,6 +74,10 @@ const ErrorSchema = z
 	.openapi("SOError");
 
 const _MessageSchema = z.object({ message: z.string() }).openapi("SOMessage");
+
+const SignedUrlSchema = z
+	.object({ url: z.string().url() })
+	.openapi("SignedUrl");
 
 const ParamId = z.object({
 	id: z
@@ -277,6 +303,309 @@ app.openapi(updateRoute, async (c) => {
 		},
 		200,
 	);
+});
+
+// ── POST /special-orders/upload ──
+const uploadRoute = createRoute({
+	method: "post",
+	path: "/special-orders/upload",
+	tags: ["Special Orders"],
+	summary: "Upload a special order PDF and create/update record",
+	security: [{ Bearer: [] }],
+	responses: {
+		201: {
+			content: { "application/json": { schema: SpecialOrderSchema } },
+			description: "Special order uploaded and created/updated",
+		},
+		400: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid file",
+		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Forbidden",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Member not found",
+		},
+		409: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Duplicate SO number",
+		},
+		413: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "File too large",
+		},
+		422: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid file type",
+		},
+		500: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Internal server error",
+		},
+	},
+});
+
+app.openapi(uploadRoute, async (c) => {
+	const user = c.get("user");
+
+	const contentLength = Number(c.req.header("content-length") ?? 0);
+	if (contentLength > MAX_UPLOAD_BYTES) {
+		throw new ApiError(413, "FILE_TOO_LARGE", "File exceeds 50MB limit");
+	}
+
+	const formData = await c.req.formData();
+	const file = formData.get("file");
+	const memberId = formData.get("memberId");
+	const soNumber = formData.get("soNumber");
+
+	if (!(file instanceof File)) {
+		throw new ApiError(400, "NO_FILE", "A PDF file is required");
+	}
+
+	if (file.size <= 0) {
+		throw new ApiError(422, "EMPTY_FILE", "Uploaded file cannot be empty");
+	}
+
+	if (file.size > MAX_UPLOAD_BYTES) {
+		throw new ApiError(413, "FILE_TOO_LARGE", "File exceeds 50MB limit");
+	}
+
+	if (file.type !== "application/pdf") {
+		throw new ApiError(422, "INVALID_FILE_TYPE", "Only PDF files are allowed");
+	}
+
+	if (typeof memberId !== "string" || !memberId) {
+		throw new ApiError(400, "INVALID_MEMBER_ID", "memberId is required");
+	}
+
+	if (typeof soNumber !== "string" || !soNumber) {
+		throw new ApiError(400, "INVALID_SO_NUMBER", "soNumber is required");
+	}
+
+	// Verify member exists
+	const [member] = await db
+		.select({ memberId: proposalMembers.memberId })
+		.from(proposalMembers)
+		.where(eq(proposalMembers.memberId, memberId))
+		.limit(1);
+
+	if (!member) {
+		throw new ApiError(
+			404,
+			"MEMBER_NOT_FOUND",
+			"Proposal member not found",
+		);
+	}
+
+	// Permission check: Director OR Project Leader of the member's proposal
+	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
+		const [memberRow] = await db
+			.select({ proposalId: proposalMembers.proposalId })
+			.from(proposalMembers)
+			.where(eq(proposalMembers.memberId, memberId))
+			.limit(1);
+
+		if (!memberRow) {
+			throw new ApiError(
+				404,
+				"MEMBER_NOT_FOUND",
+				"Proposal member not found",
+			);
+		}
+
+		const [leader] = await db
+			.select()
+			.from(proposalMembers)
+			.where(
+				and(
+					eq(proposalMembers.proposalId, memberRow.proposalId),
+					eq(proposalMembers.userId, user.userId),
+					eq(proposalMembers.projectRole, "Project Leader"),
+				),
+			)
+			.limit(1);
+
+		if (!leader) {
+			throw new ApiError(
+				403,
+				"FORBIDDEN",
+				"You must be the Director or Project Leader to upload special orders",
+			);
+		}
+	}
+
+	const sanitizedFilename = sanitizeFilename(file.name);
+	const storagePath = `special-orders/${memberId}/${Date.now()}_${randomUUID()}_${sanitizedFilename}`;
+
+	// Upload to Supabase Storage
+	const { error: uploadError } = await supabase.storage
+		.from("documents")
+		.upload(storagePath, file, {
+			contentType: file.type,
+			upsert: false,
+		});
+
+	if (uploadError) {
+		throw new ApiError(
+			400,
+			"UPLOAD_FAILED",
+			`Supabase storage upload failed: ${uploadError.message}`,
+		);
+	}
+
+	// Check if a special_orders record already exists for this member
+	const [existing] = await db
+		.select()
+		.from(specialOrders)
+		.where(eq(specialOrders.memberId, memberId))
+		.limit(1);
+
+	let record;
+	try {
+		if (existing) {
+			// Update existing record
+			const [updated] = await db
+				.update(specialOrders)
+				.set({
+					storagePath,
+					soNumber,
+					updatedAt: new Date(),
+				})
+				.where(eq(specialOrders.specialOrderId, existing.specialOrderId))
+				.returning();
+
+			if (!updated) {
+				throw new ApiError(500, "UPDATE_FAILED", "Failed to update special order");
+			}
+			record = updated;
+		} else {
+			// Check for duplicate SO number on new insert
+			const [duplicateSO] = await db
+				.select({ specialOrderId: specialOrders.specialOrderId })
+				.from(specialOrders)
+				.where(eq(specialOrders.soNumber, soNumber))
+				.limit(1);
+
+			if (duplicateSO) {
+				throw new ApiError(
+					409,
+					"DUPLICATE_SO_NUMBER",
+					"A special order with this SO number already exists",
+				);
+			}
+
+			// Insert new record
+			const [inserted] = await db
+				.insert(specialOrders)
+				.values({
+					memberId,
+					soNumber,
+					storagePath,
+				})
+				.returning();
+
+			if (!inserted) {
+				throw new ApiError(500, "INSERT_FAILED", "Failed to create special order");
+			}
+			record = inserted;
+		}
+	} catch (error) {
+		// Compensate: delete uploaded file
+		try {
+			await supabase.storage.from("documents").remove([storagePath]);
+		} catch {}
+		throw error;
+	}
+
+	await insertAuditLog({
+		userId: user.userId,
+		action: `${existing ? "Updated" : "Created"} special order ${record.specialOrderId} for member ${memberId}`,
+		tableAffected: "special_orders",
+		ipAddress: getClientIp(c),
+	});
+
+	return c.json(
+		{
+			specialOrderId: record.specialOrderId,
+			memberId: record.memberId,
+			soNumber: record.soNumber,
+			storagePath: record.storagePath,
+			dateIssued: record.dateIssued?.toISOString() ?? null,
+			status: record.status,
+			createdAt: record.createdAt.toISOString(),
+			updatedAt: record.updatedAt.toISOString(),
+			archivedAt: record.archivedAt?.toISOString() ?? null,
+		},
+		201,
+	);
+});
+
+// ── GET /special-orders/:id/url ──
+const getUrlRoute = createRoute({
+	method: "get",
+	path: "/special-orders/{id}/url",
+	tags: ["Special Orders"],
+	summary: "Get a signed URL for viewing/downloading a special order PDF",
+	security: [{ Bearer: [] }],
+	request: { params: ParamId },
+	responses: {
+		200: {
+			content: { "application/json": { schema: SignedUrlSchema } },
+			description: "Signed URL",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Not found or no file uploaded",
+		},
+		500: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Internal server error",
+		},
+	},
+});
+
+app.openapi(getUrlRoute, async (c) => {
+	const user = c.get("user");
+	const { id } = c.req.valid("param");
+
+	const [order] = await db
+		.select()
+		.from(specialOrders)
+		.where(
+			and(
+				eq(specialOrders.specialOrderId, id),
+				isNull(specialOrders.archivedAt),
+			),
+		)
+		.limit(1);
+
+	if (!order) {
+		throw new ApiError(404, "NOT_FOUND", "Special order not found");
+	}
+
+	if (!order.storagePath) {
+		throw new ApiError(404, "NO_FILE", "No file uploaded for this special order");
+	}
+
+	const { data, error } = await supabase.storage
+		.from("documents")
+		.createSignedUrl(order.storagePath, 3600);
+
+	if (error || !data) {
+		throw new ApiError(500, "URL_FAILED", "Failed to generate signed URL");
+	}
+
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Accessed signed URL for special order ${id}`,
+		tableAffected: "special_orders",
+		ipAddress: getClientIp(c),
+	});
+
+	return c.json({ url: data.signedUrl }, 200);
 });
 
 export default app;
