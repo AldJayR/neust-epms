@@ -1183,7 +1183,8 @@ app.openapi(projectDetailsRoute, async (c) => {
 					eq(proposalMembers.proposalId, proposalId),
 					isNull(specialOrders.archivedAt),
 				),
-			),
+			)
+			.orderBy(desc(specialOrders.createdAt)),
 	]);
 
 	const months = [
