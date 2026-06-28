@@ -118,32 +118,30 @@ export function ProjectDetailsSkeleton() {
 
 				{/* Sidebar */}
 				<div className="lg:col-span-4 flex flex-col gap-6">
-					{/* Attachments */}
-					<PageCard>
-						<div className="bg-card border-b border-border px-6 py-3">
-							<Skeleton className="h-4 w-24" />
-						</div>
-						<div className="p-4 flex flex-col gap-3">
-							{[1].map((i) => (
-								<div
-									key={i}
-									className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3"
-								>
-									<div className="flex items-center gap-3">
-										<Skeleton className="size-10 rounded-lg" />
-										<div className="flex flex-1 flex-col gap-1">
-											<Skeleton className="h-4 w-40" />
-											<Skeleton className="h-3 w-20" />
-										</div>
-									</div>
-									<div className="grid grid-cols-2 gap-2">
-										<Skeleton className="h-8 rounded-lg" />
-										<Skeleton className="h-8 rounded-lg" />
-									</div>
+				{/* Attachments */}
+				<PageCard>
+					<div className="bg-card border-b border-border px-6 py-3">
+						<Skeleton className="h-4 w-24" />
+					</div>
+					<div className="p-4 flex flex-col gap-2">
+						{[1].map((i) => (
+							<div
+								key={i}
+								className="flex items-center gap-2 rounded-xl border border-border bg-card px-2.5 py-2"
+							>
+								<Skeleton className="size-10 shrink-0 rounded-lg" />
+								<div className="flex flex-1 min-w-0 flex-col gap-1">
+									<Skeleton className="h-4 w-40" />
+									<Skeleton className="h-3 w-20" />
 								</div>
-							))}
-						</div>
-					</PageCard>
+								<div className="flex shrink-0 items-center gap-1">
+									<Skeleton className="size-7 rounded-md" />
+									<Skeleton className="size-7 rounded-md" />
+								</div>
+							</div>
+						))}
+					</div>
+				</PageCard>
 				</div>
 			</div>
 		</div>

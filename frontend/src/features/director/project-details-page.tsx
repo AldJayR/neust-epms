@@ -19,6 +19,15 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
+	Attachment,
+	AttachmentAction,
+	AttachmentActions,
+	AttachmentContent,
+	AttachmentDescription,
+	AttachmentMedia,
+	AttachmentTitle,
+} from "@/components/ui/attachment";
+import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
@@ -428,60 +437,41 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 			<div className="bg-card border-b border-border px-6 py-3">
 				<h2 className="text-sm font-semibold text-heading">Attachments</h2>
 			</div>
-			<ul className="p-4 flex flex-col gap-3">
+			<div className="p-4 flex flex-col gap-2">
 				{attachments.map((attachment) => (
-					<li
-						key={attachment.id}
-						className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:border-brand-primary/30"
-					>
-						<div className="flex items-center gap-3">
-							<div className="flex size-10 items-center justify-center rounded-lg bg-red-50 text-red-500">
-								<FileText className="size-5" />
-							</div>
-							<div className="flex flex-1 flex-col overflow-hidden">
-								<span className="truncate text-sm font-medium text-foreground">
-									{attachment.name}
-								</span>
-								<span className="text-xs text-muted-foreground">
-									{attachment.type} · v{attachment.version}
-								</span>
-							</div>
-						</div>
-						<div className="grid grid-cols-2 gap-2">
-							<Button
-								nativeButton={false}
-								variant="outline"
-								className="h-8 rounded-lg border-border text-xs font-medium text-muted-foreground hover:bg-background"
+					<Attachment key={attachment.id} state="done">
+						<AttachmentMedia>
+							<FileText className="size-4" />
+						</AttachmentMedia>
+						<AttachmentContent>
+							<AttachmentTitle>{attachment.name}</AttachmentTitle>
+							<AttachmentDescription>
+								{attachment.type} · v{attachment.version}
+							</AttachmentDescription>
+						</AttachmentContent>
+						<AttachmentActions>
+							<AttachmentAction
 								render={
 									<a
 										href={attachment.url}
 										target="_blank"
 										rel="noopener noreferrer"
-									>
-										View Attachment
-									</a>
+									/>
 								}
+								aria-label="View"
 							>
-								<Eye className="mr-1.5 size-3.5" />
-								View
-							</Button>
-							<Button
-								nativeButton={false}
-								variant="outline"
-								className="h-8 rounded-lg border-border text-xs font-medium text-muted-foreground hover:bg-background"
-								render={
-									<a href={attachment.url} download>
-										Download Attachment
-									</a>
-								}
+								<Eye className="size-3.5" />
+							</AttachmentAction>
+							<AttachmentAction
+								render={<a href={attachment.url} download />}
+								aria-label="Download"
 							>
-								<Download className="mr-1.5 size-3.5" />
-								Download
-							</Button>
-						</div>
-					</li>
+								<Download className="size-3.5" />
+							</AttachmentAction>
+						</AttachmentActions>
+					</Attachment>
 				))}
-			</ul>
+			</div>
 		</PageCard>
 	);
 }
