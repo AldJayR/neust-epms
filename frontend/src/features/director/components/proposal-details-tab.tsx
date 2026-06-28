@@ -59,7 +59,7 @@ interface ProposalDetailsTabProps {
 	activeAttachmentId: string | null;
 	setActiveAttachmentId: (id: string) => void;
 	isReviewable: boolean;
-	handleDeny: () => void;
+	handleDeny: (comments?: string) => void;
 	handleApprove: (comments?: string) => void;
 	isPending: boolean;
 	isRET?: boolean;
@@ -78,6 +78,8 @@ export function ProposalDetailsTab({
 }: ProposalDetailsTabProps) {
 	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 	const [commentsText, setCommentsText] = useState("");
+	const [isReturnOpen, setIsReturnOpen] = useState(false);
+	const [returnReason, setReturnReason] = useState("");
 
 	return (
 		<CardContent className="p-0">
@@ -211,14 +213,17 @@ export function ProposalDetailsTab({
 
 			{isReviewable && (
 				<div className="p-5 flex gap-3">
-					<LoadingButton
-						variant="outline"
-						className="flex-1 border border-border rounded-lg text-[#e54d2e] font-medium h-9 text-sm shadow-sm"
-						onClick={handleDeny}
-						loading={isPending}
-					>
-						Return
-					</LoadingButton>
+				<LoadingButton
+					variant="outline"
+					className="flex-1 border border-border rounded-lg text-[#e54d2e] font-medium h-9 text-sm shadow-sm"
+					onClick={() => {
+						setReturnReason("");
+						setIsReturnOpen(true);
+					}}
+					loading={isPending}
+				>
+					Return
+				</LoadingButton>
 					<LoadingButton
 						className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-brand-primary text-white hover:bg-brand-primary/90 rounded-lg"
 						onClick={() => {
@@ -274,6 +279,48 @@ export function ProposalDetailsTab({
 							loading={isPending}
 						>
 							Endorse
+						</LoadingButton>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog open={isReturnOpen} onOpenChange={setIsReturnOpen}>
+				<DialogContent className="sm:max-w-[425px] rounded-xl p-6 bg-background gap-4">
+					<DialogHeader className="pb-2">
+						<DialogTitle className="text-base font-semibold text-heading">
+							Return Proposal
+						</DialogTitle>
+						<DialogDescription className="text-sm text-muted-foreground font-light">
+							Please provide a reason for returning this proposal for revision.
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="space-y-4">
+						<Textarea
+							placeholder="Enter reason for returning..."
+							value={returnReason}
+							onChange={(e) => setReturnReason(e.target.value)}
+							className="w-full min-h-[100px] border border-border rounded-lg p-3 text-sm focus-visible:ring-1 focus-visible:ring-brand-primary"
+						/>
+					</div>
+
+					<DialogFooter className="flex gap-3 mt-4">
+						<Button
+							variant="outline"
+							className="flex-1 border border-border rounded-lg text-gray-500 font-medium h-9 text-sm shadow-sm cursor-pointer"
+							onClick={() => setIsReturnOpen(false)}
+						>
+							Cancel
+						</Button>
+						<LoadingButton
+							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer rounded-lg bg-red-500 text-white hover:bg-red-600"
+							onClick={() => {
+								handleDeny(returnReason);
+								setIsReturnOpen(false);
+							}}
+							loading={isPending}
+						>
+							Return
 						</LoadingButton>
 					</DialogFooter>
 				</DialogContent>

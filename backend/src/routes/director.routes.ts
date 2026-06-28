@@ -969,6 +969,7 @@ const ProjectDetailsMemberSchema = z.object({
 	userId: z.string(),
 	name: z.string(),
 	role: z.string(),
+	avatarUrl: z.string().nullable().optional(),
 	specialOrder: z
 		.object({
 			specialOrderId: z.string(),
@@ -1129,6 +1130,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 				lastName: users.lastName,
 				role: proposalMembers.projectRole,
 				memberId: proposalMembers.memberId,
+				avatarUrl: users.avatarUrl,
 			})
 			.from(proposalMembers)
 			.innerJoin(users, eq(proposalMembers.userId, users.userId))
@@ -1236,6 +1238,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 		userId: m.userId,
 		name: `${m.firstName} ${m.lastName}`,
 		role: m.role,
+		avatarUrl: m.avatarUrl,
 		specialOrder: specialOrderMap.get(m.memberId) ?? null,
 	}));
 

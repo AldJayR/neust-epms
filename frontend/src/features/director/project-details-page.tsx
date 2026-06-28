@@ -30,7 +30,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import {
 	API_BASE,
 	type ProjectMember,
-	getAccessTokenForUpload,
+	getAccessTokenForUploadFn,
 	getSpecialOrderSignedUrlFn,
 	projectDetailsQueryOptions,
 } from "@/lib/dashboard.functions";
@@ -62,6 +62,7 @@ interface ProjectOverviewCardProps {
 	currentUserId: string;
 	currentUserRole: string;
 	proposalId: string;
+	status: string;
 }
 
 function ProjectOverviewCard({
@@ -70,6 +71,7 @@ function ProjectOverviewCard({
 	currentUserId,
 	currentUserRole,
 	proposalId,
+	status,
 }: ProjectOverviewCardProps) {
 	const queryClient = useQueryClient();
 	const [uploadingMemberId, setUploadingMemberId] = useState<string | null>(null);
@@ -78,8 +80,9 @@ function ProjectOverviewCard({
 	const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
 
 	function canUpload(member: ProjectMember): boolean {
+		if (status !== "Approved") return false;
 		if (currentUserRole === "Director") return true;
-		if (member.userId === currentUserId && member.role === "Project Leader")
+		if (members.some((m) => m.userId === currentUserId && m.role === "Project Leader"))
 			return true;
 		return false;
 	}
@@ -93,7 +96,7 @@ function ProjectOverviewCard({
 		setUploadErrors((prev) => ({ ...prev, [member.userId]: "" }));
 
 		try {
-			const token = await getAccessTokenForUpload();
+			const token = await getAccessTokenForUploadFn();
 			const formData = new FormData();
 			formData.append("file", file);
 			formData.append("memberId", member.memberId);
@@ -183,12 +186,15 @@ function ProjectOverviewCard({
 							<button
 								type="button"
 								aria-label="View project team members"
-								className="flex w-full items-center justify-between px-6 py-3 transition-colors hover:bg-card"
+								className="flex w-full items-center justify-between px-6 py-3 transition-colors hover:bg-card cursor-pointer"
 							/>
 						}
 					>
 						<span className="text-sm text-muted-foreground">Project Team</span>
 						<div className="flex items-center gap-4">
+							<Badge variant="outline" className="text-[10px] font-normal text-muted-foreground border-dashed">
+								Manage SO
+							</Badge>
 							<div className="flex -space-x-2">
 								{members.slice(0, 4).map((member) => (
 									<Avatar
@@ -213,11 +219,14 @@ function ProjectOverviewCard({
 							<ChevronRight className="size-4 text-muted-foreground/60" />
 						</div>
 					</DialogTrigger>
-					<DialogContent className="sm:max-w-[425px] rounded-xl p-6">
-						<DialogHeader className="pb-4">
+					<DialogContent className="sm:max-w-[680px] rounded-xl p-6">
+						<DialogHeader className="pb-2">
 							<DialogTitle className="text-base font-semibold text-heading">
 								Project Members
 							</DialogTitle>
+							<span className="text-xs text-muted-foreground">
+								{members.filter((m) => m.specialOrder).length}/{members.length} Special Orders uploaded
+							</span>
 						</DialogHeader>
 						<ul className="flex flex-col gap-1 max-h-[400px] overflow-y-auto pr-2">
 							{members.map((member) => (
@@ -266,12 +275,12 @@ function ProjectOverviewCard({
 													View
 												</Button>
 											</div>
-										) : canUpload(member) ? (
-											<div className="flex items-center gap-2">
+									) : canUpload(member) ? (
+										<div className="flex items-center gap-2.5">
 												<Input
 													type="text"
 													placeholder="SO#"
-													className="h-7 w-[100px] text-xs"
+													className="h-7 w-[110px] text-xs"
 													value={soNumbers[member.userId] ?? ""}
 													onChange={(e) =>
 														setSoNumbers((prev) => ({
@@ -283,7 +292,7 @@ function ProjectOverviewCard({
 												<Input
 													type="file"
 													accept=".pdf"
-													className="h-7 w-[120px] text-xs file:h-5 file:text-[10px]"
+													className="h-7 w-[180px] text-xs file:h-5 file:text-[10px]"
 													onChange={(e) =>
 														setFiles((prev) => ({
 															...prev,
@@ -551,6 +560,7 @@ export function ProjectDetailsPage({
 						currentUserId={currentUserId}
 						currentUserRole={currentUserRole}
 						proposalId={proposalId}
+						status={data.status}
 					/>
 					<DocumentHistoryCard history={data.history} />
 				</div>

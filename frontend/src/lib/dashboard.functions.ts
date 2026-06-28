@@ -512,10 +512,12 @@ export const getSpecialOrderSignedUrlFn = createServerFn({ method: "GET" })
 		return (await response.json()) as { url: string };
 	});
 
-export async function getAccessTokenForUpload(): Promise<string> {
-	await authorizeSessionUser("Director", "RET Chair");
-	return getValidAccessToken();
-}
+export const getAccessTokenForUploadFn = createServerFn({ method: "GET" })
+	.validator(z.void())
+	.handler(async () => {
+		await authorizeSessionUser("Director", "RET Chair");
+		return getValidAccessToken();
+	});
 
 // ── Query Options ─────────────────────────────────────────
 

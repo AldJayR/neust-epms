@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Download, Loader2 } from "lucide-react";
+import { Download } from "lucide-react";
 import { useRef, useState } from "react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { PdfViewer, type PdfViewerRef } from "@/components/pdf-viewer";
@@ -134,11 +134,11 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		});
 	};
 
-	const handleDeny = () => {
+	const handleDeny = (comments?: string) => {
 		reviewMutation.mutate({
 			proposalId,
 			decision: "Returned",
-			comments: "Returned for revision",
+			comments: comments || "Returned for revision",
 		});
 	};
 
