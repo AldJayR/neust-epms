@@ -2,7 +2,6 @@
 // Per file-separation skill: .functions.ts files wrap server-only logic
 // in createServerFn, so the build replaces them with RPC stubs on the client.
 
-import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { ApiErrorResponse, AuthUser } from "./auth";
@@ -190,7 +189,6 @@ export const logoutFn = createServerFn({ method: "POST" }).handler(async () => {
 	const { getAppSession } = await import("./session.server");
 	const session = await getAppSession();
 	await session.clear();
-	throw redirect({ to: "/login" });
 });
 
 // ── Public lookup data (no auth required) ─────────────────
