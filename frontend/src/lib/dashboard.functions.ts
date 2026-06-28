@@ -154,11 +154,20 @@ export interface FacultyDirectoryParams {
 	status?: string;
 }
 
+export interface ProjectMemberSpecialOrder {
+	specialOrderId: string;
+	soNumber: string;
+	storagePath: string | null;
+	dateIssued: string | null;
+	status: string;
+}
+
 export interface ProjectMember {
 	userId: string;
 	name: string;
 	role: string;
 	avatarUrl?: string;
+	specialOrder?: ProjectMemberSpecialOrder | null;
 }
 
 export interface ProjectHistoryItem {
@@ -477,6 +486,35 @@ const getReportStatsFn = createServerFn({ method: "GET" })
 
 		return (await response.json()) as ReportStatsResponse;
 	});
+
+export const getSpecialOrderSignedUrlFn = createServerFn({ method: "GET" })
+	.validator(z.string())
+	.handler(async ({ data: specialOrderId }) => {
+		await authorizeSessionUser("Director", "RET Chair");
+		const token = await getValidAccessToken();
+
+		const response = await fetch(
+			`${API_BASE}/special-orders/${specialOrderId}/url`,
+			{
+				headers: { Authorization: `Bearer ${token}` },
+			},
+		);
+
+		if (!response.ok) {
+			const message = await getErrorMessage(
+				response,
+				"Failed to get signed URL",
+			);
+			throw new Error(message);
+		}
+
+		return (await response.json()) as { url: string };
+	});
+
+export async function getAccessTokenForUpload(): Promise<string> {
+	await authorizeSessionUser("Director", "RET Chair");
+	return getValidAccessToken();
+}
 
 // ── Query Options ─────────────────────────────────────────
 
