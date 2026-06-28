@@ -372,11 +372,11 @@ const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 const getProjectDetailsFn = createServerFn({ method: "GET" })
 	.validator(z.string())
 	.handler(async ({ data: proposalId }) => {
-		await authorizeSessionUser("Director", "RET Chair");
+		await authorizeSessionUser("Director", "RET Chair", "Faculty");
 		const token = await getValidAccessToken();
 
 		const response = await fetch(
-			`${API_BASE}/director/projects/${proposalId}`,
+			`${API_BASE}/projects/${proposalId}`,
 			{
 				headers: {
 					Authorization: `Bearer ${token}`,

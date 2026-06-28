@@ -5,6 +5,17 @@ import { moas } from "../db/schema/moas.js";
 import { projectReports } from "../db/schema/project-reports.js";
 import { projects } from "../db/schema/projects.js";
 import { proposals } from "../db/schema/proposals.js";
+import { users } from "../db/schema/users.js";
+import { createClient } from "@supabase/supabase-js";
+import { departments } from "../db/schema/departments.js";
+import { partners } from "../db/schema/partners.js";
+import { proposalDocuments } from "../db/schema/proposal-documents.js";
+import { proposalMembers } from "../db/schema/proposal-members.js";
+import { proposalReviews } from "../db/schema/proposal-reviews.js";
+import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
+import { sdgs } from "../db/schema/sdgs.js";
+import { specialOrders } from "../db/schema/special-orders.js";
+import { env } from "../env.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
@@ -26,6 +37,7 @@ const ProjectSchema = z
 		projectId: z.string().uuid(),
 		proposalId: z.string().uuid(),
 		moaId: z.string().uuid().nullable(),
+		title: z.string().optional(),
 		targetStartDate: z.string().nullable(),
 		targetEndDate: z.string().nullable(),
 		actualEndDate: z.string().nullable(),
@@ -33,6 +45,9 @@ const ProjectSchema = z
 		createdAt: z.string(),
 		updatedAt: z.string(),
 		archivedAt: z.string().nullable(),
+		leaderFirstName: z.string().nullable().optional(),
+		leaderLastName: z.string().nullable().optional(),
+		leaderAcademicRank: z.string().nullable().optional(),
 	})
 	.openapi("Project");
 
@@ -153,6 +168,7 @@ app.openapi(listRoute, async (c) => {
 			projectId: projects.projectId,
 			proposalId: projects.proposalId,
 			moaId: projects.moaId,
+			title: proposals.title,
 			targetStartDate: proposals.targetStartDate,
 			targetEndDate: proposals.targetEndDate,
 			actualEndDate: projects.actualEndDate,
@@ -160,9 +176,13 @@ app.openapi(listRoute, async (c) => {
 			createdAt: projects.createdAt,
 			updatedAt: projects.updatedAt,
 			archivedAt: projects.archivedAt,
+			leaderFirstName: users.firstName,
+			leaderLastName: users.lastName,
+			leaderAcademicRank: users.academicRank,
 		})
 		.from(projects)
 		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+		.leftJoin(users, eq(proposals.projectLeaderId, users.userId))
 		.where(
 			and(
 				isNull(projects.archivedAt),
@@ -617,6 +637,381 @@ app.openapi(closeProjectRoute, async (c) => {
 	});
 
 	return c.json({ message: "Project closed" }, 200);
+});
+
+// ── Project Details Endpoint ──
+
+const ProjectDetailsMemberSchema = z.object({
+	memberId: z.string(),
+	userId: z.string(),
+	name: z.string(),
+	role: z.string(),
+	avatarUrl: z.string().nullable().optional(),
+	specialOrder: z
+		.object({
+			specialOrderId: z.string(),
+			soNumber: z.string(),
+			storagePath: z.string().nullable(),
+			dateIssued: z.string().nullable(),
+			status: z.string(),
+		})
+		.nullable()
+		.optional(),
+});
+
+const ProjectDetailsHistoryItemSchema = z.object({
+	id: z.string(),
+	version: z.string(),
+	status: z.string(),
+	actorName: z.string(),
+	date: z.string(),
+	comment: z.string().optional(),
+});
+
+const ProjectDetailsAttachmentSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	type: z.string(),
+	url: z.string(),
+	version: z.string(),
+});
+
+const ProjectDetailsSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	status: z.string(),
+	version: z.string(),
+	metadata: z.object({
+		leader: z.object({
+			name: z.string(),
+		}),
+		department: z.string(),
+		duration: z.string(),
+		moaLinked: z.string(),
+		sdgs: z.string().optional(),
+		budget: z.object({
+			total: z.number(),
+			neust: z.number(),
+			partner: z.number(),
+		}),
+	}),
+	members: z.array(ProjectDetailsMemberSchema),
+	history: z.array(ProjectDetailsHistoryItemSchema),
+	attachments: z.array(ProjectDetailsAttachmentSchema),
+});
+
+const projectDetailsRoute = createRoute({
+	method: "get",
+	path: "/projects/{proposalId}",
+	tags: ["Projects"],
+	summary: "Get project details by proposal ID",
+	security: [{ Bearer: [] }],
+	request: {
+		params: z.object({
+			proposalId: z
+				.string()
+				.uuid()
+				.openapi({ param: { name: "proposalId", in: "path" } }),
+		}),
+	},
+	responses: {
+		200: {
+			content: { "application/json": { schema: ProjectDetailsSchema } },
+			description: "Project details",
+		},
+		404: {
+			description: "Project not found",
+		},
+	},
+});
+
+app.openapi(projectDetailsRoute, async (c) => {
+	const { proposalId } = c.req.valid("param");
+	const user = c.get("user");
+
+	const leaderMembers = db
+		.select({
+			proposalId: proposalMembers.proposalId,
+			userId: proposalMembers.userId,
+		})
+		.from(proposalMembers)
+		.where(eq(proposalMembers.projectRole, "Project Leader"))
+		.as("leader_members");
+
+	const [row] = await db
+		.select({
+			proposalId: proposals.proposalId,
+			campusId: proposals.campusId,
+			departmentId: proposals.departmentId,
+			title: proposals.title,
+			status: proposals.status,
+			revisionNum: proposals.revisionNum,
+			budgetNeust: proposals.budgetNeust,
+			budgetPartner: proposals.budgetPartner,
+			leaderFirstName: users.firstName,
+			leaderLastName: users.lastName,
+			departmentCode: departments.departmentCode,
+			departmentName: departments.departmentName,
+			projectStatus: projects.projectStatus,
+			targetStartDate: proposals.targetStartDate,
+			targetEndDate: proposals.targetEndDate,
+			moaPartner: partners.partnerName,
+		})
+		.from(proposals)
+		.innerJoin(
+			leaderMembers,
+			eq(proposals.proposalId, leaderMembers.proposalId),
+		)
+		.innerJoin(users, eq(leaderMembers.userId, users.userId))
+		.innerJoin(
+			departments,
+			eq(proposals.departmentId, departments.departmentId),
+		)
+		.leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
+		.leftJoin(moas, eq(projects.moaId, moas.moaId))
+		.leftJoin(partners, eq(moas.partnerId, partners.partnerId))
+		.where(eq(proposals.proposalId, proposalId));
+
+	if (!row) {
+		return c.json({ error: { message: "Project not found" } }, 404);
+	}
+
+	// Security check for Faculty / RET Chair
+	if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
+		const isMainCampus = user.isMainCampus;
+
+		if (isMainCampus && user.departmentId !== null) {
+			if (row.departmentId !== user.departmentId) {
+				throw new ApiError(
+					403,
+					"FORBIDDEN",
+					"You do not have access to this proposal",
+				);
+			}
+		} else {
+			if (row.campusId !== user.campusId) {
+				throw new ApiError(
+					403,
+					"FORBIDDEN",
+					"You do not have access to this proposal",
+				);
+			}
+		}
+	}
+
+	const [memberRows, documentRows, reviewRows, sdgRows, specialOrderRows] = await Promise.all([
+		db
+			.select({
+				userId: users.userId,
+				firstName: users.firstName,
+				lastName: users.lastName,
+				role: proposalMembers.projectRole,
+				memberId: proposalMembers.memberId,
+				avatarUrl: users.avatarUrl,
+			})
+			.from(proposalMembers)
+			.innerJoin(users, eq(proposalMembers.userId, users.userId))
+			.where(eq(proposalMembers.proposalId, proposalId)),
+
+		db
+			.select({
+				documentId: proposalDocuments.documentId,
+				versionNum: proposalDocuments.versionNum,
+				storagePath: proposalDocuments.storagePath,
+				uploadedAt: proposalDocuments.uploadedAt,
+			})
+			.from(proposalDocuments)
+			.where(eq(proposalDocuments.proposalId, proposalId))
+			.orderBy(desc(proposalDocuments.versionNum)),
+
+		db
+			.select({
+				reviewId: proposalReviews.reviewId,
+				decision: proposalReviews.decision,
+				comments: proposalReviews.comments,
+				reviewedAt: proposalReviews.reviewedAt,
+				reviewerFirstName: users.firstName,
+				reviewerLastName: users.lastName,
+			})
+			.from(proposalReviews)
+			.innerJoin(users, eq(proposalReviews.reviewerId, users.userId))
+			.where(eq(proposalReviews.proposalId, proposalId))
+			.orderBy(desc(proposalReviews.reviewedAt)),
+
+		db
+			.select({
+				sdgNumber: sdgs.sdgNumber,
+				sdgTitle: sdgs.sdgTitle,
+			})
+			.from(proposalSdgs)
+			.innerJoin(sdgs, eq(proposalSdgs.sdgId, sdgs.sdgId))
+			.where(eq(proposalSdgs.proposalId, proposalId))
+			.orderBy(sdgs.sdgNumber),
+
+		db
+			.select({
+				memberId: specialOrders.memberId,
+				specialOrderId: specialOrders.specialOrderId,
+				soNumber: specialOrders.soNumber,
+				storagePath: specialOrders.storagePath,
+				dateIssued: specialOrders.dateIssued,
+				status: specialOrders.status,
+			})
+			.from(specialOrders)
+			.innerJoin(proposalMembers, eq(specialOrders.memberId, proposalMembers.memberId))
+			.where(
+				and(
+					eq(proposalMembers.proposalId, proposalId),
+					isNull(specialOrders.archivedAt),
+				),
+			)
+			.orderBy(desc(specialOrders.createdAt)),
+	]);
+
+	const months = [
+		"Jan",
+		"Feb",
+		"Mar",
+		"Apr",
+		"May",
+		"Jun",
+		"Jul",
+		"Aug",
+		"Sep",
+		"Oct",
+		"Nov",
+		"Dec",
+	];
+	let duration = "Not yet started";
+	if (row.targetStartDate && row.targetEndDate) {
+		duration = `${months[row.targetStartDate.getMonth()]} ${row.targetStartDate.getFullYear()} - ${months[row.targetEndDate.getMonth()]} ${row.targetEndDate.getFullYear()}`;
+	}
+
+	const budgetNeust = Number(row.budgetNeust ?? 0);
+	const budgetPartner = Number(row.budgetPartner ?? 0);
+
+	const specialOrderMap = new Map<
+		string,
+		{
+			specialOrderId: string;
+			soNumber: string;
+			storagePath: string | null;
+			dateIssued: string | null;
+			status: string;
+		}
+	>();
+	for (const so of specialOrderRows) {
+		specialOrderMap.set(so.memberId, {
+			specialOrderId: so.specialOrderId,
+			soNumber: so.soNumber,
+			storagePath: so.storagePath,
+			dateIssued: so.dateIssued?.toISOString() ?? null,
+			status: so.status,
+		});
+	}
+
+	const members = memberRows.map((m) => ({
+		memberId: m.memberId,
+		userId: m.userId,
+		name: `${m.firstName} ${m.lastName}`,
+		role: m.role,
+		avatarUrl: m.avatarUrl,
+		specialOrder: specialOrderMap.get(m.memberId) ?? null,
+	}));
+
+	const history: Array<{
+		id: string;
+		version: string;
+		status: string;
+		actorName: string;
+		date: string;
+		comment?: string;
+	}> = [];
+
+	documentRows.forEach((doc) => {
+		history.push({
+			id: doc.documentId,
+			version: `v${doc.versionNum}`,
+			status:
+				doc.versionNum === documentRows[0]?.versionNum ? "Current" : "Previous",
+			actorName: "System",
+			date: doc.uploadedAt.toISOString(),
+		});
+	});
+
+	reviewRows.forEach((review) => {
+		const matchingDoc = documentRows.find(
+			(doc) => doc.uploadedAt.getTime() <= review.reviewedAt.getTime(),
+		);
+		const reviewVersion = matchingDoc ? `v${matchingDoc.versionNum}` : `v${row.revisionNum}`;
+
+		history.push({
+			id: review.reviewId,
+			version: reviewVersion,
+			status:
+				review.decision === "Returned"
+					? "Returned"
+					: review.decision === "Approved"
+						? "Approved"
+						: review.decision,
+			actorName: `${review.reviewerFirstName} ${review.reviewerLastName}`,
+			date: review.reviewedAt.toISOString(),
+			...(review.comments ? { comment: review.comments } : {}),
+		});
+	});
+
+	history.sort(
+		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+	);
+
+	const supabaseClient = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+
+	const attachments = await Promise.all(
+		documentRows.map(async (doc) => {
+			const { data: signedUrlData } = await supabaseClient.storage
+				.from("documents")
+				.createSignedUrl(doc.storagePath, 3600);
+
+			const rawName = doc.storagePath.split("/").pop() || doc.storagePath;
+			const cleanName = rawName.replace(/^v\d+_\d+_[a-f0-9-]+_/, "");
+
+			return {
+				id: doc.documentId,
+				name: cleanName,
+				type: "pdf",
+				url: signedUrlData?.signedUrl ?? "",
+				version: `v${doc.versionNum}`,
+			};
+		}),
+	);
+
+	return c.json(
+		{
+			id: row.proposalId,
+			title: row.title,
+			status: row.projectStatus || row.status,
+			version: `v${row.revisionNum}`,
+			metadata: {
+				leader: {
+					name: `${row.leaderFirstName} ${row.leaderLastName}`,
+				},
+				departmentCode: row.departmentCode,
+				department: row.departmentName,
+				duration,
+				moaLinked: row.moaPartner || "None",
+				sdgs: sdgRows.map((s) => `SDG ${s.sdgNumber}`).join(", ") || undefined,
+				budget: {
+					total: budgetNeust + budgetPartner,
+					neust: budgetNeust,
+					partner: budgetPartner,
+				},
+			},
+			members,
+			history,
+			attachments,
+		},
+		200,
+	);
 });
 
 export default app;

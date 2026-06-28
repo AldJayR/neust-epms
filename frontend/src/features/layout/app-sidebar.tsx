@@ -16,7 +16,7 @@ import {
 	type RoleSidebarItem,
 } from "@/components/role-sidebar";
 import type { AuthUser } from "@/lib/auth";
-import { isDirector, isRETChair } from "@/lib/permissions";
+import { isDirector, isRETChair, isSuperAdmin } from "@/lib/permissions";
 
 type NavItem = {
 	title: string;
@@ -100,6 +100,44 @@ const directorNav: NavGroup[] = [
 	},
 ];
 
+const facultyNav: NavGroup[] = [
+	{
+		title: "Overview",
+		items: [
+			{
+				title: "Dashboard",
+				url: "/dashboard",
+				icon: LayoutDashboard,
+			},
+			{
+				title: "Projects",
+				url: "/projects",
+				icon: FolderKanban,
+			},
+			{
+				title: "Archives",
+				url: "/archives",
+				icon: Scroll,
+			},
+			{
+				title: "Reports",
+				url: "/reports",
+				icon: BarChart3,
+			},
+		],
+	},
+	{
+		title: "Management",
+		items: [
+			{
+				title: "Settings",
+				url: "/admin/settings",
+				icon: Settings,
+			},
+		],
+	},
+];
+
 const retNav: NavGroup[] = [
 	{
 		title: "Overview",
@@ -160,8 +198,10 @@ export function AppSidebar({
 		select: (s) => s.location.pathname,
 	});
 
-	let navMain = adminNav;
-	if (isDirector(user)) {
+	let navMain = facultyNav;
+	if (isSuperAdmin(user)) {
+		navMain = adminNav;
+	} else if (isDirector(user)) {
 		navMain = directorNav;
 	} else if (isRETChair(user)) {
 		navMain = retNav;

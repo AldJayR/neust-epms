@@ -5,6 +5,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { UsersPage } from "@/features/admin/users-page";
 import { DirectorDashboardPage } from "@/features/director/director-dashboard-page";
 import { RETDashboardPage } from "@/features/ret/ret-dashboard-page";
+import { FacultyDashboardPage } from "@/features/faculty/faculty-dashboard-page";
+import {
+	facultyProposalsQueryOptions,
+	facultyProjectsQueryOptions,
+} from "@/lib/faculty.functions";
 import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
@@ -40,6 +45,12 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 		if (
 			requireRole(context.auth.user, "Super Admin", "Director", "RET Chair")
 		) {
+			context.queryClient.prefetchQuery(
+				facultyProposalsQueryOptions({ page: 1, limit: 100 }),
+			);
+			context.queryClient.prefetchQuery(
+				facultyProjectsQueryOptions({ page: 1, limit: 100 }),
+			);
 			return null;
 		}
 
@@ -185,16 +196,5 @@ function DashboardPage() {
 		);
 	}
 
-	return (
-		<main className="flex min-h-dvh items-center justify-center p-8">
-			<div className="text-center">
-				<h1 className="text-2xl font-semibold text-card-foreground">
-					Dashboard
-				</h1>
-				<p className="mt-2 text-muted-foreground">
-					Welcome! This page is under construction.
-				</p>
-			</div>
-		</main>
-	);
+	return <FacultyDashboardPage user={user} />;
 }

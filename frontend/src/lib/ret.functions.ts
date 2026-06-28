@@ -167,7 +167,7 @@ const getRETProposalsFn = createServerFn({ method: "GET" })
 export const createProposalFn = createServerFn({ method: "POST" })
 	.validator(createProposalSchema)
 	.handler(async ({ data }) => {
-		await authorizeSessionUser("RET Chair", "Director");
+		await authorizeSessionUser("RET Chair", "Director", "Faculty");
 		const accessToken = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/proposals`, {
@@ -206,7 +206,7 @@ export const uploadProposalDocumentFn = createServerFn({ method: "POST" })
 		return data;
 	})
 	.handler(async ({ data }) => {
-		await authorizeSessionUser("RET Chair", "Director");
+		await authorizeSessionUser("RET Chair", "Director", "Faculty");
 		const accessToken = await getValidAccessToken();
 
 		const proposalId = data.get("proposalId") as string;

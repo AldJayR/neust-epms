@@ -1,4 +1,4 @@
-export type RoleName = "Super Admin" | "Director" | "RET Chair";
+export type RoleName = "Super Admin" | "Director" | "RET Chair" | "Faculty";
 
 const ROLES = {
 	SUPER_ADMIN: "Super Admin" as RoleName,
