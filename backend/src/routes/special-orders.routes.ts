@@ -313,9 +313,13 @@ const uploadRoute = createRoute({
 	summary: "Upload a special order PDF and create/update record",
 	security: [{ Bearer: [] }],
 	responses: {
+		200: {
+			content: { "application/json": { schema: SpecialOrderSchema } },
+			description: "Special order updated",
+		},
 		201: {
 			content: { "application/json": { schema: SpecialOrderSchema } },
-			description: "Special order uploaded and created/updated",
+			description: "Special order created",
 		},
 		400: {
 			content: { "application/json": { schema: ErrorSchema } },
@@ -385,9 +389,9 @@ app.openapi(uploadRoute, async (c) => {
 		throw new ApiError(400, "INVALID_SO_NUMBER", "soNumber is required");
 	}
 
-	// Verify member exists
+	// Verify member exists and get proposalId for permission check (I.1: single query)
 	const [member] = await db
-		.select({ memberId: proposalMembers.memberId })
+		.select({ memberId: proposalMembers.memberId, proposalId: proposalMembers.proposalId })
 		.from(proposalMembers)
 		.where(eq(proposalMembers.memberId, memberId))
 		.limit(1);
@@ -402,26 +406,14 @@ app.openapi(uploadRoute, async (c) => {
 
 	// Permission check: Director OR Project Leader of the member's proposal
 	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
-		const [memberRow] = await db
-			.select({ proposalId: proposalMembers.proposalId })
-			.from(proposalMembers)
-			.where(eq(proposalMembers.memberId, memberId))
-			.limit(1);
-
-		if (!memberRow) {
-			throw new ApiError(
-				404,
-				"MEMBER_NOT_FOUND",
-				"Proposal member not found",
-			);
-		}
-
 		const [leader] = await db
-			.select()
+			.select({
+				userId: proposalMembers.userId,
+			})
 			.from(proposalMembers)
 			.where(
 				and(
-					eq(proposalMembers.proposalId, memberRow.proposalId),
+					eq(proposalMembers.proposalId, member.proposalId),
 					eq(proposalMembers.userId, user.userId),
 					eq(proposalMembers.projectRole, "Project Leader"),
 				),
@@ -456,14 +448,25 @@ app.openapi(uploadRoute, async (c) => {
 		);
 	}
 
-	// Check if a special_orders record already exists for this member
+	// Check if a special_orders record already exists for this member (I.6: explicit columns)
 	const [existing] = await db
-		.select()
+		.select({
+			specialOrderId: specialOrders.specialOrderId,
+			memberId: specialOrders.memberId,
+			soNumber: specialOrders.soNumber,
+			storagePath: specialOrders.storagePath,
+			dateIssued: specialOrders.dateIssued,
+			status: specialOrders.status,
+			createdAt: specialOrders.createdAt,
+			updatedAt: specialOrders.updatedAt,
+			archivedAt: specialOrders.archivedAt,
+		})
 		.from(specialOrders)
 		.where(eq(specialOrders.memberId, memberId))
 		.limit(1);
 
 	let record;
+	let isNew = false;
 	try {
 		if (existing) {
 			// Update existing record
@@ -482,22 +485,7 @@ app.openapi(uploadRoute, async (c) => {
 			}
 			record = updated;
 		} else {
-			// Check for duplicate SO number on new insert
-			const [duplicateSO] = await db
-				.select({ specialOrderId: specialOrders.specialOrderId })
-				.from(specialOrders)
-				.where(eq(specialOrders.soNumber, soNumber))
-				.limit(1);
-
-			if (duplicateSO) {
-				throw new ApiError(
-					409,
-					"DUPLICATE_SO_NUMBER",
-					"A special order with this SO number already exists",
-				);
-			}
-
-			// Insert new record
+			// Insert new record — rely on DB unique constraint for SO number (I.3)
 			const [inserted] = await db
 				.insert(specialOrders)
 				.values({
@@ -511,9 +499,18 @@ app.openapi(uploadRoute, async (c) => {
 				throw new ApiError(500, "INSERT_FAILED", "Failed to create special order");
 			}
 			record = inserted;
+			isNew = true;
 		}
-	} catch (error) {
-		// Compensate: delete uploaded file
+	} catch (error: any) {
+		// I.3: Catch PG unique-violation (23505) for duplicate SO number
+		if (error?.code === "23505") {
+			throw new ApiError(
+				409,
+				"DUPLICATE_SO_NUMBER",
+				"A special order with this SO number already exists",
+			);
+		}
+		// Compensate: delete uploaded file on any failure
 		try {
 			await supabase.storage.from("documents").remove([storagePath]);
 		} catch {}
@@ -539,7 +536,7 @@ app.openapi(uploadRoute, async (c) => {
 			updatedAt: record.updatedAt.toISOString(),
 			archivedAt: record.archivedAt?.toISOString() ?? null,
 		},
-		201,
+		isNew ? 201 : 200,
 	);
 });
 
@@ -571,8 +568,19 @@ app.openapi(getUrlRoute, async (c) => {
 	const user = c.get("user");
 	const { id } = c.req.valid("param");
 
+	// I.6: explicit column list
 	const [order] = await db
-		.select()
+		.select({
+			specialOrderId: specialOrders.specialOrderId,
+			memberId: specialOrders.memberId,
+			soNumber: specialOrders.soNumber,
+			storagePath: specialOrders.storagePath,
+			dateIssued: specialOrders.dateIssued,
+			status: specialOrders.status,
+			createdAt: specialOrders.createdAt,
+			updatedAt: specialOrders.updatedAt,
+			archivedAt: specialOrders.archivedAt,
+		})
 		.from(specialOrders)
 		.where(
 			and(
@@ -584,6 +592,45 @@ app.openapi(getUrlRoute, async (c) => {
 
 	if (!order) {
 		throw new ApiError(404, "NOT_FOUND", "Special order not found");
+	}
+
+	// I.5: Authorization check — Director, Project Leader of the proposal, or the member themselves
+	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
+		const [member] = await db
+			.select({ memberId: proposalMembers.memberId, proposalId: proposalMembers.proposalId })
+			.from(proposalMembers)
+			.where(eq(proposalMembers.memberId, order.memberId))
+			.limit(1);
+
+		if (!member) {
+			throw new ApiError(404, "MEMBER_NOT_FOUND", "Proposal member not found");
+		}
+
+		const isMember = member.memberId === order.memberId;
+
+		let isProjectLeader = false;
+		if (!isMember) {
+			const [leader] = await db
+				.select({ userId: proposalMembers.userId })
+				.from(proposalMembers)
+				.where(
+					and(
+						eq(proposalMembers.proposalId, member.proposalId),
+						eq(proposalMembers.userId, user.userId),
+						eq(proposalMembers.projectRole, "Project Leader"),
+					),
+				)
+				.limit(1);
+			isProjectLeader = !!leader;
+		}
+
+		if (!isMember && !isProjectLeader) {
+			throw new ApiError(
+				403,
+				"FORBIDDEN",
+				"You must be the Director, Project Leader, or the member to access this file",
+			);
+		}
 	}
 
 	if (!order.storagePath) {
