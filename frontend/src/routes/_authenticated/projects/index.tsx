@@ -2,11 +2,16 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { ProjectHubPage } from "@/features/director/project-hub-page";
 import { ProjectMonitoringPage } from "@/features/ret/project-monitoring-page";
+import { FacultyProjectHubPage } from "@/features/faculty/faculty-project-hub-page";
 import { PageSkeleton } from "@/components/custom/page-skeleton";
 import {
 	directorDashboardQueryOptions,
 	projectHubQueryOptions,
 } from "@/lib/dashboard.functions";
+import {
+	facultyProjectsQueryOptions,
+	facultyProposalsQueryOptions,
+} from "@/lib/faculty.functions";
 import {
 	isDirector,
 	isRETChair,
@@ -27,11 +32,11 @@ const ProjectsPendingComponent = () => {
 	const context = Route.useRouteContext();
 	const user = context.auth?.user;
 
-	if (isDirector(user)) {
+	if (isDirector(user) || user?.roleName === "Faculty") {
 		return (
 			<PageSkeleton
 				title="Project Hub"
-				actionText="Create Proposal"
+				actionText="Start New Project Proposal"
 				columnWidths={["w-[350px]", "w-[200px]", "w-[180px]", "w-[150px]"]}
 			/>
 		);
@@ -65,7 +70,18 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 		}
 	},
 	loader: async ({ context, deps }) => {
-		if (requireRole(context.auth.user, "Director", "RET Chair")) {
+		const user = context.auth.user;
+		if (!user) return null;
+
+		if (user.roleName === "Faculty") {
+			await Promise.all([
+				context.queryClient.ensureQueryData(facultyProjectsQueryOptions()),
+				context.queryClient.ensureQueryData(facultyProposalsQueryOptions()),
+			]);
+			return null;
+		}
+
+		if (requireRole(user, "Director", "RET Chair")) {
 			return null;
 		}
 
@@ -134,6 +150,14 @@ function ProjectsIndexPage() {
 			params: { projectId },
 		});
 	};
+
+	if (!user) {
+		return null;
+	}
+
+	if (user.roleName === "Faculty") {
+		return <FacultyProjectHubPage user={user} />;
+	}
 
 	if (isDirector(user)) {
 		return (

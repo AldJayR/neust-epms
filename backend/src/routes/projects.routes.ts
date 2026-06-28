@@ -38,6 +38,7 @@ const ProjectSchema = z
 		proposalId: z.string().uuid(),
 		moaId: z.string().uuid().nullable(),
 		title: z.string().optional(),
+		extensionCategory: z.string().optional(),
 		targetStartDate: z.string().nullable(),
 		targetEndDate: z.string().nullable(),
 		actualEndDate: z.string().nullable(),
@@ -163,12 +164,22 @@ app.openapi(listRoute, async (c) => {
 		.from(proposals)
 		.where(and(...proposalConditions));
 
+	const leaderMembers = db
+		.select({
+			proposalId: proposalMembers.proposalId,
+			userId: proposalMembers.userId,
+		})
+		.from(proposalMembers)
+		.where(eq(proposalMembers.projectRole, "Project Leader"))
+		.as("leader_members");
+
 	const rows = await db
 		.select({
 			projectId: projects.projectId,
 			proposalId: projects.proposalId,
 			moaId: projects.moaId,
 			title: proposals.title,
+			extensionCategory: proposals.extensionCategory,
 			targetStartDate: proposals.targetStartDate,
 			targetEndDate: proposals.targetEndDate,
 			actualEndDate: projects.actualEndDate,
@@ -182,7 +193,8 @@ app.openapi(listRoute, async (c) => {
 		})
 		.from(projects)
 		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-		.leftJoin(users, eq(proposals.projectLeaderId, users.userId))
+		.leftJoin(leaderMembers, eq(projects.proposalId, leaderMembers.proposalId))
+		.leftJoin(users, eq(leaderMembers.userId, users.userId))
 		.where(
 			and(
 				isNull(projects.archivedAt),

@@ -55,6 +55,7 @@ export interface FacultyProjectItem {
 	proposalId: string;
 	moaId: string | null;
 	title?: string;
+	extensionCategory?: string;
 	targetStartDate?: string | null;
 	targetEndDate?: string | null;
 	actualEndDate?: string | null;
