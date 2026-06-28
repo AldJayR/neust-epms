@@ -27,6 +27,7 @@ import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
 import { proposals } from "../db/schema/proposals.js";
 import { roles } from "../db/schema/roles.js";
 import { sdgs } from "../db/schema/sdgs.js";
+import { specialOrders } from "../db/schema/special-orders.js";
 import { users } from "../db/schema/users.js";
 import { env } from "../env.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
@@ -967,6 +968,15 @@ const ProjectDetailsMemberSchema = z.object({
 	userId: z.string(),
 	name: z.string(),
 	role: z.string(),
+	specialOrder: z
+		.object({
+			specialOrderId: z.string(),
+			soNumber: z.string(),
+			storagePath: z.string().nullable(),
+			dateIssued: z.string().nullable(),
+			status: z.string(),
+		})
+		.nullable(),
 });
 
 const ProjectDetailsHistoryItemSchema = z.object({
@@ -1109,13 +1119,14 @@ app.openapi(projectDetailsRoute, async (c) => {
 		}
 	}
 
-	const [memberRows, documentRows, reviewRows, sdgRows] = await Promise.all([
+	const [memberRows, documentRows, reviewRows, sdgRows, specialOrderRows] = await Promise.all([
 		db
 			.select({
 				userId: users.userId,
 				firstName: users.firstName,
 				lastName: users.lastName,
 				role: proposalMembers.projectRole,
+				memberId: proposalMembers.memberId,
 			})
 			.from(proposalMembers)
 			.innerJoin(users, eq(proposalMembers.userId, users.userId))
@@ -1155,6 +1166,24 @@ app.openapi(projectDetailsRoute, async (c) => {
 			.innerJoin(sdgs, eq(proposalSdgs.sdgId, sdgs.sdgId))
 			.where(eq(proposalSdgs.proposalId, proposalId))
 			.orderBy(sdgs.sdgNumber),
+
+		db
+			.select({
+				memberId: specialOrders.memberId,
+				specialOrderId: specialOrders.specialOrderId,
+				soNumber: specialOrders.soNumber,
+				storagePath: specialOrders.storagePath,
+				dateIssued: specialOrders.dateIssued,
+				status: specialOrders.status,
+			})
+			.from(specialOrders)
+			.innerJoin(proposalMembers, eq(specialOrders.memberId, proposalMembers.memberId))
+			.where(
+				and(
+					eq(proposalMembers.proposalId, proposalId),
+					isNull(specialOrders.archivedAt),
+				),
+			),
 	]);
 
 	const months = [
@@ -1179,10 +1208,31 @@ app.openapi(projectDetailsRoute, async (c) => {
 	const budgetNeust = Number(row.budgetNeust ?? 0);
 	const budgetPartner = Number(row.budgetPartner ?? 0);
 
+	const specialOrderMap = new Map<
+		string,
+		{
+			specialOrderId: string;
+			soNumber: string;
+			storagePath: string | null;
+			dateIssued: string | null;
+			status: string;
+		}
+	>();
+	for (const so of specialOrderRows) {
+		specialOrderMap.set(so.memberId, {
+			specialOrderId: so.specialOrderId,
+			soNumber: so.soNumber,
+			storagePath: so.storagePath,
+			dateIssued: so.dateIssued?.toISOString() ?? null,
+			status: so.status,
+		});
+	}
+
 	const members = memberRows.map((m) => ({
 		userId: m.userId,
 		name: `${m.firstName} ${m.lastName}`,
 		role: m.role,
+		specialOrder: specialOrderMap.get(m.memberId) ?? null,
 	}));
 
 	const history: Array<{
