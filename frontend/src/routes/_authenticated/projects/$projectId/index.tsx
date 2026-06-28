@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId/")({
 	beforeLoad: ({ context }) => {
-		if (requireRole(context.auth.user, "Director", "RET Chair")) {
+		if (requireRole(context.auth.user, "Director", "RET Chair", "Faculty")) {
 			throw redirect({
 				to: "/dashboard",
 				search: { page: 1, pageSize: 10 },
@@ -24,6 +24,13 @@ export const Route = createFileRoute("/_authenticated/projects/$projectId/")({
 
 function ProjectDetailsRoutePage() {
 	const { projectId } = Route.useParams();
+	const { user } = Route.useRouteContext();
 
-	return <ProjectDetailsPage proposalId={projectId} />;
+	return (
+		<ProjectDetailsPage
+			proposalId={projectId}
+			currentUserId={user.userId}
+			currentUserRole={user.roleName}
+		/>
+	);
 }
