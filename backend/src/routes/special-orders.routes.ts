@@ -597,7 +597,7 @@ app.openapi(getUrlRoute, async (c) => {
 	// I.5: Authorization check — Director, Project Leader of the proposal, or the member themselves
 	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
 		const [member] = await db
-			.select({ memberId: proposalMembers.memberId, proposalId: proposalMembers.proposalId })
+			.select({ memberId: proposalMembers.memberId, proposalId: proposalMembers.proposalId, userId: proposalMembers.userId })
 			.from(proposalMembers)
 			.where(eq(proposalMembers.memberId, order.memberId))
 			.limit(1);
@@ -606,7 +606,7 @@ app.openapi(getUrlRoute, async (c) => {
 			throw new ApiError(404, "MEMBER_NOT_FOUND", "Proposal member not found");
 		}
 
-		const isMember = member.memberId === order.memberId;
+		const isMember = member.userId === user.userId;
 
 		let isProjectLeader = false;
 		if (!isMember) {
