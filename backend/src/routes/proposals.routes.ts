@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, count, desc, eq, ilike, isNull, or, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, ilike, isNull, or, type SQL, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { beneficiarySectors } from "../db/schema/beneficiary-sectors.js";
 import { proposalBeneficiaries } from "../db/schema/proposal-beneficiaries.js";

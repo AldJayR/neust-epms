@@ -130,27 +130,37 @@ const getFacultyProjectsFn = createServerFn({ method: "GET" })
 
 // ── Query Options ─────────────────────────────────────────
 
-export function facultyProposalsQueryOptions(params: {
-	page: number;
-	limit: number;
+export function facultyProposalsQueryOptions(params?: {
+	page?: number;
+	limit?: number;
 	search?: string;
 	status?: string;
 }) {
+	const data = {
+		page: params?.page ?? 1,
+		limit: params?.limit ?? 100,
+		search: params?.search,
+		status: params?.status,
+	};
 	return queryOptions({
-		queryKey: ["faculty", "proposals", params],
-		queryFn: () => getFacultyProposalsFn({ data: params }),
+		queryKey: ["faculty", "proposals", data],
+		queryFn: () => getFacultyProposalsFn({ data }),
 		staleTime: FACULTY_QUERY_STALE_TIME_MS,
 		placeholderData: keepPreviousData,
 	});
 }
 
-export function facultyProjectsQueryOptions(params: {
-	page: number;
-	limit: number;
+export function facultyProjectsQueryOptions(params?: {
+	page?: number;
+	limit?: number;
 }) {
+	const data = {
+		page: params?.page ?? 1,
+		limit: params?.limit ?? 100,
+	};
 	return queryOptions({
-		queryKey: ["faculty", "projects", params],
-		queryFn: () => getFacultyProjectsFn({ data: params }),
+		queryKey: ["faculty", "projects", data],
+		queryFn: () => getFacultyProjectsFn({ data }),
 		staleTime: FACULTY_QUERY_STALE_TIME_MS,
 		placeholderData: keepPreviousData,
 	});

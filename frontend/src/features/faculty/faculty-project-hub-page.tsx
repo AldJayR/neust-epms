@@ -486,8 +486,9 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 
 			{/* Create Proposal Modal */}
 			<CreateProposalModal
-				isOpen={isCreateModalOpen}
-				onClose={() => setIsCreateModalOpen(false)}
+				open={isCreateModalOpen}
+				onOpenChange={setIsCreateModalOpen}
+				user={user}
 			/>
 		</div>
 	);
