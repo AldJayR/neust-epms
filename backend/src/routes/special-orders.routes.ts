@@ -462,7 +462,7 @@ app.openapi(uploadRoute, async (c) => {
 			archivedAt: specialOrders.archivedAt,
 		})
 		.from(specialOrders)
-		.where(eq(specialOrders.memberId, memberId))
+		.where(and(eq(specialOrders.memberId, memberId), isNull(specialOrders.archivedAt)))
 		.limit(1);
 
 	let record;

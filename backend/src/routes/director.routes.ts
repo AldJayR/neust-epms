@@ -965,6 +965,7 @@ app.openapi(dashboardRoute, async (c) => {
 // ── Project Details Endpoint ──
 
 const ProjectDetailsMemberSchema = z.object({
+	memberId: z.string(),
 	userId: z.string(),
 	name: z.string(),
 	role: z.string(),
@@ -976,7 +977,8 @@ const ProjectDetailsMemberSchema = z.object({
 			dateIssued: z.string().nullable(),
 			status: z.string(),
 		})
-		.nullable(),
+		.nullable()
+		.optional(),
 });
 
 const ProjectDetailsHistoryItemSchema = z.object({
@@ -1230,6 +1232,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 	}
 
 	const members = memberRows.map((m) => ({
+		memberId: m.memberId,
 		userId: m.userId,
 		name: `${m.firstName} ${m.lastName}`,
 		role: m.role,

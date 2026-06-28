@@ -163,6 +163,7 @@ export interface ProjectMemberSpecialOrder {
 }
 
 export interface ProjectMember {
+	memberId: string;
 	userId: string;
 	name: string;
 	role: string;

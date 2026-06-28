@@ -96,7 +96,7 @@ function ProjectOverviewCard({
 			const token = await getAccessTokenForUpload();
 			const formData = new FormData();
 			formData.append("file", file);
-			formData.append("memberId", member.userId);
+			formData.append("memberId", member.memberId);
 			formData.append("soNumber", soNumber);
 
 			const response = await fetch(`${API_BASE}/special-orders/upload`, {
