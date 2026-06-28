@@ -123,6 +123,8 @@ const DashboardMetricSchema = z.object({
 
 const ChartPointSchema = z.object({
 	label: z.string(),
+	department: z.string(),
+	departmentCode: z.string(),
 	value: z.number(),
 });
 
@@ -876,12 +878,15 @@ app.openapi(dashboardRoute, async (c) => {
 	const chartRows = await db
 		.select({
 			label: campuses.campusName,
+			department: departments.departmentName,
+			departmentCode: departments.departmentCode,
 			value: count(),
 		})
 		.from(proposals)
 		.innerJoin(campuses, eq(proposals.campusId, campuses.campusId))
+		.innerJoin(departments, eq(proposals.departmentId, departments.departmentId))
 		.where(and(...chartConditions))
-		.groupBy(campuses.campusName);
+		.groupBy(campuses.campusName, departments.departmentName, departments.departmentCode);
 
 	const recentLogRows = await db
 		.select({
@@ -934,7 +939,12 @@ app.openapi(dashboardRoute, async (c) => {
 				pendingClosureProjects: Number(projectMetrics[0]?.pendingClosure ?? 0),
 			},
 			chartData: chartRows
-				.map((row) => ({ label: row.label, value: Number(row.value ?? 0) }))
+				.map((row) => ({
+					label: row.label,
+					department: row.department,
+					departmentCode: row.departmentCode,
+					value: Number(row.value ?? 0),
+				}))
 				.sort((a, b) => b.value - a.value),
 			recentActivities: recentLogRows.map((row) => ({
 				title: activityTitle(row.action, row.tableAffected),

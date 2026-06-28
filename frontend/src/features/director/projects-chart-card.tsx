@@ -11,8 +11,10 @@ import {
 
 const ProjectsChart = React.lazy(() => import("./projects-chart"));
 
+import type { DirectorChartPoint } from "@/lib/dashboard.functions";
+
 interface ProjectsChartCardProps {
-	chartData: { label: string; value: number }[];
+	chartData: DirectorChartPoint[];
 	campuses: { id: number; name: string }[];
 	selectedCampus: string;
 	onCampusChange: (campus: string) => void;
@@ -24,14 +26,27 @@ export default function ProjectsChartCard({
 	selectedCampus,
 	onCampusChange,
 }: ProjectsChartCardProps) {
+	const filtered = selectedCampus
+		? chartData.filter((d) => d.label === selectedCampus)
+		: chartData;
+
+	const deptMap = new Map<string, number>();
+	for (const d of filtered) {
+		deptMap.set(d.departmentCode, (deptMap.get(d.departmentCode) ?? 0) + d.value);
+	}
+	const bars = Array.from(deptMap, ([label, value]) => ({ label, value }))
+		.sort((a, b) => b.value - a.value);
+
 	return (
-		<div className="h-[370px] overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">
+		<div className="h-[370px] overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px var(--shadow-card)]">
 			<div className="flex h-[72px] items-start justify-between border-b border-white px-6 pt-4 pb-3">
 				<div className="leading-tight">
 					<p className="text-sm font-semibold leading-5 text-foreground">
 						Total Projects
 					</p>
-					<p className="text-sm leading-5 text-muted-foreground">per college</p>
+					<p className="text-sm leading-5 text-muted-foreground">
+						per college/department
+					</p>
 				</div>
 				<Select
 					value={selectedCampus}
@@ -72,7 +87,7 @@ export default function ProjectsChartCard({
 							</div>
 						}
 					>
-						<ProjectsChart chartData={chartData} />
+						<ProjectsChart chartData={bars} />
 					</React.Suspense>
 				</ClientOnly>
 			</div>

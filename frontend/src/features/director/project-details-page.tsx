@@ -394,8 +394,12 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 								</div>
 								<p className="text-[13px] text-muted-foreground">
 									{item.status === "Returned"
-										? "Returned by Technical Panel"
-										: `Uploaded by ${item.actorName}`}
+										? `Returned by ${item.actorName}`
+										: item.status === "Endorsed"
+											? `Endorsed by ${item.actorName}`
+											: item.status === "Approved"
+												? `Approved by ${item.actorName}`
+												: `Uploaded by ${item.actorName}`}
 								</p>
 								{item.comment && (
 									<div className="rounded-lg border border-dashed border-border bg-card p-3 text-xs italic text-muted-foreground">

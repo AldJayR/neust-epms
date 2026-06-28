@@ -121,7 +121,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	const isReviewable =
 		data?.status === "Endorsed" || data?.status === "Pending Review";
 
-	const canAnnotate = !(isRETChair(user) && data?.bypassedRetChair);
+	const canAnnotate = !(isRETChair(user) && (data?.bypassedRetChair || endorsement));
 
 	const handleApprove = (comments?: string) => {
 		const decision = data?.status === "Endorsed" ? "Approved" : "Endorsed";
@@ -234,7 +234,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 										});
 									} : undefined}
 									isTheaterMode={isTheaterMode}
-									onToggleTheaterMode={canAnnotate ? () => setIsTheaterMode(!isTheaterMode) : undefined}
+									onToggleTheaterMode={() => setIsTheaterMode(!isTheaterMode)}
 								/>
 							) : (
 								<div className="flex items-center justify-center h-full text-muted-foreground">

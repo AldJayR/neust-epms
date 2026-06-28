@@ -46,6 +46,8 @@ export interface DirectorDashboardMetric {
 
 export interface DirectorChartPoint {
 	label: string;
+	department: string;
+	departmentCode: string;
 	value: number;
 }
 
