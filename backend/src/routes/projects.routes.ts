@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, count, desc, eq, inArray, isNull, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, type SQL, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
 import { projectReports } from "../db/schema/project-reports.js";
@@ -49,6 +49,7 @@ const ProjectSchema = z
 		leaderFirstName: z.string().nullable().optional(),
 		leaderLastName: z.string().nullable().optional(),
 		leaderAcademicRank: z.string().nullable().optional(),
+		isMember: z.boolean().optional(),
 	})
 	.openapi("Project");
 
@@ -173,6 +174,15 @@ app.openapi(listRoute, async (c) => {
 		.where(eq(proposalMembers.projectRole, "Project Leader"))
 		.as("leader_members");
 
+	const userMemberSubquery = db
+		.select({
+			proposalId: proposalMembers.proposalId,
+			isMember: sql<boolean>`true`.as("is_member"),
+		})
+		.from(proposalMembers)
+		.where(eq(proposalMembers.userId, user.userId))
+		.as("user_member");
+
 	const rows = await db
 		.select({
 			projectId: projects.projectId,
@@ -190,11 +200,16 @@ app.openapi(listRoute, async (c) => {
 			leaderFirstName: users.firstName,
 			leaderLastName: users.lastName,
 			leaderAcademicRank: users.academicRank,
+			isMember: sql<boolean>`COALESCE(${userMemberSubquery.isMember}, false)`,
 		})
 		.from(projects)
 		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
 		.leftJoin(leaderMembers, eq(projects.proposalId, leaderMembers.proposalId))
 		.leftJoin(users, eq(leaderMembers.userId, users.userId))
+		.leftJoin(
+			userMemberSubquery,
+			eq(projects.proposalId, userMemberSubquery.proposalId),
+		)
 		.where(
 			and(
 				isNull(projects.archivedAt),

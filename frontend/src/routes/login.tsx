@@ -44,6 +44,7 @@ export const Route = createFileRoute("/login")({
 			throw redirect({ to: target });
 		}
 	},
+	pendingComponent: () => null,
 	component: LoginPage,
 });
 

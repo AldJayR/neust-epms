@@ -43,6 +43,7 @@ export interface FacultyProposalItem {
 	leaderFirstName?: string | null;
 	leaderLastName?: string | null;
 	leaderAcademicRank?: string | null;
+	isMember?: boolean;
 }
 
 export interface FacultyProposalListResponse {
@@ -65,6 +66,7 @@ export interface FacultyProjectItem {
 	leaderFirstName?: string | null;
 	leaderLastName?: string | null;
 	leaderAcademicRank?: string | null;
+	isMember?: boolean;
 }
 
 export interface FacultyProjectListResponse {

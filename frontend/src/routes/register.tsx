@@ -61,6 +61,7 @@ export const Route = createFileRoute("/register")({
 			}),
 		]);
 	},
+	pendingComponent: () => null,
 	component: RegisterRoute,
 });
 

@@ -70,6 +70,7 @@ const ProposalSchema = z
 		leaderFirstName: z.string().nullable().optional(),
 		leaderLastName: z.string().nullable().optional(),
 		leaderAcademicRank: z.string().nullable().optional(),
+		isMember: z.boolean().optional(),
 	})
 	.openapi("Proposal");
 
@@ -226,8 +227,17 @@ app.openapi(listRoute, async (c) => {
 			userId: proposalMembers.userId,
 		})
 		.from(proposalMembers)
-		.where(eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE))
+		.where(eq(proposalMembers.projectRole, "Project Leader"))
 		.as("leader_members");
+
+	const userMemberSubquery = db
+		.select({
+			proposalId: proposalMembers.proposalId,
+			isMember: sql<boolean>`true`.as("is_member"),
+		})
+		.from(proposalMembers)
+		.where(eq(proposalMembers.userId, user.userId))
+		.as("user_member");
 
 	const rows = await db
 		.select({
@@ -251,6 +261,7 @@ app.openapi(listRoute, async (c) => {
 			leaderFirstName: users.firstName,
 			leaderLastName: users.lastName,
 			leaderAcademicRank: users.academicRank,
+			isMember: sql<boolean>`COALESCE(${userMemberSubquery.isMember}, false)`,
 		})
 		.from(proposals)
 		.leftJoin(
@@ -258,6 +269,10 @@ app.openapi(listRoute, async (c) => {
 			eq(proposals.proposalId, leaderSubquery.proposalId),
 		)
 		.leftJoin(users, eq(leaderSubquery.userId, users.userId))
+		.leftJoin(
+			userMemberSubquery,
+			eq(proposals.proposalId, userMemberSubquery.proposalId),
+		)
 		.where(and(...whereConditions))
 		.orderBy(desc(proposals.createdAt))
 		.limit(limit)

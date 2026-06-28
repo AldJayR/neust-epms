@@ -70,6 +70,7 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 				status: p.projectStatus, // Ongoing, Completed, Closed, etc.
 				isLeader,
 				isProject: true,
+				isMember: p.isMember,
 			};
 		});
 
@@ -88,6 +89,7 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 				status: p.status, // Draft, Pending Review, Returned, Rejected
 				isLeader,
 				isProject: false,
+				isMember: p.isMember,
 			};
 		});
 
@@ -127,13 +129,7 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 	const tabFilteredItems = useMemo(() => {
 		if (activeTab === "my") {
 			// In "My Projects" tab: filter items where current user is Leader or Member.
-			// Since we checked isLeader, isMember is when isLeader is false. But wait!
-			// In a real database, they could be collaborators. If they are in the dataset, they are relevant.
-			// Let's filter where isLeader is true for My Projects, or they are associated. Since we only fetch
-			// department-wide items, let's keep all items under "college" tab, and items where they are Leader/Member under "my" tab.
-			// Wait, let's show all items under "College-wide Projects" and items where they are Project Leader (isLeader === true) or member (isLeader === false but they are in the list) under "My Projects".
-			// Since we don't have member list detail on this listing, let's assume they are either leader or member of all items they created or joined. Let's just filter by isLeader: true/false.
-			return allItems.filter((item) => item.isLeader || !item.isLeader); 
+			return allItems.filter((item) => item.isLeader || item.isMember); 
 		}
 		return allItems;
 	}, [allItems, activeTab]);

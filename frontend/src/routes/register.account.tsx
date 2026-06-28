@@ -42,6 +42,7 @@ export const Route = createFileRoute("/register/account")({
 			throw redirect({ to: "/dashboard", search: { page: 1, pageSize: 10 } });
 		}
 	},
+	pendingComponent: () => null,
 	component: RegisterStepTwo,
 });
 
@@ -158,7 +159,7 @@ function RegisterStepTwo() {
 				</p>
 				<Link
 					to="/login"
-					className="mt-6 inline-block rounded-lg bg-brand-primary px-6 py-2 text-sm font-medium text-white hover:bg-brand-primary-hover"
+					className="mt-6 inline-block rounded-lg bg-brand-primary px-6 py-2 text-sm font-medium !text-white hover:bg-brand-primary-hover"
 				>
 					Go to Login
 				</Link>

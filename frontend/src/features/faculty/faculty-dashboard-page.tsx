@@ -73,6 +73,7 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 				status: p.projectStatus, // Ongoing, Completed, Approved
 				isLeader,
 				isProject: true,
+				isMember: p.isMember,
 			};
 		}),
 		...activeProposals.map((p) => {
@@ -90,16 +91,22 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 				status: p.status, // Pending Review, Draft, Returned, Rejected
 				isLeader,
 				isProject: false,
+				isMember: p.isMember,
 			};
 		}),
 	];
 
+	// Filter down to only projects/proposals where user is member or leader
+	const userItems = combinedItems.filter(
+		(item) => item.isMember || item.isLeader,
+	);
+
 	// Calculate metrics
-	const myTotalSubmissions = combinedItems.length;
-	const ongoingProjects = combinedItems.filter(
+	const myTotalSubmissions = userItems.length;
+	const ongoingProjects = userItems.filter(
 		(item) => item.status === "Ongoing",
 	).length;
-	const proposalsSubmitted = combinedItems.filter(
+	const proposalsSubmitted = userItems.filter(
 		(item) => item.status === "Pending Review",
 	).length;
 
@@ -210,12 +217,12 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 							</div>
 						</div>
 					))
-				) : combinedItems.length === 0 ? (
+				) : userItems.length === 0 ? (
 					<div className="bg-white border border-[#ebebeb] rounded-[12px] p-8 text-center text-muted-foreground shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-						No project proposals or ongoing projects found for your department.
+						No project proposals or ongoing projects found for you.
 					</div>
 				) : (
-					combinedItems.map((item) => (
+					userItems.map((item) => (
 						<div
 							key={item.id}
 							className="bg-white border border-[#ebebeb] rounded-[12px] p-[15px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] flex flex-col gap-[10px] w-full"
