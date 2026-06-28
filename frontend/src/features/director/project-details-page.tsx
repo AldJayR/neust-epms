@@ -1,6 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
+import { useState } from "react";
 import { ChevronRight, Download, Eye, FileText, User } from "lucide-react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { DetailsRow } from "@/components/custom/details-row";
@@ -24,12 +25,21 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { projectDetailsQueryOptions } from "@/lib/dashboard.functions";
+import {
+	API_BASE,
+	type ProjectMember,
+	getAccessTokenForUpload,
+	getSpecialOrderSignedUrlFn,
+	projectDetailsQueryOptions,
+} from "@/lib/dashboard.functions";
 import { ProjectDetailsSkeleton } from "./project-details-skeleton";
 
 interface ProjectDetailsPageProps {
 	proposalId: string;
+	currentUserId: string;
+	currentUserRole: string;
 }
 
 interface ProjectOverviewCardProps {
@@ -48,15 +58,84 @@ interface ProjectOverviewCardProps {
 			partner: number;
 		};
 	};
-	members: {
-		userId: string;
-		name: string;
-		avatarUrl?: string;
-		role: string;
-	}[];
+	members: ProjectMember[];
+	currentUserId: string;
+	currentUserRole: string;
+	proposalId: string;
 }
 
-function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
+function ProjectOverviewCard({
+	metadata,
+	members,
+	currentUserId,
+	currentUserRole,
+	proposalId,
+}: ProjectOverviewCardProps) {
+	const queryClient = useQueryClient();
+	const [uploadingMemberId, setUploadingMemberId] = useState<string | null>(null);
+	const [soNumbers, setSoNumbers] = useState<Record<string, string>>({});
+	const [files, setFiles] = useState<Record<string, File | null>>({});
+	const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
+
+	function canUpload(member: ProjectMember): boolean {
+		if (currentUserRole === "Director") return true;
+		if (member.userId === currentUserId && member.role === "Project Leader")
+			return true;
+		return false;
+	}
+
+	const handleUpload = async (member: ProjectMember) => {
+		const soNumber = soNumbers[member.userId];
+		const file = files[member.userId];
+		if (!soNumber || !file) return;
+
+		setUploadingMemberId(member.userId);
+		setUploadErrors((prev) => ({ ...prev, [member.userId]: "" }));
+
+		try {
+			const token = await getAccessTokenForUpload();
+			const formData = new FormData();
+			formData.append("file", file);
+			formData.append("memberId", member.userId);
+			formData.append("soNumber", soNumber);
+
+			const response = await fetch(`${API_BASE}/special-orders/upload`, {
+				method: "POST",
+				headers: { Authorization: `Bearer ${token}` },
+				body: formData,
+			});
+
+			if (!response.ok) {
+				const err = await response.json();
+				throw new Error(err.error?.message ?? "Upload failed");
+			}
+
+			queryClient.invalidateQueries({
+				queryKey: ["dashboard", "proposals", proposalId],
+			});
+
+			setSoNumbers((prev) => ({ ...prev, [member.userId]: "" }));
+			setFiles((prev) => ({ ...prev, [member.userId]: null }));
+		} catch (err) {
+			setUploadErrors((prev) => ({
+				...prev,
+				[member.userId]: err instanceof Error ? err.message : "Upload failed",
+			}));
+		} finally {
+			setUploadingMemberId(null);
+		}
+	};
+
+	const handleViewSO = async (specialOrderId: string) => {
+		try {
+			const result = await getSpecialOrderSignedUrlFn({
+				data: specialOrderId,
+			});
+			window.open(result.url, "_blank", "noopener,noreferrer");
+		} catch (err) {
+			console.error("Failed to get signed URL:", err);
+		}
+	};
 	return (
 		<PageCard>
 			<div className="bg-card border-b border-border px-6 py-3">
@@ -144,22 +223,101 @@ function ProjectOverviewCard({ metadata, members }: ProjectOverviewCardProps) {
 							{members.map((member) => (
 								<li
 									key={member.userId}
-									className="flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-card"
+									className="flex flex-col gap-2 p-2 rounded-lg transition-colors hover:bg-card"
 								>
-									<Avatar className="size-9 border border-border">
-										<AvatarImage src={member.avatarUrl} alt={member.name} />
-										<AvatarFallback className="bg-gray-100 text-gray-600">
-											<User className="size-4" />
-										</AvatarFallback>
-									</Avatar>
-									<div className="flex flex-col">
-										<span className="text-sm font-medium text-foreground">
-											{member.name}
-										</span>
-										<span className="text-xs text-muted-foreground">
-											{member.role}
-										</span>
+									<div className="flex items-center gap-3">
+										<Avatar className="size-9 border border-border">
+											<AvatarImage
+												src={member.avatarUrl}
+												alt={member.name}
+											/>
+											<AvatarFallback className="bg-gray-100 text-gray-600">
+												<User className="size-4" />
+											</AvatarFallback>
+										</Avatar>
+										<div className="flex flex-col flex-1 min-w-0">
+											<span className="text-sm font-medium text-foreground">
+												{member.name}
+											</span>
+											<span className="text-xs text-muted-foreground">
+												{member.role}
+											</span>
+										</div>
+
+										{member.specialOrder ? (
+											<div className="flex items-center gap-2">
+												<Badge
+													variant="outline"
+													className="text-green-600 border-green-200 bg-green-50 text-[10px] px-1.5"
+												>
+													{member.specialOrder.soNumber}
+												</Badge>
+												<Button
+													size="sm"
+													variant="outline"
+													className="h-7 text-xs"
+													onClick={() =>
+														handleViewSO(
+															member.specialOrder!.specialOrderId,
+														)
+													}
+												>
+													<Eye className="mr-1 size-3" />
+													View
+												</Button>
+											</div>
+										) : canUpload(member) ? (
+											<div className="flex items-center gap-2">
+												<Input
+													type="text"
+													placeholder="SO#"
+													className="h-7 w-[100px] text-xs"
+													value={soNumbers[member.userId] ?? ""}
+													onChange={(e) =>
+														setSoNumbers((prev) => ({
+															...prev,
+															[member.userId]: e.target.value,
+														}))
+													}
+												/>
+												<Input
+													type="file"
+													accept=".pdf"
+													className="h-7 w-[120px] text-xs file:h-5 file:text-[10px]"
+													onChange={(e) =>
+														setFiles((prev) => ({
+															...prev,
+															[member.userId]:
+																e.target.files?.[0] ?? null,
+														}))
+													}
+												/>
+												<Button
+													size="sm"
+													className="h-7 text-xs"
+													disabled={
+														!soNumbers[member.userId] ||
+														!files[member.userId] ||
+														uploadingMemberId === member.userId
+													}
+													onClick={() => handleUpload(member)}
+												>
+													{uploadingMemberId === member.userId
+														? "Uploading..."
+														: "Upload"}
+												</Button>
+											</div>
+										) : (
+											<span className="text-xs text-muted-foreground">
+												No SO
+											</span>
+										)}
 									</div>
+									{uploadErrors[member.userId] && (
+										<span className="ml-12 text-xs text-red-500">
+											{uploadErrors[member.userId]}
+										</span>
+									)}
 								</li>
 							))}
 						</ul>
@@ -319,7 +477,11 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 	);
 }
 
-export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
+export function ProjectDetailsPage({
+	proposalId,
+	currentUserId,
+	currentUserRole,
+}: ProjectDetailsPageProps) {
 	const { data, isLoading } = useQuery(projectDetailsQueryOptions(proposalId));
 
 	if (isLoading) {
@@ -386,6 +548,9 @@ export function ProjectDetailsPage({ proposalId }: ProjectDetailsPageProps) {
 					<ProjectOverviewCard
 						metadata={data.metadata}
 						members={data.members}
+						currentUserId={currentUserId}
+						currentUserRole={currentUserRole}
+						proposalId={proposalId}
 					/>
 					<DocumentHistoryCard history={data.history} />
 				</div>
