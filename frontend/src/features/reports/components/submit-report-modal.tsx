@@ -1,8 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BrandButton } from "@/components/custom/brand-button";
 import {
 	Dialog,
 	DialogContent,
@@ -51,7 +52,9 @@ export function SubmitReportModal({ open, onOpenChange }: SubmitReportModalProps
 
 	// Fetch projects
 	const { data: projectsData } = useQuery(facultyProjectsQueryOptions());
-	const projects = projectsData?.items ?? [];
+	const projects = (projectsData?.items ?? []).filter(
+		(p) => p.projectStatus === "Ongoing",
+	);
 
 	// Form States
 	const [selectedProjectId, setSelectedProjectId] = useState<string>("");
@@ -69,7 +72,7 @@ export function SubmitReportModal({ open, onOpenChange }: SubmitReportModalProps
 	// Loading phase
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const filteredProjects = useMemo(() => {
+	const filteredProjects = (() => {
 		if (!projectSearch) return projects;
 		// If the search matches the selected project title, don't filter out everything else
 		const selectedProj = projects.find((p) => p.projectId === selectedProjectId);
@@ -79,7 +82,7 @@ export function SubmitReportModal({ open, onOpenChange }: SubmitReportModalProps
 		return projects.filter((p) =>
 			(p.title || "").toLowerCase().includes(projectSearch.toLowerCase()),
 		);
-	}, [projects, projectSearch, selectedProjectId]);
+	})();
 
 	const handleProjectSelect = (val: string | null) => {
 		if (!val) {
@@ -189,7 +192,7 @@ export function SubmitReportModal({ open, onOpenChange }: SubmitReportModalProps
 				onOpenChange(openVal);
 			}}
 		>
-			<DialogContent className="max-w-lg">
+			<DialogContent className="max-w-lg pb-4">
 				<DialogHeader>
 					<DialogTitle>Submit Project Report</DialogTitle>
 				</DialogHeader>
@@ -282,7 +285,7 @@ export function SubmitReportModal({ open, onOpenChange }: SubmitReportModalProps
 					</div>
 
 					{/* Dropzones */}
-					{reportType === "Progress" ? (
+					{reportType === "Progress" && (
 						<div className="flex flex-col gap-1.5">
 							<Label>Progress Report Document</Label>
 							<FileUpload
@@ -316,7 +319,8 @@ export function SubmitReportModal({ open, onOpenChange }: SubmitReportModalProps
 								</FileUploadList>
 							</FileUpload>
 						</div>
-					) : (
+					)}
+					{reportType === "Closure" && (
 						<div className="space-y-4 border border-border rounded-lg p-4 bg-muted/20">
 							<div className="flex flex-col gap-1.5">
 								<Label>Final Accomplishment Report Document</Label>
@@ -390,10 +394,10 @@ export function SubmitReportModal({ open, onOpenChange }: SubmitReportModalProps
 
 					</div>
 
-					<DialogFooter className="mt-6 pt-4 border-t border-border">
+					<DialogFooter className="mt-4 pt-3 pb-0 border-t border-border">
 						<Button
 							type="button"
-							variant="outline"
+							variant="ghost"
 							onClick={() => {
 								onOpenChange(false);
 								resetForm();
@@ -402,7 +406,7 @@ export function SubmitReportModal({ open, onOpenChange }: SubmitReportModalProps
 						>
 							Cancel
 						</Button>
-						<Button type="submit" disabled={isSubmitting}>
+						<BrandButton type="submit" disabled={isSubmitting}>
 							{isSubmitting ? (
 								<>
 									<Loader2 className="mr-2 size-4 animate-spin" />
@@ -411,7 +415,7 @@ export function SubmitReportModal({ open, onOpenChange }: SubmitReportModalProps
 							) : (
 								"Submit Report"
 							)}
-						</Button>
+						</BrandButton>
 					</DialogFooter>
 				</form>
 			</DialogContent>
