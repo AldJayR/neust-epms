@@ -56,7 +56,7 @@ export function SubmitReportModal({ open, onOpenChange }: SubmitReportModalProps
 	// Form States
 	const [selectedProjectId, setSelectedProjectId] = useState<string>("");
 	const [projectSearch, setProjectSearch] = useState("");
-	const [reportType, setReportType] = useState<"Progress" | "Closure">("Progress");
+	const [reportType, setReportType] = useState<"Progress" | "Closure" | "">("");
 	const [periodStart, setPeriodStart] = useState("");
 	const [periodEnd, setPeriodEnd] = useState("");
 	const [remarks, setRemarks] = useState("");
@@ -95,7 +95,7 @@ export function SubmitReportModal({ open, onOpenChange }: SubmitReportModalProps
 	const resetForm = () => {
 		setSelectedProjectId("");
 		setProjectSearch("");
-		setReportType("Progress");
+		setReportType("");
 		setPeriodStart("");
 		setPeriodEnd("");
 		setRemarks("");
@@ -109,6 +109,11 @@ export function SubmitReportModal({ open, onOpenChange }: SubmitReportModalProps
 
 		if (!selectedProjectId) {
 			toast.error("Please select a project.");
+			return;
+		}
+
+		if (!reportType) {
+			toast.error("Please select a report type.");
 			return;
 		}
 
@@ -189,8 +194,9 @@ export function SubmitReportModal({ open, onOpenChange }: SubmitReportModalProps
 					<DialogTitle>Submit Project Report</DialogTitle>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-6 py-2">
-					{/* Project Selector */}
+				<form onSubmit={handleSubmit} className="py-2">
+					<div className="max-h-[60vh] overflow-y-auto px-1 py-1 space-y-4 scrollbar-thin">
+						{/* Project Selector */}
 					<div className="flex flex-col gap-1.5 relative">
 						<Label>Project</Label>
 						<Combobox
@@ -382,7 +388,9 @@ export function SubmitReportModal({ open, onOpenChange }: SubmitReportModalProps
 						</div>
 					)}
 
-					<DialogFooter className="mt-6">
+					</div>
+
+					<DialogFooter className="mt-6 pt-4 border-t border-border">
 						<Button
 							type="button"
 							variant="outline"
