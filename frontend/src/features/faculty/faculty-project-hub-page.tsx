@@ -250,9 +250,7 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 			<div className="grid gap-6 md:grid-cols-3 w-full">
 				<MetricCard
 					label="Projects as Leader"
-					value={
-						isLoading ? undefined : String(projectsAsLeader).padStart(2, "0")
-					}
+					value={isLoading ? undefined : projectsAsLeader}
 					isLoading={isLoading}
 				/>
 				<MetricCard
@@ -305,8 +303,8 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 				}
 				activeFilters={{
 					search: searchQuery,
-					category: selectedCategory,
-					status: selectedStatus,
+					category: selectedCategory === "all" ? undefined : selectedCategory,
+					status: selectedStatus === "all" ? undefined : selectedStatus,
 				}}
 				emptyMessage="No projects found matching the criteria."
 				ariaLabel="Projects"

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { SortingState } from "@tanstack/react-table";
-import { Download, ListFilter } from "lucide-react";
+import { Download, ListFilter, Plus } from "lucide-react";
 import { useState, useMemo } from "react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
@@ -26,6 +26,7 @@ import {
 } from "@/lib/dashboard.functions";
 import { facultyProjectsQueryOptions } from "@/lib/faculty.functions";
 import { useRouterState } from "@tanstack/react-router";
+import { SubmitReportModal } from "../reports/components/submit-report-modal";
 
 const formatDate = (dateStr: string) => {
 	try {
@@ -62,6 +63,7 @@ export function ReportsPage() {
 		"All",
 	);
 	const [sorting, setSorting] = useState<SortingState>([]);
+	const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
 	const limit = 10;
 
 	const { data: listData, isLoading: listLoading } = useQuery(
@@ -288,10 +290,21 @@ export function ReportsPage() {
 			<PageHeader
 				title={<h1 className="text-2xl font-semibold text-heading">Reports</h1>}
 				actions={
-					<BrandButton className="gap-2">
-						<Download className="size-4" />
-						Export Reports
-					</BrandButton>
+					<div className="flex items-center gap-3">
+						{isFaculty && (
+							<BrandButton
+								className="gap-2"
+								onClick={() => setIsSubmitModalOpen(true)}
+							>
+								<Plus className="size-4" />
+								Submit Report
+							</BrandButton>
+						)}
+						<BrandButton variant="outline" className="gap-2">
+							<Download className="size-4" />
+							Export Reports
+						</BrandButton>
+					</div>
 				}
 			/>
 
@@ -382,6 +395,13 @@ export function ReportsPage() {
 				emptyMessage="No reports found."
 				ariaLabel="Reports"
 			/>
+
+			{isFaculty && (
+				<SubmitReportModal
+					open={isSubmitModalOpen}
+					onOpenChange={setIsSubmitModalOpen}
+				/>
+			)}
 		</div>
 	);
 }

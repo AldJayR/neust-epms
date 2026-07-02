@@ -622,3 +622,40 @@ export const emailReportFn = createServerFn({ method: "POST" })
 
 		return (await response.json()) as { success: boolean; message: string };
 	});
+
+export const submitReportFn = createServerFn({ method: "POST" })
+	.validator(
+		z.object({
+			projectId: z.string().uuid(),
+			reportType: z.enum(["Progress", "Final Accomplishment", "Terminal"]),
+			remarks: z.string().optional(),
+			periodStart: z.string().optional(),
+			periodEnd: z.string().optional(),
+		}),
+	)
+	.handler(async ({ data }) => {
+		const { authorizeSessionUser, getValidAccessToken } = await import(
+			"./session.server"
+		);
+		await authorizeSessionUser("Faculty", "RET Chair", "Director");
+		const token = await getValidAccessToken();
+
+		const response = await fetch(`${API_BASE}/reports`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(data),
+		});
+
+		if (!response.ok) {
+			const message = await getErrorMessage(
+				response,
+				"Failed to submit report",
+			);
+			throw new Error(message);
+		}
+
+		return (await response.json()) as ReportItem;
+	});
