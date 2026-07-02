@@ -55,29 +55,31 @@ export function ProposalStepDocuments({
 						toast.error(message);
 					}}
 				>
-					<FileUploadDropzone className="border-2 border-dashed border-border rounded-xl p-8 bg-card hover:bg-primary/5">
-						<div className="p-4 bg-primary/10 rounded-full">
-							<Upload className="size-8 text-primary" />
-						</div>
-						<div className="text-center">
-							<p className="text-sm font-medium">
-								Click to upload or drag and drop
-							</p>
-							<p className="text-xs text-muted-foreground mt-1">
-								Project Proposal PDF (Max 50MB)
-							</p>
-						</div>
-						<FileUploadTrigger
-							render={
-								<Button
-									variant="secondary"
-									className="bg-brand-primary hover:bg-brand-primary-hover text-white"
-								/>
-							}
-						>
-							Select File
-						</FileUploadTrigger>
-					</FileUploadDropzone>
+					{!file && (
+						<FileUploadDropzone className="border-2 border-dashed border-border rounded-xl p-8 bg-card hover:bg-primary/5">
+							<div className="p-4 bg-primary/10 rounded-full">
+								<Upload className="size-8 text-primary" />
+							</div>
+							<div className="text-center">
+								<p className="text-sm font-medium">
+									Click to upload or drag and drop
+								</p>
+								<p className="text-xs text-muted-foreground mt-1">
+									Project Proposal PDF (Max 50MB)
+								</p>
+							</div>
+							<FileUploadTrigger
+								render={
+									<Button
+										variant="secondary"
+										className="bg-brand-primary hover:bg-brand-primary-hover text-white"
+									/>
+								}
+							>
+								Select File
+							</FileUploadTrigger>
+						</FileUploadDropzone>
+					)}
 
 					<FileUploadList>
 						{file && (

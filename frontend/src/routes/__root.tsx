@@ -39,6 +39,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			},
 		};
 	},
+	loader: () => void 0,
 	head: () => ({
 		meta: [
 			{
@@ -120,7 +121,7 @@ function NotFound() {
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-	const isPending = useRouterState({ select: (s) => s.status === "pending" });
+	const isPending = useRouterState({ select: (s) => s.isLoading });
 
 	useEffect(() => {
 		let disconnectToastId: string | number | undefined;

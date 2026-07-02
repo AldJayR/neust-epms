@@ -16,6 +16,7 @@ export const Route = createFileRoute("/_authenticated")({
 			user: context.auth.user as AuthUser,
 		};
 	},
+	loader: () => void 0,
 	component: () => (
 		<AppShell>
 			<Outlet />
