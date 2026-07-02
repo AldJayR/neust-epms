@@ -88,6 +88,11 @@ function ProjectOverviewCard({
 	const [files, setFiles] = useState<Record<string, File | null>>({});
 	const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
 
+	const isAllowedToManageSO =
+		currentUserRole === "Director" ||
+		currentUserRole === "RET Chair" ||
+		members.some((m) => m.userId === currentUserId);
+
 	function canUpload(_member: ProjectMember): boolean {
 		if (status !== "Approved") return false;
 		if (currentUserRole === "Director") return true;
@@ -201,9 +206,11 @@ function ProjectOverviewCard({
 					>
 						<span className="text-sm text-muted-foreground">Project Team</span>
 						<div className="flex items-center gap-4">
-							<Badge variant="outline" className="text-[10px] font-normal text-muted-foreground border-dashed">
-								Manage SO
-							</Badge>
+							{isAllowedToManageSO && (
+								<Badge variant="outline" className="text-[10px] font-normal text-muted-foreground border-dashed">
+									Manage SO
+								</Badge>
+							)}
 							<div className="flex -space-x-2">
 								{members.slice(0, 4).map((member) => (
 									<Avatar
@@ -233,9 +240,11 @@ function ProjectOverviewCard({
 							<DialogTitle className="text-base font-semibold text-heading">
 								Project Members
 							</DialogTitle>
-							<span className="text-xs text-muted-foreground">
-								{members.filter((m) => m.specialOrder).length}/{members.length} Special Orders uploaded
-							</span>
+							{isAllowedToManageSO && (
+								<span className="text-xs text-muted-foreground">
+									{members.filter((m) => m.specialOrder).length}/{members.length} Special Orders uploaded
+								</span>
+							)}
 						</DialogHeader>
 						<ul className="flex flex-col gap-1 max-h-[400px] overflow-y-auto pr-2">
 							{members.map((member) => (
@@ -262,73 +271,75 @@ function ProjectOverviewCard({
 											</span>
 										</div>
 
-										{member.specialOrder ? (
-											<div className="flex items-center gap-2">
-												<Badge
-													variant="outline"
-													className="text-green-600 border-green-200 bg-green-50 text-[10px] px-1.5"
-												>
-													{member.specialOrder.soNumber}
-												</Badge>
-												<Button
-													size="sm"
-													variant="outline"
-													className="h-7 text-xs"
-													onClick={() =>
-														handleViewSO(
-															member.specialOrder!.specialOrderId,
-														)
-													}
-												>
-													<Eye className="mr-1 size-3" />
-													View
-												</Button>
-											</div>
-									) : canUpload(member) ? (
-										<div className="flex items-center gap-2.5">
-												<Input
-													type="text"
-													placeholder="SO#"
-													className="h-7 w-[110px] text-xs"
-													value={soNumbers[member.userId] ?? ""}
-													onChange={(e) =>
-														setSoNumbers((prev) => ({
-															...prev,
-															[member.userId]: e.target.value,
-														}))
-													}
-												/>
-												<Input
-													type="file"
-													accept=".pdf"
-													className="h-7 w-[180px] text-xs file:h-5 file:text-[10px]"
-													onChange={(e) =>
-														setFiles((prev) => ({
-															...prev,
-															[member.userId]:
-																e.target.files?.[0] ?? null,
-														}))
-													}
-												/>
-												<Button
-													size="sm"
-													className="h-7 text-xs"
-													disabled={
-														!soNumbers[member.userId] ||
-														!files[member.userId] ||
-														uploadingMemberId === member.userId
-													}
-													onClick={() => handleUpload(member)}
-												>
-													{uploadingMemberId === member.userId
-														? "Uploading..."
-														: "Upload"}
-												</Button>
-											</div>
-										) : (
-											<span className="text-xs text-muted-foreground">
-												No SO
-											</span>
+										{isAllowedToManageSO && (
+											member.specialOrder ? (
+												<div className="flex items-center gap-2">
+													<Badge
+														variant="outline"
+														className="text-green-600 border-green-200 bg-green-50 text-[10px] px-1.5"
+													>
+														{member.specialOrder.soNumber}
+													</Badge>
+													<Button
+														size="sm"
+														variant="outline"
+														className="h-7 text-xs"
+														onClick={() =>
+															handleViewSO(
+																member.specialOrder!.specialOrderId,
+															)
+														}
+													>
+														<Eye className="mr-1 size-3" />
+														View
+													</Button>
+												</div>
+											) : canUpload(member) ? (
+												<div className="flex items-center gap-2.5">
+													<Input
+														type="text"
+														placeholder="SO#"
+														className="h-7 w-[110px] text-xs"
+														value={soNumbers[member.userId] ?? ""}
+														onChange={(e) =>
+															setSoNumbers((prev) => ({
+																...prev,
+																[member.userId]: e.target.value,
+															}))
+														}
+													/>
+													<Input
+														type="file"
+														accept=".pdf"
+														className="h-7 w-[180px] text-xs file:h-5 file:text-[10px]"
+														onChange={(e) =>
+															setFiles((prev) => ({
+																...prev,
+																[member.userId]:
+																	e.target.files?.[0] ?? null,
+															}))
+														}
+													/>
+													<Button
+														size="sm"
+														className="h-7 text-xs"
+														disabled={
+															!soNumbers[member.userId] ||
+															!files[member.userId] ||
+															uploadingMemberId === member.userId
+														}
+														onClick={() => handleUpload(member)}
+													>
+														{uploadingMemberId === member.userId
+															? "Uploading..."
+															: "Upload"}
+													</Button>
+												</div>
+											) : (
+												<span className="text-xs text-muted-foreground">
+													No SO
+												</span>
+											)
 										)}
 									</div>
 									{uploadErrors[member.userId] && (
@@ -499,6 +510,11 @@ export function ProjectDetailsPage({
 		);
 	}
 
+	const isAllowedToReadProposal =
+		currentUserRole === "Director" ||
+		currentUserRole === "RET Chair" ||
+		(data.members && data.members.some((m) => m.userId === currentUserId));
+
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Breadcrumb */}
@@ -532,22 +548,24 @@ export function ProjectDetailsPage({
 					</h1>
 				}
 				actions={
-					<BrandButton
-						nativeButton={false}
-						className="flex w-fit items-center gap-2 px-5 h-9 !text-white hover:!text-white shadow-[0px_1px_2px_0px_var(--shadow-card)] hover:bg-brand-primary-hover"
-						render={
-							<Link to="/proposals/$proposalId" params={{ proposalId }} />
-						}
-					>
-						<Eye className="size-4" />
-						<span className="text-sm font-medium">Read Proposal Document</span>
-					</BrandButton>
+					isAllowedToReadProposal ? (
+						<BrandButton
+							nativeButton={false}
+							className="flex w-fit items-center gap-2 px-5 h-9 !text-white hover:!text-white shadow-[0px_1px_2px_0px_var(--shadow-card)] hover:bg-brand-primary-hover"
+							render={
+								<Link to="/proposals/$proposalId" params={{ proposalId }} />
+							}
+						>
+							<Eye className="size-4" />
+							<span className="text-sm font-medium">Read Proposal Document</span>
+						</BrandButton>
+					) : undefined
 				}
 			/>
 
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
 				{/* Main Column */}
-				<div className="lg:col-span-8 flex flex-col gap-6">
+				<div className={`${isAllowedToReadProposal ? "lg:col-span-8" : "lg:col-span-12"} flex flex-col gap-6`}>
 					<ProjectOverviewCard
 						metadata={data.metadata}
 						members={data.members}
@@ -560,9 +578,11 @@ export function ProjectDetailsPage({
 				</div>
 
 				{/* Sidebar */}
-				<div className="lg:col-span-4 flex flex-col gap-6">
-					<AttachmentsCard attachments={data.attachments} />
-				</div>
+				{isAllowedToReadProposal && (
+					<div className="lg:col-span-4 flex flex-col gap-6">
+						<AttachmentsCard attachments={data.attachments} />
+					</div>
+				)}
 			</div>
 		</div>
 	);

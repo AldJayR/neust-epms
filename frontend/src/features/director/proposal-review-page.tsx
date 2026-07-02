@@ -24,7 +24,7 @@ import {
 	projectDetailsQueryOptions,
 	reviewProposalFn,
 } from "@/lib/dashboard.functions";
-import { isRETChair } from "@/lib/permissions";
+import { isDirector, isRETChair } from "@/lib/permissions";
 import { CommentsTab } from "./components/comments-tab";
 import { ProposalDetailsTab } from "./components/proposal-details-tab";
 import { ProjectDetailsSkeleton } from "./project-details-skeleton";
@@ -118,10 +118,13 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		},
 	});
 
-	const isReviewable =
-		data?.status === "Endorsed" || data?.status === "Pending Review";
+	const isReviewer = isDirector(user) || isRETChair(user);
 
-	const canAnnotate = !(isRETChair(user) && (data?.bypassedRetChair || endorsement));
+	const isReviewable =
+		isReviewer && (data?.status === "Endorsed" || data?.status === "Pending Review");
+
+	const canAnnotate =
+		isReviewer && !(isRETChair(user) && (data?.bypassedRetChair || endorsement));
 
 	const handleApprove = (comments?: string) => {
 		const decision = data?.status === "Endorsed" ? "Approved" : "Endorsed";

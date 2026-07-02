@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { ReportsPage } from "@/features/director/reports-page";
 import { PageSkeleton } from "@/components/custom/page-skeleton";
-import { reportsQueryOptions } from "@/lib/dashboard.functions";
+import { reportsListQueryOptions } from "@/lib/dashboard.functions";
 import { requireRole } from "@/lib/permissions";
 
 const ReportsPendingComponent = () => (
@@ -14,7 +14,7 @@ const ReportsPendingComponent = () => (
 
 export const Route = createFileRoute("/_authenticated/reports/")({
 	beforeLoad: ({ context }) => {
-		if (requireRole(context.auth.user, "Director", "RET Chair")) {
+		if (requireRole(context.auth.user, "Director", "RET Chair", "Faculty")) {
 			throw redirect({
 				to: "/dashboard",
 				search: { page: 1, pageSize: 10 },
@@ -22,7 +22,9 @@ export const Route = createFileRoute("/_authenticated/reports/")({
 		}
 	},
 	loader: async ({ context }) => {
-		await context.queryClient.ensureQueryData(reportsQueryOptions());
+		await context.queryClient.ensureQueryData(
+			reportsListQueryOptions({ page: 1, limit: 100 }),
+		);
 	},
 	pendingComponent: ReportsPendingComponent,
 	component: ReportsPage,

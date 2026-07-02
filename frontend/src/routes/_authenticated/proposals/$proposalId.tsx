@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/proposals/$proposalId")({
 	beforeLoad: ({ context }) => {
-		if (requireRole(context.auth.user, "Director", "RET Chair")) {
+		if (requireRole(context.auth.user, "Director", "RET Chair", "Faculty")) {
 			throw redirect({
 				to: "/dashboard",
 				search: { page: 1, pageSize: 10 },
@@ -14,9 +14,19 @@ export const Route = createFileRoute("/_authenticated/proposals/$proposalId")({
 		}
 	},
 	loader: async ({ context, params }) => {
-		await context.queryClient.ensureQueryData(
+		const data = await context.queryClient.ensureQueryData(
 			projectDetailsQueryOptions(params.proposalId),
 		);
+		const user = context.auth.user;
+		if (user?.roleName === "Faculty" && data) {
+			const isMember = data.members?.some((m) => m.userId === user.userId);
+			if (!isMember) {
+				throw redirect({
+					to: "/dashboard",
+					search: { page: 1, pageSize: 10 },
+				});
+			}
+		}
 	},
 	pendingComponent: ProjectDetailsSkeleton,
 	component: ProposalReviewComponent,

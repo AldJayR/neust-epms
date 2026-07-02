@@ -445,7 +445,7 @@ const reportsListParamsSchema = z.object({
 const getReportsListFn = createServerFn({ method: "GET" })
 	.validator(reportsListParamsSchema)
 	.handler(async ({ data }) => {
-		await authorizeSessionUser("Director", "RET Chair");
+		await authorizeSessionUser("Director", "RET Chair", "Faculty");
 		const token = await getValidAccessToken();
 
 		const searchParams = new URLSearchParams({

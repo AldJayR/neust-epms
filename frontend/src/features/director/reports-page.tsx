@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { SortingState } from "@tanstack/react-table";
 import { Download, ListFilter } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { DataTablePage } from "@/components/custom/data-table-page";
@@ -18,11 +18,14 @@ import {
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { AuthUser } from "@/lib/auth";
 import {
 	type ReportItem,
 	reportsListQueryOptions,
-	reportsQueryOptions,
 } from "@/lib/dashboard.functions";
+import { facultyProjectsQueryOptions } from "@/lib/faculty.functions";
+import { useRouterState } from "@tanstack/react-router";
 
 const formatDate = (dateStr: string) => {
 	try {
@@ -37,30 +40,76 @@ const formatDate = (dateStr: string) => {
 };
 
 export function ReportsPage() {
+	const user = useRouterState({
+		select: (s) => {
+			const authMatch = s.matches.find((m) => m.routeId === "/_authenticated");
+			return (
+				(authMatch?.context as { user: AuthUser | null } | undefined)?.user ??
+				null
+			);
+		},
+	});
+
+	const isFaculty = user?.roleName === "Faculty";
+	const userFullName = user ? `${user.firstName} ${user.lastName}` : "";
+
+	const [activeTab, setActiveTab] = useState<"my" | "college">(
+		isFaculty ? "my" : "college",
+	);
 	const [search, setSearch] = useState("");
 	const [page, setPage] = useState(1);
 	const [typeFilter, setTypeFilter] = useState<"All" | "Progress" | "Terminal">(
 		"All",
 	);
 	const [sorting, setSorting] = useState<SortingState>([]);
-	const limit = 20;
+	const limit = 10;
 
-	const { data: stats, isLoading: statsLoading } = useQuery(
-		reportsQueryOptions(),
-	);
 	const { data: listData, isLoading: listLoading } = useQuery(
-		reportsListQueryOptions({ page, limit, search: search || undefined }),
+		reportsListQueryOptions({ page: 1, limit: 100, search: search || undefined }),
 	);
+
+	const { data: projectsData, isLoading: projectsLoading } = useQuery({
+		...facultyProjectsQueryOptions(),
+		enabled: !!user,
+	});
 
 	const reports = listData?.items ?? [];
-	const filteredReports =
-		typeFilter === "All"
-			? reports
-			: reports.filter((r) => r.reportType === typeFilter);
-	const totalReports = stats?.total ?? 0;
-	const progressCount = stats?.progress ?? 0;
-	const terminalCount = stats?.terminal ?? 0;
-	const isLoading = statsLoading || listLoading;
+	const myProjectIds = useMemo(() => {
+		return new Set(projectsData?.items?.map((p) => p.projectId) ?? []);
+	}, [projectsData]);
+
+	const tabFilteredReports = useMemo(() => {
+		if (activeTab === "my") {
+			return reports.filter((r) => {
+				const isLeader = r.leader === userFullName;
+				const isMember = myProjectIds.has(r.projectId);
+				return isLeader || isMember;
+			});
+		}
+		return reports;
+	}, [reports, activeTab, userFullName, myProjectIds]);
+
+	const filteredReports = useMemo(() => {
+		return typeFilter === "All"
+			? tabFilteredReports
+			: tabFilteredReports.filter((r) => r.reportType === typeFilter);
+	}, [tabFilteredReports, typeFilter]);
+
+	const totalReports = tabFilteredReports.length;
+	const progressCount = tabFilteredReports.filter((r) => r.reportType === "Progress").length;
+	const terminalCount = tabFilteredReports.filter((r) => r.reportType === "Terminal").length;
+
+	const isLoading = listLoading || (!!user && projectsLoading);
+
+	const paginatedReports = useMemo(() => {
+		const startIndex = (page - 1) * limit;
+		return filteredReports.slice(startIndex, startIndex + limit);
+	}, [filteredReports, page, limit]);
+
+	const handleTabChange = (tab: "my" | "college") => {
+		setActiveTab(tab);
+		setPage(1);
+	};
 
 	const columns: DataTableColumnDef<ReportItem>[] = [
 		{
@@ -158,8 +207,8 @@ export function ReportsPage() {
 
 			<DataTablePage
 				columns={columns}
-				data={filteredReports}
-				total={totalReports}
+				data={paginatedReports}
+				total={filteredReports.length}
 				isLoading={isLoading}
 				page={page}
 				pageSize={limit}
@@ -205,6 +254,32 @@ export function ReportsPage() {
 							</DropdownMenuRadioGroup>
 						</DropdownMenuContent>
 					</DropdownMenu>
+				}
+				cardHeader={
+					isFaculty ? (
+						<div className="border-b border-border bg-background p-2">
+							<Tabs
+								value={activeTab}
+								onValueChange={(val) => handleTabChange(val as "my" | "college")}
+								className="w-fit"
+							>
+								<TabsList className="bg-muted">
+									<TabsTrigger
+										value="my"
+										className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+									>
+										My Reports
+									</TabsTrigger>
+									<TabsTrigger
+										value="college"
+										className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+									>
+										College-wide Reports
+									</TabsTrigger>
+								</TabsList>
+							</Tabs>
+						</div>
+					) : undefined
 				}
 				activeFilters={{ search }}
 				emptyMessage="No reports found."

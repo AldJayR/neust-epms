@@ -84,7 +84,7 @@ export const saveProposalCommentFn = createServerFn({ method: "POST" })
 export const getProposalCommentsFn = createServerFn({ method: "GET" })
 	.validator(getCommentsValidator)
 	.handler(async ({ data }) => {
-		await authorizeSessionUser("Director", "RET Chair");
+		await authorizeSessionUser("Director", "RET Chair", "Faculty");
 		const token = await getValidAccessToken();
 
 		const { proposalId, documentId } = data;
