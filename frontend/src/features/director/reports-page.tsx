@@ -300,10 +300,13 @@ export function ReportsPage() {
 								Submit Report
 							</BrandButton>
 						)}
-						<BrandButton variant="outline" className="gap-2">
+						<Button
+							variant="outline"
+							className="border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white rounded-lg gap-2"
+						>
 							<Download className="size-4" />
 							Export Reports
-						</BrandButton>
+						</Button>
 					</div>
 				}
 			/>
