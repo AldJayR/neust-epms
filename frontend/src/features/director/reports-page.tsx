@@ -185,6 +185,103 @@ export function ReportsPage() {
 		createActionsColumn(),
 	];
 
+	const progressReportSequences = useMemo(() => {
+		const progressByProject: Record<string, typeof reports> = {};
+		for (const r of reports) {
+			if (r.reportType === "Progress") {
+				if (!progressByProject[r.projectId]) {
+					progressByProject[r.projectId] = [];
+				}
+				progressByProject[r.projectId].push(r);
+			}
+		}
+
+		const sequenceMap = new Map<string, number>();
+		for (const projectId in progressByProject) {
+			const projectReports = progressByProject[projectId];
+			projectReports.sort(
+				(a, b) => new Date(a.submitted).getTime() - new Date(b.submitted).getTime(),
+			);
+			projectReports.forEach((r, idx) => {
+				sequenceMap.set(r.reportId, idx + 1);
+			});
+		}
+
+		return sequenceMap;
+	}, [reports]);
+
+	const facultyColumns: DataTableColumnDef<ReportItem>[] = [
+		{
+			id: "reportName",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Report" />
+			),
+			headerClassName: "px-4 py-2 text-sm font-medium text-muted-foreground",
+			cellClassName: "px-4 py-3 font-medium text-foreground",
+			cell: ({ row }) => {
+				const item = row.original;
+				if (item.reportType === "Progress") {
+					const seq = progressReportSequences.get(item.reportId) ?? 1;
+					return `Progress Report #${seq}`;
+				}
+				return "Terminal Report";
+			},
+		},
+		{
+			id: "project",
+			accessorKey: "project",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Project" />
+			),
+			headerClassName: "px-4 py-2 text-sm font-medium text-muted-foreground",
+			cellClassName: "px-4 py-3 text-sm text-foreground",
+			cell: ({ row }) => (
+				<div className="truncate max-w-[280px]" title={row.original.project}>
+					{row.original.project}
+				</div>
+			),
+		},
+		{
+			id: "reportType",
+			accessorKey: "reportType",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Report Type" className="justify-center" />
+			),
+			headerClassName:
+				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			cellClassName: "px-4 py-3 text-center",
+			cell: ({ row }) => {
+				const type = row.original.reportType;
+				return (
+					<Badge
+						variant="outline"
+						className={`rounded-md font-medium text-xs px-2 py-0.5 border ${
+							type === "Terminal"
+								? "bg-[#ffee9c] text-amber-700 border-[#e2a336]"
+								: "bg-[#c4e8d1] text-[#218358] border-[#2b9a66]"
+						}`}
+					>
+						{type}
+					</Badge>
+				);
+			},
+		},
+		{
+			id: "submitted",
+			accessorKey: "submitted",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Submitted" className="justify-center" />
+			),
+			headerClassName:
+				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
+			cell: ({ row }) => formatDate(row.original.submitted),
+		},
+		createActionsColumn(),
+	];
+
+	const columnsToUse = isFaculty ? facultyColumns : columns;
+
 	return (
 		<div className="flex flex-col gap-8">
 			{/* Header Section */}
@@ -206,7 +303,7 @@ export function ReportsPage() {
 			</div>
 
 			<DataTablePage
-				columns={columns}
+				columns={columnsToUse}
 				data={paginatedReports}
 				total={filteredReports.length}
 				isLoading={isLoading}
