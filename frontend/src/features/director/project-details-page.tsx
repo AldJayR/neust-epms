@@ -88,7 +88,7 @@ function ProjectOverviewCard({
 	const [files, setFiles] = useState<Record<string, File | null>>({});
 	const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
 
-	function canUpload(member: ProjectMember): boolean {
+	function canUpload(_member: ProjectMember): boolean {
 		if (status !== "Approved") return false;
 		if (currentUserRole === "Director") return true;
 		if (members.some((m) => m.userId === currentUserId && m.role === "Project Leader"))

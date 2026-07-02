@@ -87,6 +87,26 @@ const STATUS_MAP: Record<string, StatusConfig> = {
 		icon: XCircle,
 		iconClassName: "text-red-500",
 	},
+	Draft: {
+		label: "Draft",
+		icon: Clock,
+		iconClassName: "text-muted-foreground",
+	},
+	Completed: {
+		label: "Completed",
+		icon: CheckCircle2,
+		iconClassName: "text-green-500",
+	},
+	Rejected: {
+		label: "Rejected",
+		icon: XCircle,
+		iconClassName: "text-red-500",
+	},
+	Closed: {
+		label: "Closed",
+		icon: XCircle,
+		iconClassName: "text-muted-foreground",
+	},
 };
 
 interface StatusBadgeProps {

@@ -114,11 +114,11 @@ const facultyNav: NavGroup[] = [
 				url: "/projects",
 				icon: FolderKanban,
 			},
-			{
-				title: "Archives",
-				url: "/archives",
-				icon: Scroll,
-			},
+			// {
+			// 	title: "Archives",
+			// 	url: "/archives",
+			// 	icon: Scroll,
+			// },
 			{
 				title: "Reports",
 				url: "/reports",

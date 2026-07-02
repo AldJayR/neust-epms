@@ -1,34 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { Crown, FileSearch, Loader2, Play, Plus, RefreshCcw, Users } from "lucide-react";
+import { Crown, Plus, Users } from "lucide-react";
 import * as React from "react";
 import { BrandButton } from "@/components/custom/brand-button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { MetricCard } from "@/components/custom/metric-card";
+import { PageCard } from "@/components/custom/page-card";
+import { PageHeader } from "@/components/custom/page-header";
+import { StatusBadge } from "@/components/ui/status-badge";
 import type { AuthUser } from "@/lib/auth";
 import {
-	facultyProposalsQueryOptions,
 	facultyProjectsQueryOptions,
+	facultyProposalsQueryOptions,
 } from "@/lib/faculty.functions";
 import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
-
-interface FacultyDashboardPageProps {
-	user: AuthUser;
-}
-
-function DashboardBadge({ icon: Icon, text }: { icon: any; text: string }) {
-	return (
-		<div className="bg-background border border-[#e5e5e5] h-[22px] inline-flex gap-1 items-center justify-center px-1.5 py-0.5 rounded-[8px] shrink-0 text-muted-foreground text-xs font-medium">
-			<Icon className="size-3.5 text-muted-foreground" />
-			<span>{text}</span>
-		</div>
-	);
-}
 
 export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
 
-	// Fetch proposals for this faculty member (scoped by department/campus in backend)
 	const { data: proposalsData, isLoading: isProposalsLoading } = useQuery(
 		facultyProposalsQueryOptions({
 			page: 1,
@@ -36,7 +25,6 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 		}),
 	);
 
-	// Fetch projects for this faculty member (scoped by department/campus in backend)
 	const { data: projectsData, isLoading: isProjectsLoading } = useQuery(
 		facultyProjectsQueryOptions({
 			page: 1,
@@ -46,14 +34,10 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 
 	const isLoading = isProposalsLoading || isProjectsLoading;
 
-	// Process and merge items
 	const projectsList = projectsData?.items ?? [];
 	const proposalsList = proposalsData?.items ?? [];
 
-	// Filter out proposals that have already been approved (since they will exist as projects)
-	const activeProposals = proposalsList.filter(
-		(p) => p.status !== "Approved",
-	);
+	const activeProposals = proposalsList.filter((p) => p.status !== "Approved");
 
 	const userFullName = `${user.firstName} ${user.lastName}`;
 
@@ -70,7 +54,7 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 				title: p.title || "Untitled Project",
 				startDate: p.targetStartDate,
 				endDate: p.targetEndDate,
-				status: p.projectStatus, // Ongoing, Completed, Approved
+				status: p.projectStatus,
 				isLeader,
 				isProject: true,
 				isMember: p.isMember,
@@ -88,7 +72,7 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 				title: p.title || "Untitled Proposal",
 				startDate: p.targetStartDate,
 				endDate: p.targetEndDate,
-				status: p.status, // Pending Review, Draft, Returned, Rejected
+				status: p.status,
 				isLeader,
 				isProject: false,
 				isMember: p.isMember,
@@ -96,12 +80,10 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 		}),
 	];
 
-	// Filter down to only projects/proposals where user is member or leader
 	const userItems = combinedItems.filter(
 		(item) => item.isMember || item.isLeader,
 	);
 
-	// Calculate metrics
 	const myTotalSubmissions = userItems.length;
 	const ongoingProjects = userItems.filter(
 		(item) => item.status === "Ongoing",
@@ -110,7 +92,6 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 		(item) => item.status === "Pending Review",
 	).length;
 
-	// Format dates (e.g. "Jan 2026 - Mar 2026")
 	const formatDateRange = (start?: string | null, end?: string | null) => {
 		if (!start && !end) return "No duration set";
 		try {
@@ -123,7 +104,6 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 		}
 	};
 
-	// Determine time of day dynamically
 	const getTimeOfDay = () => {
 		const hour = new Date().getHours();
 		if (hour < 12) return "Morning";
@@ -131,136 +111,107 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 		return "Evening";
 	};
 
-	// Custom status badge mapper
-	const renderStatusBadge = (status: string) => {
-		if (status === "Ongoing") {
-			return <DashboardBadge icon={RefreshCcw} text="Ongoing" />;
-		}
-		if (status === "Pending Review") {
-			return <DashboardBadge icon={FileSearch} text="Pending Review" />;
-		}
-		// Fallbacks
-		if (status === "Draft") {
-			return <DashboardBadge icon={Loader2} text="Draft" />;
-		}
-		return <DashboardBadge icon={Play} text={status} />;
-	};
-
 	return (
 		<div className="flex flex-col gap-8">
-			{/* Header Section */}
-			<div className="flex items-start justify-between w-full">
-				<div className="flex flex-col gap-2">
-					<h1 className="text-[24px] font-semibold text-[#11215a] leading-[35px]">
-						Good {getTimeOfDay()}, {user.firstName}
-					</h1>
-					<p className="text-[14px] text-[#666] leading-[16px]">
-						Faculty Member
-					</p>
-				</div>
-				<BrandButton
-					onClick={() => setIsCreateModalOpen(true)}
-					className="h-9 gap-1.5 px-[10px] py-2 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] rounded-[10px]"
-				>
-					<Plus className="size-4" />
-					<span className="font-medium">Start New Project Proposal</span>
-				</BrandButton>
-			</div>
+			<PageHeader
+				title={
+					<div className="flex flex-col gap-2">
+						<h1 className="text-2xl font-semibold text-heading">
+							Good {getTimeOfDay()}, {user.firstName}
+						</h1>
+						<p className="text-sm text-muted-foreground">Faculty Member</p>
+					</div>
+				}
+				actions={
+					<BrandButton onClick={() => setIsCreateModalOpen(true)}>
+						<Plus className="size-4" />
+						<span>Start New Project Proposal</span>
+					</BrandButton>
+				}
+			/>
 
-			{/* Metric Cards Section */}
 			<div className="grid gap-6 md:grid-cols-3 w-full">
-				<div className="bg-white border border-[#ebebeb] rounded-[12px] p-[16px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] flex flex-col gap-[16px]">
-					<p className="text-[14px] text-[#666] leading-[16px] font-medium">
-						My Total Submission
-					</p>
-					<p className="text-[36px] font-semibold text-[#11215a] leading-[36px]">
-						{isLoading ? "..." : myTotalSubmissions}
-					</p>
-				</div>
-				<div className="bg-white border border-[#ebebeb] rounded-[12px] p-[16px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] flex flex-col gap-[16px]">
-					<p className="text-[14px] text-[#666] leading-[16px] font-medium">
-						Ongoing Projects
-					</p>
-					<p className="text-[36px] font-semibold text-[#11215a] leading-[36px]">
-						{isLoading ? "..." : ongoingProjects}
-					</p>
-				</div>
-				<div className="bg-white border border-[#ebebeb] rounded-[12px] p-[16px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] flex flex-col gap-[16px]">
-					<p className="text-[14px] text-[#666] leading-[16px] font-medium">
-						Proposals Submitted
-					</p>
-					<p className="text-[36px] font-semibold text-[#11215a] leading-[36px]">
-						{isLoading ? "..." : proposalsSubmitted}
-					</p>
-				</div>
+				<MetricCard
+					label="My Total Submission"
+					value={isLoading ? undefined : myTotalSubmissions}
+					isLoading={isLoading}
+				/>
+				<MetricCard
+					label="Ongoing Projects"
+					value={isLoading ? undefined : ongoingProjects}
+					isLoading={isLoading}
+				/>
+				<MetricCard
+					label="Proposals Submitted"
+					value={isLoading ? undefined : proposalsSubmitted}
+					isLoading={isLoading}
+				/>
 			</div>
 
-			{/* Project List Cards */}
-			<div className="flex flex-col gap-[16px] w-full">
+			<div className="flex flex-col gap-4 w-full">
 				{isLoading ? (
-					// Skeletons
 					[1, 2, 3, 4].map((i) => (
-						<div
+						<PageCard
 							key={i}
-							className="bg-white border border-[#ebebeb] rounded-[12px] p-[16px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] flex flex-col gap-4 h-[112px]"
+							className="flex flex-col gap-4 p-4 h-[112px] animate-pulse"
 						>
 							<div className="flex justify-between items-start">
 								<div className="flex flex-col gap-2 w-1/3">
-									<Skeleton className="h-5 w-3/4 rounded" />
-									<Skeleton className="h-3 w-1/2 rounded" />
+									<div className="h-5 w-3/4 rounded bg-muted" />
+									<div className="h-3 w-1/2 rounded bg-muted" />
 								</div>
-								<Skeleton className="h-[22px] w-24 rounded-lg" />
+								<div className="h-[22px] w-24 rounded-lg bg-muted" />
 							</div>
 							<div className="flex justify-between items-center mt-auto">
-								<Skeleton className="h-[22px] w-28 rounded-lg" />
-								<Skeleton className="h-4 w-20 rounded" />
+								<div className="h-[22px] w-28 rounded-lg bg-muted" />
+								<div className="h-4 w-20 rounded bg-muted" />
 							</div>
-						</div>
+						</PageCard>
 					))
 				) : userItems.length === 0 ? (
-					<div className="bg-white border border-[#ebebeb] rounded-[12px] p-8 text-center text-muted-foreground shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+					<PageCard className="p-8 text-center text-muted-foreground">
 						No project proposals or ongoing projects found for you.
-					</div>
+					</PageCard>
 				) : (
 					userItems.map((item) => (
-						<div
-							key={item.id}
-							className="bg-white border border-[#ebebeb] rounded-[12px] p-[15px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] flex flex-col gap-[10px] w-full"
-						>
-							{/* Top Row: Title + Status */}
+						<PageCard key={item.id} className="flex flex-col gap-2.5 p-4">
 							<div className="flex items-start justify-between w-full">
 								<div>
-									<h3 className="text-[16px] font-semibold text-black leading-[24px]">
+									<h3 className="text-base font-semibold text-foreground">
 										{item.title}
 									</h3>
-									<p className="text-[12px] text-[#737373] leading-[16px] mt-0.5">
+									<p className="text-xs text-muted-foreground mt-0.5">
 										{formatDateRange(item.startDate, item.endDate)}
 									</p>
 								</div>
-								{renderStatusBadge(item.status)}
+								<StatusBadge status={item.status} />
 							</div>
 
-							{/* Bottom Row: Role + Details Link */}
 							<div className="flex items-center justify-between w-full mt-1">
 								{item.isLeader ? (
-									<DashboardBadge icon={Crown} text="Project Leader" />
+									<div className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+										<Crown className="size-3.5 text-muted-foreground" />
+										<span>Project Leader</span>
+									</div>
 								) : (
-									<DashboardBadge icon={Users} text="Project Member" />
+									<div className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+										<Users className="size-3.5 text-muted-foreground" />
+										<span>Project Member</span>
+									</div>
 								)}
 								<Link
 									to="/projects/$projectId"
 									params={{ projectId: item.proposalId }}
-									className="text-[12px] font-semibold text-[#113264] hover:underline"
+									className="text-xs font-semibold text-brand-primary hover:underline"
 								>
 									View Project &rarr;
 								</Link>
 							</div>
-						</div>
+						</PageCard>
 					))
 				)}
 			</div>
 
-			{/* Proposal Submission Modal */}
 			<CreateProposalModal
 				open={isCreateModalOpen}
 				onOpenChange={setIsCreateModalOpen}
