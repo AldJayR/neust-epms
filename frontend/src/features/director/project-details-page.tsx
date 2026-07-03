@@ -588,15 +588,6 @@ export function ProjectDetailsPage({
 				}
 				actions={
 					<>
-						{isEditable && (
-							<BrandButton
-								className="flex w-fit items-center gap-2 px-5 h-9 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
-								onClick={() => setIsEditing(true)}
-							>
-								<Pencil className="size-4" />
-								<span className="text-sm font-medium">Edit</span>
-							</BrandButton>
-						)}
 						{isAllowedToReadProposal ? (
 							<BrandButton
 								nativeButton={false}
@@ -609,6 +600,16 @@ export function ProjectDetailsPage({
 								<span className="text-sm font-medium">Read Proposal Document</span>
 							</BrandButton>
 						) : undefined}
+						{isEditable && (
+							<Button
+								variant="outline"
+								className="flex w-fit items-center gap-2 px-5 h-9 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
+								onClick={() => setIsEditing(true)}
+							>
+								<Pencil className="size-4" />
+								<span className="text-sm font-medium">Edit</span>
+							</Button>
+						)}
 					</>
 				}
 			/>
