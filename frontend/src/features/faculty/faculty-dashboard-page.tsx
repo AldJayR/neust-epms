@@ -7,6 +7,7 @@ import { BrandButton } from "@/components/custom/brand-button";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
+import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { AuthUser } from "@/lib/auth";
 import {
@@ -37,8 +38,6 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 	const projectsList = projectsData?.items ?? [];
 	const proposalsList = proposalsData?.items ?? [];
 
-	const activeProposals = proposalsList.filter((p) => p.status !== "Approved");
-
 	const userFullName = `${user.firstName} ${user.lastName}`;
 
 	const combinedItems = [
@@ -60,7 +59,7 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 				isMember: p.isMember,
 			};
 		}),
-		...activeProposals.map((p) => {
+		...proposalsList.map((p) => {
 			const isLeader =
 				(p.leaderFirstName &&
 					p.leaderLastName &&
@@ -189,22 +188,22 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 
 							<div className="flex items-center justify-between w-full mt-1">
 								{item.isLeader ? (
-									<div className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
-										<Crown className="size-3.5 text-muted-foreground" />
-										<span>Project Leader</span>
-									</div>
+									<Badge variant="outline" className="gap-1 text-muted-foreground">
+										<Crown className="size-3.5 text-amber-500" />
+										Project Leader
+									</Badge>
 								) : (
-									<div className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
-										<Users className="size-3.5 text-muted-foreground" />
-										<span>Project Member</span>
-									</div>
+									<Badge variant="outline" className="gap-1 text-muted-foreground">
+										<Users className="size-3.5 text-sky-500" />
+										Project Member
+									</Badge>
 								)}
 								<Link
 									to="/projects/$projectId"
 									params={{ projectId: item.proposalId }}
 									className="text-xs font-semibold text-brand-primary hover:underline"
 								>
-									View Project &rarr;
+									{item.isProject ? "View Project" : "View Details"} &rarr;
 								</Link>
 							</div>
 						</PageCard>
