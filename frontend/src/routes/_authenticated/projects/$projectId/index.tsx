@@ -29,8 +29,7 @@ function ProjectDetailsRoutePage() {
 	return (
 		<ProjectDetailsPage
 			proposalId={projectId}
-			currentUserId={user.userId}
-			currentUserRole={user.roleName}
+			currentUser={user}
 		/>
 	);
 }
