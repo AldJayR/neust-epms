@@ -1,8 +1,9 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { useState } from "react";
-import { ChevronRight, Download, Eye, FileText, Info, Pencil, User } from "lucide-react";
+import { toast } from "sonner";
+import { ChevronRight, Download, Eye, FileText, Info, Loader2, Pencil, Play, User } from "lucide-react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { DetailsRow } from "@/components/custom/details-row";
 import { PageCard } from "@/components/custom/page-card";
@@ -43,6 +44,7 @@ import {
 	getAccessTokenForUploadFn,
 	getSpecialOrderSignedUrlFn,
 	projectDetailsQueryOptions,
+	transitionProjectFn,
 } from "@/lib/dashboard.functions";
 import type { AuthUser } from "@/lib/auth";
 import { CreateProposalModal } from "@/features/proposals/components/create-proposal-modal";
@@ -562,6 +564,25 @@ export function ProjectDetailsPage({
 			}
 		: undefined;
 
+	const isDirector = currentUserRole === "Director";
+	const canActivate =
+		isDirector &&
+		data.status === "Approved" &&
+		data.metadata.moaLinked !== "None" &&
+		data.members.every(
+			(m) => m.specialOrder && m.specialOrder.storagePath,
+		);
+
+	const transitionMutation = useMutation({
+		mutationFn: transitionProjectFn,
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["dashboard", "proposals", proposalId],
+			});
+			toast.success("Project activated! It is now Ongoing.");
+		},
+	});
+
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Breadcrumb */}
@@ -614,6 +635,26 @@ export function ProjectDetailsPage({
 								<Pencil className="size-4" />
 								<span className="text-sm font-medium">Edit</span>
 							</Button>
+						)}
+						{canActivate && (
+							<BrandButton
+								className="flex w-fit items-center gap-2 px-5 h-9 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
+								onClick={() =>
+									transitionMutation.mutate({
+										data: { projectId: proposalId, status: "Ongoing" },
+									})
+								}
+								disabled={transitionMutation.isPending}
+							>
+								{transitionMutation.isPending ? (
+									<Loader2 className="size-4 animate-spin" />
+								) : (
+									<Play className="size-4" />
+								)}
+								<span className="text-sm font-medium">
+									{transitionMutation.isPending ? "Activating..." : "Activate Project"}
+								</span>
+							</BrandButton>
 						)}
 					</>
 				}

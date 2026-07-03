@@ -660,3 +660,38 @@ export const submitReportFn = createServerFn({ method: "POST" })
 
 		return (await response.json()) as ReportItem;
 	});
+
+// ── Transition Project Status ──
+export const transitionProjectFn = createServerFn({ method: "POST" })
+	.validator(
+		z.object({
+			projectId: z.uuid(),
+			status: z.enum(["Ongoing"]),
+		}),
+	)
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director");
+		const token = await getValidAccessToken();
+
+		const response = await fetch(
+			`${API_BASE}/projects/${data.projectId}/transition`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify({ status: data.status }),
+			},
+		);
+
+		if (!response.ok) {
+			const message = await getErrorMessage(
+				response,
+				"Failed to activate project",
+			);
+			throw new Error(message);
+		}
+
+		return (await response.json()) as { message: string };
+	});
