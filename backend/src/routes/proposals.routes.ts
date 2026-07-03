@@ -704,6 +704,13 @@ app.openapi(updateRoute, async (c) => {
 		throw new ApiError(500, "UPDATE_FAILED", "Failed to update proposal");
 	}
 
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Updated proposal ${id}`,
+		tableAffected: "proposals",
+		ipAddress: getClientIp(c),
+	});
+
 	return c.json(
 		{
 			...updated,
