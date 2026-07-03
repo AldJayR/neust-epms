@@ -17,7 +17,10 @@ import {
 import type { AuthUser } from "@/lib/auth";
 import {
 	createProposalFn,
+	getProposalByIdFn,
 	sdgsQueryOptions,
+	submitProposalFn,
+	updateProposalFn,
 	uploadProposalDocumentFn,
 } from "@/lib/ret.functions";
 import { ProposalStepDetails } from "./proposal-step-details";
@@ -67,12 +70,16 @@ interface CreateProposalModalProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	user: AuthUser;
+	initialData?: Partial<FormValues>;
+	editingProposalId?: string;
 }
 
 export function CreateProposalModal({
 	open,
 	onOpenChange,
 	user,
+	initialData,
+	editingProposalId,
 }: CreateProposalModalProps) {
 	const [state, setState] = React.useReducer(
 		(
@@ -125,7 +132,23 @@ export function CreateProposalModal({
 		},
 	});
 
+	React.useEffect(() => {
+		if (open && initialData) {
+			form.reset(initialData);
+		}
+	}, [open, initialData, form]);
+
+	const isEditing = !!editingProposalId;
+
 	const { data: sdgsData } = useQuery(sdgsQueryOptions());
+
+	const updateProposalMutation = useMutation({
+		mutationFn: updateProposalFn,
+	});
+
+	const submitProposalMutation = useMutation({
+		mutationFn: submitProposalFn,
+	});
 
 	const createProposalMutation = useMutation({
 		mutationFn: createProposalFn,
@@ -146,7 +169,7 @@ export function CreateProposalModal({
 	});
 
 	const onSubmit: SubmitHandler<FormValues> = async (values) => {
-		if (!file) {
+		if (!isEditing && !file) {
 			toast.error("Please upload the Project Proposal PDF");
 			return;
 		}
@@ -156,54 +179,85 @@ export function CreateProposalModal({
 		try {
 			setState({ uploadPhase: "creating", uploadProgress: 0 });
 
-			const proposal = await createProposalMutation.mutateAsync({
-				data: {
-					campusId: Number(values.campusId),
-					departmentId: Number(values.departmentId),
-					title: values.title,
-					bannerProgram: values.bannerProgram,
-					projectLocale: values.projectLocale,
-					extensionCategory: values.extensionCategory,
-					budgetPartner: values.budgetPartner,
-					budgetNeust: values.budgetNeust,
-					targetStartDate: new Date(values.targetStartDate).toISOString(),
-					targetEndDate: new Date(values.targetEndDate).toISOString(),
-					sdgIds: values.sdgIds,
-					members: values.members.map((m) => ({
-						userId: m.userId,
-						projectRole: m.projectRole,
-					})),
-				},
-			});
+			let proposalId = editingProposalId ?? "";
 
-			setState({ uploadProgress: 30, uploadPhase: "uploading" });
-
-			const fileSizeMB = file.size / 1024 / 1024;
-			const baseInterval = 80;
-			const interval = Math.max(40, baseInterval - fileSizeMB * 2);
-			const increment = Math.max(1, Math.min(8, 30 / fileSizeMB));
-
-			timer = setInterval(() => {
-				setState((curr) => {
-					const next = curr.uploadProgress + increment;
-					return { uploadProgress: next >= 95 ? 95 : next };
+			if (isEditing && editingProposalId) {
+				await updateProposalMutation.mutateAsync({
+					data: {
+						proposalId: editingProposalId,
+						title: values.title,
+						bannerProgram: values.bannerProgram,
+						projectLocale: values.projectLocale,
+						extensionCategory: values.extensionCategory,
+						budgetPartner: values.budgetPartner,
+						budgetNeust: values.budgetNeust,
+					},
 				});
-			}, interval);
+			} else {
+				const proposal = await createProposalMutation.mutateAsync({
+					data: {
+						campusId: Number(values.campusId),
+						departmentId: Number(values.departmentId),
+						title: values.title,
+						bannerProgram: values.bannerProgram,
+						projectLocale: values.projectLocale,
+						extensionCategory: values.extensionCategory,
+						budgetPartner: values.budgetPartner,
+						budgetNeust: values.budgetNeust,
+						targetStartDate: new Date(values.targetStartDate).toISOString(),
+						targetEndDate: new Date(values.targetEndDate).toISOString(),
+						sdgIds: values.sdgIds,
+						members: values.members.map((m) => ({
+							userId: m.userId,
+							projectRole: m.projectRole,
+						})),
+					},
+				});
+				proposalId = proposal.proposalId;
+			}
 
-			const formData = new FormData();
-			formData.append("file", file);
-			formData.append("proposalId", proposal.proposalId);
+			if (file) {
+				setState({ uploadProgress: 30, uploadPhase: "uploading" });
 
-			await uploadDocumentMutation.mutateAsync({ data: formData });
+				const fileSizeMB = file.size / 1024 / 1024;
+				const baseInterval = 80;
+				const interval = Math.max(40, baseInterval - fileSizeMB * 2);
+				const increment = Math.max(1, Math.min(8, 30 / fileSizeMB));
 
-			if (timer) clearInterval(timer);
+				timer = setInterval(() => {
+					setState((curr) => {
+						const next = curr.uploadProgress + increment;
+						return { uploadProgress: next >= 95 ? 95 : next };
+					});
+				}, interval);
+
+				const formData = new FormData();
+				formData.append("file", file);
+				formData.append("proposalId", proposalId);
+
+				await uploadDocumentMutation.mutateAsync({ data: formData });
+
+				if (timer) clearInterval(timer);
+			}
+
+			if (isEditing && editingProposalId) {
+				await submitProposalMutation.mutateAsync({
+					data: { proposalId: editingProposalId },
+				});
+			}
+
 			setState({ uploadProgress: 100, uploadPhase: "done" });
 
-			toast.success("Project proposal submitted successfully!");
+			toast.success(
+				isEditing
+					? "Proposal updated and submitted successfully!"
+					: "Project proposal submitted successfully!",
+			);
 			onOpenChange(false);
 			form.reset();
 			setState({ step: 1, file: null });
 			queryClient.invalidateQueries({ queryKey: ["ret", "dashboard"] });
+			queryClient.invalidateQueries({ queryKey: ["dashboard", "proposals"] });
 			setTimeout(() => {
 				setState({ uploadPhase: "idle", uploadProgress: 0 });
 			}, 1000);
@@ -256,7 +310,7 @@ export function CreateProposalModal({
 				>
 					<DialogHeader className="py-4 px-6 border-b border-border">
 						<DialogTitle className="text-xl font-semibold text-heading">
-							Start New Project Proposal
+							{isEditing ? "Edit Project Proposal" : "Start New Project Proposal"}
 						</DialogTitle>
 						<DialogDescription className="text-sm text-muted-foreground">
 							Step {step} of 4:{" "}
@@ -322,10 +376,14 @@ export function CreateProposalModal({
 									className="bg-brand-primary hover:bg-brand-primary-hover text-white"
 									disabled={
 										createProposalMutation.isPending ||
+										updateProposalMutation.isPending ||
+										submitProposalMutation.isPending ||
 										uploadDocumentMutation.isPending
 									}
 								>
 									{createProposalMutation.isPending ||
+									updateProposalMutation.isPending ||
+									submitProposalMutation.isPending ||
 									uploadDocumentMutation.isPending ? (
 										<>
 											<Loader2 className="size-4 animate-spin" />
@@ -333,7 +391,7 @@ export function CreateProposalModal({
 										</>
 									) : (
 										<>
-											Finish
+											{isEditing ? "Save Changes" : "Finish"}
 											<Check className="size-4" />
 										</>
 									)}

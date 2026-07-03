@@ -273,3 +273,103 @@ export function sdgsQueryOptions() {
 		staleTime: 1000 * 60 * 60, // 1 hour
 	});
 }
+
+// ── Edit Proposal Functions ─────────────────────────────
+
+export interface ProposalFull {
+	proposalId: string;
+	campusId: number;
+	departmentId: number | null;
+	title: string;
+	bannerProgram: string;
+	projectLocale: string;
+	extensionCategory: string;
+	budgetPartner: string | null;
+	budgetNeust: string | null;
+	status: string;
+	targetStartDate: string | null;
+	targetEndDate: string | null;
+}
+
+export const getProposalByIdFn = createServerFn({ method: "GET" })
+	.validator(z.object({ proposalId: z.string() }))
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("RET Chair", "Director", "Faculty");
+		const accessToken = await getValidAccessToken();
+
+		const response = await fetch(`${API_BASE}/proposals/${data.proposalId}`, {
+			headers: { Authorization: `Bearer ${accessToken}` },
+		});
+
+		if (!response.ok) {
+			const message = await getErrorMessage(response, "Failed to fetch proposal");
+			throw new Error(message);
+		}
+
+		return (await response.json()) as ProposalFull;
+	});
+
+const updateProposalSchema = z.object({
+	proposalId: z.string(),
+	title: z.string().min(1),
+	bannerProgram: z.string().min(1),
+	projectLocale: z.string().min(1),
+	extensionCategory: z.string().min(1),
+	budgetPartner: z.number().optional(),
+	budgetNeust: z.number().optional(),
+});
+
+export const submitProposalFn = createServerFn({ method: "POST" })
+	.validator(z.object({ proposalId: z.string() }))
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("RET Chair", "Director", "Faculty");
+		const accessToken = await getValidAccessToken();
+
+		const response = await fetch(
+			`${API_BASE}/proposals/${data.proposalId}/submit`,
+			{
+				method: "POST",
+				headers: { Authorization: `Bearer ${accessToken}` },
+			},
+		);
+
+		if (!response.ok) {
+			const message = await getErrorMessage(response, "Failed to submit proposal");
+			throw new Error(message);
+		}
+
+		return (await response.json()) as { message: string };
+	});
+
+export const updateProposalFn = createServerFn({ method: "PATCH" })
+	.validator(updateProposalSchema)
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("RET Chair", "Director", "Faculty");
+		const accessToken = await getValidAccessToken();
+
+		const response = await fetch(
+			`${API_BASE}/proposals/${data.proposalId}`,
+			{
+				method: "PATCH",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					title: data.title,
+					bannerProgram: data.bannerProgram,
+					projectLocale: data.projectLocale,
+					extensionCategory: data.extensionCategory,
+					budgetPartner: data.budgetPartner,
+					budgetNeust: data.budgetNeust,
+				}),
+			},
+		);
+
+		if (!response.ok) {
+			const message = await getErrorMessage(response, "Failed to update proposal");
+			throw new Error(message);
+		}
+
+		return (await response.json()) as ProposalItem;
+	});

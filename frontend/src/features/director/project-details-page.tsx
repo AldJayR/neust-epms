@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { useState } from "react";
-import { ChevronRight, Download, Eye, FileText, User } from "lucide-react";
+import { ChevronRight, Download, Eye, FileText, Info, Pencil, User } from "lucide-react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { DetailsRow } from "@/components/custom/details-row";
 import { PageCard } from "@/components/custom/page-card";
@@ -34,6 +34,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import {
@@ -43,12 +44,14 @@ import {
 	getSpecialOrderSignedUrlFn,
 	projectDetailsQueryOptions,
 } from "@/lib/dashboard.functions";
+import type { AuthUser } from "@/lib/auth";
+import { CreateProposalModal } from "@/features/proposals/components/create-proposal-modal";
+import { getProposalByIdFn } from "@/lib/ret.functions";
 import { ProjectDetailsSkeleton } from "./project-details-skeleton";
 
 interface ProjectDetailsPageProps {
 	proposalId: string;
-	currentUserId: string;
-	currentUserRole: string;
+	currentUser: AuthUser;
 }
 
 interface ProjectOverviewCardProps {
@@ -454,14 +457,14 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 			</div>
 			<div className="p-4 flex flex-col gap-2">
 				{attachments.map((attachment) => (
-					<Attachment key={attachment.id} state="done">
+					<Attachment key={attachment.id} state="done" className="w-full">
 						<AttachmentMedia>
 							<FileText className="size-4" />
 						</AttachmentMedia>
 						<AttachmentContent>
 							<AttachmentTitle>{attachment.name}</AttachmentTitle>
 							<AttachmentDescription>
-								{attachment.type} · v{attachment.version}
+								{attachment.type} · {attachment.version}
 							</AttachmentDescription>
 						</AttachmentContent>
 						<AttachmentActions>
@@ -493,9 +496,9 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 
 export function ProjectDetailsPage({
 	proposalId,
-	currentUserId,
-	currentUserRole,
+	currentUser,
 }: ProjectDetailsPageProps) {
+	const { userId: currentUserId, roleName: currentUserRole } = currentUser;
 	const { data, isLoading } = useQuery(projectDetailsQueryOptions(proposalId));
 
 	if (isLoading) {
@@ -514,6 +517,44 @@ export function ProjectDetailsPage({
 		currentUserRole === "Director" ||
 		currentUserRole === "RET Chair" ||
 		(data.members && data.members.some((m) => m.userId === currentUserId));
+
+	const [isEditing, setIsEditing] = useState(false);
+
+	const { data: editProposalData } = useQuery({
+		queryKey: ["proposal", "edit", proposalId],
+		queryFn: () => getProposalByIdFn({ data: { proposalId } }),
+		enabled: isEditing,
+	});
+
+	const isProjectLeader =
+		data.members?.some(
+			(m) => m.userId === currentUserId && m.role === "Project Leader",
+		) ?? false;
+
+	const isEditable =
+		isProjectLeader &&
+		!["Approved", "Ongoing", "Closed"].includes(data.status);
+
+	const editInitialData = editProposalData
+		? {
+				title: editProposalData.title,
+				bannerProgram: editProposalData.bannerProgram,
+				projectLocale: editProposalData.projectLocale,
+				extensionCategory: editProposalData.extensionCategory,
+				campusId: editProposalData.campusId.toString(),
+				departmentId: editProposalData.departmentId?.toString() ?? "",
+				sdgIds: [] as number[],
+				targetStartDate: editProposalData.targetStartDate ?? "",
+				targetEndDate: editProposalData.targetEndDate ?? "",
+				budgetPartner: Number(editProposalData.budgetPartner ?? 0),
+				budgetNeust: Number(editProposalData.budgetNeust ?? 0),
+				members: data.members.map((m) => ({
+					userId: m.userId,
+					projectRole: m.role,
+					name: m.name,
+				})),
+			}
+		: undefined;
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -542,26 +583,61 @@ export function ProjectDetailsPage({
 					<h1 className="flex flex-wrap items-center gap-3 text-[22px] font-semibold text-heading">
 						<span>{data.title}</span>
 						<StatusBadge status={data.status} />
-						<span className="text-xs font-normal text-muted-foreground">
-							Version {data.version}
-						</span>
 					</h1>
 				}
 				actions={
-					isAllowedToReadProposal ? (
-						<BrandButton
-							nativeButton={false}
-							className="flex w-fit items-center gap-2 px-5 h-9 !text-white hover:!text-white shadow-[0px_1px_2px_0px_var(--shadow-card)] hover:bg-brand-primary-hover"
-							render={
-								<Link to="/proposals/$proposalId" params={{ proposalId }} />
-							}
-						>
-							<Eye className="size-4" />
-							<span className="text-sm font-medium">Read Proposal Document</span>
-						</BrandButton>
-					) : undefined
+					<>
+						{isEditable && (
+							<BrandButton
+								className="flex w-fit items-center gap-2 px-5 h-9 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
+								onClick={() => setIsEditing(true)}
+							>
+								<Pencil className="size-4" />
+								<span className="text-sm font-medium">Edit</span>
+							</BrandButton>
+						)}
+						{isAllowedToReadProposal ? (
+							<BrandButton
+								nativeButton={false}
+								className="flex w-fit items-center gap-2 px-5 h-9 !text-white hover:!text-white shadow-[0px_1px_2px_0px_var(--shadow-card)] hover:bg-brand-primary-hover"
+								render={
+									<Link to="/proposals/$proposalId" params={{ proposalId }} />
+								}
+							>
+								<Eye className="size-4" />
+								<span className="text-sm font-medium">Read Proposal Document</span>
+							</BrandButton>
+						) : undefined}
+					</>
 				}
 			/>
+
+			{data.status === "Approved" && (
+				<Alert>
+					<Info className="size-4 text-blue-500" />
+					<AlertTitle>Your proposal has been approved!</AlertTitle>
+					<AlertDescription className="space-y-2">
+						<p>
+							Great news — your project proposal has been approved. Here's what to do next:
+						</p>
+						<ol className="list-decimal pl-5 space-y-1">
+							<li>
+								<strong>Print the proposal document</strong> and submit the physical
+								copy to the Extension Services Department Office for their records.
+							</li>
+							<li>
+								<strong>Upload the Special Order</strong> for each project member —
+								you can do this by opening the Project Team section below and
+								uploading the corresponding SO for each team member.
+							</li>
+						</ol>
+						<p className="pt-1">
+							Once the Special Orders are in place, the project lead can request
+							the Director to activate the project so work can officially begin.
+						</p>
+					</AlertDescription>
+				</Alert>
+			)}
 
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
 				{/* Main Column */}
@@ -584,6 +660,21 @@ export function ProjectDetailsPage({
 					</div>
 				)}
 			</div>
+
+			<CreateProposalModal
+				open={isEditing}
+				onOpenChange={(v) => {
+					setIsEditing(v);
+					if (!v) {
+						queryClient.invalidateQueries({
+							queryKey: ["dashboard", "proposals", proposalId],
+						});
+					}
+				}}
+				user={currentUser}
+				initialData={editInitialData}
+				editingProposalId={proposalId}
+			/>
 		</div>
 	);
 }

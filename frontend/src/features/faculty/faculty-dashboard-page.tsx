@@ -88,7 +88,7 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 		(item) => item.status === "Ongoing",
 	).length;
 	const proposalsSubmitted = userItems.filter(
-		(item) => item.status === "Pending Review",
+		(item) => !item.isProject,
 	).length;
 
 	const formatDateRange = (start?: string | null, end?: string | null) => {

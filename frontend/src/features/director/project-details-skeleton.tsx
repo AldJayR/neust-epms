@@ -34,15 +34,17 @@ export function ProjectDetailsSkeleton() {
 
 	const projectData = id
 		? queryClient.getQueryData<{
-				leader?: { userId: string };
-				members?: { userId: string }[];
-		  }>(["projects", id, "details"])
+				metadata?: { leader?: { name?: string } };
+				members?: { userId: string; role?: string }[];
+		  }>(["dashboard", "proposals", id])
 		: null;
 
-	const isProjectLeader = projectData?.leader?.userId === user?.userId;
-	const isProjectMember = projectData?.members?.some(
-		(m) => m.userId === user?.userId,
-	);
+	const isProjectLeader =
+		projectData?.members?.some(
+			(m) => m.userId === user?.userId && m.role === "Project Leader",
+		) ?? false;
+	const isProjectMember =
+		projectData?.members?.some((m) => m.userId === user?.userId) ?? false;
 
 	const isAllowedToReadProposal =
 		user?.roleName === "Director" ||

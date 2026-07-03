@@ -134,7 +134,7 @@ export const searchUsersFn = createServerFn({ method: "GET" })
 		]);
 		// Require an authenticated user with any of our active roles
 		const [_, accessToken] = await Promise.all([
-			authorizeSessionUser("RET Chair", "Director", "Super Admin"),
+			authorizeSessionUser("Faculty", "RET Chair", "Director", "Super Admin"),
 			getValidAccessToken(),
 		]);
 
