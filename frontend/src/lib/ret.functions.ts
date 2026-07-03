@@ -341,7 +341,7 @@ export const submitProposalFn = createServerFn({ method: "POST" })
 		return (await response.json()) as { message: string };
 	});
 
-export const updateProposalFn = createServerFn({ method: "PATCH" })
+export const updateProposalFn = createServerFn({ method: "POST" })
 	.validator(updateProposalSchema)
 	.handler(async ({ data }) => {
 		await authorizeSessionUser("RET Chair", "Director", "Faculty");

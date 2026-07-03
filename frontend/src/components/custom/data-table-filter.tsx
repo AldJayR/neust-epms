@@ -23,6 +23,9 @@ export function DataTableFilter({
 	options,
 	className,
 }: DataTableFilterProps) {
+	const displayLabel =
+		options.find((o) => o.value === value)?.label ?? placeholder;
+
 	return (
 		<Select
 			value={value}
@@ -37,9 +40,9 @@ export function DataTableFilter({
 				)}
 			>
 				<Filter className="mr-2 size-4 text-muted-foreground" />
-				<SelectValue placeholder={placeholder} />
+				<SelectValue placeholder={placeholder}>{displayLabel}</SelectValue>
 			</SelectTrigger>
-			<SelectContent>
+			<SelectContent alignItemWithTrigger={false}>
 				{options.map((opt) => (
 					<SelectItem key={opt.value} value={opt.value}>
 						{opt.label}

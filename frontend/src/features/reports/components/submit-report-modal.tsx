@@ -239,7 +239,13 @@ export function SubmitReportModal({ open, onOpenChange }: SubmitReportModalProps
 							onValueChange={(val) => setReportType(val as "Progress" | "Closure")}
 						>
 							<SelectTrigger className="w-full">
-								<SelectValue placeholder="Select report type" />
+								<SelectValue placeholder="Select report type">
+									{reportType === "Progress"
+										? "Progress Report"
+										: reportType === "Closure"
+											? "Project Closure"
+											: undefined}
+								</SelectValue>
 							</SelectTrigger>
 							<SelectContent className="w-full z-50">
 								<SelectItem value="Progress">Progress Report</SelectItem>

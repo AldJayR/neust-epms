@@ -17,7 +17,6 @@ import {
 import type { AuthUser } from "@/lib/auth";
 import {
 	createProposalFn,
-	getProposalByIdFn,
 	sdgsQueryOptions,
 	submitProposalFn,
 	updateProposalFn,

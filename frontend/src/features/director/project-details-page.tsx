@@ -499,6 +499,7 @@ export function ProjectDetailsPage({
 	currentUser,
 }: ProjectDetailsPageProps) {
 	const { userId: currentUserId, roleName: currentUserRole } = currentUser;
+	const queryClient = useQueryClient();
 	const { data, isLoading } = useQuery(projectDetailsQueryOptions(proposalId));
 
 	if (isLoading) {
