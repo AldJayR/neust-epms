@@ -175,6 +175,7 @@ export interface ProjectMember {
 
 export interface ProjectHistoryItem {
 	id: string;
+	type: "document" | "review" | "edit";
 	version: string;
 	status: string;
 	actorName: string;

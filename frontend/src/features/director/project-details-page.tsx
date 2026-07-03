@@ -360,22 +360,21 @@ function ProjectOverviewCard({
 	);
 }
 
-interface DocumentHistoryCardProps {
-	history: {
-		id: string | number;
-		version: string;
-		status: string;
-		date: string;
-		actorName: string;
-		comment?: string;
-	}[];
+interface Activity {
+	id: string | number;
+	type: "document" | "review" | "edit";
+	version: string;
+	status: string;
+	date: string;
+	actorName: string;
+	comment?: string;
 }
 
-function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
+function ActivityHistoryCard({ history }: { history: Activity[] }) {
 	return (
 		<PageCard noOverflow>
 			<div className="px-6 py-3 border-b border-border">
-				<h2 className="text-sm font-semibold text-heading">Document History</h2>
+				<h2 className="text-sm font-semibold text-heading">Activity History</h2>
 			</div>
 			<div className="px-6 py-4">
 				<ul className="relative space-y-6 before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-0.5 before:bg-border">
@@ -387,16 +386,20 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 							<div className="flex flex-1 flex-col gap-1">
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2">
-										<span className="text-sm font-medium text-foreground">
-											Version {item.version}
-										</span>
+										{item.type !== "edit" && (
+											<span className="text-sm font-medium text-foreground">
+												Version {item.version}
+											</span>
+										)}
 										<Badge
 											className={`${
 												item.status === "Current"
 													? "bg-blue-50 text-blue-600 border-blue-100"
 													: item.status === "Returned"
 														? "bg-red-50 text-red-600 border-red-100"
-														: "bg-gray-50 text-gray-600 border-gray-100"
+														: item.status === "Updated"
+															? "bg-amber-50 text-amber-600 border-amber-100"
+															: "bg-gray-50 text-gray-600 border-gray-100"
 											} rounded-md px-2 py-0 h-5 text-[10px] font-semibold uppercase`}
 										>
 											{item.status}
@@ -407,20 +410,22 @@ function DocumentHistoryCard({ history }: DocumentHistoryCardProps) {
 									</span>
 								</div>
 								<p className="text-[13px] text-muted-foreground">
-									{item.status === "Returned"
-										? `Returned by ${item.actorName}`
-										: item.status === "Endorsed"
-											? `Endorsed by ${item.actorName}`
-											: item.status === "Approved"
-												? `Approved by ${item.actorName}`
-												: `Uploaded by ${item.actorName}`}
+									{item.type === "edit"
+										? `Edited by ${item.actorName}`
+										: item.status === "Returned"
+											? `Returned by ${item.actorName}`
+											: item.status === "Endorsed"
+												? `Endorsed by ${item.actorName}`
+												: item.status === "Approved"
+													? `Approved by ${item.actorName}`
+													: `Uploaded by ${item.actorName}`}
 								</p>
 								{item.comment && (
 									<div className="rounded-lg border border-dashed border-border bg-card p-3 text-xs italic text-muted-foreground">
 										"{item.comment}"
 									</div>
 								)}
-								{item.status !== "Current" && (
+								{item.type === "document" && item.status !== "Current" && (
 									<Button
 										variant="outline"
 										size="sm"
@@ -652,7 +657,7 @@ export function ProjectDetailsPage({
 						proposalId={proposalId}
 						status={data.status}
 					/>
-					<DocumentHistoryCard history={data.history} />
+					<ActivityHistoryCard history={data.history} />
 				</div>
 
 				{/* Sidebar */}

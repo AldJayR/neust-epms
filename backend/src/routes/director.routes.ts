@@ -1132,7 +1132,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 		}
 	}
 
-	const [memberRows, documentRows, reviewRows, sdgRows, specialOrderRows] = await Promise.all([
+	const [memberRows, documentRows, reviewRows, sdgRows, specialOrderRows, editLogRows] = await Promise.all([
 		db
 			.select({
 				userId: users.userId,
@@ -1199,6 +1199,24 @@ app.openapi(projectDetailsRoute, async (c) => {
 				),
 			)
 			.orderBy(desc(specialOrders.createdAt)),
+
+		db
+			.select({
+				logId: auditLogs.logId,
+				action: auditLogs.action,
+				createdAt: auditLogs.createdAt,
+				actorFirstName: users.firstName,
+				actorLastName: users.lastName,
+			})
+			.from(auditLogs)
+			.innerJoin(users, eq(auditLogs.userId, users.userId))
+			.where(
+				and(
+					eq(auditLogs.tableAffected, "proposals"),
+					ilike(auditLogs.action, `Updated proposal ${proposalId}%`),
+				),
+			)
+			.orderBy(desc(auditLogs.createdAt)),
 	]);
 
 	const months = [
@@ -1254,6 +1272,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 
 	const history: Array<{
 		id: string;
+		type: "document" | "review" | "edit";
 		version: string;
 		status: string;
 		actorName: string;
@@ -1264,6 +1283,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 	documentRows.forEach((doc) => {
 		history.push({
 			id: doc.documentId,
+			type: "document",
 			version: `v${doc.versionNum}`,
 			status:
 				doc.versionNum === documentRows[0]?.versionNum ? "Current" : "Previous",
@@ -1280,6 +1300,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 
 		history.push({
 			id: review.reviewId,
+			type: "review",
 			version: reviewVersion,
 			status:
 				review.decision === "Returned"
@@ -1290,6 +1311,17 @@ app.openapi(projectDetailsRoute, async (c) => {
 			actorName: `${review.reviewerFirstName} ${review.reviewerLastName}`,
 			date: review.reviewedAt.toISOString(),
 			...(review.comments ? { comment: review.comments } : {}),
+		});
+	});
+
+	editLogRows.forEach((log) => {
+		history.push({
+			id: log.logId,
+			type: "edit",
+			version: "",
+			status: "Updated",
+			actorName: `${log.actorFirstName} ${log.actorLastName}`,
+			date: log.createdAt.toISOString(),
 		});
 	});
 
