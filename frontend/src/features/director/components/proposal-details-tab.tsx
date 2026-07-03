@@ -130,7 +130,9 @@ export function ProposalDetailsTab({
 			{endorsement && (
 				<>
 					<div className="p-5 space-y-4">
-						<h2 className="text-sm font-medium text-black">Endorsement</h2>
+						<h2 className="text-sm font-medium text-black">
+							{endorsement.status === "Approved" ? "Approval" : "Endorsement"}
+						</h2>
 						<div className="rounded-lg border border-border p-3 space-y-1">
 							<div className="flex items-center gap-3">
 								<CheckCircle2 className="size-4 text-black" />
