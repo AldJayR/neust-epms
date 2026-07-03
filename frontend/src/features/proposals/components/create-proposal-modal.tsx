@@ -338,6 +338,7 @@ export function CreateProposalModal({
 								setFile={(f) => setState({ file: f })}
 								uploadPhase={uploadPhase}
 								uploadProgress={uploadProgress}
+								isEditing={isEditing}
 							/>
 						)}
 					</div>

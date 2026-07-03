@@ -18,6 +18,7 @@ interface ProposalStepDocumentsProps {
 	setFile: (file: File | null) => void;
 	uploadPhase: "idle" | "creating" | "uploading" | "done";
 	uploadProgress: number;
+	isEditing?: boolean;
 }
 
 export function ProposalStepDocuments({
@@ -25,9 +26,17 @@ export function ProposalStepDocuments({
 	setFile,
 	uploadPhase,
 	uploadProgress,
+	isEditing,
 }: ProposalStepDocumentsProps) {
 	return (
 		<div className="space-y-6">
+			{isEditing && !file && (
+				<p className="text-sm text-muted-foreground text-center">
+					Upload a new proposal PDF only if you need to replace the current
+					document. Otherwise, just proceed to save your changes.
+				</p>
+			)}
+
 			{uploadPhase !== "idle" ? (
 				<div className="border-2 border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center gap-4 bg-card">
 					<div className="flex flex-col items-center gap-3 w-full max-w-xs">
@@ -66,6 +75,7 @@ export function ProposalStepDocuments({
 								</p>
 								<p className="text-xs text-muted-foreground mt-1">
 									Project Proposal PDF (Max 50MB)
+									{isEditing && " — Optional"}
 								</p>
 							</div>
 							<FileUploadTrigger
