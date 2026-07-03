@@ -2,6 +2,8 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { and, count, desc, eq, inArray, isNull, type SQL, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
+import { projectReportingDates } from "../db/schema/project-reporting-dates.js";
+import { projectReportingSchedules } from "../db/schema/project-reporting-schedules.js";
 import { projectReports } from "../db/schema/project-reports.js";
 import { projects } from "../db/schema/projects.js";
 import { proposals } from "../db/schema/proposals.js";
@@ -1018,12 +1020,11 @@ app.openapi(projectDetailsRoute, async (c) => {
 		{
 			id: row.proposalId,
 			title: row.title,
-			status: row.projectStatus || row.status,
+			status,
 			version: `v${row.revisionNum}`,
-			bypassedRetChair: row.bypassedRetChair,
 			metadata: {
 				leader: {
-					name: `${row.leaderFirstName} ${row.leaderLastName}`,
+					name: `${row.leaderFirstName ?? "N/A"} ${row.leaderLastName ?? "N/A"}`.trim(),
 				},
 				departmentCode: row.departmentCode,
 				department: row.departmentName,
@@ -1042,6 +1043,133 @@ app.openapi(projectDetailsRoute, async (c) => {
 		},
 		200,
 	);
+});
+
+// ── POST /projects/:id/activate ──
+const ActivateSchema = z
+	.object({
+		moaId: z.string().uuid(),
+		reportingFrequency: z.enum(["Monthly", "Quarterly", "Semestral", "Custom"]),
+		dueDates: z.array(
+			z.object({
+				reportType: z.string().min(1),
+				dueDate: z.string().datetime(),
+			}),
+		),
+	})
+	.openapi("ActivateProject");
+
+const activateRoute = createRoute({
+	method: "post",
+	path: "/projects/{id}/activate",
+	tags: ["Projects"],
+	summary: "Activate a project by linking MOA, setting reporting schedule, and transitioning to Ongoing",
+	security: [{ Bearer: [] }],
+	request: {
+		params: ParamId,
+		body: {
+			content: { "application/json": { schema: ActivateSchema } },
+			required: true,
+		},
+	},
+	responses: {
+		200: {
+			content: { "application/json": { schema: MessageSchema } },
+			description: "Project activated",
+		},
+		400: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid activation request",
+		},
+	},
+});
+
+app.openapi(activateRoute, async (c) => {
+	const user = c.get("user");
+	const { id } = c.req.valid("param");
+	const body = c.req.valid("json");
+
+	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
+		throw new ApiError(403, "FORBIDDEN", "Only Directors can activate projects");
+	}
+
+	const [project] = await db
+		.select({
+			projectId: projects.projectId,
+			projectStatus: projects.projectStatus,
+			archivedAt: projects.archivedAt,
+		})
+		.from(projects)
+		.where(and(eq(projects.projectId, id), isNull(projects.archivedAt)))
+		.limit(1);
+
+	if (!project) {
+		throw new ApiError(404, "NOT_FOUND", "Project not found");
+	}
+
+	if (project.projectStatus !== PROJECT_STATUS.APPROVED) {
+		throw new ApiError(
+			400,
+			"INVALID_TRANSITION",
+			"Only Approved projects can be activated",
+		);
+	}
+
+	// Validate MOA exists and is not expired
+	const [moa] = await db
+		.select({ moaId: moas.moaId, validUntil: moas.validUntil })
+		.from(moas)
+		.where(eq(moas.moaId, body.moaId))
+		.limit(1);
+
+	if (!moa) {
+		throw new ApiError(404, "NOT_FOUND", "MOA not found");
+	}
+
+	if (moa.validUntil < new Date()) {
+		throw new ApiError(400, "MOA_EXPIRED", "The selected MOA is expired");
+	}
+
+	await db.transaction(async (tx) => {
+		// Link MOA and transition to Ongoing
+		await tx
+			.update(projects)
+			.set({
+				moaId: body.moaId,
+				projectStatus: PROJECT_STATUS.ONGOING,
+				updatedAt: new Date(),
+			})
+			.where(eq(projects.projectId, id));
+
+		// Create reporting schedule
+		const [schedule] = await tx
+			.insert(projectReportingSchedules)
+			.values({ projectId: id })
+			.returning();
+
+		// Create reporting dates
+		if (body.dueDates.length > 0 && schedule) {
+			await tx.insert(projectReportingDates).values(
+				body.dueDates.map((dd) => ({
+					scheduleId: schedule!.scheduleId,
+					reportingDate: new Date(dd.dueDate),
+					isCompleted: false,
+				})),
+			);
+		}
+
+		await insertAuditLog(
+			{
+				userId: user.userId,
+				action: `Activated project ${id} with MOA ${body.moaId}`,
+				tableAffected: "projects",
+				ipAddress: getClientIp(c),
+			},
+			tx,
+		);
+	});
+
+	return c.json({ message: "Project activated successfully" }, 200);
 });
 
 export default app;

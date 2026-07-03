@@ -19,6 +19,8 @@ import { departments } from "../db/schema/departments.js";
 import { moas } from "../db/schema/moas.js";
 import { partners } from "../db/schema/partners.js";
 import { projectReports } from "../db/schema/project-reports.js";
+import { projectReportingDates } from "../db/schema/project-reporting-dates.js";
+import { projectReportingSchedules } from "../db/schema/project-reporting-schedules.js";
 import { projects } from "../db/schema/projects.js";
 import { proposalDocuments } from "../db/schema/proposal-documents.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
@@ -1624,6 +1626,46 @@ app.openapi(emailReportRoute, async (c) => {
 		console.error("Failed to send email report:", error);
 		return c.json({ success: false, message: "Failed to send email report." }, 500);
 	}
+});
+
+// ── GET /director/moas/active ──
+const activeMoasRoute = createRoute({
+	method: "get",
+	path: "/moas/active",
+	tags: ["Director"],
+	summary: "List active MOAs with partner names (for project activation)",
+	security: [{ Bearer: [] }],
+	responses: {
+		200: {
+			description: "List of active MOAs",
+		},
+	},
+});
+
+app.openapi(activeMoasRoute, async (c) => {
+	const user = c.get("user");
+
+	const rows = await db
+		.select({
+			moaId: moas.moaId,
+			partnerName: partners.partnerName,
+			validFrom: moas.validFrom,
+			validUntil: moas.validUntil,
+		})
+		.from(moas)
+		.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
+		.where(isNull(moas.archivedAt))
+		.orderBy(desc(moas.createdAt));
+
+	return c.json(
+		rows.map((r) => ({
+			moaId: r.moaId,
+			partnerName: r.partnerName,
+			validFrom: r.validFrom.toISOString(),
+			validUntil: r.validUntil.toISOString(),
+		})),
+		200,
+	);
 });
 
 export default app;

@@ -695,3 +695,76 @@ export const transitionProjectFn = createServerFn({ method: "POST" })
 
 		return (await response.json()) as { message: string };
 	});
+
+// ── Get Active MOAs ──
+export interface ActiveMoa {
+	moaId: string;
+	partnerName: string;
+	validFrom: string;
+	validUntil: string;
+}
+
+export const getActiveMoasFn = createServerFn({ method: "GET" })
+	.handler(async () => {
+		await authorizeSessionUser("Director");
+		const token = await getValidAccessToken();
+
+		const response = await fetch(`${API_BASE}/director/moas/active`, {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		});
+
+		if (!response.ok) {
+			const message = await getErrorMessage(response, "Failed to fetch MOAs");
+			throw new Error(message);
+		}
+
+		return (await response.json()) as ActiveMoa[];
+	});
+
+// ── Activate Project with MOA & Schedule ──
+export const activateProjectFn = createServerFn({ method: "POST" })
+	.validator(
+		z.object({
+			projectId: z.uuid(),
+			moaId: z.uuid(),
+			reportingFrequency: z.enum(["Monthly", "Quarterly", "Semestral", "Custom"]),
+			dueDates: z.array(
+				z.object({
+					reportType: z.string(),
+					dueDate: z.string(),
+				}),
+			),
+		}),
+	)
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director");
+		const token = await getValidAccessToken();
+
+		const response = await fetch(
+			`${API_BASE}/projects/${data.projectId}/activate`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify({
+					moaId: data.moaId,
+					reportingFrequency: data.reportingFrequency,
+					dueDates: data.dueDates,
+				}),
+			},
+		);
+
+		if (!response.ok) {
+			const message = await getErrorMessage(
+				response,
+				"Failed to activate project",
+			);
+			throw new Error(message);
+		}
+
+		return (await response.json()) as { message: string };
+	});

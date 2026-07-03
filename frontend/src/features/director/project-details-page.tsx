@@ -1,9 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { useState } from "react";
-import { toast } from "sonner";
-import { ChevronRight, Download, Eye, FileText, Info, Loader2, Pencil, Play, User } from "lucide-react";
+import { ChevronRight, Download, Eye, FileText, Info, Pencil, Play, User } from "lucide-react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { DetailsRow } from "@/components/custom/details-row";
 import { PageCard } from "@/components/custom/page-card";
@@ -44,11 +43,11 @@ import {
 	getAccessTokenForUploadFn,
 	getSpecialOrderSignedUrlFn,
 	projectDetailsQueryOptions,
-	transitionProjectFn,
 } from "@/lib/dashboard.functions";
 import type { AuthUser } from "@/lib/auth";
 import { CreateProposalModal } from "@/features/proposals/components/create-proposal-modal";
 import { getProposalByIdFn } from "@/lib/ret.functions";
+import { ActivateProjectWizard } from "./activate-project-wizard";
 import { ProjectDetailsSkeleton } from "./project-details-skeleton";
 
 interface ProjectDetailsPageProps {
@@ -565,23 +564,8 @@ export function ProjectDetailsPage({
 		: undefined;
 
 	const isDirector = currentUserRole === "Director";
-	const canActivate =
-		isDirector &&
-		data.status === "Approved" &&
-		data.metadata.moaLinked !== "None" &&
-		data.members.every(
-			(m) => m.specialOrder && m.specialOrder.storagePath,
-		);
-
-	const transitionMutation = useMutation({
-		mutationFn: transitionProjectFn,
-		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: ["dashboard", "proposals", proposalId],
-			});
-			toast.success("Project activated! It is now Ongoing.");
-		},
-	});
+	const showActivateButton = isDirector && data.status === "Approved";
+	const [showActivateWizard, setShowActivateWizard] = useState(false);
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -636,24 +620,13 @@ export function ProjectDetailsPage({
 								<span className="text-sm font-medium">Edit</span>
 							</Button>
 						)}
-						{canActivate && (
+						{showActivateButton && (
 							<BrandButton
 								className="flex w-fit items-center gap-2 px-5 h-9 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
-								onClick={() =>
-									transitionMutation.mutate({
-										data: { projectId: proposalId, status: "Ongoing" },
-									})
-								}
-								disabled={transitionMutation.isPending}
+								onClick={() => setShowActivateWizard(true)}
 							>
-								{transitionMutation.isPending ? (
-									<Loader2 className="size-4 animate-spin" />
-								) : (
-									<Play className="size-4" />
-								)}
-								<span className="text-sm font-medium">
-									{transitionMutation.isPending ? "Activating..." : "Activate Project"}
-								</span>
+								<Play className="size-4" />
+								<span className="text-sm font-medium">Activate Project</span>
 							</BrandButton>
 						)}
 					</>
@@ -722,6 +695,12 @@ export function ProjectDetailsPage({
 				user={currentUser}
 				initialData={editInitialData}
 				editingProposalId={proposalId}
+			/>
+
+			<ActivateProjectWizard
+				open={showActivateWizard}
+				onOpenChange={setShowActivateWizard}
+				projectId={proposalId}
 			/>
 		</div>
 	);
