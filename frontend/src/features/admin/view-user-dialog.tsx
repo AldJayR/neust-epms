@@ -18,10 +18,21 @@ import { formatAcademicRank } from "@/lib/utils";
 interface ViewUserDialogProps {
 	user: UserResponse;
 	children?: React.ReactNode;
+	isOpen?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }
 
-export function ViewUserDialog({ user, children }: ViewUserDialogProps) {
-	const [isOpen, setIsOpen] = useState(false);
+export function ViewUserDialog({
+	user,
+	children,
+	isOpen: controlledIsOpen,
+	onOpenChange: controlledOnOpenChange,
+}: ViewUserDialogProps) {
+	const [localIsOpen, setLocalIsOpen] = useState(false);
+	const isOpen =
+		controlledIsOpen !== undefined ? controlledIsOpen : localIsOpen;
+	const setIsOpen =
+		controlledOnOpenChange !== undefined ? controlledOnOpenChange : setLocalIsOpen;
 
 	const getFullName = () => {
 		const parts = [user.firstName, user.middleName, user.lastName].filter(
@@ -36,11 +47,13 @@ export function ViewUserDialog({ user, children }: ViewUserDialogProps) {
 
 	return (
 		<Dialog open={isOpen} onOpenChange={setIsOpen}>
-			<DialogTrigger
-				render={
-					React.isValidElement(children) ? children : <span>{children}</span>
-				}
-			/>
+			{children && (
+				<DialogTrigger
+					render={
+						React.isValidElement(children) ? children : <span>{children}</span>
+					}
+				/>
+			)}
 			<DialogContent className="sm:max-w-[480px]">
 				<DialogHeader>
 					<DialogTitle>User Account Details</DialogTitle>

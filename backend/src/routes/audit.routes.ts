@@ -1,9 +1,13 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, count, desc, eq, gte, ilike, or, type SQL, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, or, type SQL, sql, inArray } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { auditLogs } from "../db/schema/audit-logs.js";
 import { roles } from "../db/schema/roles.js";
 import { users } from "../db/schema/users.js";
+import { proposals } from "../db/schema/proposals.js";
+import { projects } from "../db/schema/projects.js";
+import { partners } from "../db/schema/partners.js";
+import { projectReports } from "../db/schema/project-reports.js";
 import { installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
@@ -196,10 +200,49 @@ app.openapi(listRoute, async (c) => {
 			.offset(offset),
 	]);
 
-	const items = rows.map((r) => ({
-		...r,
-		createdAt: r.createdAt.toISOString(),
-	}));
+	// Resolve names/labels for UUIDs present in rows
+	const uuids = new Set<string>();
+	const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+	for (const r of rows) {
+		const matches = r.action.match(uuidRegex);
+		if (matches) {
+			for (const u of matches) {
+				uuids.add(u.toLowerCase());
+			}
+		}
+	}
+
+	const lookup = new Map<string, string>();
+
+	if (uuids.size > 0) {
+		const uuidList = Array.from(uuids);
+		const [proposalsList, projectsList, usersList, partnersList, reportsList] = await Promise.all([
+			db.select({ id: proposals.proposalId, label: proposals.title }).from(proposals).where(inArray(proposals.proposalId, uuidList)),
+			db.select({ id: projects.projectId, label: proposals.title }).from(projects).innerJoin(proposals, eq(projects.proposalId, proposals.proposalId)).where(inArray(projects.projectId, uuidList)),
+			db.select({ id: users.userId, label: sql<string>`${users.firstName} || ' ' || ${users.lastName}` }).from(users).where(inArray(users.userId, uuidList)),
+			db.select({ id: partners.partnerId, label: partners.partnerName }).from(partners).where(inArray(partners.partnerId, uuidList)),
+			db.select({ id: projectReports.reportId, label: projectReports.reportType }).from(projectReports).where(inArray(projectReports.reportId, uuidList)),
+		]);
+
+		for (const p of proposalsList) lookup.set(p.id.toLowerCase(), p.label);
+		for (const p of projectsList) lookup.set(p.id.toLowerCase(), p.label);
+		for (const u of usersList) lookup.set(u.id.toLowerCase(), u.label);
+		for (const pt of partnersList) lookup.set(pt.id.toLowerCase(), pt.label);
+		for (const r of reportsList) lookup.set(r.id.toLowerCase(), r.label);
+	}
+
+	const items = rows.map((r) => {
+		let action = r.action;
+		action = action.replace(uuidRegex, (match) => {
+			const label = lookup.get(match.toLowerCase());
+			return label ? `"${label}"` : match;
+		});
+		return {
+			...r,
+			action,
+			createdAt: r.createdAt.toISOString(),
+		};
+	});
 
 	return c.json({ items, total: Number(totalResult[0]?.value ?? 0) }, 200);
 });

@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { FieldGroup } from "@/components/ui/field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
 	Select,
@@ -117,137 +116,146 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 					React.isValidElement(children) ? children : <span>{children}</span>
 				}
 			/>
-			<DialogContent className="sm:max-w-[480px]">
-				<DialogHeader>
+			<DialogContent className="sm:max-w-[480px] flex flex-col max-h-[90vh] p-6">
+				<DialogHeader className="shrink-0">
 					<DialogTitle>Add User (Director)</DialogTitle>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="flex flex-col gap-5 py-2">
-					<div className="grid grid-cols-2 gap-4">
-						<FieldGroup>
-							<Label htmlFor="firstName" className="text-sm font-medium">
-								First Name <span className="text-destructive">*</span>
+				<form onSubmit={handleSubmit} className="flex-1 flex flex-col gap-5 min-h-0">
+					<div className="flex-1 overflow-y-auto pr-1.5 flex flex-col gap-5 py-1">
+						<div className="grid grid-cols-2 gap-4">
+							<div className="flex flex-col gap-1.5">
+								<Label htmlFor="firstName" className="text-sm font-medium">
+									First Name <span className="text-destructive">*</span>
+								</Label>
+								<Input
+									id="firstName"
+									placeholder="First name"
+									value={firstName}
+									onChange={(e) => setFirstName(e.target.value)}
+									required
+								/>
+							</div>
+							<div className="flex flex-col gap-1.5">
+								<Label htmlFor="lastName" className="text-sm font-medium">
+									Last Name <span className="text-destructive">*</span>
+								</Label>
+								<Input
+									id="lastName"
+									placeholder="Last name"
+									value={lastName}
+									onChange={(e) => setLastName(e.target.value)}
+									required
+								/>
+							</div>
+						</div>
+
+						<div className="grid grid-cols-2 gap-4">
+							<div className="flex flex-col gap-1.5">
+								<Label htmlFor="middleName" className="text-sm font-medium">
+									Middle Name (Optional)
+								</Label>
+								<Input
+									id="middleName"
+									placeholder="Middle name"
+									value={middleName}
+									onChange={(e) => setMiddleName(e.target.value)}
+								/>
+							</div>
+							<div className="flex flex-col gap-1.5">
+								<Label htmlFor="nameSuffix" className="text-sm font-medium">
+									Extension (Optional)
+								</Label>
+								<Input
+									id="nameSuffix"
+									placeholder="e.g. Jr., III"
+									value={nameSuffix}
+									onChange={(e) => setNameSuffix(e.target.value)}
+								/>
+							</div>
+						</div>
+
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="email" className="text-sm font-medium">
+								Email Address <span className="text-destructive">*</span>
 							</Label>
 							<Input
-								id="firstName"
-								placeholder="First name"
-								value={firstName}
-								onChange={(e) => setFirstName(e.target.value)}
+								id="email"
+								type="email"
+								placeholder="email@example.com"
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
 								required
 							/>
-						</FieldGroup>
-						<FieldGroup>
-							<Label htmlFor="lastName" className="text-sm font-medium">
-								Last Name <span className="text-destructive">*</span>
+						</div>
+
+						<div className="grid grid-cols-2 gap-4">
+							<div className="flex flex-col gap-1.5">
+								<Label htmlFor="academicRank" className="text-sm font-medium">
+									Academic Rank <span className="text-destructive">*</span>
+								</Label>
+								<Select value={academicRank} onValueChange={(val) => setAcademicRank(val ?? "")}>
+									<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
+										<SelectValue placeholder="Select rank">
+											{(val) => rankOptions.find((o) => o.value === val)?.label ?? val}
+										</SelectValue>
+									</SelectTrigger>
+									<SelectContent className="z-50">
+										{rankOptions.map((opt) => (
+											<SelectItem key={opt.value} value={opt.value}>
+												{opt.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div className="flex flex-col gap-1.5">
+								<Label htmlFor="department" className="text-sm font-medium">
+									Department (Optional)
+								</Label>
+								<Select value={departmentId} onValueChange={(val) => setDepartmentId(val ?? "")}>
+									<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
+										<SelectValue placeholder="Select department">
+											{(val) => {
+												if (val === "none") return "None";
+												return departments.find((d) => String(d.id) === val)?.name ?? val;
+											}}
+										</SelectValue>
+									</SelectTrigger>
+									<SelectContent className="z-50">
+										<SelectItem value="none">None</SelectItem>
+										{departments.map((d) => (
+											<SelectItem key={d.id} value={String(d.id)}>
+												{d.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						</div>
+
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="role" className="text-sm font-medium">
+								System Role (Locked)
 							</Label>
 							<Input
-								id="lastName"
-								placeholder="Last name"
-								value={lastName}
-								onChange={(e) => setLastName(e.target.value)}
-								required
+								id="role"
+								value="Director"
+								disabled
+								className="bg-muted text-muted-foreground border-border"
 							/>
-						</FieldGroup>
+						</div>
+
+						<Alert className="bg-amber-50/50 border-amber-200/60 text-amber-800 flex items-start gap-2.5 p-3 rounded-lg">
+							<AlertCircle className="size-4 mt-0.5 shrink-0 text-amber-600" />
+							<AlertDescription className="text-amber-700 text-xs font-normal leading-relaxed">
+								A temporary password will be generated and sent to the email address. The user will be prompted to change it on first login.
+							</AlertDescription>
+						</Alert>
 					</div>
 
-					<div className="grid grid-cols-2 gap-4">
-						<FieldGroup>
-							<Label htmlFor="middleName" className="text-sm font-medium">
-								Middle Name (Optional)
-							</Label>
-							<Input
-								id="middleName"
-								placeholder="Middle name"
-								value={middleName}
-								onChange={(e) => setMiddleName(e.target.value)}
-							/>
-						</FieldGroup>
-						<FieldGroup>
-							<Label htmlFor="nameSuffix" className="text-sm font-medium">
-								Extension (Optional)
-							</Label>
-							<Input
-								id="nameSuffix"
-								placeholder="e.g. Jr., III"
-								value={nameSuffix}
-								onChange={(e) => setNameSuffix(e.target.value)}
-							/>
-						</FieldGroup>
-					</div>
-
-					<FieldGroup>
-						<Label htmlFor="email" className="text-sm font-medium">
-							Email Address <span className="text-destructive">*</span>
-						</Label>
-						<Input
-							id="email"
-							type="email"
-							placeholder="email@example.com"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							required
-						/>
-					</FieldGroup>
-
-					<div className="grid grid-cols-2 gap-4">
-						<FieldGroup>
-							<Label htmlFor="academicRank" className="text-sm font-medium">
-								Academic Rank <span className="text-destructive">*</span>
-							</Label>
-							<Select value={academicRank} onValueChange={(val) => setAcademicRank(val ?? "")}>
-								<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
-									<SelectValue placeholder="Select rank" />
-								</SelectTrigger>
-								<SelectContent className="z-50">
-									{rankOptions.map((opt) => (
-										<SelectItem key={opt.value} value={opt.value}>
-											{opt.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</FieldGroup>
-
-						<FieldGroup>
-							<Label htmlFor="department" className="text-sm font-medium">
-								Department (Optional)
-							</Label>
-							<Select value={departmentId} onValueChange={(val) => setDepartmentId(val ?? "")}>
-								<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
-									<SelectValue placeholder="Select department" />
-								</SelectTrigger>
-								<SelectContent className="z-50">
-									<SelectItem value="none">None</SelectItem>
-									{departments.map((d) => (
-										<SelectItem key={d.id} value={String(d.id)}>
-											{d.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</FieldGroup>
-					</div>
-
-					<FieldGroup>
-						<Label htmlFor="role" className="text-sm font-medium">
-							System Role (Locked)
-						</Label>
-						<Input
-							id="role"
-							value="Director"
-							disabled
-							className="bg-muted text-muted-foreground border-border"
-						/>
-					</FieldGroup>
-
-					<Alert className="bg-amber-50/50 border-amber-200/60 text-amber-800 flex items-start gap-2.5 p-3 rounded-lg">
-						<AlertCircle className="size-4 mt-0.5 shrink-0 text-amber-600" />
-						<AlertDescription className="text-amber-700 text-xs font-normal leading-relaxed">
-							A temporary password will be generated and sent to the email address. The user will be prompted to change it on first login.
-						</AlertDescription>
-					</Alert>
-
-					<DialogFooter className="flex gap-3 pt-2">
+					<DialogFooter className="flex gap-3 pt-2 shrink-0">
 						<Button
 							type="button"
 							variant="outline"

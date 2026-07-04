@@ -52,6 +52,10 @@ interface ActivityLogPageProps {
 	onPageChange: (page: number) => void;
 }
 
+const formatActionText = (action: string) => {
+	return action.replace(/\s+/g, " ").trim();
+};
+
 const getActionTypeInfo = (action: string, table: string) => {
 	const lowerAction = action.toLowerCase();
 	if (lowerAction.includes("approved proposal")) {
@@ -159,7 +163,11 @@ export function ActivityLogPage({
 			),
 			headerClassName: "font-medium text-muted-foreground text-sm py-2.5",
 			cellClassName: "py-2.5 text-sm text-foreground leading-normal text-left",
-			cell: ({ row }) => row.original.action,
+			cell: ({ row }) => (
+				<div className="max-w-[320px] md:max-w-[450px] whitespace-normal break-words">
+					{formatActionText(row.original.action)}
+				</div>
+			),
 		},
 		{
 			id: "actor",

@@ -56,6 +56,9 @@ export function UsersPage({
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const queryClient = useQueryClient();
 
+	const [viewingUser, setViewingUser] = useState<UserResponse | null>(null);
+	const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
+
 	// ── Queries ──────────────────────────────────────────────
 
 	const { data: statsData, isLoading: isStatsLoading } = useQuery(
@@ -198,16 +201,12 @@ export function UsersPage({
 								<MoreVertical className="size-4" />
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
-								<ViewUserDialog user={user}>
-									<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-										View Details
-									</DropdownMenuItem>
-								</ViewUserDialog>
-								<EditUserDialog user={user}>
-									<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-										Edit User
-									</DropdownMenuItem>
-								</EditUserDialog>
+								<DropdownMenuItem onClick={() => setViewingUser(user)}>
+									View Details
+								</DropdownMenuItem>
+								<DropdownMenuItem onClick={() => setEditingUser(user)}>
+									Edit User
+								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem
 									className={
@@ -242,14 +241,14 @@ export function UsersPage({
 				actions={
 					<div className="flex gap-3">
 						<BulkApproveDialog>
-							<BrandButton
+							<Button
 								variant="outline"
 								className="shadow-[0px_1px_2px_0px_var(--shadow-card)] border-border bg-background"
 								disabled={updateStatusMutation.isPending}
 							>
 								<CheckCircle2 className="mr-2 size-4" />
 								Bulk approve
-							</BrandButton>
+							</Button>
 						</BulkApproveDialog>
 						<AddUserDialog>
 							<BrandButton
@@ -330,6 +329,25 @@ export function UsersPage({
 						: "No user accounts are available yet."
 				}
 			/>
+
+			{viewingUser && (
+				<ViewUserDialog
+					user={viewingUser}
+					isOpen={!!viewingUser}
+					onOpenChange={(open) => {
+						if (!open) setViewingUser(null);
+					}}
+				/>
+			)}
+			{editingUser && (
+				<EditUserDialog
+					user={editingUser}
+					isOpen={!!editingUser}
+					onOpenChange={(open) => {
+						if (!open) setEditingUser(null);
+					}}
+				/>
+			)}
 		</div>
 	);
 }
