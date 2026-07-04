@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as ForgotPasswordIndexRouteImport } from './routes/forgot-password.index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as RegisterAccountRouteImport } from './routes/register.account'
 import { Route as ForgotPasswordResetRouteImport } from './routes/forgot-password.reset'
@@ -53,6 +54,11 @@ const AboutRoute = AboutRouteImport.update({
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordIndexRoute = ForgotPasswordIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ForgotPasswordRoute,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
@@ -149,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password/otp': typeof ForgotPasswordOtpRoute
   '/forgot-password/reset': typeof ForgotPasswordResetRoute
   '/register/account': typeof RegisterAccountRoute
+  '/forgot-password/': typeof ForgotPasswordIndexRoute
   '/proposals/$proposalId': typeof AuthenticatedProposalsProposalIdRoute
   '/faculty/': typeof AuthenticatedFacultyIndexRoute
   '/moas/': typeof AuthenticatedMoasIndexRoute
@@ -161,7 +168,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/about': typeof AboutRoute
-  '/forgot-password': typeof ForgotPasswordRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRouteWithChildren
   '/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -170,6 +176,7 @@ export interface FileRoutesByTo {
   '/forgot-password/reset': typeof ForgotPasswordResetRoute
   '/register/account': typeof RegisterAccountRoute
   '/': typeof AuthenticatedIndexRoute
+  '/forgot-password': typeof ForgotPasswordIndexRoute
   '/proposals/$proposalId': typeof AuthenticatedProposalsProposalIdRoute
   '/faculty': typeof AuthenticatedFacultyIndexRoute
   '/moas': typeof AuthenticatedMoasIndexRoute
@@ -193,6 +200,7 @@ export interface FileRoutesById {
   '/forgot-password/reset': typeof ForgotPasswordResetRoute
   '/register/account': typeof RegisterAccountRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/forgot-password/': typeof ForgotPasswordIndexRoute
   '/_authenticated/proposals/$proposalId': typeof AuthenticatedProposalsProposalIdRoute
   '/_authenticated/faculty/': typeof AuthenticatedFacultyIndexRoute
   '/_authenticated/moas/': typeof AuthenticatedMoasIndexRoute
@@ -216,6 +224,7 @@ export interface FileRouteTypes {
     | '/forgot-password/otp'
     | '/forgot-password/reset'
     | '/register/account'
+    | '/forgot-password/'
     | '/proposals/$proposalId'
     | '/faculty/'
     | '/moas/'
@@ -228,7 +237,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/about'
-    | '/forgot-password'
     | '/login'
     | '/register'
     | '/admin'
@@ -237,6 +245,7 @@ export interface FileRouteTypes {
     | '/forgot-password/reset'
     | '/register/account'
     | '/'
+    | '/forgot-password'
     | '/proposals/$proposalId'
     | '/faculty'
     | '/moas'
@@ -259,6 +268,7 @@ export interface FileRouteTypes {
     | '/forgot-password/reset'
     | '/register/account'
     | '/_authenticated/'
+    | '/forgot-password/'
     | '/_authenticated/proposals/$proposalId'
     | '/_authenticated/faculty/'
     | '/_authenticated/moas/'
@@ -314,6 +324,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password/': {
+      id: '/forgot-password/'
+      path: '/'
+      fullPath: '/forgot-password/'
+      preLoaderRoute: typeof ForgotPasswordIndexRouteImport
+      parentRoute: typeof ForgotPasswordRoute
     }
     '/_authenticated/': {
       id: '/_authenticated/'
@@ -471,11 +488,13 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 interface ForgotPasswordRouteChildren {
   ForgotPasswordOtpRoute: typeof ForgotPasswordOtpRoute
   ForgotPasswordResetRoute: typeof ForgotPasswordResetRoute
+  ForgotPasswordIndexRoute: typeof ForgotPasswordIndexRoute
 }
 
 const ForgotPasswordRouteChildren: ForgotPasswordRouteChildren = {
   ForgotPasswordOtpRoute: ForgotPasswordOtpRoute,
   ForgotPasswordResetRoute: ForgotPasswordResetRoute,
+  ForgotPasswordIndexRoute: ForgotPasswordIndexRoute,
 }
 
 const ForgotPasswordRouteWithChildren = ForgotPasswordRoute._addFileChildren(

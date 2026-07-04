@@ -158,7 +158,7 @@ function OtpVerificationPage() {
 					<div className="flex gap-3 items-center justify-end w-full mt-7">
 						<Link
 							to="/forgot-password"
-							className="flex h-9 items-center justify-center rounded-lg border border-brand-primary text-brand-primary text-sm font-medium px-4 hover:bg-zinc-50 transition-colors w-[126px]"
+							className="flex h-9 items-center justify-center rounded-lg border border-brand-primary !text-brand-primary text-sm font-medium px-4 hover:bg-zinc-50 transition-colors w-[126px]"
 						>
 							← Back
 						</Link>
