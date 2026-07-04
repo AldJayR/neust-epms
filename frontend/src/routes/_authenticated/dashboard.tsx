@@ -4,17 +4,17 @@ import { PageHeader } from "@/components/custom/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UsersPage } from "@/features/admin/users-page";
 import { DirectorDashboardPage } from "@/features/director/director-dashboard-page";
-import { RETDashboardPage } from "@/features/ret/ret-dashboard-page";
 import { FacultyDashboardPage } from "@/features/faculty/faculty-dashboard-page";
-import {
-	facultyProposalsQueryOptions,
-	facultyProjectsQueryOptions,
-} from "@/lib/faculty.functions";
+import { RETDashboardPage } from "@/features/ret/ret-dashboard-page";
 import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
 } from "@/lib/admin.functions";
 import { directorDashboardQueryOptions } from "@/lib/dashboard.functions";
+import {
+	facultyProjectsQueryOptions,
+	facultyProposalsQueryOptions,
+} from "@/lib/faculty.functions";
 import {
 	isDirector,
 	isRETChair,

@@ -1,7 +1,7 @@
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { FacultyInvolvement } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
 

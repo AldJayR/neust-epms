@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { useRouterState } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { Download, ListFilter, Plus } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { DataTablePage } from "@/components/custom/data-table-page";
@@ -9,8 +10,8 @@ import { MetricCard } from "@/components/custom/metric-card";
 import { PageHeader } from "@/components/custom/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -25,7 +26,6 @@ import {
 	reportsListQueryOptions,
 } from "@/lib/dashboard.functions";
 import { facultyProjectsQueryOptions } from "@/lib/faculty.functions";
-import { useRouterState } from "@tanstack/react-router";
 import { SubmitReportModal } from "../reports/components/submit-report-modal";
 
 const formatDate = (dateStr: string) => {
@@ -67,7 +67,11 @@ export function ReportsPage() {
 	const limit = 10;
 
 	const { data: listData, isLoading: listLoading } = useQuery(
-		reportsListQueryOptions({ page: 1, limit: 100, search: search || undefined }),
+		reportsListQueryOptions({
+			page: 1,
+			limit: 100,
+			search: search || undefined,
+		}),
 	);
 
 	const { data: projectsData, isLoading: projectsLoading } = useQuery({
@@ -98,8 +102,12 @@ export function ReportsPage() {
 	}, [tabFilteredReports, typeFilter]);
 
 	const totalReports = tabFilteredReports.length;
-	const progressCount = tabFilteredReports.filter((r) => r.reportType === "Progress").length;
-	const terminalCount = tabFilteredReports.filter((r) => r.reportType === "Terminal").length;
+	const progressCount = tabFilteredReports.filter(
+		(r) => r.reportType === "Progress",
+	).length;
+	const terminalCount = tabFilteredReports.filter(
+		(r) => r.reportType === "Terminal",
+	).length;
 
 	const isLoading = listLoading || (!!user && projectsLoading);
 
@@ -152,7 +160,11 @@ export function ReportsPage() {
 			id: "reportType",
 			accessorKey: "reportType",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Report Type" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Report Type"
+					className="justify-center"
+				/>
 			),
 			headerClassName:
 				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
@@ -177,7 +189,11 @@ export function ReportsPage() {
 			id: "submitted",
 			accessorKey: "submitted",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Submitted" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Submitted"
+					className="justify-center"
+				/>
 			),
 			headerClassName:
 				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
@@ -202,7 +218,8 @@ export function ReportsPage() {
 		for (const projectId in progressByProject) {
 			const projectReports = progressByProject[projectId];
 			projectReports.sort(
-				(a, b) => new Date(a.submitted).getTime() - new Date(b.submitted).getTime(),
+				(a, b) =>
+					new Date(a.submitted).getTime() - new Date(b.submitted).getTime(),
 			);
 			projectReports.forEach((r, idx) => {
 				sequenceMap.set(r.reportId, idx + 1);
@@ -247,7 +264,11 @@ export function ReportsPage() {
 			id: "reportType",
 			accessorKey: "reportType",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Report Type" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Report Type"
+					className="justify-center"
+				/>
 			),
 			headerClassName:
 				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
@@ -272,7 +293,11 @@ export function ReportsPage() {
 			id: "submitted",
 			accessorKey: "submitted",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Submitted" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Submitted"
+					className="justify-center"
+				/>
 			),
 			headerClassName:
 				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
@@ -373,7 +398,9 @@ export function ReportsPage() {
 						<div className="border-b border-border bg-background p-2">
 							<Tabs
 								value={activeTab}
-								onValueChange={(val) => handleTabChange(val as "my" | "college")}
+								onValueChange={(val) =>
+									handleTabChange(val as "my" | "college")
+								}
 								className="w-fit"
 							>
 								<TabsList className="bg-muted">

@@ -1,12 +1,31 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
+import {
+	ChevronRight,
+	Download,
+	Eye,
+	FileText,
+	Info,
+	Pencil,
+	Play,
+	User,
+} from "lucide-react";
 import { useState } from "react";
-import { ChevronRight, Download, Eye, FileText, Info, Pencil, Play, User } from "lucide-react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { DetailsRow } from "@/components/custom/details-row";
 import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+	Attachment,
+	AttachmentAction,
+	AttachmentActions,
+	AttachmentContent,
+	AttachmentDescription,
+	AttachmentMedia,
+	AttachmentTitle,
+} from "@/components/ui/attachment";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -19,33 +38,23 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
-	Attachment,
-	AttachmentAction,
-	AttachmentActions,
-	AttachmentContent,
-	AttachmentDescription,
-	AttachmentMedia,
-	AttachmentTitle,
-} from "@/components/ui/attachment";
-import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { CreateProposalModal } from "@/features/proposals/components/create-proposal-modal";
+import type { AuthUser } from "@/lib/auth";
 import {
 	API_BASE,
-	type ProjectMember,
 	getAccessTokenForUploadFn,
 	getSpecialOrderSignedUrlFn,
+	type ProjectMember,
 	projectDetailsQueryOptions,
 } from "@/lib/dashboard.functions";
-import type { AuthUser } from "@/lib/auth";
-import { CreateProposalModal } from "@/features/proposals/components/create-proposal-modal";
 import { getProposalByIdFn } from "@/lib/ret.functions";
 import { ActivateProjectWizard } from "./activate-project-wizard";
 import { ProjectDetailsSkeleton } from "./project-details-skeleton";
@@ -87,7 +96,9 @@ function ProjectOverviewCard({
 	status,
 }: ProjectOverviewCardProps) {
 	const queryClient = useQueryClient();
-	const [uploadingMemberId, setUploadingMemberId] = useState<string | null>(null);
+	const [uploadingMemberId, setUploadingMemberId] = useState<string | null>(
+		null,
+	);
 	const [soNumbers, setSoNumbers] = useState<Record<string, string>>({});
 	const [files, setFiles] = useState<Record<string, File | null>>({});
 	const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
@@ -100,7 +111,11 @@ function ProjectOverviewCard({
 	function canUpload(_member: ProjectMember): boolean {
 		if (status !== "Approved") return false;
 		if (currentUserRole === "Director") return true;
-		if (members.some((m) => m.userId === currentUserId && m.role === "Project Leader"))
+		if (
+			members.some(
+				(m) => m.userId === currentUserId && m.role === "Project Leader",
+			)
+		)
 			return true;
 		return false;
 	}
@@ -211,7 +226,10 @@ function ProjectOverviewCard({
 						<span className="text-sm text-muted-foreground">Project Team</span>
 						<div className="flex items-center gap-4">
 							{isAllowedToManageSO && (
-								<Badge variant="outline" className="text-[10px] font-normal text-muted-foreground border-dashed">
+								<Badge
+									variant="outline"
+									className="text-[10px] font-normal text-muted-foreground border-dashed"
+								>
 									Manage SO
 								</Badge>
 							)}
@@ -246,7 +264,8 @@ function ProjectOverviewCard({
 							</DialogTitle>
 							{isAllowedToManageSO && (
 								<span className="text-xs text-muted-foreground">
-									{members.filter((m) => m.specialOrder).length}/{members.length} Special Orders uploaded
+									{members.filter((m) => m.specialOrder).length}/
+									{members.length} Special Orders uploaded
 								</span>
 							)}
 						</DialogHeader>
@@ -258,10 +277,7 @@ function ProjectOverviewCard({
 								>
 									<div className="flex items-center gap-3">
 										<Avatar className="size-9 border border-border">
-											<AvatarImage
-												src={member.avatarUrl}
-												alt={member.name}
-											/>
+											<AvatarImage src={member.avatarUrl} alt={member.name} />
 											<AvatarFallback className="bg-gray-100 text-gray-600">
 												<User className="size-4" />
 											</AvatarFallback>
@@ -275,8 +291,8 @@ function ProjectOverviewCard({
 											</span>
 										</div>
 
-										{isAllowedToManageSO && (
-											member.specialOrder ? (
+										{isAllowedToManageSO &&
+											(member.specialOrder ? (
 												<div className="flex items-center gap-2">
 													<Badge
 														variant="outline"
@@ -289,9 +305,7 @@ function ProjectOverviewCard({
 														variant="outline"
 														className="h-7 text-xs"
 														onClick={() =>
-															handleViewSO(
-																member.specialOrder!.specialOrderId,
-															)
+															handleViewSO(member.specialOrder!.specialOrderId)
 														}
 													>
 														<Eye className="mr-1 size-3" />
@@ -319,8 +333,7 @@ function ProjectOverviewCard({
 														onChange={(e) =>
 															setFiles((prev) => ({
 																...prev,
-																[member.userId]:
-																	e.target.files?.[0] ?? null,
+																[member.userId]: e.target.files?.[0] ?? null,
 															}))
 														}
 													/>
@@ -343,8 +356,7 @@ function ProjectOverviewCard({
 												<span className="text-xs text-muted-foreground">
 													No SO
 												</span>
-											)
-										)}
+											))}
 									</div>
 									{uploadErrors[member.userId] && (
 										<span className="ml-12 text-xs text-red-500">
@@ -539,8 +551,7 @@ export function ProjectDetailsPage({
 		) ?? false;
 
 	const isEditable =
-		isProjectLeader &&
-		!["Approved", "Ongoing", "Closed"].includes(data.status);
+		isProjectLeader && !["Approved", "Ongoing", "Closed"].includes(data.status);
 
 	const editInitialData = editProposalData
 		? {
@@ -607,7 +618,9 @@ export function ProjectDetailsPage({
 								}
 							>
 								<Eye className="size-4" />
-								<span className="text-sm font-medium">Read Proposal Document</span>
+								<span className="text-sm font-medium">
+									Read Proposal Document
+								</span>
 							</BrandButton>
 						) : undefined}
 						{isEditable && (
@@ -639,17 +652,19 @@ export function ProjectDetailsPage({
 					<AlertTitle>Your proposal has been approved!</AlertTitle>
 					<AlertDescription className="space-y-2">
 						<p>
-							Great news — your project proposal has been approved. Here's what to do next:
+							Great news — your project proposal has been approved. Here's what
+							to do next:
 						</p>
 						<ol className="list-decimal pl-5 space-y-1">
 							<li>
-								<strong>Print the proposal document</strong> and submit the physical
-								copy to the Extension Services Department Office for their records.
+								<strong>Print the proposal document</strong> and submit the
+								physical copy to the Extension Services Department Office for
+								their records.
 							</li>
 							<li>
-								<strong>Upload the Special Order</strong> for each project member —
-								you can do this by opening the Project Team section below and
-								uploading the corresponding SO for each team member.
+								<strong>Upload the Special Order</strong> for each project
+								member — you can do this by opening the Project Team section
+								below and uploading the corresponding SO for each team member.
 							</li>
 						</ol>
 						<p className="pt-1">
@@ -662,7 +677,9 @@ export function ProjectDetailsPage({
 
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
 				{/* Main Column */}
-				<div className={`${isAllowedToReadProposal ? "lg:col-span-8" : "lg:col-span-12"} flex flex-col gap-6`}>
+				<div
+					className={`${isAllowedToReadProposal ? "lg:col-span-8" : "lg:col-span-12"} flex flex-col gap-6`}
+				>
 					<ProjectOverviewCard
 						metadata={data.metadata}
 						members={data.members}

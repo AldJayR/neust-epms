@@ -309,7 +309,9 @@ export function CreateProposalModal({
 				>
 					<DialogHeader className="py-4 px-6 border-b border-border">
 						<DialogTitle className="text-xl font-semibold text-heading">
-							{isEditing ? "Edit Project Proposal" : "Start New Project Proposal"}
+							{isEditing
+								? "Edit Project Proposal"
+								: "Start New Project Proposal"}
 						</DialogTitle>
 						<DialogDescription className="text-sm text-muted-foreground">
 							Step {step} of 4:{" "}

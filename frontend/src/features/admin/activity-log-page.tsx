@@ -18,8 +18,8 @@ import { MetricCard } from "@/components/custom/metric-card";
 import { PageHeader } from "@/components/custom/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import {
 	DropdownMenu,
 	DropdownMenuContent,

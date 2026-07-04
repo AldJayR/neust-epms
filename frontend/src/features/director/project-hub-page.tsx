@@ -2,11 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { ClientOnly, Link } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
+import { useState } from "react";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { DataTablePage } from "@/components/custom/data-table-page";
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { AuthUser } from "@/lib/auth";
 import {
@@ -14,8 +15,6 @@ import {
 	projectHubQueryOptions,
 } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
-
-import { useState } from "react";
 
 interface ProjectHubPageProps {
 	user?: AuthUser | null;
@@ -136,9 +135,7 @@ export function ProjectHubPage({
 	return (
 		<DataTablePage
 			title={
-				<h1 className="text-2xl font-semibold text-heading">
-					Project Hub
-				</h1>
+				<h1 className="text-2xl font-semibold text-heading">Project Hub</h1>
 			}
 			columns={columns}
 			data={items}

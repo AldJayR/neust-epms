@@ -302,7 +302,10 @@ export const getProposalByIdFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch proposal");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch proposal",
+			);
 			throw new Error(message);
 		}
 
@@ -334,7 +337,10 @@ export const submitProposalFn = createServerFn({ method: "POST" })
 		);
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to submit proposal");
+			const message = await getErrorMessage(
+				response,
+				"Failed to submit proposal",
+			);
 			throw new Error(message);
 		}
 
@@ -347,27 +353,27 @@ export const updateProposalFn = createServerFn({ method: "POST" })
 		await authorizeSessionUser("RET Chair", "Director", "Faculty");
 		const accessToken = await getValidAccessToken();
 
-		const response = await fetch(
-			`${API_BASE}/proposals/${data.proposalId}`,
-			{
-				method: "PATCH",
-				headers: {
-					Authorization: `Bearer ${accessToken}`,
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					title: data.title,
-					bannerProgram: data.bannerProgram,
-					projectLocale: data.projectLocale,
-					extensionCategory: data.extensionCategory,
-					budgetPartner: data.budgetPartner,
-					budgetNeust: data.budgetNeust,
-				}),
+		const response = await fetch(`${API_BASE}/proposals/${data.proposalId}`, {
+			method: "PATCH",
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+				"Content-Type": "application/json",
 			},
-		);
+			body: JSON.stringify({
+				title: data.title,
+				bannerProgram: data.bannerProgram,
+				projectLocale: data.projectLocale,
+				extensionCategory: data.extensionCategory,
+				budgetPartner: data.budgetPartner,
+				budgetNeust: data.budgetNeust,
+			}),
+		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to update proposal");
+			const message = await getErrorMessage(
+				response,
+				"Failed to update proposal",
+			);
 			throw new Error(message);
 		}
 

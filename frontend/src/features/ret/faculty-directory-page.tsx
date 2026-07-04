@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import type { SortingState } from "@tanstack/react-table";
 import { ListFilter } from "lucide-react";
 import * as React from "react";
 import { cn } from "#/lib/utils";
@@ -12,7 +13,6 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { SortingState } from "@tanstack/react-table";
 import type { AuthUser } from "@/lib/auth";
 import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
 import { retFacultyDirectoryColumns } from "./components/faculty-directory-columns";
@@ -296,7 +296,6 @@ export function RetFacultyDirectoryPage({
 				activeFilters={{ search }}
 				emptyMessage="No faculty records found."
 				ariaLabel="Faculty directory"
-				
 				cardHeader={
 					<div className="border-b border-border bg-background p-2">
 						<Tabs

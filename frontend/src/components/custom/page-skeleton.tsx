@@ -25,7 +25,10 @@ export function PageSkeleton({
 			{metricsCount > 0 && (
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 					{Array.from({ length: metricsCount }).map((_, i) => (
-						<div key={i} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-6 shadow-sm">
+						<div
+							key={i}
+							className="flex flex-col gap-3 rounded-xl border border-border bg-card p-6 shadow-sm"
+						>
 							<Skeleton className="h-4 w-24 rounded" />
 							<Skeleton className="h-8 w-16 rounded" />
 						</div>
@@ -50,7 +53,10 @@ export function PageSkeleton({
 				</div>
 				{/* Rows */}
 				{Array.from({ length: 5 }).map((_, rowIdx) => (
-					<div key={rowIdx} className="flex gap-4 py-4 border-b border-border/40">
+					<div
+						key={rowIdx}
+						className="flex gap-4 py-4 border-b border-border/40"
+					>
 						{columnWidths.map((width, colIdx) => (
 							<div key={colIdx} className={width}>
 								<Skeleton className="h-4 w-[85%] rounded" />

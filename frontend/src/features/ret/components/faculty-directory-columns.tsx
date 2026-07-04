@@ -1,8 +1,8 @@
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { FacultyInvolvement } from "@/lib/dashboard.functions";
 import { formatAcademicRank } from "@/lib/utils";
@@ -60,7 +60,11 @@ export const retFacultyDirectoryColumns: DataTableColumnDef<FacultyInvolvement>[
 			id: "totalProjects",
 			accessorKey: "totalInvolvement",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Total Projects" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Total Projects"
+					className="justify-center"
+				/>
 			),
 			headerClassName:
 				"w-[150px] px-4 py-2 text-sm font-medium text-muted-foreground text-center",
@@ -71,7 +75,11 @@ export const retFacultyDirectoryColumns: DataTableColumnDef<FacultyInvolvement>[
 			id: "status",
 			accessorKey: "isActive",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Account Status" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Account Status"
+					className="justify-center"
+				/>
 			),
 			headerClassName:
 				"w-[150px] px-4 py-2 text-sm font-medium text-muted-foreground text-center",

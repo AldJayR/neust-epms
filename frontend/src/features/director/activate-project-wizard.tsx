@@ -1,9 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CalendarIcon, Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2 } from "lucide-react";
+import {
+	CalendarIcon,
+	Check,
+	ChevronLeft,
+	ChevronRight,
+	Loader2,
+	Plus,
+	Trash2,
+} from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
+import { cn } from "#/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
 	Combobox,
 	ComboboxContent,
@@ -21,13 +31,12 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "#/lib/utils";
 import {
-	activateProjectFn,
-	getActiveMoasFn,
-} from "@/lib/dashboard.functions";
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { activateProjectFn, getActiveMoasFn } from "@/lib/dashboard.functions";
 
 interface ActivateProjectWizardProps {
 	open: boolean;
@@ -117,7 +126,9 @@ export function ActivateProjectWizard({
 	}
 
 	function handleUpdateDueDate(id: string, date: Date | undefined) {
-		setDueDates(dueDates.map((d) => (d.id === id ? { ...d, dueDate: date } : d)));
+		setDueDates(
+			dueDates.map((d) => (d.id === id ? { ...d, dueDate: date } : d)),
+		);
 	}
 
 	function handleSubmit() {
@@ -188,8 +199,12 @@ export function ActivateProjectWizard({
 														<div className="flex flex-col">
 															<span>{moa.partnerName}</span>
 															<span className="text-xs text-muted-foreground">
-																{format(new Date(moa.validFrom), "MMM d, yyyy")} -{" "}
-																{format(new Date(moa.validUntil), "MMM d, yyyy")}
+																{format(new Date(moa.validFrom), "MMM d, yyyy")}{" "}
+																-{" "}
+																{format(
+																	new Date(moa.validUntil),
+																	"MMM d, yyyy",
+																)}
 															</span>
 														</div>
 													</ComboboxItem>
@@ -204,7 +219,8 @@ export function ActivateProjectWizard({
 								<div className="rounded-lg border border-border bg-muted/50 p-3 text-sm">
 									<p className="font-medium">{selectedMoa.partnerName}</p>
 									<p className="text-muted-foreground">
-										Valid: {format(new Date(selectedMoa.validFrom), "MMM d, yyyy")} -{" "}
+										Valid:{" "}
+										{format(new Date(selectedMoa.validFrom), "MMM d, yyyy")} -{" "}
 										{format(new Date(selectedMoa.validUntil), "MMM d, yyyy")}
 									</p>
 								</div>
@@ -218,7 +234,9 @@ export function ActivateProjectWizard({
 							<div className="space-y-3">
 								<Label>Reporting Frequency</Label>
 								<div className="grid grid-cols-4 gap-2">
-									{(["Monthly", "Quarterly", "Semestral", "Custom"] as const).map((freq) => (
+									{(
+										["Monthly", "Quarterly", "Semestral", "Custom"] as const
+									).map((freq) => (
 										<Button
 											key={freq}
 											variant={frequency === freq ? "default" : "outline"}
@@ -247,7 +265,11 @@ export function ActivateProjectWizard({
 									<Popover>
 										<PopoverTrigger
 											render={
-												<Button variant="outline" size="sm" className="gap-1.5" />
+												<Button
+													variant="outline"
+													size="sm"
+													className="gap-1.5"
+												/>
 											}
 										>
 											<Plus className="size-3.5" />
@@ -309,7 +331,9 @@ export function ActivateProjectWizard({
 													<Calendar
 														mode="single"
 														selected={entry.dueDate}
-														onSelect={(date) => handleUpdateDueDate(entry.id, date)}
+														onSelect={(date) =>
+															handleUpdateDueDate(entry.id, date)
+														}
 														disabled={(date) => date < new Date()}
 													/>
 												</PopoverContent>

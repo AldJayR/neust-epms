@@ -1,5 +1,5 @@
-import { Link, useParams, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { Link, useParams, useRouterState } from "@tanstack/react-router";
 import { DetailsRow } from "@/components/custom/details-row";
 import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
@@ -36,7 +36,7 @@ export function ProjectDetailsSkeleton() {
 		? queryClient.getQueryData<{
 				metadata?: { leader?: { name?: string } };
 				members?: { userId: string; role?: string }[];
-		  }>(["dashboard", "proposals", id])
+			}>(["dashboard", "proposals", id])
 		: null;
 
 	const isProjectLeader =

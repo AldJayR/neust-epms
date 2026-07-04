@@ -1,8 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
+import { PageSkeleton } from "@/components/custom/page-skeleton";
 import { FacultyDirectoryPage } from "@/features/director/faculty-directory-page";
 import { RetFacultyDirectoryPage } from "@/features/ret/faculty-directory-page";
-import { PageSkeleton } from "@/components/custom/page-skeleton";
 import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
 import { isRETChair, requireRole } from "@/lib/permissions";
 

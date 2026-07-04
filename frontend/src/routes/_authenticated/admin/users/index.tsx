@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
-import { UsersPage } from "@/features/admin/users-page";
 import { PageSkeleton } from "@/components/custom/page-skeleton";
+import { UsersPage } from "@/features/admin/users-page";
 import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,

@@ -87,9 +87,7 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 	const ongoingProjects = userItems.filter(
 		(item) => item.status === "Ongoing",
 	).length;
-	const proposalsSubmitted = userItems.filter(
-		(item) => !item.isProject,
-	).length;
+	const proposalsSubmitted = userItems.filter((item) => !item.isProject).length;
 
 	const formatDateRange = (start?: string | null, end?: string | null) => {
 		if (!start && !end) return "No duration set";
@@ -188,12 +186,18 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 
 							<div className="flex items-center justify-between w-full mt-1">
 								{item.isLeader ? (
-									<Badge variant="outline" className="gap-1 text-muted-foreground">
+									<Badge
+										variant="outline"
+										className="gap-1 text-muted-foreground"
+									>
 										<Crown className="size-3.5 text-amber-500" />
 										Project Leader
 									</Badge>
 								) : (
-									<Badge variant="outline" className="gap-1 text-muted-foreground">
+									<Badge
+										variant="outline"
+										className="gap-1 text-muted-foreground"
+									>
 										<Users className="size-3.5 text-sky-500" />
 										Project Member
 									</Badge>

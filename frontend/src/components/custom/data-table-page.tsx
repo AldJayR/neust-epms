@@ -1,10 +1,10 @@
-import type { ReactNode } from "react";
 import type {
+	Table as ReactTable,
 	RowSelectionState,
 	SortingState,
 	VisibilityState,
 } from "@tanstack/react-table";
-import type { Table as ReactTable } from "@tanstack/react-table";
+import type { ReactNode } from "react";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { DataTable } from "@/components/ui/data-table";
 import { PaginationBar } from "@/components/ui/pagination-bar";

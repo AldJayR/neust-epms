@@ -1,17 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { SortingState } from "@tanstack/react-table";
 import { CheckCircle2, ListFilter, MoreVertical } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
-import type { SortingState } from "@tanstack/react-table";
 import { DataTablePage } from "@/components/custom/data-table-page";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageHeader } from "@/components/custom/page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -136,7 +136,11 @@ export function UsersPage({
 			id: "department",
 			accessorFn: (row) => row.departmentName ?? row.campusName,
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Department" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Department"
+					className="justify-center"
+				/>
 			),
 			headerClassName: "text-center font-medium text-muted-foreground",
 			cellClassName: "text-center text-sm text-foreground",
@@ -146,7 +150,11 @@ export function UsersPage({
 			id: "role",
 			accessorKey: "roleName",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Role" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Role"
+					className="justify-center"
+				/>
 			),
 			headerClassName: "text-center font-medium text-muted-foreground",
 			cellClassName: "text-center text-sm text-foreground",
@@ -156,7 +164,11 @@ export function UsersPage({
 			id: "status",
 			accessorKey: "isActive",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Status" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Status"
+					className="justify-center"
+				/>
 			),
 			headerClassName: "text-center font-medium text-muted-foreground",
 			cell: ({ row }) => (

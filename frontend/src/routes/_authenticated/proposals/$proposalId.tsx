@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { ProposalReviewPage } from "@/features/director/proposal-review-page";
 import { ProjectDetailsSkeleton } from "@/features/director/project-details-skeleton";
+import { ProposalReviewPage } from "@/features/director/proposal-review-page";
 import { projectDetailsQueryOptions } from "@/lib/dashboard.functions";
 import { requireRole } from "@/lib/permissions";
 

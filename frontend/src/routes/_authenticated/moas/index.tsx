@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
-import { MoaRepositoryPage } from "@/features/director/moa-repository-page";
 import { PageSkeleton } from "@/components/custom/page-skeleton";
+import { MoaRepositoryPage } from "@/features/director/moa-repository-page";
 import { moaRepositoryQueryOptions } from "@/lib/dashboard.functions";
 import { requireRole } from "@/lib/permissions";
 

@@ -339,3 +339,110 @@ export const getCurrentUserFn = createServerFn({ method: "POST" })
 
 		return currentUser;
 	});
+
+// ── Password Reset Functions ──
+
+export const sendResetCodeFn = createServerFn({ method: "POST" })
+	.validator(z.object({ email: z.string().email() }))
+	.handler(async ({ data }) => {
+		const { supabase } = await import("./supabase.server");
+		const { error } = await supabase.auth.resetPasswordForEmail(data.email);
+		if (error) {
+			return { error: true as const, message: error.message };
+		}
+		return { error: false as const };
+	});
+
+export const verifyResetCodeFn = createServerFn({ method: "POST" })
+	.validator(
+		z.object({ email: z.string().email(), code: z.string().length(6) }),
+	)
+	.handler(async ({ data }) => {
+		const { supabase } = await import("./supabase.server");
+		const { data: verifyData, error } = await supabase.auth.verifyOtp({
+			email: data.email,
+			token: data.code,
+			type: "recovery",
+		});
+		if (error || !verifyData.session) {
+			return {
+				error: true as const,
+				message: error?.message ?? "Invalid or expired code",
+			};
+		}
+
+		const { getAppSession } = await import("./session.server");
+		const session = await getAppSession();
+		await session.update({
+			accessToken: verifyData.session.access_token,
+			refreshToken: verifyData.session.refresh_token,
+			email: data.email,
+		});
+		return { error: false as const };
+	});
+
+export const setNewPasswordFn = createServerFn({ method: "POST" })
+	.validator(z.object({ password: z.string().min(8) }))
+	.handler(async ({ data }) => {
+		const { getAppSession } = await import("./session.server");
+		const session = await getAppSession();
+		const { accessToken, refreshToken } = session.data;
+
+		if (!accessToken || !refreshToken) {
+			return {
+				error: true as const,
+				message: "Session expired or invalid. Please request a new code.",
+			};
+		}
+
+		const { createClient } = await import("@supabase/supabase-js");
+		const client = createClient(
+			process.env.SUPABASE_URL ?? "",
+			process.env.SUPABASE_ANON_KEY ?? "",
+			{
+				auth: { persistSession: false, autoRefreshToken: false },
+			},
+		);
+
+		const { error: setSessionError } = await client.auth.setSession({
+			access_token: accessToken,
+			refresh_token: refreshToken,
+		});
+
+		if (setSessionError) {
+			return {
+				error: true as const,
+				message: `Auth session error: ${setSessionError.message}`,
+			};
+		}
+
+		// Check if password has been compromised
+		const breachResponse = await fetch(`${API_BASE}/auth/check-password`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ password: data.password }),
+		});
+		if (breachResponse.ok) {
+			const { compromised } = (await breachResponse.json()) as {
+				compromised: boolean;
+			};
+			if (compromised) {
+				return {
+					error: true as const,
+					message:
+						"This password has appeared in a known data breach. Please choose a different one.",
+				};
+			}
+		}
+
+		const { error: updateError } = await client.auth.updateUser({
+			password: data.password,
+		});
+
+		if (updateError) {
+			return { error: true as const, message: updateError.message };
+		}
+
+		await session.clear();
+		return { error: false as const };
+	});

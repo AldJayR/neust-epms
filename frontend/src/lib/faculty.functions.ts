@@ -79,7 +79,12 @@ export interface FacultyProjectListResponse {
 const getFacultyProposalsFn = createServerFn({ method: "GET" })
 	.validator(facultyProposalsParamsSchema)
 	.handler(async ({ data }) => {
-		await authorizeSessionUser("Faculty", "RET Chair", "Director", "Super Admin");
+		await authorizeSessionUser(
+			"Faculty",
+			"RET Chair",
+			"Director",
+			"Super Admin",
+		);
 		const accessToken = await getValidAccessToken();
 
 		const url = new URL(`${API_BASE}/proposals`);
@@ -97,7 +102,10 @@ const getFacultyProposalsFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch faculty proposals");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch faculty proposals",
+			);
 			throw new Error(message);
 		}
 
@@ -107,7 +115,12 @@ const getFacultyProposalsFn = createServerFn({ method: "GET" })
 const getFacultyProjectsFn = createServerFn({ method: "GET" })
 	.validator(facultyProjectsParamsSchema)
 	.handler(async ({ data }) => {
-		await authorizeSessionUser("Faculty", "RET Chair", "Director", "Super Admin");
+		await authorizeSessionUser(
+			"Faculty",
+			"RET Chair",
+			"Director",
+			"Super Admin",
+		);
 		const accessToken = await getValidAccessToken();
 
 		const url = new URL(`${API_BASE}/projects`);
@@ -121,7 +134,10 @@ const getFacultyProjectsFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch faculty projects");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch faculty projects",
+			);
 			throw new Error(message);
 		}
 

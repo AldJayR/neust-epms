@@ -145,7 +145,7 @@ function LoginPage() {
 							label="Password"
 							labelAction={
 								<Link
-									to="/login"
+									to="/forgot-password"
 									className="text-sm leading-5 text-black hover:text-black hover:underline"
 								>
 									Forgot password?

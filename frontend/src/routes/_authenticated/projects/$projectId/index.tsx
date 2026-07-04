@@ -26,10 +26,5 @@ function ProjectDetailsRoutePage() {
 	const { projectId } = Route.useParams();
 	const { user } = Route.useRouteContext();
 
-	return (
-		<ProjectDetailsPage
-			proposalId={projectId}
-			currentUser={user}
-		/>
-	);
+	return <ProjectDetailsPage proposalId={projectId} currentUser={user} />;
 }

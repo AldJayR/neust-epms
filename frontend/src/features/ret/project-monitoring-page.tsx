@@ -7,8 +7,8 @@ import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { DataTablePage } from "@/components/custom/data-table-page";
 import { MetricCard } from "@/components/custom/metric-card";
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AuthUser } from "@/lib/auth";
@@ -199,7 +199,6 @@ export function ProjectMonitoringPage({
 				emptyMessage="No projects found."
 				ariaLabel="Projects"
 				onRowClick={(project) => onProjectClick?.(project.id)}
-				
 				cardHeader={
 					<div className="border-b border-border bg-background p-2">
 						<Tabs

@@ -32,10 +32,14 @@ export default function ProjectsChartCard({
 
 	const deptMap = new Map<string, number>();
 	for (const d of filtered) {
-		deptMap.set(d.departmentCode, (deptMap.get(d.departmentCode) ?? 0) + d.value);
+		deptMap.set(
+			d.departmentCode,
+			(deptMap.get(d.departmentCode) ?? 0) + d.value,
+		);
 	}
-	const bars = Array.from(deptMap, ([label, value]) => ({ label, value }))
-		.sort((a, b) => b.value - a.value);
+	const bars = Array.from(deptMap, ([label, value]) => ({ label, value })).sort(
+		(a, b) => b.value - a.value,
+	);
 
 	return (
 		<div className="h-[370px] overflow-hidden rounded-[12px] border border-border bg-background shadow-[0px_1px_3px_0px var(--shadow-card)]">

@@ -379,14 +379,11 @@ const getProjectDetailsFn = createServerFn({ method: "GET" })
 		await authorizeSessionUser("Director", "RET Chair", "Faculty");
 		const token = await getValidAccessToken();
 
-		const response = await fetch(
-			`${API_BASE}/projects/${proposalId}`,
-			{
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
+		const response = await fetch(`${API_BASE}/projects/${proposalId}`, {
+			headers: {
+				Authorization: `Bearer ${token}`,
 			},
-		);
+		});
 
 		if (!response.ok) {
 			const message = await getErrorMessage(
@@ -704,8 +701,8 @@ export interface ActiveMoa {
 	validUntil: string;
 }
 
-export const getActiveMoasFn = createServerFn({ method: "GET" })
-	.handler(async () => {
+export const getActiveMoasFn = createServerFn({ method: "GET" }).handler(
+	async () => {
 		await authorizeSessionUser("Director");
 		const token = await getValidAccessToken();
 
@@ -721,7 +718,8 @@ export const getActiveMoasFn = createServerFn({ method: "GET" })
 		}
 
 		return (await response.json()) as ActiveMoa[];
-	});
+	},
+);
 
 // ── Activate Project with MOA & Schedule ──
 export const activateProjectFn = createServerFn({ method: "POST" })
@@ -729,7 +727,12 @@ export const activateProjectFn = createServerFn({ method: "POST" })
 		z.object({
 			projectId: z.uuid(),
 			moaId: z.uuid(),
-			reportingFrequency: z.enum(["Monthly", "Quarterly", "Semestral", "Custom"]),
+			reportingFrequency: z.enum([
+				"Monthly",
+				"Quarterly",
+				"Semestral",
+				"Custom",
+			]),
 			dueDates: z.array(
 				z.object({
 					reportType: z.string(),

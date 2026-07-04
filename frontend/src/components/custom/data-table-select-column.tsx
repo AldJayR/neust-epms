@@ -1,5 +1,5 @@
-import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { Checkbox } from "@/components/ui/checkbox";
+import type { DataTableColumnDef } from "@/components/ui/data-table";
 
 export function createSelectColumn<TData>(): DataTableColumnDef<TData> {
 	return {
@@ -8,10 +8,11 @@ export function createSelectColumn<TData>(): DataTableColumnDef<TData> {
 			<div className="flex justify-center">
 				<Checkbox
 					checked={table.getIsAllPageRowsSelected()}
-					indeterminate={table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()}
-					onCheckedChange={(value) =>
-						table.toggleAllPageRowsSelected(!!value)
+					indeterminate={
+						table.getIsSomePageRowsSelected() &&
+						!table.getIsAllPageRowsSelected()
 					}
+					onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
 					aria-label="Select all"
 				/>
 			</div>

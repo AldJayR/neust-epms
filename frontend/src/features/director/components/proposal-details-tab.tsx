@@ -83,7 +83,6 @@ export function ProposalDetailsTab({
 	const [isReturnOpen, setIsReturnOpen] = useState(false);
 	const [returnReason, setReturnReason] = useState("");
 
-
 	return (
 		<CardContent className="p-0">
 			<div className="p-5 space-y-4">
@@ -218,16 +217,16 @@ export function ProposalDetailsTab({
 
 			{isReviewable && !(isRET && (bypassedRetChair || endorsement)) && (
 				<div className="p-5 flex gap-3">
-				<Button
-					variant="outline"
-					className="flex-1 border border-border rounded-lg text-[#e54d2e] font-medium h-9 text-sm shadow-sm"
-					onClick={() => {
-						setReturnReason("");
-						setIsReturnOpen(true);
-					}}
-				>
-					Return
-				</Button>
+					<Button
+						variant="outline"
+						className="flex-1 border border-border rounded-lg text-[#e54d2e] font-medium h-9 text-sm shadow-sm"
+						onClick={() => {
+							setReturnReason("");
+							setIsReturnOpen(true);
+						}}
+					>
+						Return
+					</Button>
 					<LoadingButton
 						className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-brand-primary text-white hover:bg-brand-primary/90 rounded-lg"
 						onClick={() => {
