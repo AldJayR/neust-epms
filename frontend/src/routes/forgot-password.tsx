@@ -73,12 +73,12 @@ function ForgotPasswordPage() {
 					</FieldGroup>
 
 					<div className="flex gap-3 items-center justify-end w-full mt-7">
-						<Link
-							to="/login"
-							className="flex h-9 items-center justify-center rounded-lg border border-brand-primary text-brand-primary text-sm font-medium px-4 hover:bg-zinc-50 transition-colors w-[126px]"
-						>
-							← Back to login
-						</Link>
+					<Link
+						to="/login"
+						className="flex h-9 items-center justify-center rounded-lg border border-brand-primary text-brand-primary text-sm font-medium px-4 hover:bg-zinc-50 transition-colors whitespace-nowrap"
+					>
+						← Back to login
+					</Link>
 						<RHFSubmitButton
 							label="Send code"
 							isSubmitting={form.formState.isSubmitting}
