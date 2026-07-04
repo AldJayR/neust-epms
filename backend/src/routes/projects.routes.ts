@@ -1,22 +1,31 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, count, desc, eq, inArray, isNull, type SQL, sql } from "drizzle-orm";
+import { createClient } from "@supabase/supabase-js";
+import {
+	and,
+	count,
+	desc,
+	eq,
+	inArray,
+	isNull,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import { db } from "../db/client.js";
+import { departments } from "../db/schema/departments.js";
 import { moas } from "../db/schema/moas.js";
+import { partners } from "../db/schema/partners.js";
 import { projectReportingDates } from "../db/schema/project-reporting-dates.js";
 import { projectReportingSchedules } from "../db/schema/project-reporting-schedules.js";
 import { projectReports } from "../db/schema/project-reports.js";
 import { projects } from "../db/schema/projects.js";
-import { proposals } from "../db/schema/proposals.js";
-import { users } from "../db/schema/users.js";
-import { createClient } from "@supabase/supabase-js";
-import { departments } from "../db/schema/departments.js";
-import { partners } from "../db/schema/partners.js";
 import { proposalDocuments } from "../db/schema/proposal-documents.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposalReviews } from "../db/schema/proposal-reviews.js";
 import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
+import { proposals } from "../db/schema/proposals.js";
 import { sdgs } from "../db/schema/sdgs.js";
 import { specialOrders } from "../db/schema/special-orders.js";
+import { users } from "../db/schema/users.js";
 import { env } from "../env.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { getClientIp } from "../lib/client-ip.js";
@@ -808,7 +817,10 @@ app.openapi(projectDetailsRoute, async (c) => {
 	}
 
 	// Security check for Faculty / RET Chair
-	if (user.roleName === ROLE_NAMES.FACULTY || user.roleName === ROLE_NAMES.RET_CHAIR) {
+	if (
+		user.roleName === ROLE_NAMES.FACULTY ||
+		user.roleName === ROLE_NAMES.RET_CHAIR
+	) {
 		const isMainCampus = user.isMainCampus;
 
 		if (isMainCampus && user.departmentId !== null) {
@@ -830,74 +842,78 @@ app.openapi(projectDetailsRoute, async (c) => {
 		}
 	}
 
-	const [memberRows, documentRows, reviewRows, sdgRows, specialOrderRows] = await Promise.all([
-		db
-			.select({
-				userId: users.userId,
-				firstName: users.firstName,
-				lastName: users.lastName,
-				role: proposalMembers.projectRole,
-				memberId: proposalMembers.memberId,
-				avatarUrl: users.avatarUrl,
-			})
-			.from(proposalMembers)
-			.innerJoin(users, eq(proposalMembers.userId, users.userId))
-			.where(eq(proposalMembers.proposalId, proposalId)),
+	const [memberRows, documentRows, reviewRows, sdgRows, specialOrderRows] =
+		await Promise.all([
+			db
+				.select({
+					userId: users.userId,
+					firstName: users.firstName,
+					lastName: users.lastName,
+					role: proposalMembers.projectRole,
+					memberId: proposalMembers.memberId,
+					avatarUrl: users.avatarUrl,
+				})
+				.from(proposalMembers)
+				.innerJoin(users, eq(proposalMembers.userId, users.userId))
+				.where(eq(proposalMembers.proposalId, proposalId)),
 
-		db
-			.select({
-				documentId: proposalDocuments.documentId,
-				versionNum: proposalDocuments.versionNum,
-				storagePath: proposalDocuments.storagePath,
-				uploadedAt: proposalDocuments.uploadedAt,
-			})
-			.from(proposalDocuments)
-			.where(eq(proposalDocuments.proposalId, proposalId))
-			.orderBy(desc(proposalDocuments.versionNum)),
+			db
+				.select({
+					documentId: proposalDocuments.documentId,
+					versionNum: proposalDocuments.versionNum,
+					storagePath: proposalDocuments.storagePath,
+					uploadedAt: proposalDocuments.uploadedAt,
+				})
+				.from(proposalDocuments)
+				.where(eq(proposalDocuments.proposalId, proposalId))
+				.orderBy(desc(proposalDocuments.versionNum)),
 
-		db
-			.select({
-				reviewId: proposalReviews.reviewId,
-				decision: proposalReviews.decision,
-				comments: proposalReviews.comments,
-				reviewedAt: proposalReviews.reviewedAt,
-				reviewerFirstName: users.firstName,
-				reviewerLastName: users.lastName,
-			})
-			.from(proposalReviews)
-			.innerJoin(users, eq(proposalReviews.reviewerId, users.userId))
-			.where(eq(proposalReviews.proposalId, proposalId))
-			.orderBy(desc(proposalReviews.reviewedAt)),
+			db
+				.select({
+					reviewId: proposalReviews.reviewId,
+					decision: proposalReviews.decision,
+					comments: proposalReviews.comments,
+					reviewedAt: proposalReviews.reviewedAt,
+					reviewerFirstName: users.firstName,
+					reviewerLastName: users.lastName,
+				})
+				.from(proposalReviews)
+				.innerJoin(users, eq(proposalReviews.reviewerId, users.userId))
+				.where(eq(proposalReviews.proposalId, proposalId))
+				.orderBy(desc(proposalReviews.reviewedAt)),
 
-		db
-			.select({
-				sdgNumber: sdgs.sdgNumber,
-				sdgTitle: sdgs.sdgTitle,
-			})
-			.from(proposalSdgs)
-			.innerJoin(sdgs, eq(proposalSdgs.sdgId, sdgs.sdgId))
-			.where(eq(proposalSdgs.proposalId, proposalId))
-			.orderBy(sdgs.sdgNumber),
+			db
+				.select({
+					sdgNumber: sdgs.sdgNumber,
+					sdgTitle: sdgs.sdgTitle,
+				})
+				.from(proposalSdgs)
+				.innerJoin(sdgs, eq(proposalSdgs.sdgId, sdgs.sdgId))
+				.where(eq(proposalSdgs.proposalId, proposalId))
+				.orderBy(sdgs.sdgNumber),
 
-		db
-			.select({
-				memberId: specialOrders.memberId,
-				specialOrderId: specialOrders.specialOrderId,
-				soNumber: specialOrders.soNumber,
-				storagePath: specialOrders.storagePath,
-				dateIssued: specialOrders.dateIssued,
-				status: specialOrders.status,
-			})
-			.from(specialOrders)
-			.innerJoin(proposalMembers, eq(specialOrders.memberId, proposalMembers.memberId))
-			.where(
-				and(
-					eq(proposalMembers.proposalId, proposalId),
-					isNull(specialOrders.archivedAt),
-				),
-			)
-			.orderBy(desc(specialOrders.createdAt)),
-	]);
+			db
+				.select({
+					memberId: specialOrders.memberId,
+					specialOrderId: specialOrders.specialOrderId,
+					soNumber: specialOrders.soNumber,
+					storagePath: specialOrders.storagePath,
+					dateIssued: specialOrders.dateIssued,
+					status: specialOrders.status,
+				})
+				.from(specialOrders)
+				.innerJoin(
+					proposalMembers,
+					eq(specialOrders.memberId, proposalMembers.memberId),
+				)
+				.where(
+					and(
+						eq(proposalMembers.proposalId, proposalId),
+						isNull(specialOrders.archivedAt),
+					),
+				)
+				.orderBy(desc(specialOrders.createdAt)),
+		]);
 
 	const months = [
 		"Jan",
@@ -974,7 +990,9 @@ app.openapi(projectDetailsRoute, async (c) => {
 		const matchingDoc = documentRows.find(
 			(doc) => doc.uploadedAt.getTime() <= review.reviewedAt.getTime(),
 		);
-		const reviewVersion = matchingDoc ? `v${matchingDoc.versionNum}` : `v${row.revisionNum}`;
+		const reviewVersion = matchingDoc
+			? `v${matchingDoc.versionNum}`
+			: `v${row.revisionNum}`;
 
 		history.push({
 			id: review.reviewId,
@@ -995,7 +1013,10 @@ app.openapi(projectDetailsRoute, async (c) => {
 		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
 	);
 
-	const supabaseClient = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+	const supabaseClient = createClient(
+		env.SUPABASE_URL,
+		env.SUPABASE_SERVICE_ROLE_KEY,
+	);
 
 	const attachments = await Promise.all(
 		documentRows.map(async (doc) => {
@@ -1020,7 +1041,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 		{
 			id: row.proposalId,
 			title: row.title,
-			status: row.projectStatus,
+			status: row.projectStatus ?? row.status,
 			version: `v${row.revisionNum}`,
 			metadata: {
 				leader: {
@@ -1063,7 +1084,8 @@ const activateRoute = createRoute({
 	method: "post",
 	path: "/projects/{id}/activate",
 	tags: ["Projects"],
-	summary: "Activate a project by linking MOA, setting reporting schedule, and transitioning to Ongoing",
+	summary:
+		"Activate a project by linking MOA, setting reporting schedule, and transitioning to Ongoing",
 	security: [{ Bearer: [] }],
 	request: {
 		params: ParamId,
@@ -1090,7 +1112,11 @@ app.openapi(activateRoute, async (c) => {
 	const body = c.req.valid("json");
 
 	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
-		throw new ApiError(403, "FORBIDDEN", "Only Directors can activate projects");
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"Only Directors can activate projects",
+		);
 	}
 
 	const [project] = await db

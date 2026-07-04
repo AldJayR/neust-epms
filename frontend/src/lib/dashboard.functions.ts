@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getErrorMessage } from "./auth.functions";
 import { authorizeSessionUser, getValidAccessToken } from "./session.server";
 
-export const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
+export const API_BASE = process.env.API_URL ?? "http://localhost:3001/api/v1";
 const DIRECTOR_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
 
 // ── Schemas ───────────────────────────────────────────────
@@ -492,7 +492,7 @@ const getReportStatsFn = createServerFn({ method: "GET" })
 export const getSpecialOrderSignedUrlFn = createServerFn({ method: "GET" })
 	.validator(z.string())
 	.handler(async ({ data: specialOrderId }) => {
-		await authorizeSessionUser("Director", "RET Chair");
+		await authorizeSessionUser("Director", "RET Chair", "Faculty");
 		const token = await getValidAccessToken();
 
 		const response = await fetch(
@@ -516,8 +516,50 @@ export const getSpecialOrderSignedUrlFn = createServerFn({ method: "GET" })
 export const getAccessTokenForUploadFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
-		await authorizeSessionUser("Director", "RET Chair");
+		await authorizeSessionUser("Director", "RET Chair", "Faculty");
 		return getValidAccessToken();
+	});
+
+export const uploadSpecialOrderFn = createServerFn({ method: "POST" })
+	.validator((data: FormData) => {
+		const memberId = data.get("memberId");
+		if (typeof memberId !== "string" || !memberId) {
+			throw new Error("memberId is required");
+		}
+		const soNumber = data.get("soNumber");
+		if (typeof soNumber !== "string" || !soNumber) {
+			throw new Error("soNumber is required");
+		}
+		const file = data.get("file");
+		if (!(file instanceof File)) {
+			throw new Error("file is required and must be a File");
+		}
+		if (file.type !== "application/pdf") {
+			throw new Error("Only PDF files are allowed");
+		}
+		return data;
+	})
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director", "RET Chair", "Faculty");
+		const token = await getValidAccessToken();
+
+		const response = await fetch(`${API_BASE}/special-orders/upload`, {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+			body: data,
+		});
+
+		if (!response.ok) {
+			const message = await getErrorMessage(
+				response,
+				"Failed to upload special order",
+			);
+			throw new Error(message);
+		}
+
+		return response.json();
 	});
 
 // ── Query Options ─────────────────────────────────────────

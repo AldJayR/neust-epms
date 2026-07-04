@@ -46,12 +46,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Spinner } from "@/components/ui/spinner";
 import { CreateProposalModal } from "@/features/proposals/components/create-proposal-modal";
 import type { AuthUser } from "@/lib/auth";
 import {
-	API_BASE,
-	getAccessTokenForUploadFn,
 	getSpecialOrderSignedUrlFn,
+	uploadSpecialOrderFn,
 	type ProjectMember,
 	projectDetailsQueryOptions,
 } from "@/lib/dashboard.functions";
@@ -129,22 +129,12 @@ function ProjectOverviewCard({
 		setUploadErrors((prev) => ({ ...prev, [member.userId]: "" }));
 
 		try {
-			const token = await getAccessTokenForUploadFn();
 			const formData = new FormData();
 			formData.append("file", file);
 			formData.append("memberId", member.memberId);
 			formData.append("soNumber", soNumber);
 
-			const response = await fetch(`${API_BASE}/special-orders/upload`, {
-				method: "POST",
-				headers: { Authorization: `Bearer ${token}` },
-				body: formData,
-			});
-
-			if (!response.ok) {
-				const err = await response.json();
-				throw new Error(err.error?.message ?? "Upload failed");
-			}
+			await uploadSpecialOrderFn({ data: formData });
 
 			queryClient.invalidateQueries({
 				queryKey: ["dashboard", "proposals", proposalId],
@@ -347,9 +337,11 @@ function ProjectOverviewCard({
 														}
 														onClick={() => handleUpload(member)}
 													>
-														{uploadingMemberId === member.userId
-															? "Uploading..."
-															: "Upload"}
+														{uploadingMemberId === member.userId ? (
+															<Spinner className="size-3" />
+														) : (
+															"Upload"
+														)}
 													</Button>
 												</div>
 											) : (
@@ -634,19 +626,20 @@ export function ProjectDetailsPage({
 							</Button>
 						)}
 						{showActivateButton && (
-							<BrandButton
+							<Button
+								variant="outline"
 								className="flex w-fit items-center gap-2 px-5 h-9 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
 								onClick={() => setShowActivateWizard(true)}
 							>
 								<Play className="size-4" />
 								<span className="text-sm font-medium">Activate Project</span>
-							</BrandButton>
+							</Button>
 						)}
 					</>
 				}
 			/>
 
-			{data.status === "Approved" && (
+			{data.status === "Approved" && isProjectLeader && (
 				<Alert>
 					<Info className="size-4 text-blue-500" />
 					<AlertTitle>Your proposal has been approved!</AlertTitle>

@@ -6,7 +6,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { ApiErrorResponse, AuthUser } from "./auth";
 
-const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
+const API_BASE = process.env.API_URL ?? "http://localhost:3001/api/v1";
 const USER_PROFILE_CACHE_TTL_MS = 1000 * 30; // 30 seconds
 
 /**

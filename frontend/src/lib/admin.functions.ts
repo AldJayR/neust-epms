@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getErrorMessage } from "./auth.functions";
 import { authorizeSessionUser, getValidAccessToken } from "./session.server";
 
-const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/v1";
+const API_BASE = process.env.API_URL ?? "http://localhost:3001/api/v1";
 const ADMIN_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
 
 // ── Schemas ───────────────────────────────────────────────
