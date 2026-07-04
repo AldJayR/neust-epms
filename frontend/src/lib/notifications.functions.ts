@@ -16,35 +16,39 @@ export interface Notification {
 	readAt: string | null;
 }
 
-// ── Query options (used by useQuery in components) ──
+// ── Server functions (for queries and mutations) ──
 
-export const getNotificationsQueryOptions = queryOptions({
-	queryKey: ["notifications"],
-	queryFn: async () => {
+export const getNotificationsFn = createServerFn({ method: "GET" })
+	.handler(async () => {
+		await authorizeSessionUser(
+			"Faculty",
+			"RET Chair",
+			"Director",
+			"Super Admin",
+		);
 		const accessToken = await getValidAccessToken();
 		const res = await fetch(`${API_BASE}/notifications`, {
 			headers: { Authorization: `Bearer ${accessToken}` },
 		});
 		if (!res.ok) return [] as Notification[];
 		return (await res.json()) as Notification[];
-	},
-	refetchInterval: 30_000,
-});
+	});
 
-export const getUnreadCountQueryOptions = queryOptions({
-	queryKey: ["notifications", "unread-count"],
-	queryFn: async () => {
+export const getUnreadCountFn = createServerFn({ method: "GET" })
+	.handler(async () => {
+		await authorizeSessionUser(
+			"Faculty",
+			"RET Chair",
+			"Director",
+			"Super Admin",
+		);
 		const accessToken = await getValidAccessToken();
 		const res = await fetch(`${API_BASE}/notifications/unread-count`, {
 			headers: { Authorization: `Bearer ${accessToken}` },
 		});
 		if (!res.ok) return { count: 0 };
 		return (await res.json()) as { count: number };
-	},
-	refetchInterval: 30_000,
-});
-
-// ── Server functions (for mutations) ──
+	});
 
 export const markNotificationReadFn = createServerFn({ method: "POST" })
 	.validator(z.object({ notificationId: z.string().uuid() }))
@@ -71,3 +75,17 @@ export const markNotificationReadFn = createServerFn({ method: "POST" })
 
 		return { ok: true as const };
 	});
+
+// ── Query options (used by useQuery in components) ──
+
+export const getNotificationsQueryOptions = queryOptions({
+	queryKey: ["notifications"],
+	queryFn: () => getNotificationsFn(),
+	refetchInterval: 30_000,
+});
+
+export const getUnreadCountQueryOptions = queryOptions({
+	queryKey: ["notifications", "unread-count"],
+	queryFn: () => getUnreadCountFn(),
+	refetchInterval: 30_000,
+});
