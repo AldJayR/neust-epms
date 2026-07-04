@@ -1020,7 +1020,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 		{
 			id: row.proposalId,
 			title: row.title,
-			status,
+			status: row.projectStatus,
 			version: `v${row.revisionNum}`,
 			metadata: {
 				leader: {
