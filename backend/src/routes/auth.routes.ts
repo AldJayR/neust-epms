@@ -576,4 +576,168 @@ app.openapi(searchUsersRoute, async (c) => {
 	return c.json(rows, 200);
 });
 
+// ── POST /auth/login (Public) ──
+const loginRoute = createRoute({
+	method: "post",
+	path: "/auth/login",
+	tags: ["Auth"],
+	summary: "Login with email and password",
+	request: {
+		body: {
+			content: {
+				"application/json": {
+					schema: z
+						.object({
+							email: z.string().email(),
+							password: z.string().min(1),
+						})
+						.openapi("LoginBody"),
+				},
+			},
+			required: true,
+		},
+	},
+	responses: {
+		200: {
+			content: {
+				"application/json": {
+					schema: z
+						.object({
+							access_token: z.string(),
+							refresh_token: z.string(),
+							user: UserResponseSchema,
+						})
+						.openapi("LoginResponse"),
+				},
+			},
+			description: "Login successful",
+		},
+		401: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid credentials",
+		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Account not activated",
+		},
+	},
+});
+
+const loginLimiter = rateLimiter({
+	windowMs: 15 * 60 * 1000,
+	limit: 10,
+	standardHeaders: "draft-6",
+	keyGenerator: (c) => getClientIp(c),
+});
+app.use("/auth/login", loginLimiter);
+
+app.openapi(loginRoute, async (c) => {
+	const { email, password } = c.req.valid("json");
+
+	const { data: authData, error: authError } =
+		await supabase.auth.signInWithPassword({ email, password });
+
+	if (authError || !authData.session) {
+		throw new ApiError(401, "LOGIN_FAILED", "Invalid email or password");
+	}
+
+	const [appUser] = await db
+		.select({
+			userId: users.userId,
+			firstName: users.firstName,
+			middleName: users.middleName,
+			lastName: users.lastName,
+			nameSuffix: users.nameSuffix,
+			academicRank: users.academicRank,
+			email: users.email,
+			roleName: roles.roleName,
+			campusName: campuses.campusName,
+			departmentName: departments.departmentName,
+			isActive: users.isActive,
+		})
+		.from(users)
+		.innerJoin(roles, eq(users.roleId, roles.roleId))
+		.innerJoin(campuses, eq(users.campusId, campuses.campusId))
+		.leftJoin(departments, eq(users.departmentId, departments.departmentId))
+		.where(eq(users.userId, authData.user.id))
+		.limit(1);
+
+	if (!appUser) {
+		throw new ApiError(401, "USER_NOT_FOUND", "User profile not found");
+	}
+
+	if (!appUser.isActive) {
+		await insertAuditLog({
+			userId: appUser.userId,
+			action: "Failed Login",
+			tableAffected: "users",
+			ipAddress: getClientIp(c),
+		});
+		throw new ApiError(
+			403,
+			"ACCOUNT_INACTIVE",
+			"Your account has not been activated. Contact an administrator.",
+		);
+	}
+
+	await insertAuditLog({
+		userId: appUser.userId,
+		action: "Login",
+		tableAffected: "users",
+		ipAddress: getClientIp(c),
+	});
+
+	return c.json({
+		access_token: authData.session.access_token,
+		refresh_token: authData.session.refresh_token,
+		user: appUser,
+	}, 200);
+});
+
+// ── POST /auth/logout (Authenticated) ──
+const logoutRoute = createRoute({
+	method: "post",
+	path: "/auth/logout",
+	tags: ["Auth"],
+	summary: "Logout and invalidate session",
+	security: [{ Bearer: [] }],
+	responses: {
+		200: {
+			content: {
+				"application/json": {
+					schema: z
+						.object({ ok: z.literal(true) })
+						.openapi("LogoutResponse"),
+				},
+			},
+			description: "Logged out",
+		},
+		401: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Unauthorized",
+		},
+	},
+});
+
+app.use("/auth/logout", authMiddleware);
+
+app.openapi(logoutRoute, async (c) => {
+	const authUser = c.get("user");
+	const authHeader = c.req.header("Authorization");
+	const token = authHeader?.slice(7);
+
+	await insertAuditLog({
+		userId: authUser.userId,
+		action: "Logout",
+		tableAffected: "users",
+		ipAddress: getClientIp(c),
+	});
+
+	if (token) {
+		await supabase.auth.admin.signOut(token);
+	}
+
+	return c.json({ ok: true } as const, 200);
+});
+
 export default app;

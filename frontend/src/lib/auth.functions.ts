@@ -54,69 +54,41 @@ const signupSchema = z.object({
 export const loginFn = createServerFn({ method: "POST" })
 	.validator(loginSchema)
 	.handler(async ({ data }) => {
-		const [{ getAppSession }, { supabase }] = await Promise.all([
+		const [{ getAppSession }] = await Promise.all([
 			import("./session.server"),
-			import("./supabase.server"),
 		]);
 
-		const [session, { data: authData, error: authError }] = await Promise.all([
-			getAppSession(),
-			supabase.auth.signInWithPassword({
-				email: data.email,
-				password: data.password,
-			}),
-		]);
-
-		if (authError || !authData.session) {
-			return {
-				error: true as const,
-				message: authError?.message ?? "Invalid email or password",
-			};
-		}
-
-		// 2. Verify user exists in our backend (GET /auth/me)
-		const meResponse = await fetch(`${API_BASE}/auth/me`, {
-			headers: {
-				Authorization: `Bearer ${authData.session.access_token}`,
-			},
+		const response = await fetch(`${API_BASE}/auth/login`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(data),
 		});
 
-		if (!meResponse.ok) {
-			const message = await getErrorMessage(
-				meResponse,
-				"Your account has not been provisioned. Contact an administrator.",
-			);
-			return {
-				error: true as const,
-				message,
+		if (!response.ok) {
+			const body = (await response.json().catch(() => null)) as {
+				error?: { message?: string };
 			};
+			const message = body?.error?.message ?? "Invalid email or password";
+			return { error: true as const, message };
 		}
 
-		const user = (await meResponse.json()) as AuthUser;
+		const { access_token, refresh_token, user } = (await response.json()) as {
+			access_token: string;
+			refresh_token: string;
+			user: AuthUser;
+		};
 
-		if (!user.isActive) {
-			return {
-				error: true as const,
-				message: "Your account has been deactivated. Contact an administrator.",
-			};
-		}
-
-		// 3. Store tokens in encrypted httpOnly session
-		const sessionData = {
-			accessToken: authData.session.access_token,
-			refreshToken: authData.session.refresh_token,
+		const session = await getAppSession();
+		await session.update({
+			accessToken: access_token,
+			refreshToken: refresh_token,
 			userId: user.userId,
 			email: user.email,
 			user,
 			createdAt: Date.now(),
-		};
-		await session.update(sessionData);
+		});
 
-		// 4. Return success; client handles SPA navigation
-		return {
-			error: false as const,
-			user,
-		};
+		return { error: false as const, user };
 	});
 
 export interface SearchUserResponse {
@@ -186,8 +158,17 @@ export const signupFn = createServerFn({ method: "POST" })
 // ── Logout ────────────────────────────────────────────────
 
 export const logoutFn = createServerFn({ method: "POST" }).handler(async () => {
-	const { getAppSession } = await import("./session.server");
+	const { getAppSession, getValidAccessToken } = await import("./session.server");
 	const session = await getAppSession();
+	const accessToken = await getValidAccessToken().catch(() => null);
+
+	if (accessToken) {
+		await fetch(`${API_BASE}/auth/logout`, {
+			method: "POST",
+			headers: { Authorization: `Bearer ${accessToken}` },
+		}).catch(() => {});
+	}
+
 	await session.clear();
 });
 
