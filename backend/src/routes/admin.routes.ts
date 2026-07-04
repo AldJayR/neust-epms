@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, count, eq, ilike, inArray, or, type SQL } from "drizzle-orm";
+import { and, count, eq, ilike, inArray, or, isNull, type SQL } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { campuses } from "../db/schema/campuses.js";
 import { departments } from "../db/schema/departments.js";
@@ -12,10 +12,13 @@ import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
-import { supabase } from "../lib/supabase.js";
+import { createClient } from "@supabase/supabase-js";
+import { env } from "../env.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
+
+const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
 // ── Schemas ──
 
@@ -440,6 +443,26 @@ app.openapi(provisionUserRoute, async (c) => {
 
 	if (existing) {
 		throw new ApiError(400, "USER_EXISTS", "Email already registered");
+	}
+
+	// Check for duplicate profiles (Verify Duplicate Profiles)
+	const [duplicateName] = await db
+		.select({ userId: users.userId })
+		.from(users)
+		.where(
+			and(
+				ilike(users.firstName, body.firstName.trim()),
+				ilike(users.lastName, body.lastName.trim()),
+			),
+		)
+		.limit(1);
+
+	if (duplicateName) {
+		throw new ApiError(
+			400,
+			"DUPLICATE_PROFILE",
+			"A user with this name is already registered in the system. Duplicate accounts are not permitted.",
+		);
 	}
 
 	const [directorRole] = await db

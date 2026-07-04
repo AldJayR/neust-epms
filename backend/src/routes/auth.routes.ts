@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { createClient } from "@supabase/supabase-js";
-import { eq, ilike, or } from "drizzle-orm";
+import { eq, ilike, or, isNull, and } from "drizzle-orm";
 import { rateLimiter } from "hono-rate-limiter";
 import { db } from "../db/client.js";
 import { campuses } from "../db/schema/campuses.js";
@@ -189,6 +189,26 @@ app.openapi(registerRoute, async (c) => {
 
 	if (existing) {
 		throw new ApiError(400, "USER_EXISTS", "Email already registered");
+	}
+
+	// Check for duplicate profiles (Verify Duplicate Profiles)
+	const [duplicateName] = await db
+		.select({ userId: users.userId })
+		.from(users)
+		.where(
+			and(
+				ilike(users.firstName, body.firstName.trim()),
+				ilike(users.lastName, body.lastName.trim()),
+			),
+		)
+		.limit(1);
+
+	if (duplicateName) {
+		throw new ApiError(
+			400,
+			"DUPLICATE_PROFILE",
+			"A user with this name is already registered in the system. Duplicate accounts are not permitted.",
+		);
 	}
 
 	// 2. Check if password has been compromised

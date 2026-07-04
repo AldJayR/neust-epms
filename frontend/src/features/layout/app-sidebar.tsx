@@ -91,11 +91,6 @@ const directorNav: NavGroup[] = [
 				url: "/reports",
 				icon: BarChart3,
 			},
-			{
-				title: "Settings",
-				url: "/admin/settings",
-				icon: Settings,
-			},
 		],
 	},
 ];
@@ -126,16 +121,7 @@ const facultyNav: NavGroup[] = [
 			},
 		],
 	},
-	{
-		title: "Management",
-		items: [
-			{
-				title: "Settings",
-				url: "/admin/settings",
-				icon: Settings,
-			},
-		],
-	},
+
 ];
 
 const retNav: NavGroup[] = [
@@ -169,16 +155,7 @@ const retNav: NavGroup[] = [
 			},
 		],
 	},
-	{
-		title: "Management",
-		items: [
-			{
-				title: "Settings",
-				url: "/admin/settings",
-				icon: Settings,
-			},
-		],
-	},
+
 ];
 
 export function AppSidebar({

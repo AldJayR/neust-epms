@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/faculty/")({
 	}),
 	beforeLoad: ({ context }) => {
 		if (
-			requireRole(context.auth.user, "Director", "Super Admin", "RET Chair")
+			requireRole(context.auth.user, "Director", "RET Chair")
 		) {
 			throw redirect({
 				to: "/dashboard",
