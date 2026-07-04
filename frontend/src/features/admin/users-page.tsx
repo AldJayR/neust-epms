@@ -31,6 +31,8 @@ import {
 import { formatAcademicRank } from "@/lib/utils";
 import { BulkApproveDialog } from "./bulk-approve-dialog";
 import { AddUserDialog } from "./add-user-dialog";
+import { ViewUserDialog } from "./view-user-dialog";
+import { EditUserDialog } from "./edit-user-dialog";
 
 interface UsersPageProps {
 	page: number;
@@ -115,7 +117,7 @@ export function UsersPage({
 				return (
 					<div className="flex items-center gap-3">
 						<Avatar className="h-9 w-9">
-							<AvatarImage src="" alt={`${user.firstName} ${user.lastName}`} />
+							<AvatarImage src={user.avatarUrl ?? ""} alt={`${user.firstName} ${user.lastName}`} />
 							<AvatarFallback className="bg-primary/10 text-primary font-medium">
 								{user.firstName?.charAt(0) ?? ""}
 								{user.lastName?.charAt(0) ?? ""}
@@ -196,8 +198,16 @@ export function UsersPage({
 								<MoreVertical className="size-4" />
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
-								<DropdownMenuItem>View Details</DropdownMenuItem>
-								<DropdownMenuItem>Edit User</DropdownMenuItem>
+								<ViewUserDialog user={user}>
+									<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+										View Details
+									</DropdownMenuItem>
+								</ViewUserDialog>
+								<EditUserDialog user={user}>
+									<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+										Edit User
+									</DropdownMenuItem>
+								</EditUserDialog>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem
 									className={

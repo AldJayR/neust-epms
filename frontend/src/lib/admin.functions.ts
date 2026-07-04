@@ -54,6 +54,7 @@ export interface UserResponse {
 	campusName: string;
 	departmentName: string | null;
 	isActive: boolean;
+	avatarUrl: string | null;
 }
 
 export interface UsersListResponse {
@@ -379,4 +380,47 @@ export const provisionDirectorFn = createServerFn({ method: "POST" })
 			temporaryPassword: string;
 		};
 	});
+
+// ── Update User ──────────────────────────────────────────
+
+const updateUserSchema = z.object({
+	userId: z.string(),
+	firstName: z.string().min(1).optional(),
+	middleName: z.string().optional().nullable(),
+	lastName: z.string().min(1).optional(),
+	nameSuffix: z.string().optional().nullable(),
+	academicRank: z.string().optional().nullable(),
+	campusId: z.number().optional(),
+	departmentId: z.number().optional().nullable(),
+	roleId: z.number().optional(),
+	isActive: z.boolean().optional(),
+});
+
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+
+export const updateUserFn = createServerFn({ method: "POST" })
+	.validator(updateUserSchema)
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("Super Admin");
+		const token = await getValidAccessToken();
+
+		const { userId, ...body } = data;
+
+		const response = await fetch(`${API_BASE}/admin/users/${userId}`, {
+			method: "PATCH",
+			headers: {
+				Authorization: `Bearer ${token}`,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(body),
+		});
+
+		if (!response.ok) {
+			const message = await getErrorMessage(response, "Failed to update user");
+			throw new Error(message);
+		}
+
+		return (await response.json()) as { success: boolean; userId: string };
+	});
+
 

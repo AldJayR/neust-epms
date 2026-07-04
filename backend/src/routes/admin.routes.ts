@@ -35,6 +35,7 @@ const UserResponseSchema = z
 		campusName: z.string(),
 		departmentName: z.string().nullable(),
 		isActive: z.boolean(),
+		avatarUrl: z.string().nullable(),
 	})
 	.openapi("UserResponse");
 
@@ -175,6 +176,7 @@ app.openapi(getUsersRoute, async (c) => {
 			campusName: campuses.campusName,
 			departmentName: departments.departmentName,
 			isActive: users.isActive,
+			avatarUrl: users.avatarUrl,
 		})
 		.from(users)
 		.innerJoin(roles, eq(users.roleId, roles.roleId))
@@ -546,6 +548,115 @@ app.openapi(provisionUserRoute, async (c) => {
 		},
 		201,
 	);
+});
+
+// ── PATCH /admin/users/{id} ──
+const ParamId = z.object({
+	id: z.string().openapi({
+		param: {
+			name: "id",
+			in: "path",
+		},
+		type: "string",
+		example: "123e4567-e89b-12d3-a456-426614174000",
+	}),
+});
+
+const updateSpecificUserRoute = createRoute({
+	method: "patch",
+	path: "/admin/users/{id}",
+	tags: ["Admin"],
+	summary: "Update user profile details and role (Super Admin only)",
+	security: [{ Bearer: [] }],
+	request: {
+		params: ParamId,
+		body: {
+			content: {
+				"application/json": {
+					schema: z.object({
+						firstName: z.string().min(1).optional(),
+						middleName: z.string().optional().nullable(),
+						lastName: z.string().min(1).optional(),
+						nameSuffix: z.string().optional().nullable(),
+						academicRank: z.string().optional().nullable(),
+						campusId: z.number().optional(),
+						departmentId: z.number().optional().nullable(),
+						roleId: z.number().optional(),
+						isActive: z.boolean().optional(),
+					}),
+				},
+			},
+			required: true,
+		},
+	},
+	responses: {
+		200: {
+			content: {
+				"application/json": {
+					schema: z.object({
+						success: z.boolean(),
+						userId: z.string(),
+					}),
+				},
+			},
+			description: "User updated successfully",
+		},
+	},
+});
+
+app.openapi(updateSpecificUserRoute, async (c) => {
+	const authUser = c.get("user");
+	const { id } = c.req.valid("param");
+	const body = c.req.valid("json");
+
+	if (authUser.roleName !== "Super Admin") {
+		throw new ApiError(403, "FORBIDDEN", "Only Super Admin can update users");
+	}
+
+	const [existing] = await db
+		.select()
+		.from(users)
+		.where(eq(users.userId, id))
+		.limit(1);
+
+	if (!existing) {
+		throw new ApiError(404, "NOT_FOUND", "User not found");
+	}
+
+	const updateFields: Partial<typeof users.$inferInsert> = {
+		updatedAt: new Date(),
+	};
+
+	if (body.firstName !== undefined) updateFields.firstName = body.firstName;
+	if (body.middleName !== undefined) updateFields.middleName = body.middleName;
+	if (body.lastName !== undefined) updateFields.lastName = body.lastName;
+	if (body.nameSuffix !== undefined) updateFields.nameSuffix = body.nameSuffix;
+	if (body.academicRank !== undefined) updateFields.academicRank = body.academicRank;
+	if (body.campusId !== undefined) updateFields.campusId = body.campusId;
+	if (body.departmentId !== undefined) updateFields.departmentId = body.departmentId;
+	if (body.roleId !== undefined) updateFields.roleId = body.roleId;
+	if (body.isActive !== undefined) updateFields.isActive = body.isActive;
+
+	await db.transaction(async (tx) => {
+		await tx
+			.update(users)
+			.set(updateFields)
+			.where(eq(users.userId, id));
+
+		await insertAuditLog(
+			{
+				userId: authUser.userId,
+				action: `Updated profile details for user ${id}`,
+				tableAffected: "users",
+				ipAddress: getClientIp(c),
+			},
+			tx,
+		);
+	});
+
+	invalidateAuthUserCache([id]);
+
+	return c.json({ success: true, userId: id }, 200);
 });
 
 export default app;
