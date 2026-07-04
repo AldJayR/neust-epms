@@ -1,11 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, count, desc, eq, isNull } from "drizzle-orm";
+import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
 import { partners } from "../db/schema/partners.js";
 import { projects } from "../db/schema/projects.js";
+import { proposals } from "../db/schema/proposals.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
+import { users } from "../db/schema/users.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
@@ -78,6 +80,32 @@ const MoaSchema = z
 		archivedAt: z.string().nullable(),
 	})
 	.openapi("Moa");
+
+const MoaDetailSchema = z
+	.object({
+		moaId: z.string(),
+		partnerId: z.string(),
+		partnerName: z.string(),
+		storagePath: z.string().nullable(),
+		validFrom: z.string(),
+		validUntil: z.string(),
+		createdAt: z.string(),
+		updatedAt: z.string(),
+		archivedAt: z.string().nullable(),
+		status: z.enum(["Valid", "Renewal Needed", "Expired"]),
+		daysToExpiry: z.union([z.number(), z.literal("Expired")]),
+	})
+	.openapi("MoaDetail");
+
+const MoaLinkedProjectSchema = z
+	.object({
+		projectId: z.string(),
+		title: z.string(),
+		projectStatus: z.string(),
+		leaderName: z.string().nullable(),
+		createdAt: z.string(),
+	})
+	.openapi("MoaLinkedProject");
 
 const MoaListSchema = z
 	.object({ items: z.array(MoaSchema), total: z.number() })
@@ -216,7 +244,7 @@ const getRoute = createRoute({
 	request: { params: ParamId },
 	responses: {
 		200: {
-			content: { "application/json": { schema: MoaSchema } },
+			content: { "application/json": { schema: MoaDetailSchema } },
 			description: "MOA detail",
 		},
 		403: {
@@ -234,8 +262,6 @@ app.openapi(getRoute, async (c) => {
 	const user = c.get("user");
 	const { id } = c.req.valid("param");
 
-	// RET Chair / Director can view any MOA. Other roles (e.g. project leaders
-	// and members) may only view the MOA their own project is linked to.
 	if (!canManageMoas(user)) {
 		const linked = await isMoaLinkedToUserProject(id, user.userId);
 		if (!linked) {
@@ -251,6 +277,7 @@ app.openapi(getRoute, async (c) => {
 		.select({
 			moaId: moas.moaId,
 			partnerId: moas.partnerId,
+			partnerName: partners.partnerName,
 			storagePath: moas.storagePath,
 			validFrom: moas.validFrom,
 			validUntil: moas.validUntil,
@@ -259,6 +286,7 @@ app.openapi(getRoute, async (c) => {
 			archivedAt: moas.archivedAt,
 		})
 		.from(moas)
+		.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
 		.where(and(eq(moas.moaId, id), isNull(moas.archivedAt)))
 		.limit(1);
 
@@ -266,15 +294,128 @@ app.openapi(getRoute, async (c) => {
 		throw new ApiError(404, "NOT_FOUND", "MOA not found");
 	}
 
+	const now = new Date();
+	const daysUntilExpiry = Math.ceil(
+		(row.validUntil.getTime() - now.getTime()) / (24 * 60 * 60 * 1000),
+	);
+
+	let status: "Valid" | "Renewal Needed" | "Expired" = "Valid";
+	if (row.validUntil < now) {
+		status = "Expired";
+	} else if (daysUntilExpiry <= 30) {
+		status = "Renewal Needed";
+	}
+
 	return c.json(
 		{
-			...row,
+			moaId: row.moaId,
+			partnerId: row.partnerId,
+			partnerName: row.partnerName,
+			storagePath: row.storagePath,
 			validFrom: row.validFrom.toISOString(),
 			validUntil: row.validUntil.toISOString(),
 			createdAt: row.createdAt.toISOString(),
 			updatedAt: row.updatedAt.toISOString(),
 			archivedAt: row.archivedAt?.toISOString() ?? null,
+			status,
+			daysToExpiry: (daysUntilExpiry < 0 ? "Expired" : daysUntilExpiry) as number | "Expired",
 		},
+		200,
+	);
+});
+
+// ── GET /moas/:id/projects ──
+const linkedProjectsRoute = createRoute({
+	method: "get",
+	path: "/moas/{id}/projects",
+	tags: ["MOAs"],
+	summary: "Get projects linked to a MOA",
+	security: [{ Bearer: [] }],
+	request: { params: ParamId },
+	responses: {
+		200: {
+			content: {
+				"application/json": {
+					schema: z.array(MoaLinkedProjectSchema),
+				},
+			},
+			description: "Linked projects",
+		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Forbidden",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "MOA not found",
+		},
+	},
+});
+
+app.openapi(linkedProjectsRoute, async (c) => {
+	const user = c.get("user");
+	const { id } = c.req.valid("param");
+
+	if (!canManageMoas(user)) {
+		const linked = await isMoaLinkedToUserProject(id, user.userId);
+		if (!linked) {
+			throw new ApiError(
+				403,
+				"FORBIDDEN",
+				"You do not have access to this MOA",
+			);
+		}
+	}
+
+	const [moaExists] = await db
+		.select({ moaId: moas.moaId })
+		.from(moas)
+		.where(and(eq(moas.moaId, id), isNull(moas.archivedAt)))
+		.limit(1);
+
+	if (!moaExists) {
+		throw new ApiError(404, "NOT_FOUND", "MOA not found");
+	}
+
+	const conditions = [eq(projects.moaId, id)];
+
+	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+		if (user.isMainCampus && user.departmentId !== null) {
+			conditions.push(eq(proposals.departmentId, user.departmentId));
+		} else {
+			conditions.push(eq(proposals.campusId, user.campusId));
+		}
+	}
+
+	const rows = await db
+		.select({
+			projectId: projects.projectId,
+			title: proposals.title,
+			projectStatus: projects.projectStatus,
+			leaderName: sql<string | null>`concat(${users.firstName}, ' ', ${users.lastName})`,
+			createdAt: projects.createdAt,
+		})
+		.from(projects)
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+		.leftJoin(
+			proposalMembers,
+			and(
+				eq(proposalMembers.proposalId, proposals.proposalId),
+				eq(proposalMembers.projectRole, "Project Leader"),
+			),
+		)
+		.leftJoin(users, eq(proposalMembers.userId, users.userId))
+		.where(and(...conditions))
+		.orderBy(desc(projects.createdAt));
+
+	return c.json(
+		rows.map((r) => ({
+			projectId: r.projectId,
+			title: r.title,
+			projectStatus: r.projectStatus,
+			leaderName: r.leaderName,
+			createdAt: r.createdAt.toISOString(),
+		})),
 		200,
 	);
 });
@@ -307,14 +448,11 @@ const createMoaRoute = createRoute({
 app.openapi(createMoaRoute, async (c) => {
 	const user = c.get("user");
 
-	if (
-		user.roleName !== ROLE_NAMES.SUPER_ADMIN &&
-		user.roleName !== ROLE_NAMES.DIRECTOR
-	) {
+	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
 		throw new ApiError(
 			403,
 			"FORBIDDEN",
-			"This action requires one of: Super Admin, Director",
+			"This action requires Director role",
 		);
 	}
 
@@ -579,14 +717,11 @@ const updateRoute = createRoute({
 app.openapi(updateRoute, async (c) => {
 	const user = c.get("user");
 
-	if (
-		user.roleName !== ROLE_NAMES.SUPER_ADMIN &&
-		user.roleName !== ROLE_NAMES.DIRECTOR
-	) {
+	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
 		throw new ApiError(
 			403,
 			"FORBIDDEN",
-			"This action requires one of: Super Admin, Director",
+			"This action requires Director role",
 		);
 	}
 

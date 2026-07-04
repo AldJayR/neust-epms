@@ -1,0 +1,193 @@
+import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Loader2, Calendar as CalendarIcon } from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { BrandButton } from "@/components/custom/brand-button";
+import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { FieldGroup } from "@/components/ui/field";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { updateMoaFn } from "@/lib/moa.functions";
+
+interface EditMoaModalProps {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	moaId: string;
+	partnerName: string;
+	validFrom: string;
+	validUntil: string;
+}
+
+export function EditMoaModal({
+	open,
+	onOpenChange,
+	moaId,
+	partnerName: initialPartnerName,
+	validFrom: initialValidFrom,
+	validUntil: initialValidUntil,
+}: EditMoaModalProps) {
+	const queryClient = useQueryClient();
+	const [partnerName, setPartnerName] = useState(initialPartnerName);
+	const [validFrom, setValidFrom] = useState<Date | undefined>(
+		initialValidFrom ? new Date(initialValidFrom) : undefined,
+	);
+	const [validUntil, setValidUntil] = useState<Date | undefined>(
+		initialValidUntil ? new Date(initialValidUntil) : undefined,
+	);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	useEffect(() => {
+		if (open) {
+			setPartnerName(initialPartnerName);
+			setValidFrom(initialValidFrom ? new Date(initialValidFrom) : undefined);
+			setValidUntil(initialValidUntil ? new Date(initialValidUntil) : undefined);
+		}
+	}, [open, initialPartnerName, initialValidFrom, initialValidUntil]);
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!validFrom || !validUntil) {
+			toast.error("Please fill in all fields.");
+			return;
+		}
+
+		if (validUntil <= validFrom) {
+			toast.error("Expiration date must be after the signed from date.");
+			return;
+		}
+
+		setIsSubmitting(true);
+		try {
+			await updateMoaFn({
+				data: {
+					moaId,
+					validFrom: validFrom.toISOString(),
+					validUntil: validUntil.toISOString(),
+				},
+			});
+
+			toast.success("MOA updated successfully.");
+			queryClient.invalidateQueries({ queryKey: ["moas", moaId] });
+			onOpenChange(false);
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : "Failed to update MOA");
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="sm:max-w-[480px]">
+				<DialogHeader>
+					<DialogTitle>Edit MOA</DialogTitle>
+				</DialogHeader>
+				<form onSubmit={handleSubmit} className="space-y-5 py-4">
+					<FieldGroup className="flex flex-col gap-1.5">
+						<Label htmlFor="edit-partnerName">Partner Organization</Label>
+						<Input
+							id="edit-partnerName"
+							type="text"
+							value={partnerName}
+							disabled
+							className="opacity-60"
+						/>
+					</FieldGroup>
+
+					<div className="grid grid-cols-2 gap-4">
+						<FieldGroup className="flex flex-col gap-1.5">
+							<Label htmlFor="edit-validFrom">Date Signed</Label>
+							<Popover>
+								<PopoverTrigger
+									render={
+										<Button
+											id="edit-validFrom"
+											type="button"
+											variant="outline"
+											className="w-full justify-start text-left font-normal"
+										/>
+									}
+								>
+									<CalendarIcon className="mr-2 size-4 text-muted-foreground" />
+									{validFrom ? (
+										format(validFrom, "PPP")
+									) : (
+										<span className="text-muted-foreground">Pick a date</span>
+									)}
+								</PopoverTrigger>
+								<PopoverContent className="w-auto p-0" align="start">
+									<Calendar
+										mode="single"
+										selected={validFrom}
+										onSelect={setValidFrom}
+									/>
+								</PopoverContent>
+							</Popover>
+						</FieldGroup>
+
+						<FieldGroup className="flex flex-col gap-1.5">
+							<Label htmlFor="edit-validUntil">Expiry Date</Label>
+							<Popover>
+								<PopoverTrigger
+									render={
+										<Button
+											id="edit-validUntil"
+											type="button"
+											variant="outline"
+											className="w-full justify-start text-left font-normal"
+										/>
+									}
+								>
+									<CalendarIcon className="mr-2 size-4 text-muted-foreground" />
+									{validUntil ? (
+										format(validUntil, "PPP")
+									) : (
+										<span className="text-muted-foreground">Pick a date</span>
+									)}
+								</PopoverTrigger>
+								<PopoverContent className="w-auto p-0" align="start">
+									<Calendar
+										mode="single"
+										selected={validUntil}
+										onSelect={setValidUntil}
+									/>
+								</PopoverContent>
+							</Popover>
+						</FieldGroup>
+					</div>
+
+					<DialogFooter className="pt-2">
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => onOpenChange(false)}
+							disabled={isSubmitting}
+						>
+							Cancel
+						</Button>
+						<BrandButton type="submit" disabled={isSubmitting} className="w-[120px]">
+							{isSubmitting ? (
+								<>
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									Saving...
+								</>
+							) : (
+								"Save Changes"
+							)}
+						</BrandButton>
+					</DialogFooter>
+				</form>
+			</DialogContent>
+		</Dialog>
+	);
+}

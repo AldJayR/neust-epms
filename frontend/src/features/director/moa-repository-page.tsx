@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { ClientOnly } from "@tanstack/react-router";
+import { ClientOnly, Link } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { ListFilter, Plus } from "lucide-react";
+import { EllipsisVertical, ListFilter, Plus } from "lucide-react";
 import { useState } from "react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
@@ -15,6 +15,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuItem,
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
@@ -25,7 +26,7 @@ import {
 	type MoaItem,
 	moaRepositoryQueryOptions,
 } from "@/lib/dashboard.functions";
-import { isAdminOrDirector } from "@/lib/permissions";
+import { isDirector } from "@/lib/permissions";
 import { CreateMoaModal } from "./components/create-moa-modal";
 
 interface MoaRepositoryPageProps {
@@ -75,7 +76,18 @@ export function MoaRepositoryPage({
 				"w-[320px] px-4 py-2 text-sm font-medium text-muted-foreground",
 			cellClassName:
 				"px-4 py-3 text-sm font-semibold text-foreground text-left",
-			cell: ({ row }) => row.original.partnerOrganization,
+			cell: ({ row }) => (
+				<Link
+					to="/moas/$moaId"
+					params={{ moaId: row.original.id }}
+					className="hover:underline text-left text-brand-primary"
+					onClick={(e) => {
+						e.stopPropagation();
+					}}
+				>
+					{row.original.partnerOrganization}
+				</Link>
+			),
 		},
 		{
 			id: "dateSigned",
@@ -122,7 +134,37 @@ export function MoaRepositoryPage({
 				</div>
 			),
 		},
-		createActionsColumn(),
+		createActionsColumn({
+			cell: ({ row }) => {
+				const moa = row.original;
+				return (
+					<div className="flex justify-end pr-2">
+						<DropdownMenu>
+							<DropdownMenuTrigger
+								render={
+									<Button variant="ghost" size="icon" className="size-8" />
+								}
+								aria-label="Open MOA actions"
+							>
+								<EllipsisVertical className="size-4" />
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem
+									render={
+										<Link
+											to="/moas/$moaId"
+											params={{ moaId: moa.id }}
+										/>
+									}
+								>
+									View Details
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				);
+			},
+		}),
 	];
 
 	return (
@@ -134,7 +176,7 @@ export function MoaRepositoryPage({
 					</h1>
 				}
 				actions={
-					isAdminOrDirector(user) ? (
+					isDirector(user) ? (
 						<BrandButton
 							onClick={() => setIsCreateOpen(true)}
 							className="flex items-center gap-1.5 px-[10px] py-2 shadow-sm hover:bg-brand-primary-hover"
