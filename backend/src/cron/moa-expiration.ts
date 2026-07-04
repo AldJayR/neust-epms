@@ -4,6 +4,7 @@ import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
 import { partners } from "../db/schema/partners.js";
 import { env } from "../env.js";
+import { createNotification, getUserIdsByRole } from "../lib/notification.helpers.js";
 
 /**
  * SYS-REQ-04.2: Scheduled background process that evaluates MOA expiration dates
@@ -48,7 +49,24 @@ export function startMoaExpirationCron(): void {
 
 			console.log(`[CRON] Found ${expiredMoas.length} expired MOA(s).`);
 
-			// Dispatch email notifications if Resend is configured
+			// Create in-app notifications for Director(s)
+			const directorIds = await getUserIdsByRole("Director");
+			for (const moa of expiredMoas) {
+				const expiryDate = moa.validUntil.toLocaleDateString();
+				for (const directorId of directorIds) {
+					await createNotification({
+						recipientId: directorId,
+						type: "moa_expiry",
+						title: "MOA Expiration Alert",
+						message: `MOA with "${moa.partnerName}" expired on ${expiryDate}. Please renew.`,
+						sendEmail: true,
+						emailSubject: `MOA Expired: ${moa.partnerName}`,
+						emailHtml: `<p>MOA with "<strong>${moa.partnerName}</strong>" expired on <strong>${expiryDate}</strong>. Please renew.</p>`,
+					});
+				}
+			}
+
+			// Dispatch legacy email notifications if Resend is configured
 			if (env.RESEND_API_KEY && env.RESEND_FROM) {
 				await sendExpirationEmails(expiredMoas);
 			}

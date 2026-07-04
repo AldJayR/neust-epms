@@ -10,6 +10,7 @@ import { users } from "../db/schema/users.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
+import { createNotification, getUserIdsByRole } from "../lib/notification.helpers.js";
 import { REPORT_TYPE, ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
@@ -349,6 +350,36 @@ app.openapi(createReportRoute, async (c) => {
 		tableAffected: "project_reports",
 		ipAddress: getClientIp(c),
 	});
+
+	// Notify Director(s) about the new report submission
+	const directorIds = await getUserIdsByRole("Director");
+	const readableType =
+		body.reportType === "Progress"
+			? "Progress Report"
+			: body.reportType === "Terminal"
+				? "Terminal Report"
+				: "Final Accomplishment Report";
+
+	// Resolve proposal title for the notification
+	const [proposalRow] = await db
+		.select({ title: proposals.title })
+		.from(proposals)
+		.where(eq(proposals.proposalId, project.proposalId))
+		.limit(1);
+
+	const projectTitle = proposalRow?.title ?? "Unknown Project";
+
+	for (const directorId of directorIds) {
+		await createNotification({
+			recipientId: directorId,
+			type: "report_submitted",
+			title: "New Report Submitted",
+			message: `A ${readableType} has been submitted for "${projectTitle}".`,
+			sendEmail: true,
+			emailSubject: `New Report: ${projectTitle}`,
+			emailHtml: `<p>A <strong>${readableType}</strong> has been submitted for "<strong>${projectTitle}</strong>".</p>`,
+		});
+	}
 
 	const [enriched] = await db
 		.select({

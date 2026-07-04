@@ -1,4 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { SettingsPage } from "@/features/admin/settings-page";
+import { SettingsSkeleton } from "@/components/custom/settings-skeleton";
 import { requireRole } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/admin/settings/")({
@@ -10,10 +12,6 @@ export const Route = createFileRoute("/_authenticated/admin/settings/")({
 			});
 		}
 	},
-	component: () => (
-		<div className="flex flex-col gap-4">
-			<h1 className="text-2xl font-semibold text-heading">Settings</h1>
-			<p className="text-muted-foreground">This page is under construction.</p>
-		</div>
-	),
+	pendingComponent: SettingsSkeleton,
+	component: SettingsPage,
 });

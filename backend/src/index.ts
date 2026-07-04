@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import * as Sentry from "@sentry/node";
 import app from "./app.js";
 import { startMoaExpirationCron } from "./cron/moa-expiration.js";
+import { startReportOverdueCron } from "./cron/report-overdue.js";
 import { env } from "./env.js";
 
 // ── Sentry initialization ──
@@ -16,6 +17,7 @@ if (env.SENTRY_DSN) {
 
 // ── Start cron jobs ──
 startMoaExpirationCron();
+startReportOverdueCron();
 
 // ── Start HTTP server ──
 const port = env.PORT;
