@@ -15,6 +15,7 @@ import auditRoutes from "./routes/audit.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import directorRoutes from "./routes/director.routes.js";
 import memberRoutes from "./routes/members.routes.js";
+import notificationRoutes from "./routes/notifications.routes.js";
 import moaRoutes from "./routes/moas.routes.js";
 import projectRoutes from "./routes/projects.routes.js";
 import proposalRoutes from "./routes/proposals.routes.js";
@@ -208,6 +209,7 @@ app.get("/api/v1/swagger", swaggerUI({ url: "/api/v1/openapi.json" }));
 app.use("/api/v1/proposals/*", authMiddleware);
 
 app.route("/api/v1", authRoutes);
+app.route("/api/v1", notificationRoutes);
 app.route("/api/v1", proposalRoutes);
 app.route("/api/v1", memberRoutes);
 app.route("/api/v1", specialOrderRoutes);

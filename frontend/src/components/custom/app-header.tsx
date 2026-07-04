@@ -1,7 +1,8 @@
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { NotificationDropdown } from "./notification-dropdown";
 
 export function AppHeader() {
 	return (
@@ -23,13 +24,7 @@ export function AppHeader() {
 				</div>
 			</div>
 			<div className="flex items-center gap-4">
-				<button
-					className="inline-flex size-8 items-center justify-center rounded-full hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-					type="button"
-					aria-label="Notifications"
-				>
-					<Bell className="size-4 text-muted-foreground" />
-				</button>
+				<NotificationDropdown />
 			</div>
 		</header>
 	);
