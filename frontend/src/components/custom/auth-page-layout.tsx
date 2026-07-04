@@ -20,6 +20,21 @@ export function AuthPageLayout({
 }: AuthPageLayoutProps) {
 	return (
 		<section className="w-full max-w-[480px] rounded-xl p-6">
+			<div className="flex items-center gap-2.5 mb-5">
+				<img
+					src="/images/extension-services-logo.png"
+					alt="NEUST Extension Services"
+					className="h-10 w-10 object-contain shrink-0"
+				/>
+				<div className="flex flex-col leading-tight">
+					<span className="text-sm font-semibold text-foreground">
+						Nueva Ecija University of Science and Technology
+					</span>
+					<span className="text-xs text-muted-foreground">
+						Extension Services Department
+					</span>
+				</div>
+			</div>
 			<header className="flex items-start justify-between gap-4">
 				<div className="space-y-1">
 					<h1 className="text-base font-semibold tracking-tight text-foreground">
