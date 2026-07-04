@@ -35,7 +35,7 @@ const adminNav: NavGroup[] = [
 		items: [
 			{
 				title: "User Management",
-				url: "/dashboard",
+				url: "/admin/users",
 				icon: Users,
 			},
 			{
