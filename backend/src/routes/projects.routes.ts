@@ -7,6 +7,7 @@ import {
 	eq,
 	inArray,
 	isNull,
+	or,
 	type SQL,
 	sql,
 } from "drizzle-orm";
@@ -1119,15 +1120,51 @@ app.openapi(activateRoute, async (c) => {
 		);
 	}
 
-	const [project] = await db
+	let project: {
+		projectId: string;
+		projectStatus: string;
+		archivedAt: Date | null;
+	} | undefined;
+
+	const [existingProject] = await db
 		.select({
 			projectId: projects.projectId,
 			projectStatus: projects.projectStatus,
 			archivedAt: projects.archivedAt,
 		})
 		.from(projects)
-		.where(and(eq(projects.projectId, id), isNull(projects.archivedAt)))
+		.where(
+			and(
+				or(eq(projects.projectId, id), eq(projects.proposalId, id)),
+				isNull(projects.archivedAt),
+			),
+		)
 		.limit(1);
+
+	project = existingProject;
+
+	if (!project) {
+		const [proposal] = await db
+			.select({ status: proposals.status })
+			.from(proposals)
+			.where(eq(proposals.proposalId, id))
+			.limit(1);
+
+		if (proposal && proposal.status === PROPOSAL_STATUS.APPROVED) {
+			const [newProject] = await db
+				.insert(projects)
+				.values({
+					proposalId: id,
+					projectStatus: "Approved",
+				})
+				.returning({
+					projectId: projects.projectId,
+					projectStatus: projects.projectStatus,
+					archivedAt: projects.archivedAt,
+				});
+			project = newProject;
+		}
+	}
 
 	if (!project) {
 		throw new ApiError(404, "NOT_FOUND", "Project not found");
@@ -1165,12 +1202,12 @@ app.openapi(activateRoute, async (c) => {
 				projectStatus: PROJECT_STATUS.ONGOING,
 				updatedAt: new Date(),
 			})
-			.where(eq(projects.projectId, id));
+			.where(eq(projects.projectId, project.projectId));
 
 		// Create reporting schedule
 		const [schedule] = await tx
 			.insert(projectReportingSchedules)
-			.values({ projectId: id })
+			.values({ projectId: project.projectId })
 			.returning();
 
 		// Create reporting dates
@@ -1187,7 +1224,7 @@ app.openapi(activateRoute, async (c) => {
 		await insertAuditLog(
 			{
 				userId: user.userId,
-				action: `Activated project ${id} with MOA ${body.moaId}`,
+				action: `Activated project ${project.projectId} with MOA ${body.moaId}`,
 				tableAffected: "projects",
 				ipAddress: getClientIp(c),
 			},

@@ -9,6 +9,7 @@ import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposalReviews } from "../db/schema/proposal-reviews.js";
 import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
 import { proposals } from "../db/schema/proposals.js";
+import { projects } from "../db/schema/projects.js";
 import { proposalComments } from "../db/schema/proposal-comments.js";
 import { sdgs } from "../db/schema/sdgs.js";
 import { roles } from "../db/schema/roles.js";
@@ -1012,6 +1013,21 @@ app.openapi(reviewRoute, async (c) => {
 				"INVALID_STATE",
 				"Proposal state changed since last read",
 			);
+		}
+
+		if (newStatus === PROPOSAL_STATUS.APPROVED) {
+			const [existingProject] = await tx
+				.select({ projectId: projects.projectId })
+				.from(projects)
+				.where(eq(projects.proposalId, id))
+				.limit(1);
+
+			if (!existingProject) {
+				await tx.insert(projects).values({
+					proposalId: id,
+					projectStatus: "Approved",
+				});
+			}
 		}
 	});
 
