@@ -89,10 +89,13 @@ function LoginPage() {
 
 		setCachedUser(result.user); // Cache the authenticated user on client
 
+		const isSA = isSuperAdmin(result?.user);
+		const target =
+			isSA && safeRedirectTarget === "/dashboard" ? "/admin/users" : safeRedirectTarget;
+
 		if (
-			isSuperAdmin(result?.user) &&
-			(safeRedirectTarget === "/dashboard" ||
-				safeRedirectTarget.startsWith("/admin/users"))
+			isSA &&
+			(target === "/admin/users" || safeRedirectTarget.startsWith("/admin/users"))
 		) {
 			await Promise.all([
 				queryClient.prefetchQuery(adminStatsQueryOptions()),
@@ -105,7 +108,7 @@ function LoginPage() {
 			]);
 		}
 
-		await navigate({ to: safeRedirectTarget, replace: true });
+		await navigate({ to: target, replace: true });
 	}
 
 	return (
