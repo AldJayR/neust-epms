@@ -17,6 +17,7 @@ import { users } from "../db/schema/users.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
+import { createNotification } from "../lib/notification.helpers.js";
 import {
 	PROPOSAL_STATUS,
 	REVIEW_DECISION,
@@ -851,6 +852,7 @@ app.openapi(reviewRoute, async (c) => {
 	const [existing] = await db
 		.select({
 			proposalId: proposals.proposalId,
+			title: proposals.title,
 			status: proposals.status,
 			revisionNum: proposals.revisionNum,
 			campusId: proposals.campusId,
@@ -863,6 +865,17 @@ app.openapi(reviewRoute, async (c) => {
 	if (!existing) {
 		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
 	}
+
+	const [leader] = await db
+		.select({ userId: proposalMembers.userId })
+		.from(proposalMembers)
+		.where(
+			and(
+				eq(proposalMembers.proposalId, id),
+				eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE),
+			),
+		)
+		.limit(1);
 
 	// EC-01: Conflict of interest — reviewer cannot be the project leader
 	if (await isProjectLeader(id, user.userId)) {
@@ -1037,6 +1050,35 @@ app.openapi(reviewRoute, async (c) => {
 		tableAffected: "proposal_reviews",
 		ipAddress: getClientIp(c),
 	});
+
+	if (leader?.userId) {
+		let title = "Proposal Update";
+		let message = `Your proposal "${existing.title}" status has been updated to ${newStatus}.`;
+
+		if (newStatus === PROPOSAL_STATUS.ENDORSED) {
+			title = "Proposal Endorsed";
+			message = `Your proposal "${existing.title}" has been endorsed by the RET Chair and forwarded to the Director for approval.`;
+		} else if (newStatus === PROPOSAL_STATUS.APPROVED) {
+			title = "Proposal Approved";
+			message = `Your proposal "${existing.title}" has been approved by the Director.`;
+		} else if (newStatus === PROPOSAL_STATUS.RETURNED) {
+			title = "Proposal Returned";
+			message = `Your proposal "${existing.title}" has been returned by the ${user.roleName} for revisions. Comments: ${body.comments || "No comments left."}`;
+		} else if (newStatus === PROPOSAL_STATUS.REJECTED) {
+			title = "Proposal Rejected";
+			message = `Your proposal "${existing.title}" has been rejected. Comments: ${body.comments || "No comments left."}`;
+		}
+
+		await createNotification({
+			recipientId: leader.userId,
+			type: "Proposal",
+			title,
+			message,
+			sendEmail: true,
+		}).catch((err) => {
+			console.error("[notification] Failed to create evaluation notification:", err);
+		});
+	}
 
 	return c.json({ message: `Proposal ${body.decision.toLowerCase()}` }, 200);
 });
