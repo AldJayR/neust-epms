@@ -335,3 +335,48 @@ export function auditStatsQueryOptions() {
 		staleTime: 1000 * 60, // 1 minute
 	});
 }
+
+// ── Provision Director ───────────────────────────────────
+
+const provisionDirectorSchema = z.object({
+	firstName: z.string().min(1, "First name is required"),
+	middleName: z.string().optional().nullable(),
+	lastName: z.string().min(1, "Last name is required"),
+	nameSuffix: z.string().optional().nullable(),
+	email: z.string().email("Invalid email address"),
+	academicRank: z.string().min(1, "Academic rank is required"),
+	departmentId: z.number().optional().nullable(),
+});
+
+export type ProvisionDirectorInput = z.infer<typeof provisionDirectorSchema>;
+
+export const provisionDirectorFn = createServerFn({ method: "POST" })
+	.validator(provisionDirectorSchema)
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("Super Admin");
+		const token = await getValidAccessToken();
+
+		const response = await fetch(`${API_BASE}/admin/users`, {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${token}`,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(data),
+		});
+
+		if (!response.ok) {
+			const message = await getErrorMessage(
+				response,
+				"Failed to provision Director account",
+			);
+			throw new Error(message);
+		}
+
+		return (await response.json()) as {
+			success: boolean;
+			userId: string;
+			temporaryPassword: string;
+		};
+	});
+

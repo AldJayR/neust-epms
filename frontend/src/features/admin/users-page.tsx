@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SortingState } from "@tanstack/react-table";
-import { CheckCircle2, ListFilter, MoreVertical } from "lucide-react";
+import { CheckCircle2, ListFilter, MoreVertical, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
@@ -30,6 +30,7 @@ import {
 } from "@/lib/admin.functions";
 import { formatAcademicRank } from "@/lib/utils";
 import { BulkApproveDialog } from "./bulk-approve-dialog";
+import { AddUserDialog } from "./add-user-dialog";
 
 interface UsersPageProps {
 	page: number;
@@ -229,15 +230,27 @@ export function UsersPage({
 					</h1>
 				}
 				actions={
-					<BulkApproveDialog>
-						<BrandButton
-							className="hover:bg-brand-primary-hover shadow-[0px_1px_2px_0px_var(--shadow-card)]"
-							disabled={updateStatusMutation.isPending}
-						>
-							<CheckCircle2 className="mr-2 size-4" />
-							Bulk approve
-						</BrandButton>
-					</BulkApproveDialog>
+					<div className="flex gap-3">
+						<BulkApproveDialog>
+							<BrandButton
+								variant="outline"
+								className="shadow-[0px_1px_2px_0px_var(--shadow-card)] border-border bg-background"
+								disabled={updateStatusMutation.isPending}
+							>
+								<CheckCircle2 className="mr-2 size-4" />
+								Bulk approve
+							</BrandButton>
+						</BulkApproveDialog>
+						<AddUserDialog>
+							<BrandButton
+								className="hover:bg-brand-primary-hover shadow-[0px_1px_2px_0px_var(--shadow-card)]"
+								disabled={updateStatusMutation.isPending}
+							>
+								<Plus className="mr-2 size-4" />
+								Add User
+							</BrandButton>
+						</AddUserDialog>
+					</div>
 				}
 			/>
 

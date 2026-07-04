@@ -12,6 +12,7 @@ import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
+import { supabase } from "../lib/supabase.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -379,6 +380,148 @@ app.openapi(bulkApproveRoute, async (c) => {
 			updatedCount,
 		},
 		200,
+	);
+});
+
+// ── POST /admin/users ──
+const provisionUserRoute = createRoute({
+	method: "post",
+	path: "/admin/users",
+	tags: ["Admin"],
+	summary: "Provision a new Director account directly (Super Admin only)",
+	security: [{ Bearer: [] }],
+	request: {
+		body: {
+			content: {
+				"application/json": {
+					schema: z.object({
+						firstName: z.string().min(1),
+						middleName: z.string().optional().nullable(),
+						lastName: z.string().min(1),
+						nameSuffix: z.string().optional().nullable(),
+						email: z.string().email(),
+						academicRank: z.string().min(1),
+						departmentId: z.number().optional().nullable(),
+					}),
+				},
+			},
+			required: true,
+		},
+	},
+	responses: {
+		201: {
+			content: {
+				"application/json": {
+					schema: z.object({
+						success: z.boolean(),
+						userId: z.string(),
+						temporaryPassword: z.string(),
+					}),
+				},
+			},
+			description: "Director provisioned successfully",
+		},
+	},
+});
+
+app.openapi(provisionUserRoute, async (c) => {
+	const authUser = c.get("user");
+	const body = c.req.valid("json");
+
+	if (authUser.roleName !== "Super Admin") {
+		throw new ApiError(403, "FORBIDDEN", "Only Super Admin can provision accounts");
+	}
+
+	const [existing] = await db
+		.select({ userId: users.userId })
+		.from(users)
+		.where(eq(users.email, body.email))
+		.limit(1);
+
+	if (existing) {
+		throw new ApiError(400, "USER_EXISTS", "Email already registered");
+	}
+
+	const [directorRole] = await db
+		.select({ roleId: roles.roleId })
+		.from(roles)
+		.where(eq(roles.roleName, ROLE_NAMES.DIRECTOR))
+		.limit(1);
+
+	if (!directorRole) {
+		throw new ApiError(500, "CONFIG_ERROR", "Director role not found in system");
+	}
+
+	const [mainCampus] = await db
+		.select({ campusId: campuses.campusId })
+		.from(campuses)
+		.where(eq(campuses.isMainCampus, true))
+		.limit(1);
+
+	let campusId = mainCampus?.campusId;
+	if (!campusId) {
+		const [anyCampus] = await db
+			.select({ campusId: campuses.campusId })
+			.from(campuses)
+			.limit(1);
+		campusId = anyCampus?.campusId;
+	}
+
+	if (!campusId) {
+		throw new ApiError(500, "CONFIG_ERROR", "No campus found in system");
+	}
+
+	// Generate temporary password
+	const tempPassword = `Temp-${Math.random().toString(36).slice(-8)}${Math.floor(Math.random() * 10)}`;
+
+	const { data: authData, error: authError } =
+		await supabase.auth.admin.createUser({
+			email: body.email,
+			password: tempPassword,
+			email_confirm: true,
+		});
+
+	if (authError || !authData.user) {
+		throw new ApiError(
+			400,
+			"AUTH_ERROR",
+			authError?.message ?? "Failed to create auth user",
+		);
+	}
+
+	await db.transaction(async (tx) => {
+		await tx.insert(users).values({
+			userId: authData.user.id,
+			firstName: body.firstName,
+			middleName: body.middleName ?? null,
+			lastName: body.lastName,
+			nameSuffix: body.nameSuffix ?? null,
+			academicRank: body.academicRank,
+			email: body.email,
+			roleId: directorRole.roleId,
+			campusId: campusId,
+			departmentId: body.departmentId ?? null,
+			isActive: true,
+		});
+
+		await insertAuditLog(
+			{
+				userId: authUser.userId,
+				action: `Provisioned Director account for ${body.email}`,
+				tableAffected: "users",
+				ipAddress: getClientIp(c),
+			},
+			tx,
+		);
+	});
+
+	return c.json(
+		{
+			success: true,
+			userId: authData.user.id,
+			temporaryPassword: tempPassword,
+		},
+		201,
 	);
 });
 
