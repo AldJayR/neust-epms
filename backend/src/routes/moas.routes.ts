@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
 import { partners } from "../db/schema/partners.js";
@@ -65,6 +65,70 @@ async function isMoaLinkedToUserProject(
 		.where(and(eq(projects.moaId, moaId), eq(proposalMembers.userId, userId)))
 		.limit(1);
 	return !!row;
+}
+
+/**
+ * Syncs projects linked to a partner's previous MOAs to the new MOA.
+ * Restores project status to "Ongoing" if it was "Expired" and the new MOA is valid.
+ */
+async function syncProjectsToNewMoa(
+	partnerId: string,
+	newMoaId: string,
+	validUntil: Date,
+	userId: string,
+	ipAddress: string | null,
+): Promise<void> {
+	const previousMoas = await db
+		.select({ moaId: moas.moaId })
+		.from(moas)
+		.where(
+			and(
+				eq(moas.partnerId, partnerId),
+				ne(moas.moaId, newMoaId),
+				isNull(moas.archivedAt),
+			),
+		);
+
+	const previousMoaIds = previousMoas.map((m) => m.moaId);
+	if (previousMoaIds.length === 0) return;
+
+	const projectsToSync = await db
+		.select({
+			projectId: projects.projectId,
+			projectStatus: projects.projectStatus,
+		})
+		.from(projects)
+		.where(
+			and(
+				inArray(projects.moaId, previousMoaIds),
+				inArray(projects.projectStatus, ["Ongoing", "Expired", "Overdue"]),
+				isNull(projects.archivedAt),
+			),
+		);
+
+	const now = new Date();
+	for (const p of projectsToSync) {
+		let nextStatus = p.projectStatus;
+		if (p.projectStatus === "Expired" && validUntil > now) {
+			nextStatus = "Ongoing";
+		}
+
+		await db
+			.update(projects)
+			.set({
+				moaId: newMoaId,
+				projectStatus: nextStatus,
+				updatedAt: now,
+			})
+			.where(eq(projects.projectId, p.projectId));
+
+		await insertAuditLog({
+			userId,
+			action: `Synced project ${p.projectId} to new MOA ${newMoaId} (status updated: ${p.projectStatus} -> ${nextStatus})`,
+			tableAffected: "projects",
+			ipAddress,
+		});
+	}
 }
 
 // ── Schemas ──
@@ -500,6 +564,14 @@ app.openapi(createMoaRoute, async (c) => {
 		ipAddress: getClientIp(c),
 	});
 
+	await syncProjectsToNewMoa(
+		created.partnerId,
+		created.moaId,
+		created.validUntil,
+		user.userId,
+		getClientIp(c),
+	);
+
 	return c.json(
 		{
 			...created,
@@ -671,6 +743,14 @@ app.openapi(uploadMoaRoute, async (c) => {
 		ipAddress: getClientIp(c),
 	});
 
+	await syncProjectsToNewMoa(
+		created.partnerId,
+		created.moaId,
+		created.validUntil,
+		user.userId,
+		getClientIp(c),
+	);
+
 	return c.json(
 		{
 			...created,
@@ -785,6 +865,44 @@ app.openapi(updateRoute, async (c) => {
 
 	if (!updated) {
 		throw new ApiError(404, "NOT_FOUND", "MOA not found");
+	}
+
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Updated MOA ${id}`,
+		tableAffected: "moas",
+		ipAddress: getClientIp(c),
+	});
+
+	const now = new Date();
+	if (updated.validUntil > now) {
+		const expiredProjects = await db
+			.select({ projectId: projects.projectId })
+			.from(projects)
+			.where(
+				and(
+					eq(projects.moaId, id),
+					eq(projects.projectStatus, "Expired"),
+					isNull(projects.archivedAt)
+				)
+			);
+
+		for (const p of expiredProjects) {
+			await db
+				.update(projects)
+				.set({
+					projectStatus: "Ongoing",
+					updatedAt: now,
+				})
+				.where(eq(projects.projectId, p.projectId));
+
+			await insertAuditLog({
+				userId: user.userId,
+				action: `Restored project ${p.projectId} status to Ongoing (MOA validity range extended)`,
+				tableAffected: "projects",
+				ipAddress: getClientIp(c),
+			});
+		}
 	}
 
 	return c.json(

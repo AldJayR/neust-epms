@@ -5,6 +5,10 @@ import { moas } from "../db/schema/moas.js";
 import { partners } from "../db/schema/partners.js";
 import { env } from "../env.js";
 import { createNotification, getUserIdsByRole } from "../lib/notification.helpers.js";
+import { insertAuditLog } from "../lib/audit.js";
+import { users } from "../db/schema/users.js";
+import { roles } from "../db/schema/roles.js";
+import { projects } from "../db/schema/projects.js";
 
 /**
  * SYS-REQ-04.2: Scheduled background process that evaluates MOA expiration dates
@@ -14,6 +18,35 @@ import { createNotification, getUserIdsByRole } from "../lib/notification.helper
  * Note: `isExpired` column removed; expiration is now computed dynamically
  * by comparing `validUntil` against the current time.
  */
+async function getSystemExecutorId(): Promise<string | null> {
+	try {
+		const [dir] = await db
+			.select({ userId: users.userId })
+			.from(users)
+			.innerJoin(roles, eq(users.roleId, roles.roleId))
+			.where(eq(roles.roleName, "Director"))
+			.limit(1);
+		if (dir) return dir.userId;
+
+		const [admin] = await db
+			.select({ userId: users.userId })
+			.from(users)
+			.innerJoin(roles, eq(users.roleId, roles.roleId))
+			.where(eq(roles.roleName, "Super Admin"))
+			.limit(1);
+		if (admin) return admin.userId;
+
+		const [anyUser] = await db
+			.select({ userId: users.userId })
+			.from(users)
+			.limit(1);
+		if (anyUser) return anyUser.userId;
+	} catch (e) {
+		console.error("[CRON] Error finding system user for audit logging:", e);
+	}
+	return null;
+}
+
 export function startMoaExpirationCron(): void {
 	cron.schedule("0 1 * * *", async () => {
 		console.log(
@@ -49,8 +82,10 @@ export function startMoaExpirationCron(): void {
 
 			console.log(`[CRON] Found ${expiredMoas.length} expired MOA(s).`);
 
-			// Create in-app notifications for Director(s)
+			// Create in-app notifications for Director(s) and flag linked projects as Expired
 			const directorIds = await getUserIdsByRole("Director");
+			const systemUserId = await getSystemExecutorId();
+
 			for (const moa of expiredMoas) {
 				const expiryDate = moa.validUntil.toLocaleDateString();
 				for (const directorId of directorIds) {
@@ -63,6 +98,33 @@ export function startMoaExpirationCron(): void {
 						emailSubject: `MOA Expired: ${moa.partnerName}`,
 						emailHtml: `<p>MOA with "<strong>${moa.partnerName}</strong>" expired on <strong>${expiryDate}</strong>. Please renew.</p>`,
 					});
+				}
+
+				// Flag projects linked to this expired MOA as Expired
+				const affectedProjects = await db
+					.update(projects)
+					.set({
+						projectStatus: "Expired",
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(projects.moaId, moa.moaId),
+							eq(projects.projectStatus, "Ongoing"),
+							isNull(projects.archivedAt)
+						)
+					)
+					.returning({ projectId: projects.projectId });
+
+				if (affectedProjects.length > 0 && systemUserId) {
+					for (const p of affectedProjects) {
+						await insertAuditLog({
+							userId: systemUserId,
+							action: `Flagged project ${p.projectId} status as Expired due to MOA expiration`,
+							tableAffected: "projects",
+							ipAddress: "127.0.0.1",
+						});
+					}
 				}
 			}
 

@@ -1,4 +1,4 @@
-import { and, eq, lt } from "drizzle-orm";
+import { and, eq, lt, isNull } from "drizzle-orm";
 import cron from "node-cron";
 import { db } from "../db/client.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
@@ -9,6 +9,7 @@ import { proposals } from "../db/schema/proposals.js";
 import { roles } from "../db/schema/roles.js";
 import { users } from "../db/schema/users.js";
 import { createNotification } from "../lib/notification.helpers.js";
+import { insertAuditLog } from "../lib/audit.js";
 
 const PROJECT_LEADER_ROLE = "Project Leader";
 
@@ -19,6 +20,35 @@ const PROJECT_LEADER_ROLE = "Project Leader";
  * and not yet completed, then notifies the Project Leader and
  * RET Chair for the project's campus.
  */
+async function getSystemExecutorId(): Promise<string | null> {
+	try {
+		const [dir] = await db
+			.select({ userId: users.userId })
+			.from(users)
+			.innerJoin(roles, eq(users.roleId, roles.roleId))
+			.where(eq(roles.roleName, "Director"))
+			.limit(1);
+		if (dir) return dir.userId;
+
+		const [admin] = await db
+			.select({ userId: users.userId })
+			.from(users)
+			.innerJoin(roles, eq(users.roleId, roles.roleId))
+			.where(eq(roles.roleName, "Super Admin"))
+			.limit(1);
+		if (admin) return admin.userId;
+
+		const [anyUser] = await db
+			.select({ userId: users.userId })
+			.from(users)
+			.limit(1);
+		if (anyUser) return anyUser.userId;
+	} catch (e) {
+		console.error("[CRON] Error finding system user for audit logging:", e);
+	}
+	return null;
+}
+
 export function startReportOverdueCron(): void {
 	cron.schedule("0 2 * * *", async () => {
 		console.log(
@@ -27,6 +57,7 @@ export function startReportOverdueCron(): void {
 
 		try {
 			const now = new Date();
+			const systemUserId = await getSystemExecutorId();
 
 			// Find overdue reporting dates (past due, not completed, not archived)
 			const overdueDates = await db
@@ -55,6 +86,7 @@ export function startReportOverdueCron(): void {
 			let notifiedCount = 0;
 
 			for (const row of overdueDates) {
+				const dateStr = new Date(row.reportingDate).toLocaleDateString();
 				// Get the schedule → project → proposal chain
 				const [schedule] = await db
 					.select()
@@ -78,6 +110,25 @@ export function startReportOverdueCron(): void {
 				if (project.projectStatus === "Closed" || project.archivedAt)
 					continue;
 
+				if (project.projectStatus !== "Overdue") {
+					await db
+						.update(projects)
+						.set({
+							projectStatus: "Overdue",
+							updatedAt: new Date(),
+						})
+						.where(eq(projects.projectId, project.projectId));
+
+					if (systemUserId) {
+						await insertAuditLog({
+							userId: systemUserId,
+							action: `Flagged project ${project.projectId} status as Overdue due to missed report deadline (${dateStr})`,
+							tableAffected: "projects",
+							ipAddress: "127.0.0.1",
+						});
+					}
+				}
+
 				const [proposal] = await db
 					.select()
 					.from(proposals)
@@ -85,10 +136,6 @@ export function startReportOverdueCron(): void {
 					.limit(1);
 
 				if (!proposal) continue;
-
-				const dateStr = new Date(
-					row.reportingDate,
-				).toLocaleDateString();
 
 				// Find the Project Leader
 				const [leader] = await db
