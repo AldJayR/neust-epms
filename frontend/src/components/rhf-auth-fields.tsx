@@ -95,6 +95,7 @@ export function RHFPasswordField<TFieldValues extends FieldValues>({
 	control,
 	name,
 	label,
+	placeholder,
 	description,
 	labelAction,
 	onBlur: onBlurProp,
@@ -102,6 +103,7 @@ export function RHFPasswordField<TFieldValues extends FieldValues>({
 	control: Control<TFieldValues>;
 	name: FieldPath<TFieldValues>;
 	label: string;
+	placeholder?: string;
 	description?: string;
 	labelAction?: React.ReactNode;
 	onBlur?: () => void;
@@ -128,6 +130,7 @@ export function RHFPasswordField<TFieldValues extends FieldValues>({
 					{...field}
 					id={field.name}
 					type={showPassword ? "text" : "password"}
+					placeholder={placeholder ?? "••••••••"}
 					aria-invalid={fieldState.invalid}
 					aria-describedby={describedBy || undefined}
 					className="text-black placeholder:text-zinc-500"

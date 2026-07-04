@@ -91,7 +91,7 @@ export function CreateMoaModal({ open, onOpenChange }: CreateMoaModalProps) {
 						<Input
 							id="partnerName"
 							type="text"
-							placeholder="Enter partner name"
+							placeholder="e.g. Department of Science and Technology"
 							value={partnerName}
 							onChange={(e) => setPartnerName(e.target.value)}
 							required

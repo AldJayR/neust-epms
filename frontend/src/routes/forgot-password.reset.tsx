@@ -81,12 +81,14 @@ function ResetPasswordPage() {
 							control={form.control}
 							name="password"
 							label="Password"
+							placeholder="At least 8 characters"
 							description="Password must be at least 8 characters."
 						/>
 						<RHFPasswordField
 							control={form.control}
 							name="confirmPassword"
 							label="Confirm Password"
+							placeholder="Re-enter your password"
 						/>
 					</FieldGroup>
 

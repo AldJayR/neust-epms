@@ -167,7 +167,7 @@ export function ProposalStepDetails({ form }: ProposalStepDetailsProps) {
 						<CurrencyInput
 							value={form.watch("budgetPartner")}
 							onChange={(val) => form.setValue("budgetPartner", val)}
-							placeholder="0"
+							placeholder="0.00"
 						/>
 					</FieldContent>
 					<FieldError errors={[form.formState.errors.budgetPartner]} />
@@ -178,7 +178,7 @@ export function ProposalStepDetails({ form }: ProposalStepDetailsProps) {
 						<CurrencyInput
 							value={form.watch("budgetNeust")}
 							onChange={(val) => form.setValue("budgetNeust", val)}
-							placeholder="0"
+							placeholder="0.00"
 						/>
 					</FieldContent>
 					<FieldError errors={[form.formState.errors.budgetNeust]} />

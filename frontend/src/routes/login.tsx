@@ -146,6 +146,7 @@ function LoginPage() {
 							control={form.control}
 							name="password"
 							label="Password"
+							placeholder="Enter your password"
 							labelAction={
 								<Link
 									to="/forgot-password"

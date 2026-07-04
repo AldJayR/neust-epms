@@ -211,6 +211,7 @@ function RegisterStepTwo() {
 						control={form.control}
 						name="password"
 						label="Password"
+						placeholder="At least 8 characters"
 						description={
 							passwordChecking
 								? "Checking password..."
@@ -223,6 +224,7 @@ function RegisterStepTwo() {
 						control={form.control}
 						name="confirmPassword"
 						label="Confirm Password"
+						placeholder="Re-enter your password"
 					/>
 
 					<RHFCheckboxField

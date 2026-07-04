@@ -306,7 +306,7 @@ function ProjectOverviewCard({
 												<div className="flex items-center gap-2.5">
 													<Input
 														type="text"
-														placeholder="SO#"
+														placeholder="e.g. SO-2024-001"
 														className="h-7 w-[110px] text-xs"
 														value={soNumbers[member.userId] ?? ""}
 														onChange={(e) =>

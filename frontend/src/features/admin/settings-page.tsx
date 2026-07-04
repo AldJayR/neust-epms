@@ -55,6 +55,7 @@ export function SettingsPage() {
 							type="number"
 							min={1}
 							max={100}
+							placeholder="e.g. 5"
 							value={retentionYears}
 							onChange={(e) => setRetentionYears(e.target.value)}
 							className="w-32"

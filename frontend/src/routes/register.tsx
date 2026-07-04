@@ -171,11 +171,13 @@ function RegisterStepOneForm() {
 							control={form.control}
 							name="firstName"
 							label="First Name"
+							placeholder="e.g. Juan"
 						/>
 						<RHFTextField
 							control={form.control}
 							name="lastName"
 							label="Last Name"
+							placeholder="e.g. Dela Cruz"
 						/>
 					</div>
 
