@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { and, count, desc, eq, isNull } from "drizzle-orm";
 import { db } from "../db/client.js";
@@ -9,10 +10,30 @@ import { insertAuditLog } from "../lib/audit.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { type AuthUser, ROLE_NAMES } from "../lib/types.js";
+import { createClient } from "@supabase/supabase-js";
+import { env } from "../env.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
+
+const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+
+function sanitizeFilename(fileName: string): string {
+	const normalized = fileName
+		.normalize("NFKD")
+		.replace(/[^a-zA-Z0-9._-]/g, "_")
+		.replace(/_+/g, "_")
+		.replace(/^_+|_+$/g, "");
+
+	const fallback = "document.pdf";
+	const candidate = normalized.length > 0 ? normalized : fallback;
+
+	return candidate.toLowerCase().endsWith(".pdf")
+		? candidate
+		: `${candidate}.pdf`;
+}
 
 // MOA management is restricted to RET Chair and Director (Super Admin is not
 // involved in MOA management per product decision).
@@ -337,6 +358,177 @@ app.openapi(createMoaRoute, async (c) => {
 	await insertAuditLog({
 		userId: user.userId,
 		action: `Created MOA ${created.moaId}`,
+		tableAffected: "moas",
+		ipAddress: getClientIp(c),
+	});
+
+	return c.json(
+		{
+			...created,
+			validFrom: created.validFrom.toISOString(),
+			validUntil: created.validUntil.toISOString(),
+			createdAt: created.createdAt.toISOString(),
+			updatedAt: created.updatedAt.toISOString(),
+			archivedAt: created.archivedAt?.toISOString() ?? null,
+		},
+		201,
+	);
+});
+
+// ── POST /moas/upload ──
+const uploadMoaRoute = createRoute({
+	method: "post",
+	path: "/moas/upload",
+	tags: ["MOAs"],
+	summary: "Upload a MOA document PDF and create partner/MOA record",
+	security: [{ Bearer: [] }],
+	responses: {
+		201: {
+			content: { "application/json": { schema: MoaSchema } },
+			description: "MOA created",
+		},
+		400: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid request",
+		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Forbidden",
+		},
+		500: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Internal server error",
+		},
+	},
+});
+
+app.openapi(uploadMoaRoute, async (c) => {
+	const user = c.get("user");
+
+	if (!canManageMoas(user)) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You must be the Director or RET Chair to manage MOAs",
+		);
+	}
+
+	const contentLength = Number(c.req.header("content-length") ?? 0);
+	if (contentLength > MAX_UPLOAD_BYTES) {
+		throw new ApiError(413, "FILE_TOO_LARGE", "File exceeds 50MB limit");
+	}
+
+	const formData = await c.req.formData();
+	const file = formData.get("file");
+	const partnerName = formData.get("partnerName");
+	const validFromStr = formData.get("validFrom");
+	const validUntilStr = formData.get("validUntil");
+
+	if (!(file instanceof File)) {
+		throw new ApiError(400, "NO_FILE", "A PDF file is required");
+	}
+
+	if (file.size <= 0) {
+		throw new ApiError(422, "EMPTY_FILE", "Uploaded file cannot be empty");
+	}
+
+	if (file.size > MAX_UPLOAD_BYTES) {
+		throw new ApiError(413, "FILE_TOO_LARGE", "File exceeds 50MB limit");
+	}
+
+	if (file.type !== "application/pdf") {
+		throw new ApiError(422, "INVALID_FILE_TYPE", "Only PDF files are allowed");
+	}
+
+	if (typeof partnerName !== "string" || !partnerName) {
+		throw new ApiError(400, "INVALID_PARTNER_NAME", "partnerName is required");
+	}
+
+	if (typeof validFromStr !== "string" || !validFromStr) {
+		throw new ApiError(400, "INVALID_VALID_FROM", "validFrom is required");
+	}
+
+	if (typeof validUntilStr !== "string" || !validUntilStr) {
+		throw new ApiError(400, "INVALID_VALID_UNTIL", "validUntil is required");
+	}
+
+	const validFrom = new Date(validFromStr);
+	const validUntil = new Date(validUntilStr);
+
+	if (Number.isNaN(validFrom.getTime()) || Number.isNaN(validUntil.getTime())) {
+		throw new ApiError(400, "INVALID_DATES", "Invalid date format");
+	}
+
+	if (validUntil <= validFrom) {
+		throw new ApiError(
+			400,
+			"INVALID_DATES",
+			"validUntil must be after validFrom",
+		);
+	}
+
+	// 1. Get or create partner
+	let partnerId: string;
+	const [existingPartner] = await db
+		.select({ partnerId: partners.partnerId })
+		.from(partners)
+		.where(eq(partners.partnerName, partnerName))
+		.limit(1);
+
+	if (existingPartner) {
+		partnerId = existingPartner.partnerId;
+	} else {
+		const [newPartner] = await db
+			.insert(partners)
+			.values({
+				partnerName,
+				partnerType: "Institutional", // Default partner type
+			})
+			.returning({ partnerId: partners.partnerId });
+		if (!newPartner) {
+			throw new ApiError(500, "CREATE_PARTNER_FAILED", "Failed to create partner");
+		}
+		partnerId = newPartner.partnerId;
+	}
+
+	// 2. Upload to Supabase Storage
+	const sanitizedFilename = sanitizeFilename(file.name);
+	const storagePath = `moas/${partnerId}/${Date.now()}_${randomUUID()}_${sanitizedFilename}`;
+
+	const { error: uploadError } = await supabase.storage
+		.from("documents")
+		.upload(storagePath, file, {
+			contentType: file.type,
+			upsert: false,
+		});
+
+	if (uploadError) {
+		throw new ApiError(
+			400,
+			"UPLOAD_FAILED",
+			`Supabase storage upload failed: ${uploadError.message}`,
+		);
+	}
+
+	// 3. Create MOA record
+	const [created] = await db
+		.insert(moas)
+		.values({
+			partnerId,
+			storagePath,
+			validFrom,
+			validUntil,
+		})
+		.returning();
+
+	if (!created) {
+		await supabase.storage.from("documents").remove([storagePath]);
+		throw new ApiError(500, "INSERT_FAILED", "Failed to create MOA");
+	}
+
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Created MOA ${created.moaId} for partner ${partnerName}`,
 		tableAffected: "moas",
 		ipAddress: getClientIp(c),
 	});

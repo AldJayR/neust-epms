@@ -1631,7 +1631,7 @@ app.openapi(emailReportRoute, async (c) => {
 // ── GET /director/moas/active ──
 const activeMoasRoute = createRoute({
 	method: "get",
-	path: "/moas/active",
+	path: "/director/moas/active",
 	tags: ["Director"],
 	summary: "List active MOAs with partner names (for project activation)",
 	security: [{ Bearer: [] }],

@@ -520,22 +520,34 @@ export const getAccessTokenForUploadFn = createServerFn({ method: "GET" })
 		return getValidAccessToken();
 	});
 
+const specialOrderUploadSchema = z.object({
+	memberId: z.string().uuid("Invalid member ID"),
+	soNumber: z.string().min(1, "SO number is required"),
+	file: z.instanceof(File, { message: "A PDF file is required" }).refine(
+		(file) => file.type === "application/pdf",
+		"Only PDF files are allowed",
+	),
+});
+
+const moaUploadSchema = z.object({
+	partnerName: z.string().min(1, "Partner name is required"),
+	validFrom: z.string().min(1, "Signed from date is required"),
+	validUntil: z.string().min(1, "Expiration date is required"),
+	file: z.instanceof(File, { message: "A PDF document is required" }).refine(
+		(file) => file.type === "application/pdf",
+		"Only PDF files are allowed",
+	),
+});
+
 export const uploadSpecialOrderFn = createServerFn({ method: "POST" })
 	.validator((data: FormData) => {
-		const memberId = data.get("memberId");
-		if (typeof memberId !== "string" || !memberId) {
-			throw new Error("memberId is required");
-		}
-		const soNumber = data.get("soNumber");
-		if (typeof soNumber !== "string" || !soNumber) {
-			throw new Error("soNumber is required");
-		}
-		const file = data.get("file");
-		if (!(file instanceof File)) {
-			throw new Error("file is required and must be a File");
-		}
-		if (file.type !== "application/pdf") {
-			throw new Error("Only PDF files are allowed");
+		const result = specialOrderUploadSchema.safeParse({
+			memberId: data.get("memberId"),
+			soNumber: data.get("soNumber"),
+			file: data.get("file"),
+		});
+		if (!result.success) {
+			throw new Error(result.error.issues[0]?.message ?? "Validation failed");
 		}
 		return data;
 	})
@@ -555,6 +567,42 @@ export const uploadSpecialOrderFn = createServerFn({ method: "POST" })
 			const message = await getErrorMessage(
 				response,
 				"Failed to upload special order",
+			);
+			throw new Error(message);
+		}
+
+		return response.json();
+	});
+
+export const uploadMoaFn = createServerFn({ method: "POST" })
+	.validator((data: FormData) => {
+		const result = moaUploadSchema.safeParse({
+			partnerName: data.get("partnerName"),
+			validFrom: data.get("validFrom"),
+			validUntil: data.get("validUntil"),
+			file: data.get("file"),
+		});
+		if (!result.success) {
+			throw new Error(result.error.issues[0]?.message ?? "Validation failed");
+		}
+		return data;
+	})
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director", "RET Chair");
+		const token = await getValidAccessToken();
+
+		const response = await fetch(`${API_BASE}/moas/upload`, {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+			body: data,
+		});
+
+		if (!response.ok) {
+			const message = await getErrorMessage(
+				response,
+				"Failed to upload MOA",
 			);
 			throw new Error(message);
 		}

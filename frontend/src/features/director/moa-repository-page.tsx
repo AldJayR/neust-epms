@@ -26,6 +26,7 @@ import {
 	moaRepositoryQueryOptions,
 } from "@/lib/dashboard.functions";
 import { isAdminOrDirector } from "@/lib/permissions";
+import { CreateMoaModal } from "./components/create-moa-modal";
 
 interface MoaRepositoryPageProps {
 	user?: AuthUser | null;
@@ -49,6 +50,7 @@ export function MoaRepositoryPage({
 	onStatusChange,
 }: MoaRepositoryPageProps) {
 	const [sorting, setSorting] = useState<SortingState>([]);
+	const [isCreateOpen, setIsCreateOpen] = useState(false);
 
 	const { data, isLoading } = useQuery(
 		moaRepositoryQueryOptions({ page, limit, search, status }),
@@ -79,7 +81,7 @@ export function MoaRepositoryPage({
 			id: "dateSigned",
 			accessorKey: "dateSigned",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Date Signed" />
+				<DataTableColumnHeader column={column} title="Date Signed" className="justify-center" />
 			),
 			headerClassName:
 				"w-[223px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
@@ -94,7 +96,7 @@ export function MoaRepositoryPage({
 			id: "daysToExpiry",
 			accessorKey: "daysToExpiry",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Days to Expiry" />
+				<DataTableColumnHeader column={column} title="Days to Expiry" className="justify-center" />
 			),
 			headerClassName:
 				"w-[255px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
@@ -110,7 +112,7 @@ export function MoaRepositoryPage({
 			id: "status",
 			accessorKey: "status",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Status" />
+				<DataTableColumnHeader column={column} title="Status" className="justify-center" />
 			),
 			headerClassName:
 				"w-[129px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
@@ -133,7 +135,10 @@ export function MoaRepositoryPage({
 				}
 				actions={
 					isAdminOrDirector(user) ? (
-						<BrandButton className="flex items-center gap-1.5 px-[10px] py-2 shadow-sm hover:bg-brand-primary-hover">
+						<BrandButton
+							onClick={() => setIsCreateOpen(true)}
+							className="flex items-center gap-1.5 px-[10px] py-2 shadow-sm hover:bg-brand-primary-hover"
+						>
 							<Plus className="size-4" />
 							<span className="text-sm font-medium">Create MOA</span>
 						</BrandButton>
@@ -215,6 +220,7 @@ export function MoaRepositoryPage({
 				emptyMessage="No MOAs found."
 				ariaLabel="Memoranda of Agreements"
 			/>
+			<CreateMoaModal open={isCreateOpen} onOpenChange={setIsCreateOpen} />
 		</div>
 	);
 }

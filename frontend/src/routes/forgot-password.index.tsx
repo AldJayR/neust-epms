@@ -8,6 +8,7 @@ import { AuthPageLayout } from "../components/custom/auth-page-layout";
 import { RHFSubmitButton, RHFTextField } from "../components/rhf-auth-fields";
 import { FieldGroup } from "../components/ui/field";
 import { sendResetCodeFn } from "../lib/auth.functions";
+import { ArrowLeft } from "lucide-react";
 
 const forgotPasswordSchema = z.object({
 	email: z.string().email("Please enter a valid email address"),
@@ -77,7 +78,8 @@ function ForgotPasswordPage() {
 							to="/login"
 							className="flex h-9 items-center justify-center rounded-lg border border-brand-primary !text-brand-primary text-sm font-medium px-4 hover:bg-zinc-50 transition-colors whitespace-nowrap"
 						>
-							← Back to login
+							<ArrowLeft className="mr-2 size-4" />
+							Back to login
 						</Link>
 						<RHFSubmitButton
 							label="Send code"

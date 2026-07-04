@@ -13,6 +13,7 @@ import {
 	InputOTPSlot,
 } from "../components/ui/input-otp";
 import { sendResetCodeFn, verifyResetCodeFn } from "../lib/auth.functions";
+import { ArrowLeft } from "lucide-react";
 
 const otpSchema = z.object({
 	code: z.string().length(6, "Verification code must be 6 digits"),
@@ -160,7 +161,8 @@ function OtpVerificationPage() {
 							to="/forgot-password"
 							className="flex h-9 items-center justify-center rounded-lg border border-brand-primary !text-brand-primary text-sm font-medium px-4 hover:bg-zinc-50 transition-colors w-[126px]"
 						>
-							← Back
+							<ArrowLeft className="mr-2 size-4" />
+							Back
 						</Link>
 						<RHFSubmitButton
 							label="Submit code"
