@@ -33,6 +33,7 @@ describe("GET /proposals", () => {
 		const mockProposal = createMockProposal();
 		vi.mocked(db.select)
 			.mockReturnValueOnce(mockSelectChain([]) as never) // leaderSubquery
+			.mockReturnValueOnce(mockSelectChain([]) as never) // userMemberSubquery
 			.mockReturnValueOnce(mockSelectChain([mockProposal]) as never) // items
 			.mockReturnValueOnce(mockSelectChain([{ value: 1 }]) as never); // count
 

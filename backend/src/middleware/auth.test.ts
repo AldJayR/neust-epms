@@ -14,13 +14,14 @@ import { ApiError, createErrorResponse } from "../lib/errors.js";
 import { mockSelectChain } from "../../test/helpers.js";
 import type { AuthEnv } from "./auth.js";
 
+vi.unmock("./auth.js");
+vi.unmock("../middleware/auth.js");
+
 describe("authMiddleware", () => {
 	let app: Hono<AuthEnv>;
 
 	beforeEach(async () => {
 		vi.resetModules();
-		vi.unmock("./auth.js");
-		vi.unmock("../middleware/auth.js");
 
 		const { authMiddleware } = await import("./auth.js");
 
