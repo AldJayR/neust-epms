@@ -453,7 +453,7 @@ app.openapi(linkedProjectsRoute, async (c) => {
 
 	const rows = await db
 		.select({
-			projectId: projects.projectId,
+			projectId: proposals.proposalId,
 			title: proposals.title,
 			projectStatus: projects.projectStatus,
 			leaderName: sql<string | null>`concat(${users.firstName}, ' ', ${users.lastName})`,

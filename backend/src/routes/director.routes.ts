@@ -815,8 +815,8 @@ app.openapi(projectHubRoute, async (c) => {
 		leaderName: `${r.leaderFirstName} ${r.leaderLastName}`,
 		leaderRank: r.leaderRank,
 		college: r.college,
-		dateSubmitted: r.dateSubmitted.toISOString(),
-		lastReportDate: r.lastReportDate ? r.lastReportDate.toISOString() : null,
+		dateSubmitted: new Date(r.dateSubmitted).toISOString(),
+		lastReportDate: r.lastReportDate ? new Date(r.lastReportDate).toISOString() : null,
 		status: r.projectStatus || r.proposalStatus,
 		type: (r.projectStatus ? "Project" : "Proposal") as "Project" | "Proposal",
 	}));
