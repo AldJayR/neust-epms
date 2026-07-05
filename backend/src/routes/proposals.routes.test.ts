@@ -328,28 +328,3 @@ describe("POST /proposals/:id/review", () => {
 	});
 });
 
-describe("DELETE /proposals/:id (soft delete)", () => {
-	it("should archive an existing proposal", async () => {
-		const mock = createMockProposal();
-		vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
-		vi.mocked(db.update).mockReturnValue(mockMutationChain([mock]) as never);
-
-		const res = await app.request(`/proposals/${PROPOSAL_ID}`, {
-			method: "DELETE",
-		});
-
-		expect(res.status).toBe(200);
-		const body = await res.json();
-		expect(body.message).toContain("archived");
-	});
-
-	it("should return 404 for non-existent proposal", async () => {
-		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
-
-		const res = await app.request(`/proposals/${PROPOSAL_ID}`, {
-			method: "DELETE",
-		});
-
-		expect(res.status).toBe(404);
-	});
-});

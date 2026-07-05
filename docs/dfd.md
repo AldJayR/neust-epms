@@ -68,7 +68,7 @@
 * **`MOA Management Data`** = MOA Document and Validity Dates + Updated Validity Dates + Selected MOA
 * **`MOA Review Data`** = MOA Status + Linked Project List
 * **`Evaluation Decision Data`** = Approval Decision + Evaluation Decision And Comments + Return Or Rejection Decision
-* **`Proposal Submissions`** = Proposal Documents + Revised Proposal Documents + Proposal Withdrawal Request
+* **`Proposal Submissions`** = Proposal Documents + Revised Proposal Documents
 * **`Proposal Review Data`** = Proposal Details
 * **`Project Management Data`** = Project Implementation Updates + Activation Request + Selected MOA + Reporting Schedule + Special Order Documents
 * **`Project Updates`** = Project Implementation Updates + Special Order Documents
@@ -154,10 +154,8 @@
 **Process 4 — Manage Project Proposals**
 * RET Chair → 4 — Proposal Documents
 * RET Chair → 4 — Revised Proposal Documents
-* RET Chair → 4 — Proposal Withdrawal Request
 * Faculty → 4 — Proposal Documents
 * Faculty → 4 — Revised Proposal Documents
-* Faculty → 4 — Proposal Withdrawal Request
 * 6 → 4 — Proposal Status And Feedback
 * 6 → 4 — Updated Proposal Status
 * 4 → RET Chair — Submission Acknowledgment
@@ -413,18 +411,11 @@
 * 4.4 → D2 — Revised Proposal Record
 * 4.4 → D6 — Proposal Event Data
 
-* Faculty → 4.5 — Proposal Withdrawal Request
-* RET Chair → 4.5 — Proposal Withdrawal Request
-* D2 → 4.5 — Existing Proposal State
-* 4.5 → D2 — Withdrawn Proposal Record
-* 4.5 → D6 — Proposal Event Data
-
 **Sub-processes:**
 * **4.1 — Review Proposal Submission** — Compares the initial proposal document details against existing active proposal records to prevent duplicates.
 * **4.2 — Record Proposal Data** — Validates and writes proposal records into the proposals datastore as a pending state.
 * **4.3 — Route Proposal for Review** — Forwards active core details representing pending records into the evaluation flow and issues receipts.
 * **4.4 — Process Proposal Resubmission** — Validates revised proposal documents against historic evaluation feedback and routes to active review.
-* **4.5 — Process Proposal Withdrawal** — Flags pending proposals as withdrawn in the datastore on user request.
 
 ---
 
@@ -604,7 +595,7 @@
 ## **LEVEL 1 DFD — Process 9: Manage Activity Logs**
 
 * Super Admin → 9.1 — Audit Log Request
-* D6 → 9.1 — Stored Audit Records  *(corrected — a data store cannot originate search/query parameters; D6 now correctly supplies the records being retrieved, not the request criteria)*
+* D6 → 9.1 — Stored Audit Records 
 * 9.1 → 9.2 — Retrieved Log Details
 
 * Super Admin → 9.2 — Filter And Search Parameters

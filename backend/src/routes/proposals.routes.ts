@@ -630,7 +630,7 @@ const updateRoute = createRoute({
 	method: "patch",
 	path: "/proposals/{id}",
 	tags: ["Proposals"],
-	summary: "Update a proposal (Draft or Returned only, project leader only)",
+	summary: "Update a proposal (Draft, Returned, Pending Review, or Endorsed; project leader only)",
 	security: [{ Bearer: [] }],
 	request: {
 		params: ParamId,
@@ -680,12 +680,14 @@ app.openapi(updateRoute, async (c) => {
 
 	if (
 		existing.status !== PROPOSAL_STATUS.DRAFT &&
-		existing.status !== PROPOSAL_STATUS.RETURNED
+		existing.status !== PROPOSAL_STATUS.RETURNED &&
+		existing.status !== PROPOSAL_STATUS.PENDING_REVIEW &&
+		existing.status !== PROPOSAL_STATUS.ENDORSED
 	) {
 		throw new ApiError(
 			400,
 			"INVALID_STATUS",
-			"Only Draft or Returned proposals can be updated",
+			"Only Draft, Returned, Pending Review, or Endorsed proposals can be updated",
 		);
 	}
 
@@ -726,6 +728,8 @@ app.openapi(updateRoute, async (c) => {
 				or(
 					eq(proposals.status, PROPOSAL_STATUS.DRAFT),
 					eq(proposals.status, PROPOSAL_STATUS.RETURNED),
+					eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
+					eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
 				),
 			),
 		)
@@ -1135,88 +1139,7 @@ app.openapi(reviewRoute, async (c) => {
 	return c.json({ message: `Proposal ${body.decision.toLowerCase()}` }, 200);
 });
 
-// ── DELETE /proposals/:id (soft delete) ──
-const archiveRoute = createRoute({
-	method: "delete",
-	path: "/proposals/{id}",
-	tags: ["Proposals"],
-	summary: "Archive a proposal (soft delete per RA 9470)",
-	security: [{ Bearer: [] }],
-	request: { params: ParamId },
-	responses: {
-		200: {
-			content: { "application/json": { schema: MessageSchema } },
-			description: "Proposal archived",
-		},
-		403: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Not authorized to archive this proposal",
-		},
-		404: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Not found",
-		},
-	},
-});
 
-app.openapi(archiveRoute, async (c) => {
-	const user = c.get("user");
-	const { id } = c.req.valid("param");
-
-	const [existing] = await db
-		.select({
-			proposalId: proposals.proposalId,
-			departmentId: proposals.departmentId,
-			campusId: proposals.campusId,
-		})
-		.from(proposals)
-		.where(and(eq(proposals.proposalId, id), isNull(proposals.archivedAt)))
-		.limit(1);
-
-	if (!existing) {
-		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
-	}
-
-	// Authorization: Super Admin / Director may archive anything;
-	// RET Chair only within their department/campus scope;
-	// everyone else must be the project leader of this proposal.
-	let allowed =
-		user.roleName === ROLE_NAMES.SUPER_ADMIN ||
-		user.roleName === ROLE_NAMES.DIRECTOR;
-
-	if (!allowed && user.roleName === ROLE_NAMES.RET_CHAIR) {
-		allowed =
-			user.isMainCampus && user.departmentId !== null
-				? existing.departmentId === user.departmentId
-				: existing.campusId === user.campusId;
-	}
-
-	if (!allowed) {
-		allowed = await isProjectLeader(id, user.userId);
-	}
-
-	if (!allowed) {
-		throw new ApiError(
-			403,
-			"FORBIDDEN",
-			"You do not have permission to archive this proposal",
-		);
-	}
-
-	await db
-		.update(proposals)
-		.set({ archivedAt: new Date(), updatedAt: new Date() })
-		.where(eq(proposals.proposalId, id));
-
-	await insertAuditLog({
-		userId: user.userId,
-		action: `Archived proposal ${id}`,
-		tableAffected: "proposals",
-		ipAddress: getClientIp(c),
-	});
-
-	return c.json({ message: "Proposal archived" }, 200);
-});
 
 // ── GET /proposals/metadata/sdgs ──
 const listSdgsRoute = createRoute({

@@ -57,7 +57,6 @@
 | **4.2** | Record Proposal Data | `POST /proposals` (validates + writes pending record) | `CreateProposalModal` (4-step wizard) | ✅ FULL | — |
 | **4.3** | Route Proposal for Review | Status set to `Pending Review` | Toast on submit | ⚠️ PARTIAL | No receipt acknowledgment notification (`createNotification`) sent to project leader. |
 | **4.4** | Process Proposal Resubmission | `PATCH /proposals/{id}`, `POST /proposals/{id}/submit` | `CreateProposalModal` edit mode | ✅ FULL | — |
-| **4.5** | Process Proposal Withdrawal | `DELETE /proposals/{id}` | ❌ Missing | ⚠️ PARTIAL | Backend endpoint exists; no "Withdraw" button in frontend. |
 
 ---
 
@@ -134,11 +133,10 @@
 | # | Gap | DFD Ref | Backend | Frontend | Effort |
 |---|-----|---------|---------|----------|--------|
 | 1 | **Project Implementation Updates** — no endpoint or UI for progress notes | 7.3 | New `POST /projects/{id}/updates` endpoint + table | New form/modal in project details | ~5h |
-| 2 | **Proposal Withdrawal UI** — backend exists, no button | 4.5 | Endpoint exists | Add "Withdraw" button to proposal detail | ~1h |
-| 3 | **Reject Decision Button** — backend supports, frontend omits | 6.3 | Endpoint accepts `"Rejected"` | Add Reject button to proposal review | ~1h |
-| 4 | **Activation Notification** — user gets no email on approve | 1.3 | Add `createNotification()` in approve handler | None needed | ~30m |
-| 5 | **Proposal Submission Acknowledgment** — no receipt sent | 4.3 | Add `createNotification()` in submit handler | None needed | ~30m |
-| 6 | **Overdue Flag Clearance** — submitting report doesn't clear flag | 8.2 | Add `Overdue` → `Ongoing` transition in report handler | None needed | ~1h |
+| 2 | **Reject Decision Button** — backend supports, frontend omits | 6.3 | Endpoint accepts `"Rejected"` | Add Reject button to proposal review | ~1h |
+| 3 | **Activation Notification** — user gets no email on approve | 1.3 | Add `createNotification()` in approve handler | None needed | ~30m |
+| 4 | **Proposal Submission Acknowledgment** — no receipt sent | 4.3 | Add `createNotification()` in submit handler | None needed | ~30m |
+| 5 | **Overdue Flag Clearance** — submitting report doesn't clear flag | 8.2 | Add `Overdue` → `Ongoing` transition in report handler | None needed | ~1h |
 
 ### MEDIUM PRIORITY (workflow completeness)
 

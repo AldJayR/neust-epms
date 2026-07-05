@@ -149,6 +149,14 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		});
 	};
 
+	const handleReject = (comments?: string) => {
+		reviewMutation.mutate({
+			proposalId,
+			decision: "Rejected",
+			comments: comments || "Proposal rejected",
+		});
+	};
+
 	if (isLoading) {
 		return <ProjectDetailsSkeleton />;
 	}
@@ -301,6 +309,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 											setActiveAttachmentId={setActiveAttachmentId}
 											isReviewable={isReviewable}
 											handleDeny={handleDeny}
+											handleReject={handleReject}
 											handleApprove={handleApprove}
 											isPending={reviewMutation.isPending}
 											isRET={isRETChair(user)}

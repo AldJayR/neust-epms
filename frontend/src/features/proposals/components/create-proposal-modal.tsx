@@ -71,6 +71,7 @@ interface CreateProposalModalProps {
 	user: AuthUser;
 	initialData?: Partial<FormValues>;
 	editingProposalId?: string;
+	currentStatus?: string;
 }
 
 export function CreateProposalModal({
@@ -79,6 +80,7 @@ export function CreateProposalModal({
 	user,
 	initialData,
 	editingProposalId,
+	currentStatus,
 }: CreateProposalModalProps) {
 	const [state, setState] = React.useReducer(
 		(
@@ -239,7 +241,7 @@ export function CreateProposalModal({
 				if (timer) clearInterval(timer);
 			}
 
-			if (isEditing && editingProposalId) {
+			if (isEditing && editingProposalId && currentStatus !== "Pending Review" && currentStatus !== "Endorsed") {
 				await submitProposalMutation.mutateAsync({
 					data: { proposalId: editingProposalId },
 				});
@@ -247,9 +249,12 @@ export function CreateProposalModal({
 
 			setState({ uploadProgress: 100, uploadPhase: "done" });
 
+			const shouldResubmit = isEditing && currentStatus !== "Pending Review" && currentStatus !== "Endorsed";
 			toast.success(
 				isEditing
-					? "Proposal updated and submitted successfully!"
+					? shouldResubmit
+						? "Proposal updated and resubmitted successfully!"
+						: "Proposal updated successfully!"
 					: "Project proposal submitted successfully!",
 			);
 			onOpenChange(false);

@@ -239,8 +239,8 @@
 | **Use Case Name:** Manage Project Proposals | **ID:** UC-4 | **Priority:** High |
 |:---|:---|:---|
 | **Actor:** Faculty, RET Chair |
-| **Description:** Describes how project leaders submit new proposals, resubmit revisions for returned proposals, or withdraw pending proposals. |
-| **Trigger:** Faculty or RET Chair submits a proposal package or requests a withdrawal. | **Type:** ☑ External ☐ Temporal |
+| **Description:** Describes how project leaders submit new proposals or resubmit revisions for returned proposals. |
+| **Trigger:** Faculty or RET Chair submits a proposal package. | **Type:** ☑ External ☐ Temporal |
 
 **Preconditions:**
 1. User is authenticated.
@@ -270,15 +270,9 @@
 8. Otherwise, system routes resubmission through full evaluation sequence.
 9. Return to Normal Course step 5.
 
-*4.2 User withdraws pending proposal (branch at step 1)*
-1. User submits proposal withdrawal request. (Info: Proposal Withdrawal Request)
-2. System validates proposal state is pending and updates status to withdrawn. (Info: Withdrawn Proposal Record)
-3. System records proposal withdrawal event. (Info: Proposal Event Data)
-4. Use case ends.
-
 **Postconditions:**
 1. Proposal is recorded or updated in Proposals Datastore.
-2. Submission or withdrawal event is recorded in Activity Logs Datastore.
+2. Submission event is recorded in Activity Logs Datastore.
 
 **Exceptions:**
 *E1: Invalid proposal payload (occurs at step 2)*

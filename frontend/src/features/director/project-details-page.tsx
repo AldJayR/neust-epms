@@ -1,5 +1,5 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useRouter } from "@tanstack/react-router";
 import { format } from "date-fns";
 import {
 	ChevronRight,
@@ -569,6 +569,7 @@ export function ProjectDetailsPage({
 	const isDirector = currentUserRole === "Director";
 	const showActivateButton = isDirector && data.status === "Approved";
 	const [showActivateWizard, setShowActivateWizard] = useState(false);
+	const router = useRouter();
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -705,6 +706,7 @@ export function ProjectDetailsPage({
 				user={currentUser}
 				initialData={editInitialData}
 				editingProposalId={proposalId}
+				currentStatus={data.status}
 			/>
 
 			<ActivateProjectWizard

@@ -1,4 +1,4 @@
-import { CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { LoadingButton } from "@/components/custom/loading-button";
 import { Button } from "@/components/ui/button";
@@ -60,6 +60,7 @@ interface ProposalDetailsTabProps {
 	setActiveAttachmentId: (id: string) => void;
 	isReviewable: boolean;
 	handleDeny: (comments?: string) => void;
+	handleReject: (comments?: string) => void;
 	handleApprove: (comments?: string) => void;
 	isPending: boolean;
 	isRET?: boolean;
@@ -73,6 +74,7 @@ export function ProposalDetailsTab({
 	setActiveAttachmentId,
 	isReviewable,
 	handleDeny,
+	handleReject,
 	handleApprove,
 	isPending,
 	isRET = false,
@@ -82,6 +84,8 @@ export function ProposalDetailsTab({
 	const [commentsText, setCommentsText] = useState("");
 	const [isReturnOpen, setIsReturnOpen] = useState(false);
 	const [returnReason, setReturnReason] = useState("");
+	const [isRejectOpen, setIsRejectOpen] = useState(false);
+	const [rejectReason, setRejectReason] = useState("");
 
 	return (
 		<CardContent className="p-0">
@@ -216,32 +220,48 @@ export function ProposalDetailsTab({
 			)}
 
 			{isReviewable && !(isRET && (bypassedRetChair || endorsement)) && (
-				<div className="p-5 flex gap-3">
-					<Button
-						variant="outline"
-						className="flex-1 border border-border rounded-lg text-[#e54d2e] font-medium h-9 text-sm shadow-sm"
-						onClick={() => {
-							setReturnReason("");
-							setIsReturnOpen(true);
-						}}
-					>
-						Return
-					</Button>
-					<LoadingButton
-						className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-brand-primary text-white hover:bg-brand-primary/90 rounded-lg"
-						onClick={() => {
-							if (isRET) {
-								setCommentsText("");
-								setIsConfirmOpen(true);
-							} else {
-								handleApprove();
-							}
-						}}
-						loading={isPending}
-					>
-						{isRET ? "Endorse" : "Approve"}
-					</LoadingButton>
-				</div>
+				<>
+					<div className="p-5 flex gap-3">
+						<Button
+							variant="outline"
+							className="flex-1 border border-border rounded-lg text-[#e54d2e] font-medium h-9 text-sm shadow-sm"
+							onClick={() => {
+								setReturnReason("");
+								setIsReturnOpen(true);
+							}}
+						>
+							Return
+						</Button>
+						<LoadingButton
+							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-brand-primary text-white hover:bg-brand-primary/90 rounded-lg"
+							onClick={() => {
+								if (isRET) {
+									setCommentsText("");
+									setIsConfirmOpen(true);
+								} else {
+									handleApprove();
+								}
+							}}
+							loading={isPending}
+						>
+							{isRET ? "Endorse" : "Approve"}
+						</LoadingButton>
+					</div>
+					<div className="px-5 pb-4 -mt-2">
+						<p className="text-xs text-muted-foreground text-center">
+							<button
+								type="button"
+								className="text-muted-foreground hover:text-[#e54d2e] underline underline-offset-2 transition-colors cursor-pointer"
+								onClick={() => {
+									setRejectReason("");
+									setIsRejectOpen(true);
+								}}
+							>
+								Reject this proposal entirely →
+							</button>
+						</p>
+					</div>
+				</>
 			)}
 
 			<Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
@@ -324,6 +344,57 @@ export function ProposalDetailsTab({
 							loading={isPending}
 						>
 							Return
+						</LoadingButton>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
+				<DialogContent className="sm:max-w-[425px] rounded-xl p-6 bg-background gap-4">
+					<DialogHeader className="pb-2">
+						<DialogTitle className="text-base font-semibold text-heading">
+							Reject Proposal
+						</DialogTitle>
+						<DialogDescription className="text-sm text-muted-foreground font-light">
+							Provide a reason for rejecting this proposal.
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="rounded-lg border border-red-200 bg-red-50 p-3 flex gap-3">
+						<AlertTriangle className="size-4 text-red-600 mt-0.5 shrink-0" />
+						<p className="text-sm text-red-800">
+							This will permanently decline the proposal. The project leader will
+							be notified that the proposal has been rejected.
+						</p>
+					</div>
+
+					<div className="space-y-4">
+						<Textarea
+							placeholder="Enter reason for rejection..."
+							value={rejectReason}
+							onChange={(e) => setRejectReason(e.target.value)}
+							className="w-full min-h-[100px] border border-border rounded-lg p-3 text-sm focus-visible:ring-1 focus-visible:ring-brand-primary"
+						/>
+					</div>
+
+					<DialogFooter className="flex gap-3 mt-4">
+						<Button
+							variant="outline"
+							className="flex-1 border border-border rounded-lg text-gray-500 font-medium h-9 text-sm shadow-sm cursor-pointer"
+							onClick={() => setIsRejectOpen(false)}
+						>
+							Cancel
+						</Button>
+						<LoadingButton
+							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer rounded-lg bg-red-500 text-white hover:bg-red-600"
+							onClick={() => {
+								handleReject(rejectReason);
+								setIsRejectOpen(false);
+							}}
+							loading={isPending}
+							disabled={!rejectReason.trim()}
+						>
+							Reject
 						</LoadingButton>
 					</DialogFooter>
 				</DialogContent>
