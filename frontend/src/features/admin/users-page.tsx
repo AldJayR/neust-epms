@@ -33,6 +33,16 @@ import { BulkApproveDialog } from "./bulk-approve-dialog";
 import { AddUserDialog } from "./add-user-dialog";
 import { ViewUserDialog } from "./view-user-dialog";
 import { EditUserDialog } from "./edit-user-dialog";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface UsersPageProps {
 	page: number;
@@ -58,6 +68,7 @@ export function UsersPage({
 
 	const [viewingUser, setViewingUser] = useState<UserResponse | null>(null);
 	const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
+	const [deactivatingUser, setDeactivatingUser] = useState<UserResponse | null>(null);
 
 	// ── Queries ──────────────────────────────────────────────
 
@@ -212,12 +223,16 @@ export function UsersPage({
 									className={
 										user.isActive ? "text-destructive" : "text-primary"
 									}
-									onClick={() =>
-										updateStatusMutation.mutate({
-											userIds: [user.userId],
-											isActive: !user.isActive,
-										})
-									}
+									onClick={() => {
+										if (user.isActive) {
+											setDeactivatingUser(user);
+										} else {
+											updateStatusMutation.mutate({
+												userIds: [user.userId],
+												isActive: true,
+											});
+										}
+									}}
 									disabled={updateStatusMutation.isPending}
 								>
 									{user.isActive ? "Deactivate" : "Activate"}
@@ -348,6 +363,42 @@ export function UsersPage({
 					}}
 				/>
 			)}
+			<AlertDialog
+				open={!!deactivatingUser}
+				onOpenChange={(open) => {
+					if (!open) setDeactivatingUser(null);
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+						<AlertDialogDescription>
+							This will deactivate the user account for{" "}
+							<span className="font-semibold text-foreground">
+								{deactivatingUser?.firstName} {deactivatingUser?.lastName}
+							</span>
+							. They will no longer be able to log in to the system.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={() => {
+								if (deactivatingUser) {
+									updateStatusMutation.mutate({
+										userIds: [deactivatingUser.userId],
+										isActive: false,
+									});
+									setDeactivatingUser(null);
+								}
+							}}
+							className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+						>
+							Deactivate
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }
