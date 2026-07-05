@@ -1,0 +1,729 @@
+Good. We continue the Ideate phase with the four remaining hard design challenges. These should generate alternatives, not lock us into features.
+
+# Crazy 8s Round 3: Confident Proposal Preparation and Revision
+
+### HMW
+
+> **How might we help users prepare complete submissions, understand problems, recover from errors, and revise successfully without unnecessary repetition?**
+
+## 1. Guided Proposal Builder
+
+Instead of starting with a giant upload form, proposal creation is divided into understandable stages:
+
+**Project Details → Project Team → Requirements → Documents → Review → Submit**
+
+Users can leave and return at any time.
+
+**Strength:** reduces cognitive load.
+**Risk:** too many steps can make a simple submission feel bureaucratic.
+
+---
+
+## 2. Readiness Checklist
+
+Before submission:
+
+> **Proposal readiness: 6 of 8 requirements complete**
+
+✓ Project information
+✓ Project leader
+✓ Project members
+✓ Required document A
+○ Required document B
+○ Required confirmation
+
+The submission action becomes available only when mandatory requirements are satisfied.
+
+**Strength:** prevents avoidable incomplete submissions.
+**Risk:** dangerous if the checklist reflects system assumptions rather than actual policy.
+
+---
+
+## 3. Proposal Health Check
+
+The system reviews the package before final submission and reports:
+
+> **Ready to submit**
+
+or:
+
+> **2 issues need attention**
+
+> Required file missing
+> Project member information incomplete
+
+This differs from the checklist because it happens as a deliberate pre-submission check.
+
+**Strength:** gives users confidence.
+**Risk:** users may assume the system is evaluating proposal quality, when it is only checking administrative completeness.
+
+The language must distinguish:
+
+**Complete for submission**
+
+from:
+
+**Likely to be approved**
+
+---
+
+## 4. Submission Package Preview
+
+Before confirming, the user sees exactly what the reviewer will receive:
+
+> Project information
+> 5 project members
+> 4 uploaded documents
+> Submitted to: RET Chair, CICT
+
+Then:
+
+> **Submit Proposal**
+
+**Strength:** supports error prevention.
+**Risk:** adds another step for expert users.
+
+---
+
+## 5. Feedback-to-Revision Workspace
+
+When a proposal is returned, the ordinary project workspace temporarily changes into a revision mode:
+
+> **Revision required**
+
+> 3 issues raised by Director/Admin
+
+Each issue can be reviewed alongside the relevant submission material.
+
+The user can mark:
+
+> Addressed
+
+and optionally explain:
+
+> “Updated implementation timeline on pages 8–10.”
+
+**Strength:** directly connects feedback and recovery.
+**Risk:** can become too much like issue-tracking software.
+
+---
+
+## 6. Replace Only What Changed
+
+Instead of forcing a complete re-upload:
+
+> Proposal Narrative — **Replace**
+> Budget — Unchanged
+> Work Plan — **Replace**
+
+The system preserves valid existing files.
+
+**Strength:** reduces repetition and bandwidth use.
+**Risk:** some institutional workflows may legally or procedurally require a complete revised package.
+
+That must be validated.
+
+---
+
+## 7. Revision Cover Note
+
+Every resubmission asks:
+
+> **What did you change?**
+
+The project leader provides a concise change summary:
+
+> “Revised implementation schedule and updated beneficiary count.”
+
+Reviewers see this first.
+
+**Strength:** very low technical complexity with high reviewer value.
+**Risk:** depends on users writing useful summaries.
+
+---
+
+## 8. Submission Memory
+
+The system remembers previously accepted information and reusable project context:
+
+* project members;
+* college;
+* project leader information;
+* existing valid files where policy allows.
+
+Users should not repeatedly provide unchanged information.
+
+**Strength:** reduces administrative repetition.
+**Risk:** stale information can silently propagate.
+
+---
+
+## Round 3 synthesis: Progressive Submission and Recovery
+
+The strongest combination is:
+
+**Draft workspace → Requirements checklist → Pre-submission review → Package preview → Submit**
+
+If returned:
+
+**Feedback → affected requirement → revise only what is necessary → summarize changes → resubmit**
+
+The key design principle is:
+
+> **The system should help users become ready before submission and help them recover after problems without restarting the journey.**
+
+This expands UC-4 significantly beyond its current starting point of “User submits proposal documents.” 
+
+---
+
+# Crazy 8s Round 4: Attention Management
+
+### HMW
+
+> **How might we help RET Chairs and Director/Admin users identify what matters now without searching through large numbers of projects and modules?**
+
+## 1. Unified Action Inbox
+
+All actionable work enters one queue regardless of module:
+
+> Proposal awaiting review
+> Revised proposal resubmitted
+> Project awaiting activation
+> MOA requires attention
+> Report overdue
+
+**Strength:** one place to start work.
+**Risk:** different work types may become an undifferentiated task dump.
+
+---
+
+## 2. Urgency × Importance Matrix
+
+Items are organized into:
+
+**Act Now**
+**Act Soon**
+**Monitor**
+**Routine**
+
+**Strength:** supports prioritization.
+**Risk:** who determines importance? Poor rules could hide legitimate work.
+
+---
+
+## 3. Exception-Only Dashboard
+
+Do not show everything.
+
+Show only what is abnormal:
+
+> 2 proposals waiting unusually long
+> 3 projects blocked
+> 1 MOA expiring soon
+> 4 reports overdue
+
+If everything is fine:
+
+> **No projects currently require intervention.**
+
+**Strength:** excellent for oversight.
+**Risk:** users still need access to healthy projects when needed.
+
+---
+
+## 4. Role-Based Morning Brief
+
+The system summarizes:
+
+> **Today**
+
+> 4 items need your action
+> 2 deadlines are approaching
+> 1 project became blocked
+> 3 items were completed since your last visit
+
+**Strength:** strong orientation.
+**Risk:** can become repetitive or noisy.
+
+---
+
+## 5. Work Queue by Responsibility
+
+### Needs Your Decision
+
+### Needs Your Administrative Action
+
+### Waiting for Others
+
+### Watching
+
+This is especially valuable for the Director/Admin role group because administrative work and institutional decision authority are not necessarily the same.
+
+**Strength:** aligns work with actual responsibility.
+**Risk:** requires careful permissions modeling.
+
+---
+
+## 6. Aging View
+
+Items become more visible as they remain unresolved:
+
+> Director review — 1 day
+> Director review — 5 days
+> Director review — 18 days
+
+The system highlights unusual waiting, not merely deadlines.
+
+**Strength:** reveals silent bottlenecks.
+**Risk:** age alone does not equal urgency.
+
+---
+
+## 7. “Why This Matters” Queue
+
+Every item includes the consequence of inaction:
+
+> **MOA expires in 14 days**
+
+> Affects 4 ongoing projects
+
+or:
+
+> **Progress report overdue**
+
+> Project leader: [name]
+
+**Strength:** supports judgment, not just task completion.
+**Risk:** requires reliable consequence logic.
+
+---
+
+## 8. Focus Mode
+
+The user selects:
+
+> **Process proposal reviews**
+
+and the system presents one relevant item at a time with enough context to decide.
+
+After action:
+
+> Next proposal
+
+**Strength:** reduces context switching during batch work.
+**Risk:** users may lose awareness of the broader workload.
+
+---
+
+## Round 4 synthesis: Action Center + Oversight Exceptions
+
+The strongest concept is not a traditional dashboard.
+
+For RET Chairs and Director/Admin users, the landing experience becomes:
+
+### Needs Your Action
+
+Work only they can perform.
+
+### Becoming Urgent
+
+Deadlines, aging work, and approaching risks.
+
+### Watching
+
+Items they oversee but do not currently own.
+
+### Recently Changed
+
+Important movement since their last visit.
+
+Then analytics become secondary.
+
+This directly challenges UC-3's current emphasis on aggregated metrics and faculty ranking. 
+
+The design principle becomes:
+
+> **Operational users should encounter responsibilities before statistics.**
+
+---
+
+# Crazy 8s Round 5: From Approval to Implementation
+
+### HMW
+
+> **How might we make the transition from approved proposal to implementation-ready project understandable, coordinated, and safe?**
+
+This may be the hardest workflow problem in the entire system.
+
+## 1. Readiness Gate
+
+After approval, the project enters:
+
+> **Preparing for Implementation**
+
+It cannot become ongoing until required conditions are satisfied.
+
+✓ Proposal approved
+○ Special Orders complete
+○ Valid MOA assigned
+○ Reporting schedule established
+
+**Strength:** extremely clear.
+**Risk:** can become rigid if real workflows allow exceptions.
+
+---
+
+## 2. Readiness Score
+
+> **75% ready for implementation**
+
+Three of four requirements complete.
+
+**Strength:** instantly understandable.
+**Risk:** dangerous simplification. A project missing one critical legal requirement is not meaningfully “75% ready.”
+
+### Verdict
+
+Reject the percentage.
+
+Compliance prerequisites are not interchangeable progress points.
+
+---
+
+## 3. Single Blocker View
+
+Instead of showing all prerequisites equally:
+
+> **Cannot activate project**
+
+> Blocked by: No valid MOA assigned
+
+> Responsible: Director/Admin
+
+Once resolved, the next blocker appears.
+
+**Strength:** excellent action clarity.
+**Risk:** hides parallel work that could happen simultaneously.
+
+---
+
+## 4. Responsibility Matrix
+
+Each readiness requirement shows ownership:
+
+**Special Orders** — RET Chair / Faculty
+**MOA** — Director/Admin
+**Reporting Schedule** — Director/Admin
+
+**Strength:** solves handoff confusion.
+**Risk:** ownership may vary in actual practice.
+
+This absolutely requires validation with users.
+
+---
+
+## 5. Activation Room
+
+All involved users share one temporary coordination space for the approved project:
+
+> **Preparing for Implementation**
+
+Each requirement has:
+
+* status;
+* owner;
+* documents;
+* history.
+
+**Strength:** strong cross-role coordination.
+**Risk:** potentially overengineered.
+
+---
+
+## 6. Approval Handoff Summary
+
+Immediately after approval:
+
+> **Your proposal has been approved.**
+
+> This does not yet authorize implementation.
+
+> Before implementation:
+
+> Special Orders must be completed
+> A valid MOA must be assigned
+> A reporting schedule must be established
+
+> **Your current action: None**
+
+**Strength:** solves a major communication problem with minimal complexity.
+
+---
+
+## 7. Activation Confirmation
+
+Before Director activation:
+
+> **Authorize project implementation?**
+
+> All required conditions are complete.
+
+> Start date: [date]
+> MOA: [agreement]
+> Reporting schedule: [schedule]
+
+After confirmation:
+
+> **Project is now authorized for implementation.**
+
+**Strength:** prevents accidental activation.
+**Risk:** only useful if readiness rules are correct.
+
+---
+
+## 8. Conditional Readiness Paths
+
+Not every project necessarily needs identical prerequisites.
+
+The system determines requirements based on project context.
+
+**Strength:** flexible.
+**Risk:** much higher complexity and potential confusion.
+
+Unless actual research reveals different project types, this would be premature.
+
+---
+
+## Round 5 synthesis: Project Readiness Stage
+
+The strongest concept is a dedicated lifecycle stage:
+
+**Approved Proposal → Preparing for Implementation → Ongoing Project**
+
+Inside **Preparing for Implementation**:
+
+* explicit prerequisites;
+* binary completion, not misleading percentages;
+* responsible actor;
+* exact blocker;
+* plain-language explanation;
+* final activation confirmation.
+
+The most important communication rule:
+
+> **Approved does not mean authorized to implement.**
+
+This should be visible, not buried in policy.
+
+---
+
+# Crazy 8s Round 6: Prevention Before Failure
+
+### HMW
+
+> **How might we help users anticipate deadlines, expirations, delays, and incomplete requirements before they become urgent problems?**
+
+## 1. Progressive Warning States
+
+Every time-sensitive obligation moves through:
+
+**On Track → Upcoming → Due Soon → Due Today → Overdue**
+
+MOAs:
+
+**Valid → Expiring Soon → Expiring Urgently → Expired**
+
+**Strength:** understandable progression.
+**Risk:** too many statuses can create noise.
+
+---
+
+## 2. Personal Upcoming View
+
+Faculty sees:
+
+> **Next 30 days**
+
+> Progress Report — due August 12
+
+> Final activity documentation — due August 28
+
+**Strength:** simple and actionable.
+**Risk:** users may ignore longer-term obligations.
+
+---
+
+## 3. Institutional Risk Radar
+
+Director/Admin sees only emerging risks:
+
+> 4 reports due within 7 days
+> 2 MOAs expire within 30 days
+> 3 proposals waiting longer than usual
+
+**Strength:** proactive oversight.
+**Risk:** “risk” rules must be transparent.
+
+---
+
+## 4. Escalating Reminders
+
+Notifications become progressively stronger:
+
+> 30 days before — informational
+> 7 days before — reminder
+> 1 day before — urgent
+> after deadline — overdue
+
+**Strength:** supports prevention.
+**Risk:** notification fatigue.
+
+Users may need preferences for noncritical channels, while critical institutional notices remain reliable.
+
+---
+
+## 5. Quiet Until Relevant
+
+Do not constantly notify.
+
+Only surface an obligation when:
+
+* preparation should reasonably begin;
+* action becomes required;
+* risk meaningfully changes.
+
+**Strength:** protects attention.
+**Risk:** determining the right moment is difficult.
+
+---
+
+## 6. Dependency Warning
+
+Before a problem occurs:
+
+> **MOA expires in 30 days**
+
+> 4 ongoing projects depend on this agreement.
+
+**Strength:** shows consequences.
+**Risk:** depends on accurate project-MOA relationships.
+
+---
+
+## 7. Preventive Action Suggestions
+
+Not merely:
+
+> MOA expiring soon.
+
+But:
+
+> **Review affected projects**
+
+or:
+
+> **Update validity information**
+
+or:
+
+> **Begin renewal coordination**
+
+**Strength:** turns alerts into action.
+**Risk:** the system should not prescribe procedures that policy does not support.
+
+---
+
+## 8. “Nothing Needs Attention” State
+
+When no risk exists:
+
+> **All monitored project requirements are currently on track.**
+
+**Strength:** gives users confidence that silence means healthy operations.
+**Risk:** requires trustworthy monitoring.
+
+---
+
+## Round 6 synthesis: Progressive Attention System
+
+The system should distinguish three levels:
+
+### Awareness
+
+Something is approaching.
+
+### Preparation
+
+The user should begin getting ready.
+
+### Action
+
+The user must now do something.
+
+This is more humane than:
+
+> Fine → Failed.
+
+For example:
+
+**Progress Report**
+
+> Due in 30 days — Awareness
+
+> Due in 7 days — Prepare
+
+> Due tomorrow — Act
+
+> Overdue — Recover
+
+And for MOAs:
+
+> Expiring in 90 days — Awareness
+
+> Expiring in 30 days — Prepare
+
+> Expiring in 7 days — Act
+
+> Expired — Resolve impact
+
+The exact thresholds should be validated with Extension Services rather than invented by the UI team.
+
+# What survives all six Crazy 8s rounds
+
+We now have a coherent concept system.
+
+## 1. Project Workspace
+
+**One project is the primary container of the experience.**
+
+Proposal, feedback, readiness, implementation, reports, and closure remain connected.
+
+## 2. Act / Wait / Watch
+
+Every user understands their relationship to each workflow item.
+
+## 3. Progressive Submission
+
+The system supports preparation before submission and recovery after errors.
+
+## 4. Action Center
+
+RET Chairs and Director/Admin users begin with responsibilities and risks, not generic metrics.
+
+## 5. Project Readiness
+
+Approval and authorization to implement are explicitly separated.
+
+## 6. Progressive Attention
+
+The system helps users prepare before deadlines and expirations become failures.
+
+These concepts reinforce one another rather than becoming six disconnected features.
+
+The emerging product experience is:
+
+> **A continuous project workspace that guides each project through its lifecycle, surfaces the right action to the right person, makes blockers explicit, and helps users prevent administrative problems before they occur.**
+
+That is now a genuinely user-centered product concept derived from the original use cases—not merely a prettier interface placed on top of them. 
+
+The next Ideate activity should be **concept selection and prioritization**. We should evaluate these concepts against **user value, accessibility and equity, workflow fit, technical feasibility, institutional risk, and MVP scope** before moving into information architecture or wireframes.

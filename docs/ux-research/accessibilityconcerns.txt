@@ -1,0 +1,619 @@
+Yes. This should be a **second lens across the entire Design Thinking process**, not an accessibility checklist added after the UI is finished.
+
+The question changes from:
+
+> **How do we make the workflow easier for the average user?**
+
+to:
+
+> **Who may still be excluded, disadvantaged, slowed down, embarrassed, or given less power by the workflow we are designing?**
+
+For your Extension Services system, I would run an **Accessibility and Equity-Focused Design Thinking process** in parallel with the existing one:
+
+**Empathize inclusively → Define exclusion → Ideate for equitable participation → Prototype accessibly → Test with diverse users**
+
+The current use cases already reveal several places where unequal access or unequal burden could emerge: self-registration, document submission, proposal review, dashboards, notifications, MOA management, reporting deadlines, and role-based authority. 
+
+# 1. Empathize inclusively
+
+Our previous personas represented typical role-based users:
+
+* Faculty / Project Leader
+* RET Chair
+* Director/Admin
+* Super Admin
+
+For accessibility and equity, we now ask:
+
+> **How does the same journey change under different human circumstances?**
+
+We should not create stereotypical “disabled personas.” Instead, we examine the **same personas under different access conditions**.
+
+## Faculty / Project Leader: possible access conditions
+
+The Faculty Project Leader may:
+
+* use a phone more often than a desktop;
+* have unreliable or slow internet;
+* have low digital confidence;
+* use keyboard-only navigation;
+* use a screen reader or magnification;
+* have difficulty distinguishing certain colors;
+* have limited time between classes;
+* be interrupted during long forms;
+* be unfamiliar with administrative terminology;
+* have temporary limitations, such as an injured hand or eye strain;
+* work in a campus or community location with poor connectivity.
+
+The empathy question becomes:
+
+> **Can this faculty member complete the same project journey with comparable independence and confidence?**
+
+Not:
+
+> “Can they technically access the page?”
+
+That distinction matters.
+
+---
+
+## RET Chair: possible access conditions
+
+The RET Chair may:
+
+* oversee many projects simultaneously;
+* also be a project leader;
+* use the system between meetings and classes;
+* experience high cognitive load;
+* work primarily from a laptop but occasionally from a phone;
+* have age-related changes in vision or motor precision;
+* rely on scanning rather than carefully reading every screen.
+
+The accessibility problem is therefore not only disability access.
+
+It is also:
+
+* cognitive accessibility;
+* workload accessibility;
+* information prioritization;
+* error prevention.
+
+A technically WCAG-conforming screen can still be inaccessible if the RET Chair must remember the state of 40 projects.
+
+---
+
+## Director/Admin: possible access conditions
+
+The Director/Admin may:
+
+* process a large number of records;
+* delegate work across authorized staff;
+* work under deadline pressure;
+* use different devices;
+* need to retrieve old records quickly;
+* have varying levels of technical confidence within the same role group.
+
+An important equity question appears here:
+
+> **Does the interface assume that all Director/Admin users possess the same authority?**
+
+Because your role group combines the Director and authorized Extension Services staff, equal access to the module should not automatically mean equal authority to make every decision.
+
+The system should distinguish:
+
+**Ability to perform administrative work**
+
+from:
+
+**Authority to make institutional decisions**
+
+That is an equity and governance concern.
+
+---
+
+# 2. Identify exclusion points in the current journey
+
+Now we revisit the journey maps specifically looking for exclusion.
+
+# Exclusion Point 1: Proposal preparation may privilege experienced insiders
+
+A faculty member who has previously submitted extension proposals may already know:
+
+* the requirements;
+* the terminology;
+* the templates;
+* who to ask;
+* the unofficial process.
+
+A first-time project leader may not.
+
+### Equity problem
+
+Two users with equally strong project ideas may have unequal chances of successful submission because one has more **institutional knowledge**.
+
+### Excluded or disadvantaged users
+
+* first-time project leaders;
+* newly hired faculty;
+* faculty unfamiliar with extension procedures;
+* users from units with less experienced support networks.
+
+### Design principle
+
+> **The system should not require insider knowledge to complete an official process.**
+
+### Design response
+
+Provide:
+
+* explicit requirements;
+* current templates;
+* plain-language explanations;
+* examples where appropriate;
+* contextual help;
+* visible completeness;
+* clear next steps.
+
+This turns procedural knowledge from a social advantage into shared institutional information.
+
+---
+
+# Exclusion Point 2: File-heavy workflows may privilege desktop users and strong internet connections
+
+The current use cases rely heavily on document submission across proposals, Special Orders, MOAs, progress reports, and closure reports. 
+
+### Equity problem
+
+A user with:
+
+* fast internet;
+* a modern laptop;
+* stable connectivity;
+
+has a fundamentally easier experience than someone working through:
+
+* mobile data;
+* intermittent Wi-Fi;
+* an older device;
+* a remote community location.
+
+### User experience
+
+> “I uploaded this for ten minutes and it failed.”
+
+> “Do I have to start again?”
+
+> “Did the file actually submit?”
+
+### Design responses
+
+The system should:
+
+* preserve drafts;
+* avoid losing completed form data after upload failure;
+* show upload progress;
+* allow individual file retry;
+* clearly show successful and failed uploads;
+* use reasonable file-size limits;
+* avoid unnecessary re-uploading;
+* preserve already submitted documents during revisions;
+* warn before a session expires;
+* support resumable workflows even if uploads themselves cannot technically resume.
+
+### Equity principle
+
+> **A temporary connection failure should not erase a user's work.**
+
+---
+
+# Exclusion Point 3: Long forms may punish users who need more time
+
+Suppose proposal creation involves a long session.
+
+Some users may need more time because they:
+
+* use assistive technology;
+* type slowly;
+* need to consult documents;
+* are interrupted by classes;
+* experience cognitive fatigue;
+* are unfamiliar with the process.
+
+### Equity problem
+
+A session timeout affects these users disproportionately.
+
+### Design responses
+
+* autosave drafts;
+* allow users to leave and continue later;
+* preserve uploaded files;
+* provide a visible save state;
+* warn before timeout;
+* do not impose unnecessarily short completion windows.
+
+### Design principle
+
+> **Time should not become an invisible accessibility barrier.**
+
+---
+
+# Exclusion Point 4: Color-only statuses exclude some users
+
+Your workflow contains many states:
+
+* pending;
+* returned;
+* endorsed;
+* approved;
+* blocked;
+* ongoing;
+* overdue;
+* expired;
+* completed. 
+
+A tempting design is:
+
+**Green = approved**
+**Yellow = pending**
+**Red = overdue**
+
+That is insufficient.
+
+### Accessibility problem
+
+Users with color-vision differences may not distinguish status reliably.
+
+### Design response
+
+Never use color alone.
+
+Use:
+
+**✓ Approved**
+
+**○ Awaiting Review**
+
+**! Action Required**
+
+**⚠ Overdue**
+
+with:
+
+* text labels;
+* icons;
+* sufficient contrast;
+* consistent patterns.
+
+Color should reinforce meaning, not carry meaning by itself.
+
+---
+
+# Exclusion Point 5: A visual project timeline may exclude screen-reader users
+
+Earlier, we proposed a project lifecycle:
+
+**Submitted ✓ → RET Chair Review → Director/Admin Review → Approved**
+
+Visually, that is useful.
+
+But if implemented carelessly, a screen reader may encounter:
+
+> circle, line, circle, checkmark, line
+
+### Accessibility requirement
+
+The same information must have a meaningful semantic structure.
+
+For example:
+
+> Current stage: Director/Admin Review.
+
+> Completed stages: Proposal Submitted; RET Chair Endorsed.
+
+> Next stage: Approval Decision.
+
+The visual timeline and accessible text representation must communicate equivalent information.
+
+### Principle
+
+> **The accessible version should not be an inferior summary of the visual version.**
+
+---
+
+# Exclusion Point 6: Vague administrative language creates cognitive barriers
+
+Terms such as:
+
+* pending;
+* validated;
+* endorsed;
+* activated;
+* implementation update;
+* prerequisite status;
+* reporting schedule;
+* project completion status;
+
+may be institutionally accurate but not always self-explanatory. 
+
+### User experience
+
+> “What does endorsed mean?”
+
+> “Approved but not active?”
+
+> “What am I supposed to do?”
+
+### Design response
+
+Keep official terminology where required, but explain it.
+
+Instead of:
+
+> **Status: Endorsed**
+
+show:
+
+> **Endorsed by RET Chair**
+
+> Your proposal has been forwarded to the Extension Services office for review.
+
+Instead of:
+
+> **Status: Approved**
+
+show:
+
+> **Proposal Approved**
+
+> The proposal has been approved, but the project is not yet authorized for implementation.
+
+### Equity principle
+
+> **Understanding administrative language should not depend on prior experience with the institution.**
+
+---
+
+# Exclusion Point 7: Notifications may disadvantage users who cannot constantly check the system
+
+Some users may open the portal daily.
+
+Others may not.
+
+If important actions exist only inside the dashboard, frequent users gain an advantage.
+
+### Equity problem
+
+The system rewards constant checking.
+
+### Design response
+
+Meaningful events should reach users through appropriate channels.
+
+The notification should communicate:
+
+**What happened**
+**Which project**
+**Whether action is required**
+**What action is required**
+**When it is due**
+
+For example:
+
+> **Revision required for Community Digital Literacy Program**
+
+> The Director/Admin returned your proposal with requested changes.
+
+> Action required: Submit a revised proposal.
+
+A notification that merely says:
+
+> **Proposal status updated**
+
+creates unnecessary cognitive and navigational burden.
+
+---
+
+# Exclusion Point 8: Deadline design may punish users instead of supporting them
+
+UC-7 detects overdue reports after the deadline has already been missed. 
+
+That is procedurally equal:
+
+> Everyone has the same deadline.
+
+But it is not necessarily equitably designed.
+
+### Equality
+
+Everyone receives the same due date.
+
+### Equity
+
+Everyone receives sufficient information and advance warning to have a fair opportunity to meet it.
+
+### Design response
+
+Provide progressive reminders:
+
+* upcoming;
+* due soon;
+* due tomorrow;
+* overdue.
+
+And always state:
+
+* what is due;
+* for which project;
+* the deadline;
+* the required action.
+
+### Principle
+
+> **A good system helps users avoid failure before documenting that they failed.**
+
+---
+
+# Exclusion Point 9: Faculty ranking may create structural inequity
+
+The current Director dashboard includes ranking faculty by project count. 
+
+This deserves stronger scrutiny under an equity lens.
+
+Different faculty members may have different:
+
+* teaching loads;
+* administrative assignments;
+* project complexity;
+* access to partner communities;
+* disciplinary opportunities;
+* team structures.
+
+A raw project count can flatten those differences.
+
+### Equity risk
+
+The system may make unequal circumstances look like unequal effort.
+
+### Design question
+
+> **What decision will this ranking support?**
+
+If there is no clear and fair answer, the ranking should not exist.
+
+A more equitable overview might show:
+
+* participation;
+* project status;
+* distribution across colleges;
+* completion;
+* community reach;
+* compliance;
+
+without turning faculty into a leaderboard.
+
+---
+
+# Exclusion Point 10: One account may not equal one role
+
+The current specifications assign roles and include special handling for the RET Chair, who may also submit proposals. 
+
+### Equity and access problem
+
+A person may simultaneously be:
+
+* an RET Chair;
+* a project leader;
+* a project member.
+
+Forcing one identity into one role can restrict legitimate participation.
+
+### Design response
+
+The system should distinguish:
+
+**Who the person is**
+
+from:
+
+**What responsibility they are performing in this context**
+
+The RET Chair should not lose the faculty project experience simply because they have an oversight role.
+
+This supports the earlier design:
+
+**My Projects**
+
+and
+
+**College Oversight**
+
+without requiring separate accounts.
+
+---
+
+# 3. Accessibility-focused user stories
+
+We can now add accessibility stories to the backlog.
+
+## Perceivable information
+
+> **As a user with low vision, I want text and interface elements to have sufficient contrast so that I can read and distinguish information.**
+
+> **As a user who cannot reliably distinguish colors, I want statuses to use text and other visual indicators in addition to color so that I can understand project states.**
+
+> **As a screen-reader user, I want project stages, status changes, form errors, and notifications to be announced meaningfully so that I receive the same essential information as sighted users.**
+
+> **As a user who enlarges content, I want the interface to remain usable when text is zoomed so that I do not lose information or functionality.**
+
+## Operable interaction
+
+> **As a keyboard user, I want to complete every essential workflow without a mouse so that I can independently use the system.**
+
+> **As a user with limited motor precision, I want interactive controls to be sufficiently large and separated so that I can avoid accidental actions.**
+
+> **As a user completing a long workflow, I want my work preserved so that additional time or interruptions do not cause data loss.**
+
+## Understandable workflows
+
+> **As a first-time project leader, I want unfamiliar administrative terms explained in context so that I can complete the process without relying on insider knowledge.**
+
+> **As a user who makes an error, I want the system to explain what went wrong and how to correct it so that I can recover independently.**
+
+> **As a user making a consequential decision, I want to understand what will happen before I confirm it so that I can avoid serious mistakes.**
+
+## Robust access
+
+> **As a user of assistive technology, I want controls, forms, status messages, and navigation to use meaningful semantics so that the system works reliably with my tools.**
+
+These should not be a separate “accessibility feature” epic that can be cut from the MVP.
+
+They are acceptance conditions across the core product.
+
+# 4. Equity-focused user stories
+
+> **As a first-time project leader, I want the same procedural guidance available to experienced faculty so that my success does not depend on knowing the right person to ask.**
+
+> **As a user with an unstable internet connection, I want my completed work preserved when connectivity fails so that I do not have to repeat the entire process.**
+
+> **As a user who cannot check the system frequently, I want meaningful notifications about actions and deadlines so that I am not disadvantaged by infrequent portal access.**
+
+> **As an RET Chair who is also a project leader, I want to access both my personal project responsibilities and my oversight responsibilities without maintaining separate accounts.**
+
+> **As an authorized Extension Services staff member, I want access appropriate to my actual responsibilities so that I can perform administrative work without receiving decision-making authority I should not have.**
+
+> **As a faculty member, I want institutional activity data to be presented in context rather than as a simplistic leaderboard so that differences in circumstances are not misrepresented as differences in performance.**
+
+# 5. Inclusive design principles for the entire system
+
+From this analysis, I would establish these as product-level principles:
+
+1. **No insider knowledge required.** Official processes must be understandable from the system itself.
+
+2. **No color-only meaning.** Every status must remain understandable without color.
+
+3. **No mouse-only workflow.** Every essential task must be keyboard operable.
+
+4. **No punishment for taking longer.** Long workflows must preserve progress.
+
+5. **No data loss from ordinary connection failure.** Users should recover without starting over.
+
+6. **No unexplained administrative terminology.** Official terms should be paired with plain-language meaning.
+
+7. **No status without action context.** Users should know who acts next and whether they need to do anything.
+
+8. **No reactive-only compliance design.** The system should warn before deadlines and expirations.
+
+9. **No simplistic performance ranking without context.** Metrics must support fair and legitimate decisions.
+
+10. **No assumption that role equals person.** Users may hold multiple responsibilities.
+
+11. **No inaccessible alternative experience.** Assistive-technology users should receive equivalent information and functionality.
+
+12. **No accessibility as a post-development phase.** It must shape requirements, stories, prototypes, and testing.
+
+The strongest outcome of this lens is that accessibility and equity **change the product requirements themselves**. They are not merely visual requirements like contrast and font size.
+
+They affect whether you need autosave, how notifications work, whether ranking should exist, how multi-role users are modeled, when deadline warnings occur, how proposal requirements are communicated, and whether a connection failure destroys work.
+
+The next artifact should be an **Accessibility and Equity Risk Matrix** for the entire project journey—identifying each barrier, who is disproportionately affected, severity, current use case involved, and the design requirement needed to mitigate it.

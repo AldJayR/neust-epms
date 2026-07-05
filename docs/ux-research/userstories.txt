@@ -1,0 +1,457 @@
+Now we can create user stories properly because we have already gone through:
+
+**Use Cases → Empathy Maps → Personas → Journey Maps → Pain Points → User Stories**
+
+The mistake would be to mechanically convert every use-case step into:
+
+> As a user, I want to upload a file so that the file is uploaded.
+
+That produces feature-centered stories.
+
+Instead, the stories should come from the **goals and pain points we identified**, while the existing use cases act as constraints and evidence about the intended workflow. 
+
+# User Stories: Faculty / Project Leader
+
+## Epic: Understand and Navigate My Project Journey
+
+**US-F01 — View the project lifecycle**
+
+> As a Faculty Project Leader, I want to see the complete lifecycle of my project so that I can understand where it currently is and what will happen next.
+
+**US-F02 — Understand the current status**
+
+> As a Faculty Project Leader, I want to see what my project's current status means so that I do not have to interpret administrative terminology.
+
+**US-F03 — Know who currently owns the action**
+
+> As a Faculty Project Leader, I want to know who is currently responsible for the next action so that I can understand whether I need to act or wait.
+
+**US-F04 — Know my next action**
+
+> As a Faculty Project Leader, I want the system to clearly show what I need to do next so that I can move my project forward without asking someone for instructions.
+
+**US-F05 — View project history**
+
+> As a Faculty Project Leader, I want to see the history of submissions, reviews, decisions, and status changes so that I can understand how my project reached its current state.
+
+These stories directly address the largest journey pain point: **the system understands the workflow, but the user may not**.
+
+---
+
+## Epic: Prepare a Complete Proposal
+
+**US-F06 — View proposal requirements**
+
+> As a Faculty Project Leader, I want to see all proposal requirements before I begin submitting so that I can prepare the correct documents.
+
+**US-F07 — Access official templates**
+
+> As a Faculty Project Leader, I want to access the current official templates so that I do not accidentally use outdated documents.
+
+**US-F08 — Save proposal progress**
+
+> As a Faculty Project Leader, I want to save an incomplete proposal as a draft so that I can prepare it across multiple work sessions.
+
+**US-F09 — See submission completeness**
+
+> As a Faculty Project Leader, I want to see which requirements are complete or missing so that I can correct problems before submission.
+
+**US-F10 — Review before submitting**
+
+> As a Faculty Project Leader, I want to review my proposal package before final submission so that I can verify that I am sending the correct information and files.
+
+Notice the shift from UC-4. The use case begins at **submission**. 
+
+The user stories reveal that the actual user experience begins at **preparation**.
+
+---
+
+## Epic: Submit and Track My Proposal
+
+**US-F11 — Receive submission confirmation**
+
+> As a Faculty Project Leader, I want immediate confirmation that my proposal was successfully submitted so that I know it entered the review process.
+
+**US-F12 — See where my proposal is**
+
+> As a Faculty Project Leader, I want to see the current review stage of my proposal so that I do not need to manually follow up for routine status updates.
+
+**US-F13 — Know how long my proposal has been waiting**
+
+> As a Faculty Project Leader, I want to see when my proposal entered its current stage so that I can understand how long it has been waiting.
+
+**US-F14 — Be notified of meaningful changes**
+
+> As a Faculty Project Leader, I want to be notified when my proposal requires my action or moves to a significant new stage so that I do not need to constantly check the system.
+
+This addresses the **invisible waiting** pain point.
+
+---
+
+## Epic: Respond to Proposal Feedback
+
+**US-F15 — Understand why my proposal was returned**
+
+> As a Faculty Project Leader, I want to see clear feedback when my proposal is returned so that I know why revision is required.
+
+**US-F16 — Know what must be revised**
+
+> As a Faculty Project Leader, I want feedback to identify what needs to be changed so that I can revise the correct parts of my submission.
+
+**US-F17 — Access previous submissions**
+
+> As a Faculty Project Leader, I want to access previous versions of my proposal so that I can understand the history of my revisions.
+
+**US-F18 — Submit a revised proposal**
+
+> As a Faculty Project Leader, I want to submit revised documents against the returned proposal so that my project can continue through the existing review process.
+
+**US-F19 — Know where my revision goes next**
+
+> As a Faculty Project Leader, I want to know who will review my revised proposal after resubmission so that I understand the next stage of the process.
+
+That final story is directly supported by the bypass logic in UC-4 and UC-6. 
+
+---
+
+## Epic: Prepare My Approved Project for Implementation
+
+**US-F20 — Distinguish approval from activation**
+
+> As a Faculty Project Leader, I want to know whether my project is merely approved or officially authorized for implementation so that I do not begin prematurely.
+
+**US-F21 — See activation requirements**
+
+> As a Faculty Project Leader, I want to see all requirements that must be completed before activation so that I understand what is preventing implementation.
+
+**US-F22 — See the current blocker**
+
+> As a Faculty Project Leader, I want the system to identify the exact requirement blocking activation so that I know why my approved project cannot proceed.
+
+**US-F23 — Know who is responsible for each requirement**
+
+> As a Faculty Project Leader, I want to see who is responsible for each incomplete activation requirement so that I know whether I need to act or wait.
+
+This is one of the strongest story groups because it directly addresses the dangerous confusion between **approved** and **ongoing**.
+
+---
+
+## Epic: Implement and Report
+
+**US-F24 — See my next reporting obligation**
+
+> As a Faculty Project Leader, I want to see which report is due next so that I can prepare the correct requirement.
+
+**US-F25 — See report deadlines**
+
+> As a Faculty Project Leader, I want to see when each report is due so that I can plan my work and avoid overdue submissions.
+
+**US-F26 — Receive reminders before deadlines**
+
+> As a Faculty Project Leader, I want to be reminded before a report becomes overdue so that I have time to complete it.
+
+**US-F27 — Understand report requirements**
+
+> As a Faculty Project Leader, I want to see the documents required for a specific report so that I can submit a complete report package.
+
+**US-F28 — Receive report confirmation**
+
+> As a Faculty Project Leader, I want confirmation that my report was successfully submitted so that I know the requirement has been recorded.
+
+---
+
+## Epic: Complete My Project
+
+**US-F29 — See closure requirements**
+
+> As a Faculty Project Leader, I want to see all requirements for project closure so that I know what remains before the project can be completed.
+
+**US-F30 — Submit closure documents**
+
+> As a Faculty Project Leader, I want to submit the required completion documents so that the project can proceed toward official closure.
+
+**US-F31 — Know whether the project is officially closed**
+
+> As a Faculty Project Leader, I want clear confirmation of the project's final institutional status so that I know whether any further action is required.
+
+I deliberately did **not** write:
+
+> “so that the system automatically closes my project.”
+
+That behavior from UC-8 still requires workflow validation. 
+
+---
+
+# User Stories: RET Chair
+
+## Epic: Manage My Responsibilities
+
+**US-R01 — See what needs my attention**
+
+> As an RET Chair, I want to see all items currently requiring my action so that I can prioritize my work.
+
+**US-R02 — Distinguish personal and oversight work**
+
+> As an RET Chair, I want my own projects to be clearly separated from the projects I oversee so that I do not confuse my responsibilities.
+
+**US-R03 — See urgent and overdue work**
+
+> As an RET Chair, I want items that are urgent, overdue, or at risk to be clearly identified so that I can intervene before problems worsen.
+
+This should be the foundation of the RET Chair experience.
+
+---
+
+## Epic: Review Faculty Proposals
+
+**US-R04 — See proposals awaiting my review**
+
+> As an RET Chair, I want to see all proposals currently waiting for my review so that no submission is overlooked.
+
+**US-R05 — Understand the proposal at a glance**
+
+> As an RET Chair, I want to see the key project information before reviewing documents so that I can quickly understand the proposal context.
+
+**US-R06 — Review complete proposal documents**
+
+> As an RET Chair, I want to access all submitted proposal documents in one place so that I can evaluate the proposal efficiently.
+
+**US-R07 — See previous review history**
+
+> As an RET Chair, I want to see previous submissions, decisions, and feedback so that I do not have to reconstruct the proposal's history.
+
+**US-R08 — Understand what changed in a revision**
+
+> As an RET Chair, I want to know what the project leader changed in a resubmission so that I can focus my review on the revised areas.
+
+---
+
+## Epic: Make and Communicate Evaluation Decisions
+
+**US-R09 — Endorse a proposal**
+
+> As an RET Chair, I want to endorse a satisfactory proposal so that it can proceed to Director/Admin review.
+
+**US-R10 — Return a proposal for revision**
+
+> As an RET Chair, I want to return a proposal with clear feedback so that the project leader can correct specific problems.
+
+**US-R11 — Reject a proposal**
+
+> As an RET Chair, I want to reject a proposal with a documented reason so that the decision is clear and traceable.
+
+**US-R12 — Understand the consequence of my decision**
+
+> As an RET Chair, I want to know what will happen after I submit an evaluation decision so that I can act with confidence.
+
+---
+
+## Epic: Maintain College-Wide Visibility
+
+**US-R13 — Track proposals after endorsement**
+
+> As an RET Chair, I want to continue seeing the status of proposals I have endorsed so that I can answer faculty questions and identify delays.
+
+**US-R14 — View projects across my scope**
+
+> As an RET Chair, I want to see extension projects within my college so that I can maintain oversight of extension activity.
+
+**US-R15 — Identify stalled projects**
+
+> As an RET Chair, I want to see projects that are blocked or have remained in one stage unusually long so that I can intervene when necessary.
+
+**US-R16 — Identify upcoming reports**
+
+> As an RET Chair, I want to see upcoming reporting obligations across my college so that I can help prevent missed deadlines.
+
+**US-R17 — Identify overdue reports**
+
+> As an RET Chair, I want to see which projects have overdue reports so that I can follow up with the responsible project leaders.
+
+---
+
+# User Stories: Director/Admin
+
+## Epic: Manage Office Work
+
+**US-D01 — See work awaiting office action**
+
+> As a Director/Admin, I want to see all items currently awaiting action from the Extension Services office so that important work is not overlooked.
+
+**US-D02 — Prioritize urgent work**
+
+> As a Director/Admin, I want urgent, overdue, blocked, and time-sensitive items to be clearly prioritized so that I can address the highest-risk issues first.
+
+**US-D03 — Search across extension projects**
+
+> As a Director/Admin, I want to search across the university's extension records so that I can quickly retrieve a specific project, proposal, faculty member, or administrative record.
+
+---
+
+## Epic: Evaluate Proposals
+
+**US-D04 — See endorsed proposals**
+
+> As a Director/Admin, I want to see proposals endorsed by RET Chairs and awaiting office review so that I can process them efficiently.
+
+**US-D05 — See prior evaluation context**
+
+> As a Director/Admin, I want to see the RET Chair's endorsement, previous decisions, and feedback so that I can understand the proposal's review history.
+
+**US-D06 — Review revisions efficiently**
+
+> As a Director/Admin, I want to identify what changed in a resubmitted proposal so that I do not need to repeatedly review unchanged material.
+
+**US-D07 — Approve a proposal**
+
+> As a Director/Admin, I want to approve a satisfactory proposal so that it can proceed toward project activation.
+
+**US-D08 — Return a proposal with actionable feedback**
+
+> As a Director/Admin, I want to return a proposal with clear revision requirements so that the project leader knows exactly what must be corrected.
+
+**US-D09 — Reject a proposal with a documented reason**
+
+> As a Director/Admin, I want to reject a proposal with a recorded justification so that the decision remains clear and traceable.
+
+---
+
+## Epic: Prepare Projects for Activation
+
+**US-D10 — See project readiness**
+
+> As a Director/Admin, I want to see whether an approved project has completed all activation requirements so that I can determine whether it is ready to begin.
+
+**US-D11 — Identify activation blockers**
+
+> As a Director/Admin, I want to see exactly which requirements are preventing project activation so that I can resolve them efficiently.
+
+**US-D12 — Link a valid MOA**
+
+> As a Director/Admin, I want to associate a valid MOA with a project so that the project has the required agreement context.
+
+**US-D13 — Establish a reporting schedule**
+
+> As a Director/Admin, I want to define the project's reporting obligations so that required reports can be monitored.
+
+**US-D14 — Activate a ready project**
+
+> As a Director/Admin, I want to activate a project only after all required conditions are satisfied so that implementation begins with complete administrative requirements.
+
+---
+
+## Epic: Manage MOAs
+
+**US-D15 — Record an MOA**
+
+> As a Director/Admin, I want to store an MOA and its validity period so that the agreement can be used and monitored within the system.
+
+**US-D16 — Update MOA validity**
+
+> As a Director/Admin, I want to update an existing MOA's validity information so that the system reflects the current agreement status.
+
+**US-D17 — See projects linked to an MOA**
+
+> As a Director/Admin, I want to see all projects associated with an MOA so that I can understand the impact of changes to that agreement.
+
+**US-D18 — Receive advance expiration warnings**
+
+> As a Director/Admin, I want to be warned before an MOA expires so that affected projects can be addressed before the agreement becomes invalid.
+
+This improves the reactive expiration logic in UC-7. 
+
+---
+
+## Epic: Monitor Institutional Operations
+
+**US-D19 — Identify blocked projects**
+
+> As a Director/Admin, I want to see projects that cannot move forward so that I can identify where intervention is needed.
+
+**US-D20 — Identify overdue reports**
+
+> As a Director/Admin, I want to see overdue reporting obligations across the institution so that compliance issues can be addressed.
+
+**US-D21 — Identify projects at risk**
+
+> As a Director/Admin, I want to see projects affected by expiring MOAs, overdue reports, or prolonged inactivity so that I can intervene proactively.
+
+**US-D22 — Understand institutional activity**
+
+> As a Director/Admin, I want to view meaningful extension activity across colleges and faculty so that I can support planning and institutional reporting.
+
+I would keep this broad until the “rank faculty by project count” requirement is validated.
+
+---
+
+# User Stories: Super Admin
+
+## Epic: Manage User Access
+
+**US-S01 — Review pending registrations**
+
+> As a Super Admin, I want to see pending account registrations so that I can process access requests.
+
+**US-S02 — Verify user context**
+
+> As a Super Admin, I want sufficient identity and organizational information about a registrant so that I can make an informed approval decision.
+
+**US-S03 — Assign the correct role**
+
+> As a Super Admin, I want to assign an appropriate role before activating an account so that the user receives the correct system access.
+
+**US-S04 — Reject an invalid registration**
+
+> As a Super Admin, I want to reject an account request with a reason so that unauthorized or invalid registrations do not receive access.
+
+**US-S05 — Resolve duplicate accounts**
+
+> As a Super Admin, I want to identify and safely resolve duplicate user records so that one person's access is not fragmented across multiple accounts.
+
+**US-S06 — Update user roles**
+
+> As a Super Admin, I want to update a user's role when their institutional responsibilities change so that their access remains appropriate.
+
+---
+
+## Epic: Investigate System Activity
+
+**US-S07 — Search audit activity**
+
+> As a Super Admin, I want to search and filter system activity so that I can investigate specific events efficiently.
+
+**US-S08 — Understand an audit event**
+
+> As a Super Admin, I want to see who performed an action, what changed, and when it occurred so that administrative activity is traceable.
+
+---
+
+# Cross-role stories
+
+Some of the most important stories should not belong to only one persona.
+
+**US-X01 — Meaningful notifications**
+
+> As a system user, I want notifications to tell me what happened and whether I need to act so that I can respond appropriately.
+
+**US-X02 — Clear next actions**
+
+> As a system user, I want each workflow item to clearly identify the next required action so that I do not have to infer what happens next.
+
+**US-X03 — Role-appropriate visibility**
+
+> As a system user, I want to see only the projects and actions relevant to my responsibilities so that I can focus on my work.
+
+**US-X04 — Preserve history**
+
+> As a system user, I want important submissions, decisions, and status changes to remain traceable so that the project history can be understood later.
+
+---
+
+The important result is that these user stories do **not** map one-to-one with the nine use cases.
+
+That is a good sign.
+
+The use cases describe **system behavior**. The user stories reveal **human needs**. For example, UC-7 says the system detects an overdue report; the user stories reveal that faculty need warnings *before* it becomes overdue. UC-4 says the user submits documents; the stories reveal that the user needs guidance *before* submission. UC-3 says the system displays metrics; the stories reveal that RET Chairs and Director/Admin users first need to know *what requires action*. 
+
+The next useful step is to **prioritize these stories into MVP, Should Have, Could Have, and Later**. We currently have more than enough stories to overbuild the system, so prioritization is where the Design Thinking work starts protecting your scope.

@@ -1,0 +1,628 @@
+Yes. At this point, we should identify pain points **across the entire journey**, not merely per use case. The goal is to find where users experience **uncertainty, delay, unnecessary effort, cognitive load, loss of visibility, or unclear responsibility**.
+
+These are still **hypothesized pain points** until validated through interviews and usability testing. The use cases tell us where friction *may* occur; users will tell us whether it actually does. 
+
+# Core pain points across the extension-project journey
+
+## 1. Users may not know what is required before they begin
+
+The faculty journey currently starts with submitting proposal documents. UC-4 assumes that the user already knows:
+
+* what documents are required;
+* which templates to use;
+* what information must be prepared;
+* whether the submission is complete.
+
+The system enters the journey too late.
+
+### User experience
+
+> “What exactly do I need to prepare?”
+
+> “Is this the latest template?”
+
+> “Am I missing anything?”
+
+### Root problem
+
+**Requirements uncertainty before submission.**
+
+### Consequences
+
+Users may rely on:
+
+* colleagues;
+* Messenger;
+* email;
+* old files;
+* previous proposals;
+* verbal instructions.
+
+The result may be incomplete or incorrect submissions before the formal workflow even begins.
+
+### Severity
+
+**High**
+
+Because errors introduced here create downstream work for the Faculty, RET Chair, and Director/Admin.
+
+---
+
+## 2. The project lifecycle may be difficult to understand
+
+The system divides the journey into proposals, evaluation, projects, MOAs, Special Orders, reports, and closure. 
+
+That makes sense architecturally.
+
+It may not make sense to the user.
+
+### User experience
+
+> “My proposal was approved. Where did it go?”
+
+> “Is this still a proposal or already a project?”
+
+> “What happens after approval?”
+
+### Root problem
+
+**The system's data model may become visible to the user as the navigation model.**
+
+### Consequences
+
+Users must understand the internal structure of the system to follow their own project.
+
+### Severity
+
+**Critical**
+
+This pain point affects almost the entire system.
+
+### UCD implication
+
+The project should feel continuous:
+
+**Preparation → Review → Approval → Readiness → Implementation → Reporting → Closure**
+
+even if the backend uses separate records.
+
+---
+
+## 3. “Pending” does not tell users enough
+
+Many workflow states involve waiting:
+
+* pending account approval;
+* pending RET Chair review;
+* pending Director/Admin review;
+* pending requirements;
+* pending activation.
+
+### User experience
+
+> “Pending with whom?”
+
+> “Since when?”
+
+> “Is something wrong?”
+
+> “Do I need to do anything?”
+
+### Root problem
+
+**Status without context.**
+
+### Consequences
+
+Users manually follow up because the system does not answer the questions they actually have.
+
+### Severity
+
+**Critical**
+
+A useful status should communicate:
+
+**Current stage**
+**Current owner**
+**Time entered**
+**Last activity**
+**User's required action**
+**What happens next**
+
+---
+
+## 4. Waiting may be invisible
+
+UC-6 routes proposals sequentially, but the faculty member may only experience a period of silence. 
+
+### User experience
+
+> “Has anyone opened it?”
+
+> “Is it stuck?”
+
+> “Should I follow up?”
+
+### Root problem
+
+**Lack of process visibility during handoffs.**
+
+### Consequences
+
+* anxiety;
+* repeated inquiries;
+* unnecessary messages;
+* duplicated coordination work;
+* distrust in the system.
+
+### Severity
+
+**High**
+
+The system should reduce the need for:
+
+> “Any update po?”
+
+---
+
+## 5. Users may not know who owns the next action
+
+This occurs repeatedly.
+
+After submission:
+
+> Faculty or RET Chair?
+
+After endorsement:
+
+> RET Chair or Director/Admin?
+
+After approval:
+
+> Faculty, RET Chair, or Director/Admin?
+
+For Special Orders:
+
+> Who uploads them?
+
+For MOAs:
+
+> Who acts next?
+
+### Root problem
+
+**Ambiguous action ownership.**
+
+### Consequences
+
+Everyone can see that something is incomplete, but nobody knows who is expected to resolve it.
+
+### Severity
+
+**Critical**
+
+Every active workflow item should answer:
+
+> **Who needs to act next?**
+
+---
+
+## 6. Returned proposals may create revision confusion
+
+UC-4 and UC-6 contain relatively sophisticated resubmission logic. A proposal previously endorsed by the RET Chair can return directly to the Director/Admin after revision. 
+
+But the user's experience may still be:
+
+> “What exactly am I supposed to change?”
+
+> “Which file?”
+
+> “Do I upload everything again?”
+
+> “Where does it go after I resubmit?”
+
+### Root problem
+
+**Feedback may not be sufficiently actionable.**
+
+### Consequences
+
+* incorrect revisions;
+* unnecessary rework;
+* repeated return cycles;
+* frustration;
+* longer approval time.
+
+### Severity
+
+**Critical**
+
+The system should connect:
+
+**Feedback → affected document → required change → revised version → next review stage**
+
+---
+
+## 7. Users may not understand what changed between versions
+
+Reviewers also experience revision friction.
+
+### RET Chair or Director/Admin experience
+
+> “What did they actually revise?”
+
+> “Do I need to read everything again?”
+
+### Root problem
+
+**Weak revision visibility.**
+
+### Consequences
+
+Reviewers may repeatedly inspect unchanged material.
+
+### Severity
+
+**High**
+
+The system needs a clear submission history:
+
+**Version 1**
+Returned by RET Chair
+
+**Version 2**
+Endorsed by RET Chair
+Returned by Director/Admin
+
+**Version 3**
+Current submission
+
+Even without automatic document diffing, clear version history and change notes could significantly reduce cognitive load.
+
+---
+
+## 8. Approval may be mistaken for permission to begin implementation
+
+This is one of the strongest pain points revealed by the journey.
+
+UC-7 requires additional prerequisites after proposal approval, including Special Orders, MOA assignment, and a reporting schedule before activation. 
+
+### Faculty experience
+
+> “The project was approved. Can we start now?”
+
+### Root problem
+
+**Approval and activation are conceptually different, but may feel identical to users.**
+
+### Consequences
+
+Potentially:
+
+* premature implementation;
+* confusion;
+* repeated questions;
+* administrative noncompliance.
+
+### Severity
+
+**Critical**
+
+The system needs to explicitly distinguish:
+
+**Proposal Approved**
+
+from:
+
+**Project Authorized for Implementation**
+
+And show what remains between them.
+
+---
+
+## 9. Users may not know what is blocking project activation
+
+An approved project can still be missing:
+
+* Special Orders;
+* valid MOA;
+* reporting schedule.
+
+### User experience
+
+> “Why is this still not ongoing?”
+
+### Root problem
+
+**Hidden prerequisites.**
+
+### Consequences
+
+Users see a stalled project but cannot diagnose the reason.
+
+### Severity
+
+**Critical**
+
+The system needs a readiness model:
+
+**Proposal approval** ✓
+**Special Orders** ✓
+**Valid MOA** ✕
+**Reporting schedule** ✓
+
+> **Blocked by: No valid MOA assigned**
+
+The user should never need to reverse-engineer why a project cannot proceed.
+
+---
+
+## 10. RET Chairs face severe context switching
+
+The RET Chair is simultaneously:
+
+* a proposal evaluator;
+* a college monitor;
+* a faculty coordinator;
+* potentially a project leader.
+
+The specifications place this actor across most of the system. 
+
+### User experience
+
+> “Am I looking at my own projects or projects I oversee?”
+
+### Root problem
+
+**Multiple mental modes within one role.**
+
+### Consequences
+
+* cognitive overload;
+* navigation mistakes;
+* difficulty prioritizing;
+* mixing personal work with oversight work.
+
+### Severity
+
+**High**
+
+The UX should clearly separate:
+
+**My Projects**
+
+from:
+
+**College Oversight**
+
+and:
+
+**Needs My Action**
+
+---
+
+## 11. Work may be hidden inside modules instead of surfaced as actions
+
+A user may have to visit:
+
+* Proposals;
+* Projects;
+* Reports;
+* MOAs;
+
+just to discover whether something needs attention.
+
+### User experience
+
+> “What do I need to do today?”
+
+### Root problem
+
+**Navigation-centered rather than task-centered UX.**
+
+### Consequences
+
+Important work is discovered only when users remember where to look.
+
+### Severity
+
+**Critical for RET Chair and Director/Admin**
+
+The landing experience should surface:
+
+* awaiting your review;
+* returned and resubmitted;
+* blocked;
+* due soon;
+* overdue;
+* expiring soon.
+
+---
+
+## 12. Dashboards may show information without helping users decide
+
+UC-3 focuses heavily on aggregated metrics and includes ranking faculty by project count. 
+
+### User experience
+
+Potentially:
+
+> “Okay, there are 37 projects. What am I supposed to do with that?”
+
+### Root problem
+
+**Metrics without decision context.**
+
+### Consequences
+
+The dashboard becomes decorative rather than operational.
+
+### Severity
+
+**Medium to High**
+
+The better question is not:
+
+> “What data can we visualize?”
+
+It is:
+
+> “What decision is the user trying to make?”
+
+---
+
+## 13. Faculty ranking by project count may misrepresent performance
+
+The current Director overview ranks faculty by number of extension projects. 
+
+### Potential problem
+
+More projects do not necessarily mean:
+
+* greater impact;
+* better project quality;
+* stronger community outcomes;
+* greater workload;
+* better compliance.
+
+### User experience risk
+
+Faculty may perceive the system as turning extension participation into a leaderboard.
+
+### Root problem
+
+**A system metric is being treated as a performance measure without validated user need.**
+
+### Severity
+
+**High if used for decision-making**
+
+This feature requires direct validation with the Director/Admin group.
+
+---
+
+## 14. MOA problems may be detected too late
+
+UC-7 detects an MOA after it has expired. 
+
+### Director/Admin experience
+
+> “Why am I only finding out now?”
+
+### Root problem
+
+**Reactive rather than preventive monitoring.**
+
+### Consequences
+
+* project disruption;
+* urgent administrative work;
+* compliance risk.
+
+### Severity
+
+**High**
+
+The pain occurs before expiration, so the system should support:
+
+**Expiring in 90 days**
+**Expiring in 30 days**
+**Expired**
+
+---
+
+## 15. Overdue-report detection is also reactive
+
+UC-7 detects overdue reports. 
+
+But the Faculty journey suggests the user needs help **before** missing the deadline.
+
+### Root problem
+
+**The system reacts to failure instead of helping prevent it.**
+
+### Better experience
+
+**Due in 30 days**
+**Due in 7 days**
+**Due tomorrow**
+**Overdue**
+
+### Severity
+
+**High**
+
+---
+
+## 16. Reporting may feel like a generic upload task
+
+UC-8 begins when the user submits a report document. 
+
+But users need to know:
+
+* which report is due;
+* when it is due;
+* what documents are required;
+* whether it was successfully submitted.
+
+### Root problem
+
+**The system models reports as records rather than obligations in time.**
+
+### Severity
+
+**High**
+
+The experience should be:
+
+> **Progress Report 2**
+
+> Due August 30
+
+> Not yet submitted
+
+not:
+
+> **Upload Report**
+
+---
+
+## 17. Automatic project closure may not match the real workflow
+
+UC-8 closes the project after the Terminal Report and Final Accomplishment Report are recorded. 
+
+### Potential pain
+
+If those documents require verification or acceptance, automatic closure could create an inaccurate state.
+
+### Root problem
+
+**The specification may confuse document submission with institutional completion.**
+
+### Severity
+
+**Potentially Critical**
+
+This must be validated against the actual Extension Services workflow.
+
+---
+
+# The pain points cluster into six deeper problems
+
+The individual issues are symptoms. Underneath them, I see six systemic pain clusters:
+
+**Uncertainty** — What do I need? Where is it? What happens next?
+
+**Visibility** — Who has it? How long has it been there? What changed?
+
+**Ownership** — Who is responsible for the next action?
+
+**Continuity** — Why does one project feel fragmented across proposals, MOAs, projects, and reports?
+
+**Cognitive load** — What needs my attention among all these projects?
+
+**Prevention** — Why does the system tell me only after something has expired or become overdue?
+
+These six clusters are much more useful for the Design Thinking process than a list of 17 disconnected feature complaints.
+
+The next step in **Define** should be to turn these into precise **problem statements and “How Might We” questions**. That will let us distinguish genuine user problems from premature feature ideas.

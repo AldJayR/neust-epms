@@ -1,0 +1,611 @@
+Now we move from **divergent ideation** to **convergent concept selection**.
+
+The goal is not to ask, “Which idea looks coolest?” We evaluate each concept against the user needs established during Empathize and Define, while keeping the actual workflow constraints in the use cases. 
+
+I would use six criteria:
+
+* **User value** — does it solve a major pain point?
+* **Workflow fit** — does it align with the actual project lifecycle?
+* **Accessibility and equity** — does it reduce exclusion and cognitive burden?
+* **Institutional safety** — does it prevent misunderstanding or procedural errors?
+* **Technical feasibility** — can your capstone realistically implement it?
+* **MVP necessity** — does the core experience fail without it?
+
+# Concept 1: Project Workspace
+
+> **One project becomes the primary container for its entire lifecycle.**
+
+It connects:
+
+**Proposal → Evaluation → Readiness → Implementation → Reporting → Closure**
+
+### User value: Very high
+
+This directly solves the largest problem identified during Empathize: users experience one project, while the specifications divide that experience across UC-4, UC-6, UC-7, and UC-8. 
+
+### Accessibility and equity: High
+
+It reduces:
+
+* memory burden;
+* navigation burden;
+* dependence on knowing which module contains which record;
+* confusion for first-time users.
+
+### Technical feasibility: High
+
+This does **not** require merging all backend entities.
+
+You can still have:
+
+* proposals;
+* proposal evaluations;
+* MOAs;
+* projects;
+* reports.
+
+The UX simply presents them through a shared project context.
+
+### Decision
+
+**MVP — Foundational**
+
+If this concept is removed, the system risks reverting to a collection of administrative modules.
+
+---
+
+# Concept 2: Act / Wait / Watch
+
+> Every relevant workflow item communicates the user's relationship to it.
+
+### ACT
+
+You need to do something.
+
+### WAIT
+
+Someone else currently owns the next action.
+
+### WATCH
+
+You maintain oversight, but no action is required.
+
+### User value: Very high
+
+This directly solves:
+
+* unclear ownership;
+* vague statuses;
+* invisible waiting;
+* multi-role confusion.
+
+### Accessibility and equity: Very high
+
+It reduces the need to interpret administrative language.
+
+Instead of expecting a user to understand:
+
+> Status: Returned
+
+the experience communicates:
+
+> **ACT — Revision required from you**
+
+### Workflow fit: Very high
+
+The existing workflow already transfers responsibility between actors. 
+
+This concept simply makes those handoffs visible.
+
+### Technical feasibility: High
+
+Most of the required information already exists:
+
+* current status;
+* current stage;
+* current actor;
+* user role.
+
+### Risk
+
+Do **not** necessarily store `ACT`, `WAIT`, and `WATCH` as project statuses.
+
+They are better understood as **derived user-facing states**.
+
+The same proposal may simultaneously be:
+
+* **WAIT** for Faculty;
+* **WAIT** for RET Chair;
+* **ACT** for Director/Admin.
+
+### Decision
+
+**MVP — Foundational**
+
+---
+
+# Concept 3: Progressive Proposal Preparation
+
+> Users prepare, verify, submit, recover, revise, and resubmit without restarting.
+
+### User value: Very high
+
+UC-4 currently begins too late in the user journey: at document submission. 
+
+The concept adds support for:
+
+* drafts;
+* requirements;
+* completeness;
+* pre-submission review;
+* revision recovery.
+
+### Accessibility and equity: Very high
+
+It especially helps:
+
+* first-time project leaders;
+* users with interrupted work sessions;
+* users with unstable internet;
+* users who need more time;
+* users unfamiliar with procedures.
+
+### Technical feasibility: Medium to high
+
+A realistic MVP could include:
+
+* draft saving;
+* requirement checklist;
+* upload status;
+* review before submission;
+* revision history.
+
+The MVP does **not** need:
+
+* automatic document diffing;
+* AI proposal analysis;
+* advanced collaborative editing.
+
+### Decision
+
+**MVP — Core**
+
+---
+
+# Concept 4: Action Center
+
+> RET Chairs and Director/Admin users begin with work requiring attention.
+
+### User value: Very high
+
+These users manage multiple projects simultaneously.
+
+Without an Action Center, they may need to search:
+
+* proposals;
+* projects;
+* reports;
+* MOAs;
+
+just to discover their work.
+
+### Accessibility and equity: High
+
+It reduces:
+
+* memory load;
+* module hunting;
+* context switching;
+* dependence on frequent system checking.
+
+### Technical feasibility: Medium
+
+The challenge is not the interface.
+
+The challenge is defining:
+
+> **What counts as actionable?**
+
+For the MVP, keep it simple and deterministic.
+
+Examples:
+
+**RET Chair**
+
+* proposals awaiting review;
+* returned proposals resubmitted;
+* college reports overdue.
+
+**Director/Admin**
+
+* endorsed proposals awaiting review;
+* approved projects awaiting administrative action;
+* expired MOAs;
+* overdue reports.
+
+### Decision
+
+**MVP — Core**
+
+But avoid advanced automated prioritization for now.
+
+---
+
+# Concept 5: Project Readiness
+
+> Approved proposals enter a visible preparation stage before becoming ongoing projects.
+
+### User value: Critical
+
+This solves one of the highest-risk misunderstandings:
+
+> **Approved ≠ Authorized to Implement**
+
+UC-7 already requires Special Orders, MOA assignment, and reporting schedules before activation. 
+
+### Institutional safety: Very high
+
+This may prevent:
+
+* premature implementation;
+* missing administrative requirements;
+* unclear activation responsibility.
+
+### Accessibility and equity: High
+
+Users do not need to know policy from memory.
+
+The system makes prerequisites visible.
+
+### Technical feasibility: High
+
+The existing use case already models most of the necessary data.
+
+### Important design decision
+
+Do not use:
+
+> **75% ready**
+
+Use explicit conditions:
+
+✓ Proposal approved
+✓ Special Orders complete
+✕ Valid MOA assigned
+✓ Reporting schedule established
+
+> **Blocked by: No valid MOA assigned**
+
+### Decision
+
+**MVP — Critical**
+
+---
+
+# Concept 6: Progressive Attention
+
+> The system helps users prepare before deadlines and expirations become failures.
+
+### User value: High
+
+The current UC-7 detects problems after:
+
+* MOAs expire;
+* reports become overdue. 
+
+That is too reactive.
+
+### Accessibility and equity: High
+
+Users who do not constantly check the portal receive a fairer opportunity to act.
+
+### Technical feasibility: Medium
+
+Deadline calculation is straightforward.
+
+The complexity is in:
+
+* notification scheduling;
+* threshold rules;
+* avoiding alert fatigue.
+
+### MVP approach
+
+Keep the first version simple:
+
+**Upcoming**
+**Due Soon**
+**Overdue**
+
+and:
+
+**Valid**
+**Expiring Soon**
+**Expired**
+
+Do not build an elaborate predictive-risk engine.
+
+### Decision
+
+**MVP — Core, simplified**
+
+---
+
+# Concept 7: Project Story / Activity Timeline
+
+> Users can understand what happened to the project chronologically.
+
+### User value: High
+
+This supports:
+
+* traceability;
+* feedback history;
+* revision history;
+* handoff visibility.
+
+### Technical feasibility: High
+
+The specifications already include extensive event logging across the use cases. 
+
+But there is an important distinction:
+
+**Audit Log**
+
+and:
+
+**User-Facing Project Activity**
+
+should not be the same thing.
+
+An audit log might say:
+
+> `PROPOSAL_STATUS_UPDATE: PENDING_RET_CHAIR → ENDORSED`
+
+The project timeline should say:
+
+> **Proposal endorsed by RET Chair**
+
+> July 3, 2026
+
+### Decision
+
+**MVP — Supporting**
+
+Include a simple meaningful timeline. Advanced filtering can wait.
+
+---
+
+# Concept 8: Conversational Guidance
+
+> The system explains institutional states in plain language.
+
+### User value: High
+
+Especially useful for:
+
+* first-time users;
+* unfamiliar terminology;
+* complex transitions;
+* returned proposals.
+
+### Technical feasibility: Very high
+
+This does not require a chatbot or AI.
+
+It is simply good content design.
+
+Instead of:
+
+> Status: Pending Director Approval
+
+use:
+
+> **Waiting for Director/Admin Review**
+
+> You do not need to take action right now.
+
+### Decision
+
+**MVP — Design principle**
+
+This should not become a standalone feature.
+
+It should influence all interface copy.
+
+---
+
+# Concept Selection Result
+
+The concepts should not be treated as eight equal features. They form a hierarchy.
+
+## Foundation
+
+These define the entire product model:
+
+**Project Workspace**
+**Act / Wait / Watch**
+
+Without these, the user experience becomes fragmented again.
+
+## Core Workflows
+
+These support the highest-value tasks:
+
+**Progressive Proposal Preparation**
+**Action Center**
+**Project Readiness**
+
+## Preventive Layer
+
+This helps users avoid problems:
+
+**Progressive Attention**
+
+## Supporting Communication
+
+These make the system understandable:
+
+**Project Story**
+**Conversational Guidance**
+
+So the emerging concept architecture becomes:
+
+> **A project-centered system where every user can understand the project's journey, their current responsibility, what requires attention, what is blocking progress, and what risks are approaching.**
+
+# Now we should kill some ideas
+
+Good convergence requires explicitly rejecting ideas.
+
+## Reject: Readiness percentages
+
+> 75% ready
+
+A missing MOA is not equivalent to one incomplete item in a generic progress bar.
+
+**Rejected because:** misleading simplification.
+
+---
+
+## Reject: Faculty leaderboard
+
+> Top Faculty by Number of Projects
+
+The current UC-3 includes ranking faculty by project count. 
+
+**Rejected from the core concept because:**
+
+* user need is unvalidated;
+* project count is not project impact;
+* it may produce unfair comparisons;
+* it does not directly support action.
+
+It can only return if user research identifies a legitimate decision it supports.
+
+---
+
+## Reject: Fully visual journey map as the primary interface
+
+A giant visual map may look impressive.
+
+**Rejected because:**
+
+* poor mobile scalability;
+* zoom problems;
+* screen-reader complexity;
+* unnecessary visual complexity.
+
+A compact lifecycle indicator can survive.
+
+---
+
+## Reject: Automatic AI proposal evaluation
+
+The system should not attempt to predict whether a proposal deserves approval.
+
+**Rejected because:**
+
+* high scope;
+* questionable decision legitimacy;
+* difficult explainability;
+* unnecessary for solving the actual user pain.
+
+---
+
+## Reject: Complex smart prioritization
+
+No hidden algorithm should initially decide:
+
+> “This proposal is more important than that one.”
+
+**Rejected for MVP because:**
+
+* prioritization criteria are unvalidated;
+* users may not trust it;
+* difficult to explain.
+
+Use transparent categories:
+
+**Action required**
+**Due soon**
+**Overdue**
+**Waiting**
+
+---
+
+## Reject: Separate accounts for multi-role users
+
+An RET Chair should not need one account as a faculty member and another as a coordinator.
+
+**Rejected because:** it creates identity fragmentation and unnecessary access burden.
+
+---
+
+# MVP concept statement
+
+We can now state the product concept clearly:
+
+> **The NEUST Extension Services Project Management System will provide a continuous project workspace that guides extension projects from proposal preparation through evaluation, implementation readiness, active implementation, reporting, and closure. The system will make current responsibility, required actions, blockers, and approaching obligations visible to each user according to their role and scope.**
+
+That is substantially more user-centered than:
+
+> “A system that manages proposals, projects, MOAs, and reports.”
+
+# MVP experience by persona
+
+### Faculty / Project Leader
+
+The system primarily answers:
+
+> **Where is my project? What do I need to do next?**
+
+Primary experience:
+
+**My Projects → Project Workspace → Current Action**
+
+### RET Chair
+
+The system primarily answers:
+
+> **What needs my attention across my college?**
+
+Primary experience:
+
+**Action Center → College Oversight → Project Workspace**
+
+### Director/Admin
+
+The system primarily answers:
+
+> **What requires office action or intervention?**
+
+Primary experience:
+
+**Action Center → Institution-Wide Projects → Project Workspace**
+
+### Super Admin
+
+The system primarily answers:
+
+> **What system access requires administration?**
+
+Primary experience:
+
+**Pending Accounts → Users → Audit Logs**
+
+# Design principles to carry into prototyping
+
+1. **One project, one continuous journey.**
+2. **Action before status.**
+3. **Every handoff has a visible owner.**
+4. **Every waiting state explains what the user is waiting for.**
+5. **Every blocker explains why progress cannot continue.**
+6. **Prepare users before submission; help them recover after errors.**
+7. **Approval and authorization to implement are visibly different.**
+8. **Warn before failure, not only after it.**
+9. **Operational work comes before analytics.**
+10. **Official terminology must be explained in plain language.**
+11. **No critical meaning depends on color or visual presentation alone.**
+12. **Different responsibilities do not require different identities.**
+
+We are now ready to leave broad ideation. The next artifact should be the **information architecture**, because we need to decide how these selected concepts reshape the actual navigation and content hierarchy before drawing wireframes.

@@ -1,0 +1,806 @@
+Now we enter **Ideate**.
+
+For Crazy 8s, we should resist designing eight polished screens. The method is meant to force **eight distinct solution directions in eight minutes** for one focused HMW challenge. Some ideas should overlap, some should feel strange, and some should contradict each other.
+
+Because our research produced eight consolidated design challenges, doing eight ideas for all eight immediately would create 64 ideas and become noise. We should start with the foundational challenge:
+
+> **How might we help users experience proposal preparation, review, approval, activation, implementation, reporting, and closure as one understandable project journey?**
+
+Everything in the current specifications—from UC-4 through UC-8—depends on solving this coherently. 
+
+# Crazy 8s: The Continuous Project Journey
+
+## 1. The Project Timeline
+
+### Core idea
+
+Represent the entire extension project as one horizontal or vertical lifecycle:
+
+**Proposal Preparation**
+↓
+**Under Review**
+↓
+**Approved**
+↓
+**Preparing for Implementation**
+↓
+**Ongoing**
+↓
+**Reporting**
+↓
+**Closing**
+↓
+**Completed**
+
+The current stage is emphasized.
+
+Completed stages remain visible.
+
+Future stages are visible but secondary.
+
+### What the user sees
+
+> **Community Digital Literacy Program**
+
+> Current stage: Director/Admin Review
+
+> ✓ Proposal submitted
+> ✓ RET Chair endorsed
+> ● Director/Admin review
+> ○ Project readiness
+> ○ Implementation
+> ○ Reporting
+> ○ Closure
+
+### Why it might work
+
+It directly solves lifecycle fragmentation.
+
+### Risk
+
+A timeline can become decorative.
+
+If users can see:
+
+> **Project Readiness**
+
+but cannot understand what is blocking it, we have only made the confusion prettier.
+
+### Crazy 8s verdict
+
+**Strong orientation concept, weak as a complete solution.**
+
+---
+
+## 2. The “What Happens Next?” Card
+
+### Core idea
+
+Forget the full lifecycle.
+
+Show only the user's immediate reality.
+
+Every project has one dominant card:
+
+> **What happens next?**
+
+Example:
+
+> **Waiting for Director/Admin Review**
+
+> Your proposal was endorsed by the RET Chair on July 3.
+
+> **Your action:** None
+
+> **Waiting for:** Extension Services Office
+
+> **Next:** If approved, the project will proceed to implementation preparation.
+
+### Why it might work
+
+Users often do not need the entire workflow.
+
+They need:
+
+> “What do I do now?”
+
+### Risk
+
+Users may lose the larger context.
+
+They understand the next step but not the journey.
+
+### Crazy 8s verdict
+
+**Extremely strong for reducing cognitive load.**
+
+This should probably survive concept selection even if the final design uses another primary structure.
+
+---
+
+## 3. The Project Story
+
+### Core idea
+
+Instead of a process diagram, represent the project as a chronological narrative.
+
+> **Today**
+
+> Your revised proposal is awaiting Director/Admin review.
+
+> **July 3**
+
+> You submitted Revision 2.
+
+> **July 1**
+
+> The Director/Admin requested revisions.
+
+> “Please revise the implementation timeline.”
+
+> **June 27**
+
+> Your RET Chair endorsed the proposal.
+
+> **June 25**
+
+> You submitted your proposal.
+
+### Why it might work
+
+Users naturally understand:
+
+> What happened?
+
+better than abstract workflow states.
+
+It also combines:
+
+* history;
+* feedback;
+* documents;
+* decisions;
+* handoffs.
+
+### Risk
+
+Long-running projects could produce overwhelming timelines.
+
+### Crazy 8s verdict
+
+**Strong for traceability and revision-heavy workflows.**
+
+---
+
+## 4. The Journey Map Workspace
+
+### Core idea
+
+Turn each project into a visual map.
+
+The project has regions:
+
+**Prepare** → **Get Approved** → **Get Ready** → **Implement** → **Complete**
+
+Each region contains tasks.
+
+For example:
+
+### Get Ready
+
+✓ Proposal approved
+✓ Special Orders uploaded
+○ Valid MOA assigned
+○ Reporting schedule established
+
+> **Blocked: Waiting for valid MOA**
+
+### Why it might work
+
+It connects the project journey with actionable requirements.
+
+### Risk
+
+Could become visually complex, especially:
+
+* on mobile;
+* at high zoom;
+* for screen-reader users;
+* for long projects.
+
+### Accessibility concern
+
+A visual map must have an equivalent semantic structure.
+
+### Crazy 8s verdict
+
+**Powerful, but potentially overdesigned.**
+
+---
+
+## 5. The Project Checklist
+
+### Core idea
+
+Treat the entire project like a progressive checklist.
+
+> **Project Progress: 7 of 14 milestones complete**
+
+### Proposal
+
+✓ Project information completed
+✓ Proposal documents submitted
+
+### Evaluation
+
+✓ RET Chair endorsement
+● Director/Admin review
+
+### Before Implementation
+
+○ Special Orders
+○ MOA
+○ Reporting schedule
+
+### Implementation
+
+○ Project activated
+○ Progress Report 1
+○ Progress Report 2
+
+### Completion
+
+○ Terminal Report
+○ Final Accomplishment Report
+○ Project closure
+
+### Why it might work
+
+Extremely understandable.
+
+Users can see:
+
+* completed;
+* current;
+* incomplete;
+* future.
+
+### Risk
+
+It may imply that every project follows the exact same sequence.
+
+It may also turn complex institutional decisions into simplistic “tasks.”
+
+### Crazy 8s verdict
+
+**Excellent for preparation and readiness, weaker for review and decision-making.**
+
+---
+
+## 6. The Project Control Center
+
+### Core idea
+
+Each project has one workspace with five questions:
+
+### Where is it?
+
+> Director/Admin Review
+
+### Do I need to do anything?
+
+> No action required
+
+### What are we waiting for?
+
+> Director/Admin decision
+
+### What happened recently?
+
+> RET Chair endorsed the proposal on July 3
+
+### What happens next?
+
+> If approved, the project proceeds to implementation preparation
+
+Below that:
+
+**Documents | Feedback | Reports | History | Team**
+
+### Why it might work
+
+It organizes the experience around user questions rather than system entities.
+
+### Risk
+
+Could become another dashboard full of cards.
+
+### Crazy 8s verdict
+
+**Very strong mental-model alignment.**
+
+---
+
+## 7. The “One Project, One Page” Concept
+
+### Core idea
+
+Remove separate user-facing modules for:
+
+* proposals;
+* evaluations;
+* Special Orders;
+* reports.
+
+The user opens:
+
+> **My Projects**
+
+Then:
+
+> **Community Digital Literacy Program**
+
+Everything happens inside that project.
+
+Proposal files are in the project.
+
+Evaluation feedback is in the project.
+
+Special Orders are in the project.
+
+MOA information is in the project.
+
+Reports are in the project.
+
+History is in the project.
+
+### Why it might work
+
+This is the purest expression of our empathy finding:
+
+> **Users experience one project.**
+
+### Risk
+
+The page could become enormous.
+
+Director/Admin and RET Chairs still need cross-project operational views.
+
+### Crazy 8s verdict
+
+**Probably the strongest information-architecture idea.**
+
+It does not mean literally one endlessly scrolling page. It means:
+
+> **The project is the primary container of the experience.**
+
+---
+
+## 8. The Conversational Project Guide
+
+### Core idea
+
+The system communicates like a procedural assistant.
+
+The user opens a project:
+
+> **Your proposal has been approved.**
+
+> Before implementation can begin, three requirements must be completed.
+
+> ✓ Special Orders complete
+
+> ○ MOA assignment — Extension Services Office
+
+> ○ Reporting schedule — Extension Services Office
+
+> **You do not need to do anything right now.**
+
+Later:
+
+> **Action required**
+
+> Your proposal was returned for revision.
+
+> The Director/Admin requested changes to the implementation timeline.
+
+> **Review Feedback**
+
+### Why it might work
+
+It transforms administrative state into plain-language guidance.
+
+This is especially strong for:
+
+* first-time users;
+* cognitive accessibility;
+* unfamiliar terminology;
+* next-action clarity.
+
+### Risk
+
+Too much conversational text could slow expert users.
+
+### Crazy 8s verdict
+
+**Excellent communication layer, but not enough as the whole information architecture.**
+
+---
+
+# The first Crazy 8s clustering
+
+The eight ideas naturally form four clusters.
+
+## Cluster A: Orientation
+
+**1. Project Timeline**
+**4. Journey Map Workspace**
+
+They answer:
+
+> **Where am I in the overall journey?**
+
+---
+
+## Cluster B: Immediate Action
+
+**2. What Happens Next?**
+**8. Conversational Project Guide**
+
+They answer:
+
+> **What do I need to understand or do now?**
+
+---
+
+## Cluster C: History and Continuity
+
+**3. Project Story**
+
+It answers:
+
+> **What happened to my project?**
+
+---
+
+## Cluster D: Project as the Main Container
+
+**5. Project Checklist**
+**6. Project Control Center**
+**7. One Project, One Page**
+
+They answer:
+
+> **Where does everything about this project belong?**
+
+---
+
+# Concept synthesis: the strongest idea is not one of the eight
+
+This is exactly what Crazy 8s is supposed to produce.
+
+The strongest concept is a combination:
+
+## The Project Workspace
+
+**One Project, One Workspace** becomes the structural foundation.
+
+At the top:
+
+### Project identity
+
+> Community Digital Literacy Program
+
+> **Current stage: Director/Admin Review**
+
+Then three layers:
+
+### Layer 1: Immediate reality
+
+From Ideas 2, 6, and 8:
+
+> **No action required**
+
+> Your proposal is currently being reviewed by the Extension Services Office.
+
+> Last activity: RET Chair endorsement, July 3
+
+> Next: Director/Admin decision
+
+### Layer 2: Overall journey
+
+From Idea 1:
+
+**Proposal** ✓ → **Review** ● → **Readiness** ○ → **Implementation** ○ → **Reporting** ○ → **Closure** ○
+
+### Layer 3: Contextual work
+
+The workspace changes according to the current stage.
+
+During proposal preparation:
+
+> Requirements and documents
+
+During revision:
+
+> Feedback and revised files
+
+During readiness:
+
+> Activation prerequisites
+
+During implementation:
+
+> Upcoming obligations
+
+During reporting:
+
+> Current report requirements
+
+During closure:
+
+> Completion requirements
+
+Then persistent supporting areas:
+
+**Overview | Documents | Feedback | Reports | Activity**
+
+This is much stronger than simply creating separate:
+
+> Proposal Module
+> Project Module
+> Report Module
+
+for faculty users.
+
+# Crazy 8s Round 2: The Right Action at the Right Time
+
+Our second foundational HMW is:
+
+> **How might we help every user immediately understand what requires their action, what they are waiting for, and who currently owns the next step?**
+
+Here are eight rapid concepts.
+
+## 1. Needs Your Action Inbox
+
+One global list:
+
+> **Needs Your Action**
+
+> Review Proposal — 2 days waiting
+
+> Submit Revision — due in 5 days
+
+> Upload Progress Report — due in 12 days
+
+The user processes work like an inbox.
+
+**Strength:** clear and familiar.
+**Risk:** can become an overwhelming task dump.
+
+---
+
+## 2. Three-State Work Model
+
+Every item belongs to exactly one human state:
+
+### Act
+
+You need to do something.
+
+### Wait
+
+Someone else needs to do something.
+
+### Watch
+
+No action is currently required, but you are responsible for oversight.
+
+This is conceptually interesting.
+
+For example, the same proposal can be:
+
+**Faculty:** Wait
+**RET Chair:** Wait
+**Director/Admin:** Act
+
+### Verdict
+
+**Extremely strong cross-role mental model.**
+
+---
+
+## 3. Ownership Badge
+
+Every workflow item visibly says:
+
+> **Waiting for: Director/Admin**
+
+or:
+
+> **Action required from you**
+
+or:
+
+> **Waiting for: Project Leader**
+
+### Verdict
+
+Simple, cheap, powerful.
+
+This should probably become a universal design rule.
+
+---
+
+## 4. Responsibility Baton
+
+Imagine the project as a relay.
+
+The “baton” currently belongs to one actor:
+
+**Faculty** → **RET Chair** → **Director/Admin** → **Faculty**
+
+The UI always shows:
+
+> **Current responsibility: Director/Admin**
+
+### Strength
+
+Excellent conceptual metaphor.
+
+### Risk
+
+Real workflows may have multiple simultaneous responsibilities.
+
+### Verdict
+
+Useful mental model, perhaps too literal for the UI.
+
+---
+
+## 5. Daily Briefing
+
+Instead of a dashboard:
+
+> **Good morning. Here's what changed.**
+
+> 3 items need your action.
+
+> 2 projects became overdue.
+
+> 1 proposal you endorsed was approved.
+
+### Strength
+
+Reduces search.
+
+### Risk
+
+Can become notification noise.
+
+---
+
+## 6. Action-First Project Cards
+
+Every project card leads with action, not status.
+
+Weak:
+
+> Community Digital Literacy
+> Status: Returned
+
+Better:
+
+> **Revision required**
+
+> Community Digital Literacy
+
+> Address Director/Admin feedback and resubmit.
+
+### Verdict
+
+**Very strong.**
+
+Users act on meaning, not database states.
+
+---
+
+## 7. Blocker Board
+
+For administrative users:
+
+### Waiting for Faculty
+
+### Waiting for RET Chair
+
+### Waiting for Director/Admin
+
+### System / Requirement Blocked
+
+Projects are grouped by ownership.
+
+### Strength
+
+Excellent for finding bottlenecks.
+
+### Risk
+
+Could become a complex Kanban board.
+
+---
+
+## 8. “Why am I seeing this?” Context
+
+Every action explains:
+
+> **Why this needs you**
+
+> You are the RET Chair for CICT, and this proposal requires college endorsement before it can proceed.
+
+### Strength
+
+Excellent for multi-role users and accessibility.
+
+### Risk
+
+May be unnecessary for frequent users if always visible.
+
+---
+
+# Synthesis of Round 2
+
+Again, the winner is a combination:
+
+## Universal Action Model
+
+Every workflow item should expose four properties:
+
+**State:** Act / Wait / Watch
+
+**Owner:** Who acts next?
+
+**Reason:** Why is this happening?
+
+**Next transition:** What happens after the action?
+
+For example:
+
+> **ACT — Revision required**
+
+> Owner: You
+
+> Why: Director/Admin requested changes to the implementation timeline.
+
+> Next: Your revised proposal returns directly to Director/Admin review.
+
+Or:
+
+> **WAIT — Director/Admin review**
+
+> Owner: Extension Services Office
+
+> You do not need to do anything.
+
+> Next: You will be notified when a decision is made.
+
+This could become one of the strongest interaction principles in the entire system.
+
+# What Ideate has produced so far
+
+We now have two major product concepts:
+
+## Concept 1: Project Workspace
+
+The project—not the module—is the center of the user's experience.
+
+## Concept 2: Act / Wait / Watch
+
+Every workflow state is translated into the user's relationship with it.
+
+Together:
+
+> **One continuous project workspace that always tells the user whether to act, wait, or watch.**
+
+That concept directly responds to the strongest findings from Empathize and Define without merely copying the original use cases. 
+
+The next Crazy 8s rounds should tackle the remaining hard design challenges: **proposal preparation and revision**, **attention management for RET Chair and Director/Admin**, **project readiness from approval to activation**, and **preventive compliance**. Those are where the more difficult product decisions are hiding.

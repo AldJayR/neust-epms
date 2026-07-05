@@ -1,0 +1,569 @@
+Now we convert the **problem space into an opportunity space**.
+
+A good HMW statement should be broad enough to allow multiple solutions, but narrow enough to address a real user need. We should avoid embedding features into the question.
+
+Weak:
+
+> How might we create a dashboard that shows project status?
+
+This already assumes the solution is a dashboard.
+
+Stronger:
+
+> How might we help project leaders understand where their project is and what happens next?
+
+The HMW statements below come directly from the problem statements, journey maps, pain points, accessibility and equity analysis, and the workflow represented in the current use cases. 
+
+# Core HMW Statements
+
+These should guide the overall product concept.
+
+## HMW-01: Project Journey Clarity
+
+> **How might we help Faculty Project Leaders understand where their project currently is, what has already happened, and what will happen next?**
+
+This opens possibilities such as:
+
+* project timelines;
+* lifecycle views;
+* contextual status explanations;
+* project history;
+* stage summaries.
+
+But none of those are prescribed yet.
+
+---
+
+## HMW-02: Action and Responsibility
+
+> **How might we help users immediately understand whether they need to act, wait, or follow up—and who currently owns the next action?**
+
+This addresses one of the deepest problems in the system.
+
+Every workflow state should eventually answer:
+
+**Do I need to do something?**
+
+If yes:
+
+**What?**
+
+If no:
+
+**Who are we waiting for?**
+
+---
+
+## HMW-03: Work Prioritization
+
+> **How might we help RET Chairs and Director/Admin users identify what requires their attention first without requiring them to search through multiple modules?**
+
+This opens the design space for:
+
+* work queues;
+* priority views;
+* alerts;
+* attention states;
+* task summaries.
+
+It does not prematurely assume a dashboard.
+
+---
+
+## HMW-04: Preventive Compliance
+
+> **How might we help users anticipate and resolve upcoming deadlines, expirations, and incomplete requirements before they become administrative problems?**
+
+This reframes the system from:
+
+> detect failure
+
+to:
+
+> help prevent failure.
+
+---
+
+## HMW-05: Equitable Participation
+
+> **How might we enable users with different levels of experience, ability, connectivity, available time, and institutional knowledge to complete essential workflows with comparable independence and confidence?**
+
+This is the broadest HMW statement, but it should act as a **design lens across every concept**, not as one isolated feature.
+
+# Faculty / Project Leader HMW Statements
+
+## Proposal Preparation
+
+### HMW-F01
+
+> **How might we help first-time and experienced project leaders understand what they need before they begin preparing a proposal?**
+
+### HMW-F02
+
+> **How might we help project leaders determine whether their proposal is complete before they submit it?**
+
+### HMW-F03
+
+> **How might we reduce project leaders' dependence on colleagues and informal communication for official procedural guidance?**
+
+### HMW-F04
+
+> **How might we help project leaders prepare complex submissions across multiple work sessions without losing progress?**
+
+These questions expose something missing from UC-4: the current use case begins at submission, but the user journey begins with preparation. 
+
+---
+
+## Submission
+
+### HMW-F05
+
+> **How might we give project leaders confidence that their proposal was successfully submitted and entered the correct review process?**
+
+### HMW-F06
+
+> **How might we help project leaders understand what will happen immediately after they submit?**
+
+### HMW-F07
+
+> **How might we help users recover from interrupted or failed submissions without repeating completed work?**
+
+The third question is especially important for accessibility and connectivity equity.
+
+---
+
+## Waiting and Tracking
+
+### HMW-F08
+
+> **How might we help project leaders wait confidently without needing to ask for routine status updates?**
+
+This is stronger than:
+
+> How might we provide real-time tracking?
+
+Because “real-time tracking” is already a solution assumption.
+
+### HMW-F09
+
+> **How might we communicate meaningful progress even when the project leader has no action to perform?**
+
+### HMW-F10
+
+> **How might we help project leaders recognize when normal waiting has become an unusual delay?**
+
+This is an interesting design problem. Users need enough visibility to distinguish:
+
+> **The process is moving normally**
+
+from:
+
+> **Something may be stuck.**
+
+---
+
+## Feedback and Revision
+
+### HMW-F11
+
+> **How might we make proposal feedback clear enough for project leaders to know exactly what they need to address?**
+
+### HMW-F12
+
+> **How might we connect evaluation feedback to the relevant part of a submission without overwhelming the project leader?**
+
+### HMW-F13
+
+> **How might we help project leaders understand what they need to resubmit and what they do not need to upload again?**
+
+### HMW-F14
+
+> **How might we help project leaders understand where their revised proposal will go after resubmission?**
+
+These directly address the revision and bypass logic currently spread across UC-4 and UC-6. 
+
+---
+
+## Approval and Activation
+
+### HMW-F15
+
+> **How might we help project leaders clearly distinguish proposal approval from authorization to begin implementation?**
+
+This should be one of your highest-priority ideation questions.
+
+### HMW-F16
+
+> **How might we help project leaders understand what still needs to happen after their proposal is approved?**
+
+### HMW-F17
+
+> **How might we make the exact reason an approved project cannot yet proceed immediately understandable?**
+
+### HMW-F18
+
+> **How might we help project leaders understand which incomplete requirements they are responsible for and which are being handled by others?**
+
+Together, these address the dangerous gap between **Approved** and **Ongoing** in UC-7. 
+
+---
+
+## Implementation and Reporting
+
+### HMW-F19
+
+> **How might we help project leaders focus on implementing their project while minimizing the cognitive burden of remembering administrative requirements?**
+
+### HMW-F20
+
+> **How might we help project leaders understand what reporting obligation comes next?**
+
+### HMW-F21
+
+> **How might we help project leaders prepare for reporting deadlines before they become urgent?**
+
+### HMW-F22
+
+> **How might we make report requirements understandable before users begin preparing their submission?**
+
+### HMW-F23
+
+> **How might we help users recover from incomplete or interrupted report submissions without losing valid work?**
+
+---
+
+## Closure
+
+### HMW-F24
+
+> **How might we help project leaders understand what remains before their project is truly complete?**
+
+### HMW-F25
+
+> **How might we clearly distinguish the submission of final requirements from the official completion of a project?**
+
+### HMW-F26
+
+> **How might we give project leaders confidence that no further institutional action is required from them?**
+
+These questions deliberately avoid assuming that uploading two documents should automatically close the project, which remains an assumption in UC-8 that requires validation. 
+
+# RET Chair HMW Statements
+
+## Attention Management
+
+### HMW-R01
+
+> **How might we help RET Chairs immediately identify what requires their attention?**
+
+### HMW-R02
+
+> **How might we help RET Chairs prioritize competing responsibilities without requiring them to inspect every project individually?**
+
+### HMW-R03
+
+> **How might we help RET Chairs identify projects at risk of becoming stuck or noncompliant before intervention becomes urgent?**
+
+These are stronger than:
+
+> How might we design an RET Chair dashboard?
+
+The solution could become something other than a conventional dashboard.
+
+---
+
+## Proposal Review
+
+### HMW-R04
+
+> **How might we help RET Chairs understand a proposal's essential context before opening every document?**
+
+### HMW-R05
+
+> **How might we reduce the effort required to review complex proposal packages without removing information needed for a responsible decision?**
+
+### HMW-R06
+
+> **How might we help RET Chairs quickly understand what changed in a resubmitted proposal?**
+
+### HMW-R07
+
+> **How might we preserve previous feedback and decisions so that reviewers do not need to reconstruct proposal history?**
+
+---
+
+## Decision-Making
+
+### HMW-R08
+
+> **How might we help RET Chairs provide feedback that project leaders can understand and act on correctly?**
+
+### HMW-R09
+
+> **How might we help RET Chairs understand the consequence of endorsing, returning, or rejecting a proposal before confirming the decision?**
+
+### HMW-R10
+
+> **How might we reduce accidental or ambiguous evaluation decisions?**
+
+This last question is especially relevant to accessibility and error prevention.
+
+---
+
+## Oversight
+
+### HMW-R11
+
+> **How might we help RET Chairs maintain appropriate visibility after a proposal leaves their control?**
+
+### HMW-R12
+
+> **How might we help RET Chairs answer faculty questions without manually contacting another office for routine status information?**
+
+### HMW-R13
+
+> **How might we help RET Chairs identify which faculty members need support without reducing oversight to simplistic performance rankings?**
+
+---
+
+## Multi-Role Experience
+
+### HMW-R14
+
+> **How might we help RET Chairs move between their personal project responsibilities and college oversight responsibilities without confusion?**
+
+### HMW-R15
+
+> **How might we support multiple responsibilities within one account without forcing users into one rigid role?**
+
+This is broader and can influence the entire authorization and navigation model.
+
+# Director/Admin HMW Statements
+
+## Operational Triage
+
+### HMW-D01
+
+> **How might we help Director/Admin users understand what requires office action now, what can wait, and what is becoming risky?**
+
+### HMW-D02
+
+> **How might we bring attention to important work regardless of which module or process it belongs to?**
+
+### HMW-D03
+
+> **How might we help the Extension Services office manage a large volume of work without important items becoming invisible?**
+
+---
+
+## Proposal Evaluation
+
+### HMW-D04
+
+> **How might we give Director/Admin users enough proposal context to make informed decisions without forcing them to reconstruct the entire history manually?**
+
+### HMW-D05
+
+> **How might we help reviewers understand what the RET Chair has already evaluated?**
+
+### HMW-D06
+
+> **How might we help reviewers focus on meaningful changes in revised proposals?**
+
+### HMW-D07
+
+> **How might we make evaluation feedback actionable for project leaders while preserving an accountable decision record?**
+
+---
+
+## Project Readiness and Activation
+
+### HMW-D08
+
+> **How might we help Director/Admin users determine whether an approved project is truly ready for implementation?**
+
+### HMW-D09
+
+> **How might we make project activation blockers immediately visible?**
+
+### HMW-D10
+
+> **How might we help the office coordinate incomplete requirements when different people are responsible for resolving them?**
+
+### HMW-D11
+
+> **How might we prevent a project from being activated when critical requirements are incomplete without making the workflow unnecessarily rigid?**
+
+That final clause matters. We do not want safety and compliance controls to create unnecessary bureaucracy.
+
+---
+
+## MOA Management
+
+### HMW-D12
+
+> **How might we help Director/Admin users understand the impact of an MOA before it expires?**
+
+### HMW-D13
+
+> **How might we help the office identify which projects could be affected by changes to an agreement?**
+
+### HMW-D14
+
+> **How might we make MOA validity understandable at the moment it becomes relevant to a project?**
+
+This is broader than putting MOA information only inside a dedicated MOA module.
+
+---
+
+## Institutional Monitoring
+
+### HMW-D15
+
+> **How might we help decision-makers identify where intervention is needed across the university's extension activities?**
+
+### HMW-D16
+
+> **How might we present institutional activity in ways that support decisions rather than merely display available data?**
+
+### HMW-D17
+
+> **How might we represent faculty and college participation without creating misleading comparisons or unfair rankings?**
+
+### HMW-D18
+
+> **How might we help Director/Admin users recognize patterns behind delays, incomplete requirements, and compliance problems?**
+
+# Accessibility and Equity HMW Statements
+
+These should be used as **constraints during ideation**, not placed in a separate backlog and forgotten.
+
+## Procedural Equity
+
+### HMW-A01
+
+> **How might we make official extension procedures understandable without requiring prior experience or insider knowledge?**
+
+### HMW-A02
+
+> **How might we ensure that first-time project leaders can navigate the process with comparable independence to experienced users?**
+
+---
+
+## Connectivity and Resilience
+
+### HMW-A03
+
+> **How might we preserve user progress when connectivity becomes slow, unstable, or temporarily unavailable?**
+
+### HMW-A04
+
+> **How might we minimize the amount of work users must repeat after a technical failure?**
+
+### HMW-A05
+
+> **How might we design document-heavy workflows that remain manageable for users with limited bandwidth or older devices?**
+
+---
+
+## Cognitive Accessibility
+
+### HMW-A06
+
+> **How might we reduce the amount of workflow information users must remember?**
+
+### HMW-A07
+
+> **How might we explain unfamiliar institutional terminology without removing necessary official language?**
+
+### HMW-A08
+
+> **How might we make complex processes understandable one decision at a time without hiding the larger journey?**
+
+This is a particularly strong design question for your system.
+
+---
+
+## Perceivable and Operable Access
+
+### HMW-A09
+
+> **How might we communicate every critical status without depending on color alone?**
+
+### HMW-A10
+
+> **How might we ensure that users of assistive technologies receive equivalent information about stages, actions, feedback, errors, and deadlines?**
+
+### HMW-A11
+
+> **How might we ensure every essential workflow can be completed without relying on precise pointer or mouse interaction?**
+
+---
+
+## Time and Attention Equity
+
+### HMW-A12
+
+> **How might we support users who need more time or multiple sessions to complete complex tasks?**
+
+### HMW-A13
+
+> **How might we keep users informed without requiring them to constantly monitor the portal?**
+
+### HMW-A14
+
+> **How might we help users act before deadlines without overwhelming them with notifications?**
+
+---
+
+## Authority and Fairness
+
+### HMW-A15
+
+> **How might we give Director/Admin users enough access to perform their responsibilities without granting authority they should not have?**
+
+### HMW-A16
+
+> **How might we represent extension activity without making unequal circumstances appear to be unequal effort or performance?**
+
+# The HMW statements we should actually carry into Ideate
+
+We should not ideate against all 60 questions independently. That would fragment the product and produce feature sprawl.
+
+I would consolidate them into **eight design challenges**:
+
+### Design Challenge 1 — The Continuous Project Journey
+
+> **How might we help users experience proposal preparation, review, approval, activation, implementation, reporting, and closure as one understandable project journey?**
+
+### Design Challenge 2 — The Right Action at the Right Time
+
+> **How might we help every user immediately understand what requires their action, what they are waiting for, and who currently owns the next step?**
+
+### Design Challenge 3 — Confident Preparation and Recovery
+
+> **How might we help users prepare complete submissions, understand problems, recover from errors, and revise successfully without unnecessary repetition?**
+
+### Design Challenge 4 — Attention Instead of Information Overload
+
+> **How might we help RET Chairs and Director/Admin users identify what matters now without searching through large numbers of projects and modules?**
+
+### Design Challenge 5 — Approval to Implementation
+
+> **How might we make the transition from approved proposal to implementation-ready project understandable, coordinated, and safe?**
+
+### Design Challenge 6 — Prevention Before Failure
+
+> **How might we help users anticipate deadlines, expirations, delays, and incomplete requirements before they become urgent problems?**
+
+### Design Challenge 7 — Multiple Responsibilities, One Coherent Experience
+
+> **How might we support users who hold multiple responsibilities while keeping their personal work, oversight duties, visibility, and authority clear?**
+
+### Design Challenge 8 — Equitable and Accessible Participation
+
+> **How might we enable users with different abilities, devices, connectivity, experience, available time, and institutional knowledge to complete the same essential journeys with comparable independence and confidence?**
+
+These eight should become the **actual input to the Ideate phase**.
+
+The strongest move next is not to start designing screens. We should perform **idea generation per design challenge**—using methods like Crazy 8s, “worst possible idea,” analogous inspiration, and then concept clustering—before deciding whether the solution should be a project workspace, action center, readiness system, lifecycle timeline, or something we have not yet considered.

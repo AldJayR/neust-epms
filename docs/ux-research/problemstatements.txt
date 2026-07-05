@@ -1,0 +1,495 @@
+Yes. Now we are properly entering the **Define phase**.
+
+The goal is not to restate the use cases as problems:
+
+> “The university needs a system to manage proposals.”
+
+That is solution-centered and too broad.
+
+A strong Design Thinking problem statement should identify:
+
+**User + Need + Insight / Why**
+
+The structure is:
+
+> **[User] needs a way to [human need] because [meaningful insight discovered during Empathize].**
+
+The problem statements below synthesize the personas, journey maps, pain points, accessibility lens, and the workflow assumptions in the current use cases. 
+
+# Define Phase: User-Centered Problem Statements
+
+## PS-01: Understanding the Project Journey
+
+**User:** Faculty / Project Leader
+**Problem area:** Lifecycle visibility
+
+> **Faculty Project Leaders need a way to understand where their project currently is, who is responsible for the next action, and what will happen next because the extension-project process spans multiple administrative stages that users experience as one continuous journey.**
+
+### Why this is a core problem
+
+The current system separates the journey into proposal submission, evaluation, project activation, implementation, reporting, and closure. 
+
+The faculty member does not think:
+
+> “I am transitioning from UC-4 to UC-6.”
+
+They think:
+
+> “What is happening to my project?”
+
+### Root pain points addressed
+
+* fragmented project lifecycle;
+* vague statuses;
+* invisible waiting;
+* unclear next action;
+* repeated status inquiries.
+
+### Design constraint
+
+The solution must preserve the continuity of one project even when the underlying system uses different records and processes.
+
+---
+
+## PS-02: Preparing a Complete Proposal
+
+**User:** Faculty / Project Leader
+**Problem area:** Procedural uncertainty
+
+> **Faculty Project Leaders, especially those unfamiliar with extension procedures, need a way to understand and prepare complete proposal requirements before submission because success currently risks depending on prior experience, institutional knowledge, or knowing whom to ask.**
+
+### Why this matters
+
+UC-4 begins when proposal documents are submitted. 
+
+But the user problem begins much earlier:
+
+> “What do I need?”
+
+### Root pain points addressed
+
+* unclear requirements;
+* outdated templates;
+* incomplete submissions;
+* dependence on colleagues;
+* disadvantage for first-time project leaders.
+
+### Equity insight
+
+A formal university process should not be easier merely because someone has done it before or has better access to experienced colleagues.
+
+---
+
+## PS-03: Waiting Without Uncertainty
+
+**User:** Faculty / Project Leader
+**Problem area:** Process visibility
+
+> **Faculty Project Leaders need a way to remain informed while their proposal is being reviewed because waiting without knowing the current stage, responsible reviewer, or recent activity creates uncertainty and encourages repetitive manual follow-ups.**
+
+### Root pain points addressed
+
+* invisible waiting;
+* “pending” without context;
+* repeated follow-ups;
+* uncertainty about whether the process is moving.
+
+### Important distinction
+
+The problem is not:
+
+> “Users need real-time tracking.”
+
+That is already a proposed solution.
+
+The actual problem is:
+
+> **Users lack enough information to wait confidently.**
+
+That leaves room for multiple solutions during Ideate.
+
+---
+
+## PS-04: Acting on Proposal Feedback
+
+**User:** Faculty / Project Leader
+**Problem area:** Revision and recovery
+
+> **Faculty Project Leaders need a way to clearly understand and act on evaluation feedback because vague or disconnected revision requests can lead to incorrect changes, repeated submissions, and longer approval cycles.**
+
+### Root pain points addressed
+
+* unclear feedback;
+* uncertainty about affected documents;
+* repeated revision cycles;
+* unclear resubmission path.
+
+### Accessibility insight
+
+Feedback must not merely identify that something is wrong. It must support recovery.
+
+A user should understand:
+
+**What is wrong?**
+**Where is it?**
+**What must change?**
+**What happens after resubmission?**
+
+---
+
+## PS-05: Understanding Revisions Across Versions
+
+**Users:** RET Chair and Director/Admin
+**Problem area:** Review efficiency
+
+> **Proposal evaluators need a way to understand what changed between submissions because repeatedly reconstructing proposal history and rereading unchanged material increases cognitive load and slows evaluation.**
+
+### Root pain points addressed
+
+* weak revision visibility;
+* repeated review effort;
+* lost evaluation context;
+* difficulty reconstructing history.
+
+### Important scope note
+
+The problem statement does **not** prescribe automatic document comparison.
+
+Possible solutions could include:
+
+* version history;
+* faculty-provided change summaries;
+* highlighted replaced documents;
+* automatic comparison.
+
+We define the problem first.
+
+---
+
+## PS-06: Distinguishing Approval from Authorization to Implement
+
+**User:** Faculty / Project Leader
+**Problem area:** Pre-implementation clarity
+
+> **Faculty Project Leaders need a way to clearly distinguish proposal approval from authorization to begin implementation because an approved proposal may still require Special Orders, a valid MOA, a reporting schedule, or other prerequisites before the project can officially proceed.**
+
+### Why this is critical
+
+UC-7 shows that approval does not automatically create an ongoing project. 
+
+### Root pain points addressed
+
+* approved-versus-active confusion;
+* premature implementation risk;
+* uncertainty after approval.
+
+### Severity
+
+**Critical**
+
+This is not merely a usability problem. It may become a procedural and compliance problem.
+
+---
+
+## PS-07: Understanding What Blocks Project Activation
+
+**Users:** Faculty / Project Leader and Director/Admin
+**Problem area:** Readiness visibility
+
+> **Users involved in project activation need a way to identify which prerequisites remain incomplete and who is responsible for completing them because an approved project can become stalled without anyone clearly understanding the blocker or the next responsible actor.**
+
+### Root pain points addressed
+
+* hidden prerequisites;
+* unclear ownership;
+* stalled approved projects;
+* repeated coordination.
+
+### Key insight
+
+Users do not merely need:
+
+> **Status: Not Active**
+
+They need:
+
+> **Why not?**
+
+---
+
+## PS-08: Managing RET Chair Attention
+
+**User:** RET Chair
+**Problem area:** Cognitive load and prioritization
+
+> **RET Chairs need a way to identify and prioritize proposals, projects, and reporting obligations that require their attention because they oversee multiple faculty activities while also managing teaching, administrative responsibilities, and potentially their own extension projects.**
+
+### Root pain points addressed
+
+* cognitive overload;
+* hidden work;
+* constant context switching;
+* missed actions;
+* information without prioritization.
+
+### Design insight
+
+The RET Chair's primary need may not be:
+
+> “Show me more metrics.”
+
+It may be:
+
+> **“Show me what needs my attention.”**
+
+---
+
+## PS-09: Separating Personal and Oversight Responsibilities
+
+**User:** RET Chair
+**Problem area:** Multi-role experience
+
+> **RET Chairs who also lead extension projects need a way to distinguish their personal project responsibilities from their college oversight responsibilities because the same person operates in different contexts that require different information and actions.**
+
+### Root pain points addressed
+
+* role confusion;
+* mixed project lists;
+* accidental context switching;
+* cognitive overload.
+
+### Equity insight
+
+One person may hold multiple legitimate responsibilities.
+
+The system should not force:
+
+* separate accounts;
+* loss of faculty capabilities;
+* one rigid identity per user.
+
+---
+
+## PS-10: Maintaining Visibility After Handoffs
+
+**User:** RET Chair
+**Problem area:** Coordination continuity
+
+> **RET Chairs need a way to maintain appropriate visibility into proposals and projects after responsibility moves to another actor because they remain accountable for supporting faculty even when they no longer control the current action.**
+
+### Root pain points addressed
+
+* loss of visibility after endorsement;
+* inability to answer faculty inquiries;
+* difficulty identifying stalled proposals;
+* fragmented coordination.
+
+### Important distinction
+
+Visibility does not necessarily mean edit authority.
+
+This is an important permissions principle:
+
+> **Users may need to see a process without being allowed to act on it.**
+
+---
+
+## PS-11: Managing Institution-Wide Operational Attention
+
+**User:** Director/Admin
+**Problem area:** Work triage
+
+> **Director/Admin users need a way to identify which proposals, projects, agreements, and reporting obligations require office attention because institution-wide work is distributed across different processes and not all items carry the same urgency or risk.**
+
+### Root pain points addressed
+
+* work hidden inside modules;
+* everything appearing equally important;
+* reactive administration;
+* overlooked tasks.
+
+### Design insight
+
+The Director/Admin experience should support:
+
+> **Triage before navigation.**
+
+---
+
+## PS-12: Making Proposal Decisions with Sufficient Context
+
+**User:** Director/Admin
+**Problem area:** Decision support
+
+> **Director/Admin users need a way to understand the relevant history and prior evaluation context of a proposal because informed decisions become slower and more difficult when reviewers must reconstruct what happened across previous submissions, endorsements, returns, and revisions.**
+
+### Root pain points addressed
+
+* fragmented decision history;
+* repeated document review;
+* missing RET Chair context;
+* unclear revision progression.
+
+---
+
+## PS-13: Preventing Compliance Problems Before They Occur
+
+**Users:** Faculty, RET Chair, Director/Admin
+**Problem area:** Preventive monitoring
+
+> **Users responsible for project compliance need a way to anticipate approaching report deadlines and MOA expirations because discovering a requirement only after it becomes overdue or invalid creates avoidable urgency, disruption, and administrative risk.**
+
+### Why this matters
+
+UC-7 currently detects:
+
+* expired MOAs;
+* overdue reports. 
+
+The Empathize phase revealed that the user need begins **before failure**.
+
+### Root pain points addressed
+
+* reactive monitoring;
+* late discovery;
+* deadline pressure;
+* preventable noncompliance.
+
+### Core insight
+
+> **A useful system should help prevent failure, not merely record it.**
+
+---
+
+## PS-14: Understanding Reporting Obligations
+
+**User:** Faculty / Project Leader
+**Problem area:** Time-based requirements
+
+> **Faculty Project Leaders need a way to understand which report is required, when it is due, and what must be submitted because reporting is experienced as a scheduled obligation rather than a generic document-upload task.**
+
+### Root pain points addressed
+
+* unclear report type;
+* missed deadlines;
+* incomplete report packages;
+* generic upload experience.
+
+### Design insight
+
+The user's mental model is:
+
+> **“What do I owe next?”**
+
+not:
+
+> **“Where is the report upload module?”**
+
+---
+
+## PS-15: Confirming True Project Completion
+
+**Users:** Faculty / Project Leader and Director/Admin
+**Problem area:** Closure certainty
+
+> **Users involved in project closure need a way to understand when all institutional completion requirements have truly been satisfied because submitting final documents may not necessarily mean that a project has been formally reviewed, accepted, and closed.**
+
+### Root pain points addressed
+
+* submission-versus-acceptance confusion;
+* uncertain final state;
+* potentially premature automatic closure.
+
+### Research dependency
+
+This problem statement must be validated against the real closure procedure before UC-8 is finalized. 
+
+---
+
+# Accessibility and Equity Problem Statements
+
+These should not sit in a separate “accessibility phase.” They are part of the product definition.
+
+## PS-A01: Equal Access to Procedural Knowledge
+
+> **First-time and less-experienced project leaders need a way to access the same procedural knowledge available to experienced faculty because successful participation should not depend on informal networks or prior familiarity with extension processes.**
+
+---
+
+## PS-A02: Recovering from Connectivity Problems
+
+> **Users with unstable or limited internet access need a way to preserve completed work and recover from interrupted submissions because temporary connectivity problems should not force them to repeat lengthy administrative tasks.**
+
+---
+
+## PS-A03: Completing Work at Different Speeds
+
+> **Users who need more time to complete forms or review information need a way to pause and continue their work because interruptions, assistive-technology use, unfamiliarity, and different working speeds should not result in data loss.**
+
+---
+
+## PS-A04: Understanding Status Without Relying on Color
+
+> **Users who cannot reliably perceive color differences need a way to distinguish project states through text and other meaningful indicators because color alone cannot communicate critical workflow information equitably.**
+
+---
+
+## PS-A05: Accessing Equivalent Workflow Information
+
+> **Users of assistive technologies need a way to access the same project stages, status changes, errors, feedback, and required actions as other users because critical workflow information must not depend on visual presentation alone.**
+
+---
+
+## PS-A06: Understanding Institutional Language
+
+> **Users unfamiliar with administrative terminology need a way to understand what official statuses and processes mean because prior institutional experience should not be required to know what has happened or what action is expected.**
+
+---
+
+## PS-A07: Participating Without Constant Portal Access
+
+> **Users who cannot frequently check the system need a way to receive meaningful information about important changes and approaching responsibilities because participation should not depend on continuously monitoring the portal.**
+
+---
+
+## PS-A08: Representing Performance Fairly
+
+> **Decision-makers need a way to understand extension participation and activity in context because simplistic rankings based on project counts may misrepresent differences in workload, opportunity, project complexity, and contribution.**
+
+This directly challenges the current faculty-ranking requirement in UC-3. 
+
+---
+
+## PS-A09: Matching Access to Actual Responsibility
+
+> **Users within the Director/Admin role group need access appropriate to their actual responsibilities because the ability to perform administrative work should not automatically grant authority to make institutional decisions.**
+
+---
+
+# The five core problem statements
+
+We now have many valid problem statements, but not all should carry equal weight. If we reduce the entire Define phase to the five most foundational problems, I would choose:
+
+### Core Problem 1: Project Journey Clarity
+
+> **Faculty Project Leaders need a way to understand where their project is, who currently owns the next action, and what happens next because they experience one continuous project journey that is fragmented across multiple administrative processes.**
+
+### Core Problem 2: Action and Responsibility Visibility
+
+> **Users need a way to know what requires their action and what they are waiting for because unclear ownership causes uncertainty, repeated follow-ups, and stalled work.**
+
+### Core Problem 3: Work Prioritization
+
+> **RET Chairs and Director/Admin users need a way to identify what requires attention first because they manage many simultaneous responsibilities and cannot efficiently discover urgent work by searching through separate modules.**
+
+### Core Problem 4: Preventive Compliance
+
+> **Users need a way to anticipate deadlines, expirations, and incomplete prerequisites because reactive detection allows preventable administrative problems to become urgent failures.**
+
+### Core Problem 5: Equitable Participation
+
+> **Users with different levels of experience, ability, connectivity, available time, and institutional knowledge need a way to complete the same essential workflows with comparable independence because the official process should not privilege users with better technology, more experience, or stronger informal support networks.**
+
+These five are strong enough to become the foundation of your **Define phase**.
+
+The next move should be to convert them into **Point-of-View statements**, then **How Might We questions**. That transition matters: the problem statements establish what must be solved; the HMW questions deliberately open the solution space before we begin deciding what the dashboard, project workspace, proposal flow, and notification system should actually look like.
