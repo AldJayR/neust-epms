@@ -1,0 +1,437 @@
+Good. But we should build them as **research artifacts**, not as fictional personas where we pretend to know what users think and feel.
+
+Because we have not yet interviewed the Extension Services Director, staff, RET Chairs, and faculty, every empathy map starts as a **hypothesis map**. Your usability testing and interviews will later confirm, reject, or revise it.
+
+I would also not make one empathy map per use case. Users do not experience the system as UC-1, UC-2, UC-3. We build one per meaningful user role.
+
+# Empathy Map 1: Faculty / Project Leader
+
+## Who are we empathizing with?
+
+A faculty member who wants to propose, implement, document, and complete an extension project while also handling teaching, research, administrative work, and other responsibilities.
+
+Their journey spans UC-2, UC-3, UC-4, UC-6, UC-7, and UC-8. 
+
+### Says
+
+Likely statements we need to validate:
+
+* “What documents do I need to submit?”
+* “Where is my proposal now?”
+* “Has the RET Chair already reviewed it?”
+* “Why was it returned?”
+* “What exactly do I need to revise?”
+* “Do I have to upload the whole proposal again?”
+* “Can we already start the project?”
+* “What documents are still missing?”
+* “When is our next report due?”
+* “Who do I need to follow up with?”
+
+### Thinks
+
+Possible internal concerns:
+
+* “I hope I submitted everything correctly.”
+* “I do not know whether anyone has looked at my proposal yet.”
+* “I do not want to repeatedly ask the RET Chair or Extension Services for updates.”
+* “I might miss a reporting deadline.”
+* “I hope I do not have to redo documents I already submitted.”
+* “I know my extension project better than the administrative process.”
+
+### Does
+
+Current or likely behaviors to investigate:
+
+* prepares proposal documents outside the system;
+* asks colleagues what requirements are needed;
+* submits documents through existing institutional channels;
+* follows up through Messenger, email, phone, or in person;
+* waits for feedback;
+* revises returned documents;
+* asks what happens after approval;
+* coordinates Special Orders and other requirements;
+* implements the project;
+* prepares progress and completion reports;
+* keeps personal copies of documents and records.
+
+### Feels
+
+Possible emotional states across the journey:
+
+* uncertain when requirements are unclear;
+* anxious while waiting without visibility;
+* frustrated by repeated follow-ups;
+* overwhelmed when multiple administrative requirements overlap;
+* relieved when a proposal progresses;
+* confused when statuses do not explain the next action;
+* pressured by reporting deadlines.
+
+### Pains
+
+The strongest hypothesized pains are:
+
+* unclear requirements;
+* fragmented communication;
+* no visibility into current review stage;
+* unclear ownership of the next action;
+* repeated follow-ups;
+* uncertainty after a proposal is returned;
+* difficulty remembering deadlines;
+* documents scattered across different channels;
+* administrative work competing with teaching responsibilities.
+
+### Gains
+
+The faculty member likely wants:
+
+* one clear checklist;
+* one place for the entire project;
+* visible progress through the approval process;
+* understandable feedback;
+* clear next actions;
+* deadline reminders;
+* confidence that submissions were received;
+* less need to personally follow up.
+
+## Core empathy statement
+
+**The Faculty Project Leader needs to understand where the project is, what is required, and what to do next because managing the administrative process competes with the actual work of planning and implementing the extension project.**
+
+---
+
+# Empathy Map 2: RET Chair
+
+## Who are we empathizing with?
+
+A college-level coordinator who sits between faculty project leaders and the Extension Services Department while potentially leading extension projects of their own.
+
+The RET Chair interacts with account rosters, dashboards, proposals, evaluations, projects, Special Orders, and reports. 
+
+This is probably your most cognitively complex role.
+
+### Says
+
+Hypotheses:
+
+* “What needs my attention?”
+* “Which proposals are waiting for me?”
+* “Which faculty members need to revise?”
+* “Has this already been forwarded to the Director?”
+* “Which projects in our college are overdue?”
+* “Who has not submitted their report?”
+* “Why is this project not yet active?”
+* “Am I responsible for this, or is the project leader?”
+* “I already endorsed this. What happened after that?”
+
+### Thinks
+
+Possible concerns:
+
+* “I need to make sure nothing from our college gets stuck.”
+* “I cannot remember the status of every project.”
+* “I do not want faculty members repeatedly asking me for updates I do not have.”
+* “I need to review proposals without becoming a bottleneck.”
+* “I am both a coordinator and sometimes a project leader.”
+* “I need to know what requires action, not just see statistics.”
+
+### Does
+
+Likely behaviors:
+
+* receives faculty inquiries;
+* checks proposal completeness;
+* reviews and endorses proposals;
+* returns proposals with comments;
+* follows up with faculty;
+* coordinates with Extension Services;
+* tracks projects informally;
+* checks reporting compliance;
+* relays information between offices;
+* submits their own proposals when acting as a project leader.
+
+### Feels
+
+Possible states:
+
+* responsible for the performance of the entire college;
+* overloaded by coordination;
+* pressured when multiple proposals arrive simultaneously;
+* frustrated when information is scattered;
+* cautious when endorsing incomplete proposals;
+* caught between faculty and the central office;
+* uncertain when responsibilities overlap.
+
+### Pains
+
+Likely pains:
+
+* too many items requiring manual tracking;
+* constant context switching;
+* unclear distinction between “my projects” and “projects I oversee”;
+* no consolidated list of pending actions;
+* repetitive follow-up communication;
+* difficulty seeing what became of endorsed proposals;
+* responsibility without complete visibility;
+* unclear task ownership.
+
+### Gains
+
+Likely desired outcomes:
+
+* a clear **Needs Your Action** queue;
+* college-wide visibility;
+* distinction between personal and oversight work;
+* ability to see bottlenecks;
+* concise proposal review;
+* clear revision history;
+* reporting compliance visibility;
+* fewer repetitive status inquiries.
+
+## Core empathy statement
+
+**The RET Chair needs to quickly identify what requires attention across the college because they coordinate many projects while also managing their own academic and administrative responsibilities.**
+
+This already challenges UC-3. A metrics-heavy dashboard may not be the primary need. The RET Chair may need an **action-oriented workspace** more than a conventional dashboard.
+
+---
+
+# Empathy Map 3: Extension Services Director
+
+## Who are we empathizing with?
+
+The decision-maker responsible for institutional oversight, proposal approval, project activation, MOA administration, and extension-program monitoring.
+
+The Director interacts primarily with UC-3, UC-5, UC-6, and UC-7. 
+
+### Says
+
+Hypotheses:
+
+* “What is waiting for my approval?”
+* “Has the RET Chair already reviewed this?”
+* “What changed in the revised proposal?”
+* “Why has this project not started?”
+* “Which MOA covers this project?”
+* “Is the MOA still valid?”
+* “Which projects are affected by this expiring MOA?”
+* “Which projects are overdue?”
+* “Which colleges need attention?”
+* “Can I get the information needed for reporting and accreditation?”
+
+### Thinks
+
+Possible concerns:
+
+* “I need enough information to make a defensible decision.”
+* “I should not have to rediscover the history of every proposal.”
+* “An approved project should not become stuck because of missing administrative requirements.”
+* “I need visibility across the university.”
+* “I need to identify problems before they become compliance issues.”
+* “The data should help me decide where intervention is needed.”
+
+### Does
+
+Likely behaviors:
+
+* reviews endorsed proposals;
+* returns proposals for revision;
+* approves proposals;
+* manages or verifies MOAs;
+* coordinates Special Orders;
+* activates projects;
+* reviews project activity;
+* follows up on overdue requirements;
+* prepares or supports institutional reports.
+
+### Feels
+
+Possible states:
+
+* accountable for institutional compliance;
+* cautious when approving;
+* pressured by accumulated pending work;
+* frustrated by incomplete submissions;
+* concerned about expired agreements and overdue reports;
+* confident when information is complete and traceable.
+
+### Pains
+
+Likely pains:
+
+* incomplete information at decision time;
+* difficulty seeing what changed after revision;
+* proposal backlog;
+* disconnected proposal, MOA, Special Order, project, and report records;
+* discovering problems too late;
+* manually determining which projects need intervention;
+* difficulty obtaining reliable institution-wide information.
+
+### Gains
+
+Likely desired outcomes:
+
+* prioritized decision queue;
+* concise decision context;
+* revision comparison;
+* visible approval history;
+* early warnings;
+* project readiness visibility;
+* institution-wide monitoring;
+* reliable reports.
+
+## Core empathy statement
+
+**The Director needs to make informed decisions and identify institutional risks quickly because they are accountable for both individual project approvals and the health of the university's extension program.**
+
+This makes me even more skeptical of the current **faculty ranking by project count** feature in UC-3.  That feature needs evidence from the Director. It should not survive merely because it is technically possible.
+
+---
+
+# Empathy Map 4: Extension Services Staff
+
+This role is missing from the use case specifications.
+
+That is already a significant Design Thinking finding.
+
+Your planned usability testing includes **the Director and Extension Services staff**, but the use cases currently recognize only the Director as an operational actor within the department. 
+
+Before creating a detailed empathy map, we need to discover:
+
+* What do staff actually receive?
+* What do they encode?
+* What do they check?
+* Who follows up on missing documents?
+* Who maintains project records?
+* Who handles Special Orders?
+* Who uploads signed documents?
+* Who monitors reporting compliance?
+* Who prepares reports for the Director?
+* Does the Director really perform the operational tasks assigned to them in the use cases?
+
+So the provisional map is:
+
+### Says
+
+* “We need to follow up on this.”
+* “This document is still missing.”
+* “The Director has not reviewed this yet.”
+* “Which project does this document belong to?”
+* “We need this for the report.”
+* “Can you resend the file?”
+
+### Thinks
+
+* “I need to keep records complete.”
+* “I need to know what is still missing.”
+* “I need to prepare information before the Director needs it.”
+* “I cannot rely on memory to track every project.”
+
+### Does
+
+**Unknown — must be observed and interviewed.**
+
+This is the most important quadrant for this user group.
+
+### Feels
+
+Likely:
+
+* overloaded by repetitive administrative work;
+* frustrated by incomplete submissions;
+* pressured by follow-ups and deadlines;
+* responsible for maintaining institutional records.
+
+### Pains
+
+**Unknown — high-priority research area.**
+
+### Gains
+
+Likely:
+
+* less manual encoding;
+* centralized records;
+* easier retrieval;
+* automatic identification of missing requirements;
+* fewer repetitive follow-ups;
+* easier report preparation.
+
+## Core empathy statement
+
+**Extension Services staff need to be studied before the system scope is finalized because the current use cases may be assigning operational work to the Director that staff actually perform.**
+
+That is potentially a major scope correction.
+
+---
+
+# Empathy Map 5: Super Admin
+
+## Who are we empathizing with?
+
+The person responsible for system access, account approval, roles, and auditability.
+
+### Says
+
+* “Who is this person?”
+* “What role should they have?”
+* “Does this account already exist?”
+* “Which college do they belong to?”
+* “Why was this account flagged as a duplicate?”
+
+### Thinks
+
+* “I should not give the wrong person access.”
+* “I need a reliable way to verify registrations.”
+* “A person may have more than one institutional responsibility.”
+* “I need to know who changed what.”
+
+### Does
+
+* reviews registrations;
+* assigns roles;
+* approves or rejects accounts;
+* handles duplicates;
+* changes roles;
+* investigates audit logs.
+
+### Feels
+
+* cautious about access;
+* concerned about mistakes;
+* frustrated by ambiguous identities;
+* responsible for system integrity.
+
+### Pains
+
+* manually verifying users;
+* unclear organizational scope;
+* duplicate accounts;
+* role changes;
+* users with multiple responsibilities;
+* searching large audit trails.
+
+### Gains
+
+* clear identity information;
+* safe role assignment;
+* obvious duplicate detection;
+* understandable organizational scope;
+* searchable audit history.
+
+## Core empathy statement
+
+**The Super Admin needs to confidently verify identity and access because incorrect account decisions can affect both security and the user's ability to participate in the extension workflow.**
+
+---
+
+## The empathy maps have already exposed four major research questions
+
+First, **Extension Services staff are absent as actors**, despite being intended usability-test participants.
+
+Second, the **RET Chair may need action management more than dashboard metrics**.
+
+Third, the **Director may be assigned operational tasks that staff actually perform**.
+
+Fourth, faculty likely experience UC-4, UC-6, UC-7, and UC-8 as **one continuous project journey**, not four disconnected system modules.
+
+The next Design Thinking move should not be ideation yet. We should turn these hypothesis maps into an **Empathy Research Guide**: exactly what to ask the Director, staff, RET Chairs, and faculty so we can replace the “likely,” “possible,” and “unknown” parts with evidence.

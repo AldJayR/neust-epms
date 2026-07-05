@@ -1,0 +1,1037 @@
+Yes. Now we move from the **static persona** to the **experience over time**.
+
+A useful journey map should not merely repeat the use cases as:
+
+> Submit Proposal → Evaluate Proposal → Manage Project → Submit Reports
+
+That would just be the system workflow wearing a UX label.
+
+Instead, each journey map should capture:
+
+**Stage → User Goal → Actions → Thoughts → Emotions → Pain Points → Opportunities**
+
+And because we have not completed field research yet, these remain **hypothesis journey maps** to validate with actual users.
+
+I would build three primary journey maps:
+
+1. Faculty / Project Leader
+2. RET Chair
+3. Director/Admin
+
+The Super Admin has a separate administrative journey and does not participate in the core extension-project lifecycle.
+
+# Journey Map 1: Faculty / Project Leader
+
+## Journey goal
+
+> **Take an extension project from initial proposal submission to successful completion without becoming lost in the administrative process.**
+
+The current system spreads this journey across UC-4, UC-6, UC-7, and UC-8. 
+
+But the faculty member experiences it as one continuous journey:
+
+**Prepare → Submit → Wait for Review → Revise if Needed → Get Approved → Complete Pre-Implementation Requirements → Implement → Report → Close**
+
+---
+
+## Stage 1: Preparing the Proposal
+
+### User goal
+
+Understand what must be prepared and submit a complete proposal correctly.
+
+### Actions
+
+The faculty member:
+
+* develops the project concept;
+* prepares proposal documents;
+* identifies project members;
+* gathers required information;
+* checks requirements;
+* asks colleagues or the RET Chair when unsure;
+* prepares files outside the system.
+
+### Thinks
+
+> “What exactly do I need?”
+
+> “Am I using the correct format?”
+
+> “Do I need all of these documents now?”
+
+> “Who should be included as a project member?”
+
+### Feels
+
+**Interested → uncertain → cautious**
+
+The project itself may be exciting, but administrative uncertainty introduces friction before submission even begins.
+
+### Pain points
+
+* requirements may be scattered;
+* the user may rely on colleagues for procedural knowledge;
+* unclear distinction between required and optional documents;
+* uncertainty about completeness;
+* users may discover missing requirements only after submission.
+
+### Design opportunities
+
+The system could provide:
+
+* a proposal preparation checklist;
+* clear requirements before upload;
+* downloadable official templates;
+* project-member guidance;
+* draft saving;
+* visible completion progress.
+
+### Key UCD question
+
+**Does the system help users prepare correctly, or does it merely reject them after they submit incorrectly?**
+
+This is already a weakness in UC-4. The current specification begins with:
+
+> “User submits proposal documents.”
+
+It does not describe how the user becomes ready to submit. 
+
+---
+
+## Stage 2: Submitting the Proposal
+
+### User goal
+
+Successfully submit the proposal and know that it has entered the process.
+
+### Actions
+
+The faculty member:
+
+* uploads proposal documents;
+* reviews the submission;
+* submits;
+* waits for confirmation.
+
+### Thinks
+
+> “Did it actually go through?”
+
+> “Can I still correct something?”
+
+> “Who receives it now?”
+
+### Feels
+
+**Cautious → relieved**
+
+### Pain points
+
+* uncertainty about successful submission;
+* no clear indication of what happens next;
+* fear of uploading the wrong version;
+* possible accidental duplicate submission.
+
+### Design opportunities
+
+After submission, show:
+
+> **Proposal successfully submitted**
+
+> Current stage: Awaiting RET Chair Review
+
+> Submitted: July 5, 2026
+
+> Next step: Your RET Chair will review your proposal
+
+> Your action: None required
+
+This is more useful than merely displaying:
+
+> **Status: Pending**
+
+### Journey principle
+
+Every major submission should answer:
+
+**What happened? Who has it now? What happens next? Do I need to do anything?**
+
+---
+
+## Stage 3: Waiting for Review
+
+### User goal
+
+Know whether the proposal is progressing without manually following up.
+
+### Actions
+
+The faculty member:
+
+* checks the system;
+* waits;
+* may contact the RET Chair;
+* may ask Extension Services for an update.
+
+### Thinks
+
+> “Has anyone reviewed it?”
+
+> “Is it stuck?”
+
+> “Should I follow up?”
+
+> “How long does this normally take?”
+
+### Feels
+
+**Hopeful → uncertain → anxious or frustrated**
+
+This is likely one of the lowest emotional points in the journey.
+
+### Pain points
+
+* invisible waiting;
+* unclear reviewer ownership;
+* no indication of progress;
+* no expectation for response time;
+* repetitive follow-ups.
+
+### Design opportunities
+
+Provide a visible timeline:
+
+**Submitted** ✓
+**RET Chair Review** ← Current
+**Director/Admin Review**
+**Approved**
+
+Also show:
+
+> Waiting for: RET Chair Review
+
+> Last activity: Submitted July 5
+
+> Your action: None required
+
+The system should reduce the urge to ask:
+
+> “Any update po?”
+
+---
+
+## Stage 4: Receiving a Decision or Revision Request
+
+### User goal
+
+Understand the decision and respond correctly.
+
+### Actions
+
+If returned, the faculty member:
+
+* opens the notification;
+* reads comments;
+* retrieves the previous submission;
+* revises documents;
+* uploads the revision;
+* resubmits.
+
+### Thinks
+
+> “What exactly needs changing?”
+
+> “Which document contains the problem?”
+
+> “Do I upload everything again?”
+
+> “Will this return to the RET Chair?”
+
+### Feels
+
+**Disappointed or frustrated → focused → hopeful**
+
+### Pain points
+
+* vague feedback;
+* comments disconnected from documents;
+* no distinction between old and revised versions;
+* unclear resubmission route;
+* fear of repeating the same mistake.
+
+### Design opportunities
+
+Show:
+
+**Returned by:** Director/Admin
+**Reason:** Revision required
+**Requested changes:** clearly listed
+**Documents affected:** identified
+**Next action:** Upload revised proposal
+**After resubmission:** Returns directly to Director/Admin review
+
+That last element is especially important because UC-4 and UC-6 already contain bypass logic for proposals that previously cleared the RET Chair stage. 
+
+The system knows the route.
+
+The user should know it too.
+
+---
+
+## Stage 5: Approval and Pre-Implementation
+
+### User goal
+
+Understand what must happen before the project can officially begin.
+
+### Actions
+
+The faculty member:
+
+* receives approval;
+* checks project requirements;
+* coordinates Special Orders;
+* waits for MOA assignment;
+* waits for activation.
+
+### Thinks
+
+> “My proposal is approved. Can we start?”
+
+> “What is still missing?”
+
+> “Who handles the Special Order?”
+
+> “Do I need to do anything about the MOA?”
+
+### Feels
+
+**Excited → confused → impatient**
+
+This is potentially a dangerous experience gap.
+
+The user may interpret:
+
+> **Approved**
+
+as:
+
+> **Ready to implement**
+
+But UC-7 requires additional conditions before project activation. 
+
+### Pain points
+
+* approval does not necessarily mean activation;
+* unclear prerequisite ownership;
+* unclear Special Order process;
+* unclear MOA process;
+* waiting without understanding the blocker.
+
+### Design opportunities
+
+Create a **Project Readiness Checklist**:
+
+**Proposal approved** ✓
+**Special Orders complete** ○
+**MOA assigned and valid** ○
+**Reporting schedule established** ○
+**Project activated** ○
+
+Then state clearly:
+
+> **Your project is approved but not yet ready for implementation.**
+
+This could prevent major real-world confusion.
+
+---
+
+## Stage 6: Project Implementation
+
+### User goal
+
+Conduct the extension project while maintaining the necessary administrative record.
+
+### Actions
+
+The faculty member:
+
+* implements activities;
+* updates project information;
+* checks upcoming requirements;
+* monitors reporting deadlines.
+
+### Thinks
+
+> “When is my next report?”
+
+> “What do I need to submit?”
+
+> “Where should I record this update?”
+
+### Feels
+
+**Engaged → busy → occasionally pressured**
+
+### Pain points
+
+* administrative tasks compete with actual implementation;
+* reporting schedules may be forgotten;
+* users may only return to the system when reminded;
+* project updates may feel like additional clerical work.
+
+### Design opportunities
+
+The project workspace should prioritize:
+
+**Next required action**
+**Next report deadline**
+**Recent project activity**
+**Documents**
+**Timeline**
+
+Do not force faculty to interpret a general dashboard to understand one project.
+
+---
+
+## Stage 7: Reporting
+
+### User goal
+
+Submit the correct report on time.
+
+### Actions
+
+The faculty member:
+
+* prepares the report;
+* checks the deadline;
+* uploads documents;
+* waits for confirmation.
+
+### Thinks
+
+> “Is this the correct report?”
+
+> “Is anything else required?”
+
+> “Was it accepted?”
+
+### Feels
+
+**Pressured → cautious → relieved**
+
+### Pain points
+
+* unclear report type;
+* missing deadlines;
+* missing companion documents;
+* uncertainty after upload.
+
+### Design opportunities
+
+Instead of:
+
+> Upload Report
+
+show:
+
+> **Progress Report 2**
+
+> Due: August 30, 2026
+
+> Required documents: 1
+
+> Status: Not submitted
+
+> **Submit Report**
+
+The system should present reporting as a scheduled obligation, not a generic file-upload feature.
+
+---
+
+## Stage 8: Project Closure
+
+### User goal
+
+Complete all final requirements and know that the project is officially closed.
+
+### Actions
+
+The faculty member:
+
+* prepares Terminal Report;
+* prepares Final Accomplishment Report;
+* submits both;
+* waits for confirmation.
+
+### Thinks
+
+> “Is this everything?”
+
+> “Is the project officially complete now?”
+
+> “Can I still access our records?”
+
+### Feels
+
+**Tired → relieved → accomplished**
+
+### Pain points
+
+The current UC-8 automatically closes the project after both documents are recorded. 
+
+That creates a major research question:
+
+**Does uploading the Terminal and Final Accomplishment Reports really mean the project is officially closed?**
+
+There may be:
+
+* document verification;
+* Director/Admin acceptance;
+* missing requirements;
+* financial or other administrative closure procedures.
+
+### Design opportunities
+
+Provide a closure checklist and a clear final state:
+
+> **Project completed**
+
+> All required reports submitted
+
+> Closed on: [date]
+
+> Complete project record available
+
+---
+
+# Faculty Emotional Journey
+
+The likely emotional curve is:
+
+**Motivated**
+↓
+**Uncertain during preparation**
+↑
+**Relieved after submission**
+↓
+**Anxious while waiting**
+↓
+**Frustrated if returned**
+↑
+**Relieved when approved**
+↓
+**Confused by pre-implementation requirements**
+↑
+**Engaged during implementation**
+↓
+**Pressured by reporting**
+↑
+**Accomplished at closure**
+
+The biggest UX opportunities occur at the emotional lows:
+
+**Preparation uncertainty**
+**Invisible waiting**
+**Revision confusion**
+**Approved-but-not-active confusion**
+**Reporting pressure**
+
+---
+
+# Journey Map 2: RET Chair
+
+## Journey goal
+
+> **Keep faculty proposals and projects within the college moving while preventing anything from being overlooked.**
+
+The RET Chair's journey is not linear like the faculty journey.
+
+It is cyclical:
+
+**Notice → Review → Decide → Follow Up → Monitor → Intervene**
+
+---
+
+## Stage 1: Becoming Aware of Work
+
+### Goal
+
+Know what requires attention.
+
+### Actions
+
+* opens the system;
+* checks notifications;
+* identifies pending proposals;
+* checks overdue items.
+
+### Thinks
+
+> “What do I need to deal with today?”
+
+### Feels
+
+**Busy → focused**
+
+### Pain points
+
+* work hidden inside modules;
+* too many notifications;
+* no prioritization;
+* mixing personal projects with oversight responsibilities.
+
+### Opportunity
+
+The RET Chair's landing experience should begin with:
+
+**Needs Your Action**
+
+not merely charts.
+
+---
+
+## Stage 2: Reviewing a Proposal
+
+### Goal
+
+Determine whether a faculty proposal should move forward.
+
+### Actions
+
+* opens proposal;
+* checks project details;
+* reviews documents;
+* examines previous submissions if applicable.
+
+### Thinks
+
+> “Is this complete?”
+
+> “What am I actually expected to evaluate?”
+
+> “Has this been revised before?”
+
+### Feels
+
+**Focused → cautious**
+
+### Pain points
+
+* opening multiple files;
+* missing context;
+* unclear revision history;
+* repetitive checking.
+
+### Opportunity
+
+Provide:
+
+* proposal overview;
+* project team;
+* submission checklist;
+* document viewer;
+* previous feedback;
+* revision history.
+
+---
+
+## Stage 3: Making a Decision
+
+### Goal
+
+Endorse, return, or reject appropriately.
+
+### Actions
+
+* chooses decision;
+* provides comments;
+* submits.
+
+### Thinks
+
+> “Will the faculty member understand my feedback?”
+
+> “Where does this go next?”
+
+### Feels
+
+**Decisive but cautious**
+
+### Pain points
+
+* vague comment fields;
+* accidental decisions;
+* unclear consequences.
+
+### Opportunity
+
+Before confirmation:
+
+> **Endorse Proposal**
+
+> This proposal will be forwarded to Director/Admin review.
+
+Or:
+
+> **Return for Revision**
+
+> The project leader will be asked to revise and resubmit.
+
+The system should explain the consequence of the decision.
+
+---
+
+## Stage 4: Tracking What Happened Next
+
+### Goal
+
+Maintain visibility after endorsement.
+
+### Actions
+
+* checks proposal status;
+* responds to faculty questions;
+* monitors Director/Admin decisions.
+
+### Thinks
+
+> “I endorsed this. Where is it now?”
+
+### Feels
+
+**Curious → concerned if delayed**
+
+### Pain points
+
+* losing visibility after handoff;
+* faculty asking for updates;
+* no indication of bottlenecks.
+
+### Opportunity
+
+Maintain a visible lifecycle even when the RET Chair no longer owns the current action.
+
+---
+
+## Stage 5: Monitoring College Projects
+
+### Goal
+
+Identify projects requiring intervention.
+
+### Actions
+
+* checks active projects;
+* monitors reports;
+* identifies overdue items;
+* contacts faculty.
+
+### Thinks
+
+> “Which project needs attention?”
+
+> “Who is falling behind?”
+
+### Feels
+
+**Responsible → pressured**
+
+### Pain points
+
+* manually searching project by project;
+* discovering issues too late;
+* too much information with no prioritization.
+
+### Opportunity
+
+Organize by attention:
+
+**Needs Your Action**
+**At Risk**
+**Due Soon**
+**On Track**
+
+Not merely:
+
+**24 Projects**
+
+---
+
+## Stage 6: Acting as a Project Leader
+
+### Goal
+
+Manage their own extension project.
+
+### Critical experience problem
+
+The same user now changes mental mode.
+
+They are no longer:
+
+> **College coordinator**
+
+They are:
+
+> **Project leader**
+
+### Opportunity
+
+The interface needs an obvious separation:
+
+**My Work**
+
+and
+
+**College Oversight**
+
+This is one of the strongest findings from the RET Chair journey.
+
+---
+
+# Journey Map 3: Director/Admin
+
+## Journey goal
+
+> **Process institution-wide extension work, remove administrative blockers, and maintain reliable oversight.**
+
+Like the RET Chair, this is not a linear journey.
+
+The cycle is:
+
+**Triage → Process → Coordinate → Monitor → Intervene → Retrieve**
+
+---
+
+## Stage 1: Triage
+
+### Goal
+
+Know what requires office attention.
+
+### Actions
+
+* checks pending proposals;
+* checks project activation blockers;
+* reviews expiring MOAs;
+* checks overdue reports.
+
+### Thinks
+
+> “What is urgent?”
+
+> “What is waiting for us?”
+
+### Feels
+
+**Busy → potentially overwhelmed**
+
+### Pain points
+
+* different problems spread across modules;
+* everything appearing equally important;
+* reactive rather than proactive work.
+
+### Opportunity
+
+Create one operational queue:
+
+**Awaiting Office Action**
+**Blocked Projects**
+**MOAs Expiring Soon**
+**Overdue Reports**
+
+---
+
+## Stage 2: Processing Proposal Decisions
+
+### Goal
+
+Make or support an informed decision efficiently.
+
+### Actions
+
+* opens endorsed proposal;
+* reviews RET Chair decision;
+* examines documents;
+* checks revisions;
+* approves, returns, or rejects.
+
+### Thinks
+
+> “What has already been checked?”
+
+> “What changed?”
+
+> “Why was this returned previously?”
+
+### Feels
+
+**Focused → cautious**
+
+### Pain points
+
+* reconstructing proposal history;
+* rereading unchanged documents;
+* unclear revision differences.
+
+### Opportunity
+
+Show the complete decision context:
+
+**Current submission**
+**RET Chair endorsement**
+**Previous feedback**
+**Revision history**
+
+---
+
+## Stage 3: Preparing a Project for Activation
+
+### Goal
+
+Move an approved proposal into legitimate implementation.
+
+### Actions
+
+* checks Special Orders;
+* checks MOA;
+* establishes reporting schedule;
+* activates project.
+
+### Thinks
+
+> “What is blocking this project?”
+
+### Feels
+
+**Task-focused → frustrated by missing requirements**
+
+### Pain points
+
+UC-7 currently separates these conditions procedurally, but the user needs one readiness view. 
+
+### Opportunity
+
+Show:
+
+> **Project Readiness: 2 of 3 requirements complete**
+
+Then identify the exact blocker.
+
+---
+
+## Stage 4: Managing MOAs
+
+### Goal
+
+Maintain valid agreements and understand their project impact.
+
+### Actions
+
+* uploads MOA;
+* updates validity;
+* checks linked projects;
+* responds to expiration risks.
+
+### Thinks
+
+> “Which projects depend on this MOA?”
+
+> “What happens if it expires?”
+
+### Feels
+
+**Cautious → concerned near expiration**
+
+### Pain points
+
+* expiration discovered too late;
+* unclear impact;
+* manually finding linked projects.
+
+### Opportunity
+
+Do not wait until the MOA is already expired, as UC-7 currently suggests. 
+
+A user-centered system should warn:
+
+**Expiring in 90 days**
+**Expiring in 30 days**
+**Expired**
+
+with affected projects visible.
+
+---
+
+## Stage 5: Monitoring Institutional Operations
+
+### Goal
+
+Identify where intervention is needed.
+
+### Actions
+
+* reviews college activity;
+* checks stalled projects;
+* monitors overdue reports;
+* identifies recurring issues.
+
+### Thinks
+
+> “Where is the system breaking down?”
+
+> “Which colleges or projects need support?”
+
+### Feels
+
+**Responsible → informed when data is actionable**
+
+### Pain points
+
+* vanity metrics;
+* project counts without context;
+* discovering problems after deadlines.
+
+### Opportunity
+
+This again challenges the current “faculty ranking by project count” in UC-3. 
+
+The journey suggests more useful questions:
+
+* Where are proposals getting stuck?
+* Which projects are blocked?
+* Which requirements are commonly missing?
+* Which reports are overdue?
+* Which MOAs put projects at risk?
+
+---
+
+# The combined journey reveals the real system
+
+When all three journeys overlap, the central experience becomes:
+
+**Faculty prepares**
+→ **Faculty submits**
+→ **RET Chair reviews**
+→ **Faculty revises if necessary**
+→ **RET Chair endorses**
+→ **Director/Admin reviews**
+→ **Faculty revises if necessary**
+→ **Director/Admin approves**
+→ **Pre-implementation requirements are completed**
+→ **Director/Admin activates**
+→ **Faculty implements**
+→ **RET Chair monitors**
+→ **Faculty reports**
+→ **Director/Admin monitors compliance**
+→ **Project closes**
+
+This exposes the most important UX insight so far:
+
+> **The system should not be designed primarily around nine use cases. It should be designed around one shared project journey with different users entering, acting, handing off responsibility, and monitoring progress at different stages.**
+
+The next artifact I would build is a **service blueprint**. The journey maps show the users' experience; the service blueprint will put all three personas on the same lifecycle and map **frontstage actions, backstage system processes, handoffs, ownership, notifications, and datastores**. That is where we can finally validate and restructure the nine use cases against the human workflow.

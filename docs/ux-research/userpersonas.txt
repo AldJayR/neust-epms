@@ -1,0 +1,421 @@
+That resolves the apparent missing actor: **Director/Admin is a role group**, where the Director and authorized Extension Services staff operate within the same functional area, potentially with different permissions later. That means we should create personas around the **actual behavioral patterns and responsibilities**, not mechanically create one persona for every system role in the use-case diagram. The current specifications support four meaningful primary persona groups: Faculty/Project Leader, RET Chair, Director/Admin, and Super Admin. 
+
+These should still be treated as **provisional research personas** until interviews and usability testing validate them.
+
+# Persona 1: The Faculty Project Leader
+
+## Dr. Maria Santos
+
+**Role:** Faculty Member / Extension Project Leader
+**User Type:** Primary user
+**Digital confidence:** Moderate
+**System frequency:** Occasional, but intensive during submissions and reporting periods
+
+### Background
+
+Maria is a permanent faculty member who teaches classes while participating in university extension activities. She may lead one or more extension projects, but project administration is only one part of her workload.
+
+She understands the substance of her proposed project well. Her difficulty is not necessarily creating the extension initiative itself; it is navigating the administrative lifecycle around it.
+
+She does not think in terms of:
+
+> proposal record → evaluation record → active project record → report record
+
+To her, it is simply:
+
+> **“My extension project.”**
+
+### Primary goal
+
+**Successfully move an extension project from proposal to completion without losing track of requirements, feedback, approvals, and deadlines.**
+
+### Secondary goals
+
+* submit complete requirements correctly;
+* know whether a submission was received;
+* understand who is currently reviewing the project;
+* respond correctly to requested revisions;
+* know when implementation can officially begin;
+* submit reports on time;
+* retain a complete record of the project.
+
+### Behaviors
+
+* prepares documents outside the system;
+* works around teaching and administrative schedules;
+* asks colleagues about unfamiliar procedures;
+* checks project status more frequently when waiting for approval;
+* follows up through familiar communication channels when status is unclear;
+* returns to the system primarily when an action is required;
+* may forget exact administrative procedures between projects.
+
+### Needs
+
+* a clear project lifecycle;
+* requirements before submission;
+* visible completeness checks;
+* confirmation after every important submission;
+* understandable status information;
+* feedback attached to the relevant submission;
+* clear next actions;
+* visible deadlines;
+* reminders when action is required;
+* one place to access the complete project history.
+
+### Frustrations
+
+* not knowing whether a submission is complete;
+* waiting without knowing who currently has the proposal;
+* vague statuses such as “Pending” or “Returned”;
+* receiving feedback without knowing exactly what to do next;
+* repeated submission of documents already provided;
+* manually remembering reporting deadlines;
+* needing to ask someone for routine status updates.
+
+### Motivations
+
+* implement a meaningful extension project;
+* serve the community;
+* fulfill faculty and institutional extension responsibilities;
+* complete administrative requirements efficiently;
+* avoid preventable delays.
+
+### Representative quote
+
+> **“Just show me where my project is, what I still need to do, and what happens next.”**
+
+### Core scenario
+
+Maria submits a proposal. She wants to immediately know:
+
+**Submitted successfully → awaiting RET Chair review → RET Chair endorsed → awaiting Director/Admin approval → approved → requirements needed before activation → ongoing → next report due**
+
+She should not need to understand the backend boundaries between UC-4, UC-6, UC-7, and UC-8. 
+
+### Design implications
+
+The UX should prioritize:
+
+**My Projects → Project Workspace → Current Stage → Required Action → Timeline**
+
+For this persona, the system should feel like a **guided project journey**, not a collection of administrative modules.
+
+---
+
+# Persona 2: The RET Chair
+
+## Prof. Roberto Cruz
+
+**Role:** RET Chair / College Extension Coordinator
+**User Type:** Primary power user
+**Digital confidence:** Moderate to high
+**System frequency:** Regular
+
+### Background
+
+Roberto coordinates extension activities within his college. He reviews faculty proposals, monitors projects, helps faculty navigate requirements, and serves as the connection between project leaders and the Extension Services Department.
+
+He may also lead his own extension projects.
+
+This creates a dual-role problem:
+
+> **Sometimes he is overseeing other people's work. Sometimes he is managing his own.**
+
+The current use cases place him across account visibility, dashboards, proposal submission, proposal evaluation, project management, and reporting. 
+
+### Primary goal
+
+**Keep extension activities within the college moving without allowing proposals, requirements, or reports to become stuck.**
+
+### Secondary goals
+
+* review proposals efficiently;
+* identify what requires attention;
+* provide useful feedback;
+* monitor college projects;
+* identify overdue requirements;
+* answer faculty questions;
+* know what happened after endorsement;
+* manage personal projects separately from oversight responsibilities.
+
+### Behaviors
+
+* frequently switches between projects;
+* reviews multiple submissions;
+* communicates with faculty about missing or revised requirements;
+* follows up on delayed actions;
+* checks college-wide project activity;
+* returns to the system primarily to process work;
+* may use informal tracking methods when official visibility is insufficient.
+
+### Needs
+
+* a prioritized action queue;
+* clear distinction between personal projects and college oversight;
+* concise proposal summaries;
+* complete proposal documents;
+* revision history;
+* visible feedback;
+* college-wide project status;
+* overdue-report visibility;
+* ability to see what happened after endorsement.
+
+### Frustrations
+
+* having to remember which project needs what;
+* repeatedly answering “What is the status of my proposal?”;
+* searching through multiple projects to find pending work;
+* unclear responsibility for the next action;
+* losing visibility after forwarding something to the Director/Admin;
+* seeing metrics without knowing what actually requires intervention.
+
+### Motivations
+
+* keep the college compliant;
+* help faculty successfully conduct extension projects;
+* prevent administrative bottlenecks;
+* maintain visibility over college extension activity.
+
+### Representative quote
+
+> **“Show me what needs my attention and which projects are at risk of getting stuck.”**
+
+### Core scenario
+
+Roberto opens the system between other responsibilities. He does not want to explore charts to discover work.
+
+He needs to immediately see:
+
+**3 proposals awaiting review**
+**2 revisions resubmitted**
+**4 reports due soon**
+**1 project with an expired MOA**
+
+Then he can act.
+
+### Design implications
+
+His primary UX should likely be:
+
+**Needs Your Action → College Projects → My Projects → Monitoring**
+
+This persona strongly suggests that UC-3 should not be designed as a traditional analytics dashboard alone. 
+
+---
+
+# Persona 3: The Director/Admin
+
+## Dr. Elena Reyes
+
+**Role:** Extension Services Director or Authorized Extension Services Staff
+**User Type:** Primary administrative user
+**Digital confidence:** Moderate to high
+**System frequency:** Frequent
+
+### Background
+
+Elena represents the **Director/Admin role group**.
+
+This persona does not assume that the Director personally performs every administrative task. Depending on actual office practice, authorized Extension Services personnel may prepare, encode, upload, monitor, or maintain records on behalf of the office.
+
+What unifies this persona is the functional context:
+
+> **institution-wide extension administration**
+
+The role interacts with proposal decisions, MOA records, project activation, monitoring, and institutional oversight. 
+
+### Primary goal
+
+**Keep the university's extension project portfolio administratively complete, moving, traceable, and compliant.**
+
+### Secondary goals
+
+* process proposals requiring office action;
+* maintain accurate project records;
+* manage MOA information;
+* identify projects blocked from activation;
+* monitor reporting compliance;
+* identify institutional risks;
+* retrieve information for management and accreditation;
+* maintain a reliable history of actions and decisions.
+
+### Behaviors
+
+* processes many projects across different colleges;
+* reviews or prepares information for decisions;
+* handles recurring administrative records;
+* checks document completeness;
+* monitors pending and overdue work;
+* searches historical records;
+* responds to inquiries from RET Chairs and project leaders;
+* works across the entire institutional portfolio.
+
+### Needs
+
+* prioritized work queues;
+* institution-wide search;
+* clear proposal history;
+* revision visibility;
+* project readiness checks;
+* MOA validity visibility;
+* linked projects per MOA;
+* deadline and compliance monitoring;
+* reliable institutional data;
+* role-appropriate permissions within the Director/Admin group.
+
+### Frustrations
+
+* incomplete submissions;
+* disconnected records;
+* manually determining why a project cannot proceed;
+* searching for documents;
+* repeated status inquiries;
+* discovering expired MOAs too late;
+* difficulty identifying projects requiring intervention;
+* data that exists but is difficult to turn into useful information.
+
+### Motivations
+
+* maintain an effective extension program;
+* reduce administrative delays;
+* preserve institutional records;
+* support compliance and accreditation;
+* give decision-makers reliable information.
+
+### Representative quote
+
+> **“I need to know what requires action, what is blocking a project, and where intervention is needed.”**
+
+### Core scenario
+
+Elena begins work and sees:
+
+**Awaiting Office Action**
+**Projects Not Ready for Activation**
+**MOAs Expiring Soon**
+**Overdue Reports**
+**Recently Resubmitted Proposals**
+
+She can then move from institutional oversight to individual project context without reconstructing the project's history manually.
+
+### Design implications
+
+The primary UX should likely be:
+
+**Work Queue → Projects → Proposals → MOAs → Monitoring**
+
+The “Director/Admin” grouping also creates an important validation question for later:
+
+> **Which actions can all authorized Extension Services staff perform, and which decisions must remain exclusive to the Director?**
+
+That is a permissions question, not necessarily a separate-persona question.
+
+---
+
+# Persona 4: The Super Admin
+
+## Alex Mendoza
+
+**Role:** System Administrator
+**User Type:** Supporting administrative user
+**Digital confidence:** High
+**System frequency:** Occasional to regular
+
+### Background
+
+Alex manages system access and integrity. Unlike the other personas, Alex is not directly responsible for conducting or administering extension projects.
+
+The system is the object being managed.
+
+### Primary goal
+
+**Ensure that legitimate users have the correct access without compromising system integrity.**
+
+### Secondary goals
+
+* process registrations;
+* assign correct roles;
+* prevent duplicate accounts;
+* update access when responsibilities change;
+* investigate administrative activity;
+* maintain traceability.
+
+### Behaviors
+
+* works in batches;
+* reviews pending registrations;
+* checks identity and organizational information;
+* changes roles when responsibilities change;
+* investigates unusual activity through logs;
+* rarely interacts with project content itself.
+
+### Needs
+
+* sufficient identity context;
+* organizational affiliation information;
+* clear role definitions;
+* safe duplicate resolution;
+* role-change history;
+* powerful audit search and filtering.
+
+### Frustrations
+
+* registrations that are difficult to verify;
+* ambiguous role assignments;
+* duplicate accounts;
+* users with multiple responsibilities;
+* searching large volumes of audit events;
+* accidental privilege assignment.
+
+### Motivations
+
+* protect system integrity;
+* minimize access errors;
+* resolve administrative issues quickly;
+* maintain accountability.
+
+### Representative quote
+
+> **“Give me enough information to make the correct access decision without guessing.”**
+
+### Design implications
+
+Alex does not need a project dashboard.
+
+The primary UX should be:
+
+**Pending Accounts → Users → Roles and Access → Audit Logs**
+
+---
+
+# What these personas reveal about the system
+
+The four personas have fundamentally different mental models.
+
+**Faculty Project Leader:**
+
+> **My project**
+
+**RET Chair:**
+
+> **My responsibilities and my college's projects**
+
+**Director/Admin:**
+
+> **The university's extension operations**
+
+**Super Admin:**
+
+> **The system and its users**
+
+That means a role-based dashboard should not simply show different numbers to different roles. The **entire information architecture should shift according to the user's mental model**.
+
+A Faculty user should enter through **their projects**.
+
+An RET Chair should enter through **work requiring attention**.
+
+A Director/Admin should enter through **institution-wide operations and intervention**.
+
+A Super Admin should enter through **system administration**.
+
+The next Design Thinking artifact should be the **current-state journey maps** for the three actual extension-work personas—Faculty, RET Chair, and Director/Admin. That is where we can walk through the real lifecycle from proposal preparation to project closure and expose exactly where the current UC-1 to UC-9 structure aligns or conflicts with the user experience.

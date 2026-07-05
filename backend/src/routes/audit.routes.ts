@@ -12,6 +12,8 @@ import { installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
+import { insertAuditLog } from "../lib/audit.js";
+import { getClientIp } from "../lib/client-ip.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -161,8 +163,16 @@ const listRoute = createRoute({
 });
 
 app.openapi(listRoute, async (c) => {
+	const user = c.get("user");
 	const { page, limit, search } = c.req.valid("query");
 	const offset = (page - 1) * limit;
+
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Viewed audit logs (page ${page}, limit ${limit}${search ? `, search: ${search}` : ""})`,
+		tableAffected: "audit_logs",
+		ipAddress: getClientIp(c),
+	});
 
 	let whereClause: SQL | undefined;
 	if (search) {
