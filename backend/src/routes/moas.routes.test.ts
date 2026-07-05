@@ -27,11 +27,15 @@ describe("GET /moas", () => {
 
 describe("POST /moas", () => {
 	it("should create a MOA with valid dates", async () => {
-		vi.mocked(db.select).mockReturnValue(
-			mockSelectChain([
-				{ partnerId: "22222222-8888-4888-8888-222222222222" },
-			]) as never,
-		);
+		let selectCallCount = 0;
+		vi.mocked(db.select).mockImplementation(() => {
+			selectCallCount++;
+			if (selectCallCount === 1)
+				return mockSelectChain([
+					{ partnerId: "22222222-8888-4888-8888-222222222222" },
+				]) as never; // partner lookup
+			return mockSelectChain([]) as never; // syncProjectsToNewMoa → no projects to sync
+		});
 		vi.mocked(db.insert).mockReturnValue(
 			mockMutationChain([createMockMoa()]) as never,
 		);

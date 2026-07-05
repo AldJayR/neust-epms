@@ -8,6 +8,10 @@ import {
 } from "../../test/helpers.js";
 import app from "./auth.routes.js";
 
+vi.mock("../lib/password-check.js", () => ({
+	isPasswordCompromised: vi.fn().mockResolvedValue(false),
+}));
+
 beforeEach(() => {
 	setMockUser(MOCK_USERS.superAdmin);
 });
@@ -116,10 +120,12 @@ describe("POST /auth/register", () => {
 		};
 
 		// 1. Check existing: empty
-		// 2. Fetch role: faculty
-		// 3. Fetch full profile after insert
+		// 2. Check duplicate name: empty
+		// 3. Fetch role: faculty
+		// 4. Fetch full profile after insert
 		vi.mocked(db.select)
 			.mockReturnValueOnce(mockSelectChain([]) as never) // Existing check
+			.mockReturnValueOnce(mockSelectChain([]) as never) // Duplicate name check
 			.mockReturnValueOnce(mockSelectChain([facultyRole]) as never) // Role check
 			.mockReturnValueOnce(mockSelectChain([fullProfile]) as never); // Full profile fetch
 

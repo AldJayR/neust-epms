@@ -74,8 +74,8 @@ describe("REVIEW_DECISION", () => {
 });
 
 describe("PROJECT_STATUS", () => {
-	it("should define exactly 6 statuses", () => {
-		expect(Object.keys(PROJECT_STATUS)).toHaveLength(6);
+	it("should define exactly 7 statuses", () => {
+		expect(Object.keys(PROJECT_STATUS)).toHaveLength(7);
 	});
 
 	it("should follow the lifecycle order", () => {
@@ -85,5 +85,6 @@ describe("PROJECT_STATUS", () => {
 		expect(PROJECT_STATUS.CLOSED).toBe("Closed");
 		expect(PROJECT_STATUS.PENDING_CLOSURE).toBe("Pending Closure");
 		expect(PROJECT_STATUS.OVERDUE).toBe("Overdue");
+		expect(PROJECT_STATUS.EXPIRED).toBe("Expired");
 	});
 });

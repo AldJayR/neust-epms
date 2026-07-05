@@ -585,6 +585,20 @@ app.openapi(createProposalRoute, async (c) => {
 		ipAddress: getClientIp(c),
 	});
 
+	// DFD 4.3: Send submission acknowledgment to project leader
+	const leaderMember = (body.members ?? []).find(
+		(m) => m.projectRole === PROJECT_LEADER_ROLE,
+	);
+	const leaderId = leaderMember?.userId ?? user.userId;
+	await createNotification({
+		recipientId: leaderId,
+		type: "proposal",
+		title: "Submission Received",
+		message: `Your proposal "${created.title}" has been received and is pending review.`,
+	}).catch((err) => {
+		console.error("[notification] Failed to send submission acknowledgment:", err);
+	});
+
 	return c.json(
 		{
 			...created,
@@ -808,6 +822,29 @@ app.openapi(submitRoute, async (c) => {
 		tableAffected: "proposals",
 		ipAddress: getClientIp(c),
 	});
+
+	// DFD 4.3: Send submission acknowledgment to project leader
+	const [submitLeader] = await db
+		.select({ userId: proposalMembers.userId })
+		.from(proposalMembers)
+		.where(
+			and(
+				eq(proposalMembers.proposalId, id),
+				eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE),
+			),
+		)
+		.limit(1);
+
+	if (submitLeader?.userId) {
+		await createNotification({
+			recipientId: submitLeader.userId,
+			type: "proposal",
+			title: "Submission Received",
+			message: `Your proposal has been submitted and is pending review.`,
+		}).catch((err) => {
+			console.error("[notification] Failed to send submission acknowledgment:", err);
+		});
+	}
 
 	return c.json({ message: "Proposal submitted for endorsement" }, 200);
 });

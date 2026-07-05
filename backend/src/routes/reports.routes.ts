@@ -351,6 +351,27 @@ app.openapi(createReportRoute, async (c) => {
 		ipAddress: getClientIp(c),
 	});
 
+	// DFD 8.2: Clear Overdue flag when report is submitted
+	const [projectStatusRow] = await db
+		.select({ projectStatus: projects.projectStatus })
+		.from(projects)
+		.where(eq(projects.projectId, body.projectId))
+		.limit(1);
+
+	if (projectStatusRow?.projectStatus === "Overdue") {
+		await db
+			.update(projects)
+			.set({ projectStatus: "Ongoing", updatedAt: new Date() })
+			.where(eq(projects.projectId, body.projectId));
+
+		await insertAuditLog({
+			userId: user.userId,
+			action: `Cleared Overdue flag for project ${body.projectId} after report submission`,
+			tableAffected: "projects",
+			ipAddress: getClientIp(c),
+		});
+	}
+
 	// Notify Director(s) about the new report submission
 	const directorIds = await getUserIdsByRole("Director");
 	const readableType =

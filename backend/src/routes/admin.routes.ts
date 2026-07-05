@@ -9,6 +9,7 @@ import { insertAuditLog } from "../lib/audit.js";
 import { invalidateAuthUserCache } from "../lib/cache.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
+import { createNotification } from "../lib/notification.helpers.js";
 import { ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
@@ -97,15 +98,16 @@ app.openapi(getAdminStatsRoute, async (c) => {
 		.from(users)
 		.where(eq(users.isActive, false));
 
-	// "Pending Approval" logic can be specific. For now, let's assume it's 0
-	// or define a placeholder logic if we have a field for it.
-	// Based on requirements, there might be a 'pending' state.
-	// If we don't have a status field yet, we'll return 0 or implement a check.
+	// DFD 3.1: Count users pending approval (isActive=false = not yet activated)
+	const [pendingResult] = await db
+		.select({ value: count() })
+		.from(users)
+		.where(eq(users.isActive, false));
 
 	return c.json(
 		{
 			totalAccounts: Number(allUsersCount[0]?.value ?? 0),
-			pendingApproval: 0,
+			pendingApproval: Number(pendingResult?.value ?? 0),
 			deactivated: Number(deactivatedCount[0]?.value ?? 0),
 		},
 		200,
@@ -377,6 +379,18 @@ app.openapi(bulkApproveRoute, async (c) => {
 	// Invalidate cache AFTER successful commit
 	if (updatedCount > 0) {
 		invalidateAuthUserCache(usersToApprove.map((u) => u.userId));
+	}
+
+	// DFD 1.3: Send activation notification to each approved user
+	for (const u of usersToApprove) {
+		await createNotification({
+			recipientId: u.userId,
+			type: "system",
+			title: "Account Activated",
+			message: "Your account has been approved and activated.",
+		}).catch((err) => {
+			console.error("[notification] Failed to send activation notification:", err);
+		});
 	}
 
 	return c.json(
