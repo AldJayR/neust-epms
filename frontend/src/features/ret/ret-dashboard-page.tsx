@@ -30,6 +30,7 @@ import {
 } from "@/lib/ret.functions";
 import { formatAcademicRank } from "@/lib/utils";
 import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
+import { ActionCenterCard } from "../action-center/action-center-card";
 
 interface RETDashboardPageProps {
 	user: AuthUser;
@@ -242,6 +243,8 @@ export function RETDashboardPage({
 					</BrandButton>
 				}
 			/>
+
+			<ActionCenterCard />
 
 			{/* Stats Cards */}
 			<div className="grid gap-6 md:grid-cols-3">

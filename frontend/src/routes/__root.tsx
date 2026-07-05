@@ -12,6 +12,7 @@ import { Loader2, Wifi, WifiOff } from "lucide-react";
 import { useEffect } from "react";
 import { Toaster, toast } from "sonner";
 import { Devtools } from "../components/devtools";
+import { TooltipProvider } from "../components/ui/tooltip";
 import type { AuthContext } from "../lib/auth";
 import { getCurrentUserFn } from "../lib/auth.functions";
 import { getCachedUser, isCacheStale, setCachedUser } from "../lib/auth-cache";
@@ -244,7 +245,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
 				{isPending && <div className="global-loading-bar" />}
-				{children}
+				<TooltipProvider>
+					{children}
+				</TooltipProvider>
 				<Toaster position="top-right" />
 				<Devtools />
 				<Scripts />

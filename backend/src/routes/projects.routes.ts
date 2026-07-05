@@ -31,6 +31,7 @@ import { env } from "../env.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
+import { deriveProjectState } from "../lib/derived-states.js";
 import {
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
@@ -678,6 +679,125 @@ app.openapi(closeProjectRoute, async (c) => {
 	return c.json({ message: "Project closed" }, 200);
 });
 
+// ── GET /projects/:id/derived-state ──
+const ProjectDerivedStateSchema = z
+	.object({
+		state: z.enum(["ACT", "WAIT", "WATCH"]),
+		owner: z.string(),
+		reason: z.string(),
+		nextTransition: z.string(),
+	})
+	.openapi("ProjectDerivedState");
+
+const projectDerivedStateRoute = createRoute({
+	method: "get",
+	path: "/projects/{id}/derived-state",
+	tags: ["Projects"],
+	summary: "Get the derived Act/Wait/Watch state for a project",
+	security: [{ Bearer: [] }],
+	request: { params: ParamId },
+	responses: {
+		200: {
+			content: { "application/json": { schema: ProjectDerivedStateSchema } },
+			description: "Derived state of the project",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Project not found",
+		},
+	},
+});
+
+app.openapi(projectDerivedStateRoute, async (c) => {
+	const user = c.get("user");
+	const { id } = c.req.valid("param");
+
+	const proposalConditions: SQL[] = [isNull(proposals.archivedAt)];
+
+	if (user.roleName === ROLE_NAMES.FACULTY) {
+		if (user.departmentId !== null) {
+			proposalConditions.push(eq(proposals.departmentId, user.departmentId));
+		} else {
+			proposalConditions.push(eq(proposals.campusId, user.campusId));
+		}
+	} else if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+		if (user.isMainCampus && user.departmentId !== null) {
+			proposalConditions.push(eq(proposals.departmentId, user.departmentId));
+		} else {
+			proposalConditions.push(eq(proposals.campusId, user.campusId));
+		}
+	}
+
+	const allowedProposals = db
+		.select({ proposalId: proposals.proposalId })
+		.from(proposals)
+		.where(and(...proposalConditions));
+
+	const leaderMembers = db
+		.select({
+			proposalId: proposalMembers.proposalId,
+			userId: proposalMembers.userId,
+		})
+		.from(proposalMembers)
+		.where(eq(proposalMembers.projectRole, "Project Leader"))
+		.as("leader_members");
+
+	const [row] = await db
+		.select({
+			projectId: projects.projectId,
+			projectStatus: projects.projectStatus,
+			moaId: projects.moaId,
+			leaderId: leaderMembers.userId,
+		})
+		.from(projects)
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+		.leftJoin(leaderMembers, eq(projects.proposalId, leaderMembers.proposalId))
+		.where(
+			and(
+				eq(projects.projectId, id),
+				isNull(projects.archivedAt),
+				inArray(projects.proposalId, allowedProposals),
+			),
+		)
+		.limit(1);
+
+	if (!row) {
+		throw new ApiError(404, "NOT_FOUND", "Project not found");
+	}
+
+	// Check if reporting schedule is established
+	const [schedule] = await db
+		.select({ scheduleId: projectReportingSchedules.scheduleId })
+		.from(projectReportingSchedules)
+		.where(eq(projectReportingSchedules.projectId, id))
+		.limit(1);
+
+	// Check if has reports
+	const [report] = await db
+		.select({ reportId: projectReports.reportId })
+		.from(projectReports)
+		.where(
+			and(
+				eq(projectReports.projectId, id),
+				isNull(projectReports.archivedAt),
+			),
+		)
+		.limit(1);
+
+	const derived = deriveProjectState(
+		{
+			projectStatus: row.projectStatus as any,
+			moaId: row.moaId,
+			reportingSchedule: !!schedule,
+			hasReports: !!report,
+			leaderId: row.leaderId ?? undefined,
+		},
+		user,
+	);
+
+	return c.json(derived, 200);
+});
+
 // ── Project Details Endpoint ──
 
 const ProjectDetailsMemberSchema = z.object({
@@ -1233,6 +1353,372 @@ app.openapi(activateRoute, async (c) => {
 	});
 
 	return c.json({ message: "Project activated successfully" }, 200);
+});
+
+// ── GET /projects/:id/readiness ──
+const ProjectReadinessSchema = z
+	.object({
+		isReady: z.boolean(),
+		prerequisites: z.array(
+			z.object({
+				name: z.string(),
+				complete: z.boolean(),
+				owner: z.string(),
+				details: z.string(),
+			}),
+		),
+		blocker: z.string().nullable(),
+	})
+	.openapi("ProjectReadiness");
+
+const projectReadinessRoute = createRoute({
+	method: "get",
+	path: "/projects/{id}/readiness",
+	tags: ["Projects"],
+	summary: "Get the project activation readiness checklist",
+	security: [{ Bearer: [] }],
+	request: { params: ParamId },
+	responses: {
+		200: {
+			content: { "application/json": { schema: ProjectReadinessSchema } },
+			description: "Activation readiness checklist of the project",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Project not found",
+		},
+	},
+});
+
+app.openapi(projectReadinessRoute, async (c) => {
+	const user = c.get("user");
+	const { id } = c.req.valid("param");
+
+	// 1. Get project
+	const [project] = await db
+		.select({
+			projectId: projects.projectId,
+			proposalId: projects.proposalId,
+			moaId: projects.moaId,
+			projectStatus: projects.projectStatus,
+		})
+		.from(projects)
+		.where(and(eq(projects.projectId, id), isNull(projects.archivedAt)))
+		.limit(1);
+
+	if (!project) {
+		throw new ApiError(404, "NOT_FOUND", "Project not found");
+	}
+
+	// 2. Get proposal
+	const [proposal] = await db
+		.select({
+			status: proposals.status,
+			title: proposals.title,
+			createdAt: proposals.createdAt,
+			updatedAt: proposals.updatedAt,
+		})
+		.from(proposals)
+		.where(eq(proposals.proposalId, project.proposalId))
+		.limit(1);
+
+	if (!proposal) {
+		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+	}
+
+	// Check Proposal Approved
+	const isProposalApproved =
+		proposal.status === PROPOSAL_STATUS.APPROVED ||
+		project.projectStatus !== "Approved";
+	const proposalApprovedDate = proposal.updatedAt.toLocaleDateString("en-US", {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	});
+
+	// Check Special Orders Uploaded
+	const pMembers = await db
+		.select({ memberId: proposalMembers.memberId })
+		.from(proposalMembers)
+		.where(eq(proposalMembers.proposalId, project.proposalId));
+
+	const memberIds = pMembers.map((m) => m.memberId);
+	let specialOrdersUploadedCount = 0;
+	if (memberIds.length > 0) {
+		const sOrders = await db
+			.select({ memberId: specialOrders.memberId })
+			.from(specialOrders)
+			.where(
+				and(
+					inArray(specialOrders.memberId, memberIds),
+					isNull(specialOrders.archivedAt),
+					sql`${specialOrders.storagePath} IS NOT NULL`,
+				),
+			);
+		specialOrdersUploadedCount = sOrders.length;
+	}
+	const isSpecialOrdersComplete =
+		pMembers.length > 0 ? specialOrdersUploadedCount === pMembers.length : true;
+
+	// Check Valid MOA Assigned
+	let isMoaValid = false;
+	let moaValidUntilDate = "";
+	if (project.moaId) {
+		const [moa] = await db
+			.select({ validUntil: moas.validUntil })
+			.from(moas)
+			.where(and(eq(moas.moaId, project.moaId), isNull(moas.archivedAt)))
+			.limit(1);
+
+		if (moa) {
+			isMoaValid = new Date(moa.validUntil) > new Date();
+			moaValidUntilDate = new Date(moa.validUntil).toLocaleDateString("en-US", {
+				month: "short",
+				day: "numeric",
+				year: "numeric",
+			});
+		}
+	}
+
+	// Check Reporting Schedule Established
+	const [schedule] = await db
+		.select({ scheduleId: projectReportingSchedules.scheduleId })
+		.from(projectReportingSchedules)
+		.where(eq(projectReportingSchedules.projectId, id))
+		.limit(1);
+
+	let reportingDatesCount = 0;
+	if (schedule) {
+		const dates = await db
+			.select({ id: projectReportingDates.id })
+			.from(projectReportingDates)
+			.where(eq(projectReportingDates.scheduleId, schedule.scheduleId));
+		reportingDatesCount = dates.length;
+	}
+	const isScheduleEstablished = reportingDatesCount > 0;
+
+	// Construct prerequisites list
+	const prerequisites = [
+		{
+			name: "Proposal Approved",
+			complete: isProposalApproved,
+			owner: "Director/Admin",
+			details: isProposalApproved
+				? `Proposal approved on ${proposalApprovedDate}`
+				: "Awaiting proposal approval",
+		},
+		{
+			name: "Special Orders Uploaded",
+			complete: isSpecialOrdersComplete,
+			owner: "Project Leader",
+			details: isSpecialOrdersComplete
+				? `All ${pMembers.length} Special Orders uploaded`
+				: `${specialOrdersUploadedCount} of ${pMembers.length} Special Orders uploaded`,
+		},
+		{
+			name: "Valid MOA Assigned",
+			complete: isMoaValid,
+			owner: "Director/Admin",
+			details: isMoaValid
+				? `MOA valid until ${moaValidUntilDate}`
+				: project.moaId
+					? "Linked MOA has expired"
+					: "No MOA assigned to project",
+		},
+		{
+			name: "Reporting Schedule Established",
+			complete: isScheduleEstablished,
+			owner: "Director/Admin",
+			details: isScheduleEstablished
+				? `Reporting schedule configured with ${reportingDatesCount} milestones`
+				: "No reporting schedule configured",
+		},
+	];
+
+	const blockerItem = prerequisites.find((p) => !p.complete);
+	const blocker = blockerItem ? blockerItem.name : null;
+	const isReady = prerequisites.every((p) => p.complete);
+
+	return c.json(
+		{
+			isReady,
+			prerequisites,
+			blocker,
+		},
+		200,
+	);
+});
+
+// ── GET /projects/:id/reporting-schedule ──
+const ProjectReportingScheduleSchema = z
+	.object({
+		schedule: z.object({
+			frequency: z.string(),
+			dueDates: z.array(
+				z.object({
+					id: z.string(),
+					date: z.string(),
+					isCompleted: z.boolean(),
+					completedAt: z.string().nullable(),
+					reportType: z.string(),
+					reportId: z.string().nullable(),
+					storagePath: z.string().nullable(),
+				}),
+			),
+		}),
+		upcoming: z.array(
+			z.object({
+				id: z.string(),
+				date: z.string(),
+				reportType: z.string(),
+			}),
+		),
+		overdue: z.array(
+			z.object({
+				id: z.string(),
+				date: z.string(),
+				reportType: z.string(),
+			}),
+		),
+	})
+	.openapi("ProjectReportingSchedule");
+
+const projectReportingScheduleRoute = createRoute({
+	method: "get",
+	path: "/projects/{id}/reporting-schedule",
+	tags: ["Projects"],
+	summary: "Get project reporting schedule, upcoming, and overdue milestones",
+	security: [{ Bearer: [] }],
+	request: { params: ParamId },
+	responses: {
+		200: {
+			content: { "application/json": { schema: ProjectReportingScheduleSchema } },
+			description: "Reporting schedule information",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Project not found",
+		},
+	},
+});
+
+app.openapi(projectReportingScheduleRoute, async (c) => {
+	const user = c.get("user");
+	const { id } = c.req.valid("param");
+
+	// 1. Get project
+	const [project] = await db
+		.select({
+			projectId: projects.projectId,
+		})
+		.from(projects)
+		.where(and(eq(projects.projectId, id), isNull(projects.archivedAt)))
+		.limit(1);
+
+	if (!project) {
+		throw new ApiError(404, "NOT_FOUND", "Project not found");
+	}
+
+	// 2. Get schedule
+	const [scheduleRow] = await db
+		.select({ scheduleId: projectReportingSchedules.scheduleId })
+		.from(projectReportingSchedules)
+		.where(eq(projectReportingSchedules.projectId, id))
+		.limit(1);
+
+	if (!scheduleRow) {
+		return c.json(
+			{
+				schedule: { frequency: "None", dueDates: [] },
+				upcoming: [],
+				overdue: [],
+			},
+			200,
+		);
+	}
+
+	// 3. Get due dates (sorted chronologically)
+	const dueDatesList = await db
+		.select({
+			id: projectReportingDates.id,
+			reportingDate: projectReportingDates.reportingDate,
+			isCompleted: projectReportingDates.isCompleted,
+			completedAt: projectReportingDates.completedAt,
+		})
+		.from(projectReportingDates)
+		.where(eq(projectReportingDates.scheduleId, scheduleRow.scheduleId))
+		.orderBy(projectReportingDates.reportingDate);
+
+	// 4. Get submitted reports (sorted chronologically)
+	const reportsList = await db
+		.select({
+			reportId: projectReports.reportId,
+			reportType: projectReports.reportType,
+			submittedAt: projectReports.submittedAt,
+			storagePath: projectReports.storagePath,
+		})
+		.from(projectReports)
+		.where(and(eq(projectReports.projectId, id), isNull(projectReports.archivedAt)))
+		.orderBy(projectReports.submittedAt);
+
+	// 5. Map completed due dates to reports chronologically
+	const mappedDueDates = dueDatesList.map((dueDate, idx) => {
+		let resolvedType = idx === dueDatesList.length - 1 ? "Terminal" : "Progress";
+		let resolvedReportId: string | null = null;
+		let resolvedStoragePath: string | null = null;
+
+		if (dueDate.isCompleted) {
+			const completedIndex = dueDatesList
+				.slice(0, idx)
+				.filter((d) => d.isCompleted).length;
+
+			const correspondingReport = reportsList[completedIndex];
+			if (correspondingReport) {
+				resolvedType = correspondingReport.reportType;
+				resolvedReportId = correspondingReport.reportId;
+				resolvedStoragePath = correspondingReport.storagePath;
+			}
+		}
+
+		return {
+			id: dueDate.id,
+			date: dueDate.reportingDate.toISOString(),
+			isCompleted: dueDate.isCompleted,
+			completedAt: dueDate.completedAt ? dueDate.completedAt.toISOString() : null,
+			reportType: resolvedType,
+			reportId: resolvedReportId,
+			storagePath: resolvedStoragePath,
+		};
+	});
+
+	const now = new Date();
+	const upcoming = mappedDueDates
+		.filter((d) => !d.isCompleted && new Date(d.date) >= now)
+		.map((d) => ({
+			id: d.id,
+			date: d.date,
+			reportType: d.reportType,
+		}));
+
+	const overdue = mappedDueDates
+		.filter((d) => !d.isCompleted && new Date(d.date) < now)
+		.map((d) => ({
+			id: d.id,
+			date: d.date,
+			reportType: d.reportType,
+		}));
+
+	return c.json(
+		{
+			schedule: {
+				frequency: "Scheduled",
+				dueDates: mappedDueDates,
+			},
+			upcoming,
+			overdue,
+		},
+		200,
+	);
 });
 
 export default app;

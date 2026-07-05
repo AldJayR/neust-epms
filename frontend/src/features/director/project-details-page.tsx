@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useRouter } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import {
 	ChevronRight,
@@ -58,6 +58,10 @@ import {
 import { getProposalByIdFn } from "@/lib/ret.functions";
 import { ActivateProjectWizard } from "./activate-project-wizard";
 import { ProjectDetailsSkeleton } from "./project-details-skeleton";
+import { useProjectReadiness } from "@/hooks/use-project-readiness";
+import { ProjectReadinessCard } from "../projects/project-readiness-card";
+import { ReportingScheduleCard } from "../projects/reporting-schedule-card";
+import { getStatusDescription } from "@/lib/status-descriptions";
 
 interface ProjectDetailsPageProps {
 	proposalId: string;
@@ -567,9 +571,10 @@ export function ProjectDetailsPage({
 		: undefined;
 
 	const isDirector = currentUserRole === "Director";
+	const { data: readiness } = useProjectReadiness(proposalId);
+	const statusDesc = getStatusDescription(data.status);
 	const showActivateButton = isDirector && data.status === "Approved";
 	const [showActivateWizard, setShowActivateWizard] = useState(false);
-	const router = useRouter();
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -630,6 +635,8 @@ export function ProjectDetailsPage({
 							<Button
 								variant="outline"
 								className="flex w-fit items-center gap-2 px-5 h-9 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
+								disabled={!readiness?.isReady}
+								title={!readiness?.isReady ? "Prerequisites must be met before activating project" : undefined}
 								onClick={() => setShowActivateWizard(true)}
 							>
 								<Play className="size-4" />
@@ -639,6 +646,24 @@ export function ProjectDetailsPage({
 					</>
 				}
 			/>
+
+			{statusDesc && (
+				<div className="flex items-start gap-2.5 rounded-lg border border-border bg-muted/20 p-3 text-xs text-muted-foreground -mt-2">
+					<Info className="size-4 shrink-0 text-muted-foreground mt-0.5" />
+					<div className="space-y-1">
+						<p className="font-semibold text-foreground">{statusDesc.explanation}</p>
+						<p><span className="font-semibold text-foreground">Next Step:</span> {statusDesc.nextStep}</p>
+					</div>
+				</div>
+			)}
+
+			{data.status === "Approved" && readiness && (
+				<ProjectReadinessCard
+					isReady={readiness.isReady}
+					prerequisites={readiness.prerequisites}
+					blocker={readiness.blocker}
+				/>
+			)}
 
 			{data.status === "Approved" && isProjectLeader && (
 				<Alert>
@@ -682,6 +707,12 @@ export function ProjectDetailsPage({
 						proposalId={proposalId}
 						status={data.status}
 					/>
+					{["Ongoing", "Overdue", "Pending Closure", "Completed", "Closed"].includes(data.status) && (
+						<ReportingScheduleCard
+							projectId={proposalId}
+							isFaculty={currentUserRole === "Faculty"}
+						/>
+					)}
 					<ActivityHistoryCard history={data.history} />
 				</div>
 

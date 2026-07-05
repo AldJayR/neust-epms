@@ -38,6 +38,7 @@ const createProposalSchema = z.object({
 			}),
 		)
 		.optional(),
+	status: z.string().optional(),
 });
 
 // ── Interfaces ────────────────────────────────────────────
@@ -379,3 +380,29 @@ export const updateProposalFn = createServerFn({ method: "POST" })
 
 		return (await response.json()) as ProposalItem;
 	});
+
+export interface ProposalRequirements {
+	documents: { type: string; label: string; required: boolean; description: string }[];
+	members: { required: boolean; description: string };
+	sectors: { required: boolean; description: string };
+	sdgs: { required: boolean; description: string };
+	budget: { required: boolean; description: string };
+	dates: { required: boolean; description: string };
+}
+
+export const getProposalRequirementsFn = createServerFn({ method: "GET" }).handler(async () => {
+	const accessToken = await getValidAccessToken();
+	const response = await fetch(`${API_BASE}/proposals/metadata/requirements`, {
+		headers: { Authorization: `Bearer ${accessToken}` },
+	});
+	if (!response.ok) throw new Error("Failed to fetch proposal requirements");
+	return (await response.json()) as ProposalRequirements;
+});
+
+export function proposalRequirementsQueryOptions() {
+	return queryOptions({
+		queryKey: ["metadata", "proposal-requirements"],
+		queryFn: () => getProposalRequirementsFn(),
+		staleTime: 1000 * 60 * 60, // 1 hour
+	});
+}

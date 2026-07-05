@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import * as React from "react";
-import { type SubmitHandler, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import { ProposalStepDetails } from "./proposal-step-details";
 import { ProposalStepDocuments } from "./proposal-step-documents";
 import { ProposalStepInfo } from "./proposal-step-info";
 import { ProposalStepMembers } from "./proposal-step-members";
+import { ProposalStepRequirements } from "./proposal-step-requirements";
 
 const formSchema = z
 	.object({
@@ -169,13 +170,14 @@ export function CreateProposalModal({
 		},
 	});
 
-	const onSubmit: SubmitHandler<FormValues> = async (values) => {
-		if (!isEditing && !file) {
+	const handleSave = async (status: "Draft" | "Pending Review") => {
+		if (status === "Pending Review" && !isEditing && !file) {
 			toast.error("Please upload the Project Proposal PDF");
 			return;
 		}
 
 		let timer: ReturnType<typeof setInterval> | null = null;
+		const values = form.getValues();
 
 		try {
 			setState({ uploadPhase: "creating", uploadProgress: 0 });
@@ -194,6 +196,13 @@ export function CreateProposalModal({
 						budgetNeust: values.budgetNeust,
 					},
 				});
+				
+				// Transition to review if explicitly requested
+				if (status === "Pending Review" && currentStatus === "Draft") {
+					await submitProposalMutation.mutateAsync({
+						data: { proposalId: editingProposalId },
+					});
+				}
 			} else {
 				const proposal = await createProposalMutation.mutateAsync({
 					data: {
@@ -212,6 +221,7 @@ export function CreateProposalModal({
 							userId: m.userId,
 							projectRole: m.projectRole,
 						})),
+						status,
 					},
 				});
 				proposalId = proposal.proposalId;
@@ -241,21 +251,12 @@ export function CreateProposalModal({
 				if (timer) clearInterval(timer);
 			}
 
-			if (isEditing && editingProposalId && currentStatus !== "Pending Review" && currentStatus !== "Endorsed") {
-				await submitProposalMutation.mutateAsync({
-					data: { proposalId: editingProposalId },
-				});
-			}
-
 			setState({ uploadProgress: 100, uploadPhase: "done" });
 
-			const shouldResubmit = isEditing && currentStatus !== "Pending Review" && currentStatus !== "Endorsed";
 			toast.success(
-				isEditing
-					? shouldResubmit
-						? "Proposal updated and resubmitted successfully!"
-						: "Proposal updated successfully!"
-					: "Project proposal submitted successfully!",
+				status === "Draft"
+					? "Proposal draft saved successfully!"
+					: "Project proposal submitted successfully for review!"
 			);
 			onOpenChange(false);
 			form.reset();
@@ -277,8 +278,13 @@ export function CreateProposalModal({
 	};
 
 	const nextStep = async () => {
-		let fieldsToValidate: (keyof FormValues)[] = [];
 		if (step === 1) {
+			setState((prev) => ({ step: prev.step + 1 }));
+			return;
+		}
+
+		let fieldsToValidate: (keyof FormValues)[] = [];
+		if (step === 2) {
 			fieldsToValidate = [
 				"title",
 				"bannerProgram",
@@ -288,14 +294,14 @@ export function CreateProposalModal({
 				"departmentId",
 				"sdgIds",
 			];
-		} else if (step === 2) {
+		} else if (step === 3) {
 			fieldsToValidate = [
 				"targetStartDate",
 				"targetEndDate",
 				"budgetPartner",
 				"budgetNeust",
 			];
-		} else if (step === 3) {
+		} else if (step === 4) {
 			fieldsToValidate = ["members"];
 		}
 
@@ -319,27 +325,31 @@ export function CreateProposalModal({
 								: "Start New Project Proposal"}
 						</DialogTitle>
 						<DialogDescription className="text-sm text-muted-foreground">
-							Step {step} of 4:{" "}
+							Step {step} of 5:{" "}
 							{step === 1
-								? "Project Overview"
+								? "Requirements"
 								: step === 2
-									? "Timeline & Budget"
+									? "Project Overview"
 									: step === 3
-										? "Team Composition"
-										: "Attachments"}
+										? "Timeline & Budget"
+										: step === 4
+											? "Team Composition"
+											: "Attachments"}
 						</DialogDescription>
 					</DialogHeader>
 
 					<div className="p-6 overflow-y-auto max-h-[60vh]">
-						{step === 1 && (
+						{step === 1 && <ProposalStepRequirements />}
+
+						{step === 2 && (
 							<ProposalStepInfo form={form} user={user} sdgsData={sdgsData} />
 						)}
 
-						{step === 2 && <ProposalStepDetails form={form} />}
+						{step === 3 && <ProposalStepDetails form={form} />}
 
-						{step === 3 && <ProposalStepMembers form={form} user={user} />}
+						{step === 4 && <ProposalStepMembers form={form} user={user} />}
 
-						{step === 4 && (
+						{step === 5 && (
 							<ProposalStepDocuments
 								file={file}
 								setFile={(f) => setState({ file: f })}
@@ -367,7 +377,7 @@ export function CreateProposalModal({
 								</Button>
 							)}
 
-							{step < 4 ? (
+							{step < 5 ? (
 								<Button
 									type="button"
 									onClick={nextStep}
@@ -377,32 +387,47 @@ export function CreateProposalModal({
 									<ChevronRight className="size-4" />
 								</Button>
 							) : (
-								<Button
-									type="button"
-									onClick={() => form.handleSubmit(onSubmit)()}
-									className="bg-brand-primary hover:bg-brand-primary-hover text-white"
-									disabled={
-										createProposalMutation.isPending ||
+								<div className="flex items-center gap-3">
+									<Button
+										type="button"
+										variant="outline"
+										onClick={() => handleSave("Draft")}
+										disabled={
+											createProposalMutation.isPending ||
+											updateProposalMutation.isPending ||
+											submitProposalMutation.isPending ||
+											uploadDocumentMutation.isPending
+										}
+									>
+										Save as Draft
+									</Button>
+									<Button
+										type="button"
+										onClick={() => handleSave("Pending Review")}
+										className="bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold"
+										disabled={
+											createProposalMutation.isPending ||
+											updateProposalMutation.isPending ||
+											submitProposalMutation.isPending ||
+											uploadDocumentMutation.isPending
+										}
+									>
+										{createProposalMutation.isPending ||
 										updateProposalMutation.isPending ||
 										submitProposalMutation.isPending ||
-										uploadDocumentMutation.isPending
-									}
-								>
-									{createProposalMutation.isPending ||
-									updateProposalMutation.isPending ||
-									submitProposalMutation.isPending ||
-									uploadDocumentMutation.isPending ? (
-										<>
-											<Loader2 className="size-4 animate-spin" />
-											Submitting...
-										</>
-									) : (
-										<>
-											{isEditing ? "Save Changes" : "Finish"}
-											<Check className="size-4" />
-										</>
-									)}
-								</Button>
+										uploadDocumentMutation.isPending ? (
+											<>
+												<Loader2 className="size-4 animate-spin" />
+												Submitting...
+											</>
+										) : (
+											<>
+												Submit for Review
+												<Check className="size-4" />
+											</>
+										)}
+									</Button>
+								</div>
 							)}
 						</div>
 					</DialogFooter>

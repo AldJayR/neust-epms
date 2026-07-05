@@ -10,6 +10,7 @@ import { db } from "./db/client.js";
 import { getClientIp } from "./lib/client-ip.js";
 import { installApiErrorHandler } from "./lib/errors.js";
 import { type AuthEnv, authMiddleware } from "./middleware/auth.js";
+import actionCenterRoutes from "./routes/action-center.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import auditRoutes from "./routes/audit.routes.js";
 import authRoutes from "./routes/auth.routes.js";
@@ -209,6 +210,7 @@ app.get("/api/v1/swagger", swaggerUI({ url: "/api/v1/openapi.json" }));
 app.use("/api/v1/proposals/*", authMiddleware);
 
 app.route("/api/v1", authRoutes);
+app.route("/api/v1", actionCenterRoutes);
 app.route("/api/v1", notificationRoutes);
 app.route("/api/v1", proposalRoutes);
 app.route("/api/v1", memberRoutes);

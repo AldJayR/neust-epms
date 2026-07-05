@@ -15,6 +15,7 @@ import {
 	facultyProposalsQueryOptions,
 } from "@/lib/faculty.functions";
 import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
+import { ActionCenterCard } from "../action-center/action-center-card";
 
 export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
@@ -126,6 +127,8 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 					</BrandButton>
 				}
 			/>
+
+			<ActionCenterCard />
 
 			<div className="grid gap-6 md:grid-cols-3 w-full">
 				<MetricCard

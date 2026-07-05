@@ -11,6 +11,8 @@ import {
 import { type ComponentType } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "#/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
+import { getStatusDescription } from "@/lib/status-descriptions";
 
 interface StatusConfig {
 	label: string;
@@ -121,34 +123,61 @@ export function StatusBadge({
 	className,
 }: StatusBadgeProps) {
 	const config = STATUS_MAP[status];
+	const { label, explanation } = getStatusDescription(status);
 
 	if (!config) {
 		return (
-			<Badge variant="outline" className={cn("text-muted-foreground", className)}>
-				{status}
-			</Badge>
+			<Tooltip>
+				<TooltipTrigger
+					render={
+						<Badge
+							role="status"
+							aria-label={`${status}. ${explanation}`}
+							variant="outline"
+							className={cn("text-muted-foreground", className)}
+						>
+							{status}
+						</Badge>
+					}
+				/>
+				<TooltipContent>
+					<p>{explanation}</p>
+				</TooltipContent>
+			</Tooltip>
 		);
 	}
 
-	const { label, icon: Icon, iconClassName, iconSpin } = config;
+	const { icon: Icon, iconClassName, iconSpin } = config;
 
 	return (
-		<Badge
-			variant={variant}
-			className={cn(
-				"flex w-fit items-center gap-1 border-border px-2 py-0.5 text-xs font-medium text-muted-foreground bg-background",
-				variant === "outline" && "h-[22px] rounded-lg px-1.5 py-0.5",
-				className,
-			)}
-		>
-			<Icon
-				className={cn(
-					"size-3",
-					iconClassName,
-					iconSpin && "animate-spin",
-				)}
+		<Tooltip>
+			<TooltipTrigger
+				render={
+					<Badge
+						role="status"
+						aria-label={`${label}. ${explanation}`}
+						variant={variant}
+						className={cn(
+							"flex w-fit items-center gap-1 border-border px-2 py-0.5 text-xs font-medium text-muted-foreground bg-background",
+							variant === "outline" && "h-[22px] rounded-lg px-1.5 py-0.5",
+							className,
+						)}
+					>
+						<Icon
+							className={cn(
+								"size-3",
+								iconClassName,
+								iconSpin && "animate-spin",
+							)}
+						/>
+						{label}
+					</Badge>
+				}
 			/>
-			{label}
-		</Badge>
+			<TooltipContent>
+				<p>{explanation}</p>
+			</TooltipContent>
+		</Tooltip>
 	);
 }
+

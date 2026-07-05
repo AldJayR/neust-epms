@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/custom/page-header";
 import type { AuthUser } from "@/lib/auth";
 import { getCampusesFn } from "@/lib/auth.functions";
 import { directorDashboardQueryOptions } from "@/lib/dashboard.functions";
+import { ActionCenterCard } from "../action-center/action-center-card";
 
 const ProjectsChartCard = React.lazy(() => import("./projects-chart-card"));
 
@@ -151,6 +152,7 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 						</h1>
 					}
 				/>
+				<ActionCenterCard />
 				<div className="grid gap-6 xl:grid-cols-4">
 					{metricCards.map((card) => (
 						<MetricCard

@@ -18,6 +18,7 @@ import { insertAuditLog } from "../lib/audit.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { createNotification } from "../lib/notification.helpers.js";
+import { deriveProposalState } from "../lib/derived-states.js";
 import {
 	PROPOSAL_STATUS,
 	REVIEW_DECISION,
@@ -111,6 +112,7 @@ const CreateProposalSchema = z
 				}),
 			)
 			.optional(),
+		status: z.string().optional(),
 	})
 	.openapi("CreateProposal");
 
@@ -449,6 +451,119 @@ app.openapi(getRoute, async (c) => {
 	);
 });
 
+// ── GET /proposals/:id/derived-state ──
+const DerivedStateSchema = z
+	.object({
+		state: z.enum(["ACT", "WAIT", "WATCH"]),
+		owner: z.string(),
+		reason: z.string(),
+		nextTransition: z.string(),
+	})
+	.openapi("DerivedState");
+
+const derivedStateRoute = createRoute({
+	method: "get",
+	path: "/proposals/{id}/derived-state",
+	tags: ["Proposals"],
+	summary: "Get the derived Act/Wait/Watch state for a proposal",
+	security: [{ Bearer: [] }],
+	request: { params: ParamId },
+	responses: {
+		200: {
+			content: { "application/json": { schema: DerivedStateSchema } },
+			description: "Derived state of the proposal",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Proposal not found",
+		},
+	},
+});
+
+app.openapi(derivedStateRoute, async (c) => {
+	const user = c.get("user");
+	const { id } = c.req.valid("param");
+
+	const whereConditions: SQL[] = [
+		eq(proposals.proposalId, id),
+		isNull(proposals.archivedAt),
+	];
+
+	if (user.roleName === ROLE_NAMES.FACULTY) {
+		if (user.departmentId !== null) {
+			whereConditions.push(eq(proposals.departmentId, user.departmentId));
+		} else {
+			whereConditions.push(eq(proposals.campusId, user.campusId));
+		}
+	} else if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+		if (user.isMainCampus && user.departmentId !== null) {
+			whereConditions.push(eq(proposals.departmentId, user.departmentId));
+		} else {
+			whereConditions.push(eq(proposals.campusId, user.campusId));
+		}
+	}
+
+	const leaderSubquery = db
+		.select({
+			proposalId: proposalMembers.proposalId,
+			userId: proposalMembers.userId,
+		})
+		.from(proposalMembers)
+		.where(eq(proposalMembers.projectRole, "Project Leader"))
+		.as("leader_members");
+
+	const [row] = await db
+		.select({
+			proposalId: proposals.proposalId,
+			status: proposals.status,
+			bypassedRetChair: proposals.bypassedRetChair,
+			leaderId: leaderSubquery.userId,
+			campusId: proposals.campusId,
+			departmentId: proposals.departmentId,
+		})
+		.from(proposals)
+		.leftJoin(
+			leaderSubquery,
+			eq(proposals.proposalId, leaderSubquery.proposalId),
+		)
+		.where(and(...whereConditions))
+		.limit(1);
+
+	if (!row) {
+		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+	}
+
+	// Fetch whether the user has reviewed this proposal
+	const [review] = await db
+		.select({ reviewId: proposalReviews.reviewId })
+		.from(proposalReviews)
+		.where(
+			and(
+				eq(proposalReviews.proposalId, id),
+				eq(proposalReviews.reviewerId, user.userId),
+			),
+		)
+		.limit(1);
+
+	const derived = deriveProposalState(
+		{
+			status: row.status as any,
+			bypassedRetChair: row.bypassedRetChair,
+			leaderId: row.leaderId ?? undefined,
+			campusId: row.campusId,
+			departmentId: row.departmentId,
+		},
+		user,
+		{
+			isRtChair: user.roleName === ROLE_NAMES.RET_CHAIR,
+			isDirector: user.roleName === ROLE_NAMES.DIRECTOR,
+			hasReviewed: !!review,
+		},
+	);
+
+	return c.json(derived, 200);
+});
+
 // ── POST /proposals ──
 const createProposalRoute = createRoute({
 	method: "post",
@@ -535,7 +650,7 @@ app.openapi(createProposalRoute, async (c) => {
 					: null,
 				// DFD 6.1: RET Chair submissions bypass endorsement, route directly to Director
 				bypassedRetChair: user.roleName === ROLE_NAMES.RET_CHAIR,
-				status: PROPOSAL_STATUS.PENDING_REVIEW,
+				status: body.status || PROPOSAL_STATUS.PENDING_REVIEW,
 			})
 			.returning();
 
@@ -571,9 +686,20 @@ app.openapi(createProposalRoute, async (c) => {
 		}
 
 		// Insert beneficiary sectors
-		if (body.sectorIds && body.sectorIds.length > 0) {
+		let sectorIdsToInsert = body.sectorIds || [];
+		if (sectorIdsToInsert.length === 0) {
+			const [firstSector] = await tx
+				.select({ sectorId: beneficiarySectors.sectorId })
+				.from(beneficiarySectors)
+				.limit(1);
+			if (firstSector) {
+				sectorIdsToInsert = [firstSector.sectorId];
+			}
+		}
+
+		if (sectorIdsToInsert.length > 0) {
 			await tx.insert(proposalBeneficiaries).values(
-				body.sectorIds.map((sectorId) => ({
+				sectorIdsToInsert.map((sectorId) => ({
 					proposalId: proposal.proposalId,
 					sectorId,
 				})),
@@ -808,6 +934,93 @@ app.openapi(submitRoute, async (c) => {
 
 	if (!(await isProjectLeader(id, user.userId))) {
 		throw new ApiError(403, "NOT_LEADER", "Only the project leader can submit");
+	}
+
+	// ── Completeness Checks ──
+	// 1. Documents check
+	const docs = await db
+		.select({ documentId: proposalDocuments.documentId })
+		.from(proposalDocuments)
+		.where(eq(proposalDocuments.proposalId, id))
+		.limit(1);
+	if (docs.length === 0) {
+		throw new ApiError(
+			400,
+			"INCOMPLETE_PROPOSAL",
+			"At least one proposal PDF document must be uploaded.",
+		);
+	}
+
+	// 2. Members check
+	const members = await db
+		.select({ memberId: proposalMembers.memberId, projectRole: proposalMembers.projectRole })
+		.from(proposalMembers)
+		.where(eq(proposalMembers.proposalId, id));
+	if (members.length === 0) {
+		throw new ApiError(
+			400,
+			"INCOMPLETE_PROPOSAL",
+			"At least one team member must be assigned.",
+		);
+	}
+	if (!members.some((m) => m.projectRole === "Project Leader")) {
+		throw new ApiError(
+			400,
+			"INCOMPLETE_PROPOSAL",
+			"At least one team member must have the Project Leader role.",
+		);
+	}
+
+	// 3. Beneficiary sectors check
+	const sectors = await db
+		.select({ sectorId: proposalBeneficiaries.sectorId })
+		.from(proposalBeneficiaries)
+		.where(eq(proposalBeneficiaries.proposalId, id))
+		.limit(1);
+	if (sectors.length === 0) {
+		throw new ApiError(
+			400,
+			"INCOMPLETE_PROPOSAL",
+			"At least one target beneficiary sector must be specified.",
+		);
+	}
+
+	// 4. SDGs check
+	const sdgAlignments = await db
+		.select({ sdgId: proposalSdgs.sdgId })
+		.from(proposalSdgs)
+		.where(eq(proposalSdgs.proposalId, id))
+		.limit(1);
+	if (sdgAlignments.length === 0) {
+		throw new ApiError(
+			400,
+			"INCOMPLETE_PROPOSAL",
+			"At least one Sustainable Development Goal (SDG) alignment must be specified.",
+		);
+	}
+
+	// 5. Check proposal details: dates
+	const [proposalDetails] = await db
+		.select({
+			targetStartDate: proposals.targetStartDate,
+			targetEndDate: proposals.targetEndDate,
+		})
+		.from(proposals)
+		.where(eq(proposals.proposalId, id))
+		.limit(1);
+	if (!proposalDetails?.targetStartDate || !proposalDetails?.targetEndDate) {
+		throw new ApiError(
+			400,
+			"INCOMPLETE_PROPOSAL",
+			"Target start and end dates are required.",
+		);
+	}
+	if (new Date(proposalDetails.targetStartDate) > new Date(proposalDetails.targetEndDate)) {
+		throw new ApiError(
+			400,
+			"INCOMPLETE_PROPOSAL",
+			"Target end date must be on or after target start date.",
+		);
 	}
 
 	const [updated] = await db
@@ -1189,6 +1402,54 @@ app.openapi(listSectorsRoute, async (c) => {
 		.orderBy(beneficiarySectors.sectorName);
 
 	return c.json(rows, 200);
+});
+
+// ── GET /proposals/metadata/requirements ──
+const listRequirementsRoute = createRoute({
+	method: "get",
+	path: "/proposals/metadata/requirements",
+	tags: ["Proposals"],
+	summary: "List proposal submission checklist requirements",
+	responses: {
+		200: {
+			description: "Requirements checklist metadata",
+		},
+	},
+});
+
+app.openapi(listRequirementsRoute, (c) => {
+	const requirements = {
+		documents: [
+			{
+				type: "proposal_pdf",
+				label: "Project Proposal PDF",
+				required: true,
+				description: "Official project proposal document in PDF format.",
+			},
+		],
+		members: {
+			required: true,
+			description: "At least one team member with Project Leader role is required.",
+		},
+		sectors: {
+			required: true,
+			description: "At least one target beneficiary sector must be specified.",
+		},
+		sdgs: {
+			required: true,
+			description: "At least one Sustainable Development Goal (SDG) alignment is required.",
+		},
+		budget: {
+			required: true,
+			description: "Budget values for partner and university share must be non-negative.",
+		},
+		dates: {
+			required: true,
+			description: "Target start and end dates are required. End date must be on or after start date.",
+		},
+	};
+
+	return c.json(requirements, 200);
 });
 
 // ── Comments API Endpoints ──

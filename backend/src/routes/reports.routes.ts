@@ -7,6 +7,8 @@ import { projects } from "../db/schema/projects.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposals } from "../db/schema/proposals.js";
 import { users } from "../db/schema/users.js";
+import { projectReportingSchedules } from "../db/schema/project-reporting-schedules.js";
+import { projectReportingDates } from "../db/schema/project-reporting-dates.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
@@ -327,22 +329,58 @@ app.openapi(createReportRoute, async (c) => {
 		);
 	}
 
-	const [created] = await db
-		.insert(projectReports)
-		.values({
-			projectId: body.projectId,
-			submittedById: user.userId,
-			reportType: body.reportType,
-			remarks: body.remarks ?? null,
-			storagePath: null,
-			periodStart: body.periodStart ? new Date(body.periodStart) : null,
-			periodEnd: body.periodEnd ? new Date(body.periodEnd) : null,
-		})
-		.returning();
+	const created = await db.transaction(async (tx) => {
+		const [report] = await tx
+			.insert(projectReports)
+			.values({
+				projectId: body.projectId,
+				submittedById: user.userId,
+				reportType: body.reportType,
+				remarks: body.remarks ?? null,
+				storagePath: null,
+				periodStart: body.periodStart ? new Date(body.periodStart) : null,
+				periodEnd: body.periodEnd ? new Date(body.periodEnd) : null,
+			})
+			.returning();
 
-	if (!created) {
-		throw new ApiError(500, "INSERT_FAILED", "Failed to create report");
-	}
+		if (!report) {
+			throw new ApiError(500, "INSERT_FAILED", "Failed to create report");
+		}
+
+		// Find the reporting schedule for the project
+		const [schedule] = await tx
+			.select({ scheduleId: projectReportingSchedules.scheduleId })
+			.from(projectReportingSchedules)
+			.where(eq(projectReportingSchedules.projectId, body.projectId))
+			.limit(1);
+
+		if (schedule) {
+			// Find the earliest incomplete due date
+			const [earliestDueDate] = await tx
+				.select()
+				.from(projectReportingDates)
+				.where(
+					and(
+						eq(projectReportingDates.scheduleId, schedule.scheduleId),
+						eq(projectReportingDates.isCompleted, false),
+					),
+				)
+				.orderBy(projectReportingDates.reportingDate)
+				.limit(1);
+
+			if (earliestDueDate) {
+				await tx
+					.update(projectReportingDates)
+					.set({
+						isCompleted: true,
+						completedAt: new Date(),
+					})
+					.where(eq(projectReportingDates.id, earliestDueDate.id));
+			}
+		}
+
+		return report;
+	});
 
 	await insertAuditLog({
 		userId: user.userId,
