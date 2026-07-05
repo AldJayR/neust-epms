@@ -80,6 +80,7 @@ describe("GET /proposals/:id", () => {
 describe("POST /proposals", () => {
 	it("should create a proposal with transaction", async () => {
 		const mock = createMockProposal();
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never); // duplicate title check → no match
 		vi.mocked(db.transaction).mockImplementation(
 			mockTransaction(mock) as never,
 		);

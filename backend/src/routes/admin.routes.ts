@@ -402,6 +402,97 @@ app.openapi(bulkApproveRoute, async (c) => {
 	);
 });
 
+// ── PATCH /admin/users/{id}/reject ──
+const AdminParamId = z.object({
+	id: z.string().openapi({
+		param: {
+			name: "id",
+			in: "path",
+		},
+		type: "string",
+		example: "123e4567-e89b-12d3-a456-426614174000",
+	}),
+});
+
+const RejectUserSchema = z
+	.object({
+		reason: z.string().optional(),
+	})
+	.openapi("RejectUser");
+
+const rejectUserRoute = createRoute({
+	method: "patch",
+	path: "/admin/users/{id}/reject",
+	tags: ["Admin"],
+	summary: "Reject a pending user registration (Super Admin only)",
+	security: [{ Bearer: [] }],
+	request: {
+		params: AdminParamId,
+		body: {
+			content: {
+				"application/json": { schema: RejectUserSchema },
+			},
+			required: true,
+		},
+	},
+	responses: {
+		200: {
+			content: {
+				"application/json": {
+					schema: z.object({ success: z.boolean(), userId: z.string() }),
+				},
+			},
+			description: "User rejected",
+		},
+		400: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "User not pending",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "User not found",
+		},
+	},
+});
+
+app.openapi(rejectUserRoute, async (c) => {
+	const authUser = c.get("user");
+	const { id } = c.req.valid("param");
+	const body = c.req.valid("json");
+
+	const [existing] = await db
+		.select({ userId: users.userId, isActive: users.isActive })
+		.from(users)
+		.where(eq(users.userId, id))
+		.limit(1);
+
+	if (!existing) {
+		throw new ApiError(404, "NOT_FOUND", "User not found");
+	}
+
+	if (existing.isActive) {
+		throw new ApiError(
+			400,
+			"INVALID_STATE",
+			"Cannot reject an already active user",
+		);
+	}
+
+	await db
+		.update(users)
+		.set({ archivedAt: new Date(), updatedAt: new Date() })
+		.where(eq(users.userId, id));
+
+	await insertAuditLog({
+		userId: authUser.userId,
+		action: `Rejected user ${id}${body.reason ? `: ${body.reason}` : ""}`,
+		tableAffected: "users",
+		ipAddress: getClientIp(c),
+	});
+
+	return c.json({ success: true, userId: id }, 200);
+});
+
 // ── POST /admin/users ──
 const provisionUserRoute = createRoute({
 	method: "post",

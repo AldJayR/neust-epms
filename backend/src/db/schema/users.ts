@@ -39,6 +39,7 @@ export const users = pgTable(
 		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
 	},
 	(table) => ({
 		roleIdx: index("users_role_id_idx").on(table.roleId),

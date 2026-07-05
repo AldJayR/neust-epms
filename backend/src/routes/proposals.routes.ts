@@ -500,6 +500,21 @@ app.openapi(createProposalRoute, async (c) => {
 		}
 	}
 
+	// DFD 4.1: Check for duplicate title (case-insensitive)
+	const [duplicate] = await db
+		.select({ proposalId: proposals.proposalId, title: proposals.title })
+		.from(proposals)
+		.where(ilike(proposals.title, body.title))
+		.limit(1);
+
+	if (duplicate) {
+		throw new ApiError(
+			409,
+			"DUPLICATE_TITLE",
+			"A proposal with this title already exists",
+		);
+	}
+
 	const created = await db.transaction(async (tx) => {
 		const [proposal] = await tx
 			.insert(proposals)
