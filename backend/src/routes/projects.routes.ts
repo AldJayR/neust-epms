@@ -1403,7 +1403,12 @@ app.openapi(projectReadinessRoute, async (c) => {
 			projectStatus: projects.projectStatus,
 		})
 		.from(projects)
-		.where(and(eq(projects.projectId, id), isNull(projects.archivedAt)))
+		.where(
+			and(
+				or(eq(projects.projectId, id), eq(projects.proposalId, id)),
+				isNull(projects.archivedAt),
+			),
+		)
 		.limit(1);
 
 	if (!project) {
@@ -1612,7 +1617,12 @@ app.openapi(projectReportingScheduleRoute, async (c) => {
 			projectId: projects.projectId,
 		})
 		.from(projects)
-		.where(and(eq(projects.projectId, id), isNull(projects.archivedAt)))
+		.where(
+			and(
+				or(eq(projects.projectId, id), eq(projects.proposalId, id)),
+				isNull(projects.archivedAt),
+			),
+		)
 		.limit(1);
 
 	if (!project) {
@@ -1623,7 +1633,7 @@ app.openapi(projectReportingScheduleRoute, async (c) => {
 	const [scheduleRow] = await db
 		.select({ scheduleId: projectReportingSchedules.scheduleId })
 		.from(projectReportingSchedules)
-		.where(eq(projectReportingSchedules.projectId, id))
+		.where(eq(projectReportingSchedules.projectId, project.projectId))
 		.limit(1);
 
 	if (!scheduleRow) {
