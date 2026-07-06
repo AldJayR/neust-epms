@@ -387,45 +387,51 @@ export function CreateProposalModal({
 								</Button>
 							) : (
 								<div className="flex items-center gap-3">
-									<Button
-										type="button"
-										variant="outline"
-										onClick={() => handleSave(false)}
-										disabled={
-											createProposalMutation.isPending ||
-											updateProposalMutation.isPending ||
-											submitProposalMutation.isPending ||
-											uploadDocumentMutation.isPending
-										}
-									>
-										Save as Draft
-									</Button>
-									<Button
-										type="button"
-										onClick={() => handleSave(true)}
-										className="bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold"
-										disabled={
-											createProposalMutation.isPending ||
-											updateProposalMutation.isPending ||
-											submitProposalMutation.isPending ||
-											uploadDocumentMutation.isPending
-										}
-									>
-										{createProposalMutation.isPending ||
+								<Button
+									type="button"
+									variant="outline"
+									onClick={() => handleSave(false)}
+									disabled={
+										createProposalMutation.isPending ||
 										updateProposalMutation.isPending ||
 										submitProposalMutation.isPending ||
-										uploadDocumentMutation.isPending ? (
-											<>
-												<Loader2 className="size-4 animate-spin" />
-												Submitting...
-											</>
-										) : (
-											<>
-												Submit for Review
-												<Check className="size-4" />
-											</>
-										)}
-									</Button>
+										uploadDocumentMutation.isPending
+									}
+								>
+									{createProposalMutation.isPending ||
+									updateProposalMutation.isPending ||
+									uploadDocumentMutation.isPending ? (
+										<>
+											<Loader2 className="size-4 animate-spin" />
+											Saving...
+										</>
+									) : (
+										"Save as Draft"
+									)}
+								</Button>
+								<Button
+									type="button"
+									onClick={() => handleSave(true)}
+									className="bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold"
+									disabled={
+										createProposalMutation.isPending ||
+										updateProposalMutation.isPending ||
+										submitProposalMutation.isPending ||
+										uploadDocumentMutation.isPending
+									}
+								>
+									{submitProposalMutation.isPending ? (
+										<>
+											<Loader2 className="size-4 animate-spin" />
+											Submitting...
+										</>
+									) : (
+										<>
+											Submit for Review
+											<Check className="size-4" />
+										</>
+									)}
+								</Button>
 								</div>
 							)}
 						</div>
