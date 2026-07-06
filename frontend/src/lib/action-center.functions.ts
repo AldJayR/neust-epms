@@ -8,6 +8,7 @@ const API_BASE = process.env.API_URL ?? "http://localhost:3001/api/v1";
 
 export interface ActionItem {
 	id: string;
+	dateId?: string;
 	type: "proposal" | "project" | "moa" | "report" | "registration";
 	title: string;
 	status: string;

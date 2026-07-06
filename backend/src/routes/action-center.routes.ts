@@ -28,6 +28,7 @@ app.use("/action-center/*", authMiddleware);
 const ActionItemSchema = z
 	.object({
 		id: z.string(),
+		dateId: z.string().optional(),
 		type: z.enum(["proposal", "project", "moa", "report", "registration"]),
 		title: z.string(),
 		status: z.string(),
@@ -292,6 +293,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 			const urgency = rep.reportingDate <= sevenDays ? ("soon" as const) : ("routine" as const);
 			const item = {
 				id: rep.proposalId,
+				dateId: rep.dateId,
 				type: "report" as const,
 				title: `Report Obligation for ${rep.title}`,
 				status: "Upcoming",
@@ -661,6 +663,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 			const urgency = rep.reportingDate <= sevenDays ? ("soon" as const) : ("routine" as const);
 			const item = {
 				id: rep.proposalId,
+				dateId: rep.dateId,
 				type: "report" as const,
 				title: `Report deadline for ${rep.title}`,
 				status: "Upcoming",

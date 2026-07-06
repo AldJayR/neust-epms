@@ -68,6 +68,19 @@ export function ActionCenterCard() {
 
 	const { actItems, watchItems } = data;
 
+	const isEmpty = actItems.length === 0 && watchItems.length === 0;
+
+	if (isEmpty) {
+		return (
+			<Card size="sm" className="w-full">
+				<CardContent className="flex items-center gap-3 py-3">
+					<CheckCircle className="size-4 text-muted-foreground" />
+					<p className="text-sm text-muted-foreground">All caught up — no pending actions.</p>
+				</CardContent>
+			</Card>
+		);
+	}
+
 	return (
 		<Card size="sm" className="w-full">
 			<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -106,7 +119,7 @@ export function ActionCenterCard() {
 								actItems.map((item) => {
 									const routeConfig = getNavigationRoute(item.type, item.id);
 									return (
-										<div key={`${item.type}-${item.id}`} className="group/item flex items-center justify-between py-3 first:pt-0 last:pb-0">
+										<div key={`${item.type}-${item.dateId ?? item.id}`} className="group/item flex items-center justify-between py-3 first:pt-0 last:pb-0">
 											<div className="flex items-center gap-3 min-w-0">
 												<div className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
 													{getCategoryIcon(item.type)}
@@ -153,7 +166,7 @@ export function ActionCenterCard() {
 								watchItems.map((item) => {
 									const routeConfig = getNavigationRoute(item.type, item.id);
 									return (
-										<div key={`${item.type}-${item.id}`} className="group/item flex items-center justify-between py-3 first:pt-0 last:pb-0">
+										<div key={`${item.type}-${item.dateId ?? item.id}`} className="group/item flex items-center justify-between py-3 first:pt-0 last:pb-0">
 											<div className="flex items-center gap-3 min-w-0">
 												<div className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
 													{getCategoryIcon(item.type)}
