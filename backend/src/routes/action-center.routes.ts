@@ -290,7 +290,8 @@ app.openapi(getActionCenterRoute, async (c) => {
 			);
 
 		for (const rep of upcomingReports) {
-			const urgency = rep.reportingDate <= sevenDays ? ("soon" as const) : ("routine" as const);
+			const urgency = rep.reportingDate <= sevenDays ? ("urgent" as const) : rep.reportingDate <= thirtyDays ? ("soon" as const) : ("routine" as const);
+			const derivedState = urgency === "urgent" ? ("ACT" as const) : ("WATCH" as const);
 			const item = {
 				id: rep.proposalId,
 				dateId: rep.dateId,
@@ -299,11 +300,12 @@ app.openapi(getActionCenterRoute, async (c) => {
 				status: "Upcoming",
 				actionRequired: `Submit report by ${rep.reportingDate.toLocaleDateString()}`,
 				owner: "Project Leader",
-				derivedState: "WATCH" as const,
+				derivedState,
 				createdAt: rep.createdAt.toISOString(),
 				urgency,
 			};
-			watchItems.push(item);
+			if (derivedState === "ACT") actItems.push(item);
+			else watchItems.push(item);
 		}
 	}
 
@@ -411,7 +413,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 				type: "project" as const,
 				title: proj.title ?? "Untitled Project",
 				status: proj.projectStatus,
-				actionRequired: derived.nextTransition,
+				actionRequired: derived.state === "ACT" ? derived.nextTransition : derived.reason,
 				owner: derived.owner,
 				derivedState: derived.state,
 				createdAt: proj.createdAt.toISOString(),
@@ -478,41 +480,50 @@ app.openapi(getActionCenterRoute, async (c) => {
 			else watchItems.push(item);
 		}
 
-		// 4. Expiring MOAs (within 30 days)
-		const expiringMoasDb = await db
+		// 4. Upcoming report deadlines (national scope)
+		const upcomingReports = await db
 			.select({
-				moaId: moas.moaId,
-				partnerName: partners.partnerName,
-				validUntil: moas.validUntil,
-				createdAt: moas.createdAt,
+				dateId: projectReportingDates.id,
+				reportingDate: projectReportingDates.reportingDate,
+				title: proposals.title,
+				proposalId: projects.proposalId,
+				projectStatus: projects.projectStatus,
+				moaId: projects.moaId,
+				createdAt: projectReportingDates.createdAt,
+				leaderId: leaderSubquery.userId,
 			})
-			.from(moas)
-			.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
+			.from(projectReportingDates)
+			.innerJoin(projectReportingSchedules, eq(projectReportingDates.scheduleId, projectReportingSchedules.scheduleId))
+			.innerJoin(projects, eq(projectReportingSchedules.projectId, projects.projectId))
+			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+			.leftJoin(leaderSubquery, eq(proposals.proposalId, leaderSubquery.proposalId))
 			.where(
 				and(
-					gte(moas.validUntil, now),
-					lte(moas.validUntil, thirtyDays),
-					isNull(moas.archivedAt)
+					eq(projectReportingDates.isCompleted, false),
+					gte(projectReportingDates.reportingDate, now),
+					isNull(projects.archivedAt)
 				)
 			);
 
-		expiringMoas = expiringMoasDb.length;
-
-		for (const moa of expiringMoasDb) {
-			const urgency = moa.validUntil <= sevenDays ? ("urgent" as const) : ("soon" as const);
+		for (const rep of upcomingReports) {
+			const urgency = rep.reportingDate <= sevenDays ? ("urgent" as const) : rep.reportingDate <= thirtyDays ? ("soon" as const) : ("routine" as const);
+			const derivedState = urgency === "urgent" ? ("ACT" as const) : ("WATCH" as const);
 			const item = {
-				id: moa.moaId,
-				type: "moa" as const,
-				title: `MOA with ${moa.partnerName}`,
-				status: `Expiring ${moa.validUntil.toLocaleDateString()}`,
-				actionRequired: "Renew or renegotiate agreement",
-				owner: "Director/Admin",
-				derivedState: "ACT" as const,
-				createdAt: moa.createdAt.toISOString(),
+				id: rep.proposalId,
+				dateId: rep.dateId,
+				type: "report" as const,
+				title: `Report Obligation for ${rep.title}`,
+				status: "Upcoming",
+				actionRequired: `Submit report by ${rep.reportingDate.toLocaleDateString()}`,
+				owner: "Project Leader",
+				derivedState,
+				createdAt: rep.createdAt.toISOString(),
 				urgency,
 			};
-			actItems.push(item);
+			if (derivedState === "ACT") actItems.push(item);
+			else watchItems.push(item);
 		}
+
 	}
 
 	else if (user.roleName === ROLE_NAMES.FACULTY) {
@@ -660,7 +671,8 @@ app.openapi(getActionCenterRoute, async (c) => {
 			);
 
 		for (const rep of upcomingReports) {
-			const urgency = rep.reportingDate <= sevenDays ? ("soon" as const) : ("routine" as const);
+			const urgency = rep.reportingDate <= sevenDays ? ("urgent" as const) : rep.reportingDate <= thirtyDays ? ("soon" as const) : ("routine" as const);
+			const derivedState = urgency === "routine" ? ("WATCH" as const) : ("ACT" as const);
 			const item = {
 				id: rep.proposalId,
 				dateId: rep.dateId,
@@ -669,11 +681,12 @@ app.openapi(getActionCenterRoute, async (c) => {
 				status: "Upcoming",
 				actionRequired: `Submit progress report by ${rep.reportingDate.toLocaleDateString()}`,
 				owner: "You",
-				derivedState: "ACT" as const,
+				derivedState,
 				createdAt: rep.createdAt.toISOString(),
 				urgency,
 			};
-			actItems.push(item);
+			if (derivedState === "ACT") actItems.push(item);
+			else watchItems.push(item);
 		}
 	}
 

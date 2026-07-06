@@ -203,7 +203,7 @@ export function MoaDetailsPage({ moaId, currentUser }: MoaDetailsPageProps) {
 											render={
 												<Link
 													to="/projects/$projectId"
-													params={{ projectId: project.proposalId }}
+													params={{ projectId: project.projectId }}
 												/>
 											}
 										>
