@@ -322,6 +322,7 @@ const updateProposalSchema = z.object({
 	extensionCategory: z.string().min(1),
 	budgetPartner: z.number().optional(),
 	budgetNeust: z.number().optional(),
+	sectorNames: z.array(z.string()).optional(),
 });
 
 export const submitProposalFn = createServerFn({ method: "POST" })
@@ -361,14 +362,15 @@ export const updateProposalFn = createServerFn({ method: "POST" })
 				Authorization: `Bearer ${accessToken}`,
 				"Content-Type": "application/json",
 			},
-			body: JSON.stringify({
-				title: data.title,
-				bannerProgram: data.bannerProgram,
-				projectLocale: data.projectLocale,
-				extensionCategory: data.extensionCategory,
-				budgetPartner: data.budgetPartner,
-				budgetNeust: data.budgetNeust,
-			}),
+		body: JSON.stringify({
+			title: data.title,
+			bannerProgram: data.bannerProgram,
+			projectLocale: data.projectLocale,
+			extensionCategory: data.extensionCategory,
+			budgetPartner: data.budgetPartner,
+			budgetNeust: data.budgetNeust,
+			sectorNames: data.sectorNames,
+		}),
 		});
 
 		if (!response.ok) {

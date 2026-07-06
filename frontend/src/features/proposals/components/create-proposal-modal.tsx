@@ -198,6 +198,7 @@ export function CreateProposalModal({
 						extensionCategory: values.extensionCategory,
 						budgetPartner: values.budgetPartner,
 						budgetNeust: values.budgetNeust,
+						sectorNames: values.beneficiarySectors,
 					},
 				});
 			} else {

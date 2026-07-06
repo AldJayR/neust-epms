@@ -124,6 +124,7 @@ const UpdateProposalSchema = z
 		extensionCategory: z.string().min(1).optional(),
 		budgetPartner: z.coerce.number().nonnegative().finite().optional(),
 		budgetNeust: z.coerce.number().nonnegative().finite().optional(),
+		sectorNames: z.array(z.string().min(1)).optional(),
 	})
 	.openapi("UpdateProposal");
 
@@ -888,6 +889,44 @@ app.openapi(updateRoute, async (c) => {
 
 	if (!updated) {
 		throw new ApiError(500, "UPDATE_FAILED", "Failed to update proposal");
+	}
+
+	if (body.sectorNames && body.sectorNames.length > 0) {
+		const sectorIds: number[] = [];
+		for (const name of body.sectorNames) {
+			const trimmed = name.trim();
+			if (!trimmed) continue;
+
+			const [existing] = await db
+				.select({ sectorId: beneficiarySectors.sectorId })
+				.from(beneficiarySectors)
+				.where(eq(beneficiarySectors.sectorName, trimmed))
+				.limit(1);
+
+			if (existing) {
+				sectorIds.push(existing.sectorId);
+			} else {
+				const [created] = await db
+					.insert(beneficiarySectors)
+					.values({ sectorName: trimmed })
+					.returning({ sectorId: beneficiarySectors.sectorId });
+				if (created) {
+					sectorIds.push(created.sectorId);
+				}
+			}
+		}
+
+		if (sectorIds.length > 0) {
+			await db
+				.delete(proposalBeneficiaries)
+				.where(eq(proposalBeneficiaries.proposalId, id));
+			await db.insert(proposalBeneficiaries).values(
+				sectorIds.map((sectorId) => ({
+					proposalId: id,
+					sectorId,
+				})),
+			);
+		}
 	}
 
 	await insertAuditLog({
