@@ -103,6 +103,7 @@ const CreateProposalSchema = z
 		targetEndDate: z.string().datetime().optional(),
 		departmentIds: z.array(z.number().int().positive()).optional(),
 		sectorIds: z.array(z.number().int().positive()).optional(),
+		sectorNames: z.array(z.string().min(1)).optional(),
 		sdgIds: z.array(z.number().int().positive()).optional(),
 		members: z
 			.array(
@@ -686,6 +687,31 @@ app.openapi(createProposalRoute, async (c) => {
 
 		// Insert beneficiary sectors
 		let sectorIdsToInsert = body.sectorIds || [];
+
+		if (sectorIdsToInsert.length === 0 && body.sectorNames && body.sectorNames.length > 0) {
+			for (const name of body.sectorNames) {
+				const trimmed = name.trim();
+				if (!trimmed) continue;
+
+				const [existing] = await tx
+					.select({ sectorId: beneficiarySectors.sectorId })
+					.from(beneficiarySectors)
+					.where(eq(beneficiarySectors.sectorName, trimmed))
+					.limit(1);
+
+				if (existing) {
+					sectorIdsToInsert.push(existing.sectorId);
+				} else {
+					const [created] = await tx
+						.insert(beneficiarySectors)
+						.values({ sectorName: trimmed })
+						.returning({ sectorId: beneficiarySectors.sectorId });
+					if (created) {
+						sectorIdsToInsert.push(created.sectorId);
+					}
+				}
+			}
+		}
 		if (sectorIdsToInsert.length === 0) {
 			const [firstSector] = await tx
 				.select({ sectorId: beneficiarySectors.sectorId })

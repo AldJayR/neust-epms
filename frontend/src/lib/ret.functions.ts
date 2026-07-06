@@ -29,6 +29,7 @@ const createProposalSchema = z.object({
 	targetEndDate: z.string().optional(),
 	departmentIds: z.array(z.number()).optional(),
 	sectorIds: z.array(z.number()).optional(),
+	sectorNames: z.array(z.string()).optional(),
 	sdgIds: z.array(z.number()).optional(),
 	members: z
 		.array(
@@ -96,6 +97,7 @@ export interface CreateProposalInput {
 	targetEndDate?: string;
 	departmentIds?: number[];
 	sectorIds?: number[];
+	sectorNames?: string[];
 	sdgIds?: number[];
 	members?: {
 		userId: string;

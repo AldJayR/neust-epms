@@ -1,5 +1,8 @@
 import type { UseFormReturn } from "react-hook-form";
 import { useWatch } from "react-hook-form";
+import { X } from "lucide-react";
+import * as React from "react";
+import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Field,
@@ -34,6 +37,29 @@ export function ProposalStepInfo({
 			control: form.control,
 			name: "sdgIds",
 		}) || [];
+
+	const watchedSectors =
+		useWatch({
+			control: form.control,
+			name: "beneficiarySectors",
+		}) || [];
+
+	const [sectorInput, setSectorInput] = React.useState("");
+
+	const addSector = () => {
+		const trimmed = sectorInput.trim();
+		if (trimmed && !watchedSectors.includes(trimmed)) {
+			form.setValue("beneficiarySectors", [...watchedSectors, trimmed]);
+			setSectorInput("");
+		}
+	};
+
+	const removeSector = (sector: string) => {
+		form.setValue(
+			"beneficiarySectors",
+			watchedSectors.filter((s) => s !== sector),
+		);
+	};
 
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -159,6 +185,44 @@ export function ProposalStepInfo({
 					))}
 				</div>
 				<FieldError errors={[form.formState.errors.sdgIds]} />
+			</div>
+
+			<div className="md:col-span-2 space-y-2">
+				<FieldLabel>Target Beneficiary Sectors</FieldLabel>
+				<div className="flex flex-wrap gap-1.5 min-h-[38px] p-2 border rounded-md">
+					{watchedSectors.map((sector) => (
+						<Badge
+							key={sector}
+							variant="secondary"
+							className="gap-1 pr-1"
+						>
+							{sector}
+							<button
+								type="button"
+								onClick={() => removeSector(sector)}
+								className="rounded-full p-0.5 hover:bg-muted"
+							>
+								<X className="size-3" />
+							</button>
+						</Badge>
+					))}
+					<Input
+						placeholder={watchedSectors.length === 0 ? "Type a sector and press Enter" : "Add more..."}
+						value={sectorInput}
+						onChange={(e) => setSectorInput(e.target.value)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter") {
+								e.preventDefault();
+								addSector();
+							}
+						}}
+						className="flex-1 min-w-[180px] border-0 shadow-none focus-visible:ring-0 h-auto p-0"
+					/>
+				</div>
+				<p className="text-xs text-muted-foreground">
+					e.g. Farmers, Youth, Senior Citizens, Women, Children
+				</p>
+				<FieldError errors={[form.formState.errors.beneficiarySectors]} />
 			</div>
 		</div>
 	);

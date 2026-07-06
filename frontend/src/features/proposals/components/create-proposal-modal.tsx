@@ -37,6 +37,9 @@ const formSchema = z
 		campusId: z.string().min(1, "Campus is required"),
 		departmentId: z.string().min(1, "Department is required"),
 		sdgIds: z.array(z.number()).min(1, "Select at least one SDG"),
+		beneficiarySectors: z
+			.array(z.string())
+			.min(1, "Enter at least one target beneficiary sector"),
 		targetStartDate: z.string().min(1, "Start date is required"),
 		targetEndDate: z.string().min(1, "End date is required"),
 		budgetPartner: z.number().min(0, "Budget cannot be negative"),
@@ -120,6 +123,7 @@ export function CreateProposalModal({
 			campusId: user.campusId?.toString() ?? "",
 			departmentId: user.departmentId?.toString() ?? "",
 			sdgIds: [],
+			beneficiarySectors: [],
 			targetStartDate: "",
 			targetEndDate: "",
 			budgetPartner: 0,
@@ -209,8 +213,9 @@ export function CreateProposalModal({
 						budgetNeust: values.budgetNeust,
 						targetStartDate: new Date(values.targetStartDate).toISOString(),
 						targetEndDate: new Date(values.targetEndDate).toISOString(),
-						sdgIds: values.sdgIds,
-						members: values.members.map((m) => ({
+					sdgIds: values.sdgIds,
+					sectorNames: values.beneficiarySectors,
+					members: values.members.map((m) => ({
 							userId: m.userId,
 							projectRole: m.projectRole,
 						})),
@@ -292,6 +297,7 @@ export function CreateProposalModal({
 				"campusId",
 				"departmentId",
 				"sdgIds",
+				"beneficiarySectors",
 			];
 		} else if (step === 3) {
 			fieldsToValidate = [
