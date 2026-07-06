@@ -60,24 +60,26 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 				isMember: p.isMember,
 			};
 		}),
-		...proposalsList.map((p) => {
-			const isLeader =
-				(p.leaderFirstName &&
-					p.leaderLastName &&
-					`${p.leaderFirstName} ${p.leaderLastName}` === userFullName) ||
-				false;
-			return {
-				id: p.proposalId,
-				proposalId: p.proposalId,
-				title: p.title || "Untitled Proposal",
-				startDate: p.targetStartDate,
-				endDate: p.targetEndDate,
-				status: p.status,
-				isLeader,
-				isProject: false,
-				isMember: p.isMember,
-			};
-		}),
+		...proposalsList
+			.filter((p) => !projectsList.some((proj) => proj.proposalId === p.proposalId))
+			.map((p) => {
+				const isLeader =
+					(p.leaderFirstName &&
+						p.leaderLastName &&
+						`${p.leaderFirstName} ${p.leaderLastName}` === userFullName) ||
+					false;
+				return {
+					id: p.proposalId,
+					proposalId: p.proposalId,
+					title: p.title || "Untitled Proposal",
+					startDate: p.targetStartDate,
+					endDate: p.targetEndDate,
+					status: p.status,
+					isLeader,
+					isProject: false,
+					isMember: p.isMember,
+				};
+			}),
 	];
 
 	const userItems = combinedItems.filter(
