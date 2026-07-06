@@ -40,8 +40,8 @@ export const STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 		nextStep: "No further action on this proposal.",
 	},
 	Ongoing: {
-		label: "Active Project",
-		explanation: "Your project is approved and actively implementing.",
+		label: "Ongoing",
+		explanation: "Your project is ongoing.",
 		nextStep: "Submit reports on time per your schedule.",
 	},
 	Overdue: {
