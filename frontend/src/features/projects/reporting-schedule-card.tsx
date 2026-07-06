@@ -64,6 +64,7 @@ export function ReportingScheduleCard({
 					{dueDates.map((item, idx) => {
 						const dateObj = new Date(item.date);
 						const isOverdue = !item.isCompleted && dateObj < now;
+						const allPreviousComplete = dueDates.slice(0, idx).every((d) => d.isCompleted);
 
 						return (
 							<div key={item.id} className="relative">
@@ -108,6 +109,7 @@ export function ReportingScheduleCard({
 														href={item.storagePath}
 														target="_blank"
 														rel="noopener noreferrer"
+														className="text-foreground no-underline hover:underline"
 													/>
 												}
 											>
@@ -115,7 +117,7 @@ export function ReportingScheduleCard({
 												Download
 											</Button>
 										) : (
-											isFaculty && (
+											isFaculty && allPreviousComplete && !item.isCompleted && (
 												<Button
 													size="xs"
 													variant="outline"
@@ -129,9 +131,9 @@ export function ReportingScheduleCard({
 										)}
 									</div>
 								</div>
-							</div>
-						);
-					})}
+						</div>
+					);
+				})}
 				</div>
 			</CardContent>
 		</Card>

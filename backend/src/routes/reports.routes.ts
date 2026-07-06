@@ -329,6 +329,35 @@ app.openapi(createReportRoute, async (c) => {
 		);
 	}
 
+	// Sequential submission: verify the next due date in order is the one being submitted
+	const [schedule] = await db
+		.select({ scheduleId: projectReportingSchedules.scheduleId })
+		.from(projectReportingSchedules)
+		.where(eq(projectReportingSchedules.projectId, body.projectId))
+		.limit(1);
+
+	if (schedule) {
+		const allDueDates = await db
+			.select()
+			.from(projectReportingDates)
+			.where(eq(projectReportingDates.scheduleId, schedule.scheduleId))
+			.orderBy(projectReportingDates.reportingDate);
+
+		const earliestIncomplete = allDueDates.find((d) => !d.isCompleted);
+		if (earliestIncomplete) {
+			const previousIncomplete = allDueDates.filter(
+				(d) => !d.isCompleted && d.reportingDate < earliestIncomplete.reportingDate,
+			);
+			if (previousIncomplete.length > 0) {
+				throw new ApiError(
+					400,
+					"SEQUENTIAL_VIOLATION",
+					"Previous report must be submitted before the next one",
+				);
+			}
+		}
+	}
+
 	const created = await db.transaction(async (tx) => {
 		const [report] = await tx
 			.insert(projectReports)
