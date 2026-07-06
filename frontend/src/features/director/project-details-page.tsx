@@ -547,7 +547,7 @@ export function ProjectDetailsPage({
 		) ?? false;
 
 	const isEditable =
-		isProjectLeader && !["Approved", "Ongoing", "Closed"].includes(data.status);
+		isProjectLeader && ["Draft", "Returned"].includes(data.status);
 
 	const editInitialData = editProposalData
 		? {
