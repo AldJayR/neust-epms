@@ -18,38 +18,32 @@ export function DerivedStateBadge({
 	const config = {
 		ACT: {
 			icon: AlertCircle,
-			color: "bg-amber-500/10 text-amber-600 dark:text-amber-500 border-amber-500/20",
+			variant: "outline" as const,
 			label: "Action Required",
 		},
 		WAIT: {
 			icon: Clock,
-			color: "bg-blue-500/10 text-blue-600 dark:text-blue-500 border-blue-500/20",
+			variant: "secondary" as const,
 			label: "Waiting",
 		},
 		WATCH: {
 			icon: Eye,
-			color: "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/20",
+			variant: "outline" as const,
 			label: "Watching",
 		},
 	};
 
-	const { icon: Icon, color, label } = config[state];
+	const { icon: Icon, variant, label } = config[state];
 
 	return (
 		<Badge
-			variant="outline"
+			variant={variant}
 			aria-label={`${label} - ${owner}. Reason: ${reason}`}
 			title={reason}
-			className={cn(
-				"inline-flex h-6 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold shadow-2xs transition-colors",
-				color,
-				className,
-			)}
+			className={cn("gap-1", className)}
 		>
-			<Icon className="size-3.5 shrink-0" aria-hidden="true" />
-			<span>
-				{label}: <span className="font-medium">{owner}</span>
-			</span>
+			<Icon className="size-3 shrink-0" aria-hidden="true" />
+			{label}: {owner}
 		</Badge>
 	);
 }

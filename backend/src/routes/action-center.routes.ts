@@ -207,6 +207,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 		// 3. Overdue projects in college
 		const overdueProjects = await db
 			.select({
+				proposalId: proposals.proposalId,
 				projectId: projects.projectId,
 				title: proposals.title,
 				projectStatus: projects.projectStatus,
@@ -246,7 +247,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 			);
 
 			const item = {
-				id: proj.projectId,
+				id: proj.proposalId,
 				type: "project" as const,
 				title: proj.title ?? "Untitled Project",
 				status: proj.projectStatus,
@@ -267,7 +268,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 				dateId: projectReportingDates.id,
 				reportingDate: projectReportingDates.reportingDate,
 				title: proposals.title,
-				projectId: projects.projectId,
+				proposalId: projects.proposalId,
 				projectStatus: projects.projectStatus,
 				moaId: projects.moaId,
 				createdAt: projectReportingDates.createdAt,
@@ -290,7 +291,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 		for (const rep of upcomingReports) {
 			const urgency = rep.reportingDate <= sevenDays ? ("soon" as const) : ("routine" as const);
 			const item = {
-				id: rep.dateId,
+				id: rep.proposalId,
 				type: "report" as const,
 				title: `Report Obligation for ${rep.title}`,
 				status: "Upcoming",
@@ -366,6 +367,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 		// 2. Projects awaiting activation (Approved status)
 		const approvedProjects = await db
 			.select({
+				proposalId: proposals.proposalId,
 				projectId: projects.projectId,
 				title: proposals.title,
 				projectStatus: projects.projectStatus,
@@ -403,7 +405,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 			);
 
 			const item = {
-				id: proj.projectId,
+				id: proj.proposalId,
 				type: "project" as const,
 				title: proj.title ?? "Untitled Project",
 				status: proj.projectStatus,
@@ -421,6 +423,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 		// 3. Overdue projects (anywhere)
 		const overdueProjects = await db
 			.select({
+				proposalId: proposals.proposalId,
 				projectId: projects.projectId,
 				title: proposals.title,
 				projectStatus: projects.projectStatus,
@@ -458,7 +461,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 			);
 
 			const item = {
-				id: proj.projectId,
+				id: proj.proposalId,
 				type: "project" as const,
 				title: proj.title ?? "Untitled Project",
 				status: proj.projectStatus,
@@ -572,6 +575,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 		// 2. Overdue projects
 		const overdueProjects = await db
 			.select({
+				proposalId: proposals.proposalId,
 				projectId: projects.projectId,
 				title: proposals.title,
 				projectStatus: projects.projectStatus,
@@ -611,7 +615,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 			);
 
 			const item = {
-				id: proj.projectId,
+				id: proj.proposalId,
 				type: "project" as const,
 				title: proj.title ?? "Untitled Project",
 				status: proj.projectStatus,
@@ -632,7 +636,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 				dateId: projectReportingDates.id,
 				reportingDate: projectReportingDates.reportingDate,
 				title: proposals.title,
-				projectId: projects.projectId,
+				proposalId: projects.proposalId,
 				projectStatus: projects.projectStatus,
 				moaId: projects.moaId,
 				createdAt: projectReportingDates.createdAt,
@@ -656,7 +660,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 		for (const rep of upcomingReports) {
 			const urgency = rep.reportingDate <= sevenDays ? ("soon" as const) : ("routine" as const);
 			const item = {
-				id: rep.dateId,
+				id: rep.proposalId,
 				type: "report" as const,
 				title: `Report deadline for ${rep.title}`,
 				status: "Upcoming",

@@ -56,7 +56,7 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 					`${p.leaderFirstName} ${p.leaderLastName}` === userFullName) ||
 				false;
 			return {
-				id: p.projectId,
+				id: p.proposalId,
 				proposalId: p.proposalId,
 				title: p.title || "Untitled Project",
 				category: p.extensionCategory || "Extension Program",

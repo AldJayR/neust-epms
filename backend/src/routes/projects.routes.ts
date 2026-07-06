@@ -862,16 +862,16 @@ const ProjectDetailsSchema = z.object({
 
 const projectDetailsRoute = createRoute({
 	method: "get",
-	path: "/projects/{proposalId}",
+	path: "/projects/{id}",
 	tags: ["Projects"],
-	summary: "Get project details by proposal ID",
+	summary: "Get project details by proposal ID or project ID",
 	security: [{ Bearer: [] }],
 	request: {
 		params: z.object({
-			proposalId: z
+			id: z
 				.string()
 				.uuid()
-				.openapi({ param: { name: "proposalId", in: "path" } }),
+				.openapi({ param: { name: "id", in: "path" } }),
 		}),
 	},
 	responses: {
@@ -886,7 +886,7 @@ const projectDetailsRoute = createRoute({
 });
 
 app.openapi(projectDetailsRoute, async (c) => {
-	const { proposalId } = c.req.valid("param");
+	const { id } = c.req.valid("param");
 	const user = c.get("user");
 
 	const leaderMembers = db
@@ -931,7 +931,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 		.leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
 		.leftJoin(moas, eq(projects.moaId, moas.moaId))
 		.leftJoin(partners, eq(moas.partnerId, partners.partnerId))
-		.where(eq(proposals.proposalId, proposalId));
+		.where(or(eq(proposals.proposalId, id), eq(projects.projectId, id)));
 
 	if (!row) {
 		return c.json({ error: { message: "Project not found" } }, 404);
@@ -976,7 +976,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 				})
 				.from(proposalMembers)
 				.innerJoin(users, eq(proposalMembers.userId, users.userId))
-				.where(eq(proposalMembers.proposalId, proposalId)),
+				.where(eq(proposalMembers.proposalId, row.proposalId)),
 
 			db
 				.select({
@@ -986,7 +986,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 					uploadedAt: proposalDocuments.uploadedAt,
 				})
 				.from(proposalDocuments)
-				.where(eq(proposalDocuments.proposalId, proposalId))
+				.where(eq(proposalDocuments.proposalId, row.proposalId))
 				.orderBy(desc(proposalDocuments.versionNum)),
 
 			db
@@ -1000,7 +1000,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 				})
 				.from(proposalReviews)
 				.innerJoin(users, eq(proposalReviews.reviewerId, users.userId))
-				.where(eq(proposalReviews.proposalId, proposalId))
+				.where(eq(proposalReviews.proposalId, row.proposalId))
 				.orderBy(desc(proposalReviews.reviewedAt)),
 
 			db
@@ -1010,7 +1010,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 				})
 				.from(proposalSdgs)
 				.innerJoin(sdgs, eq(proposalSdgs.sdgId, sdgs.sdgId))
-				.where(eq(proposalSdgs.proposalId, proposalId))
+				.where(eq(proposalSdgs.proposalId, row.proposalId))
 				.orderBy(sdgs.sdgNumber),
 
 			db
@@ -1029,7 +1029,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 				)
 				.where(
 					and(
-						eq(proposalMembers.proposalId, proposalId),
+						eq(proposalMembers.proposalId, row.proposalId),
 						isNull(specialOrders.archivedAt),
 					),
 				)
