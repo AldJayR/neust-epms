@@ -117,7 +117,7 @@ export function CreateProposalModal({
 			bannerProgram: "",
 			projectLocale: "",
 			extensionCategory: "",
-			campusId: user.campusId.toString(),
+			campusId: user.campusId?.toString() ?? "",
 			departmentId: user.departmentId?.toString() ?? "",
 			sdgIds: [],
 			targetStartDate: "",
