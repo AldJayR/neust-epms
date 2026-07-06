@@ -136,6 +136,7 @@ export function ActionCenterCard() {
 											<Button
 												size="icon-sm"
 												variant="ghost"
+												nativeButton={false}
 												className="shrink-0 rounded-full"
 												render={
 													routeConfig.params ? (
@@ -183,6 +184,7 @@ export function ActionCenterCard() {
 											<Button
 												size="icon-sm"
 												variant="ghost"
+												nativeButton={false}
 												className="shrink-0 rounded-full"
 												render={
 													routeConfig.params ? (
