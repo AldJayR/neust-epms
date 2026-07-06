@@ -130,7 +130,7 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 
 			<ActionCenterCard />
 
-			<div className="grid gap-6 md:grid-cols-3 w-full">
+			<div className="grid gap-6 md:grid-cols-3">
 				<MetricCard
 					label="My Total Submission"
 					value={isLoading ? undefined : myTotalSubmissions}

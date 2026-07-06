@@ -153,7 +153,7 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 					}
 				/>
 				<ActionCenterCard />
-				<div className="grid gap-6 xl:grid-cols-4">
+				<div className="grid gap-6 md:grid-cols-3 xl:grid-cols-4">
 					{metricCards.map((card) => (
 						<MetricCard
 							key={card.label}
