@@ -170,8 +170,8 @@ export function CreateProposalModal({
 		},
 	});
 
-	const handleSave = async (status: "Draft" | "Pending Review") => {
-		if (status === "Pending Review" && !isEditing && !file) {
+	const handleSave = async (shouldSubmit: boolean) => {
+		if (shouldSubmit && !isEditing && !file) {
 			toast.error("Please upload the Project Proposal PDF");
 			return;
 		}
@@ -196,13 +196,6 @@ export function CreateProposalModal({
 						budgetNeust: values.budgetNeust,
 					},
 				});
-				
-				// Transition to review if explicitly requested
-				if (status === "Pending Review" && currentStatus === "Draft") {
-					await submitProposalMutation.mutateAsync({
-						data: { proposalId: editingProposalId },
-					});
-				}
 			} else {
 				const proposal = await createProposalMutation.mutateAsync({
 					data: {
@@ -221,7 +214,6 @@ export function CreateProposalModal({
 							userId: m.userId,
 							projectRole: m.projectRole,
 						})),
-						status,
 					},
 				});
 				proposalId = proposal.proposalId;
@@ -251,12 +243,19 @@ export function CreateProposalModal({
 				if (timer) clearInterval(timer);
 			}
 
+			if (shouldSubmit && (!isEditing || currentStatus === "Draft" || currentStatus === "Returned")) {
+				const targetId = editingProposalId ?? proposalId;
+				await submitProposalMutation.mutateAsync({
+					data: { proposalId: targetId },
+				});
+			}
+
 			setState({ uploadProgress: 100, uploadPhase: "done" });
 
 			toast.success(
-				status === "Draft"
-					? "Proposal draft saved successfully!"
-					: "Project proposal submitted successfully for review!"
+				shouldSubmit
+					? "Project proposal submitted successfully for review!"
+					: "Proposal draft saved successfully!"
 			);
 			onOpenChange(false);
 			form.reset();
@@ -391,7 +390,7 @@ export function CreateProposalModal({
 									<Button
 										type="button"
 										variant="outline"
-										onClick={() => handleSave("Draft")}
+										onClick={() => handleSave(false)}
 										disabled={
 											createProposalMutation.isPending ||
 											updateProposalMutation.isPending ||
@@ -403,7 +402,7 @@ export function CreateProposalModal({
 									</Button>
 									<Button
 										type="button"
-										onClick={() => handleSave("Pending Review")}
+										onClick={() => handleSave(true)}
 										className="bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold"
 										disabled={
 											createProposalMutation.isPending ||

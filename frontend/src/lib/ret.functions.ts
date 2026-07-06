@@ -38,7 +38,6 @@ const createProposalSchema = z.object({
 			}),
 		)
 		.optional(),
-	status: z.string().optional(),
 });
 
 // ── Interfaces ────────────────────────────────────────────

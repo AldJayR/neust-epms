@@ -112,7 +112,6 @@ const CreateProposalSchema = z
 				}),
 			)
 			.optional(),
-		status: z.string().optional(),
 	})
 	.openapi("CreateProposal");
 
@@ -650,7 +649,7 @@ app.openapi(createProposalRoute, async (c) => {
 					: null,
 				// DFD 6.1: RET Chair submissions bypass endorsement, route directly to Director
 				bypassedRetChair: user.roleName === ROLE_NAMES.RET_CHAIR,
-				status: body.status || PROPOSAL_STATUS.PENDING_REVIEW,
+				status: PROPOSAL_STATUS.DRAFT,
 			})
 			.returning();
 
