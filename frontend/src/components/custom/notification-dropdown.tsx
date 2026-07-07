@@ -24,6 +24,7 @@ import { Spinner } from "@/components/ui/spinner";
 import {
 	getNotificationsQueryOptions,
 	getUnreadCountQueryOptions,
+	markAllNotificationsReadFn,
 	markNotificationReadFn,
 } from "@/lib/notifications.functions";
 import { cn } from "@/lib/utils";
@@ -84,6 +85,16 @@ export function NotificationDropdown() {
 		},
 	});
 
+	const markAllReadMutation = useMutation({
+		mutationFn: () => markAllNotificationsReadFn(),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["notifications"] });
+			queryClient.invalidateQueries({
+				queryKey: ["notifications", "unread-count"],
+			});
+		},
+	});
+
 	const unreadCount = unreadData?.count ?? 0;
 
 	return (
@@ -113,11 +124,23 @@ export function NotificationDropdown() {
 				<DropdownMenuGroup>
 					<DropdownMenuLabel className="flex items-center justify-between px-3 py-2 text-sm font-semibold">
 						<span>Notifications</span>
-						{unreadCount > 0 && (
-							<span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-								{unreadCount} unread
-							</span>
-						)}
+						<div className="flex items-center gap-2">
+							{unreadCount > 0 && (
+								<button
+									type="button"
+									onClick={() => markAllReadMutation.mutate()}
+									disabled={markAllReadMutation.isPending}
+									className="text-xs font-normal text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
+								>
+									Mark all as read
+								</button>
+							)}
+							{unreadCount > 0 && (
+								<span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+									{unreadCount} unread
+								</span>
+							)}
+						</div>
 					</DropdownMenuLabel>
 				</DropdownMenuGroup>
 				<DropdownMenuSeparator />

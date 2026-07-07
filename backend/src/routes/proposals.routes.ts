@@ -34,6 +34,7 @@ import {
 	PROPOSAL_STATUS,
 	REVIEW_DECISION,
 	REVIEW_STAGE,
+	type ProposalStatus,
 	ROLE_NAMES,
 } from "../lib/types.js";
 import type { AuthEnv } from "../middleware/auth.js";
@@ -559,7 +560,7 @@ app.openapi(derivedStateRoute, async (c) => {
 
 	const derived = deriveProposalState(
 		{
-			status: row.status as any,
+			status: row.status as ProposalStatus,
 			bypassedRetChair: row.bypassedRetChair,
 			leaderId: row.leaderId ?? undefined,
 			campusId: row.campusId,

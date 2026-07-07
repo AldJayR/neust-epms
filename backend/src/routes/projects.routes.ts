@@ -37,6 +37,7 @@ import {
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
 	REPORT_TYPE,
+	type ProjectStatus,
 	ROLE_NAMES,
 } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
@@ -800,7 +801,7 @@ app.openapi(projectDerivedStateRoute, async (c) => {
 
 	const derived = deriveProjectState(
 		{
-			projectStatus: row.projectStatus as any,
+			projectStatus: row.projectStatus as ProjectStatus,
 			moaId: row.moaId,
 			reportingSchedule: !!schedule,
 			hasReports: !!report,

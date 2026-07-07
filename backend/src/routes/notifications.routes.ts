@@ -168,4 +168,43 @@ app.openapi(markReadRoute, async (c) => {
 	return c.json({ ok: true as const }, 200);
 });
 
+// ── PATCH /notifications/read-all ──
+const markAllReadRoute = createRoute({
+	method: "patch",
+	path: "/notifications/read-all",
+	tags: ["Notifications"],
+	summary: "Mark all notifications as read for the current user",
+	security: [{ Bearer: [] }],
+	responses: {
+		200: {
+			content: {
+				"application/json": {
+					schema: z.object({ ok: z.literal(true) }),
+				},
+			},
+			description: "All notifications marked as read",
+		},
+		401: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Unauthorized",
+		},
+	},
+});
+
+app.openapi(markAllReadRoute, async (c) => {
+	const user = c.get("user");
+
+	await db
+		.update(notifications)
+		.set({ isRead: true, readAt: new Date() })
+		.where(
+			and(
+				eq(notifications.recipientId, user.userId),
+				eq(notifications.isRead, false),
+			),
+		);
+
+	return c.json({ ok: true as const }, 200);
+});
+
 export default app;

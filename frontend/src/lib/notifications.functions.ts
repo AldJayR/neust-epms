@@ -78,6 +78,29 @@ export const markNotificationReadFn = createServerFn({ method: "POST" })
 		return { ok: true as const };
 	});
 
+export const markAllNotificationsReadFn = createServerFn({ method: "PATCH" })
+	.validator(z.void())
+	.handler(async () => {
+		await authorizeSessionUser(
+			"Faculty",
+			"RET Chair",
+			"Director",
+			"Super Admin",
+		);
+		const accessToken = await getValidAccessToken();
+
+		const res = await fetch(`${API_BASE}/notifications/read-all`, {
+			method: "PATCH",
+			headers: { Authorization: `Bearer ${accessToken}` },
+		});
+
+		if (!res.ok) {
+			throw new Error("Failed to mark all notifications as read");
+		}
+
+		return { ok: true as const };
+	});
+
 // ── Query options (used by useQuery in components) ──
 
 export const getNotificationsQueryOptions = queryOptions({

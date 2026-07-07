@@ -27,7 +27,13 @@ import {
 	deriveProposalState,
 } from "../lib/derived-states.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
-import { PROJECT_STATUS, PROPOSAL_STATUS, ROLE_NAMES } from "../lib/types.js";
+import {
+	PROJECT_STATUS,
+	PROPOSAL_STATUS,
+	type ProjectStatus,
+	type ProposalStatus,
+	ROLE_NAMES,
+} from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
@@ -142,7 +148,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 		for (const prop of pendingProposals) {
 			const derived = deriveProposalState(
 				{
-					status: prop.status as any,
+					status: prop.status as ProposalStatus,
 					bypassedRetChair: prop.bypassedRetChair,
 					leaderId: prop.leaderId ?? undefined,
 					campusId: prop.campusId,
@@ -198,7 +204,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 		for (const prop of returnedProps) {
 			const derived = deriveProposalState(
 				{
-					status: prop.status as any,
+					status: prop.status as ProposalStatus,
 					bypassedRetChair: prop.bypassedRetChair,
 					leaderId: prop.leaderId ?? undefined,
 					campusId: prop.campusId,
@@ -261,7 +267,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 
 			const derived = deriveProjectState(
 				{
-					projectStatus: proj.projectStatus as any,
+					projectStatus: proj.projectStatus as ProjectStatus,
 					moaId: proj.moaId,
 					reportingSchedule: !!sched,
 					leaderId: proj.leaderId ?? undefined,
@@ -383,7 +389,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 		for (const prop of pendingProposals) {
 			const derived = deriveProposalState(
 				{
-					status: prop.status as any,
+					status: prop.status as ProposalStatus,
 					bypassedRetChair: prop.bypassedRetChair,
 					leaderId: prop.leaderId ?? undefined,
 					campusId: prop.campusId,
@@ -444,7 +450,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 
 			const derived = deriveProjectState(
 				{
-					projectStatus: proj.projectStatus as any,
+					projectStatus: proj.projectStatus as ProjectStatus,
 					moaId: proj.moaId,
 					reportingSchedule: !!sched,
 					leaderId: proj.leaderId ?? undefined,
@@ -505,7 +511,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 
 			const derived = deriveProjectState(
 				{
-					projectStatus: proj.projectStatus as any,
+					projectStatus: proj.projectStatus as ProjectStatus,
 					moaId: proj.moaId,
 					reportingSchedule: !!sched,
 					leaderId: proj.leaderId ?? undefined,
@@ -630,7 +636,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 		for (const prop of returnedProps) {
 			const derived = deriveProposalState(
 				{
-					status: prop.status as any,
+					status: prop.status as ProposalStatus,
 					bypassedRetChair: prop.bypassedRetChair,
 					leaderId: prop.leaderId ?? undefined,
 					campusId: prop.campusId,
@@ -695,7 +701,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 
 			const derived = deriveProjectState(
 				{
-					projectStatus: proj.projectStatus as any,
+					projectStatus: proj.projectStatus as ProjectStatus,
 					moaId: proj.moaId,
 					reportingSchedule: !!sched,
 					leaderId: proj.leaderId ?? undefined,
