@@ -29,6 +29,7 @@ import { specialOrders } from "../db/schema/special-orders.js";
 import { users } from "../db/schema/users.js";
 import { env } from "../env.js";
 import { insertAuditLog } from "../lib/audit.js";
+import { captureAuditDiff } from "../lib/audit-diff.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { deriveProjectState } from "../lib/derived-states.js";
@@ -540,6 +541,12 @@ app.openapi(transitionRoute, async (c) => {
 		}
 	}
 
+	const diff = captureAuditDiff(
+		{ projectStatus: project.projectStatus },
+		{ projectStatus: body.status },
+		["projectStatus"],
+	);
+
 	await db.transaction(async (tx) => {
 		await tx
 			.update(projects)
@@ -551,6 +558,8 @@ app.openapi(transitionRoute, async (c) => {
 				userId: user.userId,
 				action: `Transitioned project ${id} to ${body.status}`,
 				tableAffected: "projects",
+				oldValue: diff.oldValue,
+				newValue: diff.newValue,
 				ipAddress: getClientIp(c),
 			},
 			tx,
@@ -659,6 +668,12 @@ app.openapi(closeProjectRoute, async (c) => {
 		);
 	}
 
+	const diff = captureAuditDiff(
+		{ projectStatus: project.projectStatus },
+		{ projectStatus: PROJECT_STATUS.CLOSED },
+		["projectStatus"],
+	);
+
 	await db.transaction(async (tx) => {
 		await tx
 			.update(projects)
@@ -670,6 +685,8 @@ app.openapi(closeProjectRoute, async (c) => {
 				userId: user.userId,
 				action: `Closed project ${id}`,
 				tableAffected: "projects",
+				oldValue: diff.oldValue,
+				newValue: diff.newValue,
 				ipAddress: getClientIp(c),
 			},
 			tx,

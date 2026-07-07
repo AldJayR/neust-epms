@@ -4,7 +4,8 @@ import { Download } from "lucide-react";
 import { useRef, useState } from "react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { PdfViewer, type PdfViewerRef } from "@/components/pdf-viewer";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { ProposalLifecycleStepper } from "@/features/proposals/proposal-lifecycle-stepper";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -202,12 +203,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 						{data?.title ?? "Proposal"}
 					</h1>
 					{data?.status && (
-						<Badge
-							variant="outline"
-							className="bg-background border-border text-muted-foreground font-medium rounded-lg px-2.5 py-0.5 text-xs"
-						>
-							{data.status}
-						</Badge>
+						<StatusBadge status={data.status} variant="outline" />
 					)}
 				</div>
 				{currentDoc && (
@@ -219,6 +215,12 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 					</a>
 				)}
 			</div>
+
+			{data?.status && (
+				<div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+					<ProposalLifecycleStepper currentStatus={data.status} />
+				</div>
+			)}
 
 			{error ? (
 				<div className="flex items-center justify-center h-[500px]">

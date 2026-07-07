@@ -5,12 +5,12 @@ import {
 	moaDetailsQueryOptions,
 	moaLinkedProjectsQueryOptions,
 } from "@/lib/moa.functions";
-import { requireRole } from "@/lib/permissions";
+import { isDeniedAccess } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/moas/$moaId/")({
 	beforeLoad: ({ context }) => {
 		if (
-			requireRole(context.auth.user, "Director", "RET Chair")
+			isDeniedAccess(context.auth.user, "Director", "RET Chair")
 		) {
 			throw redirect({
 				to: "/dashboard",

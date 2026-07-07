@@ -30,6 +30,7 @@ describe("GET /auth/me", () => {
 			campusName: "Main",
 			departmentName: null,
 			isActive: true,
+			hasCompletedOnboarding: false,
 		};
 		vi.mocked(db.select).mockReturnValue(mockSelectChain([profile]) as never);
 
@@ -56,6 +57,7 @@ describe("POST /auth/users", () => {
 			campusName: "Main",
 			departmentName: "CICT",
 			isActive: true,
+			hasCompletedOnboarding: false,
 		};
 
 		vi.mocked(db.insert).mockReturnValue(mockMutationChain([created]) as never);
@@ -117,6 +119,7 @@ describe("POST /auth/register", () => {
 			roleName: "Faculty",
 			campusName: "Main",
 			isActive: false,
+			hasCompletedOnboarding: false,
 		};
 
 		// 1. Check existing: empty

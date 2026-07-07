@@ -17,6 +17,7 @@ import {
 	mockMutationChain,
 } from "../../test/helpers.js";
 import app from "./projects.routes.js";
+import { insertAuditLog } from "../lib/audit.js";
 
 beforeEach(() => {
 	setMockUser(MOCK_USERS.director);
@@ -177,6 +178,44 @@ describe("POST /projects/:id/transition", () => {
 		const body = await res.json();
 		expect(body.error.code).toBe("INVALID_TRANSITION");
 	});
+
+	it("should transition project status successfully and log changes", async () => {
+		const project = createMockProject({
+			projectStatus: "Approved",
+			moaId: "moa-123",
+		});
+		const moa = createMockMoa({
+			moaId: "moa-123",
+			validUntil: new Date("2030-01-01"),
+		});
+
+		let callCount = 0;
+		vi.mocked(db.select).mockImplementation(() => {
+			callCount++;
+			if (callCount === 1) return mockSelectChain([project]) as never;
+			return mockSelectChain([moa]) as never;
+		});
+		vi.mocked(db.update).mockReturnValue(mockMutationChain([project]) as never);
+
+		const res = await app.request(`/projects/${project.projectId}/transition`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ status: "Ongoing" }),
+		});
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.message).toContain("Ongoing");
+
+		expect(insertAuditLog).toHaveBeenCalledWith(
+			expect.objectContaining({
+				action: `Transitioned project ${project.projectId} to Ongoing`,
+				oldValue: { projectStatus: "Approved" },
+				newValue: { projectStatus: "Ongoing" },
+			}),
+			expect.anything(),
+		);
+	});
 });
 
 describe("POST /projects/:id/close", () => {
@@ -202,6 +241,15 @@ describe("POST /projects/:id/close", () => {
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.message).toBe("Project closed");
+
+		expect(insertAuditLog).toHaveBeenCalledWith(
+			expect.objectContaining({
+				action: `Closed project ${project.projectId}`,
+				oldValue: { projectStatus: "Ongoing" },
+				newValue: { projectStatus: "Closed" },
+			}),
+			expect.anything(),
+		);
 	});
 
 	it("should reject close when Final Accomplishment report is missing", async () => {

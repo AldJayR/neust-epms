@@ -93,6 +93,7 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
 			nameSuffix: users.nameSuffix,
 			academicRank: users.academicRank,
 			isActive: users.isActive,
+			hasCompletedOnboarding: users.hasCompletedOnboarding,
 		})
 		.from(users)
 		.innerJoin(roles, eq(users.roleId, roles.roleId))
@@ -129,6 +130,7 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
 		nameSuffix: appUser.nameSuffix,
 		academicRank: appUser.academicRank,
 		isActive: appUser.isActive,
+		hasCompletedOnboarding: appUser.hasCompletedOnboarding,
 	};
 
 	if (cacheEnabled) {

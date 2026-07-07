@@ -1,2 +1,0 @@
-CREATE INDEX "moas_active_idx" ON "moas" USING btree ("valid_until") WHERE "moas"."archived_at" IS NULL;--> statement-breakpoint
-CREATE INDEX "project_reports_active_project_idx" ON "project_reports" USING btree ("project_id") WHERE "project_reports"."archived_at" IS NULL;

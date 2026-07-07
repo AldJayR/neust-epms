@@ -152,4 +152,5 @@ export interface AuthUser {
 	nameSuffix: string | null;
 	academicRank: string | null;
 	isActive: boolean;
+	hasCompletedOnboarding: boolean;
 }

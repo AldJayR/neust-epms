@@ -13,6 +13,11 @@ import * as React from "react";
 import { toast } from "sonner";
 import { cn } from "#/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+} from "@/components/ui/empty";
 import { Calendar } from "@/components/ui/calendar";
 import {
 	Combobox,
@@ -295,9 +300,13 @@ export function ActivateProjectWizard({
 								</div>
 
 								{dueDates.length === 0 && (
-									<p className="text-sm text-muted-foreground text-center py-6 border border-dashed rounded-lg">
-										No reports added yet. Click "Add Report" to begin.
-									</p>
+									<Empty className="py-6">
+										<EmptyContent>
+											<EmptyDescription className="text-sm text-muted-foreground">
+												No reports added yet. Click "Add Report" to begin.
+											</EmptyDescription>
+										</EmptyContent>
+									</Empty>
 								)}
 
 								<div className="space-y-2">

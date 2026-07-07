@@ -1,4 +1,5 @@
 import { HTTPException } from "hono/http-exception";
+import { PostgresError } from "postgres";
 import { ZodError } from "zod";
 
 type ErrorLikeApp = {
@@ -71,6 +72,42 @@ export function installApiErrorHandler(app: ErrorLikeApp): void {
 				},
 				400,
 			);
+		}
+
+		if (err instanceof PostgresError) {
+			if (err.code === "23505") {
+				return c.json(
+					{
+						error: {
+							code: "DUPLICATE_ENTRY",
+							message: "A record with this value already exists.",
+						},
+					},
+					409,
+				);
+			}
+			if (err.code === "23503") {
+				return c.json(
+					{
+						error: {
+							code: "REFERENCE_ERROR",
+							message: "This record is referenced by other data and cannot be modified.",
+						},
+					},
+					409,
+				);
+			}
+			if (err.code === "23514") {
+				return c.json(
+					{
+						error: {
+							code: "CONSTRAINT_VIOLATION",
+							message: "The data violates a business rule constraint.",
+						},
+					},
+					400,
+				);
+			}
 		}
 
 		if (

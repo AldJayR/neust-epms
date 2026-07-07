@@ -10,6 +10,8 @@ export async function insertAuditLog(
 		userId: string;
 		action: string;
 		tableAffected: string;
+		oldValue?: Record<string, unknown> | null;
+		newValue?: Record<string, unknown> | null;
 		ipAddress?: string | null;
 	},
 	executor: Pick<typeof db, "insert"> = db,
@@ -18,6 +20,8 @@ export async function insertAuditLog(
 		userId: params.userId,
 		action: params.action,
 		tableAffected: params.tableAffected,
+		oldValue: params.oldValue ?? null,
+		newValue: params.newValue ?? null,
 		ipAddress: params.ipAddress ?? null,
 	});
 }

@@ -1,1 +1,0 @@
-ALTER TABLE "proposal_members" ADD CONSTRAINT "pm_proposal_user_unique" UNIQUE("proposal_id","user_id");

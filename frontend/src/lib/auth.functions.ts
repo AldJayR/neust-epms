@@ -427,3 +427,42 @@ export const setNewPasswordFn = createServerFn({ method: "POST" })
 		await session.clear();
 		return { error: false as const };
 	});
+
+// ── Complete Onboarding ──
+export const completeOnboardingFn = createServerFn({ method: "POST" })
+	.validator(z.void())
+	.handler(async () => {
+		const [{ getValidAccessToken, getAppSession }] = await Promise.all([
+			import("./session.server"),
+		]);
+
+		const token = await getValidAccessToken();
+		const response = await fetch(`${API_BASE}/auth/onboarding/complete`, {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		});
+
+		if (!response.ok) {
+			const message = await getErrorMessage(
+				response,
+				"Failed to complete onboarding",
+			);
+			throw new Error(message);
+		}
+
+		// Update cached user session in memory/cookie
+		const session = await getAppSession();
+		if (session.data.user) {
+			await session.update({
+				user: {
+					...session.data.user,
+					hasCompletedOnboarding: true,
+				},
+			});
+		}
+
+		return (await response.json()) as { success: boolean };
+	});
+

@@ -6,6 +6,7 @@ import { departments } from "../db/schema/departments.js";
 import { roles } from "../db/schema/roles.js";
 import { users } from "../db/schema/users.js";
 import { insertAuditLog } from "../lib/audit.js";
+import { captureAuditDiff } from "../lib/audit-diff.js";
 import { invalidateAuthUserCache } from "../lib/cache.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
@@ -37,6 +38,7 @@ const UserResponseSchema = z
 		departmentName: z.string().nullable(),
 		isActive: z.boolean(),
 		avatarUrl: z.string().nullable(),
+		hasCompletedOnboarding: z.boolean(),
 	})
 	.openapi("UserResponse");
 
@@ -179,6 +181,7 @@ app.openapi(getUsersRoute, async (c) => {
 			departmentName: departments.departmentName,
 			isActive: users.isActive,
 			avatarUrl: users.avatarUrl,
+			hasCompletedOnboarding: users.hasCompletedOnboarding,
 		})
 		.from(users)
 		.innerJoin(roles, eq(users.roleId, roles.roleId))
@@ -742,6 +745,17 @@ app.openapi(updateSpecificUserRoute, async (c) => {
 	if (body.roleId !== undefined) updateFields.roleId = body.roleId;
 	if (body.isActive !== undefined) updateFields.isActive = body.isActive;
 
+	const updated = {
+		...existing,
+		...updateFields,
+	};
+
+	const diff = captureAuditDiff(
+		existing as unknown as Record<string, unknown>,
+		updated as unknown as Record<string, unknown>,
+		["firstName", "lastName", "email", "roleId", "isActive", "campusId", "departmentId"],
+	);
+
 	await db.transaction(async (tx) => {
 		await tx
 			.update(users)
@@ -753,6 +767,8 @@ app.openapi(updateSpecificUserRoute, async (c) => {
 				userId: authUser.userId,
 				action: `Updated profile details for user ${id}`,
 				tableAffected: "users",
+				oldValue: diff.oldValue,
+				newValue: diff.newValue,
 				ipAddress: getClientIp(c),
 			},
 			tx,

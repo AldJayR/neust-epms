@@ -16,7 +16,7 @@ import {
 	isDirector,
 	isRETChair,
 	isSuperAdmin,
-	requireRole,
+	isDeniedAccess,
 } from "@/lib/permissions";
 
 const projectsSearchSchema = z.object({
@@ -81,7 +81,7 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 			return null;
 		}
 
-		if (requireRole(user, "Director", "RET Chair")) {
+		if (isDeniedAccess(user, "Director", "RET Chair")) {
 			return null;
 		}
 

@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import {
@@ -12,7 +12,9 @@ import {
 	User,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
+import { ConfirmDialog } from "@/components/custom/confirm-dialog";
 import { DetailsRow } from "@/components/custom/details-row";
 import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
@@ -45,23 +47,24 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { Spinner } from "@/components/ui/spinner";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { CreateProposalModal } from "@/features/proposals/components/create-proposal-modal";
+import { useProjectReadiness } from "@/hooks/use-project-readiness";
 import type { AuthUser } from "@/lib/auth";
 import {
+	closeProjectFn,
 	getSpecialOrderSignedUrlFn,
-	uploadSpecialOrderFn,
 	type ProjectMember,
 	projectDetailsQueryOptions,
+	uploadSpecialOrderFn,
 } from "@/lib/dashboard.functions";
 import { getProposalByIdFn } from "@/lib/ret.functions";
-import { ActivateProjectWizard } from "./activate-project-wizard";
-import { ProjectDetailsSkeleton } from "./project-details-skeleton";
-import { useProjectReadiness } from "@/hooks/use-project-readiness";
+import { getStatusDescription } from "@/lib/status-descriptions";
 import { ProjectReadinessCard } from "../projects/project-readiness-card";
 import { ReportingScheduleCard } from "../projects/reporting-schedule-card";
-import { getStatusDescription } from "@/lib/status-descriptions";
+import { ActivateProjectWizard } from "./activate-project-wizard";
+import { ProjectDetailsSkeleton } from "./project-details-skeleton";
 
 interface ProjectDetailsPageProps {
 	proposalId: string;
@@ -488,14 +491,20 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 										href={attachment.url}
 										target="_blank"
 										rel="noopener noreferrer"
-									/>
+									>
+										View file
+									</a>
 								}
 								aria-label="View"
 							>
 								<Eye className="size-3.5" />
 							</AttachmentAction>
 							<AttachmentAction
-								render={<a href={attachment.url} download />}
+								render={
+									<a href={attachment.url} download>
+										Download file
+									</a>
+								}
 								aria-label="Download"
 							>
 								<Download className="size-3.5" />
@@ -516,6 +525,32 @@ export function ProjectDetailsPage({
 	const queryClient = useQueryClient();
 	const { data, isLoading } = useQuery(projectDetailsQueryOptions(proposalId));
 
+	const [isEditing, setIsEditing] = useState(false);
+
+	const { data: editProposalData } = useQuery({
+		queryKey: ["proposal", "edit", proposalId],
+		queryFn: () => getProposalByIdFn({ data: { proposalId } }),
+		enabled: isEditing,
+	});
+
+	const { data: readiness } = useProjectReadiness(proposalId);
+	const [showActivateWizard, setShowActivateWizard] = useState(false);
+
+	const [showCloseDialog, setShowCloseDialog] = useState(false);
+
+	const closeMutation = useMutation({
+		mutationFn: closeProjectFn,
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["dashboard", "proposals", proposalId],
+			});
+			toast.success("Project closed successfully!");
+		},
+		onError: (error: Error) => {
+			toast.error(error.message);
+		},
+	});
+
 	if (isLoading) {
 		return <ProjectDetailsSkeleton />;
 	}
@@ -532,14 +567,6 @@ export function ProjectDetailsPage({
 		currentUserRole === "Director" ||
 		currentUserRole === "RET Chair" ||
 		(data.members && data.members.some((m) => m.userId === currentUserId));
-
-	const [isEditing, setIsEditing] = useState(false);
-
-	const { data: editProposalData } = useQuery({
-		queryKey: ["proposal", "edit", proposalId],
-		queryFn: () => getProposalByIdFn({ data: { proposalId } }),
-		enabled: isEditing,
-	});
 
 	const isProjectLeader =
 		data.members?.some(
@@ -571,10 +598,9 @@ export function ProjectDetailsPage({
 		: undefined;
 
 	const isDirector = currentUserRole === "Director";
-	const { data: readiness } = useProjectReadiness(proposalId);
 	const statusDesc = getStatusDescription(data.status);
 	const showActivateButton = isDirector && data.status === "Approved";
-	const [showActivateWizard, setShowActivateWizard] = useState(false);
+	const showCloseButton = isDirector && data.status === "Ongoing";
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -636,11 +662,24 @@ export function ProjectDetailsPage({
 								variant="outline"
 								className="flex w-fit items-center gap-2 px-5 h-9 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
 								disabled={!readiness?.isReady}
-								title={!readiness?.isReady ? "Prerequisites must be met before activating project" : undefined}
+								title={
+									!readiness?.isReady
+										? "Prerequisites must be met before activating project"
+										: undefined
+								}
 								onClick={() => setShowActivateWizard(true)}
 							>
 								<Play className="size-4" />
 								<span className="text-sm font-medium">Activate Project</span>
+							</Button>
+						)}
+						{showCloseButton && (
+							<Button
+								variant="destructive"
+								className="flex w-fit items-center gap-2 px-5 h-9 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
+								onClick={() => setShowCloseDialog(true)}
+							>
+								<span className="text-sm font-medium">Close Project</span>
 							</Button>
 						)}
 					</>
@@ -651,8 +690,13 @@ export function ProjectDetailsPage({
 				<div className="flex items-start gap-2.5 rounded-lg border border-border bg-muted/20 p-3 text-xs text-muted-foreground -mt-2">
 					<Info className="size-4 shrink-0 text-muted-foreground mt-0.5" />
 					<div className="space-y-1">
-						<p className="font-semibold text-foreground">{statusDesc.explanation}</p>
-						<p><span className="font-semibold text-foreground">Next Step:</span> {statusDesc.nextStep}</p>
+						<p className="font-semibold text-foreground">
+							{statusDesc.explanation}
+						</p>
+						<p>
+							<span className="font-semibold text-foreground">Next Step:</span>{" "}
+							{statusDesc.nextStep}
+						</p>
 					</div>
 				</div>
 			)}
@@ -707,7 +751,13 @@ export function ProjectDetailsPage({
 						proposalId={proposalId}
 						status={data.status}
 					/>
-					{["Ongoing", "Overdue", "Pending Closure", "Completed", "Closed"].includes(data.status) && (
+					{[
+						"Ongoing",
+						"Overdue",
+						"Pending Closure",
+						"Completed",
+						"Closed",
+					].includes(data.status) && (
 						<ReportingScheduleCard
 							projectId={proposalId}
 							isFaculty={currentUserRole === "Faculty"}
@@ -744,6 +794,19 @@ export function ProjectDetailsPage({
 				open={showActivateWizard}
 				onOpenChange={setShowActivateWizard}
 				projectId={proposalId}
+			/>
+
+			<ConfirmDialog
+				open={showCloseDialog}
+				onOpenChange={setShowCloseDialog}
+				onConfirm={async () => {
+					await closeMutation.mutateAsync({ data: { projectId: proposalId } });
+				}}
+				title="Close Project"
+				description={`This will permanently close the project "${data.title}". It requires both a Final Accomplishment report and a Terminal report to be submitted. This action cannot be undone.`}
+				confirmLabel="Close Project"
+				confirmVariant="destructive"
+				requireTyping="CLOSE"
 			/>
 		</div>
 	);

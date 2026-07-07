@@ -13,7 +13,8 @@ export const STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 	"Pending Review": {
 		label: "Awaiting Review",
 		explanation: "Your proposal has been submitted and is awaiting review.",
-		nextStep: "No action required — you will be notified when a decision is made.",
+		nextStep:
+			"No action required — you will be notified when a decision is made.",
 	},
 	Endorsed: {
 		label: "Endorsed — Awaiting Approval",
@@ -72,6 +73,33 @@ export const STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 		explanation:
 			"Project has been officially closed. All institutional requirements satisfied.",
 		nextStep: "No further action required.",
+	},
+	Active: {
+		label: "Active",
+		explanation: "This user account is active and in good standing.",
+		nextStep: "No action required.",
+	},
+	Deactivated: {
+		label: "Deactivated",
+		explanation: "This user account has been deactivated by an administrator.",
+		nextStep: "Contact your administrator to reactivate your account.",
+	},
+	Terminated: {
+		label: "Terminated",
+		explanation:
+			"This project has been terminated prematurely by the administration.",
+		nextStep: "No further action required.",
+	},
+	"Renewal Needed": {
+		label: "Renewal Needed",
+		explanation:
+			"This project is nearing completion or its MOA is about to expire, requiring renewal.",
+		nextStep: "Prepare renewal documentation.",
+	},
+	Valid: {
+		label: "Valid",
+		explanation: "This Memorandum of Agreement is currently active and valid.",
+		nextStep: "No action required.",
 	},
 };
 

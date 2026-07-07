@@ -4,6 +4,7 @@ import { CheckCircle2, ListFilter, MoreVertical, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
+import { ConfirmDialog } from "@/components/custom/confirm-dialog";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { DataTablePage } from "@/components/custom/data-table-page";
 import { MetricCard } from "@/components/custom/metric-card";
@@ -29,20 +30,10 @@ import {
 	type UserResponse,
 } from "@/lib/admin.functions";
 import { formatAcademicRank } from "@/lib/utils";
-import { BulkApproveDialog } from "./bulk-approve-dialog";
 import { AddUserDialog } from "./add-user-dialog";
-import { ViewUserDialog } from "./view-user-dialog";
+import { BulkApproveDialog } from "./bulk-approve-dialog";
 import { EditUserDialog } from "./edit-user-dialog";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ViewUserDialog } from "./view-user-dialog";
 
 interface UsersPageProps {
 	page: number;
@@ -68,7 +59,9 @@ export function UsersPage({
 
 	const [viewingUser, setViewingUser] = useState<UserResponse | null>(null);
 	const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
-	const [deactivatingUser, setDeactivatingUser] = useState<UserResponse | null>(null);
+	const [deactivatingUser, setDeactivatingUser] = useState<UserResponse | null>(
+		null,
+	);
 
 	// ── Queries ──────────────────────────────────────────────
 
@@ -131,7 +124,10 @@ export function UsersPage({
 				return (
 					<div className="flex items-center gap-3">
 						<Avatar className="h-9 w-9">
-							<AvatarImage src={user.avatarUrl ?? ""} alt={`${user.firstName} ${user.lastName}`} />
+							<AvatarImage
+								src={user.avatarUrl ?? ""}
+								alt={`${user.firstName} ${user.lastName}`}
+							/>
 							<AvatarFallback className="bg-primary/10 text-primary font-medium">
 								{user.firstName?.charAt(0) ?? ""}
 								{user.lastName?.charAt(0) ?? ""}
@@ -363,42 +359,25 @@ export function UsersPage({
 					}}
 				/>
 			)}
-			<AlertDialog
-				open={!!deactivatingUser}
-				onOpenChange={(open) => {
-					if (!open) setDeactivatingUser(null);
-				}}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-						<AlertDialogDescription>
-							This will deactivate the user account for{" "}
-							<span className="font-semibold text-foreground">
-								{deactivatingUser?.firstName} {deactivatingUser?.lastName}
-							</span>
-							. They will no longer be able to log in to the system.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={() => {
-								if (deactivatingUser) {
-									updateStatusMutation.mutate({
-										userIds: [deactivatingUser.userId],
-										isActive: false,
-									});
-									setDeactivatingUser(null);
-								}
-							}}
-							className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-						>
-							Deactivate
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			{deactivatingUser && (
+				<ConfirmDialog
+					open={!!deactivatingUser}
+					onOpenChange={(open) => {
+						if (!open) setDeactivatingUser(null);
+					}}
+					onConfirm={async () => {
+						await updateStatusMutation.mutateAsync({
+							userIds: [deactivatingUser.userId],
+							isActive: false,
+						});
+						setDeactivatingUser(null);
+					}}
+					title="Deactivate User"
+					description={`This will deactivate the user account for ${deactivatingUser.firstName} ${deactivatingUser.lastName}. They will no longer be able to log in to the system.`}
+					confirmLabel="Deactivate"
+					confirmVariant="destructive"
+				/>
+			)}
 		</div>
 	);
 }

@@ -142,7 +142,7 @@ describe("POST /proposals", () => {
 
 describe("POST /proposals/:id/submit", () => {
 	it("should allow submission of a Draft proposal", async () => {
-		const mock = createMockProposal({ status: "Draft" });
+		const mock = createMockProposal({ status: "Draft", projectRole: "Project Leader" });
 		vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
 		vi.mocked(db.update).mockReturnValue(mockMutationChain([mock]) as never);
 

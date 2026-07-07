@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
+    "@floating-ui/react-dom": "^2.1.8",
     "@fontsource-variable/roboto": "^5.2.10",
     "@hookform/resolvers": "^5.4.0",
     "@sentry/tanstackstart-react": "^10.58.0",

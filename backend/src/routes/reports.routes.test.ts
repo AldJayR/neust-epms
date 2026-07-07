@@ -66,6 +66,7 @@ describe("POST /reports", () => {
 			.mockReturnValueOnce(mockSelectChain([project]) as never)
 			.mockReturnValueOnce(mockSelectChain([enriched]) as never);
 		vi.mocked(db.insert).mockReturnValue(mockMutationChain([report]) as never);
+		vi.mocked(db.update).mockReturnValue(mockMutationChain([]) as never);
 
 		const res = await app.request("/reports", {
 			method: "POST",

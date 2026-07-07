@@ -14,6 +14,7 @@ import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { isPasswordCompromised } from "../lib/password-check.js";
 import { ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
+import { authUserCache, cacheEnabled } from "../lib/cache.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -34,6 +35,7 @@ const UserResponseSchema = z
 		campusName: z.string(),
 		departmentName: z.string().nullable(),
 		isActive: z.boolean(),
+		hasCompletedOnboarding: z.boolean(),
 		roleId: z.number().optional(),
 		campusId: z.number().optional(),
 		departmentId: z.number().nullable().optional(),
@@ -305,6 +307,7 @@ app.openapi(registerRoute, async (c) => {
 			campusName: campuses.campusName,
 			departmentName: departments.departmentName,
 			isActive: users.isActive,
+			hasCompletedOnboarding: users.hasCompletedOnboarding,
 		})
 		.from(users)
 		.innerJoin(roles, eq(users.roleId, roles.roleId))
@@ -471,6 +474,7 @@ app.openapi(createUserRoute, async (c) => {
 			campusName: campuses.campusName,
 			departmentName: departments.departmentName,
 			isActive: users.isActive,
+			hasCompletedOnboarding: users.hasCompletedOnboarding,
 		})
 		.from(users)
 		.innerJoin(roles, eq(users.roleId, roles.roleId))
@@ -674,6 +678,7 @@ app.openapi(loginRoute, async (c) => {
 			campusName: campuses.campusName,
 			departmentName: departments.departmentName,
 			isActive: users.isActive,
+			hasCompletedOnboarding: users.hasCompletedOnboarding,
 		})
 		.from(users)
 		.innerJoin(roles, eq(users.roleId, roles.roleId))
@@ -758,6 +763,49 @@ app.openapi(logoutRoute, async (c) => {
 	}
 
 	return c.json({ ok: true } as const, 200);
+});
+
+// ── POST /auth/onboarding/complete ──
+const completeOnboardingRoute = createRoute({
+	method: "post",
+	path: "/auth/onboarding/complete",
+	tags: ["Auth"],
+	summary: "Mark onboarding as completed for the current user",
+	security: [{ Bearer: [] }],
+	responses: {
+		200: {
+			content: {
+				"application/json": {
+					schema: z.object({
+						success: z.boolean(),
+					}),
+				},
+			},
+			description: "Onboarding completed successfully",
+		},
+		401: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Unauthorized",
+		},
+	},
+});
+
+app.use("/auth/onboarding/complete", authMiddleware);
+
+app.openapi(completeOnboardingRoute, async (c) => {
+	const authUser = c.get("user");
+
+	await db
+		.update(users)
+		.set({ hasCompletedOnboarding: true })
+		.where(eq(users.userId, authUser.userId));
+
+	// Invalidate cache if enabled
+	if (cacheEnabled) {
+		authUserCache.delete(`auth:user:${authUser.userId}`);
+	}
+
+	return c.json({ success: true } as const, 200);
 });
 
 export default app;

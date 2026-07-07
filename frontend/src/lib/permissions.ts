@@ -45,3 +45,14 @@ export function requireRole(
 ): boolean {
 	return !hasRole(user, ...roles);
 }
+
+/**
+ * Returns true if the user does NOT have any of the specified roles (i.e., access is denied).
+ * Use for route guards.
+ */
+export function isDeniedAccess(
+	user: { roleName?: string } | null | undefined,
+	...roles: RoleName[]
+): boolean {
+	return requireRole(user, ...roles);
+}

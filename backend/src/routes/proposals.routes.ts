@@ -15,6 +15,7 @@ import { sdgs } from "../db/schema/sdgs.js";
 import { roles } from "../db/schema/roles.js";
 import { users } from "../db/schema/users.js";
 import { insertAuditLog } from "../lib/audit.js";
+import { captureAuditDiff } from "../lib/audit-diff.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { createNotification } from "../lib/notification.helpers.js";
@@ -817,11 +818,7 @@ app.openapi(updateRoute, async (c) => {
 	const body = c.req.valid("json");
 
 	const [existing] = await db
-		.select({
-			proposalId: proposals.proposalId,
-			status: proposals.status,
-			revisionNum: proposals.revisionNum,
-		})
+		.select()
 		.from(proposals)
 		.where(and(eq(proposals.proposalId, id), isNull(proposals.archivedAt)))
 		.limit(1);
@@ -929,10 +926,18 @@ app.openapi(updateRoute, async (c) => {
 		}
 	}
 
+	const diff = captureAuditDiff(
+		existing as unknown as Record<string, unknown>,
+		updated as unknown as Record<string, unknown>,
+		["title", "budgetNeust", "budgetPartner", "targetStartDate", "targetEndDate"],
+	);
+
 	await insertAuditLog({
 		userId: user.userId,
 		action: `Updated proposal ${id}`,
 		tableAffected: "proposals",
+		oldValue: diff.oldValue,
+		newValue: diff.newValue,
 		ipAddress: getClientIp(c),
 	});
 

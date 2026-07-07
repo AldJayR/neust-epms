@@ -19,7 +19,7 @@ import {
 	isDirector,
 	isRETChair,
 	isSuperAdmin,
-	requireRole,
+	isDeniedAccess,
 } from "@/lib/permissions";
 import {
 	retDashboardStatsQueryOptions,
@@ -43,7 +43,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 	}),
 	loader: ({ context, deps }) => {
 		if (
-			requireRole(context.auth.user, "Super Admin", "Director", "RET Chair")
+			isDeniedAccess(context.auth.user, "Super Admin", "Director", "RET Chair")
 		) {
 			context.queryClient.prefetchQuery(
 				facultyProposalsQueryOptions({ page: 1, limit: 100 }),

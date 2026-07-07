@@ -861,3 +861,36 @@ export const activateProjectFn = createServerFn({ method: "POST" })
 
 		return (await response.json()) as { message: string };
 	});
+
+// ── Close Project ──
+export const closeProjectFn = createServerFn({ method: "POST" })
+	.validator(
+		z.object({
+			projectId: z.string().uuid(),
+		}),
+	)
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director");
+		const token = await getValidAccessToken();
+
+		const response = await fetch(
+			`${API_BASE}/projects/${data.projectId}/close`,
+			{
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			},
+		);
+
+		if (!response.ok) {
+			const message = await getErrorMessage(
+				response,
+				"Failed to close project",
+			);
+			throw new Error(message);
+		}
+
+		return (await response.json()) as { message: string };
+	});
+

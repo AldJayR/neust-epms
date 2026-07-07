@@ -3,7 +3,7 @@ import { z } from "zod";
 import { PageSkeleton } from "@/components/custom/page-skeleton";
 import { MoaRepositoryPage } from "@/features/director/moa-repository-page";
 import { moaRepositoryQueryOptions } from "@/lib/dashboard.functions";
-import { requireRole } from "@/lib/permissions";
+import { isDeniedAccess } from "@/lib/permissions";
 
 const moasSearchSchema = z.object({
 	page: z.number().optional().default(1),
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/moas/")({
 	}),
 	beforeLoad: ({ context }) => {
 		if (
-			requireRole(context.auth.user, "Director", "RET Chair")
+			isDeniedAccess(context.auth.user, "Director", "RET Chair")
 		) {
 			throw redirect({
 				to: "/dashboard",

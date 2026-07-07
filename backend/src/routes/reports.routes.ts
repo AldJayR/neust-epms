@@ -10,10 +10,11 @@ import { users } from "../db/schema/users.js";
 import { projectReportingSchedules } from "../db/schema/project-reporting-schedules.js";
 import { projectReportingDates } from "../db/schema/project-reporting-dates.js";
 import { insertAuditLog } from "../lib/audit.js";
+import { captureAuditDiff } from "../lib/audit-diff.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { createNotification, getUserIdsByRole } from "../lib/notification.helpers.js";
-import { REPORT_TYPE, ROLE_NAMES } from "../lib/types.js";
+import { REPORT_TYPE, ROLE_NAMES, PROJECT_STATUS } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
@@ -418,14 +419,56 @@ app.openapi(createReportRoute, async (c) => {
 		ipAddress: getClientIp(c),
 	});
 
-	// DFD 8.2: Clear Overdue flag when report is submitted
+	// Check if all closure reports have been submitted (Terminal + Final Accomplishment)
+	const reports = await db
+		.select({ reportType: projectReports.reportType })
+		.from(projectReports)
+		.where(
+			and(eq(projectReports.projectId, body.projectId), isNull(projectReports.archivedAt)),
+		);
+
+	const hasFinalAccomplishment = reports.some(
+		(r) => r.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT,
+	);
+	const hasTerminal = reports.some(
+		(r) => r.reportType === REPORT_TYPE.TERMINAL,
+	);
+
 	const [projectStatusRow] = await db
 		.select({ projectStatus: projects.projectStatus })
 		.from(projects)
 		.where(eq(projects.projectId, body.projectId))
 		.limit(1);
 
-	if (projectStatusRow?.projectStatus === "Overdue") {
+	if (hasFinalAccomplishment && hasTerminal) {
+		if (
+			projectStatusRow &&
+			projectStatusRow.projectStatus !== PROJECT_STATUS.PENDING_CLOSURE &&
+			projectStatusRow.projectStatus !== PROJECT_STATUS.CLOSED &&
+			projectStatusRow.projectStatus !== PROJECT_STATUS.COMPLETED
+		) {
+			const diff = captureAuditDiff(
+				{ projectStatus: projectStatusRow.projectStatus },
+				{ projectStatus: PROJECT_STATUS.PENDING_CLOSURE },
+				["projectStatus"],
+			);
+
+			await db
+				.update(projects)
+				.set({ projectStatus: PROJECT_STATUS.PENDING_CLOSURE, updatedAt: new Date() })
+				.where(eq(projects.projectId, body.projectId));
+
+			await insertAuditLog({
+				userId: user.userId,
+				action: `Transitioned project ${body.projectId} to Pending Closure (all closure reports submitted)`,
+				tableAffected: "projects",
+				oldValue: diff.oldValue,
+				newValue: diff.newValue,
+				ipAddress: getClientIp(c),
+			});
+		}
+	} else if (projectStatusRow?.projectStatus === "Overdue") {
+		// DFD 8.2: Clear Overdue flag to Ongoing when a report is submitted (if not yet ready for closure)
 		await db
 			.update(projects)
 			.set({ projectStatus: "Ongoing", updatedAt: new Date() })

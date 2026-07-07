@@ -10,6 +10,12 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyMedia,
+} from "@/components/ui/empty";
+import {
 	Breadcrumb,
 	BreadcrumbItem,
 	BreadcrumbLink,
@@ -176,12 +182,16 @@ export function MoaDetailsPage({ moaId, currentUser }: MoaDetailsPageProps) {
 									))}
 								</div>
 							) : !projects || projects.length === 0 ? (
-								<div className="flex flex-col items-center gap-2 py-8 text-center">
-									<FolderOpen className="size-10 text-muted-foreground/50" />
-									<p className="text-sm text-muted-foreground">
-										No projects linked to this MOA yet.
-									</p>
-								</div>
+								<Empty className="py-8 border-none">
+									<EmptyContent>
+										<EmptyMedia variant="icon">
+											<FolderOpen className="size-5 text-muted-foreground" />
+										</EmptyMedia>
+										<EmptyDescription className="text-sm text-muted-foreground">
+											No projects linked to this MOA yet.
+										</EmptyDescription>
+									</EmptyContent>
+								</Empty>
 							) : (
 								projects.map((project: MoaLinkedProject) => (
 									<div

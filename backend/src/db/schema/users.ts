@@ -33,6 +33,9 @@ export const users = pgTable(
 		email: varchar("email", { length: 255 }).notNull().unique(),
 		avatarUrl: text("avatar_url"),
 		isActive: boolean("is_active").notNull().default(true),
+		hasCompletedOnboarding: boolean("has_completed_onboarding")
+			.notNull()
+			.default(false),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),

@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
+import { ConfirmDialog } from "@/components/custom/confirm-dialog";
 import { LoadingButton } from "@/components/custom/loading-button";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
@@ -32,6 +33,7 @@ const formatReviewDate = (dateStr: string) => {
 
 interface ProposalDetailsTabProps {
 	data: {
+		title: string;
 		metadata: {
 			leader: {
 				name: string;
@@ -86,6 +88,7 @@ export function ProposalDetailsTab({
 	const [returnReason, setReturnReason] = useState("");
 	const [isRejectOpen, setIsRejectOpen] = useState(false);
 	const [rejectReason, setRejectReason] = useState("");
+	const [isConfirmRejectOpen, setIsConfirmRejectOpen] = useState(false);
 
 	return (
 		<CardContent className="p-0">
@@ -363,8 +366,8 @@ export function ProposalDetailsTab({
 					<div className="rounded-lg border border-red-200 bg-red-50 p-3 flex gap-3">
 						<AlertTriangle className="size-4 text-red-600 mt-0.5 shrink-0" />
 						<p className="text-sm text-red-800">
-							This will permanently decline the proposal. The project leader will
-							be notified that the proposal has been rejected.
+							This will permanently decline the proposal. The project leader
+							will be notified that the proposal has been rejected.
 						</p>
 					</div>
 
@@ -388,8 +391,8 @@ export function ProposalDetailsTab({
 						<LoadingButton
 							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer rounded-lg bg-red-500 text-white hover:bg-red-600"
 							onClick={() => {
-								handleReject(rejectReason);
 								setIsRejectOpen(false);
+								setIsConfirmRejectOpen(true);
 							}}
 							loading={isPending}
 							disabled={!rejectReason.trim()}
@@ -399,6 +402,19 @@ export function ProposalDetailsTab({
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			<ConfirmDialog
+				open={isConfirmRejectOpen}
+				onOpenChange={setIsConfirmRejectOpen}
+				onConfirm={() => {
+					handleReject(rejectReason);
+				}}
+				title="Reject Proposal"
+				description={`This will permanently reject "${data.title}". The project leader will be notified that the proposal has been rejected. This action cannot be undone.`}
+				confirmLabel="Reject Proposal"
+				confirmVariant="destructive"
+				requireTyping="REJECT"
+			/>
 		</CardContent>
 	);
 }
