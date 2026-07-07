@@ -25,8 +25,6 @@ export const notifications = pgTable(
 		readAt: timestamp("read_at", { withTimezone: true }),
 	},
 	(table) => ({
-		recipientIdx: index("notifications_recipient_id_idx").on(
-			table.recipientId,
-		),
+		recipientIdx: index("notifications_recipient_id_idx").on(table.recipientId),
 	}),
 );

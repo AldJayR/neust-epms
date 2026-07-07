@@ -391,17 +391,16 @@ app.openapi(uploadRoute, async (c) => {
 
 	// Verify member exists and get proposalId for permission check (I.1: single query)
 	const [member] = await db
-		.select({ memberId: proposalMembers.memberId, proposalId: proposalMembers.proposalId })
+		.select({
+			memberId: proposalMembers.memberId,
+			proposalId: proposalMembers.proposalId,
+		})
 		.from(proposalMembers)
 		.where(eq(proposalMembers.memberId, memberId))
 		.limit(1);
 
 	if (!member) {
-		throw new ApiError(
-			404,
-			"MEMBER_NOT_FOUND",
-			"Proposal member not found",
-		);
+		throw new ApiError(404, "MEMBER_NOT_FOUND", "Proposal member not found");
 	}
 
 	// Permission check: Director OR Project Leader of the member's proposal
@@ -462,7 +461,12 @@ app.openapi(uploadRoute, async (c) => {
 			archivedAt: specialOrders.archivedAt,
 		})
 		.from(specialOrders)
-		.where(and(eq(specialOrders.memberId, memberId), isNull(specialOrders.archivedAt)))
+		.where(
+			and(
+				eq(specialOrders.memberId, memberId),
+				isNull(specialOrders.archivedAt),
+			),
+		)
 		.limit(1);
 
 	let record;
@@ -481,7 +485,11 @@ app.openapi(uploadRoute, async (c) => {
 				.returning();
 
 			if (!updated) {
-				throw new ApiError(500, "UPDATE_FAILED", "Failed to update special order");
+				throw new ApiError(
+					500,
+					"UPDATE_FAILED",
+					"Failed to update special order",
+				);
 			}
 			record = updated;
 		} else {
@@ -496,14 +504,19 @@ app.openapi(uploadRoute, async (c) => {
 				.returning();
 
 			if (!inserted) {
-				throw new ApiError(500, "INSERT_FAILED", "Failed to create special order");
+				throw new ApiError(
+					500,
+					"INSERT_FAILED",
+					"Failed to create special order",
+				);
 			}
 			record = inserted;
 			isNew = true;
 		}
-	} catch (error: any) {
+	} catch (error: unknown) {
+		const err = error as Record<string, unknown> & { code?: string };
 		// I.3: Catch PG unique-violation (23505) for duplicate SO number
-		if (error?.code === "23505") {
+		if (err?.code === "23505") {
 			throw new ApiError(
 				409,
 				"DUPLICATE_SO_NUMBER",
@@ -597,7 +610,11 @@ app.openapi(getUrlRoute, async (c) => {
 	// I.5: Authorization check — Director, Project Leader of the proposal, or the member themselves
 	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
 		const [member] = await db
-			.select({ memberId: proposalMembers.memberId, proposalId: proposalMembers.proposalId, userId: proposalMembers.userId })
+			.select({
+				memberId: proposalMembers.memberId,
+				proposalId: proposalMembers.proposalId,
+				userId: proposalMembers.userId,
+			})
 			.from(proposalMembers)
 			.where(eq(proposalMembers.memberId, order.memberId))
 			.limit(1);
@@ -634,7 +651,11 @@ app.openapi(getUrlRoute, async (c) => {
 	}
 
 	if (!order.storagePath) {
-		throw new ApiError(404, "NO_FILE", "No file uploaded for this special order");
+		throw new ApiError(
+			404,
+			"NO_FILE",
+			"No file uploaded for this special order",
+		);
 	}
 
 	const { data, error } = await supabase.storage

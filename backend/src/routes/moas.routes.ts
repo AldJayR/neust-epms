@@ -1,19 +1,19 @@
 import { randomUUID } from "node:crypto";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { createClient } from "@supabase/supabase-js";
 import { and, count, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
 import { partners } from "../db/schema/partners.js";
 import { projects } from "../db/schema/projects.js";
-import { proposals } from "../db/schema/proposals.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
+import { proposals } from "../db/schema/proposals.js";
 import { users } from "../db/schema/users.js";
+import { env } from "../env.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { type AuthUser, ROLE_NAMES } from "../lib/types.js";
-import { createClient } from "@supabase/supabase-js";
-import { env } from "../env.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
@@ -382,7 +382,9 @@ app.openapi(getRoute, async (c) => {
 			updatedAt: row.updatedAt.toISOString(),
 			archivedAt: row.archivedAt?.toISOString() ?? null,
 			status,
-			daysToExpiry: (daysUntilExpiry < 0 ? "Expired" : daysUntilExpiry) as number | "Expired",
+			daysToExpiry: (daysUntilExpiry < 0 ? "Expired" : daysUntilExpiry) as
+				| number
+				| "Expired",
 		},
 		200,
 	);
@@ -456,7 +458,9 @@ app.openapi(linkedProjectsRoute, async (c) => {
 			projectId: proposals.proposalId,
 			title: proposals.title,
 			projectStatus: projects.projectStatus,
-			leaderName: sql<string | null>`concat(${users.firstName}, ' ', ${users.lastName})`,
+			leaderName: sql<
+				string | null
+			>`concat(${users.firstName}, ' ', ${users.lastName})`,
 			createdAt: projects.createdAt,
 		})
 		.from(projects)
@@ -513,11 +517,7 @@ app.openapi(createMoaRoute, async (c) => {
 	const user = c.get("user");
 
 	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
-		throw new ApiError(
-			403,
-			"FORBIDDEN",
-			"This action requires Director role",
-		);
+		throw new ApiError(403, "FORBIDDEN", "This action requires Director role");
 	}
 
 	const body = c.req.valid("json");
@@ -696,7 +696,11 @@ app.openapi(uploadMoaRoute, async (c) => {
 			})
 			.returning({ partnerId: partners.partnerId });
 		if (!newPartner) {
-			throw new ApiError(500, "CREATE_PARTNER_FAILED", "Failed to create partner");
+			throw new ApiError(
+				500,
+				"CREATE_PARTNER_FAILED",
+				"Failed to create partner",
+			);
 		}
 		partnerId = newPartner.partnerId;
 	}
@@ -798,11 +802,7 @@ app.openapi(updateRoute, async (c) => {
 	const user = c.get("user");
 
 	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
-		throw new ApiError(
-			403,
-			"FORBIDDEN",
-			"This action requires Director role",
-		);
+		throw new ApiError(403, "FORBIDDEN", "This action requires Director role");
 	}
 
 	const { id } = c.req.valid("param");
@@ -824,7 +824,9 @@ app.openapi(updateRoute, async (c) => {
 	}
 
 	const nextValidFrom =
-		body.validFrom !== undefined ? new Date(body.validFrom) : existing.validFrom;
+		body.validFrom !== undefined
+			? new Date(body.validFrom)
+			: existing.validFrom;
 	const nextValidUntil =
 		body.validUntil !== undefined
 			? new Date(body.validUntil)
@@ -883,8 +885,8 @@ app.openapi(updateRoute, async (c) => {
 				and(
 					eq(projects.moaId, id),
 					eq(projects.projectStatus, "Expired"),
-					isNull(projects.archivedAt)
-				)
+					isNull(projects.archivedAt),
+				),
 			);
 
 		for (const p of expiredProjects) {

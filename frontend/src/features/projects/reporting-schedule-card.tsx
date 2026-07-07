@@ -1,8 +1,21 @@
-import { format } from "date-fns";
-import { Calendar, CheckCircle2, AlertCircle, Download, FilePlus, Loader2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { format } from "date-fns";
+import {
+	AlertCircle,
+	Calendar,
+	CheckCircle2,
+	Download,
+	FilePlus,
+	Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { useProjectReportingSchedule } from "@/hooks/use-project-reporting-schedule";
 
 interface ReportingScheduleCardProps {
@@ -23,7 +36,9 @@ export function ReportingScheduleCard({
 			<Card size="sm" className={className}>
 				<CardContent className="flex h-32 items-center justify-center gap-2">
 					<Loader2 className="size-5 animate-spin text-muted-foreground" />
-					<span className="text-muted-foreground text-sm">Loading reporting schedule...</span>
+					<span className="text-muted-foreground text-sm">
+						Loading reporting schedule...
+					</span>
 				</CardContent>
 			</Card>
 		);
@@ -39,8 +54,12 @@ export function ReportingScheduleCard({
 		return (
 			<Card size="sm" className={className}>
 				<CardHeader className="pb-3">
-					<CardTitle className="text-base font-semibold">Reporting Schedule</CardTitle>
-					<CardDescription className="text-xs">Milestones and submissions timeline</CardDescription>
+					<CardTitle className="text-base font-semibold">
+						Reporting Schedule
+					</CardTitle>
+					<CardDescription className="text-xs">
+						Milestones and submissions timeline
+					</CardDescription>
 				</CardHeader>
 				<CardContent className="pt-0 text-center py-8 text-muted-foreground text-sm">
 					No milestones scheduled for this project.
@@ -54,7 +73,9 @@ export function ReportingScheduleCard({
 	return (
 		<Card size="sm" className={className}>
 			<CardHeader className="pb-3">
-				<CardTitle className="text-base font-semibold">Reporting Schedule</CardTitle>
+				<CardTitle className="text-base font-semibold">
+					Reporting Schedule
+				</CardTitle>
 				<CardDescription className="text-xs">
 					Track required report milestones and submission statuses
 				</CardDescription>
@@ -64,7 +85,9 @@ export function ReportingScheduleCard({
 					{dueDates.map((item, idx) => {
 						const dateObj = new Date(item.date);
 						const isOverdue = !item.isCompleted && dateObj < now;
-						const allPreviousComplete = dueDates.slice(0, idx).every((d) => d.isCompleted);
+						const allPreviousComplete = dueDates
+							.slice(0, idx)
+							.every((d) => d.isCompleted);
 
 						return (
 							<div key={item.id} className="relative">
@@ -88,12 +111,18 @@ export function ReportingScheduleCard({
 										</p>
 										{item.isCompleted && item.completedAt && (
 											<p className="text-xs text-green-600">
-												Completed {format(new Date(item.completedAt), "MMM d, yyyy")}
+												Completed{" "}
+												{format(new Date(item.completedAt), "MMM d, yyyy")}
 											</p>
 										)}
 										{isOverdue && (
 											<p className="text-xs text-red-500">
-												Overdue by {Math.ceil((now.getTime() - dateObj.getTime()) / (1000 * 60 * 60 * 24))} days
+												Overdue by{" "}
+												{Math.ceil(
+													(now.getTime() - dateObj.getTime()) /
+														(1000 * 60 * 60 * 24),
+												)}{" "}
+												days
 											</p>
 										)}
 									</div>
@@ -117,7 +146,9 @@ export function ReportingScheduleCard({
 												Download
 											</Button>
 										) : (
-											isFaculty && allPreviousComplete && !item.isCompleted && (
+											isFaculty &&
+											allPreviousComplete &&
+											!item.isCompleted && (
 												<Button
 													size="xs"
 													variant="outline"
@@ -131,9 +162,9 @@ export function ReportingScheduleCard({
 										)}
 									</div>
 								</div>
-						</div>
-					);
-				})}
+							</div>
+						);
+					})}
 				</div>
 			</CardContent>
 		</Card>

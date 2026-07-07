@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { createClient } from "@supabase/supabase-js";
-import { eq, ilike, or, isNull, and } from "drizzle-orm";
+import { and, eq, ilike, isNull, or } from "drizzle-orm";
 import { rateLimiter } from "hono-rate-limiter";
 import { db } from "../db/client.js";
 import { campuses } from "../db/schema/campuses.js";
@@ -9,12 +9,12 @@ import { roles } from "../db/schema/roles.js";
 import { users } from "../db/schema/users.js";
 import { env } from "../env.js";
 import { insertAuditLog } from "../lib/audit.js";
+import { authUserCache, cacheEnabled } from "../lib/cache.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { isPasswordCompromised } from "../lib/password-check.js";
 import { ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
-import { authUserCache, cacheEnabled } from "../lib/cache.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -712,11 +712,14 @@ app.openapi(loginRoute, async (c) => {
 		ipAddress: getClientIp(c),
 	});
 
-	return c.json({
-		access_token: authData.session.access_token,
-		refresh_token: authData.session.refresh_token,
-		user: appUser,
-	}, 200);
+	return c.json(
+		{
+			access_token: authData.session.access_token,
+			refresh_token: authData.session.refresh_token,
+			user: appUser,
+		},
+		200,
+	);
 });
 
 // ── POST /auth/logout (Authenticated) ──
@@ -730,9 +733,7 @@ const logoutRoute = createRoute({
 		200: {
 			content: {
 				"application/json": {
-					schema: z
-						.object({ ok: z.literal(true) })
-						.openapi("LogoutResponse"),
+					schema: z.object({ ok: z.literal(true) }).openapi("LogoutResponse"),
 				},
 			},
 			description: "Logged out",

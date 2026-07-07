@@ -1,7 +1,17 @@
-import { CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { ReadinessPrerequisite } from "@/lib/project-readiness.functions";
 
 interface ProjectReadinessCardProps {
@@ -22,7 +32,9 @@ export function ProjectReadinessCard({
 			<CardHeader className="pb-3">
 				<div className="flex items-center justify-between">
 					<div>
-						<CardTitle className="text-base font-semibold">Project Activation Readiness</CardTitle>
+						<CardTitle className="text-base font-semibold">
+							Project Activation Readiness
+						</CardTitle>
 						<CardDescription className="text-xs">
 							Pre-implementation compliance and checklist
 						</CardDescription>
@@ -40,13 +52,23 @@ export function ProjectReadinessCard({
 								render={
 									<div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-background text-sm">
 										{req.complete ? (
-											<CheckCircle2 className="size-4 text-green-600 shrink-0 mt-0.5" aria-hidden="true" />
+											<CheckCircle2
+												className="size-4 text-green-600 shrink-0 mt-0.5"
+												aria-hidden="true"
+											/>
 										) : (
-											<XCircle className="size-4 text-muted-foreground shrink-0 mt-0.5" aria-hidden="true" />
+											<XCircle
+												className="size-4 text-muted-foreground shrink-0 mt-0.5"
+												aria-hidden="true"
+											/>
 										)}
 										<div className="min-w-0">
-											<p className="font-medium text-foreground truncate">{req.name}</p>
-											<p className="text-xs text-muted-foreground truncate">{req.details}</p>
+											<p className="font-medium text-foreground truncate">
+												{req.name}
+											</p>
+											<p className="text-xs text-muted-foreground truncate">
+												{req.details}
+											</p>
 											<p className="text-[10px] text-muted-foreground mt-1">
 												{req.owner}
 											</p>
@@ -69,7 +91,8 @@ export function ProjectReadinessCard({
 					<div className="flex items-start gap-2.5 p-3 rounded-lg border border-border bg-muted text-sm">
 						<AlertCircle className="size-4 shrink-0 mt-0.5 text-muted-foreground" />
 						<span className="text-muted-foreground">
-							<span className="font-medium text-foreground">Blocked:</span> {blocker}
+							<span className="font-medium text-foreground">Blocked:</span>{" "}
+							{blocker}
 						</span>
 					</div>
 				)}

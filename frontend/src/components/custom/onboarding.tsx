@@ -8,8 +8,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { completeOnboardingFn } from "@/lib/auth.functions";
 import type { AuthUser } from "@/lib/auth";
+import { completeOnboardingFn } from "@/lib/auth.functions";
 
 interface OnboardingProps {
 	user: AuthUser | null;

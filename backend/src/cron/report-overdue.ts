@@ -1,15 +1,15 @@
-import { and, eq, lt, isNull } from "drizzle-orm";
+import { and, eq, isNull, lt } from "drizzle-orm";
 import cron from "node-cron";
 import { db } from "../db/client.js";
-import { proposalMembers } from "../db/schema/proposal-members.js";
 import { projectReportingDates } from "../db/schema/project-reporting-dates.js";
 import { projectReportingSchedules } from "../db/schema/project-reporting-schedules.js";
 import { projects } from "../db/schema/projects.js";
+import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposals } from "../db/schema/proposals.js";
 import { roles } from "../db/schema/roles.js";
 import { users } from "../db/schema/users.js";
-import { createNotification } from "../lib/notification.helpers.js";
 import { insertAuditLog } from "../lib/audit.js";
+import { createNotification } from "../lib/notification.helpers.js";
 
 const PROJECT_LEADER_ROLE = "Project Leader";
 
@@ -91,9 +91,7 @@ export function startReportOverdueCron(): void {
 				const [schedule] = await db
 					.select()
 					.from(projectReportingSchedules)
-					.where(
-						eq(projectReportingSchedules.scheduleId, row.scheduleId),
-					)
+					.where(eq(projectReportingSchedules.scheduleId, row.scheduleId))
 					.limit(1);
 
 				if (!schedule) continue;
@@ -107,8 +105,7 @@ export function startReportOverdueCron(): void {
 				if (!project) continue;
 
 				// Skip closed/archived projects
-				if (project.projectStatus === "Closed" || project.archivedAt)
-					continue;
+				if (project.projectStatus === "Closed" || project.archivedAt) continue;
 
 				if (project.projectStatus !== "Overdue") {
 					await db

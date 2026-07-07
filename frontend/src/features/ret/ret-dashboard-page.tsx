@@ -29,8 +29,8 @@ import {
 	retProposalsQueryOptions,
 } from "@/lib/ret.functions";
 import { formatAcademicRank } from "@/lib/utils";
-import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
 import { ActionCenterCard } from "../action-center/action-center-card";
+import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
 
 interface RETDashboardPageProps {
 	user: AuthUser;

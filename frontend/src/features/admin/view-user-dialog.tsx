@@ -1,5 +1,6 @@
-import { useState } from "react";
 import * as React from "react";
+import { useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -11,7 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { UserResponse } from "@/lib/admin.functions";
 import { formatAcademicRank } from "@/lib/utils";
 
@@ -32,7 +32,9 @@ export function ViewUserDialog({
 	const isOpen =
 		controlledIsOpen !== undefined ? controlledIsOpen : localIsOpen;
 	const setIsOpen =
-		controlledOnOpenChange !== undefined ? controlledOnOpenChange : setLocalIsOpen;
+		controlledOnOpenChange !== undefined
+			? controlledOnOpenChange
+			: setLocalIsOpen;
 
 	const getFullName = () => {
 		const parts = [user.firstName, user.middleName, user.lastName].filter(

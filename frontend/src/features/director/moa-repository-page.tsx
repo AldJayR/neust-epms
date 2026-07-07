@@ -93,7 +93,11 @@ export function MoaRepositoryPage({
 			id: "dateSigned",
 			accessorKey: "dateSigned",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Date Signed" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Date Signed"
+					className="justify-center"
+				/>
 			),
 			headerClassName:
 				"w-[223px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
@@ -108,7 +112,11 @@ export function MoaRepositoryPage({
 			id: "daysToExpiry",
 			accessorKey: "daysToExpiry",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Days to Expiry" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Days to Expiry"
+					className="justify-center"
+				/>
 			),
 			headerClassName:
 				"w-[255px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
@@ -124,7 +132,11 @@ export function MoaRepositoryPage({
 			id: "status",
 			accessorKey: "status",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Status" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Status"
+					className="justify-center"
+				/>
 			),
 			headerClassName:
 				"w-[129px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
@@ -150,12 +162,7 @@ export function MoaRepositoryPage({
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem
-									render={
-										<Link
-											to="/moas/$moaId"
-											params={{ moaId: moa.id }}
-										/>
-									}
+									render={<Link to="/moas/$moaId" params={{ moaId: moa.id }} />}
 								>
 									View Details
 								</DropdownMenuItem>

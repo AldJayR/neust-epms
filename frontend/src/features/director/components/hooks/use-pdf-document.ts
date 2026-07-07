@@ -26,8 +26,7 @@ export function usePdfDocument(url: string) {
 		}
 
 		let isDestroyed = false;
-		// biome-ignore lint/suspicious/noExplicitAny: PDF.js Internal getDocument task type is complex
-		let loadingTask: any = null;
+		let loadingTask: pdfjsLib.PDFDocumentLoadingTask | null = null;
 
 		const loadDocument = async () => {
 			try {

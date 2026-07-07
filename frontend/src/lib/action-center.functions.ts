@@ -34,7 +34,12 @@ export interface ActionCenterResponse {
 const getActionCenterFn = createServerFn({ method: "GET" })
 	.validator(z.void())
 	.handler(async () => {
-		await authorizeSessionUser("Faculty", "RET Chair", "Director", "Super Admin");
+		await authorizeSessionUser(
+			"Faculty",
+			"RET Chair",
+			"Director",
+			"Super Admin",
+		);
 		const token = await getValidAccessToken();
 
 		const response = await fetch(`${API_BASE}/action-center`, {
@@ -44,7 +49,10 @@ const getActionCenterFn = createServerFn({ method: "GET" })
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch action center");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch action center",
+			);
 			throw new Error(message);
 		}
 

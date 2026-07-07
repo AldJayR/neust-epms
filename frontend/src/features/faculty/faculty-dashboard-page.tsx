@@ -14,8 +14,8 @@ import {
 	facultyProjectsQueryOptions,
 	facultyProposalsQueryOptions,
 } from "@/lib/faculty.functions";
-import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
 import { ActionCenterCard } from "../action-center/action-center-card";
+import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
 
 export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
@@ -61,7 +61,9 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 			};
 		}),
 		...proposalsList
-			.filter((p) => !projectsList.some((proj) => proj.proposalId === p.proposalId))
+			.filter(
+				(p) => !projectsList.some((proj) => proj.proposalId === p.proposalId),
+			)
 			.map((p) => {
 				const isLeader =
 					(p.leaderFirstName &&

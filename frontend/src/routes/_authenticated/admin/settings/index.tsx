@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { SettingsPage } from "@/features/admin/settings-page";
 import { SettingsSkeleton } from "@/components/custom/settings-skeleton";
+import { SettingsPage } from "@/features/admin/settings-page";
 import { isDeniedAccess } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/admin/settings/")({

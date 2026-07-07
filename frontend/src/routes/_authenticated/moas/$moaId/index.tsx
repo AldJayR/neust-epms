@@ -9,9 +9,7 @@ import { isDeniedAccess } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/moas/$moaId/")({
 	beforeLoad: ({ context }) => {
-		if (
-			isDeniedAccess(context.auth.user, "Director", "RET Chair")
-		) {
+		if (isDeniedAccess(context.auth.user, "Director", "RET Chair")) {
 			throw redirect({
 				to: "/dashboard",
 				search: { page: 1, pageSize: 10 },
@@ -20,9 +18,7 @@ export const Route = createFileRoute("/_authenticated/moas/$moaId/")({
 	},
 	loader: async ({ context, params }) => {
 		await Promise.all([
-			context.queryClient.ensureQueryData(
-				moaDetailsQueryOptions(params.moaId),
-			),
+			context.queryClient.ensureQueryData(moaDetailsQueryOptions(params.moaId)),
 			context.queryClient.ensureQueryData(
 				moaLinkedProjectsQueryOptions(params.moaId),
 			),

@@ -1,25 +1,35 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, count, desc, eq, ilike, isNull, or, type SQL, sql } from "drizzle-orm";
+import {
+	and,
+	count,
+	desc,
+	eq,
+	ilike,
+	isNull,
+	or,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import { db } from "../db/client.js";
 import { beneficiarySectors } from "../db/schema/beneficiary-sectors.js";
+import { projects } from "../db/schema/projects.js";
 import { proposalBeneficiaries } from "../db/schema/proposal-beneficiaries.js";
+import { proposalComments } from "../db/schema/proposal-comments.js";
 import { proposalDepartments } from "../db/schema/proposal-departments.js";
 import { proposalDocuments } from "../db/schema/proposal-documents.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposalReviews } from "../db/schema/proposal-reviews.js";
 import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
 import { proposals } from "../db/schema/proposals.js";
-import { projects } from "../db/schema/projects.js";
-import { proposalComments } from "../db/schema/proposal-comments.js";
-import { sdgs } from "../db/schema/sdgs.js";
 import { roles } from "../db/schema/roles.js";
+import { sdgs } from "../db/schema/sdgs.js";
 import { users } from "../db/schema/users.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { captureAuditDiff } from "../lib/audit-diff.js";
 import { getClientIp } from "../lib/client-ip.js";
+import { deriveProposalState } from "../lib/derived-states.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { createNotification } from "../lib/notification.helpers.js";
-import { deriveProposalState } from "../lib/derived-states.js";
 import {
 	PROPOSAL_STATUS,
 	REVIEW_DECISION,
@@ -647,9 +657,7 @@ app.openapi(createProposalRoute, async (c) => {
 				targetStartDate: body.targetStartDate
 					? new Date(body.targetStartDate)
 					: null,
-				targetEndDate: body.targetEndDate
-					? new Date(body.targetEndDate)
-					: null,
+				targetEndDate: body.targetEndDate ? new Date(body.targetEndDate) : null,
 				// DFD 6.1: RET Chair submissions bypass endorsement, route directly to Director
 				bypassedRetChair: user.roleName === ROLE_NAMES.RET_CHAIR,
 				status: PROPOSAL_STATUS.DRAFT,
@@ -690,7 +698,11 @@ app.openapi(createProposalRoute, async (c) => {
 		// Insert beneficiary sectors
 		let sectorIdsToInsert = body.sectorIds || [];
 
-		if (sectorIdsToInsert.length === 0 && body.sectorNames && body.sectorNames.length > 0) {
+		if (
+			sectorIdsToInsert.length === 0 &&
+			body.sectorNames &&
+			body.sectorNames.length > 0
+		) {
 			for (const name of body.sectorNames) {
 				const trimmed = name.trim();
 				if (!trimmed) continue;
@@ -764,7 +776,10 @@ app.openapi(createProposalRoute, async (c) => {
 		title: "Submission Received",
 		message: `Your proposal "${created.title}" has been received and is pending review.`,
 	}).catch((err) => {
-		console.error("[notification] Failed to send submission acknowledgment:", err);
+		console.error(
+			"[notification] Failed to send submission acknowledgment:",
+			err,
+		);
 	});
 
 	return c.json(
@@ -783,7 +798,8 @@ const updateRoute = createRoute({
 	method: "patch",
 	path: "/proposals/{id}",
 	tags: ["Proposals"],
-	summary: "Update a proposal (Draft, Returned, Pending Review, or Endorsed; project leader only)",
+	summary:
+		"Update a proposal (Draft, Returned, Pending Review, or Endorsed; project leader only)",
 	security: [{ Bearer: [] }],
 	request: {
 		params: ParamId,
@@ -929,7 +945,13 @@ app.openapi(updateRoute, async (c) => {
 	const diff = captureAuditDiff(
 		existing as unknown as Record<string, unknown>,
 		updated as unknown as Record<string, unknown>,
-		["title", "budgetNeust", "budgetPartner", "targetStartDate", "targetEndDate"],
+		[
+			"title",
+			"budgetNeust",
+			"budgetPartner",
+			"targetStartDate",
+			"targetEndDate",
+		],
 	);
 
 	await insertAuditLog({
@@ -1022,7 +1044,10 @@ app.openapi(submitRoute, async (c) => {
 
 	// 2. Members check
 	const members = await db
-		.select({ memberId: proposalMembers.memberId, projectRole: proposalMembers.projectRole })
+		.select({
+			memberId: proposalMembers.memberId,
+			projectRole: proposalMembers.projectRole,
+		})
 		.from(proposalMembers)
 		.where(eq(proposalMembers.proposalId, id));
 	if (members.length === 0) {
@@ -1084,7 +1109,10 @@ app.openapi(submitRoute, async (c) => {
 			"Target start and end dates are required.",
 		);
 	}
-	if (new Date(proposalDetails.targetStartDate) > new Date(proposalDetails.targetEndDate)) {
+	if (
+		new Date(proposalDetails.targetStartDate) >
+		new Date(proposalDetails.targetEndDate)
+	) {
 		throw new ApiError(
 			400,
 			"INCOMPLETE_PROPOSAL",
@@ -1143,7 +1171,10 @@ app.openapi(submitRoute, async (c) => {
 			title: "Submission Received",
 			message: `Your proposal has been submitted and is pending review.`,
 		}).catch((err) => {
-			console.error("[notification] Failed to send submission acknowledgment:", err);
+			console.error(
+				"[notification] Failed to send submission acknowledgment:",
+				err,
+			);
 		});
 	}
 
@@ -1414,14 +1445,15 @@ app.openapi(reviewRoute, async (c) => {
 			message,
 			sendEmail: true,
 		}).catch((err) => {
-			console.error("[notification] Failed to create evaluation notification:", err);
+			console.error(
+				"[notification] Failed to create evaluation notification:",
+				err,
+			);
 		});
 	}
 
 	return c.json({ message: `Proposal ${body.decision.toLowerCase()}` }, 200);
 });
-
-
 
 // ── GET /proposals/metadata/sdgs ──
 const listSdgsRoute = createRoute({
@@ -1498,7 +1530,8 @@ app.openapi(listRequirementsRoute, (c) => {
 		],
 		members: {
 			required: true,
-			description: "At least one team member with Project Leader role is required.",
+			description:
+				"At least one team member with Project Leader role is required.",
 		},
 		sectors: {
 			required: true,
@@ -1506,15 +1539,18 @@ app.openapi(listRequirementsRoute, (c) => {
 		},
 		sdgs: {
 			required: true,
-			description: "At least one Sustainable Development Goal (SDG) alignment is required.",
+			description:
+				"At least one Sustainable Development Goal (SDG) alignment is required.",
 		},
 		budget: {
 			required: true,
-			description: "Budget values for partner and university share must be non-negative.",
+			description:
+				"Budget values for partner and university share must be non-negative.",
 		},
 		dates: {
 			required: true,
-			description: "Target start and end dates are required. End date must be on or after start date.",
+			description:
+				"Target start and end dates are required. End date must be on or after start date.",
 		},
 	};
 

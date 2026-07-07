@@ -54,9 +54,7 @@ const signupSchema = z.object({
 export const loginFn = createServerFn({ method: "POST" })
 	.validator(loginSchema)
 	.handler(async ({ data }) => {
-		const [{ getAppSession }] = await Promise.all([
-			import("./session.server"),
-		]);
+		const [{ getAppSession }] = await Promise.all([import("./session.server")]);
 
 		const response = await fetch(`${API_BASE}/auth/login`, {
 			method: "POST",
@@ -158,7 +156,9 @@ export const signupFn = createServerFn({ method: "POST" })
 // ── Logout ────────────────────────────────────────────────
 
 export const logoutFn = createServerFn({ method: "POST" }).handler(async () => {
-	const { getAppSession, getValidAccessToken } = await import("./session.server");
+	const { getAppSession, getValidAccessToken } = await import(
+		"./session.server"
+	);
 	const session = await getAppSession();
 	const accessToken = await getValidAccessToken().catch(() => null);
 
@@ -465,4 +465,3 @@ export const completeOnboardingFn = createServerFn({ method: "POST" })
 
 		return (await response.json()) as { success: boolean };
 	});
-

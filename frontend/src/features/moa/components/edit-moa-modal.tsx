@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, Calendar as CalendarIcon } from "lucide-react";
-import { toast } from "sonner";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
 	Dialog,
 	DialogContent,
@@ -12,11 +13,14 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { FieldGroup } from "@/components/ui/field";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { updateMoaFn } from "@/lib/moa.functions";
 
 interface EditMoaModalProps {
@@ -50,7 +54,9 @@ export function EditMoaModal({
 		if (open) {
 			setPartnerName(initialPartnerName);
 			setValidFrom(initialValidFrom ? new Date(initialValidFrom) : undefined);
-			setValidUntil(initialValidUntil ? new Date(initialValidUntil) : undefined);
+			setValidUntil(
+				initialValidUntil ? new Date(initialValidUntil) : undefined,
+			);
 		}
 	}, [open, initialPartnerName, initialValidFrom, initialValidUntil]);
 
@@ -175,7 +181,11 @@ export function EditMoaModal({
 						>
 							Cancel
 						</Button>
-						<BrandButton type="submit" disabled={isSubmitting} className="w-[120px]">
+						<BrandButton
+							type="submit"
+							disabled={isSubmitting}
+							className="w-[120px]"
+						>
 							{isSubmitting ? (
 								<>
 									<Loader2 className="mr-2 h-4 w-4 animate-spin" />

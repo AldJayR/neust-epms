@@ -44,7 +44,9 @@ export const proposals = pgTable(
 			precision: 14,
 			scale: 2,
 		}).default("0"),
-		status: varchar("status", { length: 50 }).notNull().default("Pending Review"),
+		status: varchar("status", { length: 50 })
+			.notNull()
+			.default("Pending Review"),
 		bypassedRetChair: boolean("bypassed_ret_chair").notNull().default(false),
 		revisionNum: integer("revision_num").notNull().default(0),
 		targetStartDate: timestamp("target_start_date", { withTimezone: true }),

@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -8,7 +9,6 @@ import { AuthPageLayout } from "../components/custom/auth-page-layout";
 import { RHFSubmitButton, RHFTextField } from "../components/rhf-auth-fields";
 import { FieldGroup } from "../components/ui/field";
 import { sendResetCodeFn } from "../lib/auth.functions";
-import { ArrowLeft } from "lucide-react";
 
 const forgotPasswordSchema = z.object({
 	email: z.string().email("Please enter a valid email address"),

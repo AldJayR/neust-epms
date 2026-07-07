@@ -184,8 +184,9 @@ export function SubmitReportModal({
 
 			onOpenChange(false);
 			resetForm();
-		} catch (err: any) {
-			toast.error(err.message || "Failed to submit report");
+		} catch (err: unknown) {
+			const error = err as Error;
+			toast.error(error.message || "Failed to submit report");
 		} finally {
 			setIsSubmitting(false);
 		}

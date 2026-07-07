@@ -214,9 +214,9 @@ export function CreateProposalModal({
 						budgetNeust: values.budgetNeust,
 						targetStartDate: new Date(values.targetStartDate).toISOString(),
 						targetEndDate: new Date(values.targetEndDate).toISOString(),
-					sdgIds: values.sdgIds,
-					sectorNames: values.beneficiarySectors,
-					members: values.members.map((m) => ({
+						sdgIds: values.sdgIds,
+						sectorNames: values.beneficiarySectors,
+						members: values.members.map((m) => ({
 							userId: m.userId,
 							projectRole: m.projectRole,
 						})),
@@ -249,7 +249,12 @@ export function CreateProposalModal({
 				if (timer) clearInterval(timer);
 			}
 
-			if (shouldSubmit && (!isEditing || currentStatus === "Draft" || currentStatus === "Returned")) {
+			if (
+				shouldSubmit &&
+				(!isEditing ||
+					currentStatus === "Draft" ||
+					currentStatus === "Returned")
+			) {
 				const targetId = editingProposalId ?? proposalId;
 				await submitProposalMutation.mutateAsync({
 					data: { proposalId: targetId },
@@ -261,7 +266,7 @@ export function CreateProposalModal({
 			toast.success(
 				shouldSubmit
 					? "Project proposal submitted successfully for review!"
-					: "Proposal draft saved successfully!"
+					: "Proposal draft saved successfully!",
 			);
 			onOpenChange(false);
 			form.reset();
@@ -394,51 +399,51 @@ export function CreateProposalModal({
 								</Button>
 							) : (
 								<div className="flex items-center gap-3">
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() => handleSave(false)}
-									disabled={
-										createProposalMutation.isPending ||
+									<Button
+										type="button"
+										variant="outline"
+										onClick={() => handleSave(false)}
+										disabled={
+											createProposalMutation.isPending ||
+											updateProposalMutation.isPending ||
+											submitProposalMutation.isPending ||
+											uploadDocumentMutation.isPending
+										}
+									>
+										{createProposalMutation.isPending ||
 										updateProposalMutation.isPending ||
-										submitProposalMutation.isPending ||
-										uploadDocumentMutation.isPending
-									}
-								>
-									{createProposalMutation.isPending ||
-									updateProposalMutation.isPending ||
-									uploadDocumentMutation.isPending ? (
-										<>
-											<Loader2 className="size-4 animate-spin" />
-											Saving...
-										</>
-									) : (
-										"Save as Draft"
-									)}
-								</Button>
-								<Button
-									type="button"
-									onClick={() => handleSave(true)}
-									className="bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold"
-									disabled={
-										createProposalMutation.isPending ||
-										updateProposalMutation.isPending ||
-										submitProposalMutation.isPending ||
-										uploadDocumentMutation.isPending
-									}
-								>
-									{submitProposalMutation.isPending ? (
-										<>
-											<Loader2 className="size-4 animate-spin" />
-											Submitting...
-										</>
-									) : (
-										<>
-											Submit for Review
-											<Check className="size-4" />
-										</>
-									)}
-								</Button>
+										uploadDocumentMutation.isPending ? (
+											<>
+												<Loader2 className="size-4 animate-spin" />
+												Saving...
+											</>
+										) : (
+											"Save as Draft"
+										)}
+									</Button>
+									<Button
+										type="button"
+										onClick={() => handleSave(true)}
+										className="bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold"
+										disabled={
+											createProposalMutation.isPending ||
+											updateProposalMutation.isPending ||
+											submitProposalMutation.isPending ||
+											uploadDocumentMutation.isPending
+										}
+									>
+										{submitProposalMutation.isPending ? (
+											<>
+												<Loader2 className="size-4 animate-spin" />
+												Submitting...
+											</>
+										) : (
+											<>
+												Submit for Review
+												<Check className="size-4" />
+											</>
+										)}
+									</Button>
 								</div>
 							)}
 						</div>

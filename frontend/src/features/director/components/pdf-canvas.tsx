@@ -84,9 +84,7 @@ export function PdfPageCanvas({
 	});
 
 	useEffect(() => {
-		// Keep track of the active rendering task so we can cancel it on change/unmount
-		// biome-ignore lint/suspicious/noExplicitAny: PDF.js Internal RenderTask type is complex
-		let activeRenderTask: any = null;
+		let activeRenderTask: pdfjsLib.RenderTask | null = null;
 		let isDestroyed = false;
 		const textLayerEl = textLayerRef.current;
 

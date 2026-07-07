@@ -10,8 +10,8 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Skeleton } from "@/components/ui/skeleton";
-import { isDirector } from "@/lib/permissions";
 import type { AuthUser } from "@/lib/auth";
+import { isDirector } from "@/lib/permissions";
 
 export function MoaDetailsSkeleton() {
 	const user = useRouterState({
@@ -31,13 +31,21 @@ export function MoaDetailsSkeleton() {
 			<Breadcrumb>
 				<BreadcrumbList>
 					<BreadcrumbItem>
-						<BreadcrumbLink render={<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />}>
+						<BreadcrumbLink
+							render={
+								<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />
+							}
+						>
 							Dashboard
 						</BreadcrumbLink>
 					</BreadcrumbItem>
 					<BreadcrumbSeparator />
 					<BreadcrumbItem>
-						<BreadcrumbLink render={<Link to="/moas" search={{ page: 1, limit: 10 }} />}>MOAs</BreadcrumbLink>
+						<BreadcrumbLink
+							render={<Link to="/moas" search={{ page: 1, limit: 10 }} />}
+						>
+							MOAs
+						</BreadcrumbLink>
 					</BreadcrumbItem>
 					<BreadcrumbSeparator />
 					<BreadcrumbItem>
@@ -67,15 +75,21 @@ export function MoaDetailsSkeleton() {
 								<Skeleton className="h-6 w-20 rounded-md" />
 							</div>
 							<div className="flex flex-col gap-2 py-4">
-								<span className="text-xs text-muted-foreground">Partner Organization</span>
+								<span className="text-xs text-muted-foreground">
+									Partner Organization
+								</span>
 								<Skeleton className="h-5 w-48" />
 							</div>
 							<div className="flex flex-col gap-2 py-4">
-								<span className="text-xs text-muted-foreground">Date Signed</span>
+								<span className="text-xs text-muted-foreground">
+									Date Signed
+								</span>
 								<Skeleton className="h-5 w-32" />
 							</div>
 							<div className="flex flex-col gap-2 py-4">
-								<span className="text-xs text-muted-foreground">Expiry Date</span>
+								<span className="text-xs text-muted-foreground">
+									Expiry Date
+								</span>
 								<Skeleton className="h-5 w-32" />
 							</div>
 						</div>

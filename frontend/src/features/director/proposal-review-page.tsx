@@ -4,8 +4,6 @@ import { Download } from "lucide-react";
 import { useRef, useState } from "react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { PdfViewer, type PdfViewerRef } from "@/components/pdf-viewer";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { ProposalLifecycleStepper } from "@/features/proposals/proposal-lifecycle-stepper";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -15,7 +13,9 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Card } from "@/components/ui/card";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProposalLifecycleStepper } from "@/features/proposals/proposal-lifecycle-stepper";
 import type { AuthUser } from "@/lib/auth";
 import {
 	getProposalCommentsFn,

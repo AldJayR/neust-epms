@@ -16,10 +16,10 @@ import {
 	facultyProposalsQueryOptions,
 } from "@/lib/faculty.functions";
 import {
+	isDeniedAccess,
 	isDirector,
 	isRETChair,
 	isSuperAdmin,
-	isDeniedAccess,
 } from "@/lib/permissions";
 import {
 	retDashboardStatsQueryOptions,

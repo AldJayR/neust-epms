@@ -91,11 +91,14 @@ function LoginPage() {
 
 		const isSA = isSuperAdmin(result?.user);
 		const target =
-			isSA && safeRedirectTarget === "/dashboard" ? "/admin/users" : safeRedirectTarget;
+			isSA && safeRedirectTarget === "/dashboard"
+				? "/admin/users"
+				: safeRedirectTarget;
 
 		if (
 			isSA &&
-			(target === "/admin/users" || safeRedirectTarget.startsWith("/admin/users"))
+			(target === "/admin/users" ||
+				safeRedirectTarget.startsWith("/admin/users"))
 		) {
 			await Promise.all([
 				queryClient.prefetchQuery(adminStatsQueryOptions()),

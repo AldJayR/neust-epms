@@ -28,17 +28,28 @@ export interface ProjectReportingScheduleResponse {
 const getProjectReportingScheduleFn = createServerFn({ method: "GET" })
 	.validator(z.string().uuid())
 	.handler(async ({ data: projectId }) => {
-		await authorizeSessionUser("Faculty", "RET Chair", "Director", "Super Admin");
+		await authorizeSessionUser(
+			"Faculty",
+			"RET Chair",
+			"Director",
+			"Super Admin",
+		);
 		const token = await getValidAccessToken();
 
-		const response = await fetch(`${API_BASE}/projects/${projectId}/reporting-schedule`, {
-			headers: {
-				Authorization: `Bearer ${token}`,
+		const response = await fetch(
+			`${API_BASE}/projects/${projectId}/reporting-schedule`,
+			{
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
 			},
-		});
+		);
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to fetch reporting schedule");
+			const message = await getErrorMessage(
+				response,
+				"Failed to fetch reporting schedule",
+			);
 			throw new Error(message);
 		}
 

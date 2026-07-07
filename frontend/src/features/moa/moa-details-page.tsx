@@ -1,20 +1,10 @@
-import { useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Pencil, ExternalLink, FolderOpen } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
+import { ExternalLink, FolderOpen, Pencil } from "lucide-react";
+import { useState } from "react";
 import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-	Empty,
-	EmptyContent,
-	EmptyDescription,
-	EmptyMedia,
-} from "@/components/ui/empty";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -23,13 +13,23 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
 import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyMedia,
+} from "@/components/ui/empty";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { StatusBadge } from "@/components/ui/status-badge";
+import type { AuthUser } from "@/lib/auth";
+import {
+	type MoaLinkedProject,
 	moaDetailsQueryOptions,
 	moaLinkedProjectsQueryOptions,
-	type MoaLinkedProject,
 } from "@/lib/moa.functions";
 import { isDirector } from "@/lib/permissions";
-import type { AuthUser } from "@/lib/auth";
 import { EditMoaModal } from "./components/edit-moa-modal";
 import { MoaDetailsSkeleton } from "./moa-details-skeleton";
 
@@ -49,20 +49,33 @@ export function MoaDetailsPage({ moaId, currentUser }: MoaDetailsPageProps) {
 	);
 
 	if (moaLoading) return <MoaDetailsSkeleton />;
-	if (!moa) return <div className="py-12 text-center text-muted-foreground">MOA not found.</div>;
+	if (!moa)
+		return (
+			<div className="py-12 text-center text-muted-foreground">
+				MOA not found.
+			</div>
+		);
 
 	return (
 		<div className="flex flex-col gap-6">
 			<Breadcrumb>
 				<BreadcrumbList>
 					<BreadcrumbItem>
-						<BreadcrumbLink render={<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />}>
+						<BreadcrumbLink
+							render={
+								<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />
+							}
+						>
 							Dashboard
 						</BreadcrumbLink>
 					</BreadcrumbItem>
 					<BreadcrumbSeparator />
 					<BreadcrumbItem>
-						<BreadcrumbLink render={<Link to="/moas" search={{ page: 1, limit: 10 }} />}>MOAs</BreadcrumbLink>
+						<BreadcrumbLink
+							render={<Link to="/moas" search={{ page: 1, limit: 10 }} />}
+						>
+							MOAs
+						</BreadcrumbLink>
 					</BreadcrumbItem>
 					<BreadcrumbSeparator />
 					<BreadcrumbItem>
@@ -111,19 +124,25 @@ export function MoaDetailsPage({ moaId, currentUser }: MoaDetailsPageProps) {
 							</div>
 							<Separator />
 							<div className="flex flex-col gap-2 py-4">
-								<span className="text-xs text-muted-foreground">Partner Organization</span>
+								<span className="text-xs text-muted-foreground">
+									Partner Organization
+								</span>
 								<span className="text-sm font-medium">{moa.partnerName}</span>
 							</div>
 							<Separator />
 							<div className="flex flex-col gap-2 py-4">
-								<span className="text-xs text-muted-foreground">Date Signed</span>
+								<span className="text-xs text-muted-foreground">
+									Date Signed
+								</span>
 								<span className="text-sm font-medium">
 									{format(new Date(moa.validFrom), "MMM d, yyyy")}
 								</span>
 							</div>
 							<Separator />
 							<div className="flex flex-col gap-2 py-4">
-								<span className="text-xs text-muted-foreground">Expiry Date</span>
+								<span className="text-xs text-muted-foreground">
+									Expiry Date
+								</span>
 								<span className="text-sm font-medium">
 									{format(new Date(moa.validUntil), "MMM d, yyyy")}
 								</span>
@@ -132,7 +151,9 @@ export function MoaDetailsPage({ moaId, currentUser }: MoaDetailsPageProps) {
 								<>
 									<Separator />
 									<div className="flex flex-col gap-2 py-4">
-										<span className="text-xs text-muted-foreground">Document</span>
+										<span className="text-xs text-muted-foreground">
+											Document
+										</span>
 										<a
 											href={moa.storagePath}
 											target="_blank"
@@ -199,9 +220,14 @@ export function MoaDetailsPage({ moaId, currentUser }: MoaDetailsPageProps) {
 										className="flex items-center justify-between rounded-lg border border-border p-4"
 									>
 										<div className="flex flex-col gap-1">
-											<span className="text-sm font-medium">{project.title}</span>
+											<span className="text-sm font-medium">
+												{project.title}
+											</span>
 											<div className="flex items-center gap-3 text-xs text-muted-foreground">
-												<StatusBadge status={project.projectStatus} variant="outline" />
+												<StatusBadge
+													status={project.projectStatus}
+													variant="outline"
+												/>
 												{project.leaderName && (
 													<span>Leader: {project.leaderName}</span>
 												)}

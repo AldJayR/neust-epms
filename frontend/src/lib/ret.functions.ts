@@ -362,15 +362,15 @@ export const updateProposalFn = createServerFn({ method: "POST" })
 				Authorization: `Bearer ${accessToken}`,
 				"Content-Type": "application/json",
 			},
-		body: JSON.stringify({
-			title: data.title,
-			bannerProgram: data.bannerProgram,
-			projectLocale: data.projectLocale,
-			extensionCategory: data.extensionCategory,
-			budgetPartner: data.budgetPartner,
-			budgetNeust: data.budgetNeust,
-			sectorNames: data.sectorNames,
-		}),
+			body: JSON.stringify({
+				title: data.title,
+				bannerProgram: data.bannerProgram,
+				projectLocale: data.projectLocale,
+				extensionCategory: data.extensionCategory,
+				budgetPartner: data.budgetPartner,
+				budgetNeust: data.budgetNeust,
+				sectorNames: data.sectorNames,
+			}),
 		});
 
 		if (!response.ok) {
@@ -385,7 +385,12 @@ export const updateProposalFn = createServerFn({ method: "POST" })
 	});
 
 export interface ProposalRequirements {
-	documents: { type: string; label: string; required: boolean; description: string }[];
+	documents: {
+		type: string;
+		label: string;
+		required: boolean;
+		description: string;
+	}[];
 	members: { required: boolean; description: string };
 	sectors: { required: boolean; description: string };
 	sdgs: { required: boolean; description: string };
@@ -393,7 +398,9 @@ export interface ProposalRequirements {
 	dates: { required: boolean; description: string };
 }
 
-export const getProposalRequirementsFn = createServerFn({ method: "GET" }).handler(async () => {
+export const getProposalRequirementsFn = createServerFn({
+	method: "GET",
+}).handler(async () => {
 	const accessToken = await getValidAccessToken();
 	const response = await fetch(`${API_BASE}/proposals/metadata/requirements`, {
 		headers: { Authorization: `Bearer ${accessToken}` },

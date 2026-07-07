@@ -523,20 +523,24 @@ export const getAccessTokenForUploadFn = createServerFn({ method: "GET" })
 const specialOrderUploadSchema = z.object({
 	memberId: z.string().uuid("Invalid member ID"),
 	soNumber: z.string().min(1, "SO number is required"),
-	file: z.instanceof(File, { message: "A PDF file is required" }).refine(
-		(file) => file.type === "application/pdf",
-		"Only PDF files are allowed",
-	),
+	file: z
+		.instanceof(File, { message: "A PDF file is required" })
+		.refine(
+			(file) => file.type === "application/pdf",
+			"Only PDF files are allowed",
+		),
 });
 
 const moaUploadSchema = z.object({
 	partnerName: z.string().min(1, "Partner name is required"),
 	validFrom: z.string().min(1, "Signed from date is required"),
 	validUntil: z.string().min(1, "Expiration date is required"),
-	file: z.instanceof(File, { message: "A PDF document is required" }).refine(
-		(file) => file.type === "application/pdf",
-		"Only PDF files are allowed",
-	),
+	file: z
+		.instanceof(File, { message: "A PDF document is required" })
+		.refine(
+			(file) => file.type === "application/pdf",
+			"Only PDF files are allowed",
+		),
 });
 
 export const uploadSpecialOrderFn = createServerFn({ method: "POST" })
@@ -600,10 +604,7 @@ export const uploadMoaFn = createServerFn({ method: "POST" })
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(
-				response,
-				"Failed to upload MOA",
-			);
+			const message = await getErrorMessage(response, "Failed to upload MOA");
 			throw new Error(message);
 		}
 
@@ -893,4 +894,3 @@ export const closeProjectFn = createServerFn({ method: "POST" })
 
 		return (await response.json()) as { message: string };
 	});
-

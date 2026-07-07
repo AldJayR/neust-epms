@@ -2,11 +2,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { LoadingButton } from "@/components/custom/loading-button";
-import { PageHeader } from "@/components/custom/page-header";
 import { PageCard } from "@/components/custom/page-card";
+import { PageHeader } from "@/components/custom/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { settingsQueryOptions, updateSettingFn } from "@/lib/settings.functions";
+import {
+	settingsQueryOptions,
+	updateSettingFn,
+} from "@/lib/settings.functions";
 
 export function SettingsPage() {
 	const queryClient = useQueryClient();
@@ -61,8 +64,8 @@ export function SettingsPage() {
 							className="w-32"
 						/>
 						<p className="text-xs text-muted-foreground">
-							Closed projects are archived after this period. Used by the archival
-							cron.
+							Closed projects are archived after this period. Used by the
+							archival cron.
 						</p>
 					</div>
 					<LoadingButton
@@ -81,10 +84,7 @@ export function SettingsPage() {
 				<div className="space-y-4">
 					<InfoRow label="Application Name" value={settings?.app_name ?? "—"} />
 					<InfoRow label="Version" value="1.0.0" />
-					<InfoRow
-						label="Admin Contact"
-						value={settings?.admin_email ?? "—"}
-					/>
+					<InfoRow label="Admin Contact" value={settings?.admin_email ?? "—"} />
 					<InfoRow
 						label="Email Service"
 						value={settings?.resend_api_key ? "Configured" : "Not configured"}

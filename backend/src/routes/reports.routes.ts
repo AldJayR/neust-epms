@@ -2,19 +2,22 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { and, count, desc, eq, isNull, type SQL } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { departments } from "../db/schema/departments.js";
+import { projectReportingDates } from "../db/schema/project-reporting-dates.js";
+import { projectReportingSchedules } from "../db/schema/project-reporting-schedules.js";
 import { projectReports } from "../db/schema/project-reports.js";
 import { projects } from "../db/schema/projects.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposals } from "../db/schema/proposals.js";
 import { users } from "../db/schema/users.js";
-import { projectReportingSchedules } from "../db/schema/project-reporting-schedules.js";
-import { projectReportingDates } from "../db/schema/project-reporting-dates.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { captureAuditDiff } from "../lib/audit-diff.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
-import { createNotification, getUserIdsByRole } from "../lib/notification.helpers.js";
-import { REPORT_TYPE, ROLE_NAMES, PROJECT_STATUS } from "../lib/types.js";
+import {
+	createNotification,
+	getUserIdsByRole,
+} from "../lib/notification.helpers.js";
+import { PROJECT_STATUS, REPORT_TYPE, ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
@@ -241,13 +244,17 @@ app.openapi(statsRoute, async (c) => {
 			.from(projectReports)
 			.innerJoin(projects, eq(projectReports.projectId, projects.projectId))
 			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-			.where(and(...whereConditions, eq(projectReports.reportType, "Progress"))),
+			.where(
+				and(...whereConditions, eq(projectReports.reportType, "Progress")),
+			),
 		db
 			.select({ value: count() })
 			.from(projectReports)
 			.innerJoin(projects, eq(projectReports.projectId, projects.projectId))
 			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-			.where(and(...whereConditions, eq(projectReports.reportType, "Terminal"))),
+			.where(
+				and(...whereConditions, eq(projectReports.reportType, "Terminal")),
+			),
 	]);
 
 	return c.json(
@@ -347,7 +354,8 @@ app.openapi(createReportRoute, async (c) => {
 		const earliestIncomplete = allDueDates.find((d) => !d.isCompleted);
 		if (earliestIncomplete) {
 			const previousIncomplete = allDueDates.filter(
-				(d) => !d.isCompleted && d.reportingDate < earliestIncomplete.reportingDate,
+				(d) =>
+					!d.isCompleted && d.reportingDate < earliestIncomplete.reportingDate,
 			);
 			if (previousIncomplete.length > 0) {
 				throw new ApiError(
@@ -424,7 +432,10 @@ app.openapi(createReportRoute, async (c) => {
 		.select({ reportType: projectReports.reportType })
 		.from(projectReports)
 		.where(
-			and(eq(projectReports.projectId, body.projectId), isNull(projectReports.archivedAt)),
+			and(
+				eq(projectReports.projectId, body.projectId),
+				isNull(projectReports.archivedAt),
+			),
 		);
 
 	const hasFinalAccomplishment = reports.some(
@@ -455,7 +466,10 @@ app.openapi(createReportRoute, async (c) => {
 
 			await db
 				.update(projects)
-				.set({ projectStatus: PROJECT_STATUS.PENDING_CLOSURE, updatedAt: new Date() })
+				.set({
+					projectStatus: PROJECT_STATUS.PENDING_CLOSURE,
+					updatedAt: new Date(),
+				})
 				.where(eq(projects.projectId, body.projectId));
 
 			await insertAuditLog({

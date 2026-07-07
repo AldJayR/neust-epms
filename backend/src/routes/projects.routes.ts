@@ -31,8 +31,8 @@ import { env } from "../env.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { captureAuditDiff } from "../lib/audit-diff.js";
 import { getClientIp } from "../lib/client-ip.js";
-import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import { deriveProjectState } from "../lib/derived-states.js";
+import { ApiError, installApiErrorHandler } from "../lib/errors.js";
 import {
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
@@ -794,10 +794,7 @@ app.openapi(projectDerivedStateRoute, async (c) => {
 		.select({ reportId: projectReports.reportId })
 		.from(projectReports)
 		.where(
-			and(
-				eq(projectReports.projectId, id),
-				isNull(projectReports.archivedAt),
-			),
+			and(eq(projectReports.projectId, id), isNull(projectReports.archivedAt)),
 		)
 		.limit(1);
 
@@ -1257,11 +1254,13 @@ app.openapi(activateRoute, async (c) => {
 		);
 	}
 
-	let project: {
-		projectId: string;
-		projectStatus: string;
-		archivedAt: Date | null;
-	} | undefined;
+	let project:
+		| {
+				projectId: string;
+				projectStatus: string;
+				archivedAt: Date | null;
+		  }
+		| undefined;
 
 	const [existingProject] = await db
 		.select({
@@ -1614,7 +1613,9 @@ const projectReportingScheduleRoute = createRoute({
 	request: { params: ParamId },
 	responses: {
 		200: {
-			content: { "application/json": { schema: ProjectReportingScheduleSchema } },
+			content: {
+				"application/json": { schema: ProjectReportingScheduleSchema },
+			},
 			description: "Reporting schedule information",
 		},
 		404: {
@@ -1685,12 +1686,15 @@ app.openapi(projectReportingScheduleRoute, async (c) => {
 			storagePath: projectReports.storagePath,
 		})
 		.from(projectReports)
-		.where(and(eq(projectReports.projectId, id), isNull(projectReports.archivedAt)))
+		.where(
+			and(eq(projectReports.projectId, id), isNull(projectReports.archivedAt)),
+		)
 		.orderBy(projectReports.submittedAt);
 
 	// 5. Map completed due dates to reports chronologically
 	const mappedDueDates = dueDatesList.map((dueDate, idx) => {
-		let resolvedType = idx === dueDatesList.length - 1 ? "Terminal" : "Progress";
+		let resolvedType =
+			idx === dueDatesList.length - 1 ? "Terminal" : "Progress";
 		let resolvedReportId: string | null = null;
 		let resolvedStoragePath: string | null = null;
 
@@ -1711,7 +1715,9 @@ app.openapi(projectReportingScheduleRoute, async (c) => {
 			id: dueDate.id,
 			date: dueDate.reportingDate.toISOString(),
 			isCompleted: dueDate.isCompleted,
-			completedAt: dueDate.completedAt ? dueDate.completedAt.toISOString() : null,
+			completedAt: dueDate.completedAt
+				? dueDate.completedAt.toISOString()
+				: null,
 			reportType: resolvedType,
 			reportId: resolvedReportId,
 			storagePath: resolvedStoragePath,

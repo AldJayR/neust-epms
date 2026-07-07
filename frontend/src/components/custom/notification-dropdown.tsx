@@ -1,12 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	Bell,
-	Clock,
 	AlertTriangle,
-	FileCheck,
+	Bell,
 	Calendar,
-	UserCheck,
+	Clock,
+	FileCheck,
 	FileSignature,
+	UserCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,9 @@ function getNotificationIcon(type: string) {
 		case "moa_expiry":
 			return <Clock className={cn(iconClassName, "text-amber-500")} />;
 		case "report_overdue":
-			return <AlertTriangle className={cn(iconClassName, "text-destructive")} />;
+			return (
+				<AlertTriangle className={cn(iconClassName, "text-destructive")} />
+			);
 		case "report_submitted":
 			return <FileCheck className={cn(iconClassName, "text-emerald-500")} />;
 		case "schedule_adjustment_requested":
@@ -66,10 +68,7 @@ export function NotificationDropdown() {
 
 	const { data: unreadData } = useQuery(getUnreadCountQueryOptions);
 
-	const {
-		data: notifications,
-		isLoading: notificationsLoading,
-	} = useQuery({
+	const { data: notifications, isLoading: notificationsLoading } = useQuery({
 		...getNotificationsQueryOptions,
 		enabled: open,
 	});

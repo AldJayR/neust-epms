@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -13,7 +14,6 @@ import {
 	InputOTPSlot,
 } from "../components/ui/input-otp";
 import { sendResetCodeFn, verifyResetCodeFn } from "../lib/auth.functions";
-import { ArrowLeft } from "lucide-react";
 
 const otpSchema = z.object({
 	code: z.string().length(6, "Verification code must be 6 digits"),

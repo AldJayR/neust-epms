@@ -18,9 +18,9 @@ import { campuses } from "../db/schema/campuses.js";
 import { departments } from "../db/schema/departments.js";
 import { moas } from "../db/schema/moas.js";
 import { partners } from "../db/schema/partners.js";
-import { projectReports } from "../db/schema/project-reports.js";
 import { projectReportingDates } from "../db/schema/project-reporting-dates.js";
 import { projectReportingSchedules } from "../db/schema/project-reporting-schedules.js";
+import { projectReports } from "../db/schema/project-reports.js";
 import { projects } from "../db/schema/projects.js";
 import { proposalDocuments } from "../db/schema/proposal-documents.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
@@ -560,7 +560,12 @@ app.openapi(moaRepositoryRoute, async (c) => {
 		db
 			.select({ value: count() })
 			.from(moas)
-			.where(and(isNull(moas.archivedAt), sql`${moas.validUntil} > ${now.toISOString()}`)),
+			.where(
+				and(
+					isNull(moas.archivedAt),
+					sql`${moas.validUntil} > ${now.toISOString()}`,
+				),
+			),
 	]);
 
 	const items = rows.map((r) => {
@@ -816,7 +821,9 @@ app.openapi(projectHubRoute, async (c) => {
 		leaderRank: r.leaderRank,
 		college: r.college,
 		dateSubmitted: new Date(r.dateSubmitted).toISOString(),
-		lastReportDate: r.lastReportDate ? new Date(r.lastReportDate).toISOString() : null,
+		lastReportDate: r.lastReportDate
+			? new Date(r.lastReportDate).toISOString()
+			: null,
 		status: r.projectStatus || r.proposalStatus,
 		type: (r.projectStatus ? "Project" : "Proposal") as "Project" | "Proposal",
 	}));
@@ -886,9 +893,16 @@ app.openapi(dashboardRoute, async (c) => {
 		})
 		.from(proposals)
 		.innerJoin(campuses, eq(proposals.campusId, campuses.campusId))
-		.innerJoin(departments, eq(proposals.departmentId, departments.departmentId))
+		.innerJoin(
+			departments,
+			eq(proposals.departmentId, departments.departmentId),
+		)
 		.where(and(...chartConditions))
-		.groupBy(campuses.campusName, departments.departmentName, departments.departmentCode);
+		.groupBy(
+			campuses.campusName,
+			departments.departmentName,
+			departments.departmentCode,
+		);
 
 	const recentLogRows = await db
 		.select({
@@ -1134,7 +1148,14 @@ app.openapi(projectDetailsRoute, async (c) => {
 		}
 	}
 
-	const [memberRows, documentRows, reviewRows, sdgRows, specialOrderRows, editLogRows] = await Promise.all([
+	const [
+		memberRows,
+		documentRows,
+		reviewRows,
+		sdgRows,
+		specialOrderRows,
+		editLogRows,
+	] = await Promise.all([
 		db
 			.select({
 				userId: users.userId,
@@ -1193,7 +1214,10 @@ app.openapi(projectDetailsRoute, async (c) => {
 				status: specialOrders.status,
 			})
 			.from(specialOrders)
-			.innerJoin(proposalMembers, eq(specialOrders.memberId, proposalMembers.memberId))
+			.innerJoin(
+				proposalMembers,
+				eq(specialOrders.memberId, proposalMembers.memberId),
+			)
 			.where(
 				and(
 					eq(proposalMembers.proposalId, proposalId),
@@ -1298,7 +1322,9 @@ app.openapi(projectDetailsRoute, async (c) => {
 		const matchingDoc = documentRows.find(
 			(doc) => doc.uploadedAt.getTime() <= review.reviewedAt.getTime(),
 		);
-		const reviewVersion = matchingDoc ? `v${matchingDoc.versionNum}` : `v${row.revisionNum}`;
+		const reviewVersion = matchingDoc
+			? `v${matchingDoc.versionNum}`
+			: `v${row.revisionNum}`;
 
 		history.push({
 			id: review.reviewId,
@@ -1425,7 +1451,13 @@ app.openapi(emailReportRoute, async (c) => {
 	const user = c.get("user");
 
 	if (!env.RESEND_API_KEY) {
-		return c.json({ success: false, message: "Email service is not configured on the server." }, 400);
+		return c.json(
+			{
+				success: false,
+				message: "Email service is not configured on the server.",
+			},
+			400,
+		);
 	}
 
 	// 1. Fetch matching faculty directory data (no pagination)
@@ -1525,7 +1557,9 @@ app.openapi(emailReportRoute, async (c) => {
 		]);
 
 		leadMap = new Map(leadCounts.map((r) => [r.userId, Number(r.value ?? 0)]));
-		collabMap = new Map(collabCounts.map((r) => [r.userId, Number(r.value ?? 0)]));
+		collabMap = new Map(
+			collabCounts.map((r) => [r.userId, Number(r.value ?? 0)]),
+		);
 	}
 
 	const items = rows.map((row) => {
@@ -1621,10 +1655,16 @@ app.openapi(emailReportRoute, async (c) => {
 			html: htmlReport,
 		});
 
-		return c.json({ success: true, message: "Email report sent successfully." }, 200);
+		return c.json(
+			{ success: true, message: "Email report sent successfully." },
+			200,
+		);
 	} catch (error) {
 		console.error("Failed to send email report:", error);
-		return c.json({ success: false, message: "Failed to send email report." }, 500);
+		return c.json(
+			{ success: false, message: "Failed to send email report." },
+			500,
+		);
 	}
 });
 

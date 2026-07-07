@@ -1,10 +1,21 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, count, eq, ilike, inArray, or, isNull, type SQL } from "drizzle-orm";
+import { createClient } from "@supabase/supabase-js";
+import {
+	and,
+	count,
+	eq,
+	ilike,
+	inArray,
+	isNull,
+	or,
+	type SQL,
+} from "drizzle-orm";
 import { db } from "../db/client.js";
 import { campuses } from "../db/schema/campuses.js";
 import { departments } from "../db/schema/departments.js";
 import { roles } from "../db/schema/roles.js";
 import { users } from "../db/schema/users.js";
+import { env } from "../env.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { captureAuditDiff } from "../lib/audit-diff.js";
 import { invalidateAuthUserCache } from "../lib/cache.js";
@@ -14,8 +25,6 @@ import { createNotification } from "../lib/notification.helpers.js";
 import { ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
-import { createClient } from "@supabase/supabase-js";
-import { env } from "../env.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -392,7 +401,10 @@ app.openapi(bulkApproveRoute, async (c) => {
 			title: "Account Activated",
 			message: "Your account has been approved and activated.",
 		}).catch((err) => {
-			console.error("[notification] Failed to send activation notification:", err);
+			console.error(
+				"[notification] Failed to send activation notification:",
+				err,
+			);
 		});
 	}
 
@@ -542,7 +554,11 @@ app.openapi(provisionUserRoute, async (c) => {
 	const body = c.req.valid("json");
 
 	if (authUser.roleName !== "Super Admin") {
-		throw new ApiError(403, "FORBIDDEN", "Only Super Admin can provision accounts");
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"Only Super Admin can provision accounts",
+		);
 	}
 
 	const [existing] = await db
@@ -582,7 +598,11 @@ app.openapi(provisionUserRoute, async (c) => {
 		.limit(1);
 
 	if (!directorRole) {
-		throw new ApiError(500, "CONFIG_ERROR", "Director role not found in system");
+		throw new ApiError(
+			500,
+			"CONFIG_ERROR",
+			"Director role not found in system",
+		);
 	}
 
 	const [mainCampus] = await db
@@ -739,9 +759,11 @@ app.openapi(updateSpecificUserRoute, async (c) => {
 	if (body.middleName !== undefined) updateFields.middleName = body.middleName;
 	if (body.lastName !== undefined) updateFields.lastName = body.lastName;
 	if (body.nameSuffix !== undefined) updateFields.nameSuffix = body.nameSuffix;
-	if (body.academicRank !== undefined) updateFields.academicRank = body.academicRank;
+	if (body.academicRank !== undefined)
+		updateFields.academicRank = body.academicRank;
 	if (body.campusId !== undefined) updateFields.campusId = body.campusId;
-	if (body.departmentId !== undefined) updateFields.departmentId = body.departmentId;
+	if (body.departmentId !== undefined)
+		updateFields.departmentId = body.departmentId;
 	if (body.roleId !== undefined) updateFields.roleId = body.roleId;
 	if (body.isActive !== undefined) updateFields.isActive = body.isActive;
 
@@ -753,14 +775,19 @@ app.openapi(updateSpecificUserRoute, async (c) => {
 	const diff = captureAuditDiff(
 		existing as unknown as Record<string, unknown>,
 		updated as unknown as Record<string, unknown>,
-		["firstName", "lastName", "email", "roleId", "isActive", "campusId", "departmentId"],
+		[
+			"firstName",
+			"lastName",
+			"email",
+			"roleId",
+			"isActive",
+			"campusId",
+			"departmentId",
+		],
 	);
 
 	await db.transaction(async (tx) => {
-		await tx
-			.update(users)
-			.set(updateFields)
-			.where(eq(users.userId, id));
+		await tx.update(users).set(updateFields).where(eq(users.userId, id));
 
 		await insertAuditLog(
 			{

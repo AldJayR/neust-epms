@@ -12,8 +12,10 @@ export const PROPOSAL_STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 	},
 	"Pending Review": {
 		label: "Awaiting Review",
-		explanation: "Your proposal has been submitted and is awaiting review by the appropriate reviewer.",
-		nextStep: "No action required — you will be notified when a decision is made.",
+		explanation:
+			"Your proposal has been submitted and is awaiting review by the appropriate reviewer.",
+		nextStep:
+			"No action required — you will be notified when a decision is made.",
 	},
 	Endorsed: {
 		label: "Endorsed — Awaiting Approval",
@@ -35,7 +37,8 @@ export const PROPOSAL_STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 	},
 	Rejected: {
 		label: "Not Approved",
-		explanation: "Your proposal was not approved. Please review the feedback for details.",
+		explanation:
+			"Your proposal was not approved. Please review the feedback for details.",
 		nextStep: "No further action on this proposal.",
 	},
 };
@@ -54,7 +57,8 @@ export const PROJECT_STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 	},
 	Overdue: {
 		label: "Reports Overdue",
-		explanation: "One or more required reports have not been submitted by their deadline.",
+		explanation:
+			"One or more required reports have not been submitted by their deadline.",
 		nextStep: "Submit overdue report(s) immediately.",
 	},
 	Expired: {
@@ -76,12 +80,15 @@ export const PROJECT_STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 	},
 	Closed: {
 		label: "Closed",
-		explanation: "Project has been officially closed. All institutional requirements satisfied.",
+		explanation:
+			"Project has been officially closed. All institutional requirements satisfied.",
 		nextStep: "No further action required.",
 	},
 };
 
-export function getProposalStatusDescription(status: string): StatusDescription {
+export function getProposalStatusDescription(
+	status: string,
+): StatusDescription {
 	return (
 		PROPOSAL_STATUS_DESCRIPTIONS[status] ?? {
 			label: status,

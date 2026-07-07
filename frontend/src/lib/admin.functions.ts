@@ -422,5 +422,3 @@ export const updateUserFn = createServerFn({ method: "POST" })
 
 		return (await response.json()) as { success: boolean; userId: string };
 	});
-
-

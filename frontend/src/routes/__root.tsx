@@ -245,9 +245,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
 				{isPending && <div className="global-loading-bar" />}
-				<TooltipProvider>
-					{children}
-				</TooltipProvider>
+				<TooltipProvider>{children}</TooltipProvider>
 				<Toaster position="top-right" />
 				<Devtools />
 				<Scripts />

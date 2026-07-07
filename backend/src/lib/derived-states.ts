@@ -1,10 +1,10 @@
 import type { AuthUser } from "./types.js";
 import {
-	ROLE_NAMES,
-	PROPOSAL_STATUS,
 	PROJECT_STATUS,
-	type ProposalStatus,
+	PROPOSAL_STATUS,
 	type ProjectStatus,
+	type ProposalStatus,
+	ROLE_NAMES,
 } from "./types.js";
 
 export interface DerivedState {
@@ -40,14 +40,16 @@ export function deriveProposalState(
 			return {
 				state: "ACT",
 				owner: "You",
-				reason: "Your proposal was returned for revision. Review the feedback and resubmit.",
+				reason:
+					"Your proposal was returned for revision. Review the feedback and resubmit.",
 				nextTransition: "Submit revised proposal",
 			};
 		}
 		return {
 			state: "WAIT",
 			owner: "Project Leader",
-			reason: "Proposal returned — waiting for faculty member to revise and resubmit.",
+			reason:
+				"Proposal returned — waiting for faculty member to revise and resubmit.",
 			nextTransition: "Resubmitted proposal",
 		};
 	}
@@ -57,7 +59,8 @@ export function deriveProposalState(
 			return {
 				state: "ACT",
 				owner: "You",
-				reason: "This proposal previously cleared RET Chair review and has been resubmitted directly to your office.",
+				reason:
+					"This proposal previously cleared RET Chair review and has been resubmitted directly to your office.",
 				nextTransition: "Approve, return, or reject",
 			};
 		}
@@ -82,14 +85,16 @@ export function deriveProposalState(
 			return {
 				state: "ACT",
 				owner: "You",
-				reason: "RET Chair endorsed this proposal. Final approval decision needed.",
+				reason:
+					"RET Chair endorsed this proposal. Final approval decision needed.",
 				nextTransition: "Approve or return",
 			};
 		}
 		return {
 			state: "WAIT",
 			owner: "Director/Admin",
-			reason: "Proposal endorsed by RET Chair — awaiting Director/Admin approval.",
+			reason:
+				"Proposal endorsed by RET Chair — awaiting Director/Admin approval.",
 			nextTransition: "Approval decision",
 		};
 	}
@@ -157,7 +162,8 @@ export function deriveProjectState(
 		return {
 			state: "ACT",
 			owner: "Director/Admin",
-			reason: "MOA has expired. Project cannot continue until a valid MOA is assigned.",
+			reason:
+				"MOA has expired. Project cannot continue until a valid MOA is assigned.",
 			nextTransition: "Renew or reassign MOA",
 		};
 	}
@@ -165,7 +171,8 @@ export function deriveProjectState(
 	if (projectStatus === PROJECT_STATUS.APPROVED) {
 		const blockers: string[] = [];
 		if (!project.moaId) blockers.push("Valid MOA not assigned");
-		if (!project.reportingSchedule) blockers.push("Reporting schedule not established");
+		if (!project.reportingSchedule)
+			blockers.push("Reporting schedule not established");
 
 		if (blockers.length > 0) {
 			return {
@@ -197,7 +204,8 @@ export function deriveProjectState(
 			return {
 				state: "ACT",
 				owner: "You",
-				reason: "Final reports submitted — awaiting Director/Admin review and closure.",
+				reason:
+					"Final reports submitted — awaiting Director/Admin review and closure.",
 				nextTransition: "Closure confirmation",
 			};
 		}

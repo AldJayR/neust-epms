@@ -1,23 +1,34 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, count, desc, eq, gte, isNull, lt, lte, or, type SQL, sql } from "drizzle-orm";
+import {
+	and,
+	count,
+	desc,
+	eq,
+	gte,
+	isNull,
+	lt,
+	lte,
+	or,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import { db } from "../db/client.js";
-import { proposals } from "../db/schema/proposals.js";
+import { moas } from "../db/schema/moas.js";
+import { partners } from "../db/schema/partners.js";
+import { projectReportingDates } from "../db/schema/project-reporting-dates.js";
+import { projectReportingSchedules } from "../db/schema/project-reporting-schedules.js";
 import { projects } from "../db/schema/projects.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposalReviews } from "../db/schema/proposal-reviews.js";
-import { moas } from "../db/schema/moas.js";
-import { partners } from "../db/schema/partners.js";
-import { projectReportingSchedules } from "../db/schema/project-reporting-schedules.js";
-import { projectReportingDates } from "../db/schema/project-reporting-dates.js";
+import { proposals } from "../db/schema/proposals.js";
 import { users } from "../db/schema/users.js";
-import { deriveProposalState, deriveProjectState } from "../lib/derived-states.js";
 import {
-	ROLE_NAMES,
-	PROPOSAL_STATUS,
-	PROJECT_STATUS,
-} from "../lib/types.js";
-import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
+	deriveProjectState,
+	deriveProposalState,
+} from "../lib/derived-states.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
+import { PROJECT_STATUS, PROPOSAL_STATUS, ROLE_NAMES } from "../lib/types.js";
+import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -58,7 +69,8 @@ const getActionCenterRoute = createRoute({
 	method: "get",
 	path: "/action-center",
 	tags: ["Action Center"],
-	summary: "Get aggregated actionable and monitored items for the authenticated user",
+	summary:
+		"Get aggregated actionable and monitored items for the authenticated user",
 	security: [{ Bearer: [] }],
 	responses: {
 		200: {
@@ -80,7 +92,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 	let pendingReviews = 0;
 	let returnedProposals = 0;
 	let overdueReports = 0;
-	let expiringMoas = 0;
+	const expiringMoas = 0;
 	let projectsNeedingActivation = 0;
 
 	// Subquery to retrieve project leader ID
@@ -94,9 +106,10 @@ app.openapi(getActionCenterRoute, async (c) => {
 		.as("leader_members");
 
 	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		const scopeClause = user.isMainCampus && user.departmentId !== null
-			? eq(proposals.departmentId, user.departmentId)
-			: eq(proposals.campusId, user.campusId);
+		const scopeClause =
+			user.isMainCampus && user.departmentId !== null
+				? eq(proposals.departmentId, user.departmentId)
+				: eq(proposals.campusId, user.campusId);
 
 		// 1. Proposals pending endorsement
 		const pendingProposals = await db
@@ -111,14 +124,17 @@ app.openapi(getActionCenterRoute, async (c) => {
 				leaderId: leaderSubquery.userId,
 			})
 			.from(proposals)
-			.leftJoin(leaderSubquery, eq(proposals.proposalId, leaderSubquery.proposalId))
+			.leftJoin(
+				leaderSubquery,
+				eq(proposals.proposalId, leaderSubquery.proposalId),
+			)
 			.where(
 				and(
 					eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
 					eq(proposals.bypassedRetChair, false),
 					isNull(proposals.archivedAt),
-					scopeClause
-				)
+					scopeClause,
+				),
 			);
 
 		pendingReviews = pendingProposals.length;
@@ -133,7 +149,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 					departmentId: prop.departmentId,
 				},
 				user,
-				{ isRtChair: true, hasReviewed: false }
+				{ isRtChair: true, hasReviewed: false },
 			);
 
 			const item = {
@@ -165,13 +181,16 @@ app.openapi(getActionCenterRoute, async (c) => {
 				leaderId: leaderSubquery.userId,
 			})
 			.from(proposals)
-			.leftJoin(leaderSubquery, eq(proposals.proposalId, leaderSubquery.proposalId))
+			.leftJoin(
+				leaderSubquery,
+				eq(proposals.proposalId, leaderSubquery.proposalId),
+			)
 			.where(
 				and(
 					eq(proposals.status, PROPOSAL_STATUS.RETURNED),
 					isNull(proposals.archivedAt),
-					scopeClause
-				)
+					scopeClause,
+				),
 			);
 
 		returnedProposals = returnedProps.length;
@@ -186,7 +205,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 					departmentId: prop.departmentId,
 				},
 				user,
-				{ isRtChair: true }
+				{ isRtChair: true },
 			);
 
 			const item = {
@@ -218,13 +237,16 @@ app.openapi(getActionCenterRoute, async (c) => {
 			})
 			.from(projects)
 			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-			.leftJoin(leaderSubquery, eq(proposals.proposalId, leaderSubquery.proposalId))
+			.leftJoin(
+				leaderSubquery,
+				eq(proposals.proposalId, leaderSubquery.proposalId),
+			)
 			.where(
 				and(
 					eq(projects.projectStatus, PROJECT_STATUS.OVERDUE),
 					isNull(projects.archivedAt),
-					scopeClause
-				)
+					scopeClause,
+				),
 			);
 
 		overdueReports = overdueProjects.length;
@@ -244,7 +266,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 					reportingSchedule: !!sched,
 					leaderId: proj.leaderId ?? undefined,
 				},
-				user
+				user,
 			);
 
 			const item = {
@@ -276,22 +298,40 @@ app.openapi(getActionCenterRoute, async (c) => {
 				leaderId: leaderSubquery.userId,
 			})
 			.from(projectReportingDates)
-			.innerJoin(projectReportingSchedules, eq(projectReportingDates.scheduleId, projectReportingSchedules.scheduleId))
-			.innerJoin(projects, eq(projectReportingSchedules.projectId, projects.projectId))
+			.innerJoin(
+				projectReportingSchedules,
+				eq(
+					projectReportingDates.scheduleId,
+					projectReportingSchedules.scheduleId,
+				),
+			)
+			.innerJoin(
+				projects,
+				eq(projectReportingSchedules.projectId, projects.projectId),
+			)
 			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-			.leftJoin(leaderSubquery, eq(proposals.proposalId, leaderSubquery.proposalId))
+			.leftJoin(
+				leaderSubquery,
+				eq(proposals.proposalId, leaderSubquery.proposalId),
+			)
 			.where(
 				and(
 					eq(projectReportingDates.isCompleted, false),
 					gte(projectReportingDates.reportingDate, now),
 					isNull(projects.archivedAt),
-					scopeClause
-				)
+					scopeClause,
+				),
 			);
 
 		for (const rep of upcomingReports) {
-			const urgency = rep.reportingDate <= sevenDays ? ("urgent" as const) : rep.reportingDate <= thirtyDays ? ("soon" as const) : ("routine" as const);
-			const derivedState = urgency === "urgent" ? ("ACT" as const) : ("WATCH" as const);
+			const urgency =
+				rep.reportingDate <= sevenDays
+					? ("urgent" as const)
+					: rep.reportingDate <= thirtyDays
+						? ("soon" as const)
+						: ("routine" as const);
+			const derivedState =
+				urgency === "urgent" ? ("ACT" as const) : ("WATCH" as const);
 			const item = {
 				id: rep.proposalId,
 				dateId: rep.dateId,
@@ -307,9 +347,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 			if (derivedState === "ACT") actItems.push(item);
 			else watchItems.push(item);
 		}
-	}
-
-	else if (user.roleName === ROLE_NAMES.DIRECTOR) {
+	} else if (user.roleName === ROLE_NAMES.DIRECTOR) {
 		// 1. Proposals pending approval (Endorsed OR bypassed RET Chair)
 		const pendingProposals = await db
 			.select({
@@ -323,18 +361,21 @@ app.openapi(getActionCenterRoute, async (c) => {
 				leaderId: leaderSubquery.userId,
 			})
 			.from(proposals)
-			.leftJoin(leaderSubquery, eq(proposals.proposalId, leaderSubquery.proposalId))
+			.leftJoin(
+				leaderSubquery,
+				eq(proposals.proposalId, leaderSubquery.proposalId),
+			)
 			.where(
 				and(
 					or(
 						eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
 						and(
 							eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
-							eq(proposals.bypassedRetChair, true)
-						)
+							eq(proposals.bypassedRetChair, true),
+						),
 					),
-					isNull(proposals.archivedAt)
-				)
+					isNull(proposals.archivedAt),
+				),
 			);
 
 		pendingReviews = pendingProposals.length;
@@ -349,7 +390,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 					departmentId: prop.departmentId,
 				},
 				user,
-				{ isDirector: true, hasReviewed: false }
+				{ isDirector: true, hasReviewed: false },
 			);
 
 			const item = {
@@ -381,12 +422,15 @@ app.openapi(getActionCenterRoute, async (c) => {
 			})
 			.from(projects)
 			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-			.leftJoin(leaderSubquery, eq(proposals.proposalId, leaderSubquery.proposalId))
+			.leftJoin(
+				leaderSubquery,
+				eq(proposals.proposalId, leaderSubquery.proposalId),
+			)
 			.where(
 				and(
 					eq(projects.projectStatus, PROJECT_STATUS.APPROVED),
-					isNull(projects.archivedAt)
-				)
+					isNull(projects.archivedAt),
+				),
 			);
 
 		projectsNeedingActivation = approvedProjects.length;
@@ -405,7 +449,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 					reportingSchedule: !!sched,
 					leaderId: proj.leaderId ?? undefined,
 				},
-				user
+				user,
 			);
 
 			const item = {
@@ -413,11 +457,13 @@ app.openapi(getActionCenterRoute, async (c) => {
 				type: "project" as const,
 				title: proj.title ?? "Untitled Project",
 				status: proj.projectStatus,
-				actionRequired: derived.state === "ACT" ? derived.nextTransition : derived.reason,
+				actionRequired:
+					derived.state === "ACT" ? derived.nextTransition : derived.reason,
 				owner: derived.owner,
 				derivedState: derived.state,
 				createdAt: proj.createdAt.toISOString(),
-				urgency: derived.state === "ACT" ? ("soon" as const) : ("routine" as const),
+				urgency:
+					derived.state === "ACT" ? ("soon" as const) : ("routine" as const),
 			};
 
 			if (derived.state === "ACT") actItems.push(item);
@@ -437,12 +483,15 @@ app.openapi(getActionCenterRoute, async (c) => {
 			})
 			.from(projects)
 			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-			.leftJoin(leaderSubquery, eq(proposals.proposalId, leaderSubquery.proposalId))
+			.leftJoin(
+				leaderSubquery,
+				eq(proposals.proposalId, leaderSubquery.proposalId),
+			)
 			.where(
 				and(
 					eq(projects.projectStatus, PROJECT_STATUS.OVERDUE),
-					isNull(projects.archivedAt)
-				)
+					isNull(projects.archivedAt),
+				),
 			);
 
 		overdueReports = overdueProjects.length;
@@ -461,7 +510,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 					reportingSchedule: !!sched,
 					leaderId: proj.leaderId ?? undefined,
 				},
-				user
+				user,
 			);
 
 			const item = {
@@ -493,21 +542,39 @@ app.openapi(getActionCenterRoute, async (c) => {
 				leaderId: leaderSubquery.userId,
 			})
 			.from(projectReportingDates)
-			.innerJoin(projectReportingSchedules, eq(projectReportingDates.scheduleId, projectReportingSchedules.scheduleId))
-			.innerJoin(projects, eq(projectReportingSchedules.projectId, projects.projectId))
+			.innerJoin(
+				projectReportingSchedules,
+				eq(
+					projectReportingDates.scheduleId,
+					projectReportingSchedules.scheduleId,
+				),
+			)
+			.innerJoin(
+				projects,
+				eq(projectReportingSchedules.projectId, projects.projectId),
+			)
 			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-			.leftJoin(leaderSubquery, eq(proposals.proposalId, leaderSubquery.proposalId))
+			.leftJoin(
+				leaderSubquery,
+				eq(proposals.proposalId, leaderSubquery.proposalId),
+			)
 			.where(
 				and(
 					eq(projectReportingDates.isCompleted, false),
 					gte(projectReportingDates.reportingDate, now),
-					isNull(projects.archivedAt)
-				)
+					isNull(projects.archivedAt),
+				),
 			);
 
 		for (const rep of upcomingReports) {
-			const urgency = rep.reportingDate <= sevenDays ? ("urgent" as const) : rep.reportingDate <= thirtyDays ? ("soon" as const) : ("routine" as const);
-			const derivedState = urgency === "urgent" ? ("ACT" as const) : ("WATCH" as const);
+			const urgency =
+				rep.reportingDate <= sevenDays
+					? ("urgent" as const)
+					: rep.reportingDate <= thirtyDays
+						? ("soon" as const)
+						: ("routine" as const);
+			const derivedState =
+				urgency === "urgent" ? ("ACT" as const) : ("WATCH" as const);
 			const item = {
 				id: rep.proposalId,
 				dateId: rep.dateId,
@@ -523,13 +590,10 @@ app.openapi(getActionCenterRoute, async (c) => {
 			if (derivedState === "ACT") actItems.push(item);
 			else watchItems.push(item);
 		}
-
-	}
-
-	else if (user.roleName === ROLE_NAMES.FACULTY) {
+	} else if (user.roleName === ROLE_NAMES.FACULTY) {
 		const leaderFilter = and(
 			eq(proposalMembers.userId, user.userId),
-			eq(proposalMembers.projectRole, "Project Leader")
+			eq(proposalMembers.projectRole, "Project Leader"),
 		);
 
 		// 1. Returned proposals
@@ -545,14 +609,20 @@ app.openapi(getActionCenterRoute, async (c) => {
 				leaderId: leaderSubquery.userId,
 			})
 			.from(proposals)
-			.innerJoin(proposalMembers, eq(proposals.proposalId, proposalMembers.proposalId))
-			.leftJoin(leaderSubquery, eq(proposals.proposalId, leaderSubquery.proposalId))
+			.innerJoin(
+				proposalMembers,
+				eq(proposals.proposalId, proposalMembers.proposalId),
+			)
+			.leftJoin(
+				leaderSubquery,
+				eq(proposals.proposalId, leaderSubquery.proposalId),
+			)
 			.where(
 				and(
 					eq(proposals.status, PROPOSAL_STATUS.RETURNED),
 					isNull(proposals.archivedAt),
-					leaderFilter
-				)
+					leaderFilter,
+				),
 			);
 
 		returnedProposals = returnedProps.length;
@@ -566,7 +636,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 					campusId: prop.campusId,
 					departmentId: prop.departmentId,
 				},
-				user
+				user,
 			);
 
 			const item = {
@@ -598,14 +668,20 @@ app.openapi(getActionCenterRoute, async (c) => {
 			})
 			.from(projects)
 			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-			.innerJoin(proposalMembers, eq(proposals.proposalId, proposalMembers.proposalId))
-			.leftJoin(leaderSubquery, eq(proposals.proposalId, leaderSubquery.proposalId))
+			.innerJoin(
+				proposalMembers,
+				eq(proposals.proposalId, proposalMembers.proposalId),
+			)
+			.leftJoin(
+				leaderSubquery,
+				eq(proposals.proposalId, leaderSubquery.proposalId),
+			)
 			.where(
 				and(
 					eq(projects.projectStatus, PROJECT_STATUS.OVERDUE),
 					isNull(projects.archivedAt),
-					leaderFilter
-				)
+					leaderFilter,
+				),
 			);
 
 		overdueReports = overdueProjects.length;
@@ -624,7 +700,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 					reportingSchedule: !!sched,
 					leaderId: proj.leaderId ?? undefined,
 				},
-				user
+				user,
 			);
 
 			const item = {
@@ -656,23 +732,44 @@ app.openapi(getActionCenterRoute, async (c) => {
 				leaderId: leaderSubquery.userId,
 			})
 			.from(projectReportingDates)
-			.innerJoin(projectReportingSchedules, eq(projectReportingDates.scheduleId, projectReportingSchedules.scheduleId))
-			.innerJoin(projects, eq(projectReportingSchedules.projectId, projects.projectId))
+			.innerJoin(
+				projectReportingSchedules,
+				eq(
+					projectReportingDates.scheduleId,
+					projectReportingSchedules.scheduleId,
+				),
+			)
+			.innerJoin(
+				projects,
+				eq(projectReportingSchedules.projectId, projects.projectId),
+			)
 			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-			.innerJoin(proposalMembers, eq(proposals.proposalId, proposalMembers.proposalId))
-			.leftJoin(leaderSubquery, eq(proposals.proposalId, leaderSubquery.proposalId))
+			.innerJoin(
+				proposalMembers,
+				eq(proposals.proposalId, proposalMembers.proposalId),
+			)
+			.leftJoin(
+				leaderSubquery,
+				eq(proposals.proposalId, leaderSubquery.proposalId),
+			)
 			.where(
 				and(
 					eq(projectReportingDates.isCompleted, false),
 					gte(projectReportingDates.reportingDate, now),
 					isNull(projects.archivedAt),
-					leaderFilter
-				)
+					leaderFilter,
+				),
 			);
 
 		for (const rep of upcomingReports) {
-			const urgency = rep.reportingDate <= sevenDays ? ("urgent" as const) : rep.reportingDate <= thirtyDays ? ("soon" as const) : ("routine" as const);
-			const derivedState = urgency === "routine" ? ("WATCH" as const) : ("ACT" as const);
+			const urgency =
+				rep.reportingDate <= sevenDays
+					? ("urgent" as const)
+					: rep.reportingDate <= thirtyDays
+						? ("soon" as const)
+						: ("routine" as const);
+			const derivedState =
+				urgency === "routine" ? ("WATCH" as const) : ("ACT" as const);
 			const item = {
 				id: rep.proposalId,
 				dateId: rep.dateId,
@@ -688,9 +785,7 @@ app.openapi(getActionCenterRoute, async (c) => {
 			if (derivedState === "ACT") actItems.push(item);
 			else watchItems.push(item);
 		}
-	}
-
-	else if (user.roleName === ROLE_NAMES.SUPER_ADMIN) {
+	} else if (user.roleName === ROLE_NAMES.SUPER_ADMIN) {
 		// 1. Pending registrations
 		const pendingUsers = await db
 			.select({
@@ -718,17 +813,20 @@ app.openapi(getActionCenterRoute, async (c) => {
 		}
 	}
 
-	return c.json({
-		actItems,
-		watchItems,
-		stats: {
-			pendingReviews,
-			returnedProposals,
-			overdueReports,
-			expiringMoas,
-			projectsNeedingActivation,
+	return c.json(
+		{
+			actItems,
+			watchItems,
+			stats: {
+				pendingReviews,
+				returnedProposals,
+				overdueReports,
+				expiringMoas,
+				projectsNeedingActivation,
+			},
 		},
-	}, 200);
+		200,
+	);
 });
 
 export default app;

@@ -1,7 +1,7 @@
-import type { UseFormReturn } from "react-hook-form";
-import { useWatch } from "react-hook-form";
 import { X } from "lucide-react";
 import * as React from "react";
+import type { UseFormReturn } from "react-hook-form";
+import { useWatch } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -191,11 +191,7 @@ export function ProposalStepInfo({
 				<FieldLabel>Target Beneficiary Sectors</FieldLabel>
 				<div className="flex flex-wrap gap-1.5 min-h-[38px] p-2 border rounded-md">
 					{watchedSectors.map((sector) => (
-						<Badge
-							key={sector}
-							variant="secondary"
-							className="gap-1 pr-1"
-						>
+						<Badge key={sector} variant="secondary" className="gap-1 pr-1">
 							{sector}
 							<button
 								type="button"
@@ -207,7 +203,11 @@ export function ProposalStepInfo({
 						</Badge>
 					))}
 					<Input
-						placeholder={watchedSectors.length === 0 ? "Type a sector and press Enter" : "Add more..."}
+						placeholder={
+							watchedSectors.length === 0
+								? "Type a sector and press Enter"
+								: "Add more..."
+						}
 						value={sectorInput}
 						onChange={(e) => setSectorInput(e.target.value)}
 						onKeyDown={(e) => {

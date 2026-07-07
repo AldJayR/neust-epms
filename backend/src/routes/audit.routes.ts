@@ -1,19 +1,30 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, count, desc, eq, gte, ilike, or, type SQL, sql, inArray } from "drizzle-orm";
+import {
+	and,
+	count,
+	desc,
+	eq,
+	gte,
+	ilike,
+	inArray,
+	or,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import { db } from "../db/client.js";
 import { auditLogs } from "../db/schema/audit-logs.js";
-import { roles } from "../db/schema/roles.js";
-import { users } from "../db/schema/users.js";
-import { proposals } from "../db/schema/proposals.js";
-import { projects } from "../db/schema/projects.js";
 import { partners } from "../db/schema/partners.js";
 import { projectReports } from "../db/schema/project-reports.js";
+import { projects } from "../db/schema/projects.js";
+import { proposals } from "../db/schema/proposals.js";
+import { roles } from "../db/schema/roles.js";
+import { users } from "../db/schema/users.js";
+import { insertAuditLog } from "../lib/audit.js";
+import { getClientIp } from "../lib/client-ip.js";
 import { installApiErrorHandler } from "../lib/errors.js";
 import { ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
-import { insertAuditLog } from "../lib/audit.js";
-import { getClientIp } from "../lib/client-ip.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -212,7 +223,8 @@ app.openapi(listRoute, async (c) => {
 
 	// Resolve names/labels for UUIDs present in rows
 	const uuids = new Set<string>();
-	const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+	const uuidRegex =
+		/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
 	for (const r of rows) {
 		const matches = r.action.match(uuidRegex);
 		if (matches) {
@@ -226,13 +238,36 @@ app.openapi(listRoute, async (c) => {
 
 	if (uuids.size > 0) {
 		const uuidList = Array.from(uuids);
-		const [proposalsList, projectsList, usersList, partnersList, reportsList] = await Promise.all([
-			db.select({ id: proposals.proposalId, label: proposals.title }).from(proposals).where(inArray(proposals.proposalId, uuidList)),
-			db.select({ id: projects.projectId, label: proposals.title }).from(projects).innerJoin(proposals, eq(projects.proposalId, proposals.proposalId)).where(inArray(projects.projectId, uuidList)),
-			db.select({ id: users.userId, label: sql<string>`${users.firstName} || ' ' || ${users.lastName}` }).from(users).where(inArray(users.userId, uuidList)),
-			db.select({ id: partners.partnerId, label: partners.partnerName }).from(partners).where(inArray(partners.partnerId, uuidList)),
-			db.select({ id: projectReports.reportId, label: projectReports.reportType }).from(projectReports).where(inArray(projectReports.reportId, uuidList)),
-		]);
+		const [proposalsList, projectsList, usersList, partnersList, reportsList] =
+			await Promise.all([
+				db
+					.select({ id: proposals.proposalId, label: proposals.title })
+					.from(proposals)
+					.where(inArray(proposals.proposalId, uuidList)),
+				db
+					.select({ id: projects.projectId, label: proposals.title })
+					.from(projects)
+					.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+					.where(inArray(projects.projectId, uuidList)),
+				db
+					.select({
+						id: users.userId,
+						label: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+					})
+					.from(users)
+					.where(inArray(users.userId, uuidList)),
+				db
+					.select({ id: partners.partnerId, label: partners.partnerName })
+					.from(partners)
+					.where(inArray(partners.partnerId, uuidList)),
+				db
+					.select({
+						id: projectReports.reportId,
+						label: projectReports.reportType,
+					})
+					.from(projectReports)
+					.where(inArray(projectReports.reportId, uuidList)),
+			]);
 
 		for (const p of proposalsList) lookup.set(p.id.toLowerCase(), p.label);
 		for (const p of projectsList) lookup.set(p.id.toLowerCase(), p.label);

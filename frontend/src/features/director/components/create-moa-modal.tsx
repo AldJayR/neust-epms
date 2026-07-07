@@ -1,10 +1,11 @@
-import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, Upload, Calendar as CalendarIcon } from "lucide-react";
-import { toast } from "sonner";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
+import { Calendar as CalendarIcon, Loader2, Upload } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
 	Dialog,
 	DialogContent,
@@ -12,6 +13,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { FieldGroup } from "@/components/ui/field";
 import {
 	FileUpload,
 	FileUploadDropzone,
@@ -22,11 +24,13 @@ import {
 	FileUploadList,
 	FileUploadTrigger,
 } from "@/components/ui/file-upload";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { FieldGroup } from "@/components/ui/field";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Label } from "@/components/ui/label";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { uploadMoaFn } from "@/lib/dashboard.functions";
 
 interface CreateMoaModalProps {
@@ -178,9 +182,7 @@ export function CreateMoaModal({ open, onOpenChange }: CreateMoaModalProps) {
 												browse
 											</FileUploadTrigger>
 										</p>
-										<p className="text-xs text-zinc-400">
-											PDF only (max 50MB)
-										</p>
+										<p className="text-xs text-zinc-400">PDF only (max 50MB)</p>
 									</div>
 								</FileUploadDropzone>
 							)}
@@ -205,7 +207,11 @@ export function CreateMoaModal({ open, onOpenChange }: CreateMoaModalProps) {
 						>
 							Cancel
 						</Button>
-						<BrandButton type="submit" disabled={isSubmitting} className="w-[120px]">
+						<BrandButton
+							type="submit"
+							disabled={isSubmitting}
+							className="w-[120px]"
+						>
 							{isSubmitting ? (
 								<>
 									<Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -18,8 +18,8 @@ export interface Notification {
 
 // ── Server functions (for queries and mutations) ──
 
-export const getNotificationsFn = createServerFn({ method: "GET" })
-	.handler(async () => {
+export const getNotificationsFn = createServerFn({ method: "GET" }).handler(
+	async () => {
 		await authorizeSessionUser(
 			"Faculty",
 			"RET Chair",
@@ -32,10 +32,11 @@ export const getNotificationsFn = createServerFn({ method: "GET" })
 		});
 		if (!res.ok) return [] as Notification[];
 		return (await res.json()) as Notification[];
-	});
+	},
+);
 
-export const getUnreadCountFn = createServerFn({ method: "GET" })
-	.handler(async () => {
+export const getUnreadCountFn = createServerFn({ method: "GET" }).handler(
+	async () => {
 		await authorizeSessionUser(
 			"Faculty",
 			"RET Chair",
@@ -48,7 +49,8 @@ export const getUnreadCountFn = createServerFn({ method: "GET" })
 		});
 		if (!res.ok) return { count: 0 };
 		return (await res.json()) as { count: number };
-	});
+	},
+);
 
 export const markNotificationReadFn = createServerFn({ method: "POST" })
 	.validator(z.object({ notificationId: z.string().uuid() }))

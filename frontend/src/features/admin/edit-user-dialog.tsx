@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import * as React from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { BrandButton } from "@/components/custom/brand-button";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -13,8 +13,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -22,12 +22,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { getCampusesFn, getDepartmentsFn } from "@/lib/auth.functions";
 import {
 	getRolesFn,
-	updateUserFn,
 	type UserResponse,
+	updateUserFn,
 } from "@/lib/admin.functions";
+import { getCampusesFn, getDepartmentsFn } from "@/lib/auth.functions";
 
 const rankOptions = [
 	{ label: "Instructor I", value: "instructor-1" },
@@ -58,7 +58,9 @@ export function EditUserDialog({
 	const isOpen =
 		controlledIsOpen !== undefined ? controlledIsOpen : localIsOpen;
 	const setIsOpen =
-		controlledOnOpenChange !== undefined ? controlledOnOpenChange : setLocalIsOpen;
+		controlledOnOpenChange !== undefined
+			? controlledOnOpenChange
+			: setLocalIsOpen;
 	const [firstName, setFirstName] = useState(user.firstName);
 	const [middleName, setMiddleName] = useState(user.middleName ?? "");
 	const [lastName, setLastName] = useState(user.lastName);
@@ -162,7 +164,10 @@ export function EditUserDialog({
 					<DialogTitle>Edit User Profile</DialogTitle>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="flex-1 flex flex-col gap-5 min-h-0">
+				<form
+					onSubmit={handleSubmit}
+					className="flex-1 flex flex-col gap-5 min-h-0"
+				>
 					<div className="flex-1 overflow-y-auto pr-1.5 flex flex-col gap-5 py-1">
 						<div className="grid grid-cols-2 gap-4">
 							<div className="flex flex-col gap-1.5">
@@ -193,7 +198,10 @@ export function EditUserDialog({
 
 						<div className="grid grid-cols-2 gap-4">
 							<div className="flex flex-col gap-1.5">
-								<Label htmlFor="edit-middleName" className="text-sm font-medium">
+								<Label
+									htmlFor="edit-middleName"
+									className="text-sm font-medium"
+								>
 									Middle Name (Optional)
 								</Label>
 								<Input
@@ -204,7 +212,10 @@ export function EditUserDialog({
 								/>
 							</div>
 							<div className="flex flex-col gap-1.5">
-								<Label htmlFor="edit-nameSuffix" className="text-sm font-medium">
+								<Label
+									htmlFor="edit-nameSuffix"
+									className="text-sm font-medium"
+								>
 									Extension (Optional)
 								</Label>
 								<Input
@@ -229,7 +240,10 @@ export function EditUserDialog({
 
 						<div className="grid grid-cols-2 gap-4">
 							<div className="flex flex-col gap-1.5">
-								<Label htmlFor="edit-academicRank" className="text-sm font-medium">
+								<Label
+									htmlFor="edit-academicRank"
+									className="text-sm font-medium"
+								>
 									Academic Rank <span className="text-destructive">*</span>
 								</Label>
 								<Select
@@ -238,7 +252,9 @@ export function EditUserDialog({
 								>
 									<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
 										<SelectValue placeholder="Select rank">
-											{(val) => rankOptions.find((o) => o.value === val)?.label ?? val}
+											{(val) =>
+												rankOptions.find((o) => o.value === val)?.label ?? val
+											}
 										</SelectValue>
 									</SelectTrigger>
 									<SelectContent className="z-50">
@@ -286,7 +302,9 @@ export function EditUserDialog({
 								>
 									<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
 										<SelectValue placeholder="Select campus">
-											{(val) => campuses.find((c) => String(c.id) === val)?.name ?? val}
+											{(val) =>
+												campuses.find((c) => String(c.id) === val)?.name ?? val
+											}
 										</SelectValue>
 									</SelectTrigger>
 									<SelectContent className="z-50">
@@ -300,7 +318,10 @@ export function EditUserDialog({
 							</div>
 
 							<div className="flex flex-col gap-1.5">
-								<Label htmlFor="edit-department" className="text-sm font-medium">
+								<Label
+									htmlFor="edit-department"
+									className="text-sm font-medium"
+								>
 									Department (Optional)
 								</Label>
 								<Select
@@ -311,7 +332,10 @@ export function EditUserDialog({
 										<SelectValue placeholder="Select department">
 											{(val) => {
 												if (val === "none") return "None";
-												return departments.find((d) => String(d.id) === val)?.name ?? val;
+												return (
+													departments.find((d) => String(d.id) === val)?.name ??
+													val
+												);
 											}}
 										</SelectValue>
 									</SelectTrigger>

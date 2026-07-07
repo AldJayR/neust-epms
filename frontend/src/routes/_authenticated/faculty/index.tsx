@@ -4,7 +4,7 @@ import { PageSkeleton } from "@/components/custom/page-skeleton";
 import { FacultyDirectoryPage } from "@/features/director/faculty-directory-page";
 import { RetFacultyDirectoryPage } from "@/features/ret/faculty-directory-page";
 import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
-import { isRETChair, isDeniedAccess } from "@/lib/permissions";
+import { isDeniedAccess, isRETChair } from "@/lib/permissions";
 
 const facultySearchSchema = z.object({
 	page: z.number().optional().default(1),
@@ -30,9 +30,7 @@ export const Route = createFileRoute("/_authenticated/faculty/")({
 		college: search.college,
 	}),
 	beforeLoad: ({ context }) => {
-		if (
-			isDeniedAccess(context.auth.user, "Director", "RET Chair")
-		) {
+		if (isDeniedAccess(context.auth.user, "Director", "RET Chair")) {
 			throw redirect({
 				to: "/dashboard",
 				search: { page: 1, pageSize: 10 },

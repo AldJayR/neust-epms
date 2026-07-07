@@ -121,7 +121,6 @@ const facultyNav: NavGroup[] = [
 			},
 		],
 	},
-
 ];
 
 const retNav: NavGroup[] = [
@@ -155,7 +154,6 @@ const retNav: NavGroup[] = [
 			},
 		],
 	},
-
 ];
 
 export function AppSidebar({

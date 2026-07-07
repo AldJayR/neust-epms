@@ -1,14 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import {
 	ArrowRight,
+	CheckCircle,
 	ClipboardList,
+	Eye,
 	FileText,
 	FolderOpen,
 	Handshake,
-	CheckCircle,
-	UserPlus,
 	Loader2,
-	Eye,
+	UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,7 +35,10 @@ function getCategoryIcon(type: ActionItem["type"]) {
 function getNavigationRoute(type: ActionItem["type"], id: string) {
 	switch (type) {
 		case "proposal":
-			return { to: "/proposals/$proposalId" as const, params: { proposalId: id } };
+			return {
+				to: "/proposals/$proposalId" as const,
+				params: { proposalId: id },
+			};
 		case "project":
 			return { to: "/projects/$projectId" as const, params: { projectId: id } };
 		case "moa":
@@ -55,7 +58,9 @@ export function ActionCenterCard() {
 			<Card size="sm" className="w-full">
 				<CardContent className="flex h-32 items-center justify-center gap-2">
 					<Loader2 className="size-5 animate-spin text-muted-foreground" />
-					<span className="text-muted-foreground text-sm">Loading Action Center...</span>
+					<span className="text-muted-foreground text-sm">
+						Loading Action Center...
+					</span>
 				</CardContent>
 			</Card>
 		);
@@ -74,7 +79,9 @@ export function ActionCenterCard() {
 			<Card size="sm" className="w-full">
 				<CardContent className="flex items-center gap-3 py-3">
 					<CheckCircle className="size-4 text-muted-foreground" />
-					<p className="text-sm text-muted-foreground">All caught up — no pending actions.</p>
+					<p className="text-sm text-muted-foreground">
+						All caught up — no pending actions.
+					</p>
 				</CardContent>
 			</Card>
 		);
@@ -87,7 +94,10 @@ export function ActionCenterCard() {
 			</CardHeader>
 			<CardContent className="pt-0">
 				<Tabs defaultValue="action" className="w-full">
-					<TabsList variant="line" className="w-full justify-start border-b border-border pb-px mb-4 gap-4">
+					<TabsList
+						variant="line"
+						className="w-full justify-start border-b border-border pb-px mb-4 gap-4"
+					>
 						<TabsTrigger value="action" className="px-1 pb-2 font-semibold">
 							Needs Action
 							{actItems.length > 0 && (
@@ -118,7 +128,10 @@ export function ActionCenterCard() {
 								actItems.map((item) => {
 									const routeConfig = getNavigationRoute(item.type, item.id);
 									return (
-										<div key={`${item.type}-${item.dateId ?? item.id}`} className="group/item flex items-center justify-between py-3 first:pt-0 last:pb-0">
+										<div
+											key={`${item.type}-${item.dateId ?? item.id}`}
+											className="group/item flex items-center justify-between py-3 first:pt-0 last:pb-0"
+										>
 											<div className="flex items-center gap-3 min-w-0">
 												<div className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
 													{getCategoryIcon(item.type)}
@@ -139,7 +152,10 @@ export function ActionCenterCard() {
 												className="shrink-0 rounded-full"
 												render={
 													routeConfig.params ? (
-														<Link to={routeConfig.to} params={routeConfig.params} />
+														<Link
+															to={routeConfig.to}
+															params={routeConfig.params}
+														/>
 													) : (
 														<Link to={routeConfig.to} />
 													)
@@ -160,13 +176,18 @@ export function ActionCenterCard() {
 								<div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
 									<Eye className="size-6 text-muted-foreground/50 mb-2" />
 									<p className="text-sm font-medium">No monitored items</p>
-									<p className="text-xs">Items you are watching will appear here.</p>
+									<p className="text-xs">
+										Items you are watching will appear here.
+									</p>
 								</div>
 							) : (
 								watchItems.map((item) => {
 									const routeConfig = getNavigationRoute(item.type, item.id);
 									return (
-										<div key={`${item.type}-${item.dateId ?? item.id}`} className="group/item flex items-center justify-between py-3 first:pt-0 last:pb-0">
+										<div
+											key={`${item.type}-${item.dateId ?? item.id}`}
+											className="group/item flex items-center justify-between py-3 first:pt-0 last:pb-0"
+										>
 											<div className="flex items-center gap-3 min-w-0">
 												<div className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
 													{getCategoryIcon(item.type)}
@@ -187,7 +208,10 @@ export function ActionCenterCard() {
 												className="shrink-0 rounded-full"
 												render={
 													routeConfig.params ? (
-														<Link to={routeConfig.to} params={routeConfig.params} />
+														<Link
+															to={routeConfig.to}
+															params={routeConfig.params}
+														/>
 													) : (
 														<Link to={routeConfig.to} />
 													)

@@ -1,10 +1,11 @@
-import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import * as React from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { BrandButton } from "@/components/custom/brand-button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -13,9 +14,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -23,8 +23,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { getDepartmentsFn } from "@/lib/auth.functions";
 import { provisionDirectorFn } from "@/lib/admin.functions";
+import { getDepartmentsFn } from "@/lib/auth.functions";
 
 const rankOptions = [
 	{ label: "Instructor I", value: "instructor-1" },
@@ -121,7 +121,10 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 					<DialogTitle>Add User (Director)</DialogTitle>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="flex-1 flex flex-col gap-5 min-h-0">
+				<form
+					onSubmit={handleSubmit}
+					className="flex-1 flex flex-col gap-5 min-h-0"
+				>
 					<div className="flex-1 overflow-y-auto pr-1.5 flex flex-col gap-5 py-1">
 						<div className="grid grid-cols-2 gap-4">
 							<div className="flex flex-col gap-1.5">
@@ -194,10 +197,15 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 								<Label htmlFor="academicRank" className="text-sm font-medium">
 									Academic Rank <span className="text-destructive">*</span>
 								</Label>
-								<Select value={academicRank} onValueChange={(val) => setAcademicRank(val ?? "")}>
+								<Select
+									value={academicRank}
+									onValueChange={(val) => setAcademicRank(val ?? "")}
+								>
 									<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
 										<SelectValue placeholder="Select rank">
-											{(val) => rankOptions.find((o) => o.value === val)?.label ?? val}
+											{(val) =>
+												rankOptions.find((o) => o.value === val)?.label ?? val
+											}
 										</SelectValue>
 									</SelectTrigger>
 									<SelectContent className="z-50">
@@ -214,12 +222,18 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 								<Label htmlFor="department" className="text-sm font-medium">
 									Department (Optional)
 								</Label>
-								<Select value={departmentId} onValueChange={(val) => setDepartmentId(val ?? "")}>
+								<Select
+									value={departmentId}
+									onValueChange={(val) => setDepartmentId(val ?? "")}
+								>
 									<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
 										<SelectValue placeholder="Select department">
 											{(val) => {
 												if (val === "none") return "None";
-												return departments.find((d) => String(d.id) === val)?.name ?? val;
+												return (
+													departments.find((d) => String(d.id) === val)?.name ??
+													val
+												);
 											}}
 										</SelectValue>
 									</SelectTrigger>
@@ -250,7 +264,8 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 						<Alert className="bg-amber-50/50 border-amber-200/60 text-amber-800 flex items-start gap-2.5 p-3 rounded-lg">
 							<AlertCircle className="size-4 mt-0.5 shrink-0 text-amber-600" />
 							<AlertDescription className="text-amber-700 text-xs font-normal leading-relaxed">
-								A temporary password will be generated and sent to the email address. The user will be prompted to change it on first login.
+								A temporary password will be generated and sent to the email
+								address. The user will be prompted to change it on first login.
 							</AlertDescription>
 						</Alert>
 					</div>

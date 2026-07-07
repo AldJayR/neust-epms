@@ -28,10 +28,9 @@ export const getSettingsFn = createServerFn({ method: "GET" })
 		await authorizeSessionUser("Super Admin");
 		const token = await getValidAccessToken();
 
-		const response = await fetch(
-			`${API_BASE}/settings?page=1&limit=100`,
-			{ headers: { Authorization: `Bearer ${token}` } },
-		);
+		const response = await fetch(`${API_BASE}/settings?page=1&limit=100`, {
+			headers: { Authorization: `Bearer ${token}` },
+		});
 
 		if (!response.ok) {
 			const message = await getErrorMessage(

@@ -1,13 +1,11 @@
-import { Skeleton } from "@/components/ui/skeleton";
-import { PageHeader } from "@/components/custom/page-header";
 import { PageCard } from "@/components/custom/page-card";
+import { PageHeader } from "@/components/custom/page-header";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function SettingsSkeleton() {
 	return (
 		<div className="flex flex-col gap-8">
-			<PageHeader
-				title={<Skeleton className="h-8 w-28 rounded" />}
-			/>
+			<PageHeader title={<Skeleton className="h-8 w-28 rounded" />} />
 
 			<PageCard className="p-6">
 				<Skeleton className="h-5 w-32 rounded mb-4" />

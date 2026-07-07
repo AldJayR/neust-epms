@@ -64,10 +64,10 @@ export function installApiErrorHandler(app: ErrorLikeApp): void {
 					error: {
 						code: "VALIDATION_ERROR",
 						message: "Request validation failed",
-					details: err.issues.map((e) => ({
-						path: e.path.join("."),
-						message: e.message,
-					})),
+						details: err.issues.map((e) => ({
+							path: e.path.join("."),
+							message: e.message,
+						})),
 					},
 				},
 				400,
@@ -91,7 +91,8 @@ export function installApiErrorHandler(app: ErrorLikeApp): void {
 					{
 						error: {
 							code: "REFERENCE_ERROR",
-							message: "This record is referenced by other data and cannot be modified.",
+							message:
+								"This record is referenced by other data and cannot be modified.",
 						},
 					},
 					409,

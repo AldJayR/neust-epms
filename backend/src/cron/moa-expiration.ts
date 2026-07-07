@@ -3,12 +3,15 @@ import cron from "node-cron";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
 import { partners } from "../db/schema/partners.js";
-import { env } from "../env.js";
-import { createNotification, getUserIdsByRole } from "../lib/notification.helpers.js";
-import { insertAuditLog } from "../lib/audit.js";
-import { users } from "../db/schema/users.js";
-import { roles } from "../db/schema/roles.js";
 import { projects } from "../db/schema/projects.js";
+import { roles } from "../db/schema/roles.js";
+import { users } from "../db/schema/users.js";
+import { env } from "../env.js";
+import { insertAuditLog } from "../lib/audit.js";
+import {
+	createNotification,
+	getUserIdsByRole,
+} from "../lib/notification.helpers.js";
 
 /**
  * SYS-REQ-04.2: Scheduled background process that evaluates MOA expiration dates
@@ -111,8 +114,8 @@ export function startMoaExpirationCron(): void {
 						and(
 							eq(projects.moaId, moa.moaId),
 							eq(projects.projectStatus, "Ongoing"),
-							isNull(projects.archivedAt)
-						)
+							isNull(projects.archivedAt),
+						),
 					)
 					.returning({ projectId: projects.projectId });
 

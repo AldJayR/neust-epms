@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Users, Calendar, Target, HelpCircle } from "lucide-react";
+import { Calendar, FileText, HelpCircle, Target, Users } from "lucide-react";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { proposalRequirementsQueryOptions } from "@/lib/ret.functions";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function ProposalStepRequirements() {
 	const { data: requirements, isLoading } = useQuery(
@@ -20,22 +24,30 @@ export function ProposalStepRequirements() {
 		{
 			title: "Project Overview",
 			icon: <Target className="size-4 text-muted-foreground" />,
-			desc: requirements?.sdgs.description || "Project title, category, locale, and SDG alignments.",
+			desc:
+				requirements?.sdgs.description ||
+				"Project title, category, locale, and SDG alignments.",
 		},
 		{
 			title: "Timeline & Budget",
 			icon: <Calendar className="size-4 text-muted-foreground" />,
-			desc: requirements?.dates.description || "Start/end implementation dates and budget allocation.",
+			desc:
+				requirements?.dates.description ||
+				"Start/end implementation dates and budget allocation.",
 		},
 		{
 			title: "Team Composition",
 			icon: <Users className="size-4 text-muted-foreground" />,
-			desc: requirements?.members.description || "Assigned faculty roles (Project Leader role is mandatory).",
+			desc:
+				requirements?.members.description ||
+				"Assigned faculty roles (Project Leader role is mandatory).",
 		},
 		{
 			title: "Proposal PDF Document",
 			icon: <FileText className="size-4 text-muted-foreground" />,
-			desc: requirements?.documents[0]?.description || "PDF upload of the physical signed proposal form.",
+			desc:
+				requirements?.documents[0]?.description ||
+				"PDF upload of the physical signed proposal form.",
 		},
 	];
 
@@ -46,7 +58,9 @@ export function ProposalStepRequirements() {
 					Pre-Submission Checklist
 				</h3>
 				<p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-					Please prepare the following details before submitting. You may save your progress as a Draft at any point and complete these requirements later.
+					Please prepare the following details before submitting. You may save
+					your progress as a Draft at any point and complete these requirements
+					later.
 				</p>
 			</div>
 
@@ -61,19 +75,21 @@ export function ProposalStepRequirements() {
 						</div>
 						<div className="flex-1 min-w-0">
 							<div className="flex items-center gap-1.5">
-								<h4 className="text-sm font-medium text-foreground">{req.title}</h4>
+								<h4 className="text-sm font-medium text-foreground">
+									{req.title}
+								</h4>
 								<Tooltip>
 									<TooltipTrigger
 										render={
 											<HelpCircle className="size-3.5 text-muted-foreground cursor-help" />
 										}
 									/>
-									<TooltipContent className="text-xs max-w-xs">{req.desc}</TooltipContent>
+									<TooltipContent className="text-xs max-w-xs">
+										{req.desc}
+									</TooltipContent>
 								</Tooltip>
 							</div>
-							<p className="text-xs text-muted-foreground mt-0.5">
-								{req.desc}
-							</p>
+							<p className="text-xs text-muted-foreground mt-0.5">{req.desc}</p>
 						</div>
 					</div>
 				))}
