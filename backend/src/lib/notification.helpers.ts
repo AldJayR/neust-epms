@@ -5,9 +5,19 @@ import { roles } from "../db/schema/roles.js";
 import { users } from "../db/schema/users.js";
 import { env } from "../env.js";
 
+export type NotificationType =
+	| "proposal"
+	| "project"
+	| "report_submitted"
+	| "report_overdue"
+	| "system"
+	| "moa_expiry"
+	| "registration"
+	| "admin";
+
 export interface CreateNotificationOpts {
 	recipientId: string;
-	type: string;
+	type: NotificationType;
 	title: string;
 	message: string;
 	sendEmail?: boolean;

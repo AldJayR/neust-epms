@@ -1404,7 +1404,7 @@ app.openapi(reviewRoute, async (c) => {
 
 		await createNotification({
 			recipientId: leader.userId,
-			type: "Proposal",
+			type: "proposal",
 			title,
 			message,
 			sendEmail: true,
