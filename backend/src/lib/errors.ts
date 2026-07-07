@@ -1,4 +1,5 @@
 import { HTTPException } from "hono/http-exception";
+import { ZodError } from "zod";
 
 type ErrorLikeApp = {
 	onError: (
@@ -41,6 +42,7 @@ export interface ErrorResponse {
 	error: {
 		code: string;
 		message: string;
+		details?: Array<{ path: string; message: string }>;
 	};
 }
 
@@ -55,6 +57,22 @@ export function createErrorResponse(err: ApiError): ErrorResponse {
 
 export function installApiErrorHandler(app: ErrorLikeApp): void {
 	app.onError((err, c) => {
+		if (err instanceof ZodError) {
+			return c.json(
+				{
+					error: {
+						code: "VALIDATION_ERROR",
+						message: "Request validation failed",
+					details: err.issues.map((e) => ({
+						path: e.path.join("."),
+						message: e.message,
+					})),
+					},
+				},
+				400,
+			);
+		}
+
 		if (
 			err instanceof ApiError ||
 			(isErrorLike(err) && err.name === "ApiError")
