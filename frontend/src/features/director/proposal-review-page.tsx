@@ -127,6 +127,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 
 	const canAnnotate =
 		isReviewer &&
+		(data?.status === "Endorsed" || data?.status === "Pending Review") &&
 		!(isRETChair(user) && (data?.bypassedRetChair || endorsement));
 
 	const handleApprove = (comments?: string) => {

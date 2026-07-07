@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import * as React from "react";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageCard } from "@/components/custom/page-card";
@@ -28,12 +29,6 @@ function RecentActivitiesCard({
 				<h2 className="text-sm font-semibold leading-5 text-heading">
 					Recent Activities
 				</h2>
-				<button
-					type="button"
-					className="text-xs font-medium leading-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm"
-				>
-					View All
-				</button>
 			</div>
 			<ul className="flex min-h-0 flex-1 flex-col overflow-hidden">
 				{activities.length > 0 ? (
@@ -86,12 +81,12 @@ function ExpiringMoasCard({
 				<h2 className="text-sm font-semibold leading-5 text-heading">
 					Expiring MOAs
 				</h2>
-				<button
-					type="button"
+				<Link
+					to="/moas"
 					className="text-xs font-medium leading-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm"
 				>
 					View All
-				</button>
+				</Link>
 			</div>
 			<ul className="flex flex-1 flex-col overflow-hidden">
 				{moas.length > 0 ? (

@@ -56,25 +56,25 @@ export function PdfToolbar({
 	return (
 		<>
 			{/* Floating Tool Mode Toolbar */}
-			{showCommentTools && (
-				<div className="absolute top-4 left-4 z-40 bg-background/95 border border-border px-2 py-1 rounded-full flex items-center gap-1 shadow-md backdrop-blur-md select-none">
-					<Tooltip>
-						<TooltipTrigger
-							render={
-								<Button
-									variant={toolMode === "hand" ? "secondary" : "ghost"}
-									size="icon"
-									aria-label="Hand Tool (Pan and select text)"
-									className={`size-8 rounded-full cursor-pointer ${toolMode === "hand" ? "bg-brand-primary/10 text-brand-primary" : "text-muted-foreground"}`}
-									onClick={() => onToolModeChange("hand")}
-								>
-									<Hand className="size-4" />
-								</Button>
-							}
-						/>
-						<PdfTooltipContent>View & Select Text</PdfTooltipContent>
-					</Tooltip>
+			<div className="absolute top-4 left-4 z-40 bg-background/95 border border-border px-2 py-1 rounded-full flex items-center gap-1 shadow-md backdrop-blur-md select-none">
+				<Tooltip>
+					<TooltipTrigger
+						render={
+							<Button
+								variant={toolMode === "hand" ? "secondary" : "ghost"}
+								size="icon"
+								aria-label="Hand Tool (Pan and select text)"
+								className={`size-8 rounded-full cursor-pointer ${toolMode === "hand" ? "bg-brand-primary/10 text-brand-primary" : "text-muted-foreground"}`}
+								onClick={() => onToolModeChange("hand")}
+							>
+								<Hand className="size-4" />
+							</Button>
+						}
+					/>
+					<PdfTooltipContent>View & Select Text</PdfTooltipContent>
+				</Tooltip>
 
+				{showCommentTools && (
 					<Tooltip>
 						<TooltipTrigger
 							render={
@@ -91,42 +91,42 @@ export function PdfToolbar({
 						/>
 						<PdfTooltipContent>Add Remark (Drag on page)</PdfTooltipContent>
 					</Tooltip>
+				)}
 
-					{onToggleTheaterMode && (
-						<>
-							<div className="w-px h-4 bg-border mx-1" />
-							<Tooltip>
-								<TooltipTrigger
-									render={
-										<Button
-											variant="ghost"
-											size="icon"
-											aria-label={
-												isTheaterMode
-													? "Exit Theater Mode"
-													: "Enter Theater Mode"
-											}
-											className="size-8 rounded-full cursor-pointer text-muted-foreground hover:bg-gray-100"
-											onClick={onToggleTheaterMode}
-										>
-											{isTheaterMode ? (
-												<Minimize2 className="size-4" />
-											) : (
-												<Maximize2 className="size-4" />
-											)}
-										</Button>
-									}
-								/>
-								<PdfTooltipContent>
-									{isTheaterMode
-										? "Exit Theater Mode"
-										: "Theater Mode (Maximize View)"}
-								</PdfTooltipContent>
-							</Tooltip>
-						</>
-					)}
-				</div>
-			)}
+				{onToggleTheaterMode && (
+					<>
+						<div className="w-px h-4 bg-border mx-1" />
+						<Tooltip>
+							<TooltipTrigger
+								render={
+									<Button
+										variant="ghost"
+										size="icon"
+										aria-label={
+											isTheaterMode
+												? "Exit Theater Mode"
+												: "Enter Theater Mode"
+										}
+										className="size-8 rounded-full cursor-pointer text-muted-foreground hover:bg-gray-100"
+										onClick={onToggleTheaterMode}
+									>
+										{isTheaterMode ? (
+											<Minimize2 className="size-4" />
+										) : (
+											<Maximize2 className="size-4" />
+										)}
+									</Button>
+								}
+							/>
+							<PdfTooltipContent>
+								{isTheaterMode
+									? "Exit Theater Mode"
+									: "Theater Mode (Maximize View)"}
+							</PdfTooltipContent>
+						</Tooltip>
+					</>
+				)}
+			</div>
 
 			{/* Floating Page Indicator Pill */}
 			<div className="absolute top-4 right-4 z-40 bg-zinc-900/80 text-white px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide backdrop-blur-md shadow-md border border-white/10 select-none">
