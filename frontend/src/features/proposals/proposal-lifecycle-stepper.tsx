@@ -3,6 +3,7 @@ import {
 	Stepper,
 	StepperIndicator,
 	StepperItem,
+	StepperList,
 	StepperSeparator,
 	StepperTitle,
 } from "@/components/ui/stepper";
@@ -23,7 +24,6 @@ const LIFECYCLE_STEPS = [
 	{ status: "Pending Review", label: "Review" },
 	{ status: "Endorsed", label: "Endorsed" },
 	{ status: "Approved", label: "Approved" },
-	{ status: "PROJECT", label: "Project" },
 ] as const;
 
 export function ProposalLifecycleStepper({
@@ -34,43 +34,40 @@ export function ProposalLifecycleStepper({
 	const isReturned = currentStatus === "Returned";
 
 	// Map status to the linear step index for the Stepper component
-	const activeStep = LIFECYCLE_STEPS.findIndex(
+	const matchedIndex = LIFECYCLE_STEPS.findIndex(
 		(s) => s.status === currentStatus,
 	);
+	const activeStep = matchedIndex === -1 ? LIFECYCLE_STEPS.length - 1 : matchedIndex;
 
 	return (
 		<div className="flex flex-col gap-2">
 			<Stepper
-				defaultValue={String(Math.max(0, activeStep))}
+				value={String(Math.max(0, activeStep))}
 				orientation="horizontal"
 				className={className}
 			>
-				{LIFECYCLE_STEPS.map((step, index) => (
-					<StepperItem
-						key={step.status}
-						value={String(index)}
-						completed={index < activeStep}
-					>
-						<Tooltip>
-							<TooltipTrigger
-								render={<StepperIndicator className="cursor-default" />}
-							>
-								{index < activeStep ? <Check className="size-4" /> : index + 1}
-							</TooltipTrigger>
-							<TooltipContent>
-								<p>
-									{
-										getStatusDescription(
-											step.status === "PROJECT" ? "Closed" : step.status,
-										).explanation
-									}
-								</p>
-							</TooltipContent>
-						</Tooltip>
-						<StepperTitle>{step.label}</StepperTitle>
-						{index < LIFECYCLE_STEPS.length - 1 && <StepperSeparator />}
-					</StepperItem>
-				))}
+				<StepperList>
+					{LIFECYCLE_STEPS.map((step, index) => (
+						<StepperItem
+							key={step.status}
+							value={String(index)}
+							completed={index <= activeStep}
+						>
+							<Tooltip>
+								<TooltipTrigger
+									render={<StepperIndicator className="cursor-default" />}
+								>
+									{index <= activeStep ? <Check className="size-4" /> : index + 1}
+								</TooltipTrigger>
+								<TooltipContent>
+									<p>{getStatusDescription(step.status).explanation}</p>
+								</TooltipContent>
+							</Tooltip>
+							<StepperTitle className="ml-2">{step.label}</StepperTitle>
+							{index < LIFECYCLE_STEPS.length - 1 && <StepperSeparator />}
+						</StepperItem>
+					))}
+				</StepperList>
 			</Stepper>
 
 			{isReturned && (

@@ -20,6 +20,11 @@ import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
 	Attachment,
 	AttachmentAction,
 	AttachmentActions,
@@ -485,30 +490,43 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 							</AttachmentDescription>
 						</AttachmentContent>
 						<AttachmentActions>
-							<AttachmentAction
-								render={
-									<a
-										href={attachment.url}
-										target="_blank"
-										rel="noopener noreferrer"
-									>
-										View file
-									</a>
-								}
-								aria-label="View"
-							>
-								<Eye className="size-3.5" />
-							</AttachmentAction>
-							<AttachmentAction
-								render={
-									<a href={attachment.url} download>
-										Download file
-									</a>
-								}
-								aria-label="Download"
-							>
-								<Download className="size-3.5" />
-							</AttachmentAction>
+							<Tooltip>
+								<TooltipTrigger
+									render={
+										<AttachmentAction
+											render={
+												<a
+													href={attachment.url}
+													target="_blank"
+													rel="noopener noreferrer"
+													aria-label="View file"
+												>
+													<Eye className="size-3.5" />
+												</a>
+											}
+										/>
+									}
+								/>
+								<TooltipContent>View file</TooltipContent>
+							</Tooltip>
+							<Tooltip>
+								<TooltipTrigger
+									render={
+										<AttachmentAction
+											render={
+												<a
+													href={attachment.url}
+													download
+													aria-label="Download file"
+												>
+													<Download className="size-3.5" />
+												</a>
+											}
+										/>
+									}
+								/>
+								<TooltipContent>Download file</TooltipContent>
+							</Tooltip>
 						</AttachmentActions>
 					</Attachment>
 				))}
@@ -676,7 +694,7 @@ export function ProjectDetailsPage({
 						{showCloseButton && (
 							<Button
 								variant="destructive"
-								className="flex w-fit items-center gap-2 px-5 h-9 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
+								className="flex w-fit items-center gap-2 px-4 h-9"
 								onClick={() => setShowCloseDialog(true)}
 							>
 								<span className="text-sm font-medium">Close Project</span>
@@ -686,7 +704,7 @@ export function ProjectDetailsPage({
 				}
 			/>
 
-			{statusDesc && (
+			{statusDesc && isProjectLeader && (
 				<div className="flex items-start gap-2.5 rounded-lg border border-border bg-muted/20 p-3 text-xs text-muted-foreground -mt-2">
 					<Info className="size-4 shrink-0 text-muted-foreground mt-0.5" />
 					<div className="space-y-1">

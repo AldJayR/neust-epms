@@ -1,5 +1,6 @@
 import { HTTPException } from "hono/http-exception";
-import { PostgresError } from "postgres";
+import postgres from "postgres";
+const { PostgresError } = postgres;
 import { ZodError } from "zod";
 
 type ErrorLikeApp = {

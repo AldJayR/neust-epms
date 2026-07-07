@@ -2,7 +2,8 @@
  * Unit tests for ApiError and error response formatting.
  */
 import { describe, it, expect } from "vitest";
-import { PostgresError } from "postgres";
+import postgres from "postgres";
+const { PostgresError } = postgres;
 import { ApiError, createErrorResponse, installApiErrorHandler } from "./errors.js";
 
 describe("ApiError", () => {

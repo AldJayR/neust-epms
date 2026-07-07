@@ -75,7 +75,7 @@ export function ConfirmDialog({
 				</AlertDialogHeader>
 
 				{requireTyping && (
-					<div className="my-4">
+					<div className="mb-4">
 						<Field>
 							<FieldLabel>
 								Please type{" "}
@@ -92,7 +92,7 @@ export function ConfirmDialog({
 								className="mt-1 font-mono"
 							/>
 							{typedText && typedText !== requireTyping && (
-								<FieldError>Input does not match target text</FieldError>
+								<FieldError>Type "{requireTyping}" exactly to confirm</FieldError>
 							)}
 						</Field>
 					</div>
