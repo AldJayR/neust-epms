@@ -934,7 +934,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 		.where(or(eq(proposals.proposalId, id), eq(projects.projectId, id)));
 
 	if (!row) {
-		return c.json({ error: { message: "Project not found" } }, 404);
+		throw new ApiError(404, "NOT_FOUND", "Project not found");
 	}
 
 	// Security check for Faculty / RET Chair
