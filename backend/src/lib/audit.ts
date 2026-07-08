@@ -1,5 +1,5 @@
-import { db } from "../db/client.js";
-import { auditLogs } from "../db/schema/audit-logs.js";
+import { db } from "@/db/client.js";
+import { auditLogs } from "@/db/schema/audit-logs.js";
 
 /**
  * Insert an audit log entry for a critical transition.

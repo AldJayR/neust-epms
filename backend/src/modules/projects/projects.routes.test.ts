@@ -6,7 +6,7 @@
  * and explicit project closure with required reports.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { db } from "../../db/client.js";
+import { db } from "@/db/client.js";
 import {
 	setMockUser,
 	MOCK_USERS,
@@ -17,7 +17,7 @@ import {
 	mockMutationChain,
 } from "../../../test/helpers.js";
 import app from "./index.js";
-import { insertAuditLog } from "../../lib/audit.js";
+import { insertAuditLog } from "@/lib/audit.js";
 
 beforeEach(() => {
 	setMockUser(MOCK_USERS.director);

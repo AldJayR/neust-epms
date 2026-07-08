@@ -6,26 +6,26 @@ import {
 	isNull,
 	or,
 } from "drizzle-orm";
-import { db } from "../db/client.js";
-import { projectReportingDates } from "../db/schema/project-reporting-dates.js";
-import { projectReportingSchedules } from "../db/schema/project-reporting-schedules.js";
-import { projects } from "../db/schema/projects.js";
-import { proposalMembers } from "../db/schema/proposal-members.js";
-import { proposals } from "../db/schema/proposals.js";
-import { users } from "../db/schema/users.js";
+import { db } from "@/db/client.js";
+import { projectReportingDates } from "@/db/schema/project-reporting-dates.js";
+import { projectReportingSchedules } from "@/db/schema/project-reporting-schedules.js";
+import { projects } from "@/db/schema/projects.js";
+import { proposalMembers } from "@/db/schema/proposal-members.js";
+import { proposals } from "@/db/schema/proposals.js";
+import { users } from "@/db/schema/users.js";
 import {
 	deriveProjectState,
 	deriveProposalState,
-} from "../lib/derived-states.js";
-import { installApiErrorHandler } from "../lib/errors.js";
+} from "@/lib/derived-states.js";
+import { installApiErrorHandler } from "@/lib/errors.js";
 import {
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
 	type ProjectStatus,
 	type ProposalStatus,
 	ROLE_NAMES,
-} from "../lib/types.js";
-import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
+} from "@/lib/types.js";
+import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);

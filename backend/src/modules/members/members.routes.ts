@@ -1,15 +1,15 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { and, eq } from "drizzle-orm";
-import { db } from "../../db/client.js";
-import { proposalMembers } from "../../db/schema/proposal-members.js";
-import { proposals } from "../../db/schema/proposals.js";
-import { users } from "../../db/schema/users.js";
-import { insertAuditLog } from "../../lib/audit.js";
-import { getClientIp } from "../../lib/client-ip.js";
-import { ApiError, installApiErrorHandler } from "../../lib/errors.js";
-import { ErrorSchema, MessageSchema } from "../../lib/schemas.js";
-import { isProjectLeader, PROJECT_LEADER_ROLE } from "../../services/auth-user.service.js";
-import type { AuthEnv } from "../../middleware/auth.js";
+import { db } from "@/db/client.js";
+import { proposalMembers } from "@/db/schema/proposal-members.js";
+import { proposals } from "@/db/schema/proposals.js";
+import { users } from "@/db/schema/users.js";
+import { insertAuditLog } from "@/lib/audit.js";
+import { getClientIp } from "@/lib/client-ip.js";
+import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
+import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
+import { isProjectLeader, PROJECT_LEADER_ROLE } from "@/services/auth-user.service.js";
+import type { AuthEnv } from "@/middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);

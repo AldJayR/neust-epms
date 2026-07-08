@@ -11,34 +11,34 @@ import {
 	type SQL,
 	sql,
 } from "drizzle-orm";
-import { db } from "../db/client.js";
-import { auditLogs } from "../db/schema/audit-logs.js";
-import { campuses } from "../db/schema/campuses.js";
-import { departments } from "../db/schema/departments.js";
-import { moas } from "../db/schema/moas.js";
-import { partners } from "../db/schema/partners.js";
-import { projectReports } from "../db/schema/project-reports.js";
-import { projects } from "../db/schema/projects.js";
-import { proposalDocuments } from "../db/schema/proposal-documents.js";
-import { proposalMembers } from "../db/schema/proposal-members.js";
-import { proposalReviews } from "../db/schema/proposal-reviews.js";
-import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
-import { proposals } from "../db/schema/proposals.js";
-import { roles } from "../db/schema/roles.js";
-import { sdgs } from "../db/schema/sdgs.js";
-import { specialOrders } from "../db/schema/special-orders.js";
-import { users } from "../db/schema/users.js";
-import { env } from "../env.js";
-import { ApiError, installApiErrorHandler } from "../lib/errors.js";
-import { supabase } from "../lib/supabase.js";
+import { db } from "@/db/client.js";
+import { auditLogs } from "@/db/schema/audit-logs.js";
+import { campuses } from "@/db/schema/campuses.js";
+import { departments } from "@/db/schema/departments.js";
+import { moas } from "@/db/schema/moas.js";
+import { partners } from "@/db/schema/partners.js";
+import { projectReports } from "@/db/schema/project-reports.js";
+import { projects } from "@/db/schema/projects.js";
+import { proposalDocuments } from "@/db/schema/proposal-documents.js";
+import { proposalMembers } from "@/db/schema/proposal-members.js";
+import { proposalReviews } from "@/db/schema/proposal-reviews.js";
+import { proposalSdgs } from "@/db/schema/proposal-sdgs.js";
+import { proposals } from "@/db/schema/proposals.js";
+import { roles } from "@/db/schema/roles.js";
+import { sdgs } from "@/db/schema/sdgs.js";
+import { specialOrders } from "@/db/schema/special-orders.js";
+import { users } from "@/db/schema/users.js";
+import { env } from "@/env.js";
+import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
+import { supabase } from "@/lib/supabase.js";
 import {
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
 	type ProjectStatus,
 	ROLE_NAMES,
-} from "../lib/types.js";
-import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
-import { requireRole } from "../middleware/rbac.js";
+} from "@/lib/types.js";
+import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
+import { requireRole } from "@/middleware/rbac.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);

@@ -1,5 +1,5 @@
 import { createMiddleware } from "hono/factory";
-import { ApiError } from "../lib/errors.js";
+import { ApiError } from "@/lib/errors.js";
 import type { AuthEnv } from "./auth.js";
 
 /**

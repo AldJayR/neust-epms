@@ -1,2 +1,2 @@
-import app from "../../routes/projects.routes.js";
+import app from "@/routes/projects.routes.js";
 export default app;

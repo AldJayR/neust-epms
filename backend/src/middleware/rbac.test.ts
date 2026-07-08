@@ -8,7 +8,7 @@
 import { describe, it, expect } from "vitest";
 import { Hono } from "hono";
 import { requireRole } from "./rbac.js";
-import { ApiError, createErrorResponse } from "../lib/errors.js";
+import { ApiError, createErrorResponse } from "@/lib/errors.js";
 import type { AuthEnv } from "./auth.js";
 
 /**

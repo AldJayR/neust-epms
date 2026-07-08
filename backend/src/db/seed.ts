@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { eq } from "drizzle-orm";
-import { ROLE_NAMES } from "../lib/types.js";
+import { ROLE_NAMES } from "@/lib/types.js";
 import { db } from "./client.js";
 import { campuses } from "./schema/campuses.js";
 import { departments } from "./schema/departments.js";

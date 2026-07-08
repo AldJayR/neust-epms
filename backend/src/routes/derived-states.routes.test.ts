@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { db } from "../db/client.js";
+import { db } from "@/db/client.js";
 import {
 	setMockUser,
 	MOCK_USERS,
@@ -10,7 +10,7 @@ import {
 import proposalsApp from "./proposals.routes.js";
 import projectsApp from "./projects.routes.js";
 import { OpenAPIHono } from "@hono/zod-openapi";
-import { authMiddleware } from "../middleware/auth.js";
+import { authMiddleware } from "@/middleware/auth.js";
 
 const propApp = new OpenAPIHono();
 propApp.use("*", authMiddleware);

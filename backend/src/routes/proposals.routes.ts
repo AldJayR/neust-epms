@@ -11,36 +11,36 @@ import {
 	type SQL,
 	sql,
 } from "drizzle-orm";
-import { db } from "../db/client.js";
-import { beneficiarySectors } from "../db/schema/beneficiary-sectors.js";
-import { projects } from "../db/schema/projects.js";
-import { proposalBeneficiaries } from "../db/schema/proposal-beneficiaries.js";
-import { proposalComments } from "../db/schema/proposal-comments.js";
-import { proposalDepartments } from "../db/schema/proposal-departments.js";
-import { proposalDocuments } from "../db/schema/proposal-documents.js";
-import { proposalMembers } from "../db/schema/proposal-members.js";
-import { proposalReviews } from "../db/schema/proposal-reviews.js";
-import { proposalSdgs } from "../db/schema/proposal-sdgs.js";
-import { proposals } from "../db/schema/proposals.js";
-import { roles } from "../db/schema/roles.js";
-import { sdgs } from "../db/schema/sdgs.js";
-import { users } from "../db/schema/users.js";
-import { insertAuditLog } from "../lib/audit.js";
-import { captureAuditDiff } from "../lib/audit-diff.js";
-import { getClientIp } from "../lib/client-ip.js";
-import { deriveProposalState } from "../lib/derived-states.js";
-import { ApiError, installApiErrorHandler } from "../lib/errors.js";
-import { createNotification } from "../lib/notification.helpers.js";
+import { db } from "@/db/client.js";
+import { beneficiarySectors } from "@/db/schema/beneficiary-sectors.js";
+import { projects } from "@/db/schema/projects.js";
+import { proposalBeneficiaries } from "@/db/schema/proposal-beneficiaries.js";
+import { proposalComments } from "@/db/schema/proposal-comments.js";
+import { proposalDepartments } from "@/db/schema/proposal-departments.js";
+import { proposalDocuments } from "@/db/schema/proposal-documents.js";
+import { proposalMembers } from "@/db/schema/proposal-members.js";
+import { proposalReviews } from "@/db/schema/proposal-reviews.js";
+import { proposalSdgs } from "@/db/schema/proposal-sdgs.js";
+import { proposals } from "@/db/schema/proposals.js";
+import { roles } from "@/db/schema/roles.js";
+import { sdgs } from "@/db/schema/sdgs.js";
+import { users } from "@/db/schema/users.js";
+import { insertAuditLog } from "@/lib/audit.js";
+import { captureAuditDiff } from "@/lib/audit-diff.js";
+import { getClientIp } from "@/lib/client-ip.js";
+import { deriveProposalState } from "@/lib/derived-states.js";
+import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
+import { createNotification } from "@/lib/notification.helpers.js";
 import {
 	PROPOSAL_STATUS,
 	REVIEW_DECISION,
 	REVIEW_STAGE,
 	type ProposalStatus,
 	ROLE_NAMES,
-} from "../lib/types.js";
-import type { AuthEnv } from "../middleware/auth.js";
-import { ErrorSchema, MessageSchema } from "../lib/schemas.js";
-import { isProjectLeader, PROJECT_LEADER_ROLE } from "../services/auth-user.service.js";
+} from "@/lib/types.js";
+import type { AuthEnv } from "@/middleware/auth.js";
+import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
+import { isProjectLeader, PROJECT_LEADER_ROLE } from "@/services/auth-user.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);

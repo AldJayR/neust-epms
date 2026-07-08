@@ -2,15 +2,15 @@ import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { eq } from "drizzle-orm";
 import { createMiddleware } from "hono/factory";
-import { db } from "../db/client.js";
-import { campuses } from "../db/schema/campuses.js";
-import { departments } from "../db/schema/departments.js";
-import { roles } from "../db/schema/roles.js";
-import { users } from "../db/schema/users.js";
-import { env } from "../env.js";
-import { authUserCache, cacheEnabled, tokenCache } from "../lib/cache.js";
-import { ApiError } from "../lib/errors.js";
-import type { AuthUser } from "../lib/types.js";
+import { db } from "@/db/client.js";
+import { campuses } from "@/db/schema/campuses.js";
+import { departments } from "@/db/schema/departments.js";
+import { roles } from "@/db/schema/roles.js";
+import { users } from "@/db/schema/users.js";
+import { env } from "@/env.js";
+import { authUserCache, cacheEnabled, tokenCache } from "@/lib/cache.js";
+import { ApiError } from "@/lib/errors.js";
+import type { AuthUser } from "@/lib/types.js";
 
 /** Hono env type that holds the authenticated user */
 export interface AuthEnv {

@@ -5,7 +5,7 @@
  * conflict-of-interest rules (EC-01), and RBAC enforcement.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { db } from "../db/client.js";
+import { db } from "@/db/client.js";
 import {
 	setMockUser,
 	MOCK_USERS,
@@ -16,7 +16,7 @@ import {
 } from "../../test/helpers.js";
 import baseApp from "./proposals.routes.js";
 import { OpenAPIHono } from "@hono/zod-openapi";
-import { authMiddleware } from "../middleware/auth.js";
+import { authMiddleware } from "@/middleware/auth.js";
 
 const app = new OpenAPIHono();
 app.use("*", authMiddleware);

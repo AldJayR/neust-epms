@@ -1,9 +1,9 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "../db/client.js";
-import { notifications } from "../db/schema/notifications.js";
-import { roles } from "../db/schema/roles.js";
-import { users } from "../db/schema/users.js";
-import { env } from "../env.js";
+import { db } from "@/db/client.js";
+import { notifications } from "@/db/schema/notifications.js";
+import { roles } from "@/db/schema/roles.js";
+import { users } from "@/db/schema/users.js";
+import { env } from "@/env.js";
 
 export type NotificationType =
 	| "proposal"

@@ -1,6 +1,6 @@
 import { getConnInfo } from "@hono/node-server/conninfo";
 import type { Context } from "hono";
-import { env } from "../env.js";
+import { env } from "@/env.js";
 
 /**
  * Resolve the client IP for rate limiting and audit purposes.

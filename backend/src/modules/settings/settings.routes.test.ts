@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { db } from "../../db/client.js";
+import { db } from "@/db/client.js";
 import {
 	setMockUser,
 	MOCK_USERS,

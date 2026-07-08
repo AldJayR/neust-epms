@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { db } from "../db/client.js";
+import { db } from "@/db/client.js";
 import {
 	setMockUser,
 	MOCK_USERS,
@@ -8,7 +8,7 @@ import {
 } from "../../test/helpers.js";
 import app from "./auth.routes.js";
 
-vi.mock("../lib/password-check.js", () => ({
+vi.mock("@/lib/password-check.js", () => ({
 	isPasswordCompromised: vi.fn().mockResolvedValue(false),
 }));
 

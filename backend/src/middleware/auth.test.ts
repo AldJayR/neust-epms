@@ -10,12 +10,12 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
-import { ApiError, createErrorResponse } from "../lib/errors.js";
+import { ApiError, createErrorResponse } from "@/lib/errors.js";
 import { mockSelectChain } from "../../test/helpers.js";
 import type { AuthEnv } from "./auth.js";
 
 vi.unmock("./auth.js");
-vi.unmock("../middleware/auth.js");
+vi.unmock("@/middleware/auth.js");
 
 describe("authMiddleware", () => {
 	let app: Hono<AuthEnv>;
@@ -82,7 +82,7 @@ describe("authMiddleware", () => {
 
 	it("should return 403 when user is inactive", async () => {
 		const { createClient } = await import("@supabase/supabase-js");
-		const { db } = await import("../db/client.js");
+		const { db } = await import("@/db/client.js");
 
 		const mockSupabase = createClient("", "");
 		vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({

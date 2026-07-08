@@ -1,5 +1,5 @@
 import { LRUCache } from "lru-cache";
-import { env } from "../env.js";
+import { env } from "@/env.js";
 import type { AuthUser } from "./types.js";
 
 export const cacheEnabled = env.NODE_ENV !== "test";

@@ -8,22 +8,22 @@ import {
 	or,
 	type SQL,
 } from "drizzle-orm";
-import { db } from "../../db/client.js";
-import { campuses } from "../../db/schema/campuses.js";
-import { departments } from "../../db/schema/departments.js";
-import { roles } from "../../db/schema/roles.js";
-import { users } from "../../db/schema/users.js";
-import { insertAuditLog } from "../../lib/audit.js";
-import { captureAuditDiff } from "../../lib/audit-diff.js";
-import { invalidateAuthUserCache } from "../../lib/cache.js";
-import { getClientIp } from "../../lib/client-ip.js";
-import { ApiError, installApiErrorHandler } from "../../lib/errors.js";
-import { createNotification } from "../../lib/notification.helpers.js";
-import { ErrorSchema } from "../../lib/schemas.js";
-import { supabase } from "../../lib/supabase.js";
-import { ROLE_NAMES } from "../../lib/types.js";
-import { type AuthEnv, authMiddleware } from "../../middleware/auth.js";
-import { requireRole } from "../../middleware/rbac.js";
+import { db } from "@/db/client.js";
+import { campuses } from "@/db/schema/campuses.js";
+import { departments } from "@/db/schema/departments.js";
+import { roles } from "@/db/schema/roles.js";
+import { users } from "@/db/schema/users.js";
+import { insertAuditLog } from "@/lib/audit.js";
+import { captureAuditDiff } from "@/lib/audit-diff.js";
+import { invalidateAuthUserCache } from "@/lib/cache.js";
+import { getClientIp } from "@/lib/client-ip.js";
+import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
+import { createNotification } from "@/lib/notification.helpers.js";
+import { ErrorSchema } from "@/lib/schemas.js";
+import { supabase } from "@/lib/supabase.js";
+import { ROLE_NAMES } from "@/lib/types.js";
+import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
+import { requireRole } from "@/middleware/rbac.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
