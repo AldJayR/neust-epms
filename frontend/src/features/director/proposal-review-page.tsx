@@ -23,17 +23,19 @@ import {
 	saveProposalCommentFn,
 } from "@/lib/comments.functions";
 import {
+	type ProjectDetailsResponse,
+	type ProjectHistoryItem,
 	projectDetailsQueryOptions,
 	reviewProposalFn,
 } from "@/lib/dashboard.functions";
 import { isDirector, isRETChair } from "@/lib/permissions";
 import { CommentsTab } from "./components/comments-tab";
 import { ProposalDetailsTab } from "./components/proposal-details-tab";
-import { ProjectDetailsSkeleton } from "./project-details-skeleton";
+import { ProposalReviewSkeleton } from "./components/proposal-review-skeleton";
 
 export interface ProposalReviewContextValue {
-	data: any;
-	endorsement: any;
+	data: ProjectDetailsResponse;
+	endorsement: ProjectHistoryItem | undefined;
 	activeAttachmentId: string | null;
 	setActiveAttachmentId: (id: string) => void;
 	isReviewable: boolean;
@@ -238,7 +240,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	]);
 
 	if (isLoading) {
-		return <ProjectDetailsSkeleton />;
+		return <ProposalReviewSkeleton />;
 	}
 
 	if (!contextValue) return null;

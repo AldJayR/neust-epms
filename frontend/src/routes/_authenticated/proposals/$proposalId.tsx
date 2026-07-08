@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { ProjectDetailsSkeleton } from "@/features/director/project-details-skeleton";
+import { ProposalReviewSkeleton } from "@/features/director/components/proposal-review-skeleton";
 import { ProposalReviewPage } from "@/features/director/proposal-review-page";
 import { projectDetailsQueryOptions } from "@/lib/dashboard.functions";
 import { isDeniedAccess } from "@/lib/permissions";
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/proposals/$proposalId")({
 			}
 		}
 	},
-	pendingComponent: ProjectDetailsSkeleton,
+	pendingComponent: ProposalReviewSkeleton,
 	component: ProposalReviewComponent,
 });
 
