@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { createClient } from "@supabase/supabase-js";
-import { and, count, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
 import { partners } from "../db/schema/partners.js";
@@ -224,6 +224,12 @@ const PaginationQuery = z.object({
 		.openapi({
 			param: { name: "limit", in: "query" },
 		}),
+	archived: z
+		.string()
+		.optional()
+		.openapi({
+			param: { name: "archived", in: "query" },
+		}),
 });
 
 app.use("/moas/*", authMiddleware);
@@ -260,8 +266,9 @@ app.openapi(listRoute, async (c) => {
 		);
 	}
 
-	const { page, limit } = c.req.valid("query");
+	const { page, limit, archived } = c.req.valid("query");
 	const offset = (page - 1) * limit;
+	const showArchived = archived === "true";
 
 	const rows = await db
 		.select({
@@ -275,7 +282,7 @@ app.openapi(listRoute, async (c) => {
 			archivedAt: moas.archivedAt,
 		})
 		.from(moas)
-		.where(isNull(moas.archivedAt))
+		.where(showArchived ? isNotNull(moas.archivedAt) : isNull(moas.archivedAt))
 		.orderBy(desc(moas.validUntil))
 		.limit(limit)
 		.offset(offset);
@@ -292,7 +299,7 @@ app.openapi(listRoute, async (c) => {
 	const [totalResult] = await db
 		.select({ value: count() })
 		.from(moas)
-		.where(isNull(moas.archivedAt));
+		.where(showArchived ? isNotNull(moas.archivedAt) : isNull(moas.archivedAt));
 	const total = Number(totalResult?.value ?? 0);
 
 	return c.json({ items, total }, 200);
@@ -918,6 +925,21 @@ app.openapi(updateRoute, async (c) => {
 		},
 		200,
 	);
+});
+
+app.post("/:id/restore", async (c) => {
+	const id = c.req.param("id");
+	const [updated] = await db
+		.update(moas)
+		.set({ archivedAt: null })
+		.where(eq(moas.moaId, id))
+		.returning();
+
+	if (!updated) {
+		return c.json({ error: "MOA not found or could not be restored" }, 404);
+	}
+
+	return c.json({ message: "MOA restored successfully", id }, 200);
 });
 
 export default app;

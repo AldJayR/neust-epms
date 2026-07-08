@@ -6,6 +6,7 @@ import {
 	desc,
 	eq,
 	inArray,
+	isNotNull,
 	isNull,
 	or,
 	type SQL,
@@ -119,6 +120,12 @@ const PaginationQuery = z.object({
 		.openapi({
 			param: { name: "limit", in: "query" },
 		}),
+	archived: z
+		.string()
+		.optional()
+		.openapi({
+			param: { name: "archived", in: "query" },
+		}),
 });
 
 app.use("/projects/*", authMiddleware);
@@ -156,8 +163,9 @@ const listRoute = createRoute({
 
 app.openapi(listRoute, async (c) => {
 	const user = c.get("user");
-	const { page, limit } = c.req.valid("query");
+	const { page, limit, archived } = c.req.valid("query");
 	const offset = (page - 1) * limit;
+	const showArchived = archived === "true";
 
 	const proposalConditions: SQL[] = [isNull(proposals.archivedAt)];
 
@@ -227,7 +235,7 @@ app.openapi(listRoute, async (c) => {
 		)
 		.where(
 			and(
-				isNull(projects.archivedAt),
+				showArchived ? isNotNull(projects.archivedAt) : isNull(projects.archivedAt),
 				inArray(projects.proposalId, allowedProposals),
 			),
 		)
@@ -250,7 +258,7 @@ app.openapi(listRoute, async (c) => {
 		.from(projects)
 		.where(
 			and(
-				isNull(projects.archivedAt),
+				showArchived ? isNotNull(projects.archivedAt) : isNull(projects.archivedAt),
 				inArray(projects.proposalId, allowedProposals),
 			),
 		);
@@ -1754,6 +1762,21 @@ app.openapi(projectReportingScheduleRoute, async (c) => {
 		},
 		200,
 	);
+});
+
+app.post("/:id/restore", async (c) => {
+	const id = c.req.param("id");
+	const [updated] = await db
+		.update(projects)
+		.set({ archivedAt: null })
+		.where(eq(projects.projectId, id))
+		.returning();
+
+	if (!updated) {
+		return c.json({ error: "Project not found or could not be restored" }, 404);
+	}
+
+	return c.json({ message: "Project restored successfully", id }, 200);
 });
 
 export default app;

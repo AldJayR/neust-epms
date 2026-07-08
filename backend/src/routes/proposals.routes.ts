@@ -5,6 +5,7 @@ import {
 	desc,
 	eq,
 	ilike,
+	isNotNull,
 	isNull,
 	or,
 	type SQL,
@@ -183,6 +184,12 @@ const PaginationQuery = z.object({
 		.openapi({
 			param: { name: "search", in: "query" },
 		}),
+	archived: z
+		.string()
+		.optional()
+		.openapi({
+			param: { name: "archived", in: "query" },
+		}),
 });
 
 const ErrorSchema = z
@@ -215,10 +222,13 @@ const listRoute = createRoute({
 
 app.openapi(listRoute, async (c) => {
 	const user = c.get("user");
-	const { page, limit, search } = c.req.valid("query");
+	const { page, limit, search, archived } = c.req.valid("query");
 	const offset = (page - 1) * limit;
+	const showArchived = archived === "true";
 
-	const whereConditions: SQL[] = [isNull(proposals.archivedAt)];
+	const whereConditions: SQL[] = [
+		showArchived ? isNotNull(proposals.archivedAt) : isNull(proposals.archivedAt),
+	];
 
 	if (search) {
 		whereConditions.push(ilike(proposals.title, `%${search}%`));
@@ -1778,6 +1788,21 @@ app.openapi(listCommentsRoute, async (c) => {
 		})),
 		200,
 	);
+});
+
+app.post("/:id/restore", async (c) => {
+	const id = c.req.param("id");
+	const [updated] = await db
+		.update(proposals)
+		.set({ archivedAt: null, updatedAt: new Date() })
+		.where(eq(proposals.proposalId, id))
+		.returning();
+
+	if (!updated) {
+		return c.json({ error: "Proposal not found or could not be restored" }, 404);
+	}
+
+	return c.json({ message: "Proposal restored successfully", id }, 200);
 });
 
 export default app;

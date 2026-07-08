@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
 	Activity,
+	Archive,
 	BarChart3,
 	FolderKanban,
 	LayoutDashboard,
@@ -91,6 +92,11 @@ const directorNav: NavGroup[] = [
 				url: "/reports",
 				icon: BarChart3,
 			},
+			{
+				title: "Archives",
+				url: "/archives",
+				icon: Archive,
+			},
 		],
 	},
 ];
@@ -109,11 +115,11 @@ const facultyNav: NavGroup[] = [
 				url: "/projects",
 				icon: FolderKanban,
 			},
-			// {
-			// 	title: "Archives",
-			// 	url: "/archives",
-			// 	icon: Scroll,
-			// },
+			{
+				title: "Archives",
+				url: "/archives",
+				icon: Archive,
+			},
 			{
 				title: "Reports",
 				url: "/reports",
@@ -151,6 +157,11 @@ const retNav: NavGroup[] = [
 				title: "Reports",
 				url: "/reports",
 				icon: BarChart3,
+			},
+			{
+				title: "Archives",
+				url: "/archives",
+				icon: Archive,
 			},
 		],
 	},

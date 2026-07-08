@@ -25,6 +25,7 @@ import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects/index'
 import { Route as AuthenticatedMoasIndexRouteImport } from './routes/_authenticated/moas/index'
 import { Route as AuthenticatedFacultyIndexRouteImport } from './routes/_authenticated/faculty/index'
+import { Route as AuthenticatedArchivesIndexRouteImport } from './routes/_authenticated/archives/index'
 import { Route as AuthenticatedProposalsProposalIdRouteImport } from './routes/_authenticated/proposals/$proposalId'
 import { Route as AuthenticatedProjectsProjectIdIndexRouteImport } from './routes/_authenticated/projects/$projectId/index'
 import { Route as AuthenticatedMoasMoaIdIndexRouteImport } from './routes/_authenticated/moas/$moaId/index'
@@ -114,6 +115,12 @@ const AuthenticatedFacultyIndexRoute =
     path: '/faculty/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedArchivesIndexRoute =
+  AuthenticatedArchivesIndexRouteImport.update({
+    id: '/archives/',
+    path: '/archives/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProposalsProposalIdRoute =
   AuthenticatedProposalsProposalIdRouteImport.update({
     id: '/proposals/$proposalId',
@@ -164,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/register/account': typeof RegisterAccountRoute
   '/forgot-password/': typeof ForgotPasswordIndexRoute
   '/proposals/$proposalId': typeof AuthenticatedProposalsProposalIdRoute
+  '/archives/': typeof AuthenticatedArchivesIndexRoute
   '/faculty/': typeof AuthenticatedFacultyIndexRoute
   '/moas/': typeof AuthenticatedMoasIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
@@ -186,6 +194,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/forgot-password': typeof ForgotPasswordIndexRoute
   '/proposals/$proposalId': typeof AuthenticatedProposalsProposalIdRoute
+  '/archives': typeof AuthenticatedArchivesIndexRoute
   '/faculty': typeof AuthenticatedFacultyIndexRoute
   '/moas': typeof AuthenticatedMoasIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
@@ -211,6 +220,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/forgot-password/': typeof ForgotPasswordIndexRoute
   '/_authenticated/proposals/$proposalId': typeof AuthenticatedProposalsProposalIdRoute
+  '/_authenticated/archives/': typeof AuthenticatedArchivesIndexRoute
   '/_authenticated/faculty/': typeof AuthenticatedFacultyIndexRoute
   '/_authenticated/moas/': typeof AuthenticatedMoasIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/register/account'
     | '/forgot-password/'
     | '/proposals/$proposalId'
+    | '/archives/'
     | '/faculty/'
     | '/moas/'
     | '/projects/'
@@ -258,6 +269,7 @@ export interface FileRouteTypes {
     | '/'
     | '/forgot-password'
     | '/proposals/$proposalId'
+    | '/archives'
     | '/faculty'
     | '/moas'
     | '/projects'
@@ -282,6 +294,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/forgot-password/'
     | '/_authenticated/proposals/$proposalId'
+    | '/_authenticated/archives/'
     | '/_authenticated/faculty/'
     | '/_authenticated/moas/'
     | '/_authenticated/projects/'
@@ -415,6 +428,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFacultyIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/archives/': {
+      id: '/_authenticated/archives/'
+      path: '/archives'
+      fullPath: '/archives/'
+      preLoaderRoute: typeof AuthenticatedArchivesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/proposals/$proposalId': {
       id: '/_authenticated/proposals/$proposalId'
       path: '/proposals/$proposalId'
@@ -481,6 +501,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedProposalsProposalIdRoute: typeof AuthenticatedProposalsProposalIdRoute
+  AuthenticatedArchivesIndexRoute: typeof AuthenticatedArchivesIndexRoute
   AuthenticatedFacultyIndexRoute: typeof AuthenticatedFacultyIndexRoute
   AuthenticatedMoasIndexRoute: typeof AuthenticatedMoasIndexRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
@@ -494,6 +515,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedProposalsProposalIdRoute: AuthenticatedProposalsProposalIdRoute,
+  AuthenticatedArchivesIndexRoute: AuthenticatedArchivesIndexRoute,
   AuthenticatedFacultyIndexRoute: AuthenticatedFacultyIndexRoute,
   AuthenticatedMoasIndexRoute: AuthenticatedMoasIndexRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
