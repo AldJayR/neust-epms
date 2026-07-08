@@ -1,3 +1,6 @@
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Loader2 } from "lucide-react";
 import * as React from "react";
@@ -37,16 +40,34 @@ const rankOptions = [
 	{ label: "Professor I", value: "professor-1" },
 ];
 
+const addUserSchema = z.object({
+	firstName: z.string().min(1, "First name is required"),
+	middleName: z.string().optional(),
+	lastName: z.string().min(1, "Last name is required"),
+	nameSuffix: z.string().optional(),
+	email: z.string().email("Invalid email address"),
+	academicRank: z.string().min(1, "Academic rank is required"),
+	departmentId: z.string().optional(),
+});
+
+type AddUserFormValues = z.infer<typeof addUserSchema>;
+
 export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 	const queryClient = useQueryClient();
 	const [isOpen, setIsOpen] = useState(false);
-	const [firstName, setFirstName] = useState("");
-	const [middleName, setMiddleName] = useState("");
-	const [lastName, setLastName] = useState("");
-	const [nameSuffix, setNameSuffix] = useState("");
-	const [email, setEmail] = useState("");
-	const [academicRank, setAcademicRank] = useState("");
-	const [departmentId, setDepartmentId] = useState<string>("");
+
+	const form = useForm<AddUserFormValues>({
+		resolver: zodResolver(addUserSchema),
+		defaultValues: {
+			firstName: "",
+			middleName: "",
+			lastName: "",
+			nameSuffix: "",
+			email: "",
+			academicRank: "",
+			departmentId: "",
+		},
+	});
 
 	const { data: departments = [] } = useQuery({
 		queryKey: ["departments"],
@@ -55,52 +76,37 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 	});
 
 	const provisionMutation = useMutation({
-		mutationFn: () =>
+		mutationFn: (variables: AddUserFormValues) =>
 			provisionDirectorFn({
 				data: {
-					firstName,
-					middleName: middleName || null,
-					lastName,
-					nameSuffix: nameSuffix || null,
-					email,
-					academicRank,
+					firstName: variables.firstName,
+					middleName: variables.middleName || null,
+					lastName: variables.lastName,
+					nameSuffix: variables.nameSuffix || null,
+					email: variables.email,
+					academicRank: variables.academicRank,
 					departmentId:
-						departmentId && departmentId !== "none"
-							? Number(departmentId)
+						variables.departmentId && variables.departmentId !== "none"
+							? Number(variables.departmentId)
 							: null,
 				},
 			}),
-		onSuccess: (data) => {
+		onSuccess: (data, variables) => {
 			toast.success(
-				`Successfully provisioned Director account for ${email}! Temporary Password: ${data.temporaryPassword}`,
+				`Successfully provisioned Director account for ${variables.email}! Temporary Password: ${data.temporaryPassword}`,
 				{ duration: 15000 },
 			);
 			queryClient.invalidateQueries({ queryKey: ["admin"] });
 			setIsOpen(false);
-			resetForm();
+			form.reset();
 		},
 		onError: (error: Error) => {
 			toast.error(error.message);
 		},
 	});
 
-	const resetForm = () => {
-		setFirstName("");
-		setMiddleName("");
-		setLastName("");
-		setNameSuffix("");
-		setEmail("");
-		setAcademicRank("");
-		setDepartmentId("");
-	};
-
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!firstName || !lastName || !email || !academicRank) {
-			toast.error("Please fill in all required fields.");
-			return;
-		}
-		provisionMutation.mutate();
+	const onSubmit = (data: AddUserFormValues) => {
+		provisionMutation.mutate(data);
 	};
 
 	return (
@@ -108,7 +114,7 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 			open={isOpen}
 			onOpenChange={(val) => {
 				setIsOpen(val);
-				if (!val) resetForm();
+				if (!val) form.reset();
 			}}
 		>
 			<DialogTrigger
@@ -122,7 +128,7 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 				</DialogHeader>
 
 				<form
-					onSubmit={handleSubmit}
+					onSubmit={form.handleSubmit(onSubmit)}
 					className="flex-1 flex flex-col gap-5 min-h-0"
 				>
 					<div className="flex-1 overflow-y-auto pr-1.5 flex flex-col gap-5 py-1">
@@ -134,10 +140,13 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 								<Input
 									id="firstName"
 									placeholder="First name"
-									value={firstName}
-									onChange={(e) => setFirstName(e.target.value)}
-									required
+									{...form.register("firstName")}
 								/>
+								{form.formState.errors.firstName && (
+									<p className="text-xs text-destructive">
+										{form.formState.errors.firstName.message}
+									</p>
+								)}
 							</div>
 							<div className="flex flex-col gap-1.5">
 								<Label htmlFor="lastName" className="text-sm font-medium">
@@ -146,10 +155,13 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 								<Input
 									id="lastName"
 									placeholder="Last name"
-									value={lastName}
-									onChange={(e) => setLastName(e.target.value)}
-									required
+									{...form.register("lastName")}
 								/>
+								{form.formState.errors.lastName && (
+									<p className="text-xs text-destructive">
+										{form.formState.errors.lastName.message}
+									</p>
+								)}
 							</div>
 						</div>
 
@@ -161,8 +173,7 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 								<Input
 									id="middleName"
 									placeholder="Middle name"
-									value={middleName}
-									onChange={(e) => setMiddleName(e.target.value)}
+									{...form.register("middleName")}
 								/>
 							</div>
 							<div className="flex flex-col gap-1.5">
@@ -172,8 +183,7 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 								<Input
 									id="nameSuffix"
 									placeholder="e.g. Jr., III"
-									value={nameSuffix}
-									onChange={(e) => setNameSuffix(e.target.value)}
+									{...form.register("nameSuffix")}
 								/>
 							</div>
 						</div>
@@ -186,10 +196,13 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 								id="email"
 								type="email"
 								placeholder="email@example.com"
-								value={email}
-								onChange={(e) => setEmail(e.target.value)}
-								required
+								{...form.register("email")}
 							/>
+							{form.formState.errors.email && (
+								<p className="text-xs text-destructive">
+									{form.formState.errors.email.message}
+								</p>
+							)}
 						</div>
 
 						<div className="grid grid-cols-2 gap-4">
@@ -197,55 +210,72 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 								<Label htmlFor="academicRank" className="text-sm font-medium">
 									Academic Rank <span className="text-destructive">*</span>
 								</Label>
-								<Select
-									value={academicRank}
-									onValueChange={(val) => setAcademicRank(val ?? "")}
-								>
-									<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
-										<SelectValue placeholder="Select rank">
-											{(val) =>
-												rankOptions.find((o) => o.value === val)?.label ?? val
-											}
-										</SelectValue>
-									</SelectTrigger>
-									<SelectContent className="z-50">
-										{rankOptions.map((opt) => (
-											<SelectItem key={opt.value} value={opt.value}>
-												{opt.label}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								<Controller
+									control={form.control}
+									name="academicRank"
+									render={({ field }) => (
+										<Select
+											value={field.value}
+											onValueChange={field.onChange}
+										>
+											<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
+												<SelectValue placeholder="Select rank">
+													{(val) =>
+														rankOptions.find((o) => o.value === val)?.label ?? val
+													}
+												</SelectValue>
+											</SelectTrigger>
+											<SelectContent className="z-50">
+												{rankOptions.map((opt) => (
+													<SelectItem key={opt.value} value={opt.value}>
+														{opt.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									)}
+								/>
+								{form.formState.errors.academicRank && (
+									<p className="text-xs text-destructive">
+										{form.formState.errors.academicRank.message}
+									</p>
+								)}
 							</div>
 
 							<div className="flex flex-col gap-1.5">
 								<Label htmlFor="department" className="text-sm font-medium">
 									Department (Optional)
 								</Label>
-								<Select
-									value={departmentId}
-									onValueChange={(val) => setDepartmentId(val ?? "")}
-								>
-									<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
-										<SelectValue placeholder="Select department">
-											{(val) => {
-												if (val === "none") return "None";
-												return (
-													departments.find((d) => String(d.id) === val)?.name ??
-													val
-												);
-											}}
-										</SelectValue>
-									</SelectTrigger>
-									<SelectContent className="z-50">
-										<SelectItem value="none">None</SelectItem>
-										{departments.map((d) => (
-											<SelectItem key={d.id} value={String(d.id)}>
-												{d.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								<Controller
+									control={form.control}
+									name="departmentId"
+									render={({ field }) => (
+										<Select
+											value={field.value}
+											onValueChange={field.onChange}
+										>
+											<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
+												<SelectValue placeholder="Select department">
+													{(val) => {
+														if (val === "none" || !val) return "None";
+														return (
+															departments.find((d) => String(d.id) === val)?.name ??
+															val
+														);
+													}}
+												</SelectValue>
+											</SelectTrigger>
+											<SelectContent className="z-50">
+												<SelectItem value="none">None</SelectItem>
+												{departments.map((d) => (
+													<SelectItem key={d.id} value={String(d.id)}>
+														{d.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									)}
+								/>
 							</div>
 						</div>
 
@@ -295,4 +325,5 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 			</DialogContent>
 		</Dialog>
 	);
+
 }

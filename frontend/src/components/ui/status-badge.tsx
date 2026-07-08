@@ -109,6 +109,21 @@ const STATUS_MAP: Record<string, StatusConfig> = {
 		icon: XCircle,
 		iconClassName: "text-muted-foreground",
 	},
+	Progress: {
+		label: "Progress",
+		icon: Clock,
+		iconClassName: "text-blue-500",
+	},
+	Terminal: {
+		label: "Terminal",
+		icon: CheckCircle2,
+		iconClassName: "text-amber-500",
+	},
+	"Final Accomplishment": {
+		label: "Final Accomplishment",
+		icon: CheckCircle2,
+		iconClassName: "text-emerald-500",
+	},
 };
 
 interface StatusBadgeProps {

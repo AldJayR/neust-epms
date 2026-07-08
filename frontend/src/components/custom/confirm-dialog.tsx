@@ -42,12 +42,13 @@ export function ConfirmDialog({
 	const [typedText, setTypedText] = React.useState("");
 	const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-	React.useEffect(() => {
-		if (!open) {
+	const handleOpenChange = (isOpen: boolean) => {
+		if (!isOpen) {
 			setTypedText("");
 			setIsSubmitting(false);
 		}
-	}, [open]);
+		onOpenChange(isOpen);
+	};
 
 	const handleConfirm = async (e: React.MouseEvent) => {
 		e.preventDefault();
@@ -56,7 +57,7 @@ export function ConfirmDialog({
 		setIsSubmitting(true);
 		try {
 			await onConfirm();
-			onOpenChange(false);
+			handleOpenChange(false);
 		} catch (error) {
 			console.error("Confirmation action failed:", error);
 		} finally {
@@ -67,7 +68,7 @@ export function ConfirmDialog({
 	const isValid = !requireTyping || typedText === requireTyping;
 
 	return (
-		<AlertDialog open={open} onOpenChange={onOpenChange}>
+		<AlertDialog open={open} onOpenChange={handleOpenChange}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
 					<AlertDialogTitle>{title}</AlertDialogTitle>

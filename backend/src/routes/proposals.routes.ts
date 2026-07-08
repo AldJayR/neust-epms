@@ -267,7 +267,7 @@ app.openapi(listRoute, async (c) => {
 			extensionCategory: proposals.extensionCategory,
 			budgetPartner: proposals.budgetPartner,
 			budgetNeust: proposals.budgetNeust,
-			status: proposals.status,
+			status: sql<string>`COALESCE(${projects.projectStatus}, ${proposals.status})`,
 			bypassedRetChair: proposals.bypassedRetChair,
 			revisionNum: proposals.revisionNum,
 			targetStartDate: proposals.targetStartDate,
@@ -281,6 +281,7 @@ app.openapi(listRoute, async (c) => {
 			isMember: sql<boolean>`COALESCE(${userMemberSubquery.isMember}, false)`,
 		})
 		.from(proposals)
+		.leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
 		.leftJoin(
 			leaderSubquery,
 			eq(proposals.proposalId, leaderSubquery.proposalId),
@@ -1292,6 +1293,13 @@ app.openapi(reviewRoute, async (c) => {
 		user.roleName === ROLE_NAMES.RET_CHAIR &&
 		existing.status === PROPOSAL_STATUS.PENDING_REVIEW
 	) {
+		if (bypassRow?.bypassedRetChair) {
+			throw new ApiError(
+				403,
+				"FORBIDDEN",
+				"RET Chair review is bypassed for this proposal",
+			);
+		}
 		reviewStage = REVIEW_STAGE.ENDORSEMENT;
 		if (body.decision === REVIEW_DECISION.ENDORSED) {
 			newStatus = PROPOSAL_STATUS.ENDORSED;
@@ -1671,13 +1679,24 @@ app.openapi(createCommentRoute, async (c) => {
 
 	// Verify the proposal exists
 	const [proposal] = await db
-		.select({ proposalId: proposals.proposalId })
+		.select({
+			proposalId: proposals.proposalId,
+			bypassedRetChair: proposals.bypassedRetChair,
+		})
 		.from(proposals)
 		.where(eq(proposals.proposalId, proposalId))
 		.limit(1);
 
 	if (!proposal) {
 		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+	}
+
+	if (user.roleName === ROLE_NAMES.RET_CHAIR && proposal.bypassedRetChair) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"RET Chair review is bypassed for this proposal",
+		);
 	}
 
 	const [newComment] = await db

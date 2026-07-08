@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ClientOnly, Link } from "@tanstack/react-router";
+import { ClientOnly, Link, useNavigate } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { EllipsisVertical, ListFilter, Plus } from "lucide-react";
@@ -50,6 +50,7 @@ export function MoaRepositoryPage({
 	onSearchChange,
 	onStatusChange,
 }: MoaRepositoryPageProps) {
+	const navigate = useNavigate();
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -76,18 +77,7 @@ export function MoaRepositoryPage({
 				"w-[320px] px-4 py-2 text-sm font-medium text-muted-foreground",
 			cellClassName:
 				"px-4 py-3 text-sm font-semibold text-foreground text-left",
-			cell: ({ row }) => (
-				<Link
-					to="/moas/$moaId"
-					params={{ moaId: row.original.id }}
-					className="hover:underline text-left text-brand-primary"
-					onClick={(e) => {
-						e.stopPropagation();
-					}}
-				>
-					{row.original.partnerOrganization}
-				</Link>
-			),
+			cell: ({ row }) => row.original.partnerOrganization,
 		},
 		{
 			id: "dateSigned",
@@ -228,6 +218,9 @@ export function MoaRepositoryPage({
 				sorting={sorting}
 				onSortingChange={setSorting}
 				enableSorting
+				onRowClick={(moa) =>
+					navigate({ to: "/moas/$moaId", params: { moaId: moa.id } })
+				}
 				filters={
 					<DropdownMenu>
 						<DropdownMenuTrigger

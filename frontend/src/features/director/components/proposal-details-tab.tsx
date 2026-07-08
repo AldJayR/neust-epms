@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { useProposalReview } from "../proposal-review-page";
 
 const formatBudget = (value: number) => `P${value.toLocaleString("en-PH")}`;
 
@@ -31,57 +32,21 @@ const formatReviewDate = (dateStr: string) => {
 	}
 };
 
-interface ProposalDetailsTabProps {
-	data: {
-		title: string;
-		metadata: {
-			leader: {
-				name: string;
-			};
-			departmentCode: string;
-			duration: string;
-			budget: {
-				neust: number;
-			};
-			moaLinked: string;
-			sdgs?: string;
-		};
-		attachments?: {
-			id: string;
-			name: string;
-			version: string;
-		}[];
-	};
-	endorsement?: {
-		status: string;
-		actorName: string;
-		date: string;
-		comment?: string;
-	};
-	activeAttachmentId: string | null;
-	setActiveAttachmentId: (id: string) => void;
-	isReviewable: boolean;
-	handleDeny: (comments?: string) => void;
-	handleReject: (comments?: string) => void;
-	handleApprove: (comments?: string) => void;
-	isPending: boolean;
-	isRET?: boolean;
-	bypassedRetChair?: boolean;
-}
+export function ProposalDetailsTab() {
+	const {
+		data,
+		endorsement,
+		activeAttachmentId,
+		setActiveAttachmentId,
+		isReviewable,
+		handleDeny,
+		handleReject,
+		handleApprove,
+		isPending,
+		isRET,
+		bypassedRetChair,
+	} = useProposalReview();
 
-export function ProposalDetailsTab({
-	data,
-	endorsement,
-	activeAttachmentId,
-	setActiveAttachmentId,
-	isReviewable,
-	handleDeny,
-	handleReject,
-	handleApprove,
-	isPending,
-	isRET = false,
-	bypassedRetChair = false,
-}: ProposalDetailsTabProps) {
 	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 	const [commentsText, setCommentsText] = useState("");
 	const [isReturnOpen, setIsReturnOpen] = useState(false);

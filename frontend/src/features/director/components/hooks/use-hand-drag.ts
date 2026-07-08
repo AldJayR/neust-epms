@@ -51,9 +51,7 @@ export function useHandDrag({ scrollRef, toolMode }: UseHandDragOptions) {
 		[isDragging, toolMode, scrollRef],
 	);
 
-	const onMouseUpOrLeave = useCallback(() => {
-		setIsDragging(false);
-	}, []);
+	const onMouseUpOrLeave = () => setIsDragging(false);
 
 	return {
 		isDragging,

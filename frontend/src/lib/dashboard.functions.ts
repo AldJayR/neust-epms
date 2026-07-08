@@ -223,6 +223,8 @@ export interface ReportItem {
 	projectId: string;
 	project: string;
 	leader: string;
+	academicRank: string | null;
+	avatarUrl: string | null;
 	department: string | null;
 	reportType: string;
 	submitted: string;

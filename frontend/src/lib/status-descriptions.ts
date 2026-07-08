@@ -101,6 +101,21 @@ export const STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 		explanation: "This Memorandum of Agreement is currently active and valid.",
 		nextStep: "No action required.",
 	},
+	Progress: {
+		label: "Progress",
+		explanation: "A progress report documenting ongoing project activities and milestones.",
+		nextStep: "N/A",
+	},
+	Terminal: {
+		label: "Terminal",
+		explanation: "A terminal report marking the completion of the project.",
+		nextStep: "N/A",
+	},
+	"Final Accomplishment": {
+		label: "Final Accomplishment",
+		explanation: "A final accomplishment report detailing the project outcomes and impact.",
+		nextStep: "N/A",
+	},
 };
 
 export function getStatusDescription(status: string): StatusDescription {

@@ -253,7 +253,7 @@ export function MoaDetailsPage({ moaId, currentUser }: MoaDetailsPageProps) {
 				</div>
 			</div>
 
-			{isDirector(currentUser) && (
+			{isDirector(currentUser) && editOpen && (
 				<EditMoaModal
 					open={editOpen}
 					onOpenChange={setEditOpen}

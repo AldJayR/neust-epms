@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { DataTablePage } from "@/components/custom/data-table-page";
@@ -48,7 +48,7 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 
 	const userFullName = `${user.firstName} ${user.lastName}`;
 
-	const allItems = useMemo(() => {
+	const allItems = (() => {
 		const formattedProjects = projectsList.map((p) => {
 			const isLeader =
 				(p.leaderFirstName &&
@@ -90,10 +90,10 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 		return [...formattedProjects, ...formattedProposals].sort(
 			(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
 		);
-	}, [projectsList, activeProposals, userFullName]);
+	})();
 
 	const { projectsAsLeader, projectsAsMember, attentionRequired } =
-		useMemo(() => {
+		(() => {
 			let leaderCount = 0;
 			let memberCount = 0;
 			let attentionCount = 0;
@@ -116,34 +116,27 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 				projectsAsMember: memberCount,
 				attentionRequired: attentionCount,
 			};
-		}, [allItems]);
+		})();
 
-	const tabFilteredItems = useMemo(() => {
-		if (activeTab === "my") {
-			return allItems.filter((item) => item.isLeader || item.isMember);
-		}
-		return allItems;
-	}, [allItems, activeTab]);
+	const tabFilteredItems = activeTab === "my"
+		? allItems.filter((item) => item.isLeader || item.isMember)
+		: allItems;
 
-	const filteredItems = useMemo(() => {
-		return tabFilteredItems.filter((item) => {
-			const matchesSearch = item.title
-				.toLowerCase()
-				.includes(searchQuery.toLowerCase());
-			const matchesCategory =
-				selectedCategory === "all" || item.category === selectedCategory;
-			const matchesStatus =
-				selectedStatus === "all" || item.status === selectedStatus;
+	const filteredItems = tabFilteredItems.filter((item) => {
+		const matchesSearch = item.title
+			.toLowerCase()
+			.includes(searchQuery.toLowerCase());
+		const matchesCategory =
+			selectedCategory === "all" || item.category === selectedCategory;
+		const matchesStatus =
+			selectedStatus === "all" || item.status === selectedStatus;
 
-			return matchesSearch && matchesCategory && matchesStatus;
-		});
-	}, [tabFilteredItems, searchQuery, selectedCategory, selectedStatus]);
+		return matchesSearch && matchesCategory && matchesStatus;
+	});
 
 	const totalItems = filteredItems.length;
-	const paginatedItems = useMemo(() => {
-		const startIndex = (currentPage - 1) * itemsPerPage;
-		return filteredItems.slice(startIndex, startIndex + itemsPerPage);
-	}, [filteredItems, currentPage]);
+	const startIndex = (currentPage - 1) * itemsPerPage;
+	const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
 
 	const handleSearchChange = (val: string) => {
 		setSearchQuery(val);
@@ -155,21 +148,21 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 		setCurrentPage(1);
 	};
 
-	const categories = useMemo(() => {
+	const categories = (() => {
 		const set = new Set<string>();
 		for (const item of allItems) {
 			if (item.category) set.add(item.category);
 		}
 		return Array.from(set);
-	}, [allItems]);
+	})();
 
-	const statuses = useMemo(() => {
+	const statuses = (() => {
 		const set = new Set<string>();
 		for (const item of allItems) {
 			if (item.status) set.add(item.status);
 		}
 		return Array.from(set);
-	}, [allItems]);
+	})();
 
 	const isLoading = isProjectsLoading || isProposalsLoading;
 

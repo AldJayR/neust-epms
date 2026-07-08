@@ -49,7 +49,7 @@ export function RetFacultyDirectoryPage({
 		}),
 	);
 
-	const filteredItems = React.useMemo(() => {
+	const filteredItems = (() => {
 		let result = data?.items ?? [];
 
 		// 1. Rank filter
@@ -74,7 +74,7 @@ export function RetFacultyDirectoryPage({
 		}
 
 		return result;
-	}, [data?.items, selectedRanks, selectedLoads]);
+	})();
 
 	const activeFilterCount = selectedRanks.length + selectedLoads.length;
 	const total = data?.total ?? 0;

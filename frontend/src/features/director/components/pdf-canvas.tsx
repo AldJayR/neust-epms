@@ -1,4 +1,3 @@
-"use client";
 
 import * as pdfjsLib from "pdfjs-dist";
 import { useEffect, useReducer, useRef } from "react";
@@ -78,10 +77,9 @@ export function PdfPageCanvas({
 	const activeCanvasRef = useRef(activeCanvas);
 	const hasRenderedRef = useRef(hasRendered);
 
-	useEffect(() => {
-		activeCanvasRef.current = activeCanvas;
-		hasRenderedRef.current = hasRendered;
-	});
+	// Assign refs during render — safe for mutable refs (not reactive)
+	activeCanvasRef.current = activeCanvas;
+	hasRenderedRef.current = hasRendered;
 
 	useEffect(() => {
 		let activeRenderTask: pdfjsLib.RenderTask | null = null;

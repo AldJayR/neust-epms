@@ -1,7 +1,7 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
@@ -48,48 +48,36 @@ export function EditMoaModal({
 	const [validUntil, setValidUntil] = useState<Date | undefined>(
 		initialValidUntil ? new Date(initialValidUntil) : undefined,
 	);
-	const [isSubmitting, setIsSubmitting] = useState(false);
+	const updateMutation = useMutation({
+		mutationFn: () =>
+			updateMoaFn({
+				data: {
+					moaId,
+					validFrom: validFrom!.toISOString(),
+					validUntil: validUntil!.toISOString(),
+				},
+			}),
+		onSuccess: () => {
+			toast.success("MOA updated successfully.");
+			queryClient.invalidateQueries({ queryKey: ["moas", moaId] });
+			onOpenChange(false);
+		},
+		onError: (err) => {
+			toast.error(err instanceof Error ? err.message : "Failed to update MOA");
+		},
+	});
 
-	useEffect(() => {
-		if (open) {
-			setPartnerName(initialPartnerName);
-			setValidFrom(initialValidFrom ? new Date(initialValidFrom) : undefined);
-			setValidUntil(
-				initialValidUntil ? new Date(initialValidUntil) : undefined,
-			);
-		}
-	}, [open, initialPartnerName, initialValidFrom, initialValidUntil]);
-
-	const handleSubmit = async (e: React.FormEvent) => {
+	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!validFrom || !validUntil) {
 			toast.error("Please fill in all fields.");
 			return;
 		}
-
 		if (validUntil <= validFrom) {
 			toast.error("Expiration date must be after the signed from date.");
 			return;
 		}
-
-		setIsSubmitting(true);
-		try {
-			await updateMoaFn({
-				data: {
-					moaId,
-					validFrom: validFrom.toISOString(),
-					validUntil: validUntil.toISOString(),
-				},
-			});
-
-			toast.success("MOA updated successfully.");
-			queryClient.invalidateQueries({ queryKey: ["moas", moaId] });
-			onOpenChange(false);
-		} catch (err) {
-			toast.error(err instanceof Error ? err.message : "Failed to update MOA");
-		} finally {
-			setIsSubmitting(false);
-		}
+		updateMutation.mutate();
 	};
 
 	return (
@@ -177,16 +165,16 @@ export function EditMoaModal({
 							type="button"
 							variant="outline"
 							onClick={() => onOpenChange(false)}
-							disabled={isSubmitting}
+							disabled={updateMutation.isPending}
 						>
 							Cancel
 						</Button>
 						<BrandButton
 							type="submit"
-							disabled={isSubmitting}
+							disabled={updateMutation.isPending}
 							className="w-[120px]"
 						>
-							{isSubmitting ? (
+							{updateMutation.isPending ? (
 								<>
 									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 									Saving...

@@ -17,6 +17,7 @@ import {
 	type HubProject,
 	projectHubQueryOptions,
 } from "@/lib/dashboard.functions";
+import { formatAcademicRank } from "@/lib/utils";
 
 interface ProjectMonitoringPageProps {
 	user?: AuthUser | null;
@@ -100,7 +101,7 @@ export function ProjectMonitoringPage({
 							{project.leaderName}
 						</span>
 						<span className="text-xs text-muted-foreground">
-							{project.leaderRank}
+							{formatAcademicRank(project.leaderRank)}
 						</span>
 					</div>
 				);

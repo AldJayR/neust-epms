@@ -1179,6 +1179,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 			title: row.title,
 			status: row.projectStatus ?? row.status,
 			version: `v${row.revisionNum}`,
+			bypassedRetChair: row.bypassedRetChair,
 			metadata: {
 				leader: {
 					name: `${row.leaderFirstName ?? "N/A"} ${row.leaderLastName ?? "N/A"}`.trim(),

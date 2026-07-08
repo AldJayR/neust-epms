@@ -138,11 +138,24 @@ export function CreateProposalModal({
 		},
 	});
 
-	React.useEffect(() => {
-		if (open && initialData) {
+	// Synchronize initialData when it resolves or changes (modern React pattern)
+	const [prevInitialData, setPrevInitialData] = React.useState(initialData);
+	if (initialData !== prevInitialData) {
+		setPrevInitialData(initialData);
+		if (initialData) {
 			form.reset(initialData);
+		} else {
+			form.reset();
 		}
-	}, [open, initialData, form]);
+	}
+
+	const handleOpenChange = (isOpen: boolean) => {
+		if (!isOpen) {
+			form.reset();
+			setState({ step: 1, file: null });
+		}
+		onOpenChange(isOpen);
+	};
 
 	const isEditing = !!editingProposalId;
 
@@ -323,7 +336,7 @@ export function CreateProposalModal({
 	const prevStep = () => setState((prev) => ({ step: prev.step - 1 }));
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent className="sm:max-w-[700px] p-0 overflow-hidden gap-0">
 				<form
 					onSubmit={(e) => e.preventDefault()}

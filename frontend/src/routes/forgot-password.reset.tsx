@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -23,6 +23,14 @@ const resetPasswordSchema = z
 	});
 
 export const Route = createFileRoute("/forgot-password/reset")({
+	beforeLoad: () => {
+		if (typeof window !== "undefined") {
+			const storedEmail = sessionStorage.getItem("forgot_password_email:v1");
+			if (!storedEmail) {
+				throw redirect({ to: "/forgot-password" });
+			}
+		}
+	},
 	component: ResetPasswordPage,
 });
 

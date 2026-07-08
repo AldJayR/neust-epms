@@ -1,13 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
-import { Download, ListFilter, Plus } from "lucide-react";
+import { Download, EllipsisVertical, ListFilter, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { DataTablePage } from "@/components/custom/data-table-page";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageHeader } from "@/components/custom/page-header";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
@@ -15,10 +16,12 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuItem,
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AuthUser } from "@/lib/auth";
 import {
@@ -27,6 +30,7 @@ import {
 } from "@/lib/dashboard.functions";
 import { facultyProjectsQueryOptions } from "@/lib/faculty.functions";
 import { SubmitReportModal } from "../reports/components/submit-report-modal";
+import { formatAcademicRank } from "@/lib/utils";
 
 const formatDate = (dateStr: string) => {
 	try {
@@ -52,10 +56,11 @@ export function ReportsPage() {
 	});
 
 	const isFaculty = user?.roleName === "Faculty";
+	const isRET = user?.roleName === "RET Chair";
 	const userFullName = user ? `${user.firstName} ${user.lastName}` : "";
 
 	const [activeTab, setActiveTab] = useState<"my" | "college">(
-		isFaculty ? "my" : "college",
+		(isFaculty || isRET) ? "my" : "college",
 	);
 	const [search, setSearch] = useState("");
 	const [page, setPage] = useState(1);
@@ -80,26 +85,22 @@ export function ReportsPage() {
 	});
 
 	const reports = listData?.items ?? [];
-	const myProjectIds = useMemo(() => {
-		return new Set(projectsData?.items?.map((p) => p.projectId) ?? []);
-	}, [projectsData]);
+	const myProjectIds = new Set(projectsData?.items?.map((p) => p.projectId) ?? []);
 
-	const tabFilteredReports = useMemo(() => {
-		if (activeTab === "my") {
-			return reports.filter((r) => {
+	const tabFilteredReports = activeTab === "my"
+		? reports.filter((r) => {
 				const isLeader = r.leader === userFullName;
+				if (isRET) {
+					return isLeader;
+				}
 				const isMember = myProjectIds.has(r.projectId);
 				return isLeader || isMember;
-			});
-		}
-		return reports;
-	}, [reports, activeTab, userFullName, myProjectIds]);
+			})
+		: reports;
 
-	const filteredReports = useMemo(() => {
-		return typeFilter === "All"
-			? tabFilteredReports
-			: tabFilteredReports.filter((r) => r.reportType === typeFilter);
-	}, [tabFilteredReports, typeFilter]);
+	const filteredReports = typeFilter === "All"
+		? tabFilteredReports
+		: tabFilteredReports.filter((r) => r.reportType === typeFilter);
 
 	const totalReports = tabFilteredReports.length;
 	const progressCount = tabFilteredReports.filter(
@@ -111,97 +112,157 @@ export function ReportsPage() {
 
 	const isLoading = listLoading || (!!user && projectsLoading);
 
-	const paginatedReports = useMemo(() => {
-		const startIndex = (page - 1) * limit;
-		return filteredReports.slice(startIndex, startIndex + limit);
-	}, [filteredReports, page, limit]);
+	const startIndex = (page - 1) * limit;
+	const paginatedReports = filteredReports.slice(startIndex, startIndex + limit);
 
 	const handleTabChange = (tab: "my" | "college") => {
 		setActiveTab(tab);
 		setPage(1);
 	};
 
-	const columns: DataTableColumnDef<ReportItem>[] = [
-		{
-			id: "project",
-			accessorKey: "project",
-			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Project" />
-			),
-			headerClassName: "px-4 py-2 text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 font-bold text-foreground",
-			cell: ({ row }) => (
-				<div className="truncate max-w-[280px]" title={row.original.project}>
-					{row.original.project}
-				</div>
-			),
-		},
-		{
-			id: "leader",
-			accessorKey: "leader",
-			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Leader" />
-			),
-			headerClassName: "px-4 py-2 text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-sm text-foreground",
-			cell: ({ row }) => row.original.leader,
-		},
-		{
-			id: "department",
-			accessorKey: "department",
-			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Department" />
-			),
-			headerClassName: "px-4 py-2 text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-sm text-foreground",
-			cell: ({ row }) => row.original.department ?? "—",
-		},
-		{
-			id: "reportType",
-			accessorKey: "reportType",
-			header: ({ column }) => (
-				<DataTableColumnHeader
-					column={column}
-					title="Report Type"
-					className="justify-center"
-				/>
-			),
-			headerClassName:
-				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-center",
-			cell: ({ row }) => {
-				const type = row.original.reportType;
-				return (
-					<Badge
-						variant="outline"
-						className={`rounded-md font-medium text-xs px-2 py-0.5 border ${
-							type === "Terminal"
-								? "bg-[#ffee9c] text-amber-700 border-[#e2a336]"
-								: "bg-[#c4e8d1] text-[#218358] border-[#2b9a66]"
-						}`}
-					>
-						{type}
-					</Badge>
-				);
+	const columns = useMemo<DataTableColumnDef<ReportItem>>(() => {
+		const baseColumns: DataTableColumnDef<ReportItem>[] = [
+			{
+				id: "project",
+				accessorKey: "project",
+				header: ({ column }) => (
+					<DataTableColumnHeader column={column} title="Project" />
+				),
+				headerClassName: "px-4 py-2 text-sm font-medium text-muted-foreground",
+				cellClassName: "px-4 py-3 font-bold text-foreground",
+				cell: ({ row }) => (
+					<div className="truncate max-w-[280px]" title={row.original.project}>
+						{row.original.project}
+					</div>
+				),
 			},
-		},
-		{
-			id: "submitted",
-			accessorKey: "submitted",
-			header: ({ column }) => (
-				<DataTableColumnHeader
-					column={column}
-					title="Submitted"
-					className="justify-center"
-				/>
-			),
-			headerClassName:
-				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
-			cell: ({ row }) => formatDate(row.original.submitted),
-		},
-		createActionsColumn(),
-	];
+			{
+				id: "leader",
+				accessorKey: "leader",
+				header: ({ column }) => (
+					<DataTableColumnHeader column={column} title="Leader" />
+				),
+				headerClassName: "px-4 py-2 text-sm font-medium text-muted-foreground",
+				cellClassName: "px-4 py-3 text-sm text-foreground",
+				cell: ({ row }) => {
+					const item = row.original;
+					if (isRET) {
+						const initials = item.leader
+							.split(" ")
+							.map((n) => n[0])
+							.join("")
+							.slice(0, 2);
+						return (
+							<div className="flex items-center gap-3">
+								<Avatar className="size-9">
+									{item.avatarUrl && (
+										<AvatarImage src={item.avatarUrl} alt={item.leader} />
+									)}
+									<AvatarFallback className="bg-muted text-muted-foreground">
+										{initials}
+									</AvatarFallback>
+								</Avatar>
+								<div className="flex flex-col">
+									<span className="text-sm font-medium text-foreground">
+										{item.leader}
+									</span>
+									<span className="text-xs text-muted-foreground">
+										{formatAcademicRank(item.academicRank)}
+									</span>
+								</div>
+							</div>
+						);
+					}
+					return item.leader;
+				},
+			},
+		];
+
+		if (!isRET) {
+			baseColumns.push({
+				id: "department",
+				accessorKey: "department",
+				header: ({ column }) => (
+					<DataTableColumnHeader column={column} title="Department" />
+				),
+				headerClassName: "px-4 py-2 text-sm font-medium text-muted-foreground",
+				cellClassName: "px-4 py-3 text-sm text-foreground",
+				cell: ({ row }) => row.original.department ?? "—",
+			});
+		}
+
+		baseColumns.push(
+			{
+				id: "reportType",
+				accessorKey: "reportType",
+				header: ({ column }) => (
+					<DataTableColumnHeader
+						column={column}
+						title="Report Type"
+						className="justify-center"
+					/>
+				),
+				headerClassName:
+					"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+				cellClassName: "px-4 py-3 text-center",
+				cell: ({ row }) => {
+					const type = row.original.reportType;
+					return (
+						<div className="flex justify-center">
+							<StatusBadge status={type} variant="outline" />
+						</div>
+					);
+				},
+			},
+			{
+				id: "submitted",
+				accessorKey: "submitted",
+				header: ({ column }) => (
+					<DataTableColumnHeader
+						column={column}
+						title="Submitted"
+						className="justify-center"
+					/>
+				),
+				headerClassName:
+					"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+				cellClassName: "px-4 py-3 text-center text-sm text-foreground",
+				cell: ({ row }) => formatDate(row.original.submitted),
+			},
+			createActionsColumn({
+				cell: ({ row }) => (
+					<div className="flex justify-end pr-2">
+						<DropdownMenu>
+							<DropdownMenuTrigger
+								render={
+									<Button variant="ghost" size="icon" className="size-8" />
+								}
+								aria-label="Open report actions"
+							>
+								<EllipsisVertical className="size-4" />
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end" className="w-40">
+								<DropdownMenuItem
+									disabled={!row.original.storagePath}
+									render={
+										<a
+											href={row.original.storagePath ?? "#"}
+											target="_blank"
+											rel="noopener noreferrer"
+										/>
+									}
+								>
+									View Report
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				),
+			}),
+		);
+
+		return baseColumns;
+	}, [isRET, isFaculty, userFullName]);
 
 	const progressReportSequences = useMemo(() => {
 		const progressByProject: Record<string, typeof reports> = {};
@@ -229,7 +290,8 @@ export function ReportsPage() {
 		return sequenceMap;
 	}, [reports]);
 
-	const facultyColumns: DataTableColumnDef<ReportItem>[] = [
+	const facultyColumns = useMemo<DataTableColumnDef<ReportItem>[]>(
+		() => [
 		{
 			id: "reportName",
 			header: ({ column }) => (
@@ -276,16 +338,9 @@ export function ReportsPage() {
 			cell: ({ row }) => {
 				const type = row.original.reportType;
 				return (
-					<Badge
-						variant="outline"
-						className={`rounded-md font-medium text-xs px-2 py-0.5 border ${
-							type === "Terminal"
-								? "bg-[#ffee9c] text-amber-700 border-[#e2a336]"
-								: "bg-[#c4e8d1] text-[#218358] border-[#2b9a66]"
-						}`}
-					>
-						{type}
-					</Badge>
+					<div className="flex justify-center">
+						<StatusBadge status={type} variant="outline" />
+					</div>
 				);
 			},
 		},
@@ -304,8 +359,39 @@ export function ReportsPage() {
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => formatDate(row.original.submitted),
 		},
-		createActionsColumn(),
-	];
+		createActionsColumn({
+			cell: ({ row }) => (
+				<div className="flex justify-end pr-2">
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={
+								<Button variant="ghost" size="icon" className="size-8" />
+							}
+							aria-label="Open report actions"
+						>
+							<EllipsisVertical className="size-4" />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end" className="w-40">
+							<DropdownMenuItem
+								disabled={!row.original.storagePath}
+								render={
+									<a
+										href={row.original.storagePath ?? "#"}
+										target="_blank"
+										rel="noopener noreferrer"
+									/>
+								}
+							>
+								View Report
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+			),
+		}),
+		],
+		[progressReportSequences, setIsSubmitModalOpen],
+	);
 
 	const columnsToUse = isFaculty ? facultyColumns : columns;
 
@@ -394,7 +480,7 @@ export function ReportsPage() {
 					</DropdownMenu>
 				}
 				cardHeader={
-					isFaculty ? (
+					(isFaculty || isRET) ? (
 						<div className="border-b border-border bg-background p-2">
 							<Tabs
 								value={activeTab}

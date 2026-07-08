@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { LoadingButton } from "@/components/custom/loading-button";
 import { PageCard } from "@/components/custom/page-card";
@@ -16,10 +16,14 @@ export function SettingsPage() {
 	const { data: settings } = useQuery(settingsQueryOptions());
 	const [retentionYears, setRetentionYears] = useState("10");
 
-	useEffect(() => {
-		if (settings?.project_retention_years)
+	// Synchronize state during the render pass (modern React pattern)
+	const [prevRetentionValue, setPrevRetentionValue] = useState<string | undefined>(undefined);
+	if (settings?.project_retention_years !== prevRetentionValue) {
+		setPrevRetentionValue(settings?.project_retention_years);
+		if (settings?.project_retention_years) {
 			setRetentionYears(settings.project_retention_years);
-	}, [settings]);
+		}
+	}
 
 	const saveMutation = useMutation({
 		mutationFn: () =>

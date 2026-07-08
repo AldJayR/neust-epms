@@ -56,7 +56,8 @@ function UserApprovalList({
 	isLoading,
 	showHeader,
 }: UserApprovalListProps) {
-	const columns: DataTableColumnDef<UserResponse>[] = [
+	const columns = React.useMemo<DataTableColumnDef<UserResponse>[]>(
+		() => [
 		{
 			id: "select",
 			header: () => (
@@ -150,7 +151,9 @@ function UserApprovalList({
 				);
 			},
 		},
-	];
+		],
+		[allVisibleSelected, onSelectAll, selectedUsers, onSelectRow, userRoles, onRoleChange, roles],
+	);
 
 	return (
 		<div className="relative flex-1 overflow-hidden rounded-md border border-border bg-background shadow-[0px_1px_3px_0px_var(--shadow-card)]">

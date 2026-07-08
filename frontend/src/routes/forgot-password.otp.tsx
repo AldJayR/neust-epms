@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -20,24 +20,27 @@ const otpSchema = z.object({
 });
 
 export const Route = createFileRoute("/forgot-password/otp")({
+	beforeLoad: () => {
+		if (typeof window !== "undefined") {
+			const storedEmail = sessionStorage.getItem("forgot_password_email:v1");
+			if (!storedEmail) {
+				throw redirect({ to: "/forgot-password" });
+			}
+		}
+	},
 	component: OtpVerificationPage,
 });
 
 function OtpVerificationPage() {
 	const navigate = useNavigate();
-	const [email, setEmail] = useState("");
+	const [email] = useState(() => {
+		if (typeof window !== "undefined") {
+			return sessionStorage.getItem("forgot_password_email:v1") ?? "";
+		}
+		return "";
+	});
 	const [serverError, setServerError] = useState<string | null>(null);
 	const [isResending, setIsResending] = useState(false);
-
-	useEffect(() => {
-		const storedEmail = sessionStorage.getItem("forgot_password_email:v1");
-		if (!storedEmail) {
-			toast.error("No email found. Redirecting back to forgot password page.");
-			navigate({ to: "/forgot-password" });
-			return;
-		}
-		setEmail(storedEmail);
-	}, [navigate]);
 
 	const form = useForm<z.infer<typeof otpSchema>>({
 		resolver: zodResolver(otpSchema),

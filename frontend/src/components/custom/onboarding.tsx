@@ -16,15 +16,10 @@ interface OnboardingProps {
 }
 
 export function Onboarding({ user }: OnboardingProps) {
-	const [isOpen, setIsOpen] = React.useState(false);
+	const [isOpen, setIsOpen] = React.useState(() => {
+		return !!user && !user.hasCompletedOnboarding;
+	});
 	const [step, setStep] = React.useState(1);
-
-	React.useEffect(() => {
-		if (!user) return;
-		if (!user.hasCompletedOnboarding) {
-			setIsOpen(true);
-		}
-	}, [user]);
 
 	if (!isOpen || !user) return null;
 

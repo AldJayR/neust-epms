@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import * as React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
@@ -61,14 +61,6 @@ export function EditUserDialog({
 		controlledOnOpenChange !== undefined
 			? controlledOnOpenChange
 			: setLocalIsOpen;
-	const [firstName, setFirstName] = useState(user.firstName);
-	const [middleName, setMiddleName] = useState(user.middleName ?? "");
-	const [lastName, setLastName] = useState(user.lastName);
-	const [nameSuffix, setNameSuffix] = useState(user.nameSuffix ?? "");
-	const [academicRank, setAcademicRank] = useState(user.academicRank ?? "");
-	const [campusId, setCampusId] = useState<string>("");
-	const [departmentId, setDepartmentId] = useState<string>("");
-	const [roleName, setRoleName] = useState(user.roleName);
 
 	const { data: departments = [] } = useQuery({
 		queryKey: ["departments"],
@@ -88,28 +80,26 @@ export function EditUserDialog({
 		staleTime: Number.POSITIVE_INFINITY,
 	});
 
-	useEffect(() => {
-		if (isOpen) {
-			setFirstName(user.firstName);
-			setMiddleName(user.middleName ?? "");
-			setLastName(user.lastName);
-			setNameSuffix(user.nameSuffix ?? "");
-			setAcademicRank(user.academicRank ?? "");
-			setRoleName(user.roleName);
+	// State initialized from props — safe because this component is conditionally
+	// mounted (remounts fresh per user). Campus/dept resolved from cached queries.
+	const [firstName, setFirstName] = useState(user.firstName);
+	const [middleName, setMiddleName] = useState(user.middleName ?? "");
+	const [lastName, setLastName] = useState(user.lastName);
+	const [nameSuffix, setNameSuffix] = useState(user.nameSuffix ?? "");
+	const [academicRank, setAcademicRank] = useState(user.academicRank ?? "");
+	const [roleName, setRoleName] = useState(user.roleName);
 
-			const matchCampus = campuses.find((c) => c.name === user.campusName);
-			if (matchCampus) {
-				setCampusId(String(matchCampus.id));
-			}
+	const [campusId, setCampusId] = useState<string>(() => {
+		const cached = queryClient.getQueryData<typeof campuses>(["campuses"]) ?? campuses;
+		const match = cached.find((c) => c.name === user.campusName);
+		return match ? String(match.id) : "";
+	});
 
-			const matchDept = departments.find((d) => d.name === user.departmentName);
-			if (matchDept) {
-				setDepartmentId(String(matchDept.id));
-			} else {
-				setDepartmentId("none");
-			}
-		}
-	}, [isOpen, user, campuses, departments]);
+	const [departmentId, setDepartmentId] = useState<string>(() => {
+		const cached = queryClient.getQueryData<typeof departments>(["departments"]) ?? departments;
+		const match = cached.find((d) => d.name === user.departmentName);
+		return match ? String(match.id) : "none";
+	});
 
 	const updateMutation = useMutation({
 		mutationFn: () => {

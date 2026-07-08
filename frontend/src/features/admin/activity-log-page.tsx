@@ -94,14 +94,14 @@ export function ActivityLogPage({
 		auditLogsQueryOptions({ page, limit, search }),
 	);
 
-	const logs = React.useMemo(() => {
+	const logs = (() => {
 		const all = logsData?.items ?? [];
 		if (typeFilter === "all") return all;
 		return all.filter((log) => {
 			const typeInfo = getActionTypeInfo(log.action, log.tableAffected);
 			return typeInfo.label.toLowerCase() === typeFilter.toLowerCase();
 		});
-	}, [logsData?.items, typeFilter]);
+	})();
 
 	const stats = [
 		{
