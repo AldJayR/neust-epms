@@ -1,5 +1,7 @@
 # Sprint 1: Foundation — Lib, Services, and Module Structure
 
+> **Status:** ✅ Completed
+
 **Goal:** Establish the new module architecture by creating shared lib utilities, extracting cross-cutting services, and moving all route files into `modules/` directories.
 
 **Branch:** `refactor/backend`
@@ -112,3 +114,30 @@ export default app;
 ```
 
 This keeps `app.ts` imports clean while the big files haven't been split yet.
+
+---
+
+## Completion Summary
+
+**Completed:** 2026-07-08
+
+**Commits:**
+1. `ca04f69` — `refactor(backend): extract shared lib/services and modernize tsconfig` (Tasks 1-5 + tsconfig modernization)
+2. `8cf4aa8` — `refactor(backend): normalize all imports to use @/ path alias` (post-sprint improvement)
+
+**Files changed:** 51 + 68 = 119 files across both commits
+
+**What was delivered:**
+- `lib/schemas.ts` — centralized ErrorSchema, MessageSchema, ParamId, PaginationQuery
+- `lib/date.utils.ts` — extracted months, formatDuration, getCurrentAcademicYear, getCurrentSemester
+- `lib/supabase.ts` — singleton Supabase client
+- `services/auth-user.service.ts` — isProjectLeader, PROJECT_LEADER_ROLE, isExtensionDirector, getUserRole
+- `services/file.service.ts` — sanitizeFilename
+- `modules/` — 15 directories created, all 10 small route files moved, big 4 get barrel index.ts re-exports
+- `app.ts` — imports from `modules/` instead of `routes/`
+- `tsconfig.json` — modernized (removed deprecated baseUrl, added @/* alias, enabled strict options)
+- All cross-directory imports normalized to `@/` path alias
+
+**Verification:** `tsc --noEmit` clean, all 193 tests pass, `npm run build` succeeds.
+
+**Sprint 2 prep:** Big 4 modules (director, proposals, projects, action-center) ready for sub-route extraction and service layer creation.
