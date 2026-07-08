@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { createClient } from "@supabase/supabase-js";
 import { and, count, desc, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { moas } from "../db/schema/moas.js";
@@ -9,33 +8,19 @@ import { projects } from "../db/schema/projects.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
 import { proposals } from "../db/schema/proposals.js";
 import { users } from "../db/schema/users.js";
-import { env } from "../env.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
+import { ErrorSchema } from "../lib/schemas.js";
+import { supabase } from "../lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "../lib/types.js";
 import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
+import { sanitizeFilename } from "../services/file.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
 
-const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
-
-function sanitizeFilename(fileName: string): string {
-	const normalized = fileName
-		.normalize("NFKD")
-		.replace(/[^a-zA-Z0-9._-]/g, "_")
-		.replace(/_+/g, "_")
-		.replace(/^_+|_+$/g, "");
-
-	const fallback = "document.pdf";
-	const candidate = normalized.length > 0 ? normalized : fallback;
-
-	return candidate.toLowerCase().endsWith(".pdf")
-		? candidate
-		: `${candidate}.pdf`;
-}
 
 // MOA management is restricted to RET Chair and Director (Super Admin is not
 // involved in MOA management per product decision).
@@ -190,14 +175,6 @@ const UpdateMoaSchema = z
 		validUntil: z.string().datetime().optional(),
 	})
 	.openapi("UpdateMoa");
-
-const ErrorSchema = z
-	.object({
-		error: z.object({ code: z.string(), message: z.string() }),
-	})
-	.openapi("MoaError");
-
-const _MessageSchema = z.object({ message: z.string() }).openapi("MoaMessage");
 
 const ParamId = z.object({
 	id: z

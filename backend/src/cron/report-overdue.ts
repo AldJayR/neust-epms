@@ -1,4 +1,4 @@
-import { and, eq, isNull, lt } from "drizzle-orm";
+import { and, eq, lt } from "drizzle-orm";
 import cron from "node-cron";
 import { db } from "../db/client.js";
 import { projectReportingDates } from "../db/schema/project-reporting-dates.js";

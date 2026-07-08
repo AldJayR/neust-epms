@@ -1,0 +1,68 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { db } from "../../db/client.js";
+import {
+	setMockUser,
+	MOCK_USERS,
+	createMockMoa,
+	mockSelectChain,
+	mockMutationChain,
+} from "../../../test/helpers.js";
+import app from "./index.js";
+
+beforeEach(() => {
+	setMockUser(MOCK_USERS.director);
+});
+
+describe("GET /moas", () => {
+	it("should return a list of MOAs", async () => {
+		vi.mocked(db.select).mockReturnValue(
+			mockSelectChain([createMockMoa()]) as never,
+		);
+		const res = await app.request("/moas");
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.items).toHaveLength(1);
+	});
+});
+
+describe("POST /moas", () => {
+	it("should create a MOA with valid dates", async () => {
+		let selectCallCount = 0;
+		vi.mocked(db.select).mockImplementation(() => {
+			selectCallCount++;
+			if (selectCallCount === 1)
+				return mockSelectChain([
+					{ partnerId: "22222222-8888-4888-8888-222222222222" },
+				]) as never; // partner lookup
+			return mockSelectChain([]) as never; // syncProjectsToNewMoa → no projects to sync
+		});
+		vi.mocked(db.insert).mockReturnValue(
+			mockMutationChain([createMockMoa()]) as never,
+		);
+		const res = await app.request("/moas", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				partnerId: "22222222-8888-4888-8888-222222222222",
+				validFrom: "2025-01-01T00:00:00.000Z",
+				validUntil: "2027-12-31T00:00:00.000Z",
+			}),
+		});
+		expect(res.status).toBe(201);
+	});
+
+	it("should reject when validUntil is before validFrom", async () => {
+		const res = await app.request("/moas", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				partnerId: "22222222-8888-4888-8888-222222222222",
+				validFrom: "2027-01-01T00:00:00.000Z",
+				validUntil: "2025-01-01T00:00:00.000Z",
+			}),
+		});
+		expect(res.status).toBe(400);
+		const body = await res.json();
+		expect(body.error.code).toBe("INVALID_DATES");
+	});
+});

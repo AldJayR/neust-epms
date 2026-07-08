@@ -1,5 +1,4 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { createClient } from "@supabase/supabase-js";
 import {
 	and,
 	count,
@@ -28,12 +27,13 @@ import { proposals } from "../db/schema/proposals.js";
 import { sdgs } from "../db/schema/sdgs.js";
 import { specialOrders } from "../db/schema/special-orders.js";
 import { users } from "../db/schema/users.js";
-import { env } from "../env.js";
 import { insertAuditLog } from "../lib/audit.js";
 import { captureAuditDiff } from "../lib/audit-diff.js";
 import { getClientIp } from "../lib/client-ip.js";
 import { deriveProjectState } from "../lib/derived-states.js";
 import { ApiError, installApiErrorHandler } from "../lib/errors.js";
+import { ErrorSchema, MessageSchema } from "../lib/schemas.js";
+import { supabase } from "../lib/supabase.js";
 import {
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
@@ -84,16 +84,6 @@ const LinkMoaSchema = z.object({ moaId: z.string() }).openapi("LinkMoa");
 const TransitionSchema = z
 	.object({ status: z.enum(["Ongoing", "Completed"]) })
 	.openapi("TransitionProject");
-
-const ErrorSchema = z
-	.object({
-		error: z.object({ code: z.string(), message: z.string() }),
-	})
-	.openapi("ProjectError");
-
-const MessageSchema = z
-	.object({ message: z.string() })
-	.openapi("ProjectMessage");
 
 const ParamId = z.object({
 	id: z
@@ -1157,14 +1147,9 @@ app.openapi(projectDetailsRoute, async (c) => {
 		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
 	);
 
-	const supabaseClient = createClient(
-		env.SUPABASE_URL,
-		env.SUPABASE_SERVICE_ROLE_KEY,
-	);
-
 	const attachments = await Promise.all(
 		documentRows.map(async (doc) => {
-			const { data: signedUrlData } = await supabaseClient.storage
+			const { data: signedUrlData } = await supabase.storage
 				.from("documents")
 				.createSignedUrl(doc.storagePath, 3600);
 
@@ -1417,7 +1402,6 @@ const projectReadinessRoute = createRoute({
 });
 
 app.openapi(projectReadinessRoute, async (c) => {
-	const user = c.get("user");
 	const { id } = c.req.valid("param");
 
 	// 1. Get project
@@ -1636,7 +1620,6 @@ const projectReportingScheduleRoute = createRoute({
 });
 
 app.openapi(projectReportingScheduleRoute, async (c) => {
-	const user = c.get("user");
 	const { id } = c.req.valid("param");
 
 	// 1. Get project

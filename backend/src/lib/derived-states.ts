@@ -4,7 +4,6 @@ import {
 	PROPOSAL_STATUS,
 	type ProjectStatus,
 	type ProposalStatus,
-	ROLE_NAMES,
 } from "./types.js";
 
 export interface DerivedState {

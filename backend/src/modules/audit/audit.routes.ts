@@ -11,21 +11,21 @@ import {
 	type SQL,
 	sql,
 } from "drizzle-orm";
-import { db } from "../db/client.js";
-import { auditLogs } from "../db/schema/audit-logs.js";
-import { partners } from "../db/schema/partners.js";
-import { projectReports } from "../db/schema/project-reports.js";
-import { projects } from "../db/schema/projects.js";
-import { proposals } from "../db/schema/proposals.js";
-import { roles } from "../db/schema/roles.js";
-import { users } from "../db/schema/users.js";
-import { insertAuditLog } from "../lib/audit.js";
-import { getClientIp } from "../lib/client-ip.js";
-import { installApiErrorHandler } from "../lib/errors.js";
-import { ErrorSchema } from "../lib/schemas.js";
-import { ROLE_NAMES } from "../lib/types.js";
-import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
-import { requireRole } from "../middleware/rbac.js";
+import { db } from "../../db/client.js";
+import { auditLogs } from "../../db/schema/audit-logs.js";
+import { partners } from "../../db/schema/partners.js";
+import { projectReports } from "../../db/schema/project-reports.js";
+import { projects } from "../../db/schema/projects.js";
+import { proposals } from "../../db/schema/proposals.js";
+import { roles } from "../../db/schema/roles.js";
+import { users } from "../../db/schema/users.js";
+import { insertAuditLog } from "../../lib/audit.js";
+import { getClientIp } from "../../lib/client-ip.js";
+import { installApiErrorHandler } from "../../lib/errors.js";
+import { ErrorSchema } from "../../lib/schemas.js";
+import { ROLE_NAMES } from "../../lib/types.js";
+import { type AuthEnv, authMiddleware } from "../../middleware/auth.js";
+import { requireRole } from "../../middleware/rbac.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);

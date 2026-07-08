@@ -1,32 +1,23 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import {
 	and,
-	count,
-	desc,
 	eq,
 	gte,
 	isNull,
-	lt,
-	lte,
 	or,
-	type SQL,
-	sql,
 } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { moas } from "../db/schema/moas.js";
-import { partners } from "../db/schema/partners.js";
 import { projectReportingDates } from "../db/schema/project-reporting-dates.js";
 import { projectReportingSchedules } from "../db/schema/project-reporting-schedules.js";
 import { projects } from "../db/schema/projects.js";
 import { proposalMembers } from "../db/schema/proposal-members.js";
-import { proposalReviews } from "../db/schema/proposal-reviews.js";
 import { proposals } from "../db/schema/proposals.js";
 import { users } from "../db/schema/users.js";
 import {
 	deriveProjectState,
 	deriveProposalState,
 } from "../lib/derived-states.js";
-import { ApiError, installApiErrorHandler } from "../lib/errors.js";
+import { installApiErrorHandler } from "../lib/errors.js";
 import {
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,

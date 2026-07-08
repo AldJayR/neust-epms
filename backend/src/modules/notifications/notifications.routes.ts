@@ -1,10 +1,10 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { db } from "../db/client.js";
-import { notifications } from "../db/schema/notifications.js";
-import { ApiError, installApiErrorHandler } from "../lib/errors.js";
-import { ErrorSchema } from "../lib/schemas.js";
-import { type AuthEnv, authMiddleware } from "../middleware/auth.js";
+import { db } from "../../db/client.js";
+import { notifications } from "../../db/schema/notifications.js";
+import { ApiError, installApiErrorHandler } from "../../lib/errors.js";
+import { ErrorSchema } from "../../lib/schemas.js";
+import { type AuthEnv, authMiddleware } from "../../middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);

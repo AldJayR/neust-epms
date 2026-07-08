@@ -39,29 +39,11 @@ import {
 	ROLE_NAMES,
 } from "../lib/types.js";
 import type { AuthEnv } from "../middleware/auth.js";
-
-const PROJECT_LEADER_ROLE = "Project Leader";
+import { ErrorSchema, MessageSchema } from "../lib/schemas.js";
+import { isProjectLeader, PROJECT_LEADER_ROLE } from "../services/auth-user.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
-
-async function isProjectLeader(
-	proposalId: string,
-	userId: string,
-): Promise<boolean> {
-	const [member] = await db
-		.select({ memberId: proposalMembers.memberId })
-		.from(proposalMembers)
-		.where(
-			and(
-				eq(proposalMembers.proposalId, proposalId),
-				eq(proposalMembers.userId, userId),
-				eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE),
-			),
-		)
-		.limit(1);
-	return !!member;
-}
 
 // ── Schemas ──
 const ProposalSchema = z
@@ -191,16 +173,6 @@ const PaginationQuery = z.object({
 			param: { name: "archived", in: "query" },
 		}),
 });
-
-const ErrorSchema = z
-	.object({
-		error: z.object({ code: z.string(), message: z.string() }),
-	})
-	.openapi("ProposalError");
-
-const MessageSchema = z
-	.object({ message: z.string() })
-	.openapi("ProposalMessage");
 
 // Auth for /proposals/* is registered once at the root app (see app.ts).
 
