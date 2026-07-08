@@ -494,6 +494,7 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 								<TooltipTrigger
 									render={
 										<AttachmentAction
+											nativeButton={false}
 											render={
 												<a
 													href={attachment.url}
@@ -513,6 +514,7 @@ function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 								<TooltipTrigger
 									render={
 										<AttachmentAction
+											nativeButton={false}
 											render={
 												<a
 													href={attachment.url}
