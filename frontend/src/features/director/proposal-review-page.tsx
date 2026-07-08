@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { createContext, useContext, useMemo, useRef, useState } from "react";
 import { Download } from "lucide-react";
+import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
 import { PdfViewer, type PdfViewerRef } from "@/components/pdf-viewer";
 import {
@@ -36,9 +37,9 @@ export interface ProposalReviewContextValue {
 	activeAttachmentId: string | null;
 	setActiveAttachmentId: (id: string) => void;
 	isReviewable: boolean;
-	handleDeny: (comments?: string) => void;
-	handleReject: (comments?: string) => void;
-	handleApprove: (comments?: string) => void;
+	handleDeny: (comments?: string) => Promise<void> | void;
+	handleReject: (comments?: string) => Promise<void> | void;
+	handleApprove: (comments?: string) => Promise<void> | void;
 	isPending: boolean;
 	isRET: boolean;
 	bypassedRetChair: boolean;
@@ -82,11 +83,24 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 			decision: "Endorsed" | "Approved" | "Returned" | "Rejected";
 			comments?: string;
 		}) => reviewProposalFn({ data: input }),
-		onSuccess: () => {
+		onSuccess: (data, variables) => {
 			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["ret"] });
 			queryClient.invalidateQueries({ queryKey: ["projects"] });
+
+			if (variables.decision === "Rejected") {
+				toast.success("Proposal has been rejected successfully.");
+			} else if (variables.decision === "Approved") {
+				toast.success("Proposal has been approved successfully.");
+			} else if (variables.decision === "Endorsed") {
+				toast.success("Proposal has been endorsed successfully.");
+			} else if (variables.decision === "Returned") {
+				toast.success("Proposal has been returned for revision.");
+			}
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Failed to process proposal review.");
 		},
 	});
 
@@ -158,12 +172,12 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		(data?.status === "Endorsed" || data?.status === "Pending Review") &&
 		!(isRETChair(user) && (data?.bypassedRetChair || endorsement));
 
-	const handleApprove = (comments?: string) => {
+	const handleApprove = async (comments?: string) => {
 		if (isRETChair(user) && (data?.bypassedRetChair || endorsement)) {
 			return;
 		}
 		const decision = data?.status === "Endorsed" ? "Approved" : "Endorsed";
-		reviewMutation.mutate({
+		await reviewMutation.mutateAsync({
 			proposalId,
 			decision,
 			comments:
@@ -174,22 +188,22 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		});
 	};
 
-	const handleDeny = (comments?: string) => {
+	const handleDeny = async (comments?: string) => {
 		if (isRETChair(user) && (data?.bypassedRetChair || endorsement)) {
 			return;
 		}
-		reviewMutation.mutate({
+		await reviewMutation.mutateAsync({
 			proposalId,
 			decision: "Returned",
 			comments: comments || "Returned for revision",
 		});
 	};
 
-	const handleReject = (comments?: string) => {
+	const handleReject = async (comments?: string) => {
 		if (isRETChair(user) && (data?.bypassedRetChair || endorsement)) {
 			return;
 		}
-		reviewMutation.mutate({
+		await reviewMutation.mutateAsync({
 			proposalId,
 			decision: "Rejected",
 			comments: comments || "Proposal rejected",

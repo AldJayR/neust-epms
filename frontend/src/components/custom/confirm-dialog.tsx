@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Loader2 } from "lucide-react";
 import {
 	AlertDialog,
 	AlertDialogCancel,
@@ -105,8 +106,16 @@ export function ConfirmDialog({
 						variant={confirmVariant}
 						disabled={!isValid || isSubmitting}
 						onClick={handleConfirm}
+						className="flex items-center justify-center gap-1.5"
 					>
-						{isSubmitting ? "Processing..." : confirmLabel}
+						{isSubmitting ? (
+							<>
+								<Loader2 className="size-4 animate-spin" />
+								Processing...
+							</>
+						) : (
+							confirmLabel
+						)}
 					</Button>
 				</AlertDialogFooter>
 			</AlertDialogContent>

@@ -263,8 +263,8 @@ export function ProposalDetailsTab() {
 						</Button>
 						<LoadingButton
 							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-brand-primary text-white hover:bg-brand-primary/90 rounded-lg"
-							onClick={() => {
-								handleApprove(commentsText);
+							onClick={async () => {
+								await handleApprove(commentsText);
 								setIsConfirmOpen(false);
 							}}
 							loading={isPending}
@@ -305,8 +305,8 @@ export function ProposalDetailsTab() {
 						</Button>
 						<LoadingButton
 							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer rounded-lg bg-red-500 text-white hover:bg-red-600"
-							onClick={() => {
-								handleDeny(returnReason);
+							onClick={async () => {
+								await handleDeny(returnReason);
 								setIsReturnOpen(false);
 							}}
 							loading={isPending}
