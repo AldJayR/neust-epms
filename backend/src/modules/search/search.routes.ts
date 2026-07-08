@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, eq, isNull, sql, type SQL } from "drizzle-orm";
+import { and, eq, isNull, type SQL, sql } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { moas } from "@/db/schema/moas.js";
 import { partners } from "@/db/schema/partners.js";
@@ -8,7 +8,7 @@ import { projects } from "@/db/schema/projects.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { users } from "@/db/schema/users.js";
 import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
-import { ROLE_NAMES, type AuthUser } from "@/lib/types.js";
+import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import type { AuthEnv } from "@/middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
@@ -19,18 +19,29 @@ const SEARCH_TYPE = z
 	.default("all");
 
 const SearchQuerySchema = z.object({
-	q: z.string().trim().min(1).max(100).openapi({
-		param: { name: "q", in: "query" },
-		description: "Free-text search term",
-	}),
+	q: z
+		.string()
+		.trim()
+		.min(1)
+		.max(100)
+		.openapi({
+			param: { name: "q", in: "query" },
+			description: "Free-text search term",
+		}),
 	type: SEARCH_TYPE.openapi({
 		param: { name: "type", in: "query" },
 		description: "Entity type to search (default: all)",
 	}),
-	limit: z.coerce.number().int().min(1).max(20).default(5).openapi({
-		param: { name: "limit", in: "query" },
-		description: "Max results per entity type",
-	}),
+	limit: z.coerce
+		.number()
+		.int()
+		.min(1)
+		.max(20)
+		.default(5)
+		.openapi({
+			param: { name: "limit", in: "query" },
+			description: "Max results per entity type",
+		}),
 });
 
 const SearchResultItemSchema = z.object({
@@ -62,7 +73,11 @@ function buildTsQuery(raw: string): string {
 		.filter(Boolean)
 		.slice(0, 10);
 	if (tokens.length === 0) {
-		throw new ApiError(400, "BAD_REQUEST", "Search term contains no searchable tokens");
+		throw new ApiError(
+			400,
+			"BAD_REQUEST",
+			"Search term contains no searchable tokens",
+		);
 	}
 	return tokens.map((t) => `${t}:*`).join(" & ");
 }
@@ -107,7 +122,8 @@ app.openapi(getSearchRoute, async (c) => {
 	const tsQuery = buildTsQuery(q);
 
 	const canSearchMoas =
-		user.roleName === ROLE_NAMES.RET_CHAIR || user.roleName === ROLE_NAMES.DIRECTOR;
+		user.roleName === ROLE_NAMES.RET_CHAIR ||
+		user.roleName === ROLE_NAMES.DIRECTOR;
 	const canSearchUsers = user.roleName === ROLE_NAMES.SUPER_ADMIN;
 
 	const rank = (vector: SQL) =>
@@ -217,7 +233,9 @@ app.openapi(getSearchRoute, async (c) => {
 				.select({
 					type: sql`'users'`.as("type"),
 					id: users.userId,
-					title: sql`concat(${users.firstName}, ' ', ${users.lastName})`.as("title"),
+					title: sql`concat(${users.firstName}, ' ', ${users.lastName})`.as(
+						"title",
+					),
 					subtitle: users.email,
 				})
 				.from(users)

@@ -31,16 +31,19 @@ import { getClientIp } from "@/lib/client-ip.js";
 import { deriveProposalState } from "@/lib/derived-states.js";
 import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
 import { createNotification } from "@/lib/notification.helpers.js";
+import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
 import {
 	PROPOSAL_STATUS,
+	type ProposalStatus,
 	REVIEW_DECISION,
 	REVIEW_STAGE,
-	type ProposalStatus,
 	ROLE_NAMES,
 } from "@/lib/types.js";
 import type { AuthEnv } from "@/middleware/auth.js";
-import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
-import { isProjectLeader, PROJECT_LEADER_ROLE } from "@/services/auth-user.service.js";
+import {
+	isProjectLeader,
+	PROJECT_LEADER_ROLE,
+} from "@/services/auth-user.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
@@ -199,7 +202,9 @@ app.openapi(listRoute, async (c) => {
 	const showArchived = archived === "true";
 
 	const whereConditions: SQL[] = [
-		showArchived ? isNotNull(proposals.archivedAt) : isNull(proposals.archivedAt),
+		showArchived
+			? isNotNull(proposals.archivedAt)
+			: isNull(proposals.archivedAt),
 	];
 
 	if (search) {
@@ -1771,7 +1776,10 @@ app.post("/:id/restore", async (c) => {
 		.returning();
 
 	if (!updated) {
-		return c.json({ error: "Proposal not found or could not be restored" }, 404);
+		return c.json(
+			{ error: "Proposal not found or could not be restored" },
+			404,
+		);
 	}
 
 	return c.json({ message: "Proposal restored successfully", id }, 200);

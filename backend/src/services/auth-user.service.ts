@@ -34,9 +34,7 @@ export async function isExtensionDirector(userId: string): Promise<boolean> {
 	return !!user;
 }
 
-export async function getUserRole(
-	userId: string,
-): Promise<string | null> {
+export async function getUserRole(userId: string): Promise<string | null> {
 	const [user] = await db
 		.select({ roleName: roles.roleName })
 		.from(users)

@@ -37,8 +37,8 @@ import { supabase } from "@/lib/supabase.js";
 import {
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
-	REPORT_TYPE,
 	type ProjectStatus,
+	REPORT_TYPE,
 	ROLE_NAMES,
 } from "@/lib/types.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
@@ -225,7 +225,9 @@ app.openapi(listRoute, async (c) => {
 		)
 		.where(
 			and(
-				showArchived ? isNotNull(projects.archivedAt) : isNull(projects.archivedAt),
+				showArchived
+					? isNotNull(projects.archivedAt)
+					: isNull(projects.archivedAt),
 				inArray(projects.proposalId, allowedProposals),
 			),
 		)
@@ -248,7 +250,9 @@ app.openapi(listRoute, async (c) => {
 		.from(projects)
 		.where(
 			and(
-				showArchived ? isNotNull(projects.archivedAt) : isNull(projects.archivedAt),
+				showArchived
+					? isNotNull(projects.archivedAt)
+					: isNull(projects.archivedAt),
 				inArray(projects.proposalId, allowedProposals),
 			),
 		);

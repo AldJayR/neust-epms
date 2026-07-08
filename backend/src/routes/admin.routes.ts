@@ -1,13 +1,5 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import {
-	and,
-	count,
-	eq,
-	ilike,
-	inArray,
-	or,
-	type SQL,
-} from "drizzle-orm";
+import { and, count, eq, ilike, inArray, or, type SQL } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { campuses } from "@/db/schema/campuses.js";
 import { departments } from "@/db/schema/departments.js";
