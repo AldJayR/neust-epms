@@ -99,8 +99,8 @@ export function Onboarding({ user }: OnboardingProps) {
 									<span className="font-semibold text-brand-primary">
 										Faculty Member
 									</span>
-									, you can submit new project proposals, upload MOAs, and
-									submit regular reporting documents.
+									, you can submit new project proposals, submit regular
+									reporting documents.
 								</p>
 							)}
 							{isDirector && (
@@ -110,7 +110,7 @@ export function Onboarding({ user }: OnboardingProps) {
 										Director
 									</span>
 									, you can review proposals, manage active projects, upload
-									Special Orders, and manage institutional settings.
+									Special Orders, upload MOAs, and monitor ongoing projects.
 								</p>
 							)}
 							{isRET && (
