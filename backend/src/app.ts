@@ -21,6 +21,7 @@ import notificationRoutes from "./routes/notifications.routes.js";
 import projectRoutes from "./routes/projects.routes.js";
 import proposalRoutes from "./routes/proposals.routes.js";
 import reportRoutes from "./routes/reports.routes.js";
+import searchRoutes from "./routes/search.routes.js";
 import settingRoutes from "./routes/settings.routes.js";
 import specialOrderRoutes from "./routes/special-orders.routes.js";
 import storageRoutes from "./routes/storage.routes.js";
@@ -223,5 +224,6 @@ app.route("/api/v1", auditRoutes);
 app.route("/api/v1", settingRoutes);
 app.route("/api/v1", adminRoutes);
 app.route("/api/v1", directorRoutes);
+app.route("/api/v1", searchRoutes);
 
 export default app;

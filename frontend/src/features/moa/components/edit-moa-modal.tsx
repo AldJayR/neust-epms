@@ -41,7 +41,7 @@ export function EditMoaModal({
 	validUntil: initialValidUntil,
 }: EditMoaModalProps) {
 	const queryClient = useQueryClient();
-	const [partnerName, setPartnerName] = useState(initialPartnerName);
+	const [partnerName] = useState(initialPartnerName);
 	const [validFrom, setValidFrom] = useState<Date | undefined>(
 		initialValidFrom ? new Date(initialValidFrom) : undefined,
 	);

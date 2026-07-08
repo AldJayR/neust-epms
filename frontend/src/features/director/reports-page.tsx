@@ -9,7 +9,6 @@ import { DataTablePage } from "@/components/custom/data-table-page";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageHeader } from "@/components/custom/page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
@@ -120,7 +119,7 @@ export function ReportsPage() {
 		setPage(1);
 	};
 
-	const columns = useMemo<DataTableColumnDef<ReportItem>>(() => {
+	const columns = useMemo<DataTableColumnDef<ReportItem>[]>(() => {
 		const baseColumns: DataTableColumnDef<ReportItem>[] = [
 			{
 				id: "project",

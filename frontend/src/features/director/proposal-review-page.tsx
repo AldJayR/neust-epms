@@ -85,7 +85,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 			decision: "Endorsed" | "Approved" | "Returned" | "Rejected";
 			comments?: string;
 		}) => reviewProposalFn({ data: input }),
-		onSuccess: (data, variables) => {
+		onSuccess: (_data, variables) => {
 			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["ret"] });

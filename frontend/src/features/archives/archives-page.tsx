@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ClientOnly, Link } from "@tanstack/react-router";
+import { ClientOnly } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { Archive, ArrowLeftRight, EllipsisVertical, RotateCcw } from "lucide-react";
+import { Archive, EllipsisVertical, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/custom/confirm-dialog";
@@ -174,11 +174,9 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 				return (
 					<div className="flex items-center justify-end">
 						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="ghost" size="icon" className="size-8">
-									<EllipsisVertical className="size-4" />
-								</Button>
-							</DropdownMenuTrigger>
+						<DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+							<EllipsisVertical className="size-4" />
+						</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem
 									onClick={() => handleRestoreClick(proposal.proposalId, "proposal", proposal.title)}
@@ -241,11 +239,9 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 				return (
 					<div className="flex items-center justify-end">
 						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="ghost" size="icon" className="size-8">
-									<EllipsisVertical className="size-4" />
-								</Button>
-							</DropdownMenuTrigger>
+						<DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+							<EllipsisVertical className="size-4" />
+						</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem
 									onClick={() => handleRestoreClick(project.projectId, "project", project.title)}
@@ -311,11 +307,9 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 				return (
 					<div className="flex items-center justify-end">
 						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="ghost" size="icon" className="size-8">
-									<EllipsisVertical className="size-4" />
-								</Button>
-							</DropdownMenuTrigger>
+						<DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+							<EllipsisVertical className="size-4" />
+						</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem
 									onClick={() => handleRestoreClick(moa.moaId, "moa", moa.partnerId || "MOA")}
@@ -336,12 +330,17 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 		<div className="flex flex-col gap-8">
 			<PageHeader
 				title={
-					<div className="flex items-center gap-2.5">
-						<Archive className="size-6 text-brand-primary" />
-						<h1 className="text-2xl font-semibold text-heading">Compliance Archives</h1>
+					<div className="flex flex-col gap-1">
+						<div className="flex items-center gap-2.5">
+							<Archive className="size-6 text-brand-primary" />
+							<h1 className="text-2xl font-semibold text-heading">Compliance Archives</h1>
+						</div>
+						<p className="text-sm text-muted-foreground">
+							Manage and restore soft-deleted proposals, active projects, and partner
+							MOAs in accordance with RA 9470 records retention policies.
+						</p>
 					</div>
 				}
-				description="Manage and restore soft-deleted proposals, active projects, and partner MOAs in accordance with RA 9470 records retention policies."
 				className="bg-background"
 			/>
 

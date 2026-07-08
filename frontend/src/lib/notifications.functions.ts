@@ -78,7 +78,7 @@ export const markNotificationReadFn = createServerFn({ method: "POST" })
 		return { ok: true as const };
 	});
 
-export const markAllNotificationsReadFn = createServerFn({ method: "PATCH" })
+export const markAllNotificationsReadFn = createServerFn({ method: "POST" })
 	.validator(z.void())
 	.handler(async () => {
 		await authorizeSessionUser(

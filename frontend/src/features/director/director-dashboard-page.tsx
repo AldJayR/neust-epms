@@ -83,6 +83,7 @@ function ExpiringMoasCard({
 				</h2>
 				<Link
 					to="/moas"
+					search={{ page: 1, limit: 10 }}
 					className="text-xs font-medium leading-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm"
 				>
 					View All
