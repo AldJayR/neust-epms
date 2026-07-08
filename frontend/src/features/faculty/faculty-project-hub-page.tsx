@@ -92,35 +92,35 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 		);
 	})();
 
-	const { projectsAsLeader, projectsAsMember, attentionRequired } =
-		(() => {
-			let leaderCount = 0;
-			let memberCount = 0;
-			let attentionCount = 0;
+	const { projectsAsLeader, projectsAsMember, attentionRequired } = (() => {
+		let leaderCount = 0;
+		let memberCount = 0;
+		let attentionCount = 0;
 
-			for (const item of allItems) {
-				if (item.isProject) {
-					if (item.isLeader) {
-						leaderCount++;
-					} else {
-						memberCount++;
-					}
-				}
-				if (item.status === "Returned") {
-					attentionCount++;
+		for (const item of allItems) {
+			if (item.isProject) {
+				if (item.isLeader) {
+					leaderCount++;
+				} else {
+					memberCount++;
 				}
 			}
+			if (item.status === "Returned") {
+				attentionCount++;
+			}
+		}
 
-			return {
-				projectsAsLeader: leaderCount,
-				projectsAsMember: memberCount,
-				attentionRequired: attentionCount,
-			};
-		})();
+		return {
+			projectsAsLeader: leaderCount,
+			projectsAsMember: memberCount,
+			attentionRequired: attentionCount,
+		};
+	})();
 
-	const tabFilteredItems = activeTab === "my"
-		? allItems.filter((item) => item.isLeader || item.isMember)
-		: allItems;
+	const tabFilteredItems =
+		activeTab === "my"
+			? allItems.filter((item) => item.isLeader || item.isMember)
+			: allItems;
 
 	const filteredItems = tabFilteredItems.filter((item) => {
 		const matchesSearch = item.title
@@ -136,7 +136,10 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 
 	const totalItems = filteredItems.length;
 	const startIndex = (currentPage - 1) * itemsPerPage;
-	const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+	const paginatedItems = filteredItems.slice(
+		startIndex,
+		startIndex + itemsPerPage,
+	);
 
 	const handleSearchChange = (val: string) => {
 		setSearchQuery(val);

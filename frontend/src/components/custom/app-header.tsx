@@ -1,9 +1,9 @@
 import { useRouteContext } from "@tanstack/react-router";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import type { AuthUser } from "@/lib/auth";
 import { GlobalSearch } from "./global-search";
 import { NotificationDropdown } from "./notification-dropdown";
-import type { AuthUser } from "@/lib/auth";
 
 export function AppHeader() {
 	const { user } = useRouteContext({ from: "/_authenticated" }) as {

@@ -90,7 +90,10 @@ export const getArchivedMoasFn = createServerFn({ method: "GET" })
 		return (await response.json()) as { items: any[]; total: number };
 	});
 
-export function archivedProposalsQueryOptions(params: { page: number; limit: number }) {
+export function archivedProposalsQueryOptions(params: {
+	page: number;
+	limit: number;
+}) {
 	return queryOptions({
 		queryKey: ["archives", "proposals", params],
 		queryFn: () => getArchivedProposalsFn({ data: params }),
@@ -99,7 +102,10 @@ export function archivedProposalsQueryOptions(params: { page: number; limit: num
 	});
 }
 
-export function archivedProjectsQueryOptions(params: { page: number; limit: number }) {
+export function archivedProjectsQueryOptions(params: {
+	page: number;
+	limit: number;
+}) {
 	return queryOptions({
 		queryKey: ["archives", "projects", params],
 		queryFn: () => getArchivedProjectsFn({ data: params }),
@@ -108,7 +114,10 @@ export function archivedProjectsQueryOptions(params: { page: number; limit: numb
 	});
 }
 
-export function archivedMoasQueryOptions(params: { page: number; limit: number }) {
+export function archivedMoasQueryOptions(params: {
+	page: number;
+	limit: number;
+}) {
 	return queryOptions({
 		queryKey: ["archives", "moas", params],
 		queryFn: () => getArchivedMoasFn({ data: params }),
@@ -131,7 +140,10 @@ export const restoreProposalFn = createServerFn({ method: "POST" })
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to restore proposal");
+			const message = await getErrorMessage(
+				response,
+				"Failed to restore proposal",
+			);
 			throw new Error(message);
 		}
 
@@ -152,7 +164,10 @@ export const restoreProjectFn = createServerFn({ method: "POST" })
 		});
 
 		if (!response.ok) {
-			const message = await getErrorMessage(response, "Failed to restore project");
+			const message = await getErrorMessage(
+				response,
+				"Failed to restore project",
+			);
 			throw new Error(message);
 		}
 

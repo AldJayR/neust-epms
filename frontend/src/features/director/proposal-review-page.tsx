@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { createContext, useContext, useMemo, useRef, useState } from "react";
 import { Download } from "lucide-react";
+import { createContext, useContext, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
 import { PdfViewer, type PdfViewerRef } from "@/components/pdf-viewer";
@@ -47,7 +47,9 @@ export interface ProposalReviewContextValue {
 	bypassedRetChair: boolean;
 }
 
-const ProposalReviewContext = createContext<ProposalReviewContextValue | null>(null);
+const ProposalReviewContext = createContext<ProposalReviewContextValue | null>(
+	null,
+);
 
 export function useProposalReview() {
 	const context = useContext(ProposalReviewContext);
@@ -113,7 +115,6 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	const [isTheaterMode, setIsTheaterMode] = useState(false);
 	const [activeTab, setActiveTab] = useState<"details" | "comments">("details");
 	const pdfViewerRef = useRef<PdfViewerRef>(null);
-
 
 	const endorsement = data?.history.find(
 		(h) => h.status === "Endorsed" || h.status === "Approved",
@@ -354,7 +355,9 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 									<Tabs
 										defaultValue="details"
 										value={activeTab}
-										onValueChange={(v) => setActiveTab(v as "details" | "comments")}
+										onValueChange={(v) =>
+											setActiveTab(v as "details" | "comments")
+										}
 										className="w-full"
 									>
 										<TabsList

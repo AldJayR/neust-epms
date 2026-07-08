@@ -103,7 +103,8 @@ export const STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 	},
 	Progress: {
 		label: "Progress",
-		explanation: "A progress report documenting ongoing project activities and milestones.",
+		explanation:
+			"A progress report documenting ongoing project activities and milestones.",
 		nextStep: "N/A",
 	},
 	Terminal: {
@@ -113,7 +114,8 @@ export const STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 	},
 	"Final Accomplishment": {
 		label: "Final Accomplishment",
-		explanation: "A final accomplishment report detailing the project outcomes and impact.",
+		explanation:
+			"A final accomplishment report detailing the project outcomes and impact.",
 		nextStep: "N/A",
 	},
 };

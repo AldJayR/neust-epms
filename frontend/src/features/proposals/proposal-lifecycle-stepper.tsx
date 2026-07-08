@@ -37,7 +37,8 @@ export function ProposalLifecycleStepper({
 	const matchedIndex = LIFECYCLE_STEPS.findIndex(
 		(s) => s.status === currentStatus,
 	);
-	const activeStep = matchedIndex === -1 ? LIFECYCLE_STEPS.length - 1 : matchedIndex;
+	const activeStep =
+		matchedIndex === -1 ? LIFECYCLE_STEPS.length - 1 : matchedIndex;
 
 	return (
 		<div className="flex flex-col gap-2">
@@ -57,7 +58,11 @@ export function ProposalLifecycleStepper({
 								<TooltipTrigger
 									render={<StepperIndicator className="cursor-default" />}
 								>
-									{index <= activeStep ? <Check className="size-4" /> : index + 1}
+									{index <= activeStep ? (
+										<Check className="size-4" />
+									) : (
+										index + 1
+									)}
 								</TooltipTrigger>
 								<TooltipContent>
 									<p>{getStatusDescription(step.status).explanation}</p>

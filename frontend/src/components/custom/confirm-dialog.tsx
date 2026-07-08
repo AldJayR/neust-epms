@@ -1,5 +1,5 @@
-import * as React from "react";
 import { Loader2 } from "lucide-react";
+import * as React from "react";
 import {
 	AlertDialog,
 	AlertDialogCancel,
@@ -94,7 +94,9 @@ export function ConfirmDialog({
 								className="mt-1 font-mono"
 							/>
 							{typedText && typedText !== requireTyping && (
-								<FieldError>Type "{requireTyping}" exactly to confirm</FieldError>
+								<FieldError>
+									Type "{requireTyping}" exactly to confirm
+								</FieldError>
 							)}
 						</Field>
 					</div>

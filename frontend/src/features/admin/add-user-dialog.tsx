@@ -1,11 +1,11 @@
-import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Loader2 } from "lucide-react";
 import * as React from "react";
 import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import * as z from "zod";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -214,14 +214,12 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 									control={form.control}
 									name="academicRank"
 									render={({ field }) => (
-										<Select
-											value={field.value}
-											onValueChange={field.onChange}
-										>
+										<Select value={field.value} onValueChange={field.onChange}>
 											<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
 												<SelectValue placeholder="Select rank">
 													{(val) =>
-														rankOptions.find((o) => o.value === val)?.label ?? val
+														rankOptions.find((o) => o.value === val)?.label ??
+														val
 													}
 												</SelectValue>
 											</SelectTrigger>
@@ -250,17 +248,14 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 									control={form.control}
 									name="departmentId"
 									render={({ field }) => (
-										<Select
-											value={field.value}
-											onValueChange={field.onChange}
-										>
+										<Select value={field.value} onValueChange={field.onChange}>
 											<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
 												<SelectValue placeholder="Select department">
 													{(val) => {
 														if (val === "none" || !val) return "None";
 														return (
-															departments.find((d) => String(d.id) === val)?.name ??
-															val
+															departments.find((d) => String(d.id) === val)
+																?.name ?? val
 														);
 													}}
 												</SelectValue>
@@ -325,5 +320,4 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 			</DialogContent>
 		</Dialog>
 	);
-
 }

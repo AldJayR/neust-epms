@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { AuthUser } from "@/lib/auth";
 import {
 	archivedMoasQueryOptions,
 	archivedProjectsQueryOptions,
@@ -28,6 +27,7 @@ import {
 	restoreProjectFn,
 	restoreProposalFn,
 } from "@/lib/archives.functions";
+import type { AuthUser } from "@/lib/auth";
 import { isDirector, isRETChair } from "@/lib/permissions";
 
 interface ArchivesPageProps {
@@ -36,7 +36,9 @@ interface ArchivesPageProps {
 
 export function ArchivesPage({ user }: ArchivesPageProps) {
 	const queryClient = useQueryClient();
-	const [activeTab, setActiveTab] = useState<"proposals" | "projects" | "moas">("proposals");
+	const [activeTab, setActiveTab] = useState<"proposals" | "projects" | "moas">(
+		"proposals",
+	);
 
 	// Pagination & search state for each tab
 	const [proposalPage, setProposalPage] = useState(1);
@@ -107,7 +109,11 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 		},
 	});
 
-	const handleRestoreClick = (id: string, type: "proposal" | "project" | "moa", title: string) => {
+	const handleRestoreClick = (
+		id: string,
+		type: "proposal" | "project" | "moa",
+		title: string,
+	) => {
 		setItemToRestore({ id, type, title });
 		setConfirmOpen(true);
 	};
@@ -135,17 +141,24 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Proposal Title" />
 			),
-			headerClassName: "w-[380px] px-4 py-2 text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-sm font-semibold text-foreground text-left",
+			headerClassName:
+				"w-[380px] px-4 py-2 text-sm font-medium text-muted-foreground",
+			cellClassName:
+				"px-4 py-3 text-sm font-semibold text-foreground text-left",
 			cell: ({ row }) => row.original.title,
 		},
 		{
 			id: "extensionCategory",
 			accessorKey: "extensionCategory",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Category" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Category"
+					className="justify-center"
+				/>
 			),
-			headerClassName: "w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => row.original.extensionCategory,
 		},
@@ -153,9 +166,14 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 			id: "archivedAt",
 			accessorKey: "archivedAt",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Archived Date" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Archived Date"
+					className="justify-center"
+				/>
 			),
-			headerClassName: "w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => (
 				<ClientOnly fallback="...">
@@ -167,19 +185,30 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 		},
 		{
 			id: "actions",
-			headerClassName: "w-[100px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"w-[100px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => {
 				const proposal = row.original;
 				return (
 					<div className="flex items-center justify-end">
 						<DropdownMenu>
-						<DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
-							<EllipsisVertical className="size-4" />
-						</DropdownMenuTrigger>
+							<DropdownMenuTrigger
+								render={
+									<Button variant="ghost" size="icon" className="size-8" />
+								}
+							>
+								<EllipsisVertical className="size-4" />
+							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem
-									onClick={() => handleRestoreClick(proposal.proposalId, "proposal", proposal.title)}
+									onClick={() =>
+										handleRestoreClick(
+											proposal.proposalId,
+											"proposal",
+											proposal.title,
+										)
+									}
 									className="flex items-center gap-2 cursor-pointer"
 								>
 									<RotateCcw className="size-4 text-blue-500" />
@@ -200,17 +229,24 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Project Title" />
 			),
-			headerClassName: "w-[380px] px-4 py-2 text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-sm font-semibold text-foreground text-left",
+			headerClassName:
+				"w-[380px] px-4 py-2 text-sm font-medium text-muted-foreground",
+			cellClassName:
+				"px-4 py-3 text-sm font-semibold text-foreground text-left",
 			cell: ({ row }) => row.original.title,
 		},
 		{
 			id: "status",
 			accessorKey: "projectStatus",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Last Status" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Last Status"
+					className="justify-center"
+				/>
 			),
-			headerClassName: "w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => <StatusBadge status={row.original.projectStatus} />,
 		},
@@ -218,9 +254,14 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 			id: "archivedAt",
 			accessorKey: "archivedAt",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Archived Date" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Archived Date"
+					className="justify-center"
+				/>
 			),
-			headerClassName: "w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => (
 				<ClientOnly fallback="...">
@@ -232,19 +273,30 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 		},
 		{
 			id: "actions",
-			headerClassName: "w-[100px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"w-[100px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => {
 				const project = row.original;
 				return (
 					<div className="flex items-center justify-end">
 						<DropdownMenu>
-						<DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
-							<EllipsisVertical className="size-4" />
-						</DropdownMenuTrigger>
+							<DropdownMenuTrigger
+								render={
+									<Button variant="ghost" size="icon" className="size-8" />
+								}
+							>
+								<EllipsisVertical className="size-4" />
+							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem
-									onClick={() => handleRestoreClick(project.projectId, "project", project.title)}
+									onClick={() =>
+										handleRestoreClick(
+											project.projectId,
+											"project",
+											project.title,
+										)
+									}
 									className="flex items-center gap-2 cursor-pointer"
 								>
 									<RotateCcw className="size-4 text-blue-500" />
@@ -265,20 +317,28 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Partner ID / Name" />
 			),
-			headerClassName: "w-[380px] px-4 py-2 text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-sm font-semibold text-foreground text-left",
+			headerClassName:
+				"w-[380px] px-4 py-2 text-sm font-medium text-muted-foreground",
+			cellClassName:
+				"px-4 py-3 text-sm font-semibold text-foreground text-left",
 			cell: ({ row }) => row.original.partnerId || "Unknown Partner",
 		},
 		{
 			id: "validity",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Validity Range" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Validity Range"
+					className="justify-center"
+				/>
 			),
-			headerClassName: "w-[240px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"w-[240px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => (
 				<ClientOnly fallback="...">
-					{format(new Date(row.original.validFrom), "MM/dd/yyyy")} - {format(new Date(row.original.validUntil), "MM/dd/yyyy")}
+					{format(new Date(row.original.validFrom), "MM/dd/yyyy")} -{" "}
+					{format(new Date(row.original.validUntil), "MM/dd/yyyy")}
 				</ClientOnly>
 			),
 		},
@@ -286,9 +346,14 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 			id: "archivedAt",
 			accessorKey: "archivedAt",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Archived Date" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Archived Date"
+					className="justify-center"
+				/>
 			),
-			headerClassName: "w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => (
 				<ClientOnly fallback="...">
@@ -300,19 +365,26 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 		},
 		{
 			id: "actions",
-			headerClassName: "w-[100px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"w-[100px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => {
 				const moa = row.original;
 				return (
 					<div className="flex items-center justify-end">
 						<DropdownMenu>
-						<DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
-							<EllipsisVertical className="size-4" />
-						</DropdownMenuTrigger>
+							<DropdownMenuTrigger
+								render={
+									<Button variant="ghost" size="icon" className="size-8" />
+								}
+							>
+								<EllipsisVertical className="size-4" />
+							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem
-									onClick={() => handleRestoreClick(moa.moaId, "moa", moa.partnerId || "MOA")}
+									onClick={() =>
+										handleRestoreClick(moa.moaId, "moa", moa.partnerId || "MOA")
+									}
 									className="flex items-center gap-2 cursor-pointer"
 								>
 									<RotateCcw className="size-4 text-blue-500" />
@@ -333,11 +405,14 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 					<div className="flex flex-col gap-1">
 						<div className="flex items-center gap-2.5">
 							<Archive className="size-6 text-brand-primary" />
-							<h1 className="text-2xl font-semibold text-heading">Compliance Archives</h1>
+							<h1 className="text-2xl font-semibold text-heading">
+								Compliance Archives
+							</h1>
 						</div>
 						<p className="text-sm text-muted-foreground">
-							Manage and restore soft-deleted proposals, active projects, and partner
-							MOAs in accordance with RA 9470 records retention policies.
+							Manage and restore soft-deleted proposals, active projects, and
+							partner MOAs in accordance with RA 9470 records retention
+							policies.
 						</p>
 					</div>
 				}
@@ -349,15 +424,27 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 				onValueChange={(v) => setActiveTab(v as any)}
 				className="w-full flex flex-col gap-6"
 			>
-				<TabsList variant="line" className="w-full justify-start border-b border-border px-0">
-					<TabsTrigger value="proposals" className="px-4 py-2.5 text-sm font-medium cursor-pointer">
+				<TabsList
+					variant="line"
+					className="w-full justify-start border-b border-border px-0"
+				>
+					<TabsTrigger
+						value="proposals"
+						className="px-4 py-2.5 text-sm font-medium cursor-pointer"
+					>
 						Proposals
 					</TabsTrigger>
-					<TabsTrigger value="projects" className="px-4 py-2.5 text-sm font-medium cursor-pointer">
+					<TabsTrigger
+						value="projects"
+						className="px-4 py-2.5 text-sm font-medium cursor-pointer"
+					>
 						Projects
 					</TabsTrigger>
 					{canManageMoas && (
-						<TabsTrigger value="moas" className="px-4 py-2.5 text-sm font-medium cursor-pointer">
+						<TabsTrigger
+							value="moas"
+							className="px-4 py-2.5 text-sm font-medium cursor-pointer"
+						>
 							MOA Repository
 						</TabsTrigger>
 					)}

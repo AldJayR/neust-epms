@@ -103,9 +103,7 @@ export function PdfToolbar({
 										variant="ghost"
 										size="icon"
 										aria-label={
-											isTheaterMode
-												? "Exit Theater Mode"
-												: "Enter Theater Mode"
+											isTheaterMode ? "Exit Theater Mode" : "Enter Theater Mode"
 										}
 										className="size-8 rounded-full cursor-pointer text-muted-foreground hover:bg-gray-100"
 										onClick={onToggleTheaterMode}

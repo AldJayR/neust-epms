@@ -20,11 +20,6 @@ import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
 	Attachment,
 	AttachmentAction,
 	AttachmentActions,
@@ -54,6 +49,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/ui/status-badge";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { CreateProposalModal } from "@/features/proposals/components/create-proposal-modal";
 import { useProjectReadiness } from "@/hooks/use-project-readiness";
 import type { AuthUser } from "@/lib/auth";

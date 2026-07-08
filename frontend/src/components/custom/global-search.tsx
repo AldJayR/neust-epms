@@ -1,6 +1,6 @@
-import { CornerDownLeft, Search } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { CornerDownLeft, Search } from "lucide-react";
 import * as React from "react";
 import {
 	Command,
@@ -11,18 +11,14 @@ import {
 	CommandItem,
 	CommandList,
 } from "@/components/ui/command";
-import { cn } from "@/lib/utils";
-import {
-	isDirector,
-	isRETChair,
-	isSuperAdmin,
-} from "@/lib/permissions";
 import type { AuthUser } from "@/lib/auth";
+import { isDirector, isRETChair, isSuperAdmin } from "@/lib/permissions";
 import {
 	globalSearchFn,
 	type SearchResultItem,
 	type SearchType,
 } from "@/lib/search.functions";
+import { cn } from "@/lib/utils";
 
 const TYPE_LABELS: Record<SearchType, string> = {
 	all: "All",
@@ -107,8 +103,7 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 
 	const { data, isFetching } = useQuery({
 		queryKey: ["global-search", debounced, type],
-		queryFn: () =>
-			globalSearchFn({ data: { q: debounced, type, limit: 5 } }),
+		queryFn: () => globalSearchFn({ data: { q: debounced, type, limit: 5 } }),
 		enabled: debounced.trim().length > 0,
 	});
 
@@ -128,11 +123,17 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 			pushRecent({ query, type });
 			switch (item.type) {
 				case "proposals":
-					navigate({ to: "/proposals/$proposalId", params: { proposalId: item.id } });
+					navigate({
+						to: "/proposals/$proposalId",
+						params: { proposalId: item.id },
+					});
 					break;
 				case "projects":
 				case "reports":
-					navigate({ to: "/projects/$projectId", params: { projectId: item.id } });
+					navigate({
+						to: "/projects/$projectId",
+						params: { projectId: item.id },
+					});
 					break;
 				case "moas":
 					navigate({ to: "/moas/$moaId", params: { moaId: item.id } });

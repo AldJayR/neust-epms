@@ -112,137 +112,143 @@ export function UsersPage({
 
 	const columns = useMemo<DataTableColumnDef<UserResponse>[]>(
 		() => [
-		{
-			id: "name",
-			accessorFn: (row) => `${row.firstName} ${row.lastName}`,
-			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Faculty Name" />
-			),
-			headerClassName: "w-[320px] font-medium text-muted-foreground",
-			cellClassName: "py-4",
-			cell: ({ row }) => {
-				const user = row.original;
-				return (
-					<div className="flex items-center gap-3">
-						<Avatar className="h-9 w-9">
-							<AvatarImage
-								src={user.avatarUrl ?? ""}
-								alt={`${user.firstName} ${user.lastName}`}
-							/>
-							<AvatarFallback className="bg-primary/10 text-primary font-medium">
-								{user.firstName?.charAt(0) ?? ""}
-								{user.lastName?.charAt(0) ?? ""}
-							</AvatarFallback>
-						</Avatar>
-						<div className="flex flex-col text-left">
-							<span className="text-sm font-normal text-foreground">
-								{user.firstName} {user.lastName}
-							</span>
-							<span className="text-xs text-muted-foreground">
-								{formatAcademicRank(user.academicRank)}
-							</span>
+			{
+				id: "name",
+				accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+				header: ({ column }) => (
+					<DataTableColumnHeader column={column} title="Faculty Name" />
+				),
+				headerClassName: "w-[320px] font-medium text-muted-foreground",
+				cellClassName: "py-4",
+				cell: ({ row }) => {
+					const user = row.original;
+					return (
+						<div className="flex items-center gap-3">
+							<Avatar className="h-9 w-9">
+								<AvatarImage
+									src={user.avatarUrl ?? ""}
+									alt={`${user.firstName} ${user.lastName}`}
+								/>
+								<AvatarFallback className="bg-primary/10 text-primary font-medium">
+									{user.firstName?.charAt(0) ?? ""}
+									{user.lastName?.charAt(0) ?? ""}
+								</AvatarFallback>
+							</Avatar>
+							<div className="flex flex-col text-left">
+								<span className="text-sm font-normal text-foreground">
+									{user.firstName} {user.lastName}
+								</span>
+								<span className="text-xs text-muted-foreground">
+									{formatAcademicRank(user.academicRank)}
+								</span>
+							</div>
 						</div>
-					</div>
-				);
+					);
+				},
 			},
-		},
-		{
-			id: "department",
-			accessorFn: (row) => row.departmentName ?? row.campusName,
-			header: ({ column }) => (
-				<DataTableColumnHeader
-					column={column}
-					title="Department"
-					className="justify-center"
-				/>
-			),
-			headerClassName: "text-center font-medium text-muted-foreground",
-			cellClassName: "text-center text-sm text-foreground",
-			cell: ({ row }) => row.original.departmentName ?? row.original.campusName,
-		},
-		{
-			id: "role",
-			accessorKey: "roleName",
-			header: ({ column }) => (
-				<DataTableColumnHeader
-					column={column}
-					title="Role"
-					className="justify-center"
-				/>
-			),
-			headerClassName: "text-center font-medium text-muted-foreground",
-			cellClassName: "text-center text-sm text-foreground",
-			cell: ({ row }) => row.original.roleName,
-		},
-		{
-			id: "status",
-			accessorKey: "isActive",
-			header: ({ column }) => (
-				<DataTableColumnHeader
-					column={column}
-					title="Status"
-					className="justify-center"
-				/>
-			),
-			headerClassName: "text-center font-medium text-muted-foreground",
-			cell: ({ row }) => (
-				<div className="flex justify-center">
-					<StatusBadge
-						status={row.original.isActive ? "Active" : "Deactivated"}
-						variant="outline"
+			{
+				id: "department",
+				accessorFn: (row) => row.departmentName ?? row.campusName,
+				header: ({ column }) => (
+					<DataTableColumnHeader
+						column={column}
+						title="Department"
+						className="justify-center"
 					/>
-				</div>
-			),
-		},
-		createActionsColumn({
-			cell: ({ row }) => {
-				const user = row.original;
-				return (
-					<div className="flex justify-end pr-2">
-						<DropdownMenu>
-							<DropdownMenuTrigger
-								render={
-									<Button variant="ghost" size="icon" className="size-8" />
-								}
-								aria-label="Open user actions"
-							>
-								<MoreVertical className="size-4" />
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								<DropdownMenuItem onClick={() => setViewingUser(user)}>
-									View Details
-								</DropdownMenuItem>
-								<DropdownMenuItem onClick={() => setEditingUser(user)}>
-									Edit User
-								</DropdownMenuItem>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem
-									className={
-										user.isActive ? "text-destructive" : "text-primary"
-									}
-									onClick={() => {
-										if (user.isActive) {
-											setDeactivatingUser(user);
-										} else {
-											updateStatusMutation.mutate({
-												userIds: [user.userId],
-												isActive: true,
-											});
-										}
-									}}
-									disabled={updateStatusMutation.isPending}
-								>
-									{user.isActive ? "Deactivate" : "Activate"}
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
-				);
+				),
+				headerClassName: "text-center font-medium text-muted-foreground",
+				cellClassName: "text-center text-sm text-foreground",
+				cell: ({ row }) =>
+					row.original.departmentName ?? row.original.campusName,
 			},
-		}),
+			{
+				id: "role",
+				accessorKey: "roleName",
+				header: ({ column }) => (
+					<DataTableColumnHeader
+						column={column}
+						title="Role"
+						className="justify-center"
+					/>
+				),
+				headerClassName: "text-center font-medium text-muted-foreground",
+				cellClassName: "text-center text-sm text-foreground",
+				cell: ({ row }) => row.original.roleName,
+			},
+			{
+				id: "status",
+				accessorKey: "isActive",
+				header: ({ column }) => (
+					<DataTableColumnHeader
+						column={column}
+						title="Status"
+						className="justify-center"
+					/>
+				),
+				headerClassName: "text-center font-medium text-muted-foreground",
+				cell: ({ row }) => (
+					<div className="flex justify-center">
+						<StatusBadge
+							status={row.original.isActive ? "Active" : "Deactivated"}
+							variant="outline"
+						/>
+					</div>
+				),
+			},
+			createActionsColumn({
+				cell: ({ row }) => {
+					const user = row.original;
+					return (
+						<div className="flex justify-end pr-2">
+							<DropdownMenu>
+								<DropdownMenuTrigger
+									render={
+										<Button variant="ghost" size="icon" className="size-8" />
+									}
+									aria-label="Open user actions"
+								>
+									<MoreVertical className="size-4" />
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem onClick={() => setViewingUser(user)}>
+										View Details
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => setEditingUser(user)}>
+										Edit User
+									</DropdownMenuItem>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										className={
+											user.isActive ? "text-destructive" : "text-primary"
+										}
+										onClick={() => {
+											if (user.isActive) {
+												setDeactivatingUser(user);
+											} else {
+												updateStatusMutation.mutate({
+													userIds: [user.userId],
+													isActive: true,
+												});
+											}
+										}}
+										disabled={updateStatusMutation.isPending}
+									>
+										{user.isActive ? "Deactivate" : "Activate"}
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</div>
+					);
+				},
+			}),
 		],
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[setViewingUser, setEditingUser, setDeactivatingUser, updateStatusMutation.isPending],
+		[
+			setViewingUser,
+			setEditingUser,
+			setDeactivatingUser,
+			updateStatusMutation.isPending,
+		],
 	);
 
 	return (

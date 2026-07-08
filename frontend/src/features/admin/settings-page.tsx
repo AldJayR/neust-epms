@@ -17,7 +17,9 @@ export function SettingsPage() {
 	const [retentionYears, setRetentionYears] = useState("10");
 
 	// Synchronize state during the render pass (modern React pattern)
-	const [prevRetentionValue, setPrevRetentionValue] = useState<string | undefined>(undefined);
+	const [prevRetentionValue, setPrevRetentionValue] = useState<
+		string | undefined
+	>(undefined);
 	if (settings?.project_retention_years !== prevRetentionValue) {
 		setPrevRetentionValue(settings?.project_retention_years);
 		if (settings?.project_retention_years) {

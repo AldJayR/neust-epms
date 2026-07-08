@@ -90,13 +90,16 @@ export function EditUserDialog({
 	const [roleName, setRoleName] = useState(user.roleName);
 
 	const [campusId, setCampusId] = useState<string>(() => {
-		const cached = queryClient.getQueryData<typeof campuses>(["campuses"]) ?? campuses;
+		const cached =
+			queryClient.getQueryData<typeof campuses>(["campuses"]) ?? campuses;
 		const match = cached.find((c) => c.name === user.campusName);
 		return match ? String(match.id) : "";
 	});
 
 	const [departmentId, setDepartmentId] = useState<string>(() => {
-		const cached = queryClient.getQueryData<typeof departments>(["departments"]) ?? departments;
+		const cached =
+			queryClient.getQueryData<typeof departments>(["departments"]) ??
+			departments;
 		const match = cached.find((d) => d.name === user.departmentName);
 		return match ? String(match.id) : "none";
 	});
