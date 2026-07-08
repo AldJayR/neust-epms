@@ -2,9 +2,12 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
+> **Sprint 1:** ✅ Completed (Tasks 1-6) — commit `ca04f69`
+> **Sprint 2:** ⏳ Pending (Tasks 7-12)
+
 **Goal:** Refactor the NEUST-EPMS backend from flat route files into domain modules with proper separation of concerns (routes + services + schemas).
 
-**Architecture:** Split 4 bloated route files (1500-1800 lines each) into feature-based sub-routes under `modules/`, extract shared cross-cutting services into `services/`, centralize common zod schemas and utilities in `lib/`. Every route file moves into a `modules/<domain>/` directory. Only the 4 large modules get sub-routes + service + schema; smaller modules get a single `.routes.ts` file.
+**Architecture:** Split 4 bloated route files (1700-1800 lines each) into feature-based sub-routes under `modules/`, extract shared cross-cutting services into `services/`, centralize common zod schemas and utilities in `lib/`. Every route file moves into a `modules/<domain>/` directory. The 5 large modules get sub-routes + service + schema; smaller modules keep a single `.routes.ts` file.
 
 **Tech Stack:** TypeScript (ESM), Hono (OpenAPIHono), Drizzle ORM, Zod (via @hono/zod-openapi), Supabase, node-cron
 
@@ -32,26 +35,29 @@
 ```
 src/
 ├── modules/
-│   ├── director/               ← 5 sub-routes + service + schema
+│   ├── director/               ← 6 sub-routes + service + schema
 │   │   ├── index.ts
 │   │   ├── dashboard.routes.ts
 │   │   ├── faculty-directory.routes.ts
 │   │   ├── moa-repository.routes.ts
 │   │   ├── project-hub.routes.ts
+│   │   ├── project-details.routes.ts
 │   │   ├── email-report.routes.ts
 │   │   ├── director.service.ts
 │   │   └── director.schema.ts
-│   ├── proposals/              ← 3 sub-routes + service + schema
+│   ├── proposals/              ← 5 sub-routes + service + schema
 │   │   ├── index.ts
 │   │   ├── crud.routes.ts
+│   │   ├── submit.routes.ts
 │   │   ├── review.routes.ts
 │   │   ├── comments.routes.ts
 │   │   ├── proposals.service.ts
 │   │   └── proposals.schema.ts
-│   ├── projects/               ← 3 sub-routes + service + schema
+│   ├── projects/               ← 5 sub-routes + service + schema
 │   │   ├── index.ts
 │   │   ├── crud.routes.ts
 │   │   ├── status.routes.ts
+│   │   ├── activate.routes.ts
 │   │   ├── reporting.routes.ts
 │   │   ├── projects.service.ts
 │   │   └── projects.schema.ts
@@ -498,77 +504,82 @@ git commit -m "refactor: move all route files into modules/ with domain structur
 
 ## Task 7: Split director.routes.ts into sub-routes + service + schema
 
+> **Lines:** 1705 → 6 sub-routes + service + schema
+> **Endpoints:** 7 (GET × 6, POST × 1)
+> **Key duplication:** RET_CHAIR scoping logic 7×, leader subquery 2×, faculty query 2×
+
 **Files:**
-- Create: `src/modules/director/dashboard.routes.ts`
-- Create: `src/modules/director/faculty-directory.routes.ts`
-- Create: `src/modules/director/moa-repository.routes.ts`
-- Create: `src/modules/director/project-hub.routes.ts`
-- Create: `src/modules/director/email-report.routes.ts`
+- Create: `src/modules/director/dashboard.routes.ts` (GET /director/dashboard)
+- Create: `src/modules/director/faculty-directory.routes.ts` (GET /director/faculty)
+- Create: `src/modules/director/moa-repository.routes.ts` (GET /director/moas, GET /director/moas/active)
+- Create: `src/modules/director/project-hub.routes.ts` (GET /director/hub/projects)
+- Create: `src/modules/director/project-details.routes.ts` (GET /director/projects/{proposalId})
+- Create: `src/modules/director/email-report.routes.ts` (POST /director/email-report)
 - Create: `src/modules/director/director.service.ts`
 - Create: `src/modules/director/director.schema.ts`
-- Create: `src/modules/director/index.ts`
-- Modify: `src/app.ts`
+- Modify: `src/modules/director/index.ts` (replace barrel with actual router)
 
 **Step 1: Create `src/modules/director/director.schema.ts`**
 
-Extract all director-specific zod schemas from `director.routes.ts`:
-- Dashboard stats response schemas
-- Faculty directory query/response schemas
-- MOA repository schemas
-- Project hub schemas
-- Email report schemas
+Extract all 16 inline zod schemas from `director.routes.ts`:
+- `HubProjectSchema` (line 60), `HubProjectListSchema` (74), `HubQuerySchema` (81)
+- `DashboardMetricSchema` (113), `ChartPointSchema` (122), `ActivitySchema` (129), `MoaSchema` (135)
+- `MoaRepositoryItemSchema` (140), `MoaRepositorySchema` (148)
+- `FacultyInvolvementSchema` (158), `FacultyDirectorySchema` (173)
+- `DirectorDashboardSchema` (602)
+- `ProjectDetailsMemberSchema` (989), `ProjectDetailsHistoryItemSchema` (1007), `ProjectDetailsAttachmentSchema` (1016), `ProjectDetailsSchema` (1024)
 
 **Step 2: Create `src/modules/director/director.service.ts`**
 
-Extract business logic from `director.routes.ts`:
-- Dashboard aggregation queries (count proposals, projects, MOAs, faculty)
-- Faculty search/filter logic
-- MOA listing for director view
-- Project listing for director view
-- Email report generation logic
-
-Each function signature:
+Extract business logic into 7 functions:
 ```ts
-export async function getDashboardStats(db: any): Promise<DashboardStats>
-export async function searchFaculty(db: any, query: string, filters: FacultyFilters): Promise<FacultyMember[]>
-export async function getMoaList(db: any, pagination: PaginationQuery): Promise<MoaListItem[]>
-export async function getProjectList(db: any, pagination: PaginationQuery, filters: ProjectFilters): Promise<ProjectListItem[]>
-export async function generateEmailReport(db: any, filters: ReportFilters): Promise<string>
+export async function getDashboardStats(db, user): Promise<DirectorDashboardStats>
+// Lines 830-985: 5 parallel metric queries + helpers (formatRelativeTime, activityTitle)
+// DRY: RET_CHAIR scope logic reused from shared helper
+
+export async function getFacultyDirectory(db, query, user): Promise<FacultyDirectoryResult>
+// Lines 229-443: role-scoped faculty listing + involvement counts
+// DRY: share getFacultyInvolvementCounts with email-report
+
+export async function getFacultyInvolvementCounts(db, userIds): Promise<Map<string, counts>>
+// Lines 365-403: lead + collaborator counts per faculty member
+// Reused by: getFacultyDirectory AND sendEmailReport
+
+export async function getMoaRepository(db, query): Promise<MoaRepositoryResult>
+// Lines 485-600: paginated MOA list + status computation
+
+export async function getActiveMoas(db): Promise<MoaActiveItem[]>
+// Lines 1681-1703: simple active MOA list
+
+export async function getHubProjects(db, query, user): Promise<HubProjectListResult>
+// Lines 687-828: unified proposal+project listing with leader subquery
+
+export async function getProjectDetails(db, proposalId, user): Promise<ProjectDetails>
+// Lines 1073-1406: 6 parallel queries + history/attachment assembly
+// Uses: Supabase signed URLs, specialOrder mapping, history sorting
+
+export async function sendEmailReport(db, body, user): Promise<void>
+// Lines 1445-1665: faculty query (reuse getFacultyDirectory logic without pagination)
+// + HTML template rendering + Resend API send
 ```
 
 **Step 3: Create sub-route files**
 
-Each sub-route file:
+Each sub-route creates its own `OpenAPIHono<AuthEnv>` app with auth middleware:
 ```ts
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { db } from "../../db/client.js";
-import { supabase } from "../../lib/supabase.js";
-import { env } from "../../env.js";
-import { ApiError } from "../../lib/errors.js";
-import { type AuthEnv, authMiddleware } from "../../middleware/auth.js";
-import { requireRole } from "../../middleware/rbac.js";
-import { ROLE_NAMES } from "../../lib/types.js";
-import { ErrorSchema, MessageSchema, ParamId, PaginationQuery } from "../../lib/schemas.js";
-import { formatDuration } from "../../lib/date.utils.js";
-import { getDashboardStats, searchFaculty, getMoaList, getProjectList, generateEmailReport } from "./director.service.js";
-// (import module schemas from ./director.schema.ts)
-
 const app = new OpenAPIHono<AuthEnv>();
-
 app.use(authMiddleware);
 app.use(requireRole(ROLE_NAMES.SUPER_ADMIN, ROLE_NAMES.DIRECTOR, ROLE_NAMES.RET_CHAIR));
-
-// route handlers...
-
+// route handler calling service...
 export default app;
 ```
 
-**Sub-route boundaries (from `director.routes.ts`):**
-- `dashboard.routes.ts`: Lines ~62-350 (dashboard stats endpoints)
-- `faculty-directory.routes.ts`: Lines ~351-700 (faculty listing, search, details)
-- `moa-repository.routes.ts`: Lines ~701-950 (MOA listing/search for director)
-- `project-hub.routes.ts`: Lines ~951-1350 (project listing/details for director)
-- `email-report.routes.ts`: Lines ~1351-1711 (email report generation/sending)
+- `dashboard.routes.ts`: Lines 602-985 — `DirectorDashboardSchema` response, calls `getDashboardStats()`
+- `faculty-directory.routes.ts`: Lines 186-444 — inline query schema (page/limit/search/college/status), calls `getFacultyDirectory()`
+- `moa-repository.routes.ts`: Lines 446-600 + 1667-1703 — MOA listing + active MOAs (2 endpoints), calls `getMoaRepository()` + `getActiveMoas()`
+- `project-hub.routes.ts`: Lines 672-828 — uses `HubQuerySchema`, calls `getHubProjects()`
+- `project-details.routes.ts`: Lines 987-1406 — `ProjectDetailsSchema` response, calls `getProjectDetails()`
+- `email-report.routes.ts`: Lines 1408-1665 — POST with body schema, calls `sendEmailReport()`
 
 **Step 4: Create `src/modules/director/index.ts`**
 
@@ -578,142 +589,203 @@ import dashboard from "./dashboard.routes.js";
 import facultyDirectory from "./faculty-directory.routes.js";
 import moaRepository from "./moa-repository.routes.js";
 import projectHub from "./project-hub.routes.js";
+import projectDetails from "./project-details.routes.js";
 import emailReport from "./email-report.routes.js";
 
 const router = new Hono();
-
 router.route("/", dashboard);
 router.route("/", facultyDirectory);
 router.route("/", moaRepository);
 router.route("/", projectHub);
+router.route("/", projectDetails);
 router.route("/", emailReport);
-
 export default router;
 ```
 
-**Step 5: Update `app.ts`**
+**Step 5: Delete `src/routes/director.routes.ts`** (the original file, now fully replaced)
 
-Change:
-```ts
-import directorRoutes from "./routes/director.routes.js";
-app.route("/api/v1", directorRoutes);
-```
-To:
-```ts
-import directorRoutes from "./modules/director/index.js";
-app.route("/api/v1", directorRoutes);
-```
+**Step 6: Verify it compiles + tests pass**
 
-**Step 6: Verify it compiles**
-
-Run: `cd backend && npx tsc --noEmit`
-
-Expected: No errors.
+Run: `cd backend && npx tsc --noEmit && npx vitest run`
 
 **Step 7: Commit**
 
 ```bash
 git add -A
-git commit -m "refactor(modules): split director into sub-routes + service + schema"
+git commit -m "refactor(modules): split director into 6 sub-routes + service + schema"
 ```
 
 ---
 
 ## Task 8: Split proposals.routes.ts into sub-routes + service + schema
 
+> **Lines:** 1788 → 5 sub-routes + service + schema
+> **Endpoints:** 14 (GET × 7, POST × 5, PATCH × 1, undocumented restore × 1)
+> **Key duplication:** role-scope where-conditions every query, leader subquery 5×+, completion checks
+
 **Files:**
-- Create: `src/modules/proposals/crud.routes.ts`
-- Create: `src/modules/proposals/review.routes.ts`
-- Create: `src/modules/proposals/comments.routes.ts`
+- Create: `src/modules/proposals/crud.routes.ts` (list, get-by-id, create, update)
+- Create: `src/modules/proposals/submit.routes.ts` (submit + completeness checks)
+- Create: `src/modules/proposals/review.routes.ts` (endorse/approve/return/reject state machine)
+- Create: `src/modules/proposals/comments.routes.ts` (comment CRUD + spatial annotations)
 - Create: `src/modules/proposals/proposals.service.ts`
 - Create: `src/modules/proposals/proposals.schema.ts`
-- Create: `src/modules/proposals/index.ts`
+- Modify: `src/modules/proposals/index.ts` (replace barrel with actual router)
 
 **Step 1: Create `src/modules/proposals/proposals.schema.ts`**
 
-Extract proposal-specific zod schemas from `proposals.routes.ts`:
-- ProposalCreateSchema, ProposalUpdateSchema, ProposalResponseSchema
-- Review schemas (endorsement, approval)
-- Comment schemas
-- Metadata schemas
+Extract all inline zod schemas from `proposals.routes.ts`:
+- `ProposalSchema` (52), `ProposalListSchema` (78), `RETDashboardStatsSchema` (82)
+- `CreateProposalSchema` (90), `UpdateProposalSchema` (117), `ReviewProposalSchema` (129)
+- `DerivedStateSchema` (456) — used by derived-state route
+- Comment schemas: `CommentParams` (1559), `CreateCommentSchema` (1570), `CommentUserSchema` (1586), `CommentResponseSchema` (1593), `CommentListSchema` (1614)
 
 **Step 2: Create `src/modules/proposals/proposals.service.ts`**
 
-Extract business logic from `proposals.routes.ts`:
-- Proposal CRUD operations (create, read, update, list)
-- Submit logic (status transitions)
-- Review logic (endorsement, approval, return)
-- Comment CRUD
-- Metadata fetching (SDGs, departments, etc.)
-- Restore deleted proposals
+Extract business logic into 8 functions:
+```ts
+export function buildProposalScopeConditions(user): SQL[]
+// Lines 162-174, 234-250, 395-420: the repeated FACULTY/RET_CHAIR scoping
+
+export function getLeaderSubquery()
+// Reusable CTE: SELECT proposalId, userId WHERE projectRole = 'Project Leader'
+
+export function getUserMemberSubquery(userId)
+// Reusable CTE: checks if current user is a member
+
+export async function checkDuplicateTitle(title): Promise<boolean>
+// Case-insensitive title check via ilike
+
+export async function createProposalInTransaction(tx, body, userId): Promise<Proposal>
+// Lines 634-748: the big transactional insert (members, departments, sectors, SDGs)
+
+export async function updateProposalWithSectors(id, body, existing): Promise<Proposal>
+// Lines 820-964: update + optional sector re-sync
+
+export async function validateCompleteness(proposalId): Promise<CompletenessResult>
+// Lines 1019-1110: 5 checks (documents, members+leader, sectors, SDGs, dates)
+
+export async function processReview(user, proposalId, body, existing): Promise<ReviewResult>
+// Lines 1205-1452: full state machine (EC-01 conflict check, EC-04 revision increment,
+//   EC-05 stacked rejections, 3 flows: RET Chair endorsement, Director approval, bypassed approval)
+// On approval: creates projects row if not exists
+```
 
 **Step 3: Create sub-route files**
 
-- `crud.routes.ts`: Lines ~1-750 (create, read, update, list, submit, metadata, restore)
-- `review.routes.ts`: Lines ~751-1200 (endorsement, approval, recommendation)
-- `comments.routes.ts`: Lines ~1201-1652 (comment CRUD)
+- `crud.routes.ts`: Lines 182-964 — list (GET /proposals), get-by-id (GET /proposals/{id}), create (POST /proposals), update (PATCH /proposals/{id}). Each calls service functions.
+- `submit.routes.ts`: Lines 966-1171 — POST /proposals/{id}/submit. Calls `validateCompleteness()` then transitions status to PENDING_REVIEW. Sends leader notification.
+- `review.routes.ts`: Lines 1173-1452 — POST /proposals/{id}/review. Calls `processReview()`. The most complex handler — the 3-flow state machine.
+- `comments.routes.ts`: Lines 1556-1786 — POST + GET /proposals/{id}/documents/{docId}/comments. Comment CRUD with spatial annotation support.
+
+Note: The RET dashboard stats route (lines 304-369) and derived-state route (lines 455-566) should go in `crud.routes.ts` since they're small and closely tied to proposal data. The metadata routes (lines 1454-1554) also go in `crud.routes.ts`. The undocumented restore route (lines 1770-1786) should get proper OpenAPI docs added during extraction.
 
 **Step 4: Create `src/modules/proposals/index.ts`**
 
 ```ts
 import { Hono } from "hono";
 import crud from "./crud.routes.js";
+import submit from "./submit.routes.js";
 import review from "./review.routes.js";
 import comments from "./comments.routes.js";
 
 const router = new Hono();
 router.route("/", crud);
+router.route("/", submit);
 router.route("/", review);
 router.route("/", comments);
 export default router;
 ```
 
-**Step 5: Verify it compiles + tests pass**
+**Step 5: Delete `src/routes/proposals.routes.ts`**
 
-Run: `cd backend && npx tsc --noEmit && npx vitest run --reporter=verbose src/routes/proposals.routes.test.ts`
+**Step 6: Verify it compiles + tests pass**
 
-Expected: No compile errors, all tests pass.
+Run: `cd backend && npx tsc --noEmit && npx vitest run`
 
-Note: Test file still imports from `../routes/proposals.routes.js` — don't change tests yet (test files will be updated in a later task when old routes dir is deleted).
-
-**Step 6: Commit**
+**Step 7: Commit**
 
 ```bash
 git add -A
-git commit -m "refactor(modules): split proposals into sub-routes + service + schema"
+git commit -m "refactor(modules): split proposals into 5 sub-routes + service + schema"
 ```
 
 ---
 
 ## Task 9: Split projects.routes.ts into sub-routes + service + schema
 
+> **Lines:** 1769 → 5 sub-routes + service + schema
+> **Endpoints:** 11 (GET × 5, POST × 5, undocumented restore × 1)
+> **Key duplication:** role-scope filtering 3×, leader subquery 3×, MOA expiry check 4×, project lookup 6×
+
 **Files:**
-- Create: `src/modules/projects/crud.routes.ts`
-- Create: `src/modules/projects/status.routes.ts`
-- Create: `src/modules/projects/reporting.routes.ts`
+- Create: `src/modules/projects/crud.routes.ts` (list, create, get-details, derived-state, restore)
+- Create: `src/modules/projects/status.routes.ts` (transition, close, link-moa)
+- Create: `src/modules/projects/activate.routes.ts` (composite activation)
+- Create: `src/modules/projects/reporting.routes.ts` (readiness, reporting-schedule)
 - Create: `src/modules/projects/projects.service.ts`
 - Create: `src/modules/projects/projects.schema.ts`
-- Create: `src/modules/projects/index.ts`
+- Modify: `src/modules/projects/index.ts` (replace barrel with actual router)
 
 **Step 1: Create `src/modules/projects/projects.schema.ts`**
 
-Extract project-specific zod schemas from `projects.routes.ts`.
+Extract all 11 inline zod schemas:
+- `ProjectSchema` (51), `ProjectListSchema` (72), `CreateProjectSchema` (76), `LinkMoaSchema` (82), `TransitionSchema` (84), `ParamId` (88), `PaginationQuery` (95)
+- `ProjectDerivedStateSchema` (703), `ProjectDetailsMemberSchema` (820), `ProjectDetailsHistoryItemSchema` (838), `ProjectDetailsAttachmentSchema` (847), `ProjectDetailsSchema` (855)
+- `ActivateSchema` (1204), `ProjectReadinessSchema` (1374), `ProjectReportingScheduleSchema` (1572)
 
 **Step 2: Create `src/modules/projects/projects.service.ts`**
 
-Extract business logic:
-- Project CRUD operations
-- Link-MOA logic
-- Status transition logic
-- Close/activate/readiness check logic
-- Schedule reporting logic
-- Restore logic
+Extract business logic into 10+ functions:
+```ts
+export function buildUserProjectScope(user): SQL[]
+// Lines 162-174, 735-749: FACULTY/RET_CHAIR scoping (shared with LIST, DERIVED, DETAILS)
+
+export function getLeaderSubquery()
+// Reusable CTE (appears 3×)
+
+export async function listProjects(filters, pagination, user): Promise<ProjectListResult>
+// Lines 138-262: paginated listing with role scope
+
+export async function createProjectFromProposal(proposalId, user): Promise<Project>
+// Lines 264-372: transactional creation (validates proposal approved, no duplicate)
+
+export async function getProjectDetails(id, user): Promise<ProjectDetails>
+// Lines 818-1201: 6 parallel queries + Supabase signed URLs + history assembly
+
+export async function linkMoaToProject(projectId, moaId, user): Promise<void>
+// Lines 374-455: MOA existence + expiry validation + update + audit
+
+export async function validateTransition(project, targetStatus): Promise<void>
+// Lines 504-545: Approved→Ongoing (requires MOA), Ongoing→Completed
+
+export async function transitionProjectStatus(projectId, targetStatus, user): Promise<void>
+// Lines 457-573: validate + update + audit diff
+
+export async function validateProjectClosure(projectId): Promise<void>
+// Lines 575-700: checks FINAL_ACCOMPLISHMENT + TERMINAL reports exist
+
+export async function closeProject(projectId, user): Promise<void>
+// validate closure + update status + audit
+
+export async function activateProject(id, body, user): Promise<void>
+// Lines 1203-1371: composite — auto-create project if needed + link-moa + transition + create schedule
+
+export async function getProjectReadiness(id): Promise<ReadinessResult>
+// Lines 1373-1569: 4-part checklist (proposal approved, special orders, MOA, schedule)
+
+export async function getProjectReportingSchedule(id): Promise<ReportingScheduleResult>
+// Lines 1571-1752: schedule + due dates + reports + upcoming/overdue partition
+```
 
 **Step 3: Create sub-route files**
 
-- `crud.routes.ts`: Lines ~1-700 (create, read, update, list, link-MOA, restore)
-- `status.routes.ts`: Lines ~701-1300 (transitions, close, activate, readiness)
-- `reporting.routes.ts`: Lines ~1301-1782 (schedule, progress)
+- `crud.routes.ts`: Lines 138-372 + 702-816 + 818-1201 + 1754-1767 — list, create, get-details, derived-state, restore. The biggest sub-route file.
+- `status.routes.ts`: Lines 374-700 — link-moa, transition, close. All Director-only state changes.
+- `activate.routes.ts`: Lines 1203-1371 — composite activation (Director-only). Distinct from status because it creates schedules.
+- `reporting.routes.ts`: Lines 1373-1752 — readiness checklist + reporting schedule. Read-only endpoints.
+
+Note: The restore route (lines 1754-1767) is currently undocumented and has no auth — add proper OpenAPI docs and auth middleware during extraction.
 
 **Step 4: Create `src/modules/projects/index.ts`**
 
@@ -721,122 +793,178 @@ Extract business logic:
 import { Hono } from "hono";
 import crud from "./crud.routes.js";
 import status from "./status.routes.js";
+import activate from "./activate.routes.js";
 import reporting from "./reporting.routes.js";
 
 const router = new Hono();
 router.route("/", crud);
 router.route("/", status);
+router.route("/", activate);
 router.route("/", reporting);
 export default router;
 ```
 
-**Step 5: Verify it compiles**
+**Step 5: Delete `src/routes/projects.routes.ts`**
 
-Run: `cd backend && npx tsc --noEmit`
+**Step 6: Verify it compiles + tests pass**
 
-Expected: No errors.
+Run: `cd backend && npx tsc --noEmit && npx vitest run`
 
-**Step 6: Commit**
+**Step 7: Commit**
 
 ```bash
 git add -A
-git commit -m "refactor(modules): split projects into sub-routes + service + schema"
+git commit -m "refactor(modules): split projects into 5 sub-routes + service + schema"
 ```
 
 ---
 
 ## Task 10: Refactor action-center.routes.ts into module
 
+> **Lines:** 823 → 1 route + service + schema
+> **Endpoints:** 1 (GET /action-center — no pagination, returns all items)
+> **Key duplication:** 11 near-identical for-loops, N+1 schedule queries 4×, queries differ only in scope filter
+
+**Problem:** The handler has a 700-line `if/else if` block per role (RET_CHAIR, DIRECTOR, FACULTY, SUPER_ADMIN) with near-identical query patterns. Each role block repeats the same 3 query types (proposals by status, projects by status, upcoming reports) differing only in scope filter and join type.
+
 **Files:**
 - Create: `src/modules/action-center/routes.ts`
 - Create: `src/modules/action-center/action-center.service.ts`
 - Create: `src/modules/action-center/action-center.schema.ts`
-- Create: `src/modules/action-center/index.ts`
+- Modify: `src/modules/action-center/index.ts` (replace barrel)
 
 **Step 1: Create `src/modules/action-center/action-center.schema.ts`**
 
-Extract action-center schemas.
+Extract 3 schemas:
+- `ActionItemSchema` (lines 30-43)
+- `ActionCenterResponseSchema` (lines 45-57)
+- `getActionCenterRoute` (lines 59-72)
 
 **Step 2: Create `src/modules/action-center/action-center.service.ts`**
 
-The main problem: `action-center.routes.ts` has a giant `if/else if` block (~500 lines) with near-identical queries per role. Extract:
+The core refactoring — eliminate ~400 lines of duplication with 4 unified functions:
 
 ```ts
-export interface ActionCenterQuery {
-  role: string;
-  userId: string;
-  collegeId?: string;
-  page: number;
-  limit: number;
-  status?: string;
-  type?: "proposal" | "project" | "moa";
-}
+export async function getPendingProposals(db, user, role): Promise<ActionItem[]>
+// Unifies: RET_CHAIR lines 106-159, DIRECTOR lines 343-401, FACULTY lines 591-647
+// Parameterized by: statusFilter, scopeBuilder, joinType
 
-export async function getActionCenterItems(
-  db: any,
-  query: ActionCenterQuery,
-): Promise<{ items: any[]; total: number }>
+export async function getProjectsByStatus(db, user, role, projectStatus): Promise<ActionItem[]>
+// Unifies: RET_CHAIR lines 219-277 (overdue), DIRECTOR lines 404-462 (approved),
+//           DIRECTOR lines 465-521 (overdue), FACULTY lines 650-711 (overdue)
+// Parameterized by: projectStatus, scopeBuilder
+
+export async function getUpcomingReports(db, user, role): Promise<ActionItem[]>
+// Unifies: RET_CHAIR lines 280-340, DIRECTOR lines 524-583, FACULTY lines 714-778
+// Parameterized by: scopeBuilder
+
+export async function batchFetchSchedules(projectIds): Promise<Map<string, Schedule>>
+// Eliminates N+1: single SELECT WHERE projectId IN (...) instead of per-row queries
+// Used by all project sections that check reporting schedule
+
+// Plus: buildActionItems() factory that maps rows → ActionItem with role-specific
+// urgency/title/owner text, and the ACT/WATCH push logic
 ```
-
-The function builds the appropriate WHERE clause based on role, then runs a single set of paginated queries. The route handler just calls this and returns the result.
 
 **Step 3: Create `src/modules/action-center/routes.ts`**
 
-~50 lines — single route handler that parses query params, calls the service, returns result.
+~50 lines — single route handler:
+1. Parse user from context
+2. Call service functions based on role
+3. Combine results into `{ actItems, watchItems, stats }`
+4. Return response
 
-**Step 4: Create `src/modules/action-center/index.ts`**
+The handler drops from ~750 lines to ~50 lines.
 
-```ts
-import routes from "./routes.js";
-export default routes;
-```
+**Step 4: Delete `src/routes/action-center.routes.ts`**
 
-**Step 5: Verify it compiles**
+**Step 5: Verify it compiles + tests pass**
 
-Run: `cd backend && npx tsc --noEmit`
-
-Expected: No errors.
+Run: `cd backend && npx tsc --noEmit && npx vitest run`
 
 **Step 6: Commit**
 
 ```bash
 git add -A
-git commit -m "refactor(modules): refactor action-center with shared service layer"
+git commit -m "refactor(modules): refactor action-center with unified service layer"
 ```
 
 ---
 
 ## Task 11: Refactor moas.routes.ts into module
 
+> **Lines:** 932 → 1 route + service + schema
+> **Endpoints:** 8 (GET × 3, POST × 3, PATCH × 1, undocumented restore × 1)
+> **Key issues:** ParamId/PaginationQuery duplicated locally, restore route has wrong path, complex upload handler
+
 **Files:**
-- Create: `src/modules/moas/moas.routes.ts`
+- Create: `src/modules/moas/moas.routes.ts` (moved from routes/)
 - Create: `src/modules/moas/moas.service.ts`
 - Create: `src/modules/moas/moas.schema.ts`
-- Create: `src/modules/moas/index.ts`
+- Modify: `src/modules/moas/index.ts` (replace barrel)
 
 **Step 1: Create `src/modules/moas/moas.schema.ts`**
 
-Extract MOA-specific schemas.
+Extract 8 inline schemas. Deduplication opportunity:
+- Import `ParamId` from `@/lib/schemas.js` instead of redefining locally (line 189-194)
+- Extend `PaginationQuery` from `@/lib/schemas.js` with the `archived` field, or define a local `MoaPaginationQuery` extending the shared one
+
+Schemas to extract:
+- `MoaSchema` (130), `MoaDetailSchema` (143), `MoaLinkedProjectSchema` (159), `MoaListSchema` (169)
+- `CreateMoaSchema` (173), `UpdateMoaSchema` (181)
 
 **Step 2: Create `src/modules/moas/moas.service.ts`**
 
-Extract:
-- MOA CRUD business logic
-- Partner lookup logic
-- File upload logic (using `services/file.service.js` for sanitizeFilename, `lib/supabase.js` for Supabase client)
-- Linked project query logic
+Extract into 8+ functions:
+```ts
+export function canManageMoas(user): boolean
+// Lines 37-42: checks RET_CHAIR or DIRECTOR
+
+export async function isMoaLinkedToUserProject(moaId, userId): Promise<boolean>
+// Lines 49-63: auth fallback for non-manager roles
+
+export async function syncProjectsToNewMoa(partnerId, newMoaId, validUntil, userId, ipAddress): Promise<void>
+// Lines 69-127: complex multi-step — find old MOAs, find linked projects, re-link + audit
+
+export async function getMoaList(db, pagination): Promise<MoaListResult>
+// Lines 260-293: paginated query + count
+
+export async function getMoaById(db, id): Promise<MoaDetail | null>
+// Lines 334-384: join query + status computation (classifyMoaStatus helper)
+
+export async function getLinkedProjects(db, id, user): Promise<MoaLinkedProject[]>
+// Lines 430-482: multi-join with role-based scoping
+
+export async function createMoa(db, body, user, ip): Promise<Moa>
+// Lines 518-579: partner check + insert + audit + syncProjectsToNewMoa
+
+export async function uploadMoaDocument(db, formData, user, ip): Promise<Moa>
+// Lines 609-762: form parsing → validation → get-or-create partner → Supabase upload
+//   (with rollback on DB failure) → insert → audit → syncProjectsToNewMoa
+
+export async function updateMoa(db, id, body, user, ip): Promise<Moa>
+// Lines 796-914: partial update + date validation + expired project restoration + audit
+
+export async function restoreMoa(db, id): Promise<void>
+// Lines 917-930: simple update (fix: add proper auth + audit)
+```
 
 **Step 3: Create `src/modules/moas/moas.routes.ts`**
 
-Route handlers calling the service layer.
+Move content from `routes/moas.routes.ts`, replacing inline logic with service calls. The route handler becomes thin — HTTP parsing + service call + response formatting.
 
-**Step 4: Verify it compiles**
+Fix issues during extraction:
+- Restore route path: change `/:id/restore` to `/moas/:id/restore` (or proper OpenAPI route)
+- Restore route: add `canManageMoas()` auth check + audit log
+- Import `ParamId` from `@/lib/schemas.js` instead of local definition
 
-Run: `cd backend && npx tsc --noEmit`
+**Step 4: Delete `src/routes/moas.routes.ts`**
 
-Expected: No errors.
+**Step 5: Verify it compiles + tests pass**
 
-**Step 5: Commit**
+Run: `cd backend && npx tsc --noEmit && npx vitest run`
+
+**Step 6: Commit**
 
 ```bash
 git add -A
@@ -848,34 +976,70 @@ git commit -m "refactor(modules): extract moas module with service layer"
 ## Task 12: Clean up — delete old routes/ dir, update test imports, final verification
 
 **Files:**
-- Delete: `src/routes/` (entire directory)
-- Modify: all test files in `src/` that import from `../routes/` or `./routes/`
+- Delete: `src/routes/` (entire directory — all files have been moved to `src/modules/`)
+- Move: test files from `src/routes/` into their respective `src/modules/<domain>/` directories
+- Modify: test import paths to point to new locations
 
-**Step 1: Delete `src/routes/` directory**
+**Step 1: Verify all route files have been moved**
 
-Only if every route file has been moved to `src/modules/`.
+Before deleting, confirm every file in `src/routes/` has a corresponding `src/modules/` location:
+- `director.routes.ts` → deleted in Task 7
+- `proposals.routes.ts` → deleted in Task 8
+- `projects.routes.ts` → deleted in Task 9
+- `action-center.routes.ts` → deleted in Task 10
+- `moas.routes.ts` → deleted in Task 11
+- Other files (auth, admin, members, storage, special-orders, search, reports, notifications, settings, audit) → already in `src/modules/` since Sprint 1
 
-**Step 2: Update test import paths**
+**Step 2: Move test files to module directories**
 
-Test files that need updating (from `src/routes/`):
-- `src/routes/auth.routes.test.ts` → move/update to `src/modules/auth/auth.routes.test.ts`
-- `src/routes/projects.routes.test.ts` → move to `src/modules/projects/`
-- `src/routes/proposals.routes.test.ts` → move to `src/modules/proposals/`
-- `src/routes/moas.routes.test.ts` → move to `src/modules/moas/`
-- `src/routes/members.routes.test.ts` → move to `src/modules/members/`
-- `src/routes/storage.routes.test.ts` → move to `src/modules/storage/`
-- `src/routes/audit.routes.test.ts` → move to `src/modules/audit/`
-- `src/routes/reports.routes.test.ts` → move to `src/modules/reports/`
-- `src/routes/settings.routes.test.ts` → move to `src/modules/settings/`
-- `src/routes/special-orders.routes.test.ts` → move to `src/modules/special-orders/`
-- `src/routes/derived-states.routes.test.ts` → move to `src/modules/`
+Move each test file and update its import:
 
-The main change in each test: update the import path to the new file location. E.g.:
-```ts
-// Before:
-import app from "./auth.routes.js";
-// After:
-import app from "../modules/auth/auth.routes.js";
+| Test file | New location | Import change |
+|-----------|-------------|---------------|
+| `src/routes/audit.routes.test.ts` | `src/modules/audit/audit.routes.test.ts` | already at `@/db/client.js` |
+| `src/routes/auth.routes.test.ts` | `src/modules/auth/auth.routes.test.ts` | same |
+| `src/routes/members.routes.test.ts` | `src/modules/members/members.routes.test.ts` | same |
+| `src/routes/storage.routes.test.ts` | `src/modules/storage/storage.routes.test.ts` | same |
+| `src/routes/special-orders.routes.test.ts` | `src/modules/special-orders/special-orders.routes.test.ts` | same |
+| `src/routes/reports.routes.test.ts` | `src/modules/reports/reports.routes.test.ts` | same |
+| `src/routes/settings.routes.test.ts` | `src/modules/settings/settings.routes.test.ts` | same |
+| `src/routes/moas.routes.test.ts` | `src/modules/moas/moas.routes.test.ts` | `./index.js` → stays same |
+| `src/routes/projects.routes.test.ts` | `src/modules/projects/projects.routes.test.ts` | `./index.js` → stays same |
+| `src/routes/proposals.routes.test.ts` | `src/modules/proposals/proposals.routes.test.ts` | `./index.js` → stays same |
+| `src/routes/derived-states.routes.test.ts` | `src/modules/proposals/derived-states.routes.test.ts` | update route imports |
+
+The `../../test/helpers.js` import in each test must be updated to the new relative path from the module directory.
+
+**Step 3: Update `src/app.ts`**
+
+Verify all imports point to `./modules/` (should already be correct from Sprint 1). Remove any remaining references to `./routes/`.
+
+**Step 4: Run ALL tests**
+
+Run: `cd backend && npx vitest run`
+
+Expected: ALL 193+ tests pass. If any fail:
+1. Fix the import path in the test file
+2. Fix any broken imports in the route files
+3. Re-run
+
+**Step 5: Type check**
+
+Run: `cd backend && npx tsc --noEmit`
+
+Expected: No errors.
+
+**Step 6: Build**
+
+Run: `cd backend && npm run build`
+
+Expected: Builds successfully.
+
+**Step 7: Final commit**
+
+```bash
+git add -A
+git commit -m "refactor: delete old routes/ dir, move test files, final cleanup"
 ```
 
 **Step 3: Run ALL tests**
@@ -906,11 +1070,13 @@ git commit -m "refactor: delete old routes/ dir, update test paths, final cleanu
 
 | Risk | Mitigation |
 |------|-----------|
-| Test files import from `./routes/` paths | Catch all during Task 12; run full test suite before deleting old dir |
-| Import path typos in moved files | Each task verifies with `tsc --noEmit` before committing |
-| Missed a route import in `app.ts` | Final full test run + type check will catch it |
-| Service extraction changes behavior | Extracting logic line-by-line without rewriting; no behavior changes |
-| Splitting breaks the barrel export contract | All module `index.ts` files re-export the same router; app.ts just changes import path |
+| Import path typos in split files | Each task verifies with `tsc --noEmit` + `vitest run` before committing |
+| Service extraction changes behavior | Extract logic line-by-line without rewriting; no behavior changes in Sprint 2 |
+| Splitting breaks the barrel export contract | All module `index.ts` files mount sub-routers; app.ts import path stays the same |
+| N+1 queries in action-center | Service uses batch prefetch (`IN (...)`) instead of per-row queries |
+| Restore routes lack auth | Add proper OpenAPI docs + auth middleware during extraction (Tasks 8, 9, 11) |
+| Missing test coverage for new sub-routes | Existing tests cover the endpoints; import paths updated in Task 12 |
+| MOA upload Supabase rollback complexity | Extract to service; verify rollback path works via existing tests |
 
 ## Rollback Plan
 
@@ -919,3 +1085,12 @@ If something goes wrong after any commit:
 git revert --no-edit HEAD
 ```
 Each commit is atomic — no mixed concerns. Reverting one commit undoes a single, well-defined change.
+
+---
+
+## Sprint Summary
+
+| Sprint | Tasks | Status | Commits |
+|--------|-------|--------|---------|
+| Sprint 1 | Tasks 1-6 | ✅ Complete | `ca04f69`, `8cf4aa8`, `93fd48c` |
+| Sprint 2 | Tasks 7-12 | ⏳ Pending | — |
