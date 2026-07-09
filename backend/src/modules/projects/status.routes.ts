@@ -15,8 +15,8 @@ import {
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
 
-app.use("/*", authMiddleware);
-app.use("/*", requireRole(ROLE_NAMES.DIRECTOR));
+app.use("/projects/*", authMiddleware);
+app.use("/projects/*", requireRole(ROLE_NAMES.DIRECTOR));
 
 // ── POST /projects/:id/link-moa ──
 const linkMoaRoute = createRoute({

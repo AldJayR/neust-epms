@@ -25,7 +25,8 @@ import {
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
 
-app.use("/*", authMiddleware);
+app.use("/projects", authMiddleware);
+app.use("/projects/*", authMiddleware);
 
 // POST /projects is Director-only; GET passes through to all roles.
 const directorOnly = requireRole(ROLE_NAMES.DIRECTOR);
@@ -146,8 +147,8 @@ app.openapi(projectDerivedStateRoute, async (c) => {
 	return c.json(derived, 200);
 });
 
-// ── POST /:id/restore ──
-app.post("/:id/restore", async (c) => {
+// ── POST /projects/:id/restore ──
+app.post("/projects/:id/restore", async (c) => {
 	const id = c.req.param("id");
 	const updated = await restoreProject(id);
 
