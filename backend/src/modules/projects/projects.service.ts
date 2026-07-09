@@ -28,11 +28,13 @@ import { specialOrders } from "@/db/schema/special-orders.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
+import { deriveProjectState } from "@/lib/derived-states.js";
 import { ApiError } from "@/lib/errors.js";
 import { supabase } from "@/lib/supabase.js";
 import {
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
+	type ProjectStatus,
 	REPORT_TYPE,
 	ROLE_NAMES,
 	type AuthUser,
@@ -160,6 +162,65 @@ export async function listProjects(
 	const total = Number(totalResult?.value ?? 0);
 
 	return { items, total };
+}
+
+export async function getProjectDerivedState(id: string, user: AuthUser) {
+	const proposalConditions = buildUserProjectScope(user);
+
+	const allowedProposals = db
+		.select({ proposalId: proposals.proposalId })
+		.from(proposals)
+		.where(and(...proposalConditions));
+
+	const leaderMembers = getLeaderSubquery();
+
+	const [row] = await db
+		.select({
+			projectId: projects.projectId,
+			projectStatus: projects.projectStatus,
+			moaId: projects.moaId,
+			leaderId: leaderMembers.userId,
+		})
+		.from(projects)
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+		.leftJoin(leaderMembers, eq(projects.proposalId, leaderMembers.proposalId))
+		.where(
+			and(
+				eq(projects.projectId, id),
+				isNull(projects.archivedAt),
+				inArray(projects.proposalId, allowedProposals),
+			),
+		)
+		.limit(1);
+
+	if (!row) {
+		throw new ApiError(404, "NOT_FOUND", "Project not found");
+	}
+
+	const [schedule] = await db
+		.select({ scheduleId: projectReportingSchedules.scheduleId })
+		.from(projectReportingSchedules)
+		.where(eq(projectReportingSchedules.projectId, id))
+		.limit(1);
+
+	const [report] = await db
+		.select({ reportId: projectReports.reportId })
+		.from(projectReports)
+		.where(
+			and(eq(projectReports.projectId, id), isNull(projectReports.archivedAt)),
+		)
+		.limit(1);
+
+	return deriveProjectState(
+		{
+			projectStatus: row.projectStatus as ProjectStatus,
+			moaId: row.moaId,
+			reportingSchedule: !!schedule,
+			hasReports: !!report,
+			leaderId: row.leaderId ?? undefined,
+		},
+		user,
+	);
 }
 
 export async function createProjectFromProposal(

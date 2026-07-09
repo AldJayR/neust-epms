@@ -81,6 +81,7 @@ export const ProjectDetailsSchema = z.object({
 		leader: z.object({
 			name: z.string(),
 		}),
+		departmentCode: z.string(),
 		department: z.string(),
 		duration: z.string(),
 		moaLinked: z.string(),

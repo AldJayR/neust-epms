@@ -1,22 +1,9 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
-import {
-	and,
-	eq,
-	inArray,
-	isNull,
-} from "drizzle-orm";
-import { db } from "@/db/client.js";
-import { projects } from "@/db/schema/projects.js";
-import { proposals } from "@/db/schema/proposals.js";
-import { projectReportingSchedules } from "@/db/schema/project-reporting-schedules.js";
-import { projectReports } from "@/db/schema/project-reports.js";
-import { deriveProjectState } from "@/lib/derived-states.js";
 import { getClientIp } from "@/lib/client-ip.js";
 import { ErrorSchema } from "@/lib/schemas.js";
-import { type ProjectStatus } from "@/lib/types.js";
+import { ROLE_NAMES } from "@/lib/types.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import { requireRole } from "@/middleware/rbac.js";
-import { ROLE_NAMES } from "@/lib/types.js";
 import { installApiErrorHandler } from "@/lib/errors.js";
 import {
 	ProjectSchema,
@@ -31,8 +18,7 @@ import {
 	listProjects,
 	createProjectFromProposal,
 	getProjectDetails,
-	buildUserProjectScope,
-	getLeaderSubquery,
+	getProjectDerivedState,
 	restoreProject,
 } from "./projects.service.js";
 
@@ -156,65 +142,7 @@ const projectDerivedStateRoute = createRoute({
 app.openapi(projectDerivedStateRoute, async (c) => {
 	const user = c.get("user");
 	const { id } = c.req.valid("param");
-
-	const proposalConditions = buildUserProjectScope(user);
-
-	const allowedProposals = db
-		.select({ proposalId: proposals.proposalId })
-		.from(proposals)
-		.where(and(...proposalConditions));
-
-	const leaderMembers = getLeaderSubquery();
-
-	const [row] = await db
-		.select({
-			projectId: projects.projectId,
-			projectStatus: projects.projectStatus,
-			moaId: projects.moaId,
-			leaderId: leaderMembers.userId,
-		})
-		.from(projects)
-		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-		.leftJoin(leaderMembers, eq(projects.proposalId, leaderMembers.proposalId))
-		.where(
-			and(
-				eq(projects.projectId, id),
-				isNull(projects.archivedAt),
-				inArray(projects.proposalId, allowedProposals),
-			),
-		)
-		.limit(1);
-
-	if (!row) {
-		const { ApiError } = await import("@/lib/errors.js");
-		throw new ApiError(404, "NOT_FOUND", "Project not found");
-	}
-
-	const [schedule] = await db
-		.select({ scheduleId: projectReportingSchedules.scheduleId })
-		.from(projectReportingSchedules)
-		.where(eq(projectReportingSchedules.projectId, id))
-		.limit(1);
-
-	const [report] = await db
-		.select({ reportId: projectReports.reportId })
-		.from(projectReports)
-		.where(
-			and(eq(projectReports.projectId, id), isNull(projectReports.archivedAt)),
-		)
-		.limit(1);
-
-	const derived = deriveProjectState(
-		{
-			projectStatus: row.projectStatus as ProjectStatus,
-			moaId: row.moaId,
-			reportingSchedule: !!schedule,
-			hasReports: !!report,
-			leaderId: row.leaderId ?? undefined,
-		},
-		user,
-	);
-
+	const derived = await getProjectDerivedState(id, user);
 	return c.json(derived, 200);
 });
 
