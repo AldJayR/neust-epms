@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { CornerDownLeft, Search } from "lucide-react";
+import { ClipboardCheck, Clock, CornerDownLeft, FileText, FolderOpen, Handshake, Search, User } from "lucide-react";
 import * as React from "react";
 import {
 	Command,
@@ -19,6 +19,24 @@ import {
 	type SearchType,
 } from "@/lib/search.functions";
 import { cn } from "@/lib/utils";
+
+const TYPE_ICONS = {
+	all: null,
+	proposals: <FileText className="size-4 text-violet-500" />,
+	projects: <FolderOpen className="size-4 text-blue-500" />,
+	reports: <ClipboardCheck className="size-4 text-amber-500" />,
+	moas: <Handshake className="size-4 text-emerald-500" />,
+	users: <User className="size-4 text-slate-500" />,
+};
+
+const TYPE_BG_CLASSES = {
+	all: "",
+	proposals: "bg-violet-50 dark:bg-violet-950/30",
+	projects: "bg-blue-50 dark:bg-blue-950/30",
+	reports: "bg-amber-50 dark:bg-amber-950/30",
+	moas: "bg-emerald-50 dark:bg-emerald-950/30",
+	users: "bg-slate-50 dark:bg-slate-950/30",
+};
 
 const TYPE_LABELS: Record<SearchType, string> = {
 	all: "All",
@@ -157,10 +175,10 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 			<button
 				type="button"
 				onClick={() => setOpen(true)}
-				className="relative flex h-8 w-full max-w-[212px] items-center gap-2 rounded-lg bg-background pl-8 pr-2 text-sm text-muted-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+				className="relative flex h-8 w-full max-w-[212px] items-center gap-2 rounded-lg border border-border bg-background px-3 text-sm text-muted-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
 				aria-label="Open global search"
 			>
-				<Search className="absolute left-2.5 top-2 size-4 text-muted-foreground" />
+				<Search className="size-4 shrink-0 text-muted-foreground" />
 				<span className="flex-1 text-left">Type to search…</span>
 				<kbd className="hidden rounded border border-border bg-muted px-1.5 text-[10px] font-medium text-muted-foreground sm:inline-block">
 					⌘K
@@ -169,27 +187,24 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 
 			<CommandDialog open={open} onOpenChange={setOpen}>
 				<Command shouldFilter={false} className="gap-0">
-					<div className="flex items-center gap-2 border-b px-3">
-						<CommandInput
-							value={query}
-							onValueChange={setQuery}
-							placeholder="Search proposals, projects, reports…"
-							className="h-11 flex-1 border-0 focus-visible:ring-0"
-							autoFocus
-						/>
-					</div>
+					<CommandInput
+						value={query}
+						onValueChange={setQuery}
+						placeholder="Search proposals, projects, reports…"
+						autoFocus
+					/>
 
-					<div className="flex flex-wrap items-center gap-1 border-b px-3 py-2">
+					<div className="flex flex-wrap items-center gap-1.5 border-b bg-muted/40 px-4 py-2.5">
 						{allowedTypes.map((t) => (
 							<button
 								key={t}
 								type="button"
 								onClick={() => setType(t)}
 								className={cn(
-									"rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+									"rounded-full px-3 py-1 text-xs font-medium transition-all shadow-none hover:scale-[1.02]",
 									type === t
-										? "bg-primary text-primary-foreground"
-										: "bg-muted text-muted-foreground hover:bg-accent",
+										? "bg-primary text-primary-foreground shadow-xs"
+										: "bg-background border border-border text-muted-foreground hover:bg-accent hover:text-foreground",
 								)}
 							>
 								{TYPE_LABELS[t]}
@@ -206,10 +221,13 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 											key={`${r.query}-${r.type}`}
 											value={`recent-${r.query}-${r.type}`}
 											onSelect={() => runRecent(r)}
+											className="flex items-center gap-3 px-3 py-2.5"
 										>
-											<Search className="size-4 text-muted-foreground" />
-											<span className="flex-1">{r.query}</span>
-											<span className="text-xs text-muted-foreground">
+											<div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+												<Clock className="size-4" />
+											</div>
+											<span className="flex-1 font-medium text-sm truncate">{r.query}</span>
+											<span className="rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
 												{TYPE_LABELS[r.type]}
 											</span>
 										</CommandItem>
@@ -225,16 +243,20 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 												key={`${item.type}-${item.id}`}
 												value={`${item.type}-${item.id}`}
 												onSelect={() => goTo(item)}
+												className="flex items-center gap-3 px-3 py-2.5"
 											>
-												<div className="flex min-w-0 flex-1 flex-col">
-													<span className="truncate">{item.title}</span>
+												<div className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg", TYPE_BG_CLASSES[item.type])}>
+													{TYPE_ICONS[item.type]}
+												</div>
+												<div className="flex min-w-0 flex-1 flex-col gap-0.5">
+													<span className="truncate font-medium text-foreground text-sm leading-none">{item.title}</span>
 													{item.subtitle && (
 														<span className="truncate text-xs text-muted-foreground">
 															{item.subtitle}
 														</span>
 													)}
 												</div>
-												<CornerDownLeft className="size-4 shrink-0 text-muted-foreground" />
+												<CornerDownLeft className="size-4 shrink-0 text-muted-foreground opacity-0 group-data-selected/command-item:opacity-100 group-hover/command-item:opacity-100 transition-opacity" />
 											</CommandItem>
 										))}
 									</CommandGroup>
