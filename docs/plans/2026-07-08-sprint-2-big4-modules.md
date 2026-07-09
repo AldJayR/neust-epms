@@ -694,7 +694,9 @@ refactor(projects): split projects routes into sub-routes + service + schema
 ## Task 4: Refactor action-center.routes.ts (823 lines → 1 route + service + schema)
 
 > **Endpoints:** 1 (GET /action-center — no pagination, returns all items)
-> **Key problem:** 700-line if/else per role with 11 near-identical for-loops, N+1 schedule queries
+> **Key problem:** 750-line if/else per role with 11 near-identical for-loops, N+1 schedule queries
+>
+> **Completed:** Commit TBD on `refactor/backend`. Created `action-center.schema.ts` (3 schemas), `action-center.service.ts` (unified queries + batch schedule fetch + item builders + orchestrator), `routes.ts` (thin handler). Removed unused `PgSubqueryWithSelection` import, fixed `exactOptionalPropertyTypes` with spread pattern. Verified functional equivalence via line-by-side comparison. Deleted old `routes/action-center.routes.ts`. All 159 tests pass.
 
 ### Files to create/modify
 
@@ -708,64 +710,170 @@ refactor(projects): split projects routes into sub-routes + service + schema
 
 ### Step 1: Create `action-center.schema.ts`
 
-3 schemas: `ActionItemSchema` (30-43), `ActionCenterResponseSchema` (45-57), `getActionCenterRoute` (59-72)
+3 schemas — moved directly from lines 30-72 of the original:
+
+| Schema | Source lines | Purpose |
+|--------|-------------|---------|
+| `ActionItemSchema` | 30-43 | Individual action item (id, type, title, status, actionRequired, owner, derivedState, urgency) |
+| `ActionCenterResponseSchema` | 45-57 | Response wrapper: `{ actItems, watchItems, stats }` |
+| `getActionCenterRoute` | 59-72 | OpenAPI route definition (GET /action-center) |
 
 ### Step 2: Create `action-center.service.ts`
 
-The core refactoring — eliminate ~400 lines of duplication:
+Core refactoring — eliminate ~400 lines of duplication across 3 role branches.
+
+**Duplication analysis (from reading the 823-line file):**
+
+| Pattern | Occurrences | Lines per | Total |
+|---------|-------------|-----------|-------|
+| Leader subquery CTE | 3× (RET_CHAIR, DIRECTOR, FACULTY) | 8 | 24 |
+| Scope clause builder | 3× (scopeClause for RET_CHAIR/DIRECTOR, leaderFilter for FACULTY) | 4 | 12 |
+| Proposal query + for-loop + deriveProposalState + item building | 4× (RET_CHAIR pending + returned, DIRECTOR pending, FACULTY returned) | 50-70 | ~230 |
+| Project query + per-row schedule query + deriveProjectState + item building | 4× (RET_CHAIR overdue, DIRECTOR approved + overdue, FACULTY overdue) | 55-70 | ~250 |
+| Report query + for-loop + urgency calc + item building | 3× (RET_CHAIR, DIRECTOR, FACULTY) | 60-70 | ~190 |
+| Per-row schedule query (N+1) | 4-7× per role branch | 5 | 20-35 |
+
+**Service functions:**
 
 ```ts
-// UNIFIED QUERY FUNCTIONS (eliminate 4× proposal queries, 4× project queries, 3× report queries)
+// ── Shared helpers ──
 
-export async function getPendingProposals(db, user, role): Promise<ActionItem[]>
-// Parameterized by: statusFilter, scopeBuilder, joinType
-// Unifies: RET_CHAIR lines 106-159, DIRECTOR lines 343-401, FACULTY lines 591-647
+export function buildLeaderSubquery()
+// CTE: SELECT proposalId, userId FROM proposalMembers WHERE projectRole = 'Project Leader'
+// Currently duplicated 3× at lines 90-97, 90-97 (RET_CHAIR), 90-97 (DIRECTOR), 90-97 (FACULTY)
 
-export async function getProjectsByStatus(db, user, role, projectStatus): Promise<ActionItem[]>
-// Parameterized by: projectStatus, scopeBuilder
-// Unifies: RET_CHAIR overdue (219-277), DIRECTOR approved (404-462),
-//           DIRECTOR overdue (465-521), FACULTY overdue (650-711)
+export function buildScopeClause(user: AuthUser): SQL | undefined
+// RET_CHAIR: departmentId or campusId filter depending on isMainCampus
+// DIRECTOR/FACULTY: undefined (no scope filtering on proposals/projects)
+// Scope used in: RET_CHAIR lines 100-103, DIRECTOR (no scope), FACULTY uses leaderFilter instead
 
-export async function getUpcomingReports(db, user, role): Promise<ActionItem[]>
-// Parameterized by: scopeBuilder
-// Unifies: RET_CHAIR (280-340), DIRECTOR (524-583), FACULTY (714-778)
+export function buildLeaderFilter(user: AuthUser): SQL | undefined
+// FACULTY only: proposalMembers.userId = user.userId AND projectRole = 'Project Leader'
+// Lines 585-588 — only used in FACULTY branch
 
-export async function batchFetchSchedules(projectIds): Promise<Map<string, {scheduleId}>>
-// Eliminates N+1: single SELECT WHERE projectId IN (...) instead of 4 separate per-row queries
+// ── Unified queries (eliminate per-role duplication) ──
 
-// PLUS: buildActionItems() factory for the repetitive for-loop pattern
-// and getSuperAdminItems() for the single SUPER_ADMIN section (pending registrations)
+export async function getPendingProposals(
+  db, user: AuthUser, opts: { statusFilter: SQL, scopeClause?: SQL, joinWithMember?: boolean }
+): Promise<ProposalRow[]>
+// Unifies: RET_CHAIR lines 106-129 (PENDING_REVIEW + !bypassedRetChair + scopeClause)
+//           DIRECTOR lines 343-370 (ENDORSED OR (PENDING_REVIEW + bypassedRetChair))
+//           FACULTY: not present (FACULTY has no "pending" query)
+
+export async function getReturnedProposals(
+  db, user: AuthUser, opts: { scopeClause?: SQL, joinWithMember?: boolean }
+): Promise<ProposalRow[]>
+// Unifies: RET_CHAIR lines 163-185 (RETURNED + scopeClause)
+//           FACULTY lines 591-617 (RETURNED + leaderFilter + innerJoin proposalMembers)
+//           DIRECTOR: not present (DIRECTOR has no "returned" query)
+
+export async function getProjectsByStatus(
+  db, user: AuthUser, opts: { projectStatus: ProjectStatus, scopeClause?: SQL, joinWithMember?: boolean }
+): Promise<ProjectRow[]>
+// Unifies: RET_CHAIR overdue (219-241) — OVERDUE + scopeClause
+//           DIRECTOR approved (404-425) — APPROVED (no scope)
+//           DIRECTOR overdue (465-486) — OVERDUE (no scope)
+//           FACULTY overdue (650-676) — OVERDUE + leaderFilter + innerJoin proposalMembers
+
+export async function getUpcomingReports(
+  db, user: AuthUser, opts: { scopeClause?: SQL, joinWithMember?: boolean }
+): Promise<ReportRow[]>
+// Unifies: RET_CHAIR (280-315), DIRECTOR (524-558), FACULTY (714-753)
+// All 3 have same structure, differ only in scopeClause and join type
+
+export async function batchFetchScheduleExists(
+  db, projectIds: string[]
+): Promise<Map<string, boolean>>
+// Replaces N+1 per-row schedule queries (lines 247-251, 430-434, 491-495, 681-685)
+// Single query: SELECT projectId FROM projectReportingSchedules WHERE projectId IN (...)
+
+// ── Item builders ──
+
+export function buildProposalItem(prop, user, options): ActionItem
+// Builds ActionItem from proposal row + deriveProposalState result
+// Replaces: 4× nearly identical for-loops (lines 133-160, 189-216, 374-401, 621-647)
+
+export function buildProjectItem(proj, derived, opts: { urgency, actionRequired? }): ActionItem
+// Builds ActionItem from project row + deriveProjectState result
+// Replaces: 4× nearly identical for-loops (lines 245-277, 429-462, 490-521, 680-711)
+
+export function buildReportItem(rep, now): ActionItem
+// Builds ActionItem from report row with urgency calculation
+// Replaces: 3× nearly identical for-loops (lines 317-340, 560-583, 755-778)
+// Urgency calc: <=7d = "urgent" + ACT, <=30d = "soon" + WATCH, else = "routine" + WATCH
+
+// ── Role-specific orchestrators ──
+
+export async function getActionItemsForRole(db, user: AuthUser): Promise<{
+  actItems: ActionItem[], watchItems: ActionItem[],
+  stats: { pendingReviews, returnedProposals, overdueReports, expiringMoas, projectsNeedingActivation }
+}>
+// Dispatches to the appropriate query functions based on user.roleName
+// RET_CHAIR: getReturnedProposals (PENDING_REVIEW) + getReturnedProposals (RETURNED) + getProjectsByStatus(OVERDUE) + getUpcomingReports
+// DIRECTOR: getPendingProposals (ENDORSED|BYPASSED) + getProjectsByStatus(APPROVED) + getProjectsByStatus(OVERDUE) + getUpcomingReports
+// FACULTY: getReturnedProposals (RETURNED, leaderFilter) + getProjectsByStatus(OVERDUE, leaderFilter) + getUpcomingReports(leaderFilter)
+// SUPER_ADMIN: getPendingRegistrations()
+
+export async function getPendingRegistrations(db): Promise<ActionItem[]>
+// Lines 781-804: simple query for users.isActive = false
+// Only SUPER_ADMIN, no scope filtering
 ```
 
 ### Step 3: Create `routes.ts`
 
-~50 lines — the handler drops from ~750 to ~50:
+~60 lines — handler drops from ~750 to ~60:
 
 ```ts
+import { OpenAPIHono } from "@hono/zod-openapi";
+import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
+import { installApiErrorHandler } from "@/lib/errors.js";
+import { getActionCenterRoute, ActionCenterResponseSchema } from "./action-center.schema.js";
+import { getActionItemsForRole } from "./action-center.service.js";
+import { db } from "@/db/client.js";
+
 const app = new OpenAPIHono<AuthEnv>();
+installApiErrorHandler(app);
 app.use(authMiddleware);
 
 app.openapi(getActionCenterRoute, async (c) => {
   const user = c.get("user");
-  const actItems: ActionItem[] = [];
-  const watchItems: ActionItem[] = [];
-  const stats = { pendingReviews: 0, returnedProposals: 0, overdueReports: 0, expiringMoas: 0, projectsNeedingActivation: 0 };
-
-  // Call service functions based on role, combine results
-  const [proposals, projects, reports] = await Promise.all([
-    getPendingProposals(db, user, user.roleName),
-    getProjectsByStatus(db, user, user.roleName, "OVERDUE"),
-    getUpcomingReports(db, user, user.roleName),
-  ]);
-  // ... combine into actItems/watchItems ...
-
-  return c.json({ actItems, watchItems, stats });
+  const result = await getActionItemsForRole(db, user);
+  return c.json(result, 200);
 });
+
+export default app;
 ```
 
-### Step 4-6: index.ts, delete, verify, commit
+### Step 4: Update `index.ts`
 
-Same pattern as Task 1.
+```ts
+import app from "./routes.js";
+export default app;
+```
+
+### Step 5: Delete `src/routes/action-center.routes.ts`
+
+### Step 6: Verify
+
+```bash
+cd backend && npx tsc --noEmit && npx vitest run
+```
+
+### Step 7: Commit
+
+```
+refactor(action-center): extract action-center to schema + service + thin route
+```
+
+### Notes for implementation
+
+- **Auth pattern:** Original uses `app.use("/action-center", authMiddleware)` + `app.use("/action-center/*", authMiddleware)` — the new route.ts keeps the same middleware registration.
+- **Role dispatch:** The handler's if/else chain moves to `getActionItemsForRole()` in the service. The route handler just calls it and returns the result.
+- **Stats tracking:** `pendingReviews`, `returnedProposals`, `overdueReports`, `expiringMoas`, `projectsNeedingActivation` are computed from the query results (`.length`), not separate queries.
+- **`expiringMoas` is always 0:** The original code initializes it to 0 and never sets it — this appears to be a placeholder. Keep as-is.
+- **FACULTY report urgency differs:** FACULTY uses `routine → WATCH` while RET_CHAIR/DIRECTOR use `urgent → ACT`. This is a behavioral difference in the original code — preserve it.
+- **Scope clause差异:** RET_CHAIR uses scopeClause (departmentId or campusId), FACULTY uses leaderFilter (proposalMembers join), DIRECTOR uses no scope. The service functions accept `scopeClause` and `joinWithMember` options to handle this.
+- **`now` is captured at handler entry:** `const now = new Date()` at line 76 — pass to service functions for consistent time comparison within a single request.
 
 ---
 
