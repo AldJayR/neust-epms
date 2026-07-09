@@ -3,7 +3,7 @@
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 > **Sprint 1:** ✅ Completed (Tasks 1-6) — commit `ca04f69`
-> **Sprint 2:** ⏳ Pending (Tasks 7-12)
+> **Sprint 2:** ✅ Completed (Tasks 7-12) — commits `6c53e1a` to `2c35a36`
 
 **Goal:** Refactor the NEUST-EPMS backend from flat route files into domain modules with proper separation of concerns (routes + services + schemas).
 
@@ -1093,4 +1093,4 @@ Each commit is atomic — no mixed concerns. Reverting one commit undoes a singl
 | Sprint | Tasks | Status | Commits |
 |--------|-------|--------|---------|
 | Sprint 1 | Tasks 1-6 | ✅ Complete | `ca04f69`, `8cf4aa8`, `93fd48c` |
-| Sprint 2 | Tasks 7-12 | ⏳ Pending | — |
+| Sprint 2 | Tasks 7-12 | ✅ Complete | `6c53e1a` to `2c35a36` |
