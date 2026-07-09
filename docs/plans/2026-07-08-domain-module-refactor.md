@@ -4,6 +4,7 @@
 
 > **Sprint 1:** ✅ Completed (Tasks 1-6) — commit `ca04f69`
 > **Sprint 2:** ✅ Completed (Tasks 7-12) — commits `6c53e1a` to `2c35a36`
+> **Sprint 3:** ⏳ Pending (Tasks 13-17)
 
 **Goal:** Refactor the NEUST-EPMS backend from flat route files into domain modules with proper separation of concerns (routes + services + schemas).
 
@@ -1066,6 +1067,94 @@ git commit -m "refactor: delete old routes/ dir, update test paths, final cleanu
 
 ---
 
+## Task 13: Refactor auth and admin modules into routes + service + schema
+
+> **Goals:** Extract inline queries, schemas, and password checks from auth and admin routes.
+
+**Files:**
+- Create: `src/modules/auth/auth.service.ts`
+- Create: `src/modules/auth/auth.schema.ts`
+- Create: `src/modules/admin/admin.service.ts`
+- Create: `src/modules/admin/admin.schema.ts`
+
+**Steps:**
+1. Move `UserResponseSchema`, `RegisterUserBodySchema`, etc. from `auth.routes.ts` to `auth.schema.ts`.
+2. Move onboarding/registration checks, cache updates (`authUserCache`), and user creation to `auth.service.ts`.
+3. Move admin user activation, role changes, and audit log fetching queries to `admin.service.ts`.
+4. Update routes to call service functions and clean up.
+5. Verify tests: `npx vitest run src/modules/auth src/modules/admin`.
+
+---
+
+## Task 14: Refactor special-orders, reports, and storage modules
+
+> **Goals:** Extract file handling, storage clients, and report submission logic.
+
+**Files:**
+- Create: `src/modules/special-orders/special-orders.service.ts`
+- Create: `src/modules/special-orders/special-orders.schema.ts`
+- Create: `src/modules/reports/reports.service.ts`
+- Create: `src/modules/reports/reports.schema.ts`
+- Create: `src/modules/storage/storage.service.ts`
+- Create: `src/modules/storage/storage.schema.ts`
+
+**Steps:**
+1. Move special orders schemas, reports schemas, and storage query/upload schemas to their respective `.schema.ts` files.
+2. Move magic bytes checks, file upload integrations, and document/report linkage logic to their respective `.service.ts` files.
+3. Keep routes focused solely on handling multipart forms and passing request data.
+4. Verify tests pass.
+
+---
+
+## Task 15: Refactor members and search modules
+
+> **Goals:** Isolate search indexing and proposal member updates.
+
+**Files:**
+- Create: `src/modules/members/members.service.ts`
+- Create: `src/modules/members/members.schema.ts`
+- Create: `src/modules/search/search.service.ts`
+- Create: `src/modules/search/search.schema.ts`
+
+**Steps:**
+1. Move member and search schemas to their respective `.schema.ts` files.
+2. Move proposal members transaction logic (adding/removing roles) to `members.service.ts`.
+3. Move complex multi-table union queries for universal search to `search.service.ts`.
+4. Update routes and verify tests.
+
+---
+
+## Task 16: Refactor notifications, settings, and audit modules
+
+> **Goals:** Clean up the remaining minor modules.
+
+**Files:**
+- Create: `src/modules/notifications/notifications.service.ts`
+- Create: `src/modules/notifications/notifications.schema.ts`
+- Create: `src/modules/settings/settings.service.ts`
+- Create: `src/modules/settings/settings.schema.ts`
+- Create: `src/modules/audit/audit.service.ts`
+- Create: `src/modules/audit/audit.schema.ts`
+
+**Steps:**
+1. Move respective schemas and query logic to separate files.
+2. Refactor route files to call their services.
+3. Verify tests pass.
+
+---
+
+## Task 17: Standardize imports and run final verification
+
+> **Goals:** Perform a final type check and test run for all backend modules.
+
+**Steps:**
+1. Verify all relative path imports across the 10 refactored modules are normalized to the `@/` alias.
+2. Run type checking: `npx tsc --noEmit`.
+3. Run Vitest test suite: `npx vitest run`.
+4. Run bundle build: `npm run build`.
+
+---
+
 ## Key Risks & Mitigations
 
 | Risk | Mitigation |
@@ -1094,3 +1183,4 @@ Each commit is atomic — no mixed concerns. Reverting one commit undoes a singl
 |--------|-------|--------|---------|
 | Sprint 1 | Tasks 1-6 | ✅ Complete | `ca04f69`, `8cf4aa8`, `93fd48c` |
 | Sprint 2 | Tasks 7-12 | ✅ Complete | `6c53e1a` to `2c35a36` |
+| Sprint 3 | Tasks 13-17 | ⏳ Pending | — |
