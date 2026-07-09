@@ -291,10 +291,12 @@ git commit -m "refactor(modules): split director into 6 sub-routes + service + s
 
 ---
 
-## Task 2: Split proposals.routes.ts (1788 lines → 4 sub-routes + service + schema)
+## Task 2: Split proposals.routes.ts (1788 lines → 4 sub-routes + service + schema) ✅
 
 > **Endpoints:** 14 (GET × 7, POST × 5, PATCH × 1, undocumented restore × 1)
 > **Key duplication:** role-scope where-conditions every query, leader subquery 5×+
+>
+> **Completed:** Commit `53da159` on `refactor/backend`. Created `proposals.schema.ts` (12 schemas), `proposals.service.ts` (9 functions), 4 sub-route files (crud, submit, review, comments), updated `index.ts`. Removed unused leader query from review handler. Fixed test mock expectations. Deleted old `routes/proposals.routes.ts`. All 193 tests pass.
 
 ### Files to create/modify
 
@@ -455,10 +457,12 @@ git commit -m "refactor(modules): split proposals into 4 sub-routes + service + 
 
 ---
 
-## Task 3: Split projects.routes.ts (1769 lines → 5 sub-routes + service + schema)
+## Task 3: Split projects.routes.ts (1769 lines → 4 sub-routes + service + schema) ✅
 
 > **Endpoints:** 11 (GET × 5, POST × 5, undocumented restore × 1)
 > **Key duplication:** role-scope filtering 3×, leader subquery 3×, MOA expiry check 4×, project lookup 6×
+> **Auth pattern:** Unlike proposals (auth at root `app.ts`), projects registers `authMiddleware` + `requireRole` **inline** in the route file. Each sub-route must re-register these.
+> **Audit IP:** `getClientIp(c)` requires the Hono context — service functions doing audit calls must accept `ipAddress: string` from the handler.
 
 ### Files to create/modify
 
@@ -482,72 +486,208 @@ git commit -m "refactor(modules): split proposals into 4 sub-routes + service + 
 | `CreateProjectSchema` | 76 | Create body |
 | `LinkMoaSchema` | 82 | Link MOA body |
 | `TransitionSchema` | 84 | Status transition body |
-| `ParamId` | 88 | Path param |
-| `PaginationQuery` | 95 | Query params |
+| `ParamId` | 88 | Path param (reuse `@/lib/schemas.js` if compatible, else local) |
+| `PaginationQuery` | 95 | Query params (local — includes `archived` field not in shared version) |
 | `ProjectDerivedStateSchema` | 703 | Derived state response |
 | `ProjectDetailsMemberSchema` | 820 | Member with special order |
 | `ProjectDetailsHistoryItemSchema` | 838 | History entry |
 | `ProjectDetailsAttachmentSchema` | 847 | Attachment |
-| `ProjectDetailsSchema` | 855 | Full details |
+| `ProjectDetailsSchema` | 855 | Full details response |
 | `ActivateSchema` | 1204 | Activation body |
 | `ProjectReadinessSchema` | 1374 | Readiness checklist |
 | `ProjectReportingScheduleSchema` | 1572 | Schedule response |
 
 ### Step 2: Create `projects.service.ts`
 
+Service functions take data deps as params. Functions that write audit logs accept `ipAddress: string` (handler extracts via `getClientIp(c)`).
+
 ```ts
-export function buildUserProjectScope(user): SQL[]
-// FACULTY/RET_CHAIR scoping — shared by LIST, DERIVED, DETAILS
+// ── Shared helpers ──
 
-export function getLeaderSubquery()
-// Reusable CTE (appears 3×)
+export function buildUserProjectScope(user: AuthUser): SQL[]
+// FACULTY/RET_CHAIR proposal-scope filtering — shared by LIST, DERIVED, DETAILS
+// Lines 160-174 (LIST), 735-754 (DERIVED), 957-981 (DETAILS security check)
 
-export async function listProjects(filters, pagination, user)
-// Paginated listing with role scope
+export function getLeaderSubquery(): SubqueryWithSelection<"proposalId" | "userId">
+// Reusable CTE for Project Leader lookup via proposalMembers
+// Lines 181-188, 756-763, 909-916 — appears 3× identically
 
-export async function createProjectFromProposal(proposalId, user)
-// Transaction: validates proposal approved, no duplicate, inserts project
+// ── CRUD ──
 
-export async function getProjectDetails(id, user)
-// 6 parallel queries + Supabase signed URLs + history assembly
+export async function listProjects(
+  user: AuthUser,
+  opts: { page: number; limit: number; archived?: string },
+): Promise<{ items: ProjectRow[]; total: number }>
+// Lines 154-262: role scope + 4-way join + pagination + count
 
-export async function linkMoaToProject(projectId, moaId, user)
-// MOA existence + expiry validation + update + audit
+export async function createProjectFromProposal(
+  proposalId: string,
+  user: AuthUser,
+  ipAddress: string,
+): Promise<ProjectRow>
+// Lines 289-372: transaction — validate proposal Approved, check 1:1, insert, audit
 
-export async function validateTransition(project, targetStatus)
-// Approved→Ongoing (requires MOA, re-validates expiry), Ongoing→Completed
+export async function getProjectDetails(
+  id: string,
+  user: AuthUser,
+): Promise<ProjectDetailsResponse>
+// Lines 905-1201: security check + 5 parallel queries + Supabase signed URLs + history assembly
 
-export async function transitionProjectStatus(projectId, targetStatus, user)
-// validate + update + audit diff
+// ── Status transitions ──
 
-export async function validateProjectClosure(projectId)
-// Checks FINAL_ACCOMPLISHMENT + TERMINAL reports exist
+export async function linkMoaToProject(
+  projectId: string,
+  moaId: string,
+  user: AuthUser,
+  ipAddress: string,
+): Promise<void>
+// Lines 404-455: project+MOA lookup, expiry check, update, audit
 
-export async function closeProject(projectId, user)
-// validate + update + audit
+export async function validateTransition(
+  project: { projectId: string; projectStatus: string; moaId: string | null },
+  targetStatus: string,
+): Promise<void>
+// Lines 488-545: Approved→Ongoing (MOA required + expiry re-check), Ongoing→Completed
 
-export async function activateProject(id, body, user)
-// Composite: auto-create project + link-moa + transition + create schedule
+export async function transitionProjectStatus(
+  projectId: string,
+  targetStatus: string,
+  user: AuthUser,
+  ipAddress: string,
+): Promise<void>
+// Lines 483-573: fetch project + validateTransition + update + audit diff
 
-export async function getProjectReadiness(id)
-// 4-part checklist (proposal approved, special orders, MOA, schedule)
+export async function closeProject(
+  projectId: string,
+  user: AuthUser,
+  ipAddress: string,
+): Promise<void>
+// Lines 605-700: fetch project, validate state, check FINAL_ACCOMPLISHMENT + TERMINAL reports, update + audit
 
-export async function getProjectReportingSchedule(id)
-// Schedule + due dates + reports + upcoming/overdue partition
+// ── Activate ──
+
+export async function activateProject(
+  id: string,
+  body: { moaId: string; reportingFrequency: string; dueDates: Array<{ reportType: string; dueDate: string }> },
+  user: AuthUser,
+  ipAddress: string,
+): Promise<void>
+// Lines 1243-1371: composite — auto-create project if needed, validate MOA, link+transition+schedule in tx, audit
+
+// ── Readiness & schedule ──
+
+export async function getProjectReadiness(id: string): Promise<ReadinessResponse>
+// Lines 1408-1569: 4-part checklist (proposal approved, special orders, MOA validity, reporting schedule)
+
+export async function getProjectReportingSchedule(id: string): Promise<ReportingScheduleResponse>
+// Lines 1626-1752: schedule lookup + due dates + reports + upcoming/overdue partition
 ```
 
 ### Step 3: Create sub-route files
 
-| Sub-route file | Endpoint(s) | Source lines |
-|----------------|-------------|-------------|
-| `crud.routes.ts` | `GET /projects`, `POST /projects`, `GET /projects/{id}`, `GET /projects/{id}/derived-state`, `POST /:id/restore` | 138-372 + 702-816 + 818-1201 + 1754-1767 |
-| `status.routes.ts` | `POST /projects/{id}/link-moa`, `POST /projects/{id}/transition`, `POST /projects/{id}/close` | 374-700 |
-| `activate.routes.ts` | `POST /projects/{id}/activate` | 1203-1371 |
-| `reporting.routes.ts` | `GET /projects/{id}/readiness`, `GET /projects/{id}/reporting-schedule` | 1373-1752 |
+Each sub-route creates its own `OpenAPIHono<AuthEnv>` and registers auth middleware independently.
 
-### Step 4-7: index.ts, delete, verify, commit
+**Auth middleware pattern** (must appear in each sub-route file that has protected endpoints):
+```ts
+import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
+import { requireRole } from "@/middleware/rbac.js";
+import { ROLE_NAMES } from "@/lib/types.js";
 
-Same pattern as Task 1.
+const app = new OpenAPIHono<AuthEnv>();
+installApiErrorHandler(app);
+app.use("/*", authMiddleware);
+```
+
+#### 3a. `crud.routes.ts` — 5 endpoints
+
+| Endpoint | Auth | Source lines |
+|----------|------|-------------|
+| `GET /projects` | authMiddleware only (all roles) | 138-262 |
+| `POST /projects` | authMiddleware + requireRole(DIRECTOR) | 264-372 |
+| `GET /projects/{id}` | authMiddleware only | 880-1201 |
+| `GET /projects/{id}/derived-state` | authMiddleware only | 712-816 |
+| `POST /:id/restore` | authMiddleware only (undocumented) | 1754-1767 |
+
+**Note:** POST /projects needs conditional role guard — only POST is director-only, GET passes through. Use the same pattern from original (lines 127-133):
+```ts
+const directorOnly = requireRole(ROLE_NAMES.DIRECTOR);
+app.use("/projects", async (c, next) => {
+  if (c.req.method === "POST") return directorOnly(c, next);
+  return next();
+});
+```
+
+#### 3b. `status.routes.ts` — 3 endpoints
+
+| Endpoint | Auth | Source lines |
+|----------|------|-------------|
+| `POST /projects/{id}/link-moa` | authMiddleware + requireRole(DIRECTOR) | 374-455 |
+| `POST /projects/{id}/transition` | authMiddleware + requireRole(DIRECTOR) | 457-573 |
+| `POST /projects/{id}/close` | authMiddleware + requireRole(DIRECTOR) | 575-700 |
+
+```ts
+app.use("/*", authMiddleware);
+app.use("/*", requireRole(ROLE_NAMES.DIRECTOR));
+```
+
+#### 3c. `activate.routes.ts` — 1 endpoint
+
+| Endpoint | Auth | Source lines |
+|----------|------|-------------|
+| `POST /projects/{id}/activate` | authMiddleware + requireRole(DIRECTOR) | 1203-1371 |
+
+```ts
+app.use("/*", authMiddleware);
+app.use("/*", requireRole(ROLE_NAMES.DIRECTOR));
+```
+
+**Note:** Handler also does `user.roleName !== ROLE_NAMES.DIRECTOR` check at line 1248 — keep this as a service-level guard (belt-and-suspenders) or remove since middleware already enforces it. Recommend removing (redundant).
+
+#### 3d. `reporting.routes.ts` — 2 endpoints
+
+| Endpoint | Auth | Source lines |
+|----------|------|-------------|
+| `GET /projects/{id}/readiness` | authMiddleware only | 1373-1569 |
+| `GET /projects/{id}/reporting-schedule` | authMiddleware only | 1571-1752 |
+
+```ts
+app.use("/*", authMiddleware);
+```
+
+### Step 4: Update `index.ts`
+
+```ts
+import { Hono } from "hono";
+import crud from "./crud.routes.js";
+import status from "./status.routes.js";
+import activate from "./activate.routes.js";
+import reporting from "./reporting.routes.js";
+
+const router = new Hono();
+router.route("/", crud);
+router.route("/", status);
+router.route("/", activate);
+router.route("/", reporting);
+
+export default router;
+```
+
+### Step 5: Delete `src/routes/projects.routes.ts`
+
+### Step 6: Verify
+
+```bash
+npx tsc --noEmit          # 0 errors
+npx vitest run            # 193/193 pass (existing test file imports from ./index.js)
+```
+
+**Test file impact:** `projects.routes.test.ts` imports from `./index.js` — it will automatically pick up the new sub-routed module. No test changes needed.
+
+### Step 7: Commit
+
+```
+refactor(projects): split projects routes into sub-routes + service + schema
+```
 
 ---
 
