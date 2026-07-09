@@ -53,11 +53,6 @@ async function getPendingProposals(
 		statusFilter: SQL;
 		scopeClause?: SQL;
 		joinWithMember?: boolean;
-		deriveOptions?: {
-			isRtChair?: boolean;
-			isDirector?: boolean;
-			hasReviewed?: boolean;
-		};
 	},
 ) {
 	const leaderSubquery = buildLeaderSubquery();
@@ -97,11 +92,6 @@ async function getReturnedProposals(
 	opts: {
 		scopeClause?: SQL;
 		joinWithMember?: boolean;
-		deriveOptions?: {
-			isRtChair?: boolean;
-			isDirector?: boolean;
-			hasReviewed?: boolean;
-		};
 	},
 ) {
 	const leaderSubquery = buildLeaderSubquery();
@@ -233,11 +223,12 @@ async function getUpcomingReports(
 async function batchFetchScheduleExists(
 	projectIds: string[],
 ): Promise<Map<string, boolean>> {
-	if (projectIds.length === 0) return new Map();
+	const unique = [...new Set(projectIds)];
+	if (unique.length === 0) return new Map();
 	const rows = await db
 		.select({ projectId: projectReportingSchedules.projectId })
 		.from(projectReportingSchedules)
-		.where(inArray(projectReportingSchedules.projectId, projectIds));
+		.where(inArray(projectReportingSchedules.projectId, unique));
 	return new Map(rows.map((r) => [r.projectId, true]));
 }
 
@@ -421,7 +412,6 @@ export async function getActionItemsForRole(
 				eq(proposals.bypassedRetChair, false),
 			)!,
 			...scopeProps,
-			deriveOptions: { isRtChair: true, hasReviewed: false },
 		});
 		pendingReviews = pending.length;
 		for (const p of pending) {
@@ -434,7 +424,6 @@ export async function getActionItemsForRole(
 
 		const returned = await getReturnedProposals({
 			...scopeProps,
-			deriveOptions: { isRtChair: true },
 		});
 		returnedProposals = returned.length;
 		for (const p of returned) {
@@ -471,7 +460,6 @@ export async function getActionItemsForRole(
 					eq(proposals.bypassedRetChair, true),
 				),
 			)!,
-			deriveOptions: { isDirector: true, hasReviewed: false },
 		});
 		pendingReviews = pending.length;
 		for (const p of pending) {

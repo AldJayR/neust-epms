@@ -696,7 +696,7 @@ refactor(projects): split projects routes into sub-routes + service + schema
 > **Endpoints:** 1 (GET /action-center — no pagination, returns all items)
 > **Key problem:** 750-line if/else per role with 11 near-identical for-loops, N+1 schedule queries
 >
-> **Completed:** Commit TBD on `refactor/backend`. Created `action-center.schema.ts` (3 schemas), `action-center.service.ts` (unified queries + batch schedule fetch + item builders + orchestrator), `routes.ts` (thin handler). Removed unused `PgSubqueryWithSelection` import, fixed `exactOptionalPropertyTypes` with spread pattern. Verified functional equivalence via line-by-side comparison. Deleted old `routes/action-center.routes.ts`. All 159 tests pass.
+> **Completed:** Commit `6d10630` on `refactor/backend`. Created `action-center.schema.ts` (3 schemas), `action-center.service.ts` (unified queries + batch schedule fetch + item builders + orchestrator), `routes.ts` (thin handler). Removed unused `PgSubqueryWithSelection` import, fixed `exactOptionalPropertyTypes` with spread pattern. Verified functional equivalence via line-by-side comparison. Deleted old `routes/action-center.routes.ts`. All 159 tests pass.
 
 ### Files to create/modify
 
