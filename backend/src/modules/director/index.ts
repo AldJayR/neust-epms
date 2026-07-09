@@ -1,2 +1,17 @@
-import app from "@/routes/director.routes.js";
-export default app;
+import { Hono } from "hono";
+import dashboard from "./dashboard.routes.js";
+import facultyDirectory from "./faculty-directory.routes.js";
+import moaRepository from "./moa-repository.routes.js";
+import projectHub from "./project-hub.routes.js";
+import projectDetails from "./project-details.routes.js";
+import emailReport from "./email-report.routes.js";
+
+const router = new Hono();
+router.route("/", dashboard);
+router.route("/", facultyDirectory);
+router.route("/", moaRepository);
+router.route("/", projectHub);
+router.route("/", projectDetails);
+router.route("/", emailReport);
+
+export default router;

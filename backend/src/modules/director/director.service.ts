@@ -1,4 +1,3 @@
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import {
 	and,
 	count,
@@ -29,208 +28,227 @@ import { sdgs } from "@/db/schema/sdgs.js";
 import { specialOrders } from "@/db/schema/special-orders.js";
 import { users } from "@/db/schema/users.js";
 import { env } from "@/env.js";
-import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
+import { ApiError } from "@/lib/errors.js";
 import { supabase } from "@/lib/supabase.js";
 import {
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
 	type ProjectStatus,
 	ROLE_NAMES,
+	type AuthUser,
 } from "@/lib/types.js";
-import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
-import { requireRole } from "@/middleware/rbac.js";
 
-const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
+// ── Helper: format relative time ──
+function formatRelativeTime(date: Date, now: Date): string {
+	const diffMs = now.getTime() - date.getTime();
+	const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
+	const diffHours = Math.floor(diffMinutes / 60);
+	const diffDays = Math.floor(diffHours / 24);
 
-// ── Authentication & Authorization ──
-// MUST be registered before any route handler below: in Hono, middleware
-// registered after a handler does not apply to it.
-app.use("/director/*", authMiddleware);
-app.use(
-	"/director/*",
-	requireRole(
-		ROLE_NAMES.SUPER_ADMIN,
-		ROLE_NAMES.DIRECTOR,
-		ROLE_NAMES.RET_CHAIR,
-	),
-);
+	if (diffDays >= 2) {
+		return date.toLocaleDateString("en-US", {
+			month: "short",
+			day: "numeric",
+		});
+	}
+	if (diffDays === 1) {
+		return `Yesterday, ${date.toLocaleTimeString("en-US", {
+			hour: "numeric",
+			minute: "2-digit",
+		})}`;
+	}
+	if (diffHours >= 1) {
+		return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+	}
+	if (diffMinutes >= 1) {
+		return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
+	}
+	return "Just now";
+}
 
-// ── Schemas ──
-const HubProjectSchema = z
-	.object({
-		id: z.string(),
-		title: z.string(),
-		leaderName: z.string(),
-		leaderRank: z.string().nullable(),
-		college: z.string().nullable(),
-		dateSubmitted: z.string(),
-		lastReportDate: z.string().nullable().optional(),
-		status: z.string(),
-		type: z.enum(["Proposal", "Project"]),
-	})
-	.openapi("HubProject");
+// ── Helper: activity title ──
+function activityTitle(action: string, tableAffected: string): string {
+	const lowerAction = action.toLowerCase();
+	if (
+		lowerAction.includes("bulk approved") ||
+		lowerAction.includes("approved") ||
+		tableAffected === "projects"
+	) {
+		return "Project Approved";
+	}
+	if (lowerAction.includes("submitted") || tableAffected === "proposals") {
+		return "New Proposal Submitted";
+	}
+	return "Review Pending";
+}
 
-const HubProjectListSchema = z
-	.object({
-		items: z.array(HubProjectSchema),
-		total: z.number(),
-	})
-	.openapi("HubProjectList");
+// ── 1. getDashboardStats ──
+export async function getDashboardStats(user: AuthUser) {
+	const now = new Date();
+	const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
-const HubQuerySchema = z.object({
-	page: z.coerce
-		.number()
-		.int()
-		.min(1)
-		.default(1)
-		.openapi({ param: { name: "page", in: "query" } }),
-	limit: z.coerce
-		.number()
-		.int()
-		.min(1)
-		.max(100)
-		.default(10)
-		.openapi({ param: { name: "limit", in: "query" } }),
-	search: z
-		.string()
-		.optional()
-		.openapi({ param: { name: "search", in: "query" } }),
-	college: z
-		.string()
-		.optional()
-		.openapi({ param: { name: "college", in: "query" } }),
-	status: z
-		.string()
-		.optional()
-		.openapi({ param: { name: "status", in: "query" } }),
-	myProjectsOnly: z
-		.string()
-		.optional()
-		.openapi({ param: { name: "myProjectsOnly", in: "query" } }),
-});
+	const projectMetricsConditions = [isNull(projects.archivedAt)];
+	const underEvalConditions = [
+		isNull(proposals.archivedAt),
+		or(
+			eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
+			eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
+		),
+	];
 
-const DashboardMetricSchema = z.object({
-	totalProjects: z.number(),
-	ongoingProjects: z.number(),
-	underEvaluation: z.number(),
-	completed: z.number(),
-	overdueProjects: z.number().optional(),
-	pendingClosureProjects: z.number().optional(),
-});
+	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+		if (user.isMainCampus && user.departmentId !== null) {
+			projectMetricsConditions.push(
+				eq(proposals.departmentId, user.departmentId),
+			);
+			underEvalConditions.push(eq(proposals.departmentId, user.departmentId));
+		} else {
+			projectMetricsConditions.push(eq(proposals.campusId, user.campusId));
+			underEvalConditions.push(eq(proposals.campusId, user.campusId));
+		}
+	}
 
-const ChartPointSchema = z.object({
-	label: z.string(),
-	department: z.string(),
-	departmentCode: z.string(),
-	value: z.number(),
-});
+	const [projectMetrics, underEvaluationResult] = await Promise.all([
+		db
+			.select({
+				total: sql<number>`count(*)`,
+				ongoing: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.ONGOING})`,
+				completed: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.COMPLETED})`,
+				overdue: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.OVERDUE})`,
+				pendingClosure: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.PENDING_CLOSURE})`,
+			})
+			.from(projects)
+			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+			.where(and(...projectMetricsConditions)),
+		db
+			.select({ value: count() })
+			.from(proposals)
+			.where(and(...underEvalConditions)),
+	]);
 
-const ActivitySchema = z.object({
-	title: z.string(),
-	description: z.string(),
-	time: z.string(),
-});
+	const chartConditions = [isNull(proposals.archivedAt)];
+	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+		if (user.isMainCampus && user.departmentId !== null) {
+			chartConditions.push(eq(proposals.departmentId, user.departmentId));
+		} else {
+			chartConditions.push(eq(proposals.campusId, user.campusId));
+		}
+	}
 
-const MoaSchema = z.object({
-	name: z.string(),
-	dueText: z.string(),
-});
+	const chartRows = await db
+		.select({
+			label: campuses.campusName,
+			department: departments.departmentName,
+			departmentCode: departments.departmentCode,
+			value: count(),
+		})
+		.from(proposals)
+		.innerJoin(campuses, eq(proposals.campusId, campuses.campusId))
+		.innerJoin(
+			departments,
+			eq(proposals.departmentId, departments.departmentId),
+		)
+		.where(and(...chartConditions))
+		.groupBy(
+			campuses.campusName,
+			departments.departmentName,
+			departments.departmentCode,
+		);
 
-const MoaRepositoryItemSchema = z.object({
-	id: z.string(),
-	partnerOrganization: z.string(),
-	dateSigned: z.string(),
-	daysToExpiry: z.union([z.number(), z.string()]),
-	status: z.enum(["Valid", "Renewal Needed", "Expired"]),
-});
+	const recentLogRows = await db
+		.select({
+			action: auditLogs.action,
+			tableAffected: auditLogs.tableAffected,
+			createdAt: auditLogs.createdAt,
+			actorName: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
+		})
+		.from(auditLogs)
+		.innerJoin(users, eq(auditLogs.userId, users.userId))
+		.where(eq(auditLogs.userId, user.userId))
+		.orderBy(desc(auditLogs.createdAt))
+		.limit(3);
 
-const MoaRepositorySchema = z.object({
-	items: z.array(MoaRepositoryItemSchema),
-	total: z.number(),
-	metrics: z.object({
-		totalMoas: z.number(),
-		expiringWithin90Days: z.number(),
-		activePartnerships: z.number(),
-	}),
-});
+	const expiringMoaConditions = [
+		isNull(moas.archivedAt),
+		sql`${moas.validUntil} > ${now.toISOString()}`,
+		sql`${moas.validUntil} <= ${twoWeeksFromNow.toISOString()}`,
+	];
 
-const FacultyInvolvementSchema = z.object({
-	userId: z.string(),
-	firstName: z.string(),
-	lastName: z.string(),
-	academicRank: z.string().nullable(),
-	college: z.string().nullable(),
-	departmentCode: z.string().nullable(),
-	campusName: z.string().nullable(),
-	isMainCampus: z.boolean().nullable(),
-	isActive: z.boolean(),
-	leadProjects: z.number(),
-	collaboratorProjects: z.number(),
-	totalInvolvement: z.number(),
-});
+	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+		if (user.isMainCampus && user.departmentId !== null) {
+			expiringMoaConditions.push(eq(proposals.departmentId, user.departmentId));
+		} else {
+			expiringMoaConditions.push(eq(proposals.campusId, user.campusId));
+		}
+	}
 
-const FacultyDirectorySchema = z.object({
-	items: z.array(FacultyInvolvementSchema),
-	total: z.number(),
-	metrics: z.object({
-		totalActiveExtension: z.number(),
-		averageProjectsPerFaculty: z.number(),
-		mostActiveCollege: z.object({
-			name: z.string(),
-			contributors: z.number(),
-		}),
-	}),
-});
+	const expiringMoaRows = await db
+		.select({
+			partnerName: partners.partnerName,
+			validUntil: moas.validUntil,
+		})
+		.from(moas)
+		.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
+		.innerJoin(projects, eq(moas.moaId, projects.moaId))
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+		.where(and(...expiringMoaConditions))
+		.orderBy(moas.validUntil)
+		.limit(2);
 
-const facultyDirectoryRoute = createRoute({
-	method: "get",
-	path: "/director/faculty",
-	tags: ["Director"],
-	summary: "Get faculty directory with involvement metrics",
-	security: [{ Bearer: [] }],
-	request: {
-		query: z.object({
-			page: z.coerce
-				.number()
-				.int()
-				.min(1)
-				.default(1)
-				.openapi({ param: { name: "page", in: "query" } }),
-			limit: z.coerce
-				.number()
-				.int()
-				.min(1)
-				.max(100)
-				.default(10)
-				.openapi({ param: { name: "limit", in: "query" } }),
-			search: z
-				.string()
-				.optional()
-				.openapi({ param: { name: "search", in: "query" } }),
-			college: z
-				.string()
-				.optional()
-				.openapi({ param: { name: "college", in: "query" } }),
-			status: z
-				.string()
-				.optional()
-				.openapi({ param: { name: "status", in: "query" } }),
-		}),
-	},
-	responses: {
-		200: {
-			content: { "application/json": { schema: FacultyDirectorySchema } },
-			description: "Faculty directory with involvement metrics",
+	return {
+		metrics: {
+			totalProjects: Number(projectMetrics[0]?.total ?? 0),
+			ongoingProjects: Number(projectMetrics[0]?.ongoing ?? 0),
+			underEvaluation: Number(underEvaluationResult[0]?.value ?? 0),
+			completed: Number(projectMetrics[0]?.completed ?? 0),
+			overdueProjects: Number(projectMetrics[0]?.overdue ?? 0),
+			pendingClosureProjects: Number(projectMetrics[0]?.pendingClosure ?? 0),
 		},
-	},
-});
+		chartData: chartRows
+			.map((row) => ({
+				label: row.label,
+				department: row.department,
+				departmentCode: row.departmentCode,
+				value: Number(row.value ?? 0),
+			}))
+			.sort((a, b) => b.value - a.value),
+		recentActivities: recentLogRows.map((row) => ({
+			title: activityTitle(row.action, row.tableAffected),
+			description: row.action,
+			time: formatRelativeTime(row.createdAt, now),
+		})),
+		expiringMoas: expiringMoaRows.map((row) => {
+			const daysUntilExpiry = Math.max(
+				0,
+				Math.ceil(
+					(row.validUntil.getTime() - now.getTime()) / (24 * 60 * 60 * 1000),
+				),
+			);
+			return {
+				name: row.partnerName,
+				dueText:
+					daysUntilExpiry === 0
+						? "Expires today"
+						: `Expires in ${daysUntilExpiry} day${daysUntilExpiry === 1 ? "" : "s"}`,
+			};
+		}),
+	};
+}
 
-app.openapi(facultyDirectoryRoute, async (c) => {
-	const { page, limit, search, college, status } = c.req.valid("query");
+// ── 2. getFacultyDirectory ──
+export async function getFacultyDirectory(
+	query: {
+		page: number;
+		limit: number;
+		search?: string | undefined;
+		college?: string | undefined;
+		status?: string | undefined;
+	},
+	user: AuthUser,
+) {
+	const { page, limit, search, college, status } = query;
 	const offset = (page - 1) * limit;
 
-	const user = c.get("user");
 	const whereConditions: (SQL | undefined)[] = [
 		inArray(roles.roleName, [ROLE_NAMES.FACULTY, ROLE_NAMES.RET_CHAIR]),
 	];
@@ -345,21 +363,18 @@ app.openapi(facultyDirectoryRoute, async (c) => {
 	const mostActiveCollegeRow = mostActiveCollege[0];
 
 	if (userIds.length === 0) {
-		return c.json(
-			{
-				items: [],
-				total: Number(totalResult[0]?.value ?? 0),
-				metrics: {
-					totalActiveExtension: Number(totalFacultyRow?.value ?? 0),
-					averageProjectsPerFaculty: 0,
-					mostActiveCollege: {
-						name: mostActiveCollegeRow?.name ?? "N/A",
-						contributors: Number(mostActiveCollegeRow?.contributors ?? 0),
-					},
+		return {
+			items: [],
+			total: Number(totalResult[0]?.value ?? 0),
+			metrics: {
+				totalActiveExtension: Number(totalFacultyRow?.value ?? 0),
+				averageProjectsPerFaculty: 0,
+				mostActiveCollege: {
+					name: mostActiveCollegeRow?.name ?? "N/A",
+					contributors: Number(mostActiveCollegeRow?.contributors ?? 0),
 				},
 			},
-			200,
-		);
+		};
 	}
 
 	const [leadCounts, collabCounts] = await Promise.all([
@@ -420,70 +435,95 @@ app.openapi(facultyDirectoryRoute, async (c) => {
 		};
 	});
 
-	return c.json(
-		{
-			items,
-			total: Number(totalResult[0]?.value ?? 0),
-			metrics: {
-				totalActiveExtension: Number(totalFacultyRow?.value ?? 0),
-				averageProjectsPerFaculty: Number(
-					totalFacultyRow?.value
-						? (
-								Number(totalProjectsRow?.value) / Number(totalFacultyRow?.value)
-							).toFixed(1)
-						: 0,
-				),
-				mostActiveCollege: {
-					name: mostActiveCollegeRow?.name ?? "N/A",
-					contributors: Number(mostActiveCollegeRow?.contributors ?? 0),
-				},
+	return {
+		items,
+		total: Number(totalResult[0]?.value ?? 0),
+		metrics: {
+			totalActiveExtension: Number(totalFacultyRow?.value ?? 0),
+			averageProjectsPerFaculty: Number(
+				totalFacultyRow?.value
+					? (
+							Number(totalProjectsRow?.value) / Number(totalFacultyRow?.value)
+						).toFixed(1)
+					: 0,
+			),
+			mostActiveCollege: {
+				name: mostActiveCollegeRow?.name ?? "N/A",
+				contributors: Number(mostActiveCollegeRow?.contributors ?? 0),
 			},
 		},
-		200,
+	};
+}
+
+// ── 3. getFacultyInvolvementCounts (reused by email-report) ──
+export async function getFacultyInvolvementCounts(
+	userIds: string[],
+): Promise<Map<string, { leadCount: number; collabCount: number }>> {
+	if (userIds.length === 0) return new Map();
+
+	const [leadCounts, collabCounts] = await Promise.all([
+		db
+			.select({
+				userId: proposalMembers.userId,
+				value: count(),
+			})
+			.from(projects)
+			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+			.innerJoin(
+				proposalMembers,
+				eq(proposals.proposalId, proposalMembers.proposalId),
+			)
+			.where(
+				and(
+					inArray(proposalMembers.userId, userIds),
+					isNull(projects.archivedAt),
+					eq(proposalMembers.projectRole, "Project Leader"),
+				),
+			)
+			.groupBy(proposalMembers.userId),
+		db
+			.select({
+				userId: proposalMembers.userId,
+				value: count(),
+			})
+			.from(proposalMembers)
+			.innerJoin(
+				proposals,
+				eq(proposalMembers.proposalId, proposals.proposalId),
+			)
+			.where(
+				and(
+					inArray(proposalMembers.userId, userIds),
+					sql`${proposalMembers.projectRole} != 'Project Leader'`,
+					isNull(proposals.archivedAt),
+				),
+			)
+			.groupBy(proposalMembers.userId),
+	]);
+
+	const leadMap = new Map(leadCounts.map((r) => [r.userId, Number(r.value ?? 0)]));
+	const collabMap = new Map(
+		collabCounts.map((r) => [r.userId, Number(r.value ?? 0)]),
 	);
-});
 
-const moaRepositoryRoute = createRoute({
-	method: "get",
-	path: "/director/moas",
-	tags: ["Director"],
-	summary: "Get MOA repository with metrics",
-	security: [{ Bearer: [] }],
-	request: {
-		query: z.object({
-			page: z.coerce
-				.number()
-				.int()
-				.min(1)
-				.default(1)
-				.openapi({ param: { name: "page", in: "query" } }),
-			limit: z.coerce
-				.number()
-				.int()
-				.min(1)
-				.max(100)
-				.default(10)
-				.openapi({ param: { name: "limit", in: "query" } }),
-			search: z
-				.string()
-				.optional()
-				.openapi({ param: { name: "search", in: "query" } }),
-			status: z
-				.string()
-				.optional()
-				.openapi({ param: { name: "status", in: "query" } }),
-		}),
-	},
-	responses: {
-		200: {
-			content: { "application/json": { schema: MoaRepositorySchema } },
-			description: "MOA repository with metrics",
-		},
-	},
-});
+	const result = new Map<string, { leadCount: number; collabCount: number }>();
+	for (const userId of userIds) {
+		result.set(userId, {
+			leadCount: leadMap.get(userId) ?? 0,
+			collabCount: collabMap.get(userId) ?? 0,
+		});
+	}
+	return result;
+}
 
-app.openapi(moaRepositoryRoute, async (c) => {
-	const { page, limit, search, status } = c.req.valid("query");
+// ── 4. getMoaRepository ──
+export async function getMoaRepository(query: {
+	page: number;
+	limit: number;
+	search?: string | undefined;
+	status?: string | undefined;
+}) {
+	const { page, limit, search, status } = query;
 	const offset = (page - 1) * limit;
 	const now = new Date();
 	const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
@@ -522,7 +562,7 @@ app.openapi(moaRepositoryRoute, async (c) => {
 		}
 	}
 
-	const query = db
+	const queryBuilder = db
 		.select({
 			moaId: moas.moaId,
 			partnerName: partners.partnerName,
@@ -534,7 +574,7 @@ app.openapi(moaRepositoryRoute, async (c) => {
 		.where(and(...whereConditions))
 		.orderBy(desc(moas.validUntil));
 
-	const rows = await query.limit(limit).offset(offset);
+	const rows = await queryBuilder.limit(limit).offset(offset);
 	const totalResult = await db
 		.select({ value: count() })
 		.from(moas)
@@ -585,110 +625,53 @@ app.openapi(moaRepositoryRoute, async (c) => {
 		};
 	});
 
-	return c.json(
-		{
-			items,
-			total: Number(totalResult[0]?.value ?? 0),
-			metrics: {
-				totalMoas: Number(totalMoasCount[0]?.value ?? 0),
-				expiringWithin90Days: Number(expiringSoonCount[0]?.value ?? 0),
-				activePartnerships: Number(activeCount[0]?.value ?? 0),
-			},
+	return {
+		items,
+		total: Number(totalResult[0]?.value ?? 0),
+		metrics: {
+			totalMoas: Number(totalMoasCount[0]?.value ?? 0),
+			expiringWithin90Days: Number(expiringSoonCount[0]?.value ?? 0),
+			activePartnerships: Number(activeCount[0]?.value ?? 0),
 		},
-		200,
-	);
-});
-
-const DirectorDashboardSchema = z.object({
-	metrics: DashboardMetricSchema,
-	chartData: z.array(ChartPointSchema),
-	recentActivities: z.array(ActivitySchema),
-	expiringMoas: z.array(MoaSchema),
-});
-
-function formatRelativeTime(date: Date, now: Date) {
-	const diffMs = now.getTime() - date.getTime();
-	const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
-	const diffHours = Math.floor(diffMinutes / 60);
-	const diffDays = Math.floor(diffHours / 24);
-
-	if (diffDays >= 2) {
-		return date.toLocaleDateString("en-US", {
-			month: "short",
-			day: "numeric",
-		});
-	}
-
-	if (diffDays === 1) {
-		return `Yesterday, ${date.toLocaleTimeString("en-US", {
-			hour: "numeric",
-			minute: "2-digit",
-		})}`;
-	}
-
-	if (diffHours >= 1) {
-		return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
-	}
-
-	if (diffMinutes >= 1) {
-		return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
-	}
-
-	return "Just now";
+	};
 }
 
-function activityTitle(action: string, tableAffected: string) {
-	const lowerAction = action.toLowerCase();
+// ── 5. getActiveMoas ──
+export async function getActiveMoas() {
+	const rows = await db
+		.select({
+			moaId: moas.moaId,
+			partnerName: partners.partnerName,
+			validFrom: moas.validFrom,
+			validUntil: moas.validUntil,
+		})
+		.from(moas)
+		.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
+		.where(isNull(moas.archivedAt))
+		.orderBy(desc(moas.createdAt));
 
-	if (
-		lowerAction.includes("bulk approved") ||
-		lowerAction.includes("approved") ||
-		tableAffected === "projects"
-	) {
-		return "Project Approved";
-	}
-
-	if (lowerAction.includes("submitted") || tableAffected === "proposals") {
-		return "New Proposal Submitted";
-	}
-
-	return "Review Pending";
+	return rows.map((r) => ({
+		moaId: r.moaId,
+		partnerName: r.partnerName,
+		validFrom: r.validFrom.toISOString(),
+		validUntil: r.validUntil.toISOString(),
+	}));
 }
 
-const dashboardRoute = createRoute({
-	method: "get",
-	path: "/director/dashboard",
-	tags: ["Director"],
-	summary: "Get director dashboard summary",
-	security: [{ Bearer: [] }],
-	responses: {
-		200: {
-			content: { "application/json": { schema: DirectorDashboardSchema } },
-			description: "Director dashboard summary",
-		},
+// ── 6. getHubProjects ──
+export async function getHubProjects(
+	query: {
+		page: number;
+		limit: number;
+		search?: string | undefined;
+		college?: string | undefined;
+		status?: string | undefined;
+		myProjectsOnly?: string | undefined;
 	},
-});
-
-const projectHubRoute = createRoute({
-	method: "get",
-	path: "/director/hub/projects",
-	tags: ["Director"],
-	summary: "Get unified project hub list (Proposals + Projects)",
-	security: [{ Bearer: [] }],
-	request: { query: HubQuerySchema },
-	responses: {
-		200: {
-			content: { "application/json": { schema: HubProjectListSchema } },
-			description: "Unified project hub list",
-		},
-	},
-});
-
-app.openapi(projectHubRoute, async (c) => {
-	const { page, limit, search, college, status, myProjectsOnly } =
-		c.req.valid("query");
+	user: AuthUser,
+) {
+	const { page, limit, search, college, status, myProjectsOnly } = query;
 	const offset = (page - 1) * limit;
-	const user = c.get("user");
 
 	const leaderMembersSubquery = db
 		.select({
@@ -706,7 +689,6 @@ app.openapi(projectHubRoute, async (c) => {
 			eq(proposals.status, PROPOSAL_STATUS.APPROVED),
 			eq(proposals.status, PROPOSAL_STATUS.RETURNED),
 			eq(proposals.status, PROPOSAL_STATUS.REJECTED),
-			// DFD 6.1: Pending Review proposals that bypassed RET Chair route directly to Director
 			and(
 				eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
 				eq(proposals.bypassedRetChair, true),
@@ -768,7 +750,7 @@ app.openapi(projectHubRoute, async (c) => {
 		.groupBy(projectReports.projectId)
 		.as("latest_reports");
 
-	const query = db
+	const queryBuilder = db
 		.select({
 			id: proposals.proposalId,
 			title: proposals.title,
@@ -808,7 +790,7 @@ app.openapi(projectHubRoute, async (c) => {
 		.leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
 		.where(and(...whereConditions));
 
-	const rows = await query.limit(limit).offset(offset);
+	const rows = await queryBuilder.limit(limit).offset(offset);
 
 	const items = rows.map((r) => ({
 		id: r.id,
@@ -824,255 +806,11 @@ app.openapi(projectHubRoute, async (c) => {
 		type: (r.projectStatus ? "Project" : "Proposal") as "Project" | "Proposal",
 	}));
 
-	return c.json({ items, total: Number(totalResult[0]?.value ?? 0) }, 200);
-});
+	return { items, total: Number(totalResult[0]?.value ?? 0) };
+}
 
-app.openapi(dashboardRoute, async (c) => {
-	const user = c.get("user");
-	const now = new Date();
-	const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-
-	const projectMetricsConditions = [isNull(projects.archivedAt)];
-	const underEvalConditions = [
-		isNull(proposals.archivedAt),
-		or(
-			eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
-			eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
-		),
-	];
-
-	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		if (user.isMainCampus && user.departmentId !== null) {
-			projectMetricsConditions.push(
-				eq(proposals.departmentId, user.departmentId),
-			);
-			underEvalConditions.push(eq(proposals.departmentId, user.departmentId));
-		} else {
-			projectMetricsConditions.push(eq(proposals.campusId, user.campusId));
-			underEvalConditions.push(eq(proposals.campusId, user.campusId));
-		}
-	}
-
-	const [projectMetrics, underEvaluationResult] = await Promise.all([
-		db
-			.select({
-				total: sql<number>`count(*)`,
-				ongoing: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.ONGOING})`,
-				completed: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.COMPLETED})`,
-				overdue: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.OVERDUE})`,
-				pendingClosure: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.PENDING_CLOSURE})`,
-			})
-			.from(projects)
-			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-			.where(and(...projectMetricsConditions)),
-		db
-			.select({ value: count() })
-			.from(proposals)
-			.where(and(...underEvalConditions)),
-	]);
-
-	const chartConditions = [isNull(proposals.archivedAt)];
-	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		if (user.isMainCampus && user.departmentId !== null) {
-			chartConditions.push(eq(proposals.departmentId, user.departmentId));
-		} else {
-			chartConditions.push(eq(proposals.campusId, user.campusId));
-		}
-	}
-
-	const chartRows = await db
-		.select({
-			label: campuses.campusName,
-			department: departments.departmentName,
-			departmentCode: departments.departmentCode,
-			value: count(),
-		})
-		.from(proposals)
-		.innerJoin(campuses, eq(proposals.campusId, campuses.campusId))
-		.innerJoin(
-			departments,
-			eq(proposals.departmentId, departments.departmentId),
-		)
-		.where(and(...chartConditions))
-		.groupBy(
-			campuses.campusName,
-			departments.departmentName,
-			departments.departmentCode,
-		);
-
-	const recentLogRows = await db
-		.select({
-			action: auditLogs.action,
-			tableAffected: auditLogs.tableAffected,
-			createdAt: auditLogs.createdAt,
-			actorName: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
-		})
-		.from(auditLogs)
-		.innerJoin(users, eq(auditLogs.userId, users.userId))
-		.where(eq(auditLogs.userId, user.userId))
-		.orderBy(desc(auditLogs.createdAt))
-		.limit(3);
-
-	const expiringMoaConditions = [
-		isNull(moas.archivedAt),
-		sql`${moas.validUntil} > ${now.toISOString()}`,
-		sql`${moas.validUntil} <= ${twoWeeksFromNow.toISOString()}`,
-	];
-
-	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		if (user.isMainCampus && user.departmentId !== null) {
-			expiringMoaConditions.push(eq(proposals.departmentId, user.departmentId));
-		} else {
-			expiringMoaConditions.push(eq(proposals.campusId, user.campusId));
-		}
-	}
-
-	const expiringMoaRows = await db
-		.select({
-			partnerName: partners.partnerName,
-			validUntil: moas.validUntil,
-		})
-		.from(moas)
-		.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
-		.innerJoin(projects, eq(moas.moaId, projects.moaId))
-		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-		.where(and(...expiringMoaConditions))
-		.orderBy(moas.validUntil)
-		.limit(2);
-
-	return c.json(
-		{
-			metrics: {
-				totalProjects: Number(projectMetrics[0]?.total ?? 0),
-				ongoingProjects: Number(projectMetrics[0]?.ongoing ?? 0),
-				underEvaluation: Number(underEvaluationResult[0]?.value ?? 0),
-				completed: Number(projectMetrics[0]?.completed ?? 0),
-				overdueProjects: Number(projectMetrics[0]?.overdue ?? 0),
-				pendingClosureProjects: Number(projectMetrics[0]?.pendingClosure ?? 0),
-			},
-			chartData: chartRows
-				.map((row) => ({
-					label: row.label,
-					department: row.department,
-					departmentCode: row.departmentCode,
-					value: Number(row.value ?? 0),
-				}))
-				.sort((a, b) => b.value - a.value),
-			recentActivities: recentLogRows.map((row) => ({
-				title: activityTitle(row.action, row.tableAffected),
-				description: row.action,
-				time: formatRelativeTime(row.createdAt, now),
-			})),
-			expiringMoas: expiringMoaRows.map((row) => {
-				const daysUntilExpiry = Math.max(
-					0,
-					Math.ceil(
-						(row.validUntil.getTime() - now.getTime()) / (24 * 60 * 60 * 1000),
-					),
-				);
-
-				return {
-					name: row.partnerName,
-					dueText:
-						daysUntilExpiry === 0
-							? "Expires today"
-							: `Expires in ${daysUntilExpiry} day${daysUntilExpiry === 1 ? "" : "s"}`,
-				};
-			}),
-		},
-		200,
-	);
-});
-
-// ── Project Details Endpoint ──
-
-const ProjectDetailsMemberSchema = z.object({
-	memberId: z.string(),
-	userId: z.string(),
-	name: z.string(),
-	role: z.string(),
-	avatarUrl: z.string().nullable().optional(),
-	specialOrder: z
-		.object({
-			specialOrderId: z.string(),
-			soNumber: z.string(),
-			storagePath: z.string().nullable(),
-			dateIssued: z.string().nullable(),
-			status: z.string(),
-		})
-		.nullable()
-		.optional(),
-});
-
-const ProjectDetailsHistoryItemSchema = z.object({
-	id: z.string(),
-	version: z.string(),
-	status: z.string(),
-	actorName: z.string(),
-	date: z.string(),
-	comment: z.string().optional(),
-});
-
-const ProjectDetailsAttachmentSchema = z.object({
-	id: z.string(),
-	name: z.string(),
-	type: z.string(),
-	url: z.string(),
-	version: z.string(),
-});
-
-const ProjectDetailsSchema = z.object({
-	id: z.string(),
-	title: z.string(),
-	status: z.string(),
-	version: z.string(),
-	metadata: z.object({
-		leader: z.object({
-			name: z.string(),
-		}),
-		department: z.string(),
-		duration: z.string(),
-		moaLinked: z.string(),
-		sdgs: z.string().optional(),
-		budget: z.object({
-			total: z.number(),
-			neust: z.number(),
-			partner: z.number(),
-		}),
-	}),
-	members: z.array(ProjectDetailsMemberSchema),
-	history: z.array(ProjectDetailsHistoryItemSchema),
-	attachments: z.array(ProjectDetailsAttachmentSchema),
-});
-
-const projectDetailsRoute = createRoute({
-	method: "get",
-	path: "/director/projects/{proposalId}",
-	tags: ["Director"],
-	summary: "Get project details by proposal ID",
-	security: [{ Bearer: [] }],
-	request: {
-		params: z.object({
-			proposalId: z
-				.string()
-				.uuid()
-				.openapi({ param: { name: "proposalId", in: "path" } }),
-		}),
-	},
-	responses: {
-		200: {
-			content: { "application/json": { schema: ProjectDetailsSchema } },
-			description: "Project details",
-		},
-		404: {
-			description: "Project not found",
-		},
-	},
-});
-
-app.openapi(projectDetailsRoute, async (c) => {
-	const { proposalId } = c.req.valid("param");
-
+// ── 7. getProjectDetails ──
+export async function getProjectDetails(proposalId: string, user: AuthUser) {
 	const leaderMembers = db
 		.select({
 			proposalId: proposalMembers.proposalId,
@@ -1117,11 +855,10 @@ app.openapi(projectDetailsRoute, async (c) => {
 		.where(eq(proposals.proposalId, proposalId));
 
 	if (!row) {
-		return c.json({ error: { message: "Project not found" } }, 404);
+		throw new ApiError(404, "NOT_FOUND", "Project not found");
 	}
 
 	// Security check for RET Chair
-	const user = c.get("user");
 	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
 		const isMainCampus = user.isMainCampus;
 
@@ -1242,18 +979,8 @@ app.openapi(projectDetailsRoute, async (c) => {
 	]);
 
 	const months = [
-		"Jan",
-		"Feb",
-		"Mar",
-		"Apr",
-		"May",
-		"Jun",
-		"Jul",
-		"Aug",
-		"Sep",
-		"Oct",
-		"Nov",
-		"Dec",
+		"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 	];
 	let duration = "Not yet started";
 	if (row.targetStartDate && row.targetEndDate) {
@@ -1292,7 +1019,7 @@ app.openapi(projectDetailsRoute, async (c) => {
 		specialOrder: specialOrderMap.get(m.memberId) ?? null,
 	}));
 
-	const history: Array<{
+	type HistoryItem = {
 		id: string;
 		type: "document" | "review" | "edit";
 		version: string;
@@ -1300,7 +1027,9 @@ app.openapi(projectDetailsRoute, async (c) => {
 		actorName: string;
 		date: string;
 		comment?: string;
-	}> = [];
+	};
+
+	const history: HistoryItem[] = [];
 
 	documentRows.forEach((doc) => {
 		history.push({
@@ -1373,90 +1102,41 @@ app.openapi(projectDetailsRoute, async (c) => {
 	);
 
 	const status = row.projectStatus || row.status;
-
 	const sdgList = sdgRows.map((s) => `SDG ${s.sdgNumber}`).join(", ") || "None";
 
-	return c.json(
-		{
-			id: row.proposalId,
-			title: row.title,
-			status,
-			version: `v${row.revisionNum}`,
-			metadata: {
-				leader: {
-					name: `${row.leaderFirstName ?? "N/A"} ${row.leaderLastName ?? "N/A"}`.trim(),
-				},
-				departmentCode: row.departmentCode,
-				department: row.departmentName,
-				duration,
-				moaLinked: row.moaPartner || "None",
-				sdgs: sdgList,
-				budget: {
-					total: budgetNeust + budgetPartner,
-					neust: budgetNeust,
-					partner: budgetPartner,
-				},
+	return {
+		id: row.proposalId,
+		title: row.title,
+		status,
+		version: `v${row.revisionNum}`,
+		metadata: {
+			leader: {
+				name: `${row.leaderFirstName ?? "N/A"} ${row.leaderLastName ?? "N/A"}`.trim(),
 			},
-			members,
-			history,
-			attachments,
-		},
-		200,
-	);
-});
-
-const emailReportRoute = createRoute({
-	method: "post",
-	path: "/director/email-report",
-	tags: ["Director"],
-	summary: "Email faculty directory report to director",
-	security: [{ Bearer: [] }],
-	request: {
-		body: {
-			content: {
-				"application/json": {
-					schema: z.object({
-						search: z.string().optional(),
-						college: z.string().optional(),
-						status: z.string().optional(),
-					}),
-				},
+			departmentCode: row.departmentCode,
+			department: row.departmentName,
+			duration,
+			moaLinked: row.moaPartner || "None",
+			sdgs: sdgList,
+			budget: {
+				total: budgetNeust + budgetPartner,
+				neust: budgetNeust,
+				partner: budgetPartner,
 			},
 		},
-	},
-	responses: {
-		200: {
-			content: {
-				"application/json": {
-					schema: z.object({
-						success: z.boolean(),
-						message: z.string(),
-					}),
-				},
-			},
-			description: "Email sent successfully",
-		},
-		400: {
-			description: "Invalid request or Resend not configured",
-		},
-	},
-});
+		members,
+		history,
+		attachments,
+	};
+}
 
-app.openapi(emailReportRoute, async (c) => {
-	const { search, college, status } = c.req.valid("json");
-	const user = c.get("user");
+// ── 8. sendEmailReport ──
+export async function sendEmailReport(
+	body: { search?: string | undefined; college?: string | undefined; status?: string | undefined },
+	user: AuthUser,
+): Promise<void> {
+	const { search, college, status } = body;
 
-	if (!env.RESEND_API_KEY) {
-		return c.json(
-			{
-				success: false,
-				message: "Email service is not configured on the server.",
-			},
-			400,
-		);
-	}
-
-	// 1. Fetch matching faculty directory data (no pagination)
 	const whereConditions: (SQL | undefined)[] = [
 		inArray(roles.roleName, [ROLE_NAMES.FACULTY, ROLE_NAMES.RET_CHAIR]),
 	];
@@ -1508,68 +1188,21 @@ app.openapi(emailReportRoute, async (c) => {
 
 	const userIds = rows.map((r) => r.userId);
 
-	let leadMap = new Map<string, number>();
-	let collabMap = new Map<string, number>();
-
-	if (userIds.length > 0) {
-		const [leadCounts, collabCounts] = await Promise.all([
-			db
-				.select({
-					userId: proposalMembers.userId,
-					value: count(),
-				})
-				.from(projects)
-				.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-				.innerJoin(
-					proposalMembers,
-					eq(proposals.proposalId, proposalMembers.proposalId),
-				)
-				.where(
-					and(
-						inArray(proposalMembers.userId, userIds),
-						isNull(projects.archivedAt),
-						eq(proposalMembers.projectRole, "Project Leader"),
-					),
-				)
-				.groupBy(proposalMembers.userId),
-			db
-				.select({
-					userId: proposalMembers.userId,
-					value: count(),
-				})
-				.from(proposalMembers)
-				.innerJoin(
-					proposals,
-					eq(proposalMembers.proposalId, proposals.proposalId),
-				)
-				.where(
-					and(
-						inArray(proposalMembers.userId, userIds),
-						sql`${proposalMembers.projectRole} != 'Project Leader'`,
-						isNull(proposals.archivedAt),
-					),
-				)
-				.groupBy(proposalMembers.userId),
-		]);
-
-		leadMap = new Map(leadCounts.map((r) => [r.userId, Number(r.value ?? 0)]));
-		collabMap = new Map(
-			collabCounts.map((r) => [r.userId, Number(r.value ?? 0)]),
-		);
-	}
+	const involvementCounts = await getFacultyInvolvementCounts(userIds);
 
 	const items = rows.map((row) => {
-		const leadProjects = leadMap.get(row.userId) ?? 0;
-		const collaboratorProjects = collabMap.get(row.userId) ?? 0;
+		const counts = involvementCounts.get(row.userId) ?? {
+			leadCount: 0,
+			collabCount: 0,
+		};
 		return {
 			...row,
-			leadProjects,
-			collaboratorProjects,
-			totalInvolvement: leadProjects + collaboratorProjects,
+			leadProjects: counts.leadCount,
+			collaboratorProjects: counts.collabCount,
+			totalInvolvement: counts.leadCount + counts.collabCount,
 		};
 	});
 
-	// Helper function to format academic rank inside the template
 	const academicRankLabels: Record<string, string> = {
 		"instructor-1": "Instructor I",
 		"instructor-2": "Instructor II",
@@ -1585,7 +1218,6 @@ app.openapi(emailReportRoute, async (c) => {
 		return academicRankLabels[rank] ?? rank;
 	};
 
-	// 2. Build email HTML body
 	const htmlReport = `
 		<html>
 			<body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px;">
@@ -1639,67 +1271,13 @@ app.openapi(emailReportRoute, async (c) => {
 		</html>
 	`;
 
-	// 3. Send email using Resend
-	try {
-		const { Resend } = await import("resend");
-		const resend = new Resend(env.RESEND_API_KEY);
+	const { Resend } = await import("resend");
+	const resend = new Resend(env.RESEND_API_KEY);
 
-		await resend.emails.send({
-			from: env.RESEND_FROM ?? "noreply@neust.edu.ph",
-			to: user.email,
-			subject: `Faculty Directory Report - A.Y. 2024-2025`,
-			html: htmlReport,
-		});
-
-		return c.json(
-			{ success: true, message: "Email report sent successfully." },
-			200,
-		);
-	} catch (error) {
-		console.error("Failed to send email report:", error);
-		return c.json(
-			{ success: false, message: "Failed to send email report." },
-			500,
-		);
-	}
-});
-
-// ── GET /director/moas/active ──
-const activeMoasRoute = createRoute({
-	method: "get",
-	path: "/director/moas/active",
-	tags: ["Director"],
-	summary: "List active MOAs with partner names (for project activation)",
-	security: [{ Bearer: [] }],
-	responses: {
-		200: {
-			description: "List of active MOAs",
-		},
-	},
-});
-
-app.openapi(activeMoasRoute, async (c) => {
-	const rows = await db
-		.select({
-			moaId: moas.moaId,
-			partnerName: partners.partnerName,
-			validFrom: moas.validFrom,
-			validUntil: moas.validUntil,
-		})
-		.from(moas)
-		.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
-		.where(isNull(moas.archivedAt))
-		.orderBy(desc(moas.createdAt));
-
-	return c.json(
-		rows.map((r) => ({
-			moaId: r.moaId,
-			partnerName: r.partnerName,
-			validFrom: r.validFrom.toISOString(),
-			validUntil: r.validUntil.toISOString(),
-		})),
-		200,
-	);
-});
-
-export default app;
+	await resend.emails.send({
+		from: env.RESEND_FROM ?? "noreply@neust.edu.ph",
+		to: user.email,
+		subject: `Faculty Directory Report - A.Y. 2024-2025`,
+		html: htmlReport,
+	});
+}
