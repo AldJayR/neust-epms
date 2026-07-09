@@ -25,7 +25,8 @@ const NotificationSchema = z
 	.openapi("Notification");
 
 // ── All routes require authentication ──
-app.use("*", authMiddleware);
+app.use("/notifications", authMiddleware);
+app.use("/notifications/*", authMiddleware);
 
 // ── GET /notifications ──
 const listNotificationsRoute = createRoute({

@@ -208,6 +208,7 @@ app.get("/api/v1/swagger", swaggerUI({ url: "/api/v1/openapi.json" }));
 // here guarantees exactly one Supabase token validation per request instead of
 // each sub-app re-registering its own wildcard auth (which previously ran
 // authMiddleware multiple times per proposal request).
+app.use("/api/v1/proposals", authMiddleware);
 app.use("/api/v1/proposals/*", authMiddleware);
 
 app.route("/api/v1", authRoutes);

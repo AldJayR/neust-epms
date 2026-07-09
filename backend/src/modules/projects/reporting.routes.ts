@@ -15,7 +15,8 @@ import {
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
 
-app.use("/projects/*", authMiddleware);
+app.use("/projects/:id/readiness", authMiddleware);
+app.use("/projects/:id/reporting-schedule", authMiddleware);
 
 // ── GET /projects/:id/readiness ──
 const projectReadinessRoute = createRoute({

@@ -83,7 +83,9 @@ const PaginationQuery = z.object({
 		}),
 });
 
+app.use("/audit-logs", authMiddleware);
 app.use("/audit-logs/*", authMiddleware);
+app.use("/audit-logs", requireRole(ROLE_NAMES.SUPER_ADMIN));
 app.use("/audit-logs/*", requireRole(ROLE_NAMES.SUPER_ADMIN));
 
 // ── GET /audit-logs/stats ──

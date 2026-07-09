@@ -15,8 +15,14 @@ import {
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
 
-app.use("/projects/*", authMiddleware);
-app.use("/projects/*", requireRole(ROLE_NAMES.DIRECTOR));
+app.use("/projects/:id/link-moa", authMiddleware);
+app.use("/projects/:id/link-moa", requireRole(ROLE_NAMES.DIRECTOR));
+
+app.use("/projects/:id/transition", authMiddleware);
+app.use("/projects/:id/transition", requireRole(ROLE_NAMES.DIRECTOR));
+
+app.use("/projects/:id/close", authMiddleware);
+app.use("/projects/:id/close", requireRole(ROLE_NAMES.DIRECTOR));
 
 // ── POST /projects/:id/link-moa ──
 const linkMoaRoute = createRoute({

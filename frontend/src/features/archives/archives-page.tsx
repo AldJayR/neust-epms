@@ -410,9 +410,7 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 							</h1>
 						</div>
 						<p className="text-sm text-muted-foreground">
-							Manage and restore soft-deleted proposals, active projects, and
-							partner MOAs in accordance with RA 9470 records retention
-							policies.
+							Manage and recover archived proposals, projects, and partner MOAs.
 						</p>
 					</div>
 				}
