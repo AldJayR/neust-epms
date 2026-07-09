@@ -9,10 +9,13 @@ import { proposals } from "@/db/schema/proposals.js";
 import { users } from "@/db/schema/users.js";
 import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
-import type { AuthEnv } from "@/middleware/auth.js";
+import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
+
+app.use("/search", authMiddleware);
+app.use("/search/*", authMiddleware);
 
 const SEARCH_TYPE = z
 	.enum(["all", "proposals", "projects", "reports", "moas", "users"])
