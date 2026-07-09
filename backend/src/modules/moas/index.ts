@@ -1,2 +1,2 @@
-import app from "@/routes/moas.routes.js";
+import app from "./moas.routes.js";
 export default app;

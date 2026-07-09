@@ -58,36 +58,36 @@ src/lib/
 ```
 src/modules/
 ├── director/                   ← 6 sub-routes + service + schema
-│   ├── index.ts                (mounts 6 sub-apps)
-│   ├── dashboard.routes.ts     (GET /director/dashboard)
-│   ├── faculty-directory.routes.ts (GET /director/faculty)
-│   ├── moa-repository.routes.ts (GET /director/moas, GET /director/moas/active)
-│   ├── project-hub.routes.ts   (GET /director/hub/projects)
-│   ├── project-details.routes.ts (GET /director/projects/{proposalId})
-│   ├── email-report.routes.ts  (POST /director/email-report)
-│   ├── director.service.ts     (7 service functions)
-│   └── director.schema.ts      (16 zod schemas)
-├── proposals/                  ← 5 sub-routes + service + schema
-│   ├── index.ts                (mounts 5 sub-apps)
-│   ├── crud.routes.ts          (list, get-by-id, create, update, RET stats, derived-state, metadata, restore)
-│   ├── submit.routes.ts        (submit + 5 completeness checks)
-│   ├── review.routes.ts        (endorse/approve/return/reject state machine)
-│   ├── comments.routes.ts      (comment CRUD + spatial annotations)
-│   ├── proposals.service.ts    (8 service functions)
-│   └── proposals.schema.ts     (10+ zod schemas)
-├── projects/                   ← 5 sub-routes + service + schema
-│   ├── index.ts                (mounts 5 sub-apps)
-│   ├── crud.routes.ts          (list, create, get-details, derived-state, restore)
-│   ├── status.routes.ts        (transition, close, link-moa)
-│   ├── activate.routes.ts      (composite activation)
-│   ├── reporting.routes.ts     (readiness, reporting-schedule)
-│   ├── projects.service.ts     (10+ service functions)
-│   └── projects.schema.ts      (11+ zod schemas)
+│   ├── index.ts
+│   ├── dashboard.routes.ts
+│   ├── faculty-directory.routes.ts
+│   ├── moa-repository.routes.ts
+│   ├── project-hub.routes.ts
+│   ├── project-details.routes.ts
+│   ├── email-report.routes.ts
+│   ├── director.service.ts
+│   └── director.schema.ts
+├── proposals/                  ← 4 sub-routes + service + schema
+│   ├── index.ts
+│   ├── crud.routes.ts
+│   ├── submit.routes.ts
+│   ├── review.routes.ts
+│   ├── comments.routes.ts
+│   ├── proposals.service.ts
+│   └── proposals.schema.ts
+├── projects/                   ← 4 sub-routes + service + schema
+│   ├── index.ts
+│   ├── crud.routes.ts
+│   ├── status.routes.ts
+│   ├── activate.routes.ts
+│   ├── reporting.routes.ts
+│   ├── projects.service.ts
+│   └── projects.schema.ts
 ├── action-center/              ← 1 route + service + schema
 │   ├── index.ts
-│   ├── routes.ts               (~50 lines)
-│   ├── action-center.service.ts (4 unified functions)
-│   └── action-center.schema.ts (3 schemas)
+│   ├── action-center.routes.ts
+│   ├── action-center.service.ts
+│   └── action-center.schema.ts
 ├── moas/                       ← 1 route + service + schema
 │   ├── index.ts
 │   ├── moas.routes.ts          (moved from routes/, thin handlers)
@@ -696,7 +696,7 @@ refactor(projects): split projects routes into sub-routes + service + schema
 > **Endpoints:** 1 (GET /action-center — no pagination, returns all items)
 > **Key problem:** 750-line if/else per role with 11 near-identical for-loops, N+1 schedule queries
 >
-> **Completed:** Commit `6d10630` on `refactor/backend`. Created `action-center.schema.ts` (3 schemas), `action-center.service.ts` (unified queries + batch schedule fetch + item builders + orchestrator), `routes.ts` (thin handler). Removed unused `PgSubqueryWithSelection` import, fixed `exactOptionalPropertyTypes` with spread pattern. Verified functional equivalence via line-by-side comparison. Deleted old `routes/action-center.routes.ts`. All 159 tests pass.
+> **Completed:** Commits `6d10630` + `12a7665` on `refactor/backend`. Created `action-center.schema.ts` (3 schemas), `action-center.service.ts` (unified queries + batch schedule fetch + item builders + orchestrator), `action-center.routes.ts` (thin handler). Removed unused `PgSubqueryWithSelection` import, fixed `exactOptionalPropertyTypes` with spread pattern. Review fixes: removed dead `deriveOptions` param, added `[...new Set()]` dedup in batchFetchScheduleExists. Verified functional equivalence via line-by-side comparison. Deleted old `routes/action-center.routes.ts`. All 159 tests pass.
 
 ### Files to create/modify
 
@@ -704,7 +704,7 @@ refactor(projects): split projects routes into sub-routes + service + schema
 |--------|------|
 | Create | `src/modules/action-center/action-center.schema.ts` |
 | Create | `src/modules/action-center/action-center.service.ts` |
-| Create | `src/modules/action-center/routes.ts` |
+| Create | `src/modules/action-center/action-center.routes.ts` |
 | Modify | `src/modules/action-center/index.ts` |
 | Delete | `src/routes/action-center.routes.ts` |
 
@@ -819,25 +819,26 @@ export async function getPendingRegistrations(db): Promise<ActionItem[]>
 // Only SUPER_ADMIN, no scope filtering
 ```
 
-### Step 3: Create `routes.ts`
+### Step 3: Create `action-center.routes.ts`
 
-~60 lines — handler drops from ~750 to ~60:
+~20 lines — handler drops from ~750 to ~20:
 
 ```ts
 import { OpenAPIHono } from "@hono/zod-openapi";
-import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import { installApiErrorHandler } from "@/lib/errors.js";
-import { getActionCenterRoute, ActionCenterResponseSchema } from "./action-center.schema.js";
+import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
+import { getActionCenterRoute } from "./action-center.schema.js";
 import { getActionItemsForRole } from "./action-center.service.js";
-import { db } from "@/db/client.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
-app.use(authMiddleware);
+
+app.use("/action-center", authMiddleware);
+app.use("/action-center/*", authMiddleware);
 
 app.openapi(getActionCenterRoute, async (c) => {
   const user = c.get("user");
-  const result = await getActionItemsForRole(db, user);
+  const result = await getActionItemsForRole(user);
   return c.json(result, 200);
 });
 
@@ -847,7 +848,7 @@ export default app;
 ### Step 4: Update `index.ts`
 
 ```ts
-import app from "./routes.js";
+import app from "./action-center.routes.js";
 export default app;
 ```
 
@@ -879,8 +880,85 @@ refactor(action-center): extract action-center to schema + service + thin route
 
 ## Task 5: Refactor moas.routes.ts (932 lines → 1 route + service + schema)
 
-> **Endpoints:** 8 (GET × 3, POST × 3, PATCH × 1, undocumented restore × 1)
-> **Key issues:** ParamId/PaginationQuery duplicated locally, restore route has wrong path
+> **Endpoints:** 7 (GET × 3, POST × 3, PATCH × 1) + undocumented restore
+> **Key issues:** ParamId/PaginationQuery duplicated locally, restore route has no auth/audit, heavy business logic inline (syncProjectsToNewMoa, status computation, upload validation)
+
+### Endpoint map
+
+| Endpoint | Lines | Description | Auth |
+|----------|-------|-------------|------|
+| `GET /moas` | 226-293 | List MOAs (paginated, archived filter) | canManageMoas (RET_CHAIR/DIRECTOR) |
+| `GET /moas/:id` | 296-385 | Get MOA detail + expiry status | canManageMoas OR linked project member |
+| `GET /moas/:id/projects` | 388-483 | Get linked projects (role-scoped) | canManageMoas OR linked project member |
+| `POST /moas` | 486-580 | Create MOA | Director only |
+| `POST /moas/upload` | 583-763 | Upload PDF + create partner/MOA | canManageMoas |
+| `PATCH /moas/:id` | 766-915 | Update MOA + restore expired projects | Director only |
+| `POST /:id/restore` | 917-930 | Restore archived MOA | **NONE (BUG)** |
+
+### Helpers to extract (lines 37-127)
+
+| Helper | Lines | Purpose |
+|--------|-------|---------|
+| `canManageMoas(user)` | 37-42 | Role check: RET_CHAIR or DIRECTOR |
+| `isMoaLinkedToUserProject(moaId, userId)` | 49-63 | Checks if user is member of a proposal linked to the MOA |
+| `syncProjectsToNewMoa(partnerId, newMoaId, validUntil, userId, ipAddress)` | 69-127 | Finds old MOAs → re-links projects → restores Expired→Ongoing if valid |
+
+### Schemas to extract (lines 129-220)
+
+| Schema | Lines | Purpose |
+|--------|-------|---------|
+| `MoaSchema` | 130-141 | Base MOA response shape |
+| `MoaDetailSchema` | 143-157 | MOA with partner name + computed status + daysToExpiry |
+| `MoaLinkedProjectSchema` | 159-167 | Project linked to MOA |
+| `MoaListSchema` | 169-171 | `{ items: MoaSchema[], total: number }` |
+| `CreateMoaSchema` | 173-179 | Create body: partnerId, validFrom, validUntil |
+| `UpdateMoaSchema` | 181-187 | Update body: all optional |
+| `ParamId` | 189-194 | **Duplicated** — import from `@/lib/schemas.js` |
+| `PaginationQuery` | 196-220 | **Local** — has `archived` field not in shared version |
+
+### Service functions to extract
+
+```ts
+// ── Helpers ──
+
+export function canManageMoas(user: AuthUser): boolean
+// Lines 37-42: RET_CHAIR or DIRECTOR
+
+export async function isMoaLinkedToUserProject(moaId: string, userId: string): Promise<boolean>
+// Lines 49-63: projects → proposalMembers join check
+
+export async function syncProjectsToNewMoa(
+  partnerId: string, newMoaId: string, validUntil: Date,
+  userId: string, ipAddress: string | null,
+): Promise<void>
+// Lines 69-127: find old MOAs → re-link projects → restore Expired→Ongoing + audit
+
+// ── Queries ──
+
+export async function listMoas(opts: { page: number; limit: number; archived?: string })
+// Lines 260-293: paginated query + count, returns { items, total }
+
+export async function getMoaById(id: string, user: AuthUser)
+// Lines 319-385: auth check (canManageMoas OR linked), join with partners, compute status/daysToExpiry
+
+export async function getLinkedProjects(id: string, user: AuthUser)
+// Lines 415-483: auth check, multi-join (projects → proposals → users), RET_CHAIR scope filtering
+
+export async function createMoa(body, user: AuthUser, ipAddress: string)
+// Lines 510-579: Director-only, partner check, insert, audit, syncProjectsToNewMoa
+
+export async function uploadMoaDocument(formData: FormData, user: AuthUser, ipAddress: string)
+// Lines 609-762: canManageMoas, file validation (size, type), form field extraction,
+//   get-or-create partner, Supabase upload, insert MOA, audit, sync
+//   Note: Supabase rollback on DB failure (line 733)
+
+export async function updateMoa(id: string, body, user: AuthUser, ipAddress: string)
+// Lines 795-914: Director-only, date range validation, partial update,
+//   restore Expired→Ongoing if validUntil extended, audit
+
+export async function restoreMoa(id: string)
+// Lines 917-930: simple update (currently has no auth — needs fix)
+```
 
 ### Files to create/modify
 
@@ -888,7 +966,7 @@ refactor(action-center): extract action-center to schema + service + thin route
 |--------|------|
 | Create | `src/modules/moas/moas.schema.ts` |
 | Create | `src/modules/moas/moas.service.ts` |
-| Create | `src/modules/moas/moas.routes.ts` (moved from routes/) |
+| Create | `src/modules/moas/moas.routes.ts` |
 | Modify | `src/modules/moas/index.ts` |
 | Delete | `src/routes/moas.routes.ts` |
 
@@ -896,60 +974,58 @@ refactor(action-center): extract action-center to schema + service + thin route
 
 | Schema | Source line | Purpose |
 |--------|------------|---------|
-| `MoaSchema` | 130 | Base MOA shape |
-| `MoaDetailSchema` | 143 | MOA with partner name + computed status |
-| `MoaLinkedProjectSchema` | 159 | Project linked to MOA |
-| `MoaListSchema` | 169 | Paginated list |
-| `CreateMoaSchema` | 173 | Create body |
-| `UpdateMoaSchema` | 181 | Update body |
+| `MoaSchema` | 130-141 | Base MOA shape |
+| `MoaDetailSchema` | 143-157 | MOA with partner name + computed status |
+| `MoaLinkedProjectSchema` | 159-167 | Project linked to MOA |
+| `MoaListSchema` | 169-171 | Paginated list |
+| `CreateMoaSchema` | 173-179 | Create body |
+| `UpdateMoaSchema` | 181-187 | Update body |
 
-Deduplication: Import `ParamId` from `@/lib/schemas.js` instead of redefining locally (line 189-194). For PaginationQuery with `archived` field, either extend the shared one or define a local `MoaPaginationQuery`.
+Import `ParamId` from `@/lib/schemas.js` (dedup local definition at line 189-194). For PaginationQuery with `archived` field, define a local `MoaPaginationQuery` (same pattern as projects).
 
 ### Step 2: Create `moas.service.ts`
 
-```ts
-export function canManageMoas(user): boolean
-// Line 37-42: checks RET_CHAIR or DIRECTOR
-
-export async function isMoaLinkedToUserProject(moaId, userId): Promise<boolean>
-// Lines 49-63: auth fallback for non-manager roles
-
-export async function syncProjectsToNewMoa(partnerId, newMoaId, validUntil, userId, ipAddress)
-// Lines 69-127: find old MOAs → find linked projects → re-link + audit
-
-export async function getMoaList(db, pagination)
-// Lines 260-293: paginated query + count
-
-export async function getMoaById(db, id)
-// Lines 334-384: join query + status computation
-
-export async function getLinkedProjects(db, id, user)
-// Lines 430-482: multi-join with role scoping
-
-export async function createMoa(db, body, user, ip)
-// Lines 518-579: partner check + insert + audit + sync
-
-export async function uploadMoaDocument(db, formData, user, ip)
-// Lines 609-762: form validation → get-or-create partner → Supabase upload
-//   (with rollback on DB failure) → insert → audit → sync
-
-export async function updateMoa(db, id, body, user, ip)
-// Lines 796-914: partial update + expired project restoration + audit
-
-export async function restoreMoa(db, id)
-// Lines 917-930: simple update (fix: add auth + audit)
-```
+Extract 10 service functions (3 helpers + 7 query/mutation functions). Service functions that write audit logs accept `ipAddress: string` (handler extracts via `getClientIp(c)`).
 
 ### Step 3: Create `moas.routes.ts`
 
-Move content from `routes/moas.routes.ts`, replacing inline logic with service calls. Fix:
-- Restore route path: `/:id/restore` → proper OpenAPI route
-- Restore route: add `canManageMoas()` auth + audit log
-- Import `ParamId` from `@/lib/schemas.js`
+~80 lines — handler drops from ~932 to ~80. Thin handlers: parse → call service → return response.
 
-### Step 4-6: index.ts, delete, verify, commit
+Fixes:
+- Restore route (`/:id/restore`): add auth + proper OpenAPI route definition
+- Auth pattern: `app.use("/moas/*", authMiddleware)` + `app.use("/moas", authMiddleware)` (same as original)
 
-Same pattern as Task 1.
+### Step 4: Update `index.ts`
+
+```ts
+import app from "./moas.routes.js";
+export default app;
+```
+
+### Step 5: Delete `src/routes/moas.routes.ts`
+
+### Step 6: Verify
+
+```bash
+cd backend && npx tsc --noEmit && npx vitest run
+```
+
+### Step 7: Commit
+
+```bash
+git add -A
+git commit -m "refactor(moas): extract moas module with service layer"
+```
+
+### Notes for implementation
+
+- **Auth pattern:** Same as original — `app.use("/moas/*", authMiddleware)` + `app.use("/moas", authMiddleware)`. No requireRole (uses inline `canManageMoas()` checks instead).
+- **Restore route has no auth/audit:** The original `POST /:id/restore` (line 917-930) is outside auth middleware scope and has no audit log. Fix during extraction — add `canManageMoas` check + audit log.
+- **ParamId duplication:** Local `ParamId` at line 189-194 is identical to `@/lib/schemas.js` — import instead.
+- **PaginationQuery with archived:** Local PaginationQuery (line 196-220) has `archived` field not in shared version — define as `MoaPaginationQuery` locally (same pattern as projects module).
+- **Upload validation is inline:** File type/size checks (lines 620-657) stay in service. The `formData.get()` extraction stays in service since it's part of the business logic, not HTTP parsing.
+- **`syncProjectsToNewMoa` audit IP:** Takes `ipAddress: string | null` — handler passes `getClientIp(c)`.
+- **Restore route path:** Currently `/:id/restore` (no `/moas` prefix) — this is correct because the route is mounted under `/moas` via `app.use("/moas", ...)`. Keep same path structure.
 
 ---
 
@@ -1002,11 +1078,13 @@ git commit -m "refactor: delete old routes/ dir, move test files, final cleanup"
 | # | Commit message | What it does |
 |---|---------------|-------------|
 | 1 | `refactor(modules): split director into 6 sub-routes + service + schema` | Task 1 |
-| 2 | `refactor(modules): split proposals into 5 sub-routes + service + schema` | Task 2 |
-| 3 | `refactor(modules): split projects into 5 sub-routes + service + schema` | Task 3 |
-| 4 | `refactor(modules): refactor action-center with unified service layer` | Task 4 |
-| 5 | `refactor(modules): extract moas module with service layer` | Task 5 |
-| 6 | `refactor: delete old routes/ dir, move test files, final cleanup` | Task 6 |
+| 2 | `refactor(modules): split proposals into 4 sub-routes + service + schema` | Task 2 |
+| 3 | `refactor(modules): split projects into 4 sub-routes + service + schema` | Task 3 (initial) |
+| 4 | `refactor(projects): review fixes — thin routes + schema fix` | Task 3 review fixes |
+| 5 | `refactor(modules): refactor action-center with unified service layer` | Task 4 (initial) |
+| 6 | `refactor(action-center): review fixes — dead code removal + dedup` | Task 4 review fixes |
+| 7 | `refactor(moas): extract moas module with service layer` | Task 5 |
+| 8 | `refactor: delete old routes/ dir, move test files, final cleanup` | Task 6 |
 
 Each commit is atomic. `git revert --no-edit HEAD` rolls back any single task.
 

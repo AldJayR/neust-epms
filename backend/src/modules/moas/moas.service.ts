@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import {
 	and,
 	count,
@@ -19,34 +18,23 @@ import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
-import { getClientIp } from "@/lib/client-ip.js";
-import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
-import { ErrorSchema } from "@/lib/schemas.js";
+import { ApiError } from "@/lib/errors.js";
 import { supabase } from "@/lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
-import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import { sanitizeFilename } from "@/services/file.service.js";
-
-const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
-// MOA management is restricted to RET Chair and Director (Super Admin is not
-// involved in MOA management per product decision).
-function canManageMoas(user: AuthUser): boolean {
+// ── Helpers ──
+
+export function canManageMoas(user: AuthUser): boolean {
 	return (
 		user.roleName === ROLE_NAMES.RET_CHAIR ||
 		user.roleName === ROLE_NAMES.DIRECTOR
 	);
 }
 
-/**
- * Whether the user is a member (any project role) of a proposal whose project
- * is linked to the given MOA. Lets project leaders/members see the single MOA
- * their project depends on, without granting access to the full repository.
- */
-async function isMoaLinkedToUserProject(
+export async function isMoaLinkedToUserProject(
 	moaId: string,
 	userId: string,
 ): Promise<boolean> {
@@ -62,11 +50,7 @@ async function isMoaLinkedToUserProject(
 	return !!row;
 }
 
-/**
- * Syncs projects linked to a partner's previous MOAs to the new MOA.
- * Restores project status to "Ongoing" if it was "Expired" and the new MOA is valid.
- */
-async function syncProjectsToNewMoa(
+export async function syncProjectsToNewMoa(
 	partnerId: string,
 	newMoaId: string,
 	validUntil: Date,
@@ -126,124 +110,15 @@ async function syncProjectsToNewMoa(
 	}
 }
 
-// ── Schemas ──
-const MoaSchema = z
-	.object({
-		moaId: z.string(),
-		partnerId: z.string(),
-		storagePath: z.string().nullable(),
-		validFrom: z.string(),
-		validUntil: z.string(),
-		createdAt: z.string(),
-		updatedAt: z.string(),
-		archivedAt: z.string().nullable(),
-	})
-	.openapi("Moa");
+// ── Queries ──
 
-const MoaDetailSchema = z
-	.object({
-		moaId: z.string(),
-		partnerId: z.string(),
-		partnerName: z.string(),
-		storagePath: z.string().nullable(),
-		validFrom: z.string(),
-		validUntil: z.string(),
-		createdAt: z.string(),
-		updatedAt: z.string(),
-		archivedAt: z.string().nullable(),
-		status: z.enum(["Valid", "Renewal Needed", "Expired"]),
-		daysToExpiry: z.union([z.number(), z.literal("Expired")]),
-	})
-	.openapi("MoaDetail");
-
-const MoaLinkedProjectSchema = z
-	.object({
-		projectId: z.string(),
-		title: z.string(),
-		projectStatus: z.string(),
-		leaderName: z.string().nullable(),
-		createdAt: z.string(),
-	})
-	.openapi("MoaLinkedProject");
-
-const MoaListSchema = z
-	.object({ items: z.array(MoaSchema), total: z.number() })
-	.openapi("MoaList");
-
-const CreateMoaSchema = z
-	.object({
-		partnerId: z.string().uuid(),
-		validFrom: z.string().datetime(),
-		validUntil: z.string().datetime(),
-	})
-	.openapi("CreateMoa");
-
-const UpdateMoaSchema = z
-	.object({
-		partnerId: z.string().uuid().optional(),
-		validFrom: z.string().datetime().optional(),
-		validUntil: z.string().datetime().optional(),
-	})
-	.openapi("UpdateMoa");
-
-const ParamId = z.object({
-	id: z
-		.string()
-		.uuid()
-		.openapi({ param: { name: "id", in: "path" } }),
-});
-
-const PaginationQuery = z.object({
-	page: z.coerce
-		.number()
-		.int()
-		.min(1)
-		.default(1)
-		.openapi({
-			param: { name: "page", in: "query" },
-		}),
-	limit: z.coerce
-		.number()
-		.int()
-		.min(1)
-		.max(100)
-		.default(50)
-		.openapi({
-			param: { name: "limit", in: "query" },
-		}),
-	archived: z
-		.string()
-		.optional()
-		.openapi({
-			param: { name: "archived", in: "query" },
-		}),
-});
-
-app.use("/moas/*", authMiddleware);
-app.use("/moas", authMiddleware);
-
-// ── GET /moas ──
-const listRoute = createRoute({
-	method: "get",
-	path: "/moas",
-	tags: ["MOAs"],
-	summary: "List all non-archived MOAs (RET Chair / Director only)",
-	security: [{ Bearer: [] }],
-	request: { query: PaginationQuery },
-	responses: {
-		200: {
-			content: { "application/json": { schema: MoaListSchema } },
-			description: "List of MOAs",
-		},
-		403: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Forbidden",
-		},
-	},
-});
-
-app.openapi(listRoute, async (c) => {
-	const user = c.get("user");
+export async function listMoas(opts: {
+	page: number;
+	limit: number;
+	archived?: string | undefined;
+	user: AuthUser;
+}) {
+	const { page, limit, archived, user } = opts;
 
 	if (!canManageMoas(user)) {
 		throw new ApiError(
@@ -253,7 +128,6 @@ app.openapi(listRoute, async (c) => {
 		);
 	}
 
-	const { page, limit, archived } = c.req.valid("query");
 	const offset = (page - 1) * limit;
 	const showArchived = archived === "true";
 
@@ -289,37 +163,10 @@ app.openapi(listRoute, async (c) => {
 		.where(showArchived ? isNotNull(moas.archivedAt) : isNull(moas.archivedAt));
 	const total = Number(totalResult?.value ?? 0);
 
-	return c.json({ items, total }, 200);
-});
+	return { items, total };
+}
 
-// ── GET /moas/:id ──
-const getRoute = createRoute({
-	method: "get",
-	path: "/moas/{id}",
-	tags: ["MOAs"],
-	summary: "Get a MOA by ID",
-	security: [{ Bearer: [] }],
-	request: { params: ParamId },
-	responses: {
-		200: {
-			content: { "application/json": { schema: MoaDetailSchema } },
-			description: "MOA detail",
-		},
-		403: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Forbidden",
-		},
-		404: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Not found",
-		},
-	},
-});
-
-app.openapi(getRoute, async (c) => {
-	const user = c.get("user");
-	const { id } = c.req.valid("param");
-
+export async function getMoaById(id: string, user: AuthUser) {
 	if (!canManageMoas(user)) {
 		const linked = await isMoaLinkedToUserProject(id, user.userId);
 		if (!linked) {
@@ -364,58 +211,24 @@ app.openapi(getRoute, async (c) => {
 		status = "Renewal Needed";
 	}
 
-	return c.json(
-		{
-			moaId: row.moaId,
-			partnerId: row.partnerId,
-			partnerName: row.partnerName,
-			storagePath: row.storagePath,
-			validFrom: row.validFrom.toISOString(),
-			validUntil: row.validUntil.toISOString(),
-			createdAt: row.createdAt.toISOString(),
-			updatedAt: row.updatedAt.toISOString(),
-			archivedAt: row.archivedAt?.toISOString() ?? null,
-			status,
-			daysToExpiry: (daysUntilExpiry < 0 ? "Expired" : daysUntilExpiry) as
-				| number
-				| "Expired",
-		},
-		200,
-	);
-});
+	return {
+		moaId: row.moaId,
+		partnerId: row.partnerId,
+		partnerName: row.partnerName,
+		storagePath: row.storagePath,
+		validFrom: row.validFrom.toISOString(),
+		validUntil: row.validUntil.toISOString(),
+		createdAt: row.createdAt.toISOString(),
+		updatedAt: row.updatedAt.toISOString(),
+		archivedAt: row.archivedAt?.toISOString() ?? null,
+		status,
+		daysToExpiry: (daysUntilExpiry < 0 ? "Expired" : daysUntilExpiry) as
+			| number
+			| "Expired",
+	};
+}
 
-// ── GET /moas/:id/projects ──
-const linkedProjectsRoute = createRoute({
-	method: "get",
-	path: "/moas/{id}/projects",
-	tags: ["MOAs"],
-	summary: "Get projects linked to a MOA",
-	security: [{ Bearer: [] }],
-	request: { params: ParamId },
-	responses: {
-		200: {
-			content: {
-				"application/json": {
-					schema: z.array(MoaLinkedProjectSchema),
-				},
-			},
-			description: "Linked projects",
-		},
-		403: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Forbidden",
-		},
-		404: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "MOA not found",
-		},
-	},
-});
-
-app.openapi(linkedProjectsRoute, async (c) => {
-	const user = c.get("user");
-	const { id } = c.req.valid("param");
-
+export async function getLinkedProjects(id: string, user: AuthUser) {
 	if (!canManageMoas(user)) {
 		const linked = await isMoaLinkedToUserProject(id, user.userId);
 		if (!linked) {
@@ -470,51 +283,25 @@ app.openapi(linkedProjectsRoute, async (c) => {
 		.where(and(...conditions))
 		.orderBy(desc(projects.createdAt));
 
-	return c.json(
-		rows.map((r) => ({
-			projectId: r.projectId,
-			title: r.title,
-			projectStatus: r.projectStatus,
-			leaderName: r.leaderName,
-			createdAt: r.createdAt.toISOString(),
-		})),
-		200,
-	);
-});
+	return rows.map((r) => ({
+		projectId: r.projectId,
+		title: r.title,
+		projectStatus: r.projectStatus,
+		leaderName: r.leaderName,
+		createdAt: r.createdAt.toISOString(),
+	}));
+}
 
-// ── POST /moas ──
-const createMoaRoute = createRoute({
-	method: "post",
-	path: "/moas",
-	tags: ["MOAs"],
-	summary: "Create a new MOA",
-	security: [{ Bearer: [] }],
-	request: {
-		body: {
-			content: { "application/json": { schema: CreateMoaSchema } },
-			required: true,
-		},
-	},
-	responses: {
-		201: {
-			content: { "application/json": { schema: MoaSchema } },
-			description: "MOA created",
-		},
-		400: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Validation error",
-		},
-	},
-});
+// ── Mutations ──
 
-app.openapi(createMoaRoute, async (c) => {
-	const user = c.get("user");
-
+export async function createMoa(
+	body: { partnerId: string; validFrom: string; validUntil: string },
+	user: AuthUser,
+	ipAddress: string,
+) {
 	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
 		throw new ApiError(403, "FORBIDDEN", "This action requires Director role");
 	}
-
-	const body = c.req.valid("json");
 
 	const validFrom = new Date(body.validFrom);
 	const validUntil = new Date(body.validUntil);
@@ -527,7 +314,6 @@ app.openapi(createMoaRoute, async (c) => {
 		);
 	}
 
-	// Verify partner exists
 	const [partner] = await db
 		.select({ partnerId: partners.partnerId })
 		.from(partners)
@@ -555,7 +341,7 @@ app.openapi(createMoaRoute, async (c) => {
 		userId: user.userId,
 		action: `Created MOA ${created.moaId}`,
 		tableAffected: "moas",
-		ipAddress: getClientIp(c),
+		ipAddress,
 	});
 
 	await syncProjectsToNewMoa(
@@ -563,52 +349,25 @@ app.openapi(createMoaRoute, async (c) => {
 		created.moaId,
 		created.validUntil,
 		user.userId,
-		getClientIp(c),
+		ipAddress,
 	);
 
-	return c.json(
-		{
-			...created,
-			validFrom: created.validFrom.toISOString(),
-			validUntil: created.validUntil.toISOString(),
-			createdAt: created.createdAt.toISOString(),
-			updatedAt: created.updatedAt.toISOString(),
-			archivedAt: created.archivedAt?.toISOString() ?? null,
-		},
-		201,
-	);
-});
+	return {
+		...created,
+		validFrom: created.validFrom.toISOString(),
+		validUntil: created.validUntil.toISOString(),
+		createdAt: created.createdAt.toISOString(),
+		updatedAt: created.updatedAt.toISOString(),
+		archivedAt: created.archivedAt?.toISOString() ?? null,
+	};
+}
 
-// ── POST /moas/upload ──
-const uploadMoaRoute = createRoute({
-	method: "post",
-	path: "/moas/upload",
-	tags: ["MOAs"],
-	summary: "Upload a MOA document PDF and create partner/MOA record",
-	security: [{ Bearer: [] }],
-	responses: {
-		201: {
-			content: { "application/json": { schema: MoaSchema } },
-			description: "MOA created",
-		},
-		400: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Invalid request",
-		},
-		403: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Forbidden",
-		},
-		500: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Internal server error",
-		},
-	},
-});
-
-app.openapi(uploadMoaRoute, async (c) => {
-	const user = c.get("user");
-
+export async function uploadMoaDocument(
+	formData: FormData,
+	user: AuthUser,
+	ipAddress: string,
+	contentLength: number,
+) {
 	if (!canManageMoas(user)) {
 		throw new ApiError(
 			403,
@@ -617,12 +376,10 @@ app.openapi(uploadMoaRoute, async (c) => {
 		);
 	}
 
-	const contentLength = Number(c.req.header("content-length") ?? 0);
 	if (contentLength > MAX_UPLOAD_BYTES) {
 		throw new ApiError(413, "FILE_TOO_LARGE", "File exceeds 50MB limit");
 	}
 
-	const formData = await c.req.formData();
 	const file = formData.get("file");
 	const partnerName = formData.get("partnerName");
 	const validFromStr = formData.get("validFrom");
@@ -686,7 +443,7 @@ app.openapi(uploadMoaRoute, async (c) => {
 			.insert(partners)
 			.values({
 				partnerName,
-				partnerType: "Institutional", // Default partner type
+				partnerType: "Institutional",
 			})
 			.returning({ partnerId: partners.partnerId });
 		if (!newPartner) {
@@ -738,7 +495,7 @@ app.openapi(uploadMoaRoute, async (c) => {
 		userId: user.userId,
 		action: `Created MOA ${created.moaId} for partner ${partnerName}`,
 		tableAffected: "moas",
-		ipAddress: getClientIp(c),
+		ipAddress,
 	});
 
 	await syncProjectsToNewMoa(
@@ -746,64 +503,33 @@ app.openapi(uploadMoaRoute, async (c) => {
 		created.moaId,
 		created.validUntil,
 		user.userId,
-		getClientIp(c),
+		ipAddress,
 	);
 
-	return c.json(
-		{
-			...created,
-			validFrom: created.validFrom.toISOString(),
-			validUntil: created.validUntil.toISOString(),
-			createdAt: created.createdAt.toISOString(),
-			updatedAt: created.updatedAt.toISOString(),
-			archivedAt: created.archivedAt?.toISOString() ?? null,
-		},
-		201,
-	);
-});
+	return {
+		...created,
+		validFrom: created.validFrom.toISOString(),
+		validUntil: created.validUntil.toISOString(),
+		createdAt: created.createdAt.toISOString(),
+		updatedAt: created.updatedAt.toISOString(),
+		archivedAt: created.archivedAt?.toISOString() ?? null,
+	};
+}
 
-// ── PATCH /moas/:id ──
-const updateRoute = createRoute({
-	method: "patch",
-	path: "/moas/{id}",
-	tags: ["MOAs"],
-	summary: "Update a MOA",
-	security: [{ Bearer: [] }],
-	request: {
-		params: ParamId,
-		body: {
-			content: { "application/json": { schema: UpdateMoaSchema } },
-			required: true,
-		},
+export async function updateMoa(
+	id: string,
+	body: {
+		partnerId?: string | undefined;
+		validFrom?: string | undefined;
+		validUntil?: string | undefined;
 	},
-	responses: {
-		200: {
-			content: { "application/json": { schema: MoaSchema } },
-			description: "MOA updated",
-		},
-		400: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Validation error",
-		},
-		404: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Not found",
-		},
-	},
-});
-
-app.openapi(updateRoute, async (c) => {
-	const user = c.get("user");
-
+	user: AuthUser,
+	ipAddress: string,
+) {
 	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
 		throw new ApiError(403, "FORBIDDEN", "This action requires Director role");
 	}
 
-	const { id } = c.req.valid("param");
-	const body = c.req.valid("json");
-
-	// Load existing dates so we can validate the resulting range even when the
-	// request only updates one bound.
 	const [existing] = await db
 		.select({
 			validFrom: moas.validFrom,
@@ -836,7 +562,6 @@ app.openapi(updateRoute, async (c) => {
 
 	const setValues: Record<string, Date | string> = { updatedAt: new Date() };
 	if (body.partnerId !== undefined) {
-		// Verify partner exists
 		const [partner] = await db
 			.select({ partnerId: partners.partnerId })
 			.from(partners)
@@ -867,7 +592,7 @@ app.openapi(updateRoute, async (c) => {
 		userId: user.userId,
 		action: `Updated MOA ${id}`,
 		tableAffected: "moas",
-		ipAddress: getClientIp(c),
+		ipAddress,
 	});
 
 	const now = new Date();
@@ -896,26 +621,30 @@ app.openapi(updateRoute, async (c) => {
 				userId: user.userId,
 				action: `Restored project ${p.projectId} status to Ongoing (MOA validity range extended)`,
 				tableAffected: "projects",
-				ipAddress: getClientIp(c),
+				ipAddress,
 			});
 		}
 	}
 
-	return c.json(
-		{
-			...updated,
-			validFrom: updated.validFrom.toISOString(),
-			validUntil: updated.validUntil.toISOString(),
-			createdAt: updated.createdAt.toISOString(),
-			updatedAt: updated.updatedAt.toISOString(),
-			archivedAt: updated.archivedAt?.toISOString() ?? null,
-		},
-		200,
-	);
-});
+	return {
+		...updated,
+		validFrom: updated.validFrom.toISOString(),
+		validUntil: updated.validUntil.toISOString(),
+		createdAt: updated.createdAt.toISOString(),
+		updatedAt: updated.updatedAt.toISOString(),
+		archivedAt: updated.archivedAt?.toISOString() ?? null,
+	};
+}
 
-app.post("/:id/restore", async (c) => {
-	const id = c.req.param("id");
+export async function restoreMoa(id: string, user: AuthUser, ipAddress: string) {
+	if (!canManageMoas(user)) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You must be the Director or RET Chair to restore MOAs",
+		);
+	}
+
 	const [updated] = await db
 		.update(moas)
 		.set({ archivedAt: null })
@@ -923,10 +652,15 @@ app.post("/:id/restore", async (c) => {
 		.returning();
 
 	if (!updated) {
-		return c.json({ error: "MOA not found or could not be restored" }, 404);
+		throw new ApiError(404, "NOT_FOUND", "MOA not found or could not be restored");
 	}
 
-	return c.json({ message: "MOA restored successfully", id }, 200);
-});
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Restored MOA ${id}`,
+		tableAffected: "moas",
+		ipAddress,
+	});
 
-export default app;
+	return { message: "MOA restored successfully", id };
+}
