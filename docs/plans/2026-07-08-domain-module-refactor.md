@@ -4,11 +4,11 @@
 
 > **Sprint 1:** ✅ Completed (Tasks 1-6) — commit `ca04f69`
 > **Sprint 2:** ✅ Completed (Tasks 7-12) — commits `6c53e1a` to `2c35a36`
-> **Sprint 3:** ⏳ Pending (Tasks 13-17)
+> **Sprint 3:** ⏳ Pending (Tasks 13-15; detailed execution in `2026-07-09-sprint-3-small-modules.md`)
 
 **Goal:** Refactor the NEUST-EPMS backend from flat route files into domain modules with proper separation of concerns (routes + services + schemas).
 
-**Architecture:** Split 4 bloated route files (1700-1800 lines each) into feature-based sub-routes under `modules/`, extract shared cross-cutting services into `services/`, centralize common zod schemas and utilities in `lib/`. Every route file moves into a `modules/<domain>/` directory. The 5 large modules get sub-routes + service + schema; smaller modules keep a single `.routes.ts` file.
+**Architecture:** Split the largest route files into feature-based sub-routes under `modules/`, extract shared cross-cutting services into `services/`, centralize common zod schemas and utilities in `lib/`, and finish Sprint 3 by giving the remaining smaller modules their own route, schema, and service layers. Every route file now lives under `modules/<domain>/`; `backend/src/routes` is obsolete and should not be recreated.
 
 **Tech Stack:** TypeScript (ESM), Hono (OpenAPIHono), Drizzle ORM, Zod (via @hono/zod-openapi), Supabase, node-cron
 
@@ -16,7 +16,7 @@
 
 ---
 
-## Current State Summary
+## Original State Summary
 
 | File | Lines | What it does |
 |------|-------|-------------|
@@ -72,16 +72,20 @@ src/
 │   │   ├── moas.routes.ts
 │   │   ├── moas.service.ts
 │   │   └── moas.schema.ts
-│   ├── auth/auth.routes.ts
-│   ├── admin/admin.routes.ts
-│   ├── members/members.routes.ts
-│   ├── storage/storage.routes.ts
-│   ├── special-orders/special-orders.routes.ts
-│   ├── search/search.routes.ts
-│   ├── reports/reports.routes.ts
-│   ├── notifications/notifications.routes.ts
-│   ├── settings/settings.routes.ts
-│   └── audit/audit.routes.ts
+│   ├── auth/                   ← route + service + schema + optional barrel
+│   │   ├── index.ts
+│   │   ├── auth.routes.ts
+│   │   ├── auth.service.ts
+│   │   └── auth.schema.ts
+│   ├── admin/                  ← route + service + schema + optional barrel
+│   ├── members/                ← route + service + schema + optional barrel
+│   ├── storage/                ← route + service + schema + optional barrel
+│   ├── special-orders/         ← route + service + schema + optional barrel
+│   ├── search/                 ← route + service + schema + optional barrel
+│   ├── reports/                ← route + service + schema + optional barrel
+│   ├── notifications/          ← route + service + schema + optional barrel
+│   ├── settings/               ← route + service + schema + optional barrel
+│   └── audit/                  ← route + service + schema + optional barrel
 ├── services/                    ← cross-cutting only
 │   ├── auth-user.service.ts     ← role/scope checks
 │   └── file.service.ts          ← sanitizeFilename()
@@ -107,7 +111,7 @@ src/
 
 **Files:**
 - Create: `src/lib/schemas.ts`
-- After this: update `src/modules/*/*.routes.ts` and `src/routes/*.routes.ts` to import from here instead of redefining locally
+- After this: update route files to import from here instead of redefining locally
 
 **Step 1: Create `src/lib/schemas.ts`**
 
@@ -974,184 +978,91 @@ git commit -m "refactor(modules): extract moas module with service layer"
 
 ---
 
-## Task 12: Clean up — delete old routes/ dir, update test imports, final verification
+## Task 12: Sprint 2 cleanup status
 
-**Files:**
-- Delete: `src/routes/` (entire directory — all files have been moved to `src/modules/`)
-- Move: test files from `src/routes/` into their respective `src/modules/<domain>/` directories
-- Modify: test import paths to point to new locations
+**Status:** Complete.
 
-**Step 1: Verify all route files have been moved**
+The old `backend/src/routes` directory has already been removed. Tests and route modules already live under `backend/src/modules`, and `backend/src/app.ts` imports module apps from `./modules/...`.
 
-Before deleting, confirm every file in `src/routes/` has a corresponding `src/modules/` location:
-- `director.routes.ts` → deleted in Task 7
-- `proposals.routes.ts` → deleted in Task 8
-- `projects.routes.ts` → deleted in Task 9
-- `action-center.routes.ts` → deleted in Task 10
-- `moas.routes.ts` → deleted in Task 11
-- Other files (auth, admin, members, storage, special-orders, search, reports, notifications, settings, audit) → already in `src/modules/` since Sprint 1
+Do not execute old cleanup instructions again. Sprint 3 starts from this baseline:
 
-**Step 2: Move test files to module directories**
-
-Move each test file and update its import:
-
-| Test file | New location | Import change |
-|-----------|-------------|---------------|
-| `src/routes/audit.routes.test.ts` | `src/modules/audit/audit.routes.test.ts` | already at `@/db/client.js` |
-| `src/routes/auth.routes.test.ts` | `src/modules/auth/auth.routes.test.ts` | same |
-| `src/routes/members.routes.test.ts` | `src/modules/members/members.routes.test.ts` | same |
-| `src/routes/storage.routes.test.ts` | `src/modules/storage/storage.routes.test.ts` | same |
-| `src/routes/special-orders.routes.test.ts` | `src/modules/special-orders/special-orders.routes.test.ts` | same |
-| `src/routes/reports.routes.test.ts` | `src/modules/reports/reports.routes.test.ts` | same |
-| `src/routes/settings.routes.test.ts` | `src/modules/settings/settings.routes.test.ts` | same |
-| `src/routes/moas.routes.test.ts` | `src/modules/moas/moas.routes.test.ts` | `./index.js` → stays same |
-| `src/routes/projects.routes.test.ts` | `src/modules/projects/projects.routes.test.ts` | `./index.js` → stays same |
-| `src/routes/proposals.routes.test.ts` | `src/modules/proposals/proposals.routes.test.ts` | `./index.js` → stays same |
-| `src/routes/derived-states.routes.test.ts` | `src/modules/proposals/derived-states.routes.test.ts` | update route imports |
-
-The `../../test/helpers.js` import in each test must be updated to the new relative path from the module directory.
-
-**Step 3: Update `src/app.ts`**
-
-Verify all imports point to `./modules/` (should already be correct from Sprint 1). Remove any remaining references to `./routes/`.
-
-**Step 4: Run ALL tests**
-
-Run: `cd backend && npx vitest run`
-
-Expected: ALL 193+ tests pass. If any fail:
-1. Fix the import path in the test file
-2. Fix any broken imports in the route files
-3. Re-run
-
-**Step 5: Type check**
-
-Run: `cd backend && npx tsc --noEmit`
-
-Expected: No errors.
-
-**Step 6: Build**
-
-Run: `cd backend && npm run build`
-
-Expected: Builds successfully.
-
-**Step 7: Final commit**
-
-```bash
-git add -A
-git commit -m "refactor: delete old routes/ dir, move test files, final cleanup"
+```text
+backend/src/routes/                  # does not exist
+backend/src/modules/<domain>/        # current route/test locations
+backend/src/app.ts                   # module imports already active
 ```
 
-**Step 3: Run ALL tests**
-
-Run: `cd backend && npx vitest run --reporter=verbose`
-
-Expected: ALL tests pass. If any fail:
-1. Fix the import path in the test file
-2. Fix any broken imports in the route files
-3. Re-run
-
-**Step 4: Type check**
-
-Run: `cd backend && npx tsc --noEmit`
-
-Expected: No errors.
-
-**Step 5: Final commit**
+Before Sprint 3 implementation, verify the baseline only if needed:
 
 ```bash
-git add -A
-git commit -m "refactor: delete old routes/ dir, update test paths, final cleanup"
+cd backend
+pnpm typecheck
+pnpm test
 ```
 
+Expected: typecheck and tests pass before further refactoring.
+
 ---
 
-## Task 13: Refactor auth and admin modules into routes + service + schema
+## Task 13: Execute Sprint 3 detailed plan
 
-> **Goals:** Extract inline queries, schemas, and password checks from auth and admin routes.
+> **Goals:** Split the remaining smaller modules into route, schema, and service files while preserving existing API behavior.
+
+Use the dedicated Sprint 3 plan as the source of truth:
+
+```text
+docs/plans/2026-07-09-sprint-3-small-modules.md
+```
+
+Sprint 3 covers these modules in this order:
+
+1. `auth`
+2. `admin`
+3. `storage`
+4. `special-orders`
+5. `reports`
+6. `members`
+7. `search`
+8. `notifications`
+9. `settings`
+10. `audit`
+
+Key Sprint 3 corrections from current-code validation:
+- `admin`, `search`, and `notifications` need route tests before service extraction.
+- `auth.routes.test.ts` must mock `@/lib/password-check.js`, not `../lib/password-check.js`, before relying on password-check behavior.
+- Route paths and default `.routes.ts` exports must remain stable because existing tests import route files directly.
+- Use the `moas`/`proposals` pattern: keep `createRoute` declarations in `.routes.ts`, move only Zod schemas to `.schema.ts`, and move DB/business logic to `.service.ts`.
+- Use pnpm commands from `backend/`: `pnpm typecheck`, `pnpm exec vitest run ...`, `pnpm test`, and `pnpm build`.
+
+---
+
+## Task 14: Final module import standardization
+
+> **Goals:** Make all modules consistently importable from `index.ts` barrels after Sprint 3 extraction.
 
 **Files:**
-- Create: `src/modules/auth/auth.service.ts`
-- Create: `src/modules/auth/auth.schema.ts`
-- Create: `src/modules/admin/admin.service.ts`
-- Create: `src/modules/admin/admin.schema.ts`
+- Create missing `src/modules/<module>/index.ts` files for small modules.
+- Modify `src/app.ts` imports for small modules to use `./modules/<module>/index.js`.
 
 **Steps:**
-1. Move `UserResponseSchema`, `RegisterUserBodySchema`, etc. from `auth.routes.ts` to `auth.schema.ts`.
-2. Move onboarding/registration checks, cache updates (`authUserCache`), and user creation to `auth.service.ts`.
-3. Move admin user activation, role changes, and audit log fetching queries to `admin.service.ts`.
-4. Update routes to call service functions and clean up.
-5. Verify tests: `npx vitest run src/modules/auth src/modules/admin`.
+1. Add a two-line `index.ts` barrel to each small module that does not have one.
+2. Update `src/app.ts` imports without changing route mount order.
+3. Run `pnpm typecheck`.
+4. Run `pnpm exec vitest run src/app.test.ts`.
+5. Commit with `refactor(modules): add barrels for small modules`.
 
 ---
 
-## Task 14: Refactor special-orders, reports, and storage modules
+## Task 15: Final verification
 
-> **Goals:** Extract file handling, storage clients, and report submission logic.
-
-**Files:**
-- Create: `src/modules/special-orders/special-orders.service.ts`
-- Create: `src/modules/special-orders/special-orders.schema.ts`
-- Create: `src/modules/reports/reports.service.ts`
-- Create: `src/modules/reports/reports.schema.ts`
-- Create: `src/modules/storage/storage.service.ts`
-- Create: `src/modules/storage/storage.schema.ts`
+> **Goals:** Confirm the full backend still compiles, tests, and builds after Sprint 3.
 
 **Steps:**
-1. Move special orders schemas, reports schemas, and storage query/upload schemas to their respective `.schema.ts` files.
-2. Move magic bytes checks, file upload integrations, and document/report linkage logic to their respective `.service.ts` files.
-3. Keep routes focused solely on handling multipart forms and passing request data.
-4. Verify tests pass.
-
----
-
-## Task 15: Refactor members and search modules
-
-> **Goals:** Isolate search indexing and proposal member updates.
-
-**Files:**
-- Create: `src/modules/members/members.service.ts`
-- Create: `src/modules/members/members.schema.ts`
-- Create: `src/modules/search/search.service.ts`
-- Create: `src/modules/search/search.schema.ts`
-
-**Steps:**
-1. Move member and search schemas to their respective `.schema.ts` files.
-2. Move proposal members transaction logic (adding/removing roles) to `members.service.ts`.
-3. Move complex multi-table union queries for universal search to `search.service.ts`.
-4. Update routes and verify tests.
-
----
-
-## Task 16: Refactor notifications, settings, and audit modules
-
-> **Goals:** Clean up the remaining minor modules.
-
-**Files:**
-- Create: `src/modules/notifications/notifications.service.ts`
-- Create: `src/modules/notifications/notifications.schema.ts`
-- Create: `src/modules/settings/settings.service.ts`
-- Create: `src/modules/settings/settings.schema.ts`
-- Create: `src/modules/audit/audit.service.ts`
-- Create: `src/modules/audit/audit.schema.ts`
-
-**Steps:**
-1. Move respective schemas and query logic to separate files.
-2. Refactor route files to call their services.
-3. Verify tests pass.
-
----
-
-## Task 17: Standardize imports and run final verification
-
-> **Goals:** Perform a final type check and test run for all backend modules.
-
-**Steps:**
-1. Verify all relative path imports across the 10 refactored modules are normalized to the `@/` alias.
-2. Run type checking: `npx tsc --noEmit`.
-3. Run Vitest test suite: `npx vitest run`.
-4. Run bundle build: `npm run build`.
+1. Run type checking: `pnpm typecheck`.
+2. Run Vitest test suite: `pnpm test`.
+3. Run bundle build: `pnpm build`.
+4. Fix only issues introduced by Sprint 3.
+5. Commit any stabilization fixes with `fix: stabilize small module refactor`.
 
 ---
 
@@ -1159,12 +1070,12 @@ git commit -m "refactor: delete old routes/ dir, update test paths, final cleanu
 
 | Risk | Mitigation |
 |------|-----------|
-| Import path typos in split files | Each task verifies with `tsc --noEmit` + `vitest run` before committing |
-| Service extraction changes behavior | Extract logic line-by-line without rewriting; no behavior changes in Sprint 2 |
-| Splitting breaks the barrel export contract | All module `index.ts` files mount sub-routers; app.ts import path stays the same |
+| Import path typos in split files | Each task verifies with `pnpm typecheck` + targeted `pnpm exec vitest run ...` before committing |
+| Service extraction changes behavior | Extract logic line-by-line without rewriting; Sprint 3 must preserve API behavior |
+| Splitting breaks the barrel export contract | Preserve each `.routes.ts` default export; add `index.ts` barrels only after module tests pass |
 | N+1 queries in action-center | Service uses batch prefetch (`IN (...)`) instead of per-row queries |
 | Restore routes lack auth | Add proper OpenAPI docs + auth middleware during extraction (Tasks 8, 9, 11) |
-| Missing test coverage for new sub-routes | Existing tests cover the endpoints; import paths updated in Task 12 |
+| Missing test coverage for small modules | Add tests before extraction for `admin`, `search`, and `notifications` |
 | MOA upload Supabase rollback complexity | Extract to service; verify rollback path works via existing tests |
 
 ## Rollback Plan
@@ -1183,4 +1094,4 @@ Each commit is atomic — no mixed concerns. Reverting one commit undoes a singl
 |--------|-------|--------|---------|
 | Sprint 1 | Tasks 1-6 | ✅ Complete | `ca04f69`, `8cf4aa8`, `93fd48c` |
 | Sprint 2 | Tasks 7-12 | ✅ Complete | `6c53e1a` to `2c35a36` |
-| Sprint 3 | Tasks 13-17 | ⏳ Pending | — |
+| Sprint 3 | Tasks 13-15 | ⏳ Pending | — |

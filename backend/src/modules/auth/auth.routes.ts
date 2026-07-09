@@ -1,73 +1,37 @@
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, eq, ilike, or } from "drizzle-orm";
+import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { rateLimiter } from "hono-rate-limiter";
-import { db } from "@/db/client.js";
-import { campuses } from "@/db/schema/campuses.js";
-import { departments } from "@/db/schema/departments.js";
-import { roles } from "@/db/schema/roles.js";
-import { users } from "@/db/schema/users.js";
-import { insertAuditLog } from "@/lib/audit.js";
-import { authUserCache, cacheEnabled } from "@/lib/cache.js";
 import { getClientIp } from "@/lib/client-ip.js";
-import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
-import { isPasswordCompromised } from "@/lib/password-check.js";
+import { installApiErrorHandler } from "@/lib/errors.js";
 import { ErrorSchema } from "@/lib/schemas.js";
-import { supabase } from "@/lib/supabase.js";
-import { ROLE_NAMES } from "@/lib/types.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
+import {
+	CheckPasswordBodySchema,
+	CheckPasswordResponseSchema,
+	CreateUserBodySchema,
+	LoginBodySchema,
+	LoginResponseSchema,
+	LogoutResponseSchema,
+	OnboardingCompleteResponseSchema,
+	RegisterUserBodySchema,
+	UserResponseSchema,
+	UserSearchQuerySchema,
+	UserSearchResponseSchema,
+} from "./auth.schema.js";
+import {
+	assertCanProvisionUsers,
+	checkPassword,
+	completeOnboarding,
+	createUser,
+	listCampuses,
+	listDepartments,
+	login,
+	logout,
+	registerUser,
+	searchUsers,
+} from "./auth.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
-
-// ── Schemas ──
-const UserResponseSchema = z
-	.object({
-		userId: z.string(),
-		firstName: z.string(),
-		middleName: z.string().nullable(),
-		lastName: z.string(),
-		nameSuffix: z.string().nullable(),
-		academicRank: z.string().nullable(),
-		email: z.string().email(),
-		roleName: z.string(),
-		campusName: z.string(),
-		departmentName: z.string().nullable(),
-		isActive: z.boolean(),
-		hasCompletedOnboarding: z.boolean(),
-		roleId: z.number().optional(),
-		campusId: z.number().optional(),
-		departmentId: z.number().nullable().optional(),
-	})
-	.openapi("UserResponse");
-
-const RegisterUserBodySchema = z
-	.object({
-		firstName: z.string().min(1),
-		middleName: z.string().optional(),
-		lastName: z.string().min(1),
-		nameSuffix: z.string().optional(),
-		academicRank: z.string().optional(),
-		email: z.string().email(),
-		password: z.string().min(8),
-		campusId: z.number().int().positive(),
-		departmentId: z.number().int().positive().optional(),
-	})
-	.openapi("RegisterUserBody");
-
-const CreateUserBodySchema = z
-	.object({
-		firstName: z.string().min(1),
-		middleName: z.string().optional(),
-		lastName: z.string().min(1),
-		nameSuffix: z.string().optional(),
-		academicRank: z.string().optional(),
-		email: z.string().email(),
-		roleId: z.number().int().positive(),
-		campusId: z.number().int().positive(),
-		departmentId: z.number().int().positive().optional(),
-		supabaseUserId: z.string().uuid(),
-	})
-	.openapi("CreateUserBody");
 
 // ── POST /auth/check-password (Public) ──
 const checkPasswordRoute = createRoute({
@@ -77,31 +41,18 @@ const checkPasswordRoute = createRoute({
 	summary: "Check if a password has been compromised",
 	request: {
 		body: {
-			content: {
-				"application/json": {
-					schema: z
-						.object({ password: z.string().min(1) })
-						.openapi("CheckPasswordBody"),
-				},
-			},
+			content: { "application/json": { schema: CheckPasswordBodySchema } },
 			required: true,
 		},
 	},
 	responses: {
 		200: {
-			content: {
-				"application/json": {
-					schema: z
-						.object({ compromised: z.boolean() })
-						.openapi("CheckPasswordResponse"),
-				},
-			},
+			content: { "application/json": { schema: CheckPasswordResponseSchema } },
 			description: "Result of compromised password check",
 		},
 	},
 });
 
-// Rate limit: 10 requests per 15 minutes per IP to prevent HIBP relay abuse
 const checkPasswordLimiter = rateLimiter({
 	windowMs: 15 * 60 * 1000,
 	limit: 10,
@@ -112,7 +63,7 @@ app.use("/auth/check-password", checkPasswordLimiter);
 
 app.openapi(checkPasswordRoute, async (c) => {
 	const { password } = c.req.valid("json");
-	const compromised = await isPasswordCompromised(password);
+	const compromised = await checkPassword(password);
 	return c.json({ compromised }, 200);
 });
 
@@ -135,9 +86,6 @@ const getMeRoute = createRoute({
 	},
 });
 
-// ── Rate limit: 5 registration attempts per 15 minutes per IP ──
-// Keyed by the connection address unless TRUST_PROXY=true, so clients
-// cannot bypass the limit by spoofing forwarding headers.
 const registerLimiter = rateLimiter({
 	windowMs: 15 * 60 * 1000,
 	limit: 5,
@@ -173,150 +121,8 @@ app.use("/auth/register", registerLimiter);
 
 app.openapi(registerRoute, async (c) => {
 	const body = c.req.valid("json");
-
-	// 1. Check if user already exists in DB
-	const [existing] = await db
-		.select({ userId: users.userId })
-		.from(users)
-		.where(eq(users.email, body.email))
-		.limit(1);
-
-	if (existing) {
-		throw new ApiError(400, "USER_EXISTS", "Email already registered");
-	}
-
-	// Check for duplicate profiles (Verify Duplicate Profiles)
-	const [duplicateName] = await db
-		.select({ userId: users.userId })
-		.from(users)
-		.where(
-			and(
-				ilike(users.firstName, body.firstName.trim()),
-				ilike(users.lastName, body.lastName.trim()),
-			),
-		)
-		.limit(1);
-
-	if (duplicateName) {
-		throw new ApiError(
-			400,
-			"DUPLICATE_PROFILE",
-			"A user with this name is already registered in the system. Duplicate accounts are not permitted.",
-		);
-	}
-
-	// 2. Check if password has been compromised
-	const compromised = await isPasswordCompromised(body.password);
-	if (compromised) {
-		throw new ApiError(
-			400,
-			"COMPROMISED_PASSWORD",
-			"This password has appeared in a known data breach. Please choose a different one.",
-		);
-	}
-
-	// 3. Fetch Faculty role ID
-	const [facultyRole] = await db
-		.select({ roleId: roles.roleId })
-		.from(roles)
-		.where(eq(roles.roleName, ROLE_NAMES.FACULTY))
-		.limit(1);
-
-	if (!facultyRole) {
-		throw new ApiError(500, "CONFIG_ERROR", "Faculty role not found in system");
-	}
-
-	// 4. Create user in Supabase Auth (admin-side to skip email)
-	const { data: authData, error: authError } =
-		await supabase.auth.admin.createUser({
-			email: body.email,
-			password: body.password,
-			email_confirm: true, // Auto-confirm to skip email for now
-		});
-
-	if (authError || !authData.user) {
-		throw new ApiError(
-			400,
-			"AUTH_ERROR",
-			authError?.message ?? "Failed to create auth user",
-		);
-	}
-
-	// 5. Create user in our DB
-	let created: { userId: string } | undefined;
-	try {
-		created = await db.transaction(async (tx) => {
-			const [userRow] = await tx
-				.insert(users)
-				.values({
-					userId: authData.user.id,
-					firstName: body.firstName,
-					middleName: body.middleName ?? null,
-					lastName: body.lastName,
-					nameSuffix: body.nameSuffix ?? null,
-					academicRank: body.academicRank ?? null,
-					email: body.email,
-					roleId: facultyRole.roleId,
-					campusId: body.campusId,
-					departmentId: body.departmentId ?? null,
-					isActive: false, // Requires admin activation
-				})
-				.returning();
-
-			if (!userRow) {
-				throw new Error("INSERT_FAILED");
-			}
-
-			await insertAuditLog(
-				{
-					userId: userRow.userId,
-					action: "Self-registered account",
-					tableAffected: "users",
-					ipAddress: getClientIp(c),
-				},
-				tx,
-			);
-
-			return userRow;
-		});
-	} catch (_err) {
-		// Cleanup Supabase if DB insert fails
-		await supabase.auth.admin.deleteUser(authData.user.id);
-		throw new ApiError(500, "INSERT_FAILED", "Failed to create user record");
-	}
-
-	// Fetch full response
-	const [row] = await db
-		.select({
-			userId: users.userId,
-			firstName: users.firstName,
-			middleName: users.middleName,
-			lastName: users.lastName,
-			nameSuffix: users.nameSuffix,
-			academicRank: users.academicRank,
-			email: users.email,
-			roleName: roles.roleName,
-			campusName: campuses.campusName,
-			departmentName: departments.departmentName,
-			isActive: users.isActive,
-			hasCompletedOnboarding: users.hasCompletedOnboarding,
-		})
-		.from(users)
-		.innerJoin(roles, eq(users.roleId, roles.roleId))
-		.innerJoin(campuses, eq(users.campusId, campuses.campusId))
-		.leftJoin(departments, eq(users.departmentId, departments.departmentId))
-		.where(eq(users.userId, created.userId))
-		.limit(1);
-
-	if (!row) {
-		throw new ApiError(
-			500,
-			"REGISTRATION_FAILED",
-			"User created but profile could not be loaded",
-		);
-	}
-
-	return c.json(row, 201);
+	const result = await registerUser(body, getClientIp(c));
+	return c.json(result, 201);
 });
 
 // ── Protected Routes ──
@@ -359,127 +165,10 @@ const createUserRoute = createRoute({
 
 app.openapi(createUserRoute, async (c) => {
 	const authUser = c.get("user");
-
-	// SYS-REQ-01.2: Director and Super Admin accounts require manual provisioning
-	if (
-		authUser.roleName !== ROLE_NAMES.SUPER_ADMIN &&
-		authUser.roleName !== ROLE_NAMES.DIRECTOR
-	) {
-		throw new ApiError(
-			403,
-			"FORBIDDEN",
-			"Only Super Admin or Director can provision users",
-		);
-	}
-
+	assertCanProvisionUsers(authUser);
 	const body = c.req.valid("json");
-
-	// Resolve the requested role and prevent privilege escalation:
-	// a Director must not be able to provision a Super Admin account.
-	const [requestedRole] = await db
-		.select({ roleId: roles.roleId, roleName: roles.roleName })
-		.from(roles)
-		.where(eq(roles.roleId, body.roleId))
-		.limit(1);
-
-	if (!requestedRole) {
-		throw new ApiError(400, "INVALID_ROLE", "Requested role does not exist");
-	}
-
-	if (
-		authUser.roleName !== ROLE_NAMES.SUPER_ADMIN &&
-		requestedRole.roleName === ROLE_NAMES.SUPER_ADMIN
-	) {
-		throw new ApiError(
-			403,
-			"FORBIDDEN",
-			"Only a Super Admin can provision Super Admin accounts",
-		);
-	}
-
-	// Verify the Supabase Auth user actually exists before linking it
-	const { data: supabaseUser, error: supabaseError } =
-		await supabase.auth.admin.getUserById(body.supabaseUserId);
-
-	if (supabaseError || !supabaseUser?.user) {
-		throw new ApiError(
-			400,
-			"INVALID_SUPABASE_USER",
-			"supabaseUserId does not match an existing Supabase Auth user",
-		);
-	}
-
-	// Ensure the supplied email matches the Supabase Auth user's email
-	if (supabaseUser.user.email && body.email !== supabaseUser.user.email) {
-		throw new ApiError(
-			400,
-			"EMAIL_MISMATCH",
-			"The email provided does not match the Supabase Auth user's email",
-		);
-	}
-
-	const created = await db.transaction(async (tx) => {
-		const [userRow] = await tx
-			.insert(users)
-			.values({
-				userId: body.supabaseUserId,
-				firstName: body.firstName,
-				middleName: body.middleName ?? null,
-				lastName: body.lastName,
-				nameSuffix: body.nameSuffix ?? null,
-				academicRank: body.academicRank ?? null,
-				email: body.email,
-				roleId: body.roleId,
-				campusId: body.campusId,
-				departmentId: body.departmentId ?? null,
-			})
-			.returning();
-
-		if (!userRow) {
-			throw new ApiError(500, "INSERT_FAILED", "Failed to create user");
-		}
-
-		await insertAuditLog(
-			{
-				userId: authUser.userId,
-				action: `Created user ${userRow.userId}`,
-				tableAffected: "users",
-				ipAddress: getClientIp(c),
-			},
-			tx,
-		);
-
-		return userRow;
-	});
-
-	// Fetch the full response with joined role/campus/department names
-	const [row] = await db
-		.select({
-			userId: users.userId,
-			firstName: users.firstName,
-			middleName: users.middleName,
-			lastName: users.lastName,
-			nameSuffix: users.nameSuffix,
-			academicRank: users.academicRank,
-			email: users.email,
-			roleName: roles.roleName,
-			campusName: campuses.campusName,
-			departmentName: departments.departmentName,
-			isActive: users.isActive,
-			hasCompletedOnboarding: users.hasCompletedOnboarding,
-		})
-		.from(users)
-		.innerJoin(roles, eq(users.roleId, roles.roleId))
-		.innerJoin(campuses, eq(users.campusId, campuses.campusId))
-		.leftJoin(departments, eq(users.departmentId, departments.departmentId))
-		.where(eq(users.userId, created.userId))
-		.limit(1);
-
-	if (!row) {
-		throw new ApiError(500, "FETCH_FAILED", "Failed to fetch created user");
-	}
-
-	return c.json(row, 201);
+	const result = await createUser(body, authUser, getClientIp(c));
+	return c.json(result, 201);
 });
 
 // ── GET /auth/departments ──
@@ -496,18 +185,8 @@ const listDepartmentsRoute = createRoute({
 });
 
 app.openapi(listDepartmentsRoute, async (c) => {
-	const rows = await db
-		.select({
-			departmentId: departments.departmentId,
-			departmentName: departments.departmentName,
-		})
-		.from(departments)
-		.orderBy(departments.departmentName);
-
-	return c.json(
-		rows.map((r) => ({ id: r.departmentId, name: r.departmentName })),
-		200,
-	);
+	const result = await listDepartments();
+	return c.json(result, 200);
 });
 
 // ── GET /auth/campuses ──
@@ -524,18 +203,8 @@ const listCampusesRoute = createRoute({
 });
 
 app.openapi(listCampusesRoute, async (c) => {
-	const rows = await db
-		.select({
-			campusId: campuses.campusId,
-			campusName: campuses.campusName,
-		})
-		.from(campuses)
-		.orderBy(campuses.campusName);
-
-	return c.json(
-		rows.map((r) => ({ id: r.campusId, name: r.campusName })),
-		200,
-	);
+	const result = await listCampuses();
+	return c.json(result, 200);
 });
 
 // ── GET /auth/users/search ──
@@ -545,25 +214,10 @@ const searchUsersRoute = createRoute({
 	tags: ["Auth"],
 	summary: "Search for users (Faculty list for team composition)",
 	security: [{ Bearer: [] }],
-	request: {
-		query: z.object({
-			search: z.string().min(1),
-		}),
-	},
+	request: { query: UserSearchQuerySchema },
 	responses: {
 		200: {
-			content: {
-				"application/json": {
-					schema: z.array(
-						z.object({
-							userId: z.string(),
-							firstName: z.string(),
-							lastName: z.string(),
-							email: z.string(),
-						}),
-					),
-				},
-			},
+			content: { "application/json": { schema: UserSearchResponseSchema } },
 			description: "Matching users",
 		},
 	},
@@ -571,25 +225,8 @@ const searchUsersRoute = createRoute({
 
 app.openapi(searchUsersRoute, async (c) => {
 	const { search } = c.req.valid("query");
-
-	const rows = await db
-		.select({
-			userId: users.userId,
-			firstName: users.firstName,
-			lastName: users.lastName,
-			email: users.email,
-		})
-		.from(users)
-		.where(
-			or(
-				ilike(users.firstName, `%${search}%`),
-				ilike(users.lastName, `%${search}%`),
-				ilike(users.email, `%${search}%`),
-			),
-		)
-		.limit(10);
-
-	return c.json(rows, 200);
+	const result = await searchUsers(search);
+	return c.json(result, 200);
 });
 
 // ── POST /auth/login (Public) ──
@@ -600,32 +237,13 @@ const loginRoute = createRoute({
 	summary: "Login with email and password",
 	request: {
 		body: {
-			content: {
-				"application/json": {
-					schema: z
-						.object({
-							email: z.string().email(),
-							password: z.string().min(1),
-						})
-						.openapi("LoginBody"),
-				},
-			},
+			content: { "application/json": { schema: LoginBodySchema } },
 			required: true,
 		},
 	},
 	responses: {
 		200: {
-			content: {
-				"application/json": {
-					schema: z
-						.object({
-							access_token: z.string(),
-							refresh_token: z.string(),
-							user: UserResponseSchema,
-						})
-						.openapi("LoginResponse"),
-				},
-			},
+			content: { "application/json": { schema: LoginResponseSchema } },
 			description: "Login successful",
 		},
 		401: {
@@ -648,70 +266,9 @@ const loginLimiter = rateLimiter({
 app.use("/auth/login", loginLimiter);
 
 app.openapi(loginRoute, async (c) => {
-	const { email, password } = c.req.valid("json");
-
-	const { data: authData, error: authError } =
-		await supabase.auth.signInWithPassword({ email, password });
-
-	if (authError || !authData.session) {
-		throw new ApiError(401, "LOGIN_FAILED", "Invalid email or password");
-	}
-
-	const [appUser] = await db
-		.select({
-			userId: users.userId,
-			firstName: users.firstName,
-			middleName: users.middleName,
-			lastName: users.lastName,
-			nameSuffix: users.nameSuffix,
-			academicRank: users.academicRank,
-			email: users.email,
-			roleName: roles.roleName,
-			campusName: campuses.campusName,
-			departmentName: departments.departmentName,
-			isActive: users.isActive,
-			hasCompletedOnboarding: users.hasCompletedOnboarding,
-		})
-		.from(users)
-		.innerJoin(roles, eq(users.roleId, roles.roleId))
-		.innerJoin(campuses, eq(users.campusId, campuses.campusId))
-		.leftJoin(departments, eq(users.departmentId, departments.departmentId))
-		.where(eq(users.userId, authData.user.id))
-		.limit(1);
-
-	if (!appUser) {
-		throw new ApiError(401, "USER_NOT_FOUND", "User profile not found");
-	}
-
-	if (!appUser.isActive) {
-		await insertAuditLog({
-			userId: appUser.userId,
-			action: "Failed Login",
-			tableAffected: "users",
-			ipAddress: getClientIp(c),
-		});
-		throw new ApiError(
-			403,
-			"ACCOUNT_INACTIVE",
-			"Your account has not been activated. Contact an administrator.",
-		);
-	}
-
-	await insertAuditLog({
-		userId: appUser.userId,
-		action: "Login",
-		tableAffected: "users",
-		ipAddress: getClientIp(c),
-	});
-
-	return c.json(
-		{
-			access_token: authData.session.access_token,
-			refresh_token: authData.session.refresh_token,
-			user: appUser,
-		},
-		200,
-	);
+	const body = c.req.valid("json");
+	const result = await login(body, getClientIp(c));
+	return c.json(result, 200);
 });
 
 // ── POST /auth/logout (Authenticated) ──
@@ -723,11 +280,7 @@ const logoutRoute = createRoute({
 	security: [{ Bearer: [] }],
 	responses: {
 		200: {
-			content: {
-				"application/json": {
-					schema: z.object({ ok: z.literal(true) }).openapi("LogoutResponse"),
-				},
-			},
+			content: { "application/json": { schema: LogoutResponseSchema } },
 			description: "Logged out",
 		},
 		401: {
@@ -743,19 +296,8 @@ app.openapi(logoutRoute, async (c) => {
 	const authUser = c.get("user");
 	const authHeader = c.req.header("Authorization");
 	const token = authHeader?.slice(7);
-
-	await insertAuditLog({
-		userId: authUser.userId,
-		action: "Logout",
-		tableAffected: "users",
-		ipAddress: getClientIp(c),
-	});
-
-	if (token) {
-		await supabase.auth.admin.signOut(token);
-	}
-
-	return c.json({ ok: true } as const, 200);
+	const result = await logout(authUser, token, getClientIp(c));
+	return c.json(result, 200);
 });
 
 // ── POST /auth/onboarding/complete ──
@@ -768,11 +310,7 @@ const completeOnboardingRoute = createRoute({
 	responses: {
 		200: {
 			content: {
-				"application/json": {
-					schema: z.object({
-						success: z.boolean(),
-					}),
-				},
+				"application/json": { schema: OnboardingCompleteResponseSchema },
 			},
 			description: "Onboarding completed successfully",
 		},
@@ -787,18 +325,8 @@ app.use("/auth/onboarding/complete", authMiddleware);
 
 app.openapi(completeOnboardingRoute, async (c) => {
 	const authUser = c.get("user");
-
-	await db
-		.update(users)
-		.set({ hasCompletedOnboarding: true })
-		.where(eq(users.userId, authUser.userId));
-
-	// Invalidate cache if enabled
-	if (cacheEnabled) {
-		authUserCache.delete(`auth:user:${authUser.userId}`);
-	}
-
-	return c.json({ success: true } as const, 200);
+	const result = await completeOnboarding(authUser.userId);
+	return c.json(result, 200);
 });
 
 export default app;

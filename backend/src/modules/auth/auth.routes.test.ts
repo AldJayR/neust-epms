@@ -8,7 +8,7 @@ import {
 } from "../../../test/helpers.js";
 import app from "./auth.routes.js";
 
-vi.mock("../lib/password-check.js", () => ({
+vi.mock("@/lib/password-check.js", () => ({
 	isPasswordCompromised: vi.fn().mockResolvedValue(false),
 }));
 
