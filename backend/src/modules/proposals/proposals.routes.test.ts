@@ -267,8 +267,6 @@ describe("POST /proposals/:id/review", () => {
 			selectCallCount++;
 			if (selectCallCount === 1) return mockSelectChain([mock]) as never; // proposal lookup
 			if (selectCallCount === 2)
-				return mockSelectChain([]) as never; // leader lookup
-			if (selectCallCount === 3)
 				return mockSelectChain([]) as never; // isProjectLeader → not a leader
 			return mockSelectChain([
 				{ bypassedRetChair: true },
@@ -295,8 +293,6 @@ describe("POST /proposals/:id/review", () => {
 			selectCallCount++;
 			if (selectCallCount === 1) return mockSelectChain([mock]) as never; // proposal lookup
 			if (selectCallCount === 2)
-				return mockSelectChain([]) as never; // leader lookup
-			if (selectCallCount === 3)
 				return mockSelectChain([]) as never; // isProjectLeader → not a leader
 			return mockSelectChain([
 				{ bypassedRetChair: false },

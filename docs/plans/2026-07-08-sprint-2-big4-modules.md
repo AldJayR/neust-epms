@@ -103,10 +103,12 @@ src/lib/                        ← unchanged
 
 ---
 
-## Task 1: Split director.routes.ts (1705 lines → 6 sub-routes + service + schema)
+## Task 1: Split director.routes.ts (1705 lines → 6 sub-routes + service + schema) ✅
 
 > **Endpoints:** 7 (GET × 6, POST × 1)
 > **Key duplication:** RET_CHAIR scoping logic 7×, leader subquery 2×, faculty query 2×
+>
+> **Completed:** Commit `6c53e1a` on `refactor/backend`. Created `director.schema.ts` (16 schemas), `director.service.ts` (8 functions), 6 thin sub-route files, updated `index.ts`. Removed dead helper functions. Fixed missing `roles` import, `env` usage, `exactOptionalPropertyTypes`. Deleted old `routes/director.routes.ts`. All 193 tests pass.
 
 ### Files to create/modify
 
@@ -289,7 +291,7 @@ git commit -m "refactor(modules): split director into 6 sub-routes + service + s
 
 ---
 
-## Task 2: Split proposals.routes.ts (1788 lines → 5 sub-routes + service + schema)
+## Task 2: Split proposals.routes.ts (1788 lines → 4 sub-routes + service + schema)
 
 > **Endpoints:** 14 (GET × 7, POST × 5, PATCH × 1, undocumented restore × 1)
 > **Key duplication:** role-scope where-conditions every query, leader subquery 5×+
@@ -311,66 +313,145 @@ git commit -m "refactor(modules): split director into 6 sub-routes + service + s
 
 | Schema | Source line | Purpose |
 |--------|------------|---------|
-| `ProposalSchema` | 52 | Proposal response shape |
-| `ProposalListSchema` | 78 | Paginated proposal list |
-| `RETDashboardStatsSchema` | 82 | RET Chair dashboard counts |
-| `CreateProposalSchema` | 90 | Create body (members, departments, sectors, SDGs) |
-| `UpdateProposalSchema` | 117 | Update body (all optional) |
-| `ReviewProposalSchema` | 129 | Review body (decision + comments) |
-| `DerivedStateSchema` | 456 | ACT/WAIT/WATCH state |
-| `CommentParams` | 1559 | Path params (proposalId + docId) |
-| `CreateCommentSchema` | 1570 | Comment body with annotation JSON |
-| `CommentUserSchema` | 1586 | Comment author info |
-| `CommentResponseSchema` | 1593 | Full comment response |
-| `CommentListSchema` | 1614 | Array of comments |
+| `ProposalSchema` | 52-76 | Proposal response shape (proposalId, campusId, title, status, leader info, etc.) |
+| `ProposalListSchema` | 78-80 | `{ items: Proposal[], total: number }` |
+| `RETDashboardStatsSchema` | 82-88 | `{ pendingReview, approvedProjects, deniedProjects }` |
+| `CreateProposalSchema` | 90-115 | Create body: campusId, departmentId, title, bannerProgram, projectLocale, extensionCategory, budgets, dates, members[], departmentIds[], sectorIds[], sectorNames[], sdgIds[] |
+| `UpdateProposalSchema` | 117-127 | Update body: all optional fields (title, bannerProgram, projectLocale, extensionCategory, budgets, sectorNames) |
+| `ReviewProposalSchema` | 129-139 | `{ decision: Endorsed|Approved|Returned|Rejected, comments?: string }` |
+| `DerivedStateSchema` | 456-463 | `{ state: ACT|WAIT|WATCH, owner, reason, nextTransition }` |
+| `CommentParams` | 1559-1568 | `{ id: uuid, docId: uuid }` |
+| `CreateCommentSchema` | 1570-1584 | `{ content: string, annotationJson?: {x,y,width,height,page} \| null }` |
+| `CommentUserSchema` | 1586-1591 | `{ userId, name, email, roleName }` |
+| `CommentResponseSchema` | 1593-1612 | Full comment with user info |
+| `CommentListSchema` | 1614 | `CommentResponseSchema[]` |
+| `ParamId` | 141-146 | Import from `@/lib/schemas.js` instead |
+| `PaginationQuery` | 148-178 | Import from `@/lib/schemas.js` (needs `archived` field extension or local variant) |
+
+**Note:** `ParamId` is defined locally at line 141-146 but should import from `@/lib/schemas.js`. `PaginationQuery` at line 148-178 has an `archived` field not in the shared version — either extend the shared one or define `ProposalPaginationQuery` locally.
 
 ### Step 2: Create `proposals.service.ts`
 
 ```ts
-export function buildProposalScopeConditions(user): SQL[]
-// The repeated FACULTY/RET_CHAIR scoping — appears in list, get-by-id, create
+// ── Shared helpers (eliminate 5× duplication) ──
+
+export function buildProposalScopeConditions(user: AuthUser): SQL[]
+// Lines 214-226, 400-412, 488-505, 599-617, 835-846 (appear in list, get-by-id, derived-state, create, update)
+// FACULTY: departmentId or campusId scope
+// RET_CHAIR: isMainCampus ? departmentId : campusId scope
+// DIRECTOR/SUPER_ADMIN: no scope (unfiltered)
 
 export function getLeaderSubquery()
-// CTE: SELECT proposalId, userId WHERE projectRole = 'Project Leader'
+// Lines 228-235, 507-514: CTE selecting proposalMembers WHERE projectRole = 'Project Leader'
+// Used in: list, derived-state
 
-export function getUserMemberSubquery(userId)
-// CTE: checks if current user is a member
+export function getUserMemberSubquery(userId: string)
+// Lines 237-244: CTE checking if current user is a member
+// Used in: list only
 
-export async function checkDuplicateTitle(title): Promise<boolean>
-// Case-insensitive ilike check
+// ── CRUD operations ──
 
-export async function createProposalInTransaction(tx, body, userId)
-// Lines 634-748: insert proposal + members + departments + sectors + SDGs
+export async function checkDuplicateTitle(title: string): Promise<boolean>
+// Lines 620-632: case-insensitive ilike check, returns true if duplicate exists
 
-export async function updateProposalWithSectors(id, body, existing)
-// Lines 820-964: update + optional sector re-sync (delete+reinsert)
+export async function createProposalInTransaction(tx, body, user): Promise<Proposal>
+// Lines 634-748: transaction that inserts proposal + members + departments + sectors + SDGs
+// - Auto-adds creator as Project Leader if not in members[]
+// - sectorNames: get-or-create pattern (check existing, insert if not found)
+// - If no sectorIds/sectorNames: defaults to first sector in DB
+// - Sets bypassedRetChair = true if creator is RET_CHAIR
 
-export async function validateCompleteness(proposalId): Promise<CompletenessResult>
-// Lines 1019-1110: 5 checks (documents, members+leader, sectors, SDGs, dates)
+export async function updateProposalWithSectors(id, body, existing): Promise<Proposal>
+// Lines 820-964: update proposal + optional sector re-sync
+// - Updates only provided fields (title, bannerProgram, projectLocale, extensionCategory, budgets)
+// - If sectorNames provided: delete existing proposalBeneficiaries, re-insert new ones
+// - Uses captureAuditDiff for audit log
 
-export async function processReview(user, proposalId, body, existing): Promise<ReviewResult>
+// ── Submit flow ──
+
+export async function validateCompleteness(proposalId: string): Promise<void>
+// Lines 1019-1110: throws ApiError(400, 'INCOMPLETE_PROPOSAL', ...) on first failure
+// 5 checks in order:
+//   1. Documents: at least 1 proposalDocuments row
+//   2. Members: at least 1 member + at least 1 Project Leader
+//   3. Sectors: at least 1 proposalBeneficiaries row
+//   4. SDGs: at least 1 proposalSdgs row
+//   5. Dates: targetStartDate + targetEndDate present, end >= start
+
+// ── Review state machine ──
+
+export async function processReview(user, proposalId, body): Promise<void>
 // Lines 1205-1452: full state machine
-// EC-01: conflict-of-interest (isProjectLeader blocks review)
-// EC-04: revisionNum incremented on RETURNED
-// EC-05: stacked rejections preserved (always INSERT, never UPDATE)
-// 3 flows: RET Chair endorsement, Director approval, Director bypassed approval
-// On approval: creates projects row if not exists
+// EC-01: conflict-of-interest — isProjectLeader blocks review (line 1239)
+// Scope check: RET_CHAIR can only review proposals in their department/campus (lines 1248-1266)
+// 3 flows:
+//   RET Chair + PENDING_REVIEW + !bypassedRetChair: Endorsed|Returned|Rejected
+//   Director + ENDORSED: Approved|Returned|Rejected
+//   Director + PENDING_REVIEW + bypassedRetChair: Approved|Returned|Rejected
+// EC-04: revisionNum incremented on RETURNED (line 1353)
+// EC-05: stacked rejections preserved — always INSERT proposalReviews, never UPDATE (line 1364)
+// DFD 6.1: Director returning Endorsed sets bypassedRetChair=true (lines 1357-1360)
+// On APPROVED: creates projects row if not exists (lines 1396-1409)
+// Sends notification to project leader with role-specific message (lines 1419-1449)
 ```
 
 ### Step 3: Create sub-route files
 
-| Sub-route file | Endpoint(s) | Source lines |
-|----------------|-------------|-------------|
-| `crud.routes.ts` | `GET /proposals`, `GET /proposals/{id}`, `POST /proposals`, `PATCH /proposals/{id}`, `GET /proposals/ret/dashboard-stats`, `GET /proposals/{id}/derived-state`, metadata routes, `POST /:id/restore` | 182-964 + 304-369 + 455-566 + 1454-1554 + 1770-1786 |
-| `submit.routes.ts` | `POST /proposals/{id}/submit` | 966-1171 |
-| `review.routes.ts` | `POST /proposals/{id}/review` | 1173-1452 |
-| `comments.routes.ts` | `POST + GET /proposals/{id}/documents/{docId}/comments` | 1556-1768 |
+| Sub-route file | Endpoint(s) | Source lines | Key logic |
+|----------------|-------------|-------------|-----------|
+| `crud.routes.ts` | `GET /proposals`, `GET /proposals/{id}`, `POST /proposals`, `PATCH /proposals/{id}`, `GET /proposals/ret/dashboard-stats`, `GET /proposals/{id}/derived-state`, `GET /proposals/metadata/sdgs`, `GET /proposals/metadata/sectors`, `GET /proposals/metadata/requirements`, `POST /proposals/:id/restore` | 182-302, 304-369, 371-453, 455-566, 568-783, 785-964, 1454-1554, 1770-1786 | List with role scope + leader/member subqueries, create in transaction, update with sector re-sync, RET stats, derived state (deriveProposalState), metadata (static), restore (undocumented → add OpenAPI+auth) |
+| `submit.routes.ts` | `POST /proposals/{id}/submit` | 966-1171 | Leader check, status check (Draft|Returned), 5 completeness validations, status→PENDING_REVIEW, audit, notification |
+| `review.routes.ts` | `POST /proposals/{id}/review` | 1173-1452 | Leader conflict check, scope check, state machine (3 flows), revision increment, bypassedRetChair flag, project creation on approval, audit, notifications |
+| `comments.routes.ts` | `POST + GET /proposals/{id}/documents/{docId}/comments` | 1556-1768 | Create: insert with user info + annotation JSON. List: join with users+roles for author info. RET_CHAIR bypass check on create. |
 
-Note: The restore route (lines 1770-1786) is undocumented with no auth — add proper OpenAPI docs and auth middleware during extraction.
+**Endpoint count per sub-route:**
+- `crud.routes.ts`: 10 endpoints (GET×4, POST×2, PATCH×1, GET metadata×3) + undocumented restore
+- `submit.routes.ts`: 1 endpoint
+- `review.routes.ts`: 1 endpoint
+- `comments.routes.ts`: 2 endpoints
 
-### Step 4-7: index.ts, delete, verify, commit
+**Auth middleware:** `app.ts` registers auth for `/proposals/*` at root — sub-routes inherit this. No need to add `authMiddleware` + `requireRole` in each sub-route (unlike director which required explicit role checks).
 
-Same pattern as Task 1.
+### Step 4: Create `index.ts`
+
+```ts
+import { Hono } from "hono";
+import crud from "./crud.routes.js";
+import submit from "./submit.routes.js";
+import review from "./review.routes.js";
+import comments from "./comments.routes.js";
+
+const router = new Hono();
+router.route("/", crud);
+router.route("/", submit);
+router.route("/", review);
+router.route("/", comments);
+export default router;
+```
+
+### Step 5: Delete `src/routes/proposals.routes.ts`
+
+### Step 6: Verify
+
+```bash
+cd backend && npx tsc --noEmit && npx vitest run
+```
+
+### Step 7: Commit
+
+```bash
+git add -A
+git commit -m "refactor(modules): split proposals into 4 sub-routes + service + schema"
+```
+
+### Step 8: Notes for implementation
+
+- **Auth:** The existing code has a comment "Auth for /proposals/* is registered once at the root app (see app.ts)." — sub-routes do NOT add authMiddleware/requireRole. They inherit from the root mount.
+- **Restore route:** Lines 1770-1786 use `app.post("/:id/restore")` without OpenAPI docs or auth — convert to proper `createRoute` with auth middleware and `ApiError` response schema.
+- **PaginationQuery with archived:** The local PaginationQuery (line 148-178) has an `archived` field not in `@/lib/schemas.js`. Either extend shared or define `ProposalPaginationQuery` locally.
+- **Role names:** Uses `ROLE_NAMES.FACULTY`, `ROLE_NAMES.RET_CHAIR`, `ROLE_NAMES.DIRECTOR`, `ROLE_NAMES.SUPER_ADMIN` — all available from `@/lib/types.js`.
+- **Review schema imports:** `REVIEW_DECISION`, `REVIEW_STAGE`, `PROPOSAL_STATUS` from `@/lib/types.js`.
+- **Service dependencies:** `deriveProposalState` from `@/lib/derived-states.js`, `isProjectLeader` + `PROJECT_LEADER_ROLE` from `@/services/auth-user.service.js`, `createNotification` from `@/lib/notification.helpers.js`.
 
 ---
 
