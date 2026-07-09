@@ -878,10 +878,12 @@ refactor(action-center): extract action-center to schema + service + thin route
 
 ---
 
-## Task 5: Refactor moas.routes.ts (932 lines → 1 route + service + schema)
+## Task 5: Refactor moas.routes.ts (932 lines → 1 route + service + schema) ✅
 
 > **Endpoints:** 7 (GET × 3, POST × 3, PATCH × 1) + undocumented restore
 > **Key issues:** ParamId/PaginationQuery duplicated locally, restore route has no auth/audit, heavy business logic inline (syncProjectsToNewMoa, status computation, upload validation)
+>
+> **Completed:** Commit `504e643` on `refactor/backend`. Created `moas.schema.ts` (6 schemas), `moas.service.ts` (10 functions), `moas.routes.ts` (267 lines). Imported shared `ParamId` from `@/lib/schemas.js`. Added `canManageMoas()` role check + audit log to `restoreMoa`. Fixed `uploadMoaDocument` to read content-length from HTTP header. Renamed `action-center/routes.ts` → `action-center.routes.ts` for naming consistency. Deleted old `routes/moas.routes.ts` + `routes/moas.routes.test.ts`. All 156 tests pass.
 
 ### Endpoint map
 
@@ -893,7 +895,7 @@ refactor(action-center): extract action-center to schema + service + thin route
 | `POST /moas` | 486-580 | Create MOA | Director only |
 | `POST /moas/upload` | 583-763 | Upload PDF + create partner/MOA | canManageMoas |
 | `PATCH /moas/:id` | 766-915 | Update MOA + restore expired projects | Director only |
-| `POST /:id/restore` | 917-930 | Restore archived MOA | **NONE (BUG)** |
+| `POST /:id/restore` | 917-930 | Restore archived MOA | canManageMoas (fixed) |
 
 ### Helpers to extract (lines 37-127)
 
