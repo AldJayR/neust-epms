@@ -10,6 +10,10 @@ import {
 import app from "./reports.routes.js";
 
 beforeEach(() => {
+	vi.mocked(db.select).mockReset();
+	vi.mocked(db.insert).mockReset();
+	vi.mocked(db.update).mockReset();
+	vi.mocked(db.transaction).mockReset();
 	setMockUser(MOCK_USERS.faculty);
 });
 
@@ -34,9 +38,24 @@ describe("GET /reports", () => {
 	});
 });
 
+describe("GET /reports/stats", () => {
+	it("should return report counts", async () => {
+		vi.mocked(db.select)
+			.mockReturnValueOnce(mockSelectChain([{ value: 4 }]) as never)
+			.mockReturnValueOnce(mockSelectChain([{ value: 4 }]) as never)
+			.mockReturnValueOnce(mockSelectChain([{ value: 4 }]) as never);
+
+		const res = await app.request("/reports/stats");
+
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({ total: 4, progress: 4, terminal: 4 });
+	});
+});
+
 describe("POST /reports", () => {
 	it("should create a report for an existing project", async () => {
 		const project = createMockProject();
+		const submittedAt = new Date("2026-01-01T00:00:00.000Z");
 		const report = {
 			reportId: "aaa",
 			projectId: project.projectId,
@@ -44,7 +63,7 @@ describe("POST /reports", () => {
 			reportType: "Progress",
 			storagePath: null,
 			remarks: "Good progress",
-			submittedAt: new Date(),
+			submittedAt,
 			archivedAt: null,
 		};
 		const enriched = {
@@ -53,9 +72,11 @@ describe("POST /reports", () => {
 			projectTitle: "Test Project",
 			leaderFirstName: "John",
 			leaderLastName: "Doe",
+			leaderAcademicRank: "Professor",
+			leaderAvatarUrl: null,
 			departmentName: "CS",
 			reportType: "Progress",
-			submittedAt: new Date(),
+			submittedAt,
 			storagePath: null,
 			remarks: "Good progress",
 			periodStart: null,
@@ -64,9 +85,25 @@ describe("POST /reports", () => {
 		};
 		vi.mocked(db.select)
 			.mockReturnValueOnce(mockSelectChain([project]) as never)
+			.mockReturnValueOnce(mockSelectChain([{ memberId: "member-1" }]) as never)
+			.mockReturnValueOnce(mockSelectChain([]) as never)
+			.mockReturnValueOnce(mockSelectChain([]) as never)
+			.mockReturnValueOnce(
+				mockSelectChain([{ projectStatus: "Ongoing" }]) as never,
+			)
+			.mockReturnValueOnce(mockSelectChain([]) as never)
+			.mockReturnValueOnce(
+				mockSelectChain([{ title: "Test Project" }]) as never,
+			)
 			.mockReturnValueOnce(mockSelectChain([enriched]) as never);
-		vi.mocked(db.insert).mockReturnValue(mockMutationChain([report]) as never);
-		vi.mocked(db.update).mockReturnValue(mockMutationChain([]) as never);
+		vi.mocked(db.transaction).mockImplementation(
+			(callback) =>
+				callback({
+					insert: vi.fn(() => mockMutationChain([report])),
+					select: vi.fn(() => mockSelectChain([])),
+					update: vi.fn(() => mockMutationChain([])),
+				}) as never,
+		);
 
 		const res = await app.request("/reports", {
 			method: "POST",
@@ -78,6 +115,10 @@ describe("POST /reports", () => {
 			}),
 		});
 		expect(res.status).toBe(201);
+		expect(await res.json()).toMatchObject({
+			project: "Test Project",
+			reportType: "Progress",
+		});
 	});
 
 	it("should reject report for non-existent project", async () => {
@@ -91,6 +132,27 @@ describe("POST /reports", () => {
 			}),
 		});
 		expect(res.status).toBe(404);
+	});
+
+	it("should reject a non-member with NOT_MEMBER", async () => {
+		const project = createMockProject();
+		vi.mocked(db.select)
+			.mockReturnValueOnce(mockSelectChain([project]) as never)
+			.mockReturnValueOnce(mockSelectChain([]) as never);
+
+		const res = await app.request("/reports", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				projectId: project.projectId,
+				reportType: "Progress",
+			}),
+		});
+
+		expect(res.status).toBe(403);
+		expect(await res.json()).toMatchObject({
+			error: { code: "NOT_MEMBER" },
+		});
 	});
 });
 
@@ -120,5 +182,28 @@ describe("DELETE /reports/:id (soft delete)", () => {
 			{ method: "DELETE" },
 		);
 		expect(res.status).toBe(404);
+	});
+
+	it("should reject an unauthorized archive with FORBIDDEN", async () => {
+		vi.mocked(db.select).mockReturnValue(
+			mockSelectChain([
+				{
+					reportId: "aaaaaaaa-0000-4000-8000-aaaaaaaaaaaa",
+					submittedById: MOCK_USERS.director.userId,
+					departmentId: 2,
+					campusId: 2,
+				},
+			]) as never,
+		);
+
+		const res = await app.request(
+			"/reports/aaaaaaaa-0000-4000-8000-aaaaaaaaaaaa",
+			{ method: "DELETE" },
+		);
+
+		expect(res.status).toBe(403);
+		expect(await res.json()).toMatchObject({
+			error: { code: "FORBIDDEN" },
+		});
 	});
 });
