@@ -1,28 +1,23 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, desc, eq, sql } from "drizzle-orm";
-import { db } from "@/db/client.js";
-import { notifications } from "@/db/schema/notifications.js";
-import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
+import { installApiErrorHandler } from "@/lib/errors.js";
 import { ErrorSchema } from "@/lib/schemas.js";
-import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
+import type { AuthEnv } from "@/middleware/auth.js";
+import { authMiddleware } from "@/middleware/auth.js";
+import {
+	NotificationSchema,
+	UnreadCountSchema,
+	MarkReadParamsSchema,
+	OkResponseSchema,
+} from "./notifications.schema.js";
+import {
+	listNotifications,
+	getUnreadNotificationCount,
+	markNotificationRead,
+	markAllNotificationsRead,
+} from "./notifications.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
-
-// ── Schemas ──
-
-const NotificationSchema = z
-	.object({
-		notificationId: z.string().uuid(),
-		recipientId: z.string().uuid(),
-		type: z.string(),
-		title: z.string(),
-		message: z.string(),
-		isRead: z.boolean(),
-		createdAt: z.string(),
-		readAt: z.string().nullable(),
-	})
-	.openapi("Notification");
 
 // ── All routes require authentication ──
 app.use("/notifications", authMiddleware);
@@ -53,22 +48,8 @@ const listNotificationsRoute = createRoute({
 
 app.openapi(listNotificationsRoute, async (c) => {
 	const user = c.get("user");
-
-	const rows = await db
-		.select()
-		.from(notifications)
-		.where(eq(notifications.recipientId, user.userId))
-		.orderBy(desc(notifications.createdAt))
-		.limit(20);
-
-	return c.json(
-		rows.map((r) => ({
-			...r,
-			createdAt: r.createdAt.toISOString(),
-			readAt: r.readAt?.toISOString() ?? null,
-		})),
-		200,
-	);
+	const result = await listNotifications(user.userId);
+	return c.json(result, 200);
 });
 
 // ── GET /notifications/unread-count ──
@@ -82,7 +63,7 @@ const unreadCountRoute = createRoute({
 		200: {
 			content: {
 				"application/json": {
-					schema: z.object({ count: z.number() }),
+					schema: UnreadCountSchema,
 				},
 			},
 			description: "Unread count",
@@ -96,18 +77,8 @@ const unreadCountRoute = createRoute({
 
 app.openapi(unreadCountRoute, async (c) => {
 	const user = c.get("user");
-
-	const [result] = await db
-		.select({ count: sql<number>`count(*)::int` })
-		.from(notifications)
-		.where(
-			and(
-				eq(notifications.recipientId, user.userId),
-				eq(notifications.isRead, false),
-			),
-		);
-
-	return c.json({ count: result?.count ?? 0 }, 200);
+	const count = await getUnreadNotificationCount(user.userId);
+	return c.json({ count }, 200);
 });
 
 // ── PATCH /notifications/:id/read ──
@@ -118,15 +89,13 @@ const markReadRoute = createRoute({
 	summary: "Mark a notification as read",
 	security: [{ Bearer: [] }],
 	request: {
-		params: z.object({
-			id: z.string().uuid(),
-		}),
+		params: MarkReadParamsSchema,
 	},
 	responses: {
 		200: {
 			content: {
 				"application/json": {
-					schema: z.object({ ok: z.literal(true) }),
+					schema: OkResponseSchema,
 				},
 			},
 			description: "Notification marked as read",
@@ -145,22 +114,7 @@ const markReadRoute = createRoute({
 app.openapi(markReadRoute, async (c) => {
 	const user = c.get("user");
 	const { id } = c.req.valid("param");
-
-	const [updated] = await db
-		.update(notifications)
-		.set({ isRead: true, readAt: new Date() })
-		.where(
-			and(
-				eq(notifications.notificationId, id),
-				eq(notifications.recipientId, user.userId),
-			),
-		)
-		.returning();
-
-	if (!updated) {
-		throw new ApiError(404, "NOT_FOUND", "Notification not found");
-	}
-
+	await markNotificationRead(user.userId, id);
 	return c.json({ ok: true as const }, 200);
 });
 
@@ -175,7 +129,7 @@ const markAllReadRoute = createRoute({
 		200: {
 			content: {
 				"application/json": {
-					schema: z.object({ ok: z.literal(true) }),
+					schema: OkResponseSchema,
 				},
 			},
 			description: "All notifications marked as read",
@@ -189,17 +143,7 @@ const markAllReadRoute = createRoute({
 
 app.openapi(markAllReadRoute, async (c) => {
 	const user = c.get("user");
-
-	await db
-		.update(notifications)
-		.set({ isRead: true, readAt: new Date() })
-		.where(
-			and(
-				eq(notifications.recipientId, user.userId),
-				eq(notifications.isRead, false),
-			),
-		);
-
+	await markAllNotificationsRead(user.userId);
 	return c.json({ ok: true as const }, 200);
 });
 
