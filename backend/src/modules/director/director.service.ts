@@ -29,13 +29,14 @@ import { specialOrders } from "@/db/schema/special-orders.js";
 import { users } from "@/db/schema/users.js";
 import { env } from "@/env.js";
 import { ApiError } from "@/lib/errors.js";
+import { getLeaderSubquery } from "@/lib/leader-subquery.js";
 import { supabase } from "@/lib/supabase.js";
 import {
+	type AuthUser,
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
 	type ProjectStatus,
 	ROLE_NAMES,
-	type AuthUser,
 } from "@/lib/types.js";
 
 // ── Helper: format relative time ──
@@ -501,7 +502,9 @@ export async function getFacultyInvolvementCounts(
 			.groupBy(proposalMembers.userId),
 	]);
 
-	const leadMap = new Map(leadCounts.map((r) => [r.userId, Number(r.value ?? 0)]));
+	const leadMap = new Map(
+		leadCounts.map((r) => [r.userId, Number(r.value ?? 0)]),
+	);
 	const collabMap = new Map(
 		collabCounts.map((r) => [r.userId, Number(r.value ?? 0)]),
 	);
@@ -673,14 +676,7 @@ export async function getHubProjects(
 	const { page, limit, search, college, status, myProjectsOnly } = query;
 	const offset = (page - 1) * limit;
 
-	const leaderMembersSubquery = db
-		.select({
-			proposalId: proposalMembers.proposalId,
-			userId: proposalMembers.userId,
-		})
-		.from(proposalMembers)
-		.where(eq(proposalMembers.projectRole, "Project Leader"))
-		.as("leader_members");
+	const leaderMembersSubquery = getLeaderSubquery();
 
 	const whereConditions = [
 		isNull(proposals.archivedAt),
@@ -811,14 +807,7 @@ export async function getHubProjects(
 
 // ── 7. getProjectDetails ──
 export async function getProjectDetails(proposalId: string, user: AuthUser) {
-	const leaderMembers = db
-		.select({
-			proposalId: proposalMembers.proposalId,
-			userId: proposalMembers.userId,
-		})
-		.from(proposalMembers)
-		.where(eq(proposalMembers.projectRole, "Project Leader"))
-		.as("leader_members");
+	const leaderMembers = getLeaderSubquery();
 
 	const [row] = await db
 		.select({
@@ -979,8 +968,18 @@ export async function getProjectDetails(proposalId: string, user: AuthUser) {
 	]);
 
 	const months = [
-		"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+		"Jan",
+		"Feb",
+		"Mar",
+		"Apr",
+		"May",
+		"Jun",
+		"Jul",
+		"Aug",
+		"Sep",
+		"Oct",
+		"Nov",
+		"Dec",
 	];
 	let duration = "Not yet started";
 	if (row.targetStartDate && row.targetEndDate) {
@@ -1132,7 +1131,11 @@ export async function getProjectDetails(proposalId: string, user: AuthUser) {
 
 // ── 8. sendEmailReport ──
 export async function sendEmailReport(
-	body: { search?: string | undefined; college?: string | undefined; status?: string | undefined },
+	body: {
+		search?: string | undefined;
+		college?: string | undefined;
+		status?: string | undefined;
+	},
 	user: AuthUser,
 ): Promise<void> {
 	const { search, college, status } = body;

@@ -1,3 +1,4 @@
+import type { z } from "@hono/zod-openapi";
 import type { SQL } from "drizzle-orm";
 import { and, eq, gte, inArray, isNull, or } from "drizzle-orm";
 import { db } from "@/db/client.js";
@@ -13,41 +14,27 @@ import {
 } from "@/lib/derived-states.js";
 import { buildProposalScopeClause } from "@/lib/scope-helpers.js";
 import {
+	type AuthUser,
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
 	type ProjectStatus,
 	type ProposalStatus,
 	ROLE_NAMES,
-	type AuthUser,
 } from "@/lib/types.js";
-import type { z } from "@hono/zod-openapi";
 import type { ActionItemSchema } from "./action-center.schema.js";
 
 type ActionItem = z.infer<typeof ActionItemSchema>;
 
-// ── Shared helpers ──
-
-function buildLeaderSubquery() {
-	return db
-		.select({
-			proposalId: proposalMembers.proposalId,
-			userId: proposalMembers.userId,
-		})
-		.from(proposalMembers)
-		.where(eq(proposalMembers.projectRole, "Project Leader"))
-		.as("leader_members");
-}
+import { getLeaderSubquery } from "@/lib/leader-subquery.js";
 
 // ── Unified queries ──
 
-async function getPendingProposals(
-	opts: {
-		statusFilter: SQL;
-		scopeClause?: SQL;
-		joinWithMember?: boolean;
-	},
-) {
-	const leaderSubquery = buildLeaderSubquery();
+async function getPendingProposals(opts: {
+	statusFilter: SQL;
+	scopeClause?: SQL;
+	joinWithMember?: boolean;
+}) {
+	const leaderSubquery = getLeaderSubquery();
 	const query = db
 		.select({
 			proposalId: proposals.proposalId,
@@ -65,10 +52,7 @@ async function getPendingProposals(
 			eq(proposals.proposalId, leaderSubquery.proposalId),
 		);
 
-	const conditions: SQL[] = [
-		opts.statusFilter,
-		isNull(proposals.archivedAt),
-	];
+	const conditions: SQL[] = [opts.statusFilter, isNull(proposals.archivedAt)];
 	if (opts.scopeClause) conditions.push(opts.scopeClause);
 	if (opts.joinWithMember) {
 		query.innerJoin(
@@ -80,13 +64,11 @@ async function getPendingProposals(
 	return query.where(and(...conditions));
 }
 
-async function getReturnedProposals(
-	opts: {
-		scopeClause?: SQL;
-		joinWithMember?: boolean;
-	},
-) {
-	const leaderSubquery = buildLeaderSubquery();
+async function getReturnedProposals(opts: {
+	scopeClause?: SQL;
+	joinWithMember?: boolean;
+}) {
+	const leaderSubquery = getLeaderSubquery();
 	const query = db
 		.select({
 			proposalId: proposals.proposalId,
@@ -119,14 +101,12 @@ async function getReturnedProposals(
 	return query.where(and(...conditions));
 }
 
-async function getProjectsByStatus(
-	opts: {
-		projectStatus: ProjectStatus;
-		scopeClause?: SQL;
-		joinWithMember?: boolean;
-	},
-) {
-	const leaderSubquery = buildLeaderSubquery();
+async function getProjectsByStatus(opts: {
+	projectStatus: ProjectStatus;
+	scopeClause?: SQL;
+	joinWithMember?: boolean;
+}) {
+	const leaderSubquery = getLeaderSubquery();
 	const query = db
 		.select({
 			proposalId: proposals.proposalId,
@@ -159,14 +139,12 @@ async function getProjectsByStatus(
 	return query.where(and(...conditions));
 }
 
-async function getUpcomingReports(
-	opts: {
-		now: Date;
-		scopeClause?: SQL;
-		joinWithMember?: boolean;
-	},
-) {
-	const leaderSubquery = buildLeaderSubquery();
+async function getUpcomingReports(opts: {
+	now: Date;
+	scopeClause?: SQL;
+	joinWithMember?: boolean;
+}) {
+	const leaderSubquery = getLeaderSubquery();
 	const query = db
 		.select({
 			dateId: projectReportingDates.id,
@@ -372,9 +350,7 @@ function buildReportItem(
 
 // ── Orchestrator ──
 
-export async function getActionItemsForRole(
-	user: AuthUser,
-): Promise<{
+export async function getActionItemsForRole(user: AuthUser): Promise<{
 	actItems: ActionItem[];
 	watchItems: ActionItem[];
 	stats: {
@@ -432,9 +408,14 @@ export async function getActionItemsForRole(
 			overdue.map((p) => p.projectId),
 		);
 		for (const p of overdue) {
-			const item = buildProjectItem(p, user, schedMap.get(p.projectId) ?? false, {
-				urgency: "urgent",
-			});
+			const item = buildProjectItem(
+				p,
+				user,
+				schedMap.get(p.projectId) ?? false,
+				{
+					urgency: "urgent",
+				},
+			);
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 
@@ -532,9 +513,14 @@ export async function getActionItemsForRole(
 			overdue.map((p) => p.projectId),
 		);
 		for (const p of overdue) {
-			const item = buildProjectItem(p, user, schedMap.get(p.projectId) ?? false, {
-				urgency: "urgent",
-			});
+			const item = buildProjectItem(
+				p,
+				user,
+				schedMap.get(p.projectId) ?? false,
+				{
+					urgency: "urgent",
+				},
+			);
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 

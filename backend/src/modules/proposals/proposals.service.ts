@@ -1,11 +1,4 @@
-import {
-	and,
-	eq,
-	ilike,
-	isNull,
-	or,
-	sql,
-} from "drizzle-orm";
+import { and, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { beneficiarySectors } from "@/db/schema/beneficiary-sectors.js";
 import { projects } from "@/db/schema/projects.js";
@@ -18,11 +11,11 @@ import { proposalSdgs } from "@/db/schema/proposal-sdgs.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { ApiError } from "@/lib/errors.js";
 import {
+	type AuthUser,
 	PROPOSAL_STATUS,
 	REVIEW_DECISION,
 	REVIEW_STAGE,
 	ROLE_NAMES,
-	type AuthUser,
 } from "@/lib/types.js";
 import {
 	isProjectLeader,
@@ -30,17 +23,6 @@ import {
 } from "@/services/auth-user.service.js";
 
 // ── Shared helpers ──
-
-export function getLeaderSubquery() {
-	return db
-		.select({
-			proposalId: proposalMembers.proposalId,
-			userId: proposalMembers.userId,
-		})
-		.from(proposalMembers)
-		.where(eq(proposalMembers.projectRole, "Project Leader"))
-		.as("leader_members");
-}
 
 export function getUserMemberSubquery(userId: string) {
 	return db
@@ -420,10 +402,7 @@ export async function processReview(
 		})
 		.from(proposals)
 		.where(
-			and(
-				eq(proposals.proposalId, proposalId),
-				isNull(proposals.archivedAt),
-			),
+			and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
 		)
 		.limit(1);
 
@@ -466,10 +445,7 @@ export async function processReview(
 		.select({ bypassedRetChair: proposals.bypassedRetChair })
 		.from(proposals)
 		.where(
-			and(
-				eq(proposals.proposalId, proposalId),
-				isNull(proposals.archivedAt),
-			),
+			and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
 		)
 		.limit(1);
 

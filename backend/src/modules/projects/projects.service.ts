@@ -29,29 +29,17 @@ import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { deriveProjectState } from "@/lib/derived-states.js";
 import { ApiError } from "@/lib/errors.js";
+import { getLeaderSubquery } from "@/lib/leader-subquery.js";
+import { buildProposalScope } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
 import {
+	type AuthUser,
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
 	type ProjectStatus,
 	REPORT_TYPE,
 	ROLE_NAMES,
-	type AuthUser,
 } from "@/lib/types.js";
-import { buildProposalScope } from "@/lib/scope-helpers.js";
-
-// ── Shared helpers ──
-
-export function getLeaderSubquery() {
-	return db
-		.select({
-			proposalId: proposalMembers.proposalId,
-			userId: proposalMembers.userId,
-		})
-		.from(proposalMembers)
-		.where(eq(proposalMembers.projectRole, "Project Leader"))
-		.as("leader_members");
-}
 
 // ── CRUD ──
 
@@ -765,7 +753,10 @@ export async function closeProject(
 		.select({ reportType: projectReports.reportType })
 		.from(projectReports)
 		.where(
-			and(eq(projectReports.projectId, projectId), isNull(projectReports.archivedAt)),
+			and(
+				eq(projectReports.projectId, projectId),
+				isNull(projectReports.archivedAt),
+			),
 		);
 
 	const hasFinalAccomplishment = reports.some(

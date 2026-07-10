@@ -17,34 +17,41 @@ import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { sdgs } from "@/db/schema/sdgs.js";
 import { users } from "@/db/schema/users.js";
-import { buildProposalScope, buildProposalScopeClause } from "@/lib/scope-helpers.js";
-import { deriveProposalState } from "@/lib/derived-states.js";
-import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
-import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
-import { PROPOSAL_STATUS, ROLE_NAMES, type ProposalStatus } from "@/lib/types.js";
-import type { AuthEnv } from "@/middleware/auth.js";
-import { PROJECT_LEADER_ROLE } from "@/services/auth-user.service.js";
-import {
-	ProposalSchema,
-	ProposalListSchema,
-	RETDashboardStatsSchema,
-	CreateProposalSchema,
-	UpdateProposalSchema,
-	DerivedStateSchema,
-	ProposalPaginationQuery,
-	ParamId,
-} from "./proposals.schema.js";
-import {
-	getLeaderSubquery,
-	getUserMemberSubquery,
-	checkDuplicateTitle,
-	createProposalInTransaction,
-	updateProposalWithSectors,
-} from "./proposals.service.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { getClientIp } from "@/lib/client-ip.js";
+import { deriveProposalState } from "@/lib/derived-states.js";
+import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
+import { getLeaderSubquery } from "@/lib/leader-subquery.js";
 import { createNotification } from "@/lib/notification.helpers.js";
+import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
+import {
+	buildProposalScope,
+	buildProposalScopeClause,
+} from "@/lib/scope-helpers.js";
+import {
+	PROPOSAL_STATUS,
+	type ProposalStatus,
+	ROLE_NAMES,
+} from "@/lib/types.js";
+import type { AuthEnv } from "@/middleware/auth.js";
+import { PROJECT_LEADER_ROLE } from "@/services/auth-user.service.js";
+import {
+	CreateProposalSchema,
+	DerivedStateSchema,
+	ParamId,
+	ProposalListSchema,
+	ProposalPaginationQuery,
+	ProposalSchema,
+	RETDashboardStatsSchema,
+	UpdateProposalSchema,
+} from "./proposals.schema.js";
+import {
+	checkDuplicateTitle,
+	createProposalInTransaction,
+	getUserMemberSubquery,
+	updateProposalWithSectors,
+} from "./proposals.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
