@@ -1,5 +1,4 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
-import { getClientIp } from "@/lib/client-ip.js";
 import { ErrorSchema } from "@/lib/schemas.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 
@@ -9,7 +8,6 @@ import {
 	ProjectDerivedStateSchema,
 	ProjectDetailsSchema,
 	ProjectListSchema,
-	ProjectSchema,
 } from "./projects.schema.js";
 import {
 	getProjectDerivedState,
