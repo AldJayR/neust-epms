@@ -116,9 +116,9 @@ app.openapi(markReadRoute, async (c) => {
 	return c.json({ ok: true as const }, 200);
 });
 
-// ── POST /notifications/read-all ──
+// ── PATCH /notifications/read-all ──
 const markAllReadRoute = createRoute({
-	method: "post",
+	method: "patch",
 	path: "/notifications/read-all",
 	tags: ["Notifications"],
 	summary: "Mark all notifications as read for the current user",
