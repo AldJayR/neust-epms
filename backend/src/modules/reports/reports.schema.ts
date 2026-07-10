@@ -63,4 +63,10 @@ export const PaginationQuery = z.object({
 		.max(100)
 		.default(50)
 		.openapi({ param: { name: "limit", in: "query" } }),
+	search: z
+		.string()
+		.trim()
+		.min(1)
+		.optional()
+		.openapi({ param: { name: "search", in: "query" } }),
 });

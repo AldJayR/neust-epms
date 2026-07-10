@@ -197,21 +197,25 @@ export const getCampusesFn = createServerFn({ method: "GET" }).handler(
 
 // ── Password breach check ──
 
+export async function checkPasswordSafety(
+	password: string,
+): Promise<{ compromised: boolean }> {
+	const response = await fetch(`${API_BASE}/auth/check-password`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ password }),
+	});
+
+	if (!response.ok) {
+		throw new Error("Unable to verify password safety");
+	}
+
+	return (await response.json()) as { compromised: boolean };
+}
+
 export const checkPasswordFn = createServerFn({ method: "POST" })
 	.validator(z.object({ password: z.string().min(1) }))
-	.handler(async ({ data }) => {
-		const response = await fetch(`${API_BASE}/auth/check-password`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(data),
-		});
-
-		if (!response.ok) {
-			return { compromised: false };
-		}
-
-		return (await response.json()) as { compromised: boolean };
-	});
+	.handler(async ({ data }) => checkPasswordSafety(data.password));
 
 // ── Get Current User ──────────────────────────────────────
 
@@ -397,16 +401,8 @@ export const setNewPasswordFn = createServerFn({ method: "POST" })
 			};
 		}
 
-		// Check if password has been compromised
-		const breachResponse = await fetch(`${API_BASE}/auth/check-password`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ password: data.password }),
-		});
-		if (breachResponse.ok) {
-			const { compromised } = (await breachResponse.json()) as {
-				compromised: boolean;
-			};
+		try {
+			const { compromised } = await checkPasswordSafety(data.password);
 			if (compromised) {
 				return {
 					error: true as const,
@@ -414,6 +410,11 @@ export const setNewPasswordFn = createServerFn({ method: "POST" })
 						"This password has appeared in a known data breach. Please choose a different one.",
 				};
 			}
+		} catch {
+			return {
+				error: true as const,
+				message: "Unable to verify password safety. Please try again.",
+			};
 		}
 
 		const { error: updateError } = await client.auth.updateUser({

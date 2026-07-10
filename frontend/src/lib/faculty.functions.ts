@@ -6,6 +6,16 @@ import { authorizeSessionUser, getValidAccessToken } from "./session.server";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3001/api/v1";
 const FACULTY_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
+const proposalStatusFilterSchema = z.enum([
+	"all",
+	"Draft",
+	"Pending Review",
+	"Endorsed",
+	"Approved",
+	"Returned",
+	"Rejected",
+]);
+type ProposalStatusFilter = z.infer<typeof proposalStatusFilterSchema>;
 
 // ── Schemas ───────────────────────────────────────────────
 
@@ -13,7 +23,7 @@ const facultyProposalsParamsSchema = z.object({
 	page: z.number(),
 	limit: z.number(),
 	search: z.string().optional(),
-	status: z.string().optional(),
+	status: proposalStatusFilterSchema.optional(),
 });
 
 const facultyProjectsParamsSchema = z.object({
@@ -150,7 +160,7 @@ export function facultyProposalsQueryOptions(params?: {
 	page?: number;
 	limit?: number;
 	search?: string;
-	status?: string;
+	status?: ProposalStatusFilter;
 }) {
 	const data = {
 		page: params?.page ?? 1,

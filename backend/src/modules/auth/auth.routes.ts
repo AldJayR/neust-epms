@@ -46,6 +46,10 @@ const checkPasswordRoute = createRoute({
 			content: { "application/json": { schema: CheckPasswordResponseSchema } },
 			description: "Result of compromised password check",
 		},
+		503: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Password safety check is unavailable",
+		},
 	},
 });
 
@@ -109,6 +113,10 @@ const registerRoute = createRoute({
 		400: {
 			content: { "application/json": { schema: ErrorSchema } },
 			description: "Validation error or user already exists",
+		},
+		503: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Password safety check is unavailable",
 		},
 	},
 });

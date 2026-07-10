@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { ApiError } from "./errors.js";
 
 /**
  * Check if a password has been exposed in known data breaches
@@ -14,17 +15,26 @@ export async function isPasswordCompromised(
 	const prefix = hash.slice(0, 5);
 	const suffix = hash.slice(5);
 
-	const response = await fetch(
-		`https://api.pwnedpasswords.com/range/${prefix}`,
-		{
+	let response: Response;
+	try {
+		response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
 			headers: { AddPadding: "no" },
 			signal: AbortSignal.timeout(3000),
-		},
-	);
+		});
+	} catch {
+		throw new ApiError(
+			503,
+			"PASSWORD_CHECK_UNAVAILABLE",
+			"Password safety check is unavailable",
+		);
+	}
 
 	if (!response.ok) {
-		// HIBP API unreachable — fail open (don't block registration)
-		return false;
+		throw new ApiError(
+			503,
+			"PASSWORD_CHECK_UNAVAILABLE",
+			"Password safety check is unavailable",
+		);
 	}
 
 	const text = await response.text();

@@ -39,6 +39,12 @@ describe("GET /reports", () => {
 		expect(body.items).toHaveLength(1);
 		expect(body.items[0].reportType).toBe("Monthly");
 	});
+
+	it("should reject an empty search query", async () => {
+		const res = await app.request("/reports?search=");
+
+		expect(res.status).toBe(400);
+	});
 });
 
 describe("GET /reports/stats", () => {

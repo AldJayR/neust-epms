@@ -1,5 +1,5 @@
 import type { z } from "@hono/zod-openapi";
-import { and, count, desc, eq, isNull, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, ilike, isNull, or, type SQL } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { departments } from "@/db/schema/departments.js";
 import { projectReportingDates } from "@/db/schema/project-reporting-dates.js";
@@ -77,11 +77,18 @@ const reportSelection = {
 };
 
 export async function listReports(user: AuthUser, query: Pagination) {
-	const { page, limit } = query;
+	const { page, limit, search } = query;
 	const whereConditions: SQL[] = [
 		isNull(projectReports.archivedAt),
 		...buildProposalScope(user),
 	];
+	if (search) {
+		const searchCondition = or(
+			ilike(proposals.title, `%${search}%`),
+			ilike(projectReports.reportType, `%${search}%`),
+		);
+		if (searchCondition) whereConditions.push(searchCondition);
+	}
 	const rows = await db
 		.select(reportSelection)
 		.from(projectReports)

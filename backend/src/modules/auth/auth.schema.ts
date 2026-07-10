@@ -9,14 +9,15 @@ export const UserResponseSchema = z
 		nameSuffix: z.string().nullable(),
 		academicRank: z.string().nullable(),
 		email: z.string().email(),
+		roleId: z.number(),
 		roleName: z.string(),
+		campusId: z.number(),
 		campusName: z.string(),
+		isMainCampus: z.boolean(),
+		departmentId: z.number().nullable(),
 		departmentName: z.string().nullable(),
 		isActive: z.boolean(),
 		hasCompletedOnboarding: z.boolean(),
-		roleId: z.number().optional(),
-		campusId: z.number().optional(),
-		departmentId: z.number().nullable().optional(),
 	})
 	.openapi("UserResponse");
 

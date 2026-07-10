@@ -25,6 +25,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import type { AuthUser } from "@/lib/auth";
 import {
 	type ProposalItem,
+	type ProposalStatusFilter,
 	retDashboardStatsQueryOptions,
 	retProposalsQueryOptions,
 } from "@/lib/ret.functions";
@@ -50,7 +51,8 @@ export function RETDashboardPage({
 	onPageChange,
 }: RETDashboardPageProps) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
-	const [statusFilter, setStatusFilter] = React.useState<string>("all");
+	const [statusFilter, setStatusFilter] =
+		React.useState<ProposalStatusFilter>("all");
 	const [sorting, setSorting] = React.useState<SortingState>([]);
 	const navigate = useNavigate();
 
@@ -277,16 +279,16 @@ export function RETDashboardPage({
 						value={statusFilter}
 						onValueChange={(v) => {
 							if (v) {
-								setStatusFilter(v);
+								setStatusFilter(v as ProposalStatusFilter);
 								onPageChange(1);
 							}
 						}}
 						placeholder="All Statuses"
 						options={[
 							{ value: "all", label: "All Statuses" },
-							{ value: "submitted", label: "Pending" },
-							{ value: "endorsed", label: "For Endorsement" },
-							{ value: "approved", label: "Approved" },
+							{ value: "Pending Review", label: "Pending Review" },
+							{ value: "Endorsed", label: "Endorsed" },
+							{ value: "Approved", label: "Approved" },
 						]}
 					/>
 				}

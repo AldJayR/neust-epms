@@ -72,7 +72,7 @@ const listRoute = createRoute({
 
 app.openapi(listRoute, async (c) => {
 	const user = c.get("user");
-	const { page, limit, search, archived } = c.req.valid("query");
+	const { page, limit, search, status, archived } = c.req.valid("query");
 	const offset = (page - 1) * limit;
 	const showArchived = archived === "true";
 
@@ -84,6 +84,9 @@ app.openapi(listRoute, async (c) => {
 
 	if (search) {
 		whereConditions.push(ilike(proposals.title, `%${search}%`));
+	}
+	if (status) {
+		whereConditions.push(eq(proposals.status, status));
 	}
 
 	const scopeClause = buildProposalScopeClause(user);

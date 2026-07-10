@@ -1,14 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { db } from "@/db/client.js";
 import { setMockUser, MOCK_USERS, mockSelectChain } from "../../../test/helpers.js";
-import baseApp from "./search.routes.js";
-import { OpenAPIHono } from "@hono/zod-openapi";
-import { authMiddleware } from "@/middleware/auth.js";
+import app from "./search.routes.js";
 import { installApiErrorHandler } from "@/lib/errors.js";
 
-const app = new OpenAPIHono();
-app.use("*", authMiddleware);
-app.route("/", baseApp);
 installApiErrorHandler(app);
 
 beforeEach(() => {
@@ -182,7 +177,7 @@ describe("GET /search", () => {
 		expect(res.status).toBe(200);
 	});
 
-	it("should require authentication", async () => {
+	it("should use the route authentication middleware", async () => {
 		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
 
 		const res = await app.request("/search?q=test");

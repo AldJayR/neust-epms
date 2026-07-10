@@ -57,6 +57,14 @@ describe("GET /proposals", () => {
 		expect(body.items).toHaveLength(0);
 		expect(body.total).toBe(0);
 	});
+
+	it("should reject an unsupported status filter", async () => {
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
+
+		const res = await app.request("/proposals?status=Unknown");
+
+		expect(res.status).toBe(400);
+	});
 });
 
 describe("GET /proposals/:id", () => {

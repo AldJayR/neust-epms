@@ -1,11 +1,11 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
-import type { AuthEnv } from "@/middleware/auth.js";
+import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import { SearchQuerySchema, SearchResponseSchema } from "./search.schema.js";
 import { searchEntities } from "./search.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 
-// Auth for /search is registered in this module
+app.use("*", authMiddleware);
 
 const getSearchRoute = createRoute({
 	method: "get",

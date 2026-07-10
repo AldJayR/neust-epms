@@ -6,6 +6,16 @@ import { authorizeSessionUser, getValidAccessToken } from "./session.server";
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3001/api/v1";
 const RET_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
+const proposalStatusFilterSchema = z.enum([
+	"all",
+	"Draft",
+	"Pending Review",
+	"Endorsed",
+	"Approved",
+	"Returned",
+	"Rejected",
+]);
+export type ProposalStatusFilter = z.infer<typeof proposalStatusFilterSchema>;
 
 // ── Schemas ───────────────────────────────────────────────
 
@@ -13,7 +23,7 @@ const retDashboardParamsSchema = z.object({
 	page: z.number(),
 	limit: z.number(),
 	search: z.string().optional(),
-	status: z.string().optional(),
+	status: proposalStatusFilterSchema.optional(),
 });
 
 const createProposalSchema = z.object({
@@ -81,7 +91,7 @@ export interface RETDashboardParams {
 	page: number;
 	limit: number;
 	search?: string;
-	status?: string;
+	status?: ProposalStatusFilter;
 }
 
 export interface CreateProposalInput {

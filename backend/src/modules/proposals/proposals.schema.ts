@@ -1,6 +1,14 @@
 import { z } from "@hono/zod-openapi";
 import { ParamId } from "@/lib/schemas.js";
-import { REVIEW_DECISION } from "@/lib/types.js";
+import {
+	PROPOSAL_STATUS,
+	type ProposalStatus,
+	REVIEW_DECISION,
+} from "@/lib/types.js";
+
+const ProposalStatusQuerySchema = z.enum(
+	Object.values(PROPOSAL_STATUS) as [ProposalStatus, ...ProposalStatus[]],
+);
 
 export const ProposalSchema = z
 	.object({
@@ -183,6 +191,9 @@ export const ProposalPaginationQuery = z.object({
 		.openapi({
 			param: { name: "search", in: "query" },
 		}),
+	status: ProposalStatusQuerySchema.optional().openapi({
+		param: { name: "status", in: "query" },
+	}),
 	archived: z
 		.string()
 		.optional()

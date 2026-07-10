@@ -439,7 +439,7 @@ export const reviewProposalFn = createServerFn({ method: "POST" })
 const reportsListParamsSchema = z.object({
 	page: z.number(),
 	limit: z.number(),
-	search: z.string().optional(),
+	search: z.string().trim().min(1).optional(),
 });
 
 const getReportsListFn = createServerFn({ method: "GET" })
