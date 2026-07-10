@@ -4,7 +4,6 @@ import { getClientIp } from "@/lib/client-ip.js";
 import { ErrorSchema, MessageSchema, ParamId } from "@/lib/schemas.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import {
-	CreateMoaSchema,
 	MoaDetailSchema,
 	MoaLinkedProjectSchema,
 	MoaListSchema,
@@ -13,7 +12,6 @@ import {
 	UpdateMoaSchema,
 } from "./moas.schema.js";
 import {
-	createMoa,
 	getLinkedProjects,
 	getMoaById,
 	listMoas,
@@ -125,39 +123,6 @@ app.openapi(linkedProjectsRoute, async (c) => {
 	const { id } = c.req.valid("param");
 	const result = await getLinkedProjects(id, user);
 	return c.json(result, 200);
-});
-
-// ── POST /moas ──
-
-const createMoaRoute = createRoute({
-	method: "post",
-	path: "/moas",
-	tags: ["MOAs"],
-	summary: "Create a new MOA",
-	security: [{ Bearer: [] }],
-	request: {
-		body: {
-			content: { "application/json": { schema: CreateMoaSchema } },
-			required: true,
-		},
-	},
-	responses: {
-		201: {
-			content: { "application/json": { schema: MoaSchema } },
-			description: "MOA created",
-		},
-		400: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Validation error",
-		},
-	},
-});
-
-app.openapi(createMoaRoute, async (c) => {
-	const user = c.get("user");
-	const body = c.req.valid("json");
-	const result = await createMoa(body, user, getClientIp(c));
-	return c.json(result, 201);
 });
 
 // ── POST /moas/upload ──

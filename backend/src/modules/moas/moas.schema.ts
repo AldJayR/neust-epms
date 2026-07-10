@@ -43,14 +43,6 @@ export const MoaListSchema = z
 	.object({ items: z.array(MoaSchema), total: z.number() })
 	.openapi("MoaList");
 
-export const CreateMoaSchema = z
-	.object({
-		partnerId: z.string().uuid(),
-		validFrom: z.string().datetime(),
-		validUntil: z.string().datetime(),
-	})
-	.openapi("CreateMoa");
-
 export const UpdateMoaSchema = z
 	.object({
 		partnerId: z.string().uuid().optional(),
