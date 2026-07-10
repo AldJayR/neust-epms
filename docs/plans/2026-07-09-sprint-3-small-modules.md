@@ -33,6 +33,9 @@ Do not repeat route-directory deletion, test-file moves, or shared foundation ex
 - Complete: `members` refactor in commit `08bc2f5`
 - Complete: `search` route tests in commit `3362591`
 - Complete: `search` refactor in commit `e6912b3`
+- Complete: `notifications` route tests in commit `3882530`
+- Complete: `notifications` refactor in commit `a6fae5e`
+- Complete: `settings` refactor in commit `49d136c`
 - Verified with `pnpm typecheck` and targeted Vitest runs
 
 ## Remaining-Work Findings
@@ -602,6 +605,8 @@ git commit -m "refactor(search): split routes schemas and service"
 
 ### Task 10: Add Notifications Route Tests
 
+Status: Complete in commit `3882530`.
+
 **Files:**
 - Create: `backend/src/modules/notifications/notifications.routes.test.ts`
 - Read: `backend/src/modules/notifications/notifications.routes.ts`
@@ -635,6 +640,8 @@ git commit -m "test(notifications): cover existing notification routes"
 ---
 
 ### Task 11: Refactor Notifications Module
+
+Status: Complete in commit `a6fae5e`.
 
 **Files:**
 - Create: `backend/src/modules/notifications/notifications.schema.ts`
@@ -680,6 +687,8 @@ git commit -m "refactor(notifications): split routes schemas and service"
 ---
 
 ### Task 12: Refactor Settings Module
+
+Status: Complete in commit `49d136c`.
 
 **Files:**
 - Create: `backend/src/modules/settings/settings.schema.ts`
