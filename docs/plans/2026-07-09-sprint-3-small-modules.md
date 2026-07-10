@@ -36,7 +36,9 @@ Do not repeat route-directory deletion, test-file moves, or shared foundation ex
 - Complete: `notifications` route tests in commit `3882530`
 - Complete: `notifications` refactor in commit `a6fae5e`
 - Complete: `settings` refactor in commit `49d136c`
-- Verified with `pnpm typecheck` and targeted Vitest runs
+- Complete: `audit` refactor in commit `cd9b2de`
+- Complete: barrels and app imports in commit `792330c`
+- Final verification: typecheck passed, 182/182 tests passed, build passed
 
 ## Remaining-Work Findings
 
@@ -733,6 +735,8 @@ git commit -m "refactor(settings): split routes schemas and service"
 
 ### Task 13: Refactor Audit Module
 
+Status: Complete in commit `cd9b2de`.
+
 **Files:**
 - Create: `backend/src/modules/audit/audit.schema.ts`
 - Create: `backend/src/modules/audit/audit.service.ts`
@@ -789,6 +793,8 @@ git commit -m "refactor(audit): split routes schemas and service"
 
 ### Task 14: Add Barrels and Standardize App Imports
 
+Status: Complete in commit `792330c`.
+
 **Files:**
 - Create: `backend/src/modules/auth/index.ts`
 - Create: `backend/src/modules/admin/index.ts`
@@ -835,6 +841,8 @@ git commit -m "refactor(modules): add barrels for small modules"
 ---
 
 ### Task 15: Final Verification
+
+Status: Complete — all checks passed.
 
 **Files:**
 - No planned source edits unless verification fails.
