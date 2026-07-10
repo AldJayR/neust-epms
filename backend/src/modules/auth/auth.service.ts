@@ -228,18 +228,30 @@ export async function login(body: LoginBody, ipAddress: string) {
 		throw new ApiError(401, "LOGIN_FAILED", "Invalid email or password");
 	}
 
-	const appUser = await getUserProfileById(authData.user.id);
+	let appUser: AuthUser | undefined;
+	if (cacheEnabled) {
+		appUser = authUserCache.get(`auth:user:${authData.user.id}`);
+	}
+
+	if (!appUser) {
+		appUser = await getUserProfileById(authData.user.id);
+		if (appUser && cacheEnabled) {
+			authUserCache.set(`auth:user:${authData.user.id}`, appUser);
+		}
+	}
 
 	if (!appUser) {
 		throw new ApiError(401, "USER_NOT_FOUND", "User profile not found");
 	}
 
 	if (!appUser.isActive) {
-		await insertAuditLog({
+		insertAuditLog({
 			userId: appUser.userId,
 			action: "Failed Login",
 			tableAffected: "users",
 			ipAddress,
+		}).catch((err) => {
+			console.error("Failed to write failed login audit log:", err);
 		});
 		throw new ApiError(
 			403,
@@ -248,11 +260,13 @@ export async function login(body: LoginBody, ipAddress: string) {
 		);
 	}
 
-	await insertAuditLog({
+	insertAuditLog({
 		userId: appUser.userId,
 		action: "Login",
 		tableAffected: "users",
 		ipAddress,
+	}).catch((err) => {
+		console.error("Failed to write login audit log:", err);
 	});
 
 	return {
@@ -267,16 +281,17 @@ export async function logout(
 	bearerToken: string | undefined,
 	ipAddress: string,
 ): Promise<{ ok: true }> {
-	await insertAuditLog({
-		userId: authUser.userId,
-		action: "Logout",
-		tableAffected: "users",
-		ipAddress,
-	});
-
-	if (bearerToken) {
-		await supabase.auth.admin.signOut(bearerToken);
-	}
+	await Promise.all([
+		insertAuditLog({
+			userId: authUser.userId,
+			action: "Logout",
+			tableAffected: "users",
+			ipAddress,
+		}).catch((err) => {
+			console.error("Failed to write logout audit log:", err);
+		}),
+		bearerToken ? supabase.auth.admin.signOut(bearerToken) : Promise.resolve(),
+	]);
 
 	return { ok: true };
 }
