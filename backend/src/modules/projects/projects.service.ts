@@ -953,9 +953,12 @@ export async function getProjectReadiness(id: string) {
 		},
 	];
 
-	const blockerItem = prerequisites.find((p) => !p.complete);
+	// The MOA and reporting schedule are configured during activation inside the wizard modal,
+	// so they do not block the activation process itself.
+	const activationPrerequisites = prerequisites.slice(0, 2);
+	const blockerItem = activationPrerequisites.find((p) => !p.complete);
 	const blocker = blockerItem ? blockerItem.name : null;
-	const isReady = prerequisites.every((p) => p.complete);
+	const isReady = activationPrerequisites.every((p) => p.complete);
 
 	return { isReady, prerequisites, blocker };
 }
