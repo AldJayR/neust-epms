@@ -3,8 +3,10 @@ import { db } from "@/db/client.js";
 import { setMockUser, MOCK_USERS, mockSelectChain } from "../../../test/helpers.js";
 import baseApp from "./search.routes.js";
 import { OpenAPIHono } from "@hono/zod-openapi";
+import { authMiddleware } from "@/middleware/auth.js";
 
 const app = new OpenAPIHono();
+app.use("*", authMiddleware);
 app.route("/", baseApp);
 
 beforeEach(() => {
