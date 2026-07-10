@@ -147,14 +147,6 @@ export const ProjectReportingScheduleSchema = z
 
 // ── Request schemas ──
 
-export const CreateProjectSchema = z
-	.object({
-		proposalId: z.string(),
-	})
-	.openapi("CreateProject");
-
-export const LinkMoaSchema = z.object({ moaId: z.string() }).openapi("LinkMoa");
-
 export const TransitionSchema = z
 	.object({ status: z.enum(["Ongoing", "Completed"]) })
 	.openapi("TransitionProject");

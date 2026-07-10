@@ -1,12 +1,9 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { getClientIp } from "@/lib/client-ip.js";
 import { ErrorSchema } from "@/lib/schemas.js";
-import { ROLE_NAMES } from "@/lib/types.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
-import { requireRole } from "@/middleware/rbac.js";
 
 import {
-	CreateProjectSchema,
 	PaginationQuery,
 	ParamId,
 	ProjectDerivedStateSchema,
@@ -15,7 +12,6 @@ import {
 	ProjectSchema,
 } from "./projects.schema.js";
 import {
-	createProjectFromProposal,
 	getProjectDerivedState,
 	getProjectDetails,
 	listProjects,
@@ -26,15 +22,6 @@ const app = new OpenAPIHono<AuthEnv>();
 
 app.use("/projects", authMiddleware);
 app.use("/projects/*", authMiddleware);
-
-// POST /projects is Director-only; GET passes through to all roles.
-const directorOnly = requireRole(ROLE_NAMES.DIRECTOR);
-app.use("/projects", async (c, next) => {
-	if (c.req.method === "POST") {
-		return directorOnly(c, next);
-	}
-	return next();
-});
 
 // ── GET /projects ──
 const listRoute = createRoute({
@@ -57,42 +44,6 @@ app.openapi(listRoute, async (c) => {
 	const query = c.req.valid("query");
 	const result = await listProjects(user, query);
 	return c.json(result, 200);
-});
-
-// ── POST /projects ──
-const createProjectRoute = createRoute({
-	method: "post",
-	path: "/projects",
-	tags: ["Projects"],
-	summary: "Create a project from an approved proposal",
-	security: [{ Bearer: [] }],
-	request: {
-		body: {
-			content: { "application/json": { schema: CreateProjectSchema } },
-			required: true,
-		},
-	},
-	responses: {
-		201: {
-			content: { "application/json": { schema: ProjectSchema } },
-			description: "Project created",
-		},
-		400: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Validation error",
-		},
-	},
-});
-
-app.openapi(createProjectRoute, async (c) => {
-	const user = c.get("user");
-	const body = c.req.valid("json");
-	const created = await createProjectFromProposal(
-		body.proposalId,
-		user,
-		getClientIp(c),
-	);
-	return c.json(created, 201);
 });
 
 // ── GET /projects/:id ──

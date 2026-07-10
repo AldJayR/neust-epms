@@ -5,61 +5,19 @@ import { ROLE_NAMES } from "@/lib/types.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import { requireRole } from "@/middleware/rbac.js";
 
-import { LinkMoaSchema, ParamId, TransitionSchema } from "./projects.schema.js";
+import { ParamId, TransitionSchema } from "./projects.schema.js";
 import {
 	closeProject,
-	linkMoaToProject,
 	transitionProjectStatus,
 } from "./projects.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-
-app.use("/projects/:id/link-moa", authMiddleware);
-app.use("/projects/:id/link-moa", requireRole(ROLE_NAMES.DIRECTOR));
 
 app.use("/projects/:id/transition", authMiddleware);
 app.use("/projects/:id/transition", requireRole(ROLE_NAMES.DIRECTOR));
 
 app.use("/projects/:id/close", authMiddleware);
 app.use("/projects/:id/close", requireRole(ROLE_NAMES.DIRECTOR));
-
-// ── POST /projects/:id/link-moa ──
-const linkMoaRoute = createRoute({
-	method: "post",
-	path: "/projects/{id}/link-moa",
-	tags: ["Projects"],
-	summary: "Link a MOA to a project (SYS-REQ-04.1)",
-	security: [{ Bearer: [] }],
-	request: {
-		params: ParamId,
-		body: {
-			content: { "application/json": { schema: LinkMoaSchema } },
-			required: true,
-		},
-	},
-	responses: {
-		200: {
-			content: { "application/json": { schema: MessageSchema } },
-			description: "MOA linked",
-		},
-		400: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "MOA expired or invalid",
-		},
-		404: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Not found",
-		},
-	},
-});
-
-app.openapi(linkMoaRoute, async (c) => {
-	const user = c.get("user");
-	const { id } = c.req.valid("param");
-	const body = c.req.valid("json");
-	await linkMoaToProject(id, body.moaId, user, getClientIp(c));
-	return c.json({ message: "MOA linked to project" }, 200);
-});
 
 // ── POST /projects/:id/transition ──
 const transitionRoute = createRoute({
