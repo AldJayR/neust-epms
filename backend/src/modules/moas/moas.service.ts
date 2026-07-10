@@ -132,22 +132,29 @@ export async function listMoas(opts: {
 	const offset = (page - 1) * limit;
 	const showArchived = archived === "true";
 
-	const rows = await db
-		.select({
-			moaId: moas.moaId,
-			partnerId: moas.partnerId,
-			storagePath: moas.storagePath,
-			validFrom: moas.validFrom,
-			validUntil: moas.validUntil,
-			createdAt: moas.createdAt,
-			updatedAt: moas.updatedAt,
-			archivedAt: moas.archivedAt,
-		})
-		.from(moas)
-		.where(showArchived ? isNotNull(moas.archivedAt) : isNull(moas.archivedAt))
-		.orderBy(desc(moas.validUntil))
-		.limit(limit)
-		.offset(offset);
+	const [rows, [totalResult]] = await Promise.all([
+		db
+			.select({
+				moaId: moas.moaId,
+				partnerId: moas.partnerId,
+				storagePath: moas.storagePath,
+				validFrom: moas.validFrom,
+				validUntil: moas.validUntil,
+				createdAt: moas.createdAt,
+				updatedAt: moas.updatedAt,
+				archivedAt: moas.archivedAt,
+			})
+			.from(moas)
+			.where(showArchived ? isNotNull(moas.archivedAt) : isNull(moas.archivedAt))
+			.orderBy(desc(moas.validUntil))
+			.limit(limit)
+			.offset(offset),
+		db
+			.select({ value: count() })
+			.from(moas)
+			.where(showArchived ? isNotNull(moas.archivedAt) : isNull(moas.archivedAt)),
+	]);
+	const total = Number(totalResult?.value ?? 0);
 
 	const items = rows.map((r) => ({
 		...r,
@@ -158,43 +165,39 @@ export async function listMoas(opts: {
 		archivedAt: r.archivedAt?.toISOString() ?? null,
 	}));
 
-	const [totalResult] = await db
-		.select({ value: count() })
-		.from(moas)
-		.where(showArchived ? isNotNull(moas.archivedAt) : isNull(moas.archivedAt));
-	const total = Number(totalResult?.value ?? 0);
-
 	return { items, total };
 }
 
 export async function getMoaById(id: string, user: AuthUser) {
-	if (!canManageMoas(user)) {
-		const linked = await isMoaLinkedToUserProject(id, user.userId);
-		if (!linked) {
-			throw new ApiError(
-				403,
-				"FORBIDDEN",
-				"You do not have access to this MOA",
-			);
-		}
-	}
+	const [[row], linked] = await Promise.all([
+		db
+			.select({
+				moaId: moas.moaId,
+				partnerId: moas.partnerId,
+				partnerName: partners.partnerName,
+				storagePath: moas.storagePath,
+				validFrom: moas.validFrom,
+				validUntil: moas.validUntil,
+				createdAt: moas.createdAt,
+				updatedAt: moas.updatedAt,
+				archivedAt: moas.archivedAt,
+			})
+			.from(moas)
+			.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
+			.where(and(eq(moas.moaId, id), isNull(moas.archivedAt)))
+			.limit(1),
+		!canManageMoas(user)
+			? isMoaLinkedToUserProject(id, user.userId)
+			: Promise.resolve(true),
+	]);
 
-	const [row] = await db
-		.select({
-			moaId: moas.moaId,
-			partnerId: moas.partnerId,
-			partnerName: partners.partnerName,
-			storagePath: moas.storagePath,
-			validFrom: moas.validFrom,
-			validUntil: moas.validUntil,
-			createdAt: moas.createdAt,
-			updatedAt: moas.updatedAt,
-			archivedAt: moas.archivedAt,
-		})
-		.from(moas)
-		.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
-		.where(and(eq(moas.moaId, id), isNull(moas.archivedAt)))
-		.limit(1);
+	if (!linked) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You do not have access to this MOA",
+		);
+	}
 
 	if (!row) {
 		throw new ApiError(404, "NOT_FOUND", "MOA not found");
@@ -230,54 +233,55 @@ export async function getMoaById(id: string, user: AuthUser) {
 }
 
 export async function getLinkedProjects(id: string, user: AuthUser) {
-	if (!canManageMoas(user)) {
-		const linked = await isMoaLinkedToUserProject(id, user.userId);
-		if (!linked) {
-			throw new ApiError(
-				403,
-				"FORBIDDEN",
-				"You do not have access to this MOA",
-			);
-		}
-	}
-
-	const [moaExists] = await db
-		.select({ moaId: moas.moaId })
-		.from(moas)
-		.where(and(eq(moas.moaId, id), isNull(moas.archivedAt)))
-		.limit(1);
-
-	if (!moaExists) {
-		throw new ApiError(404, "NOT_FOUND", "MOA not found");
-	}
-
 	const conditions = [eq(projects.moaId, id)];
 
 	const scopeClause = buildProposalScopeClause(user);
 	if (scopeClause) conditions.push(scopeClause);
 
-	const rows = await db
-		.select({
-			projectId: proposals.proposalId,
-			title: proposals.title,
-			projectStatus: projects.projectStatus,
-			leaderName: sql<
-				string | null
-			>`concat(${users.firstName}, ' ', ${users.lastName})`,
-			createdAt: projects.createdAt,
-		})
-		.from(projects)
-		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-		.leftJoin(
-			proposalMembers,
-			and(
-				eq(proposalMembers.proposalId, proposals.proposalId),
-				eq(proposalMembers.projectRole, "Project Leader"),
-			),
-		)
-		.leftJoin(users, eq(proposalMembers.userId, users.userId))
-		.where(and(...conditions))
-		.orderBy(desc(projects.createdAt));
+	const [linked, [moaExists], rows] = await Promise.all([
+		!canManageMoas(user)
+			? isMoaLinkedToUserProject(id, user.userId)
+			: Promise.resolve(true),
+		db
+			.select({ moaId: moas.moaId })
+			.from(moas)
+			.where(and(eq(moas.moaId, id), isNull(moas.archivedAt)))
+			.limit(1),
+		db
+			.select({
+				projectId: proposals.proposalId,
+				title: proposals.title,
+				projectStatus: projects.projectStatus,
+				leaderName: sql<
+					string | null
+				>`concat(${users.firstName}, ' ', ${users.lastName})`,
+				createdAt: projects.createdAt,
+			})
+			.from(projects)
+			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+			.leftJoin(
+				proposalMembers,
+				and(
+					eq(proposalMembers.proposalId, proposals.proposalId),
+					eq(proposalMembers.projectRole, "Project Leader"),
+				),
+			)
+			.leftJoin(users, eq(proposalMembers.userId, users.userId))
+			.where(and(...conditions))
+			.orderBy(desc(projects.createdAt)),
+	]);
+
+	if (!linked) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You do not have access to this MOA",
+		);
+	}
+
+	if (!moaExists) {
+		throw new ApiError(404, "NOT_FOUND", "MOA not found");
+	}
 
 	return rows.map((r) => ({
 		projectId: r.projectId,
