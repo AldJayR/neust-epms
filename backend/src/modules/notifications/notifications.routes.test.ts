@@ -141,12 +141,12 @@ describe("PATCH /notifications/:id/read", () => {
 	});
 });
 
-describe("POST /notifications/read-all", () => {
+describe("PATCH /notifications/read-all", () => {
 	it("should mark all notifications as read", async () => {
 		vi.mocked(db.update).mockReturnValue(mockMutationChain([]) as never);
 
 		const res = await app.request("/notifications/read-all", {
-			method: "POST",
+			method: "PATCH",
 		});
 
 		expect(res.status).toBe(200);
@@ -158,7 +158,7 @@ describe("POST /notifications/read-all", () => {
 		vi.mocked(db.update).mockReturnValue(mockMutationChain([]) as never);
 
 		const res = await app.request("/notifications/read-all", {
-			method: "POST",
+			method: "PATCH",
 		});
 
 		expect(res.status).toBe(200);
