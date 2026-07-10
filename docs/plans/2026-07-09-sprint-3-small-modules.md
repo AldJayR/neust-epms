@@ -27,6 +27,9 @@ Do not repeat route-directory deletion, test-file moves, or shared foundation ex
 - Complete: `auth` refactor in commit `371b3ee`
 - Complete: `admin` route tests in commit `371b3ee`
 - Complete: `admin` refactor in commit `371b3ee`
+- Complete: `storage` refactor in commit `22bc44c`
+- Complete: `special-orders` refactor in commit `22bc44c`
+- Complete: `reports` refactor in commit `4eeeb8d`
 - Verified with `pnpm typecheck` and targeted Vitest runs
 
 ## Remaining-Work Findings
@@ -279,6 +282,8 @@ git commit -m "refactor(admin): split routes schemas and service"
 
 ### Task 4: Refactor Storage Module
 
+Status: Complete in commit `22bc44c`.
+
 **Files:**
 - Create: `backend/src/modules/storage/storage.schema.ts`
 - Create: `backend/src/modules/storage/storage.service.ts`
@@ -333,6 +338,8 @@ git commit -m "refactor(storage): split routes schemas and service"
 ---
 
 ### Task 5: Refactor Special Orders Module
+
+Status: Complete in commit `22bc44c`.
 
 **Files:**
 - Create: `backend/src/modules/special-orders/special-orders.schema.ts`
@@ -390,6 +397,8 @@ git commit -m "refactor(special-orders): split routes schemas and service"
 ---
 
 ### Task 6: Refactor Reports Module
+
+Status: Complete in commit `4eeeb8d`.
 
 **Files:**
 - Create: `backend/src/modules/reports/reports.schema.ts`
