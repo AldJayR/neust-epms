@@ -7,7 +7,6 @@ import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import {
 	CheckPasswordBodySchema,
 	CheckPasswordResponseSchema,
-	CreateUserBodySchema,
 	LoginBodySchema,
 	LoginResponseSchema,
 	LogoutResponseSchema,
@@ -18,10 +17,8 @@ import {
 	UserSearchResponseSchema,
 } from "./auth.schema.js";
 import {
-	assertCanProvisionUsers,
 	checkPassword,
 	completeOnboarding,
-	createUser,
 	listCampuses,
 	listDepartments,
 	login,
@@ -126,48 +123,10 @@ app.openapi(registerRoute, async (c) => {
 
 // ── Protected Routes ──
 app.use("/auth/me", authMiddleware);
-app.use("/auth/users", authMiddleware);
 
 app.openapi(getMeRoute, async (c) => {
 	const authUser = c.get("user");
 	return c.json(authUser, 200);
-});
-
-// ── POST /auth/users (Admin provisioning) ──
-const createUserRoute = createRoute({
-	method: "post",
-	path: "/auth/users",
-	tags: ["Auth"],
-	summary: "Provision a new user (Super Admin / Director only)",
-	security: [{ Bearer: [] }],
-	request: {
-		body: {
-			content: { "application/json": { schema: CreateUserBodySchema } },
-			required: true,
-		},
-	},
-	responses: {
-		201: {
-			content: { "application/json": { schema: UserResponseSchema } },
-			description: "User created",
-		},
-		400: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Validation error",
-		},
-		403: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Forbidden",
-		},
-	},
-});
-
-app.openapi(createUserRoute, async (c) => {
-	const authUser = c.get("user");
-	assertCanProvisionUsers(authUser);
-	const body = c.req.valid("json");
-	const result = await createUser(body, authUser, getClientIp(c));
-	return c.json(result, 201);
 });
 
 // ── GET /auth/departments ──

@@ -34,21 +34,6 @@ export const RegisterUserBodySchema = z
 	})
 	.openapi("RegisterUserBody");
 
-export const CreateUserBodySchema = z
-	.object({
-		firstName: z.string().min(1),
-		middleName: z.string().optional(),
-		lastName: z.string().min(1),
-		nameSuffix: z.string().optional(),
-		academicRank: z.string().optional(),
-		email: z.string().email(),
-		roleId: z.number().int().positive(),
-		campusId: z.number().int().positive(),
-		departmentId: z.number().int().positive().optional(),
-		supabaseUserId: z.string().uuid(),
-	})
-	.openapi("CreateUserBody");
-
 export const CheckPasswordBodySchema = z
 	.object({ password: z.string().min(1) })
 	.openapi("CheckPasswordBody");

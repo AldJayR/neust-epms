@@ -45,61 +45,6 @@ describe("GET /auth/me", () => {
 	});
 });
 
-describe("POST /auth/users", () => {
-	it("should allow Super Admin to provision a user", async () => {
-		const created = { userId: "new-user-id" };
-		const profile = {
-			userId: "new-user-id",
-			firstName: "New",
-			middleName: null,
-			lastName: "Faculty",
-			nameSuffix: null,
-			academicRank: "Instructor I",
-			email: "new@neust.edu.ph",
-			roleName: "Faculty",
-			campusName: "Main",
-			departmentName: "CICT",
-			isActive: true,
-			hasCompletedOnboarding: false,
-		};
-
-		vi.mocked(db.insert).mockReturnValue(mockMutationChain([created]) as never);
-		vi.mocked(db.select).mockReturnValue(mockSelectChain([profile]) as never);
-
-		const res = await app.request("/auth/users", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				firstName: "New",
-				lastName: "Faculty",
-				email: "new@neust.edu.ph",
-				roleId: 4,
-				campusId: 1,
-				departmentId: 1,
-				supabaseUserId: "bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb",
-			}),
-		});
-		expect(res.status).toBe(201);
-	});
-
-	it("should reject Faculty from provisioning users", async () => {
-		setMockUser(MOCK_USERS.faculty);
-		const res = await app.request("/auth/users", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				firstName: "Fail",
-				lastName: "User",
-				email: "fail@neust.edu.ph",
-				roleId: 4,
-				campusId: 1,
-				supabaseUserId: "cccccccc-1111-4111-8111-cccccccccccc",
-			}),
-		});
-		expect(res.status).toBe(403);
-	});
-});
-
 describe("POST /auth/register", () => {
 	it("should allow a user to register their own account", async () => {
 		const { createClient } = await import("@supabase/supabase-js");

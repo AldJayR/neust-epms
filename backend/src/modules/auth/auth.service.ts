@@ -12,14 +12,12 @@ import { isPasswordCompromised } from "@/lib/password-check.js";
 import { supabase } from "@/lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import type {
-	CreateUserBodySchema,
 	LoginBodySchema,
 	RegisterUserBodySchema,
 	UserSearchQuerySchema,
 } from "./auth.schema.js";
 
 type RegisterUserBody = z.infer<typeof RegisterUserBodySchema>;
-type CreateUserBody = z.infer<typeof CreateUserBodySchema>;
 type LoginBody = z.infer<typeof LoginBodySchema>;
 type UserSearchQuery = z.infer<typeof UserSearchQuerySchema>;
 
@@ -47,19 +45,6 @@ async function getUserProfileById(userId: string) {
 		.limit(1);
 
 	return row;
-}
-
-export function assertCanProvisionUsers(authUser: AuthUser): void {
-	if (
-		authUser.roleName !== ROLE_NAMES.SUPER_ADMIN &&
-		authUser.roleName !== ROLE_NAMES.DIRECTOR
-	) {
-		throw new ApiError(
-			403,
-			"FORBIDDEN",
-			"Only Super Admin or Director can provision users",
-		);
-	}
 }
 
 export async function checkPassword(password: string): Promise<boolean> {
@@ -183,96 +168,6 @@ export async function registerUser(body: RegisterUserBody, ipAddress: string) {
 			"REGISTRATION_FAILED",
 			"User created but profile could not be loaded",
 		);
-	}
-
-	return row;
-}
-
-export async function createUser(
-	body: CreateUserBody,
-	authUser: AuthUser,
-	ipAddress: string,
-) {
-	assertCanProvisionUsers(authUser);
-
-	const [requestedRole] = await db
-		.select({ roleId: roles.roleId, roleName: roles.roleName })
-		.from(roles)
-		.where(eq(roles.roleId, body.roleId))
-		.limit(1);
-
-	if (!requestedRole) {
-		throw new ApiError(400, "INVALID_ROLE", "Requested role does not exist");
-	}
-
-	if (
-		authUser.roleName !== ROLE_NAMES.SUPER_ADMIN &&
-		requestedRole.roleName === ROLE_NAMES.SUPER_ADMIN
-	) {
-		throw new ApiError(
-			403,
-			"FORBIDDEN",
-			"Only a Super Admin can provision Super Admin accounts",
-		);
-	}
-
-	const { data: supabaseUser, error: supabaseError } =
-		await supabase.auth.admin.getUserById(body.supabaseUserId);
-
-	if (supabaseError || !supabaseUser?.user) {
-		throw new ApiError(
-			400,
-			"INVALID_SUPABASE_USER",
-			"supabaseUserId does not match an existing Supabase Auth user",
-		);
-	}
-
-	if (supabaseUser.user.email && body.email !== supabaseUser.user.email) {
-		throw new ApiError(
-			400,
-			"EMAIL_MISMATCH",
-			"The email provided does not match the Supabase Auth user's email",
-		);
-	}
-
-	const created = await db.transaction(async (tx) => {
-		const [userRow] = await tx
-			.insert(users)
-			.values({
-				userId: body.supabaseUserId,
-				firstName: body.firstName,
-				middleName: body.middleName ?? null,
-				lastName: body.lastName,
-				nameSuffix: body.nameSuffix ?? null,
-				academicRank: body.academicRank ?? null,
-				email: body.email,
-				roleId: body.roleId,
-				campusId: body.campusId,
-				departmentId: body.departmentId ?? null,
-			})
-			.returning();
-
-		if (!userRow) {
-			throw new ApiError(500, "INSERT_FAILED", "Failed to create user");
-		}
-
-		await insertAuditLog(
-			{
-				userId: authUser.userId,
-				action: `Created user ${userRow.userId}`,
-				tableAffected: "users",
-				ipAddress,
-			},
-			tx,
-		);
-
-		return userRow;
-	});
-
-	const row = await getUserProfileById(created.userId);
-
-	if (!row) {
-		throw new ApiError(500, "FETCH_FAILED", "Failed to fetch created user");
 	}
 
 	return row;
