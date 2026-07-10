@@ -56,76 +56,6 @@ export async function listSpecialOrders(query: {
 	return { items: rows.map(serializeSpecialOrder) };
 }
 
-export async function createSpecialOrder(
-	user: AuthUser,
-	body: { memberId: string; soNumber: string; dateIssued?: string | undefined },
-	ipAddress: string,
-) {
-	const [member] = await db
-		.select({ memberId: proposalMembers.memberId })
-		.from(proposalMembers)
-		.where(eq(proposalMembers.memberId, body.memberId))
-		.limit(1);
-
-	if (!member) {
-		throw new ApiError(
-			404,
-			"MEMBER_NOT_FOUND",
-			"Proposal member not found — special orders must link to proposal_members (EC-03)",
-		);
-	}
-
-	const [created] = await db
-		.insert(specialOrders)
-		.values({
-			memberId: body.memberId,
-			soNumber: body.soNumber,
-			dateIssued: body.dateIssued ? new Date(body.dateIssued) : null,
-		})
-		.returning();
-
-	if (!created) {
-		throw new ApiError(500, "INSERT_FAILED", "Failed to create special order");
-	}
-
-	await insertAuditLog({
-		userId: user.userId,
-		action: `Created special order ${created.specialOrderId} for member ${body.memberId}`,
-		tableAffected: "special_orders",
-		ipAddress,
-	});
-
-	return serializeSpecialOrder(created);
-}
-
-export async function updateSpecialOrder(
-	id: string,
-	body: { status?: string | undefined; dateIssued?: string | undefined },
-) {
-	const [updated] = await db
-		.update(specialOrders)
-		.set({
-			...(body.status !== undefined ? { status: body.status } : {}),
-			...(body.dateIssued !== undefined
-				? { dateIssued: new Date(body.dateIssued) }
-				: {}),
-			updatedAt: new Date(),
-		})
-		.where(
-			and(
-				eq(specialOrders.specialOrderId, id),
-				isNull(specialOrders.archivedAt),
-			),
-		)
-		.returning();
-
-	if (!updated) {
-		throw new ApiError(404, "NOT_FOUND", "Special order not found");
-	}
-
-	return serializeSpecialOrder(updated);
-}
-
 export async function uploadSpecialOrder(
 	user: AuthUser,
 	file: File,
@@ -192,7 +122,7 @@ export async function uploadSpecialOrder(
 		)
 		.limit(1);
 
-	let record;
+	let record: typeof specialOrders.$inferSelect;
 	let isNew = false;
 	try {
 		if (existing) {

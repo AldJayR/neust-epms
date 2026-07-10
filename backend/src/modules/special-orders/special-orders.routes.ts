@@ -4,19 +4,15 @@ import { ApiError } from "@/lib/errors.js";
 import { ErrorSchema } from "@/lib/schemas.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import {
-	CreateSpecialOrderSchema,
 	PaginationQuery,
 	ParamId,
 	SignedUrlSchema,
 	SpecialOrderListSchema,
 	SpecialOrderSchema,
-	UpdateSpecialOrderSchema,
 } from "./special-orders.schema.js";
 import {
-	createSpecialOrder,
 	getSpecialOrderSignedUrl,
 	listSpecialOrders,
-	updateSpecialOrder,
 	uploadSpecialOrder,
 } from "./special-orders.service.js";
 
@@ -44,76 +40,6 @@ const listRoute = createRoute({
 
 app.openapi(listRoute, async (c) => {
 	return c.json(await listSpecialOrders(c.req.valid("query")), 200);
-});
-
-const createRoute_ = createRoute({
-	method: "post",
-	path: "/special-orders",
-	tags: ["Special Orders"],
-	summary: "Create a special order linked to a proposal member (EC-03)",
-	security: [{ Bearer: [] }],
-	request: {
-		body: {
-			content: { "application/json": { schema: CreateSpecialOrderSchema } },
-			required: true,
-		},
-	},
-	responses: {
-		201: {
-			content: { "application/json": { schema: SpecialOrderSchema } },
-			description: "Special order created",
-		},
-		400: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Validation error",
-		},
-		404: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Member not found",
-		},
-	},
-});
-
-app.openapi(createRoute_, async (c) => {
-	const created = await createSpecialOrder(
-		c.get("user"),
-		c.req.valid("json"),
-		getClientIp(c),
-	);
-	return c.json(created, 201);
-});
-
-const updateRoute = createRoute({
-	method: "patch",
-	path: "/special-orders/{id}",
-	tags: ["Special Orders"],
-	summary: "Update a special order",
-	security: [{ Bearer: [] }],
-	request: {
-		params: ParamId,
-		body: {
-			content: { "application/json": { schema: UpdateSpecialOrderSchema } },
-			required: true,
-		},
-	},
-	responses: {
-		200: {
-			content: { "application/json": { schema: SpecialOrderSchema } },
-			description: "Updated",
-		},
-		404: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Not found",
-		},
-	},
-});
-
-app.openapi(updateRoute, async (c) => {
-	const updated = await updateSpecialOrder(
-		c.req.valid("param").id,
-		c.req.valid("json"),
-	);
-	return c.json(updated, 200);
 });
 
 const uploadRoute = createRoute({

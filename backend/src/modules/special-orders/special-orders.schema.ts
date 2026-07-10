@@ -18,21 +18,6 @@ export const SpecialOrderListSchema = z
 	.object({ items: z.array(SpecialOrderSchema) })
 	.openapi("SpecialOrderList");
 
-export const CreateSpecialOrderSchema = z
-	.object({
-		memberId: z.string(),
-		soNumber: z.string().min(1),
-		dateIssued: z.string().datetime().optional(),
-	})
-	.openapi("CreateSpecialOrder");
-
-export const UpdateSpecialOrderSchema = z
-	.object({
-		status: z.string().min(1).optional(),
-		dateIssued: z.string().datetime().optional(),
-	})
-	.openapi("UpdateSpecialOrder");
-
 export const SignedUrlSchema = z
 	.object({ url: z.string().url() })
 	.openapi("SignedUrl");
