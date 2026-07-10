@@ -4,7 +4,7 @@
 
 > **Sprint 1:** ✅ Completed (Tasks 1-6) — commit `ca04f69`
 > **Sprint 2:** ✅ Completed (Tasks 7-12) — commits `6c53e1a` to `2c35a36`
-> **Sprint 3:** ⏳ Pending (Tasks 13-15; detailed execution in `2026-07-09-sprint-3-small-modules.md`)
+> **Sprint 3:** 🚧 In progress (Tasks 13-15; detailed execution in `2026-07-09-sprint-3-small-modules.md`). Auth and admin are complete in commit `371b3ee`.
 
 **Goal:** Refactor the NEUST-EPMS backend from flat route files into domain modules with proper separation of concerns (routes + services + schemas).
 

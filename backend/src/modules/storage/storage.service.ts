@@ -1,0 +1,229 @@
+import { randomUUID } from "node:crypto";
+import { and, eq, isNull, sql } from "drizzle-orm";
+import { db } from "@/db/client.js";
+import { proposalDocuments } from "@/db/schema/proposal-documents.js";
+import { proposals } from "@/db/schema/proposals.js";
+import { insertAuditLog } from "@/lib/audit.js";
+import { ApiError } from "@/lib/errors.js";
+import { supabase } from "@/lib/supabase.js";
+import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
+import { sanitizeFilename } from "@/services/file.service.js";
+
+function canAccessProposalDocuments(
+	user: AuthUser,
+	proposal: { departmentId: number; campusId: number },
+): boolean {
+	if (user.roleName === ROLE_NAMES.FACULTY) {
+		if (user.departmentId !== null) {
+			return proposal.departmentId === user.departmentId;
+		}
+		return proposal.campusId === user.campusId;
+	}
+
+	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+		if (user.isMainCampus && user.departmentId !== null) {
+			return proposal.departmentId === user.departmentId;
+		}
+		return proposal.campusId === user.campusId;
+	}
+
+	return true;
+}
+
+function generateSecureStoragePath(
+	proposalId: string,
+	versionNum: number,
+	fileName: string,
+): string {
+	const sanitizedFilename = sanitizeFilename(fileName);
+	return `proposals/${proposalId}/v${versionNum}_${Date.now()}_${randomUUID()}_${sanitizedFilename}`;
+}
+
+async function getProposal(proposalId: string) {
+	const [proposal] = await db
+		.select({
+			proposalId: proposals.proposalId,
+			departmentId: proposals.departmentId,
+			campusId: proposals.campusId,
+		})
+		.from(proposals)
+		.where(
+			and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
+		)
+		.limit(1);
+
+	if (!proposal) {
+		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+	}
+
+	return proposal;
+}
+
+export async function listProposalDocuments(
+	user: AuthUser,
+	proposalId: string,
+	page: number,
+	limit: number,
+) {
+	const proposal = await getProposal(proposalId);
+	if (!canAccessProposalDocuments(user, proposal)) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You do not have access to documents for this proposal",
+		);
+	}
+
+	const rows = await db
+		.select({
+			documentId: proposalDocuments.documentId,
+			proposalId: proposalDocuments.proposalId,
+			storagePath: proposalDocuments.storagePath,
+			versionNum: proposalDocuments.versionNum,
+			uploadedAt: proposalDocuments.uploadedAt,
+		})
+		.from(proposalDocuments)
+		.where(eq(proposalDocuments.proposalId, proposalId))
+		.orderBy(proposalDocuments.versionNum)
+		.limit(limit)
+		.offset((page - 1) * limit);
+
+	return rows.map((row) => ({
+		documentId: row.documentId,
+		proposalId: row.proposalId,
+		versionNum: row.versionNum,
+		uploadedAt: row.uploadedAt.toISOString(),
+	}));
+}
+
+export async function uploadProposalDocument(
+	user: AuthUser,
+	proposalId: string,
+	file: File,
+	ipAddress: string,
+) {
+	const nextVersion = await db.transaction(async (tx) => {
+		const result = await tx.execute(sql`
+			SELECT COALESCE(MAX(version_num), 0) + 1 AS max_ver
+			FROM (
+				SELECT version_num
+				FROM proposal_documents
+				WHERE proposal_id = ${proposalId}
+				FOR UPDATE
+			) locked
+		`);
+		return Number(result[0]?.max_ver ?? 1);
+	});
+
+	const storagePath = generateSecureStoragePath(proposalId, nextVersion, file.name);
+	const { error: uploadError } = await supabase.storage
+		.from("documents")
+		.upload(storagePath, file, {
+			contentType: file.type,
+			upsert: false,
+		});
+
+	if (uploadError) {
+		throw new ApiError(
+			400,
+			"UPLOAD_FAILED",
+			`Supabase storage upload failed: ${uploadError.message}`,
+		);
+	}
+
+	let doc;
+	try {
+		const [inserted] = await db
+			.insert(proposalDocuments)
+			.values({ proposalId, storagePath, versionNum: nextVersion })
+			.returning();
+
+		if (!inserted) {
+			throw new ApiError(500, "INSERT_FAILED", "Failed to record document");
+		}
+		doc = inserted;
+	} catch (error) {
+		try {
+			await supabase.storage.from("documents").remove([storagePath]);
+		} catch {}
+		throw error;
+	}
+
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Uploaded document v${nextVersion} for proposal ${proposalId}`,
+		tableAffected: "proposal_documents",
+		ipAddress,
+	});
+
+	return {
+		documentId: doc.documentId,
+		storagePath: doc.storagePath,
+		versionNum: doc.versionNum,
+	};
+}
+
+export async function ensureUploadProposalDocumentAccess(
+	user: AuthUser,
+	proposalId: string,
+) {
+	const proposal = await getProposal(proposalId);
+	if (!canAccessProposalDocuments(user, proposal)) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You do not have permission to upload documents for this proposal",
+		);
+	}
+}
+
+export async function getDocumentSignedUrl(
+	user: AuthUser,
+	proposalId: string,
+	documentId: string,
+	ipAddress: string,
+) {
+	const proposal = await getProposal(proposalId);
+	if (!canAccessProposalDocuments(user, proposal)) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You do not have access to documents for this proposal",
+		);
+	}
+
+	const [doc] = await db
+		.select({
+			documentId: proposalDocuments.documentId,
+			storagePath: proposalDocuments.storagePath,
+		})
+		.from(proposalDocuments)
+		.where(
+			and(
+				eq(proposalDocuments.documentId, documentId),
+				eq(proposalDocuments.proposalId, proposalId),
+			),
+		)
+		.limit(1);
+
+	if (!doc) {
+		throw new ApiError(404, "NOT_FOUND", "Document not found");
+	}
+
+	const { data, error } = await supabase.storage
+		.from("documents")
+		.createSignedUrl(doc.storagePath, 3600);
+
+	if (error || !data) {
+		throw new ApiError(500, "URL_FAILED", "Failed to generate signed URL");
+	}
+
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Downloaded signed URL for document ${documentId} (proposal ${proposalId})`,
+		tableAffected: "proposal_documents",
+		ipAddress,
+	});
+
+	return { url: data.signedUrl };
+}

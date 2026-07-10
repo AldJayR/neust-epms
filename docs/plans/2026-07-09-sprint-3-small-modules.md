@@ -22,6 +22,23 @@ Existing foundation files are already present:
 
 Do not repeat route-directory deletion, test-file moves, or shared foundation extraction in Sprint 3.
 
+## Sprint 3 Progress
+
+- Complete: `auth` refactor in commit `371b3ee`
+- Complete: `admin` route tests in commit `371b3ee`
+- Complete: `admin` refactor in commit `371b3ee`
+- Verified with `pnpm typecheck` and targeted Vitest runs
+
+## Remaining-Work Findings
+
+The following findings were verified from the current code before planning Tasks 4-15:
+
+- `storage`, `special-orders`, `reports`, `members`, `search`, `notifications`, `settings`, and `audit` each currently have a `.routes.ts` file and no local `.schema.ts`, `.service.ts`, or `index.ts`.
+- `backend/src/app.ts` imports these small modules directly from their `.routes.ts` files. Task 14 should replace only those imports and preserve the existing mount sequence.
+- `members` and `storage` rely on the `/proposals` auth middleware registered by `backend/src/app.ts`; do not add duplicate module-local auth middleware while extracting them.
+- `special-orders`, `reports`, `search`, `notifications`, `settings`, and `audit` register their own exact and wildcard auth paths. Preserve their registration order and paths.
+- The Vitest setup uses mocked DB, auth, audit, and Supabase services. These are route characterization tests, not integration tests.
+
 ## Required Module Shape
 
 Each remaining module should end in this shape:
@@ -59,10 +76,16 @@ Expected results:
 - Targeted module route tests pass after each module refactor.
 - Final `pnpm test` and `pnpm build` pass.
 
+Notes:
+- Run `pnpm` commands from `backend/`; the workspace-root `pnpm test` intentionally exits with "no test specified".
+- `pnpm typecheck` excludes `*.test.ts`; targeted Vitest commands remain required after each task.
+- `pnpm build` runs typecheck again and writes `backend/dist/`.
+
 ## Known Test Coverage Gaps
 
 Route tests currently exist for:
 - `auth`
+- `admin`
 - `audit`
 - `members`
 - `reports`
@@ -71,16 +94,17 @@ Route tests currently exist for:
 - `storage`
 
 Route tests are missing and should be added before extraction for:
-- `admin`
 - `notifications`
 - `search`
 
-Known test-risk to fix when touching auth:
-- `backend/src/modules/auth/auth.routes.test.ts` mocks `../lib/password-check.js`, but production code imports `@/lib/password-check.js`. Correct the mock to the alias path before relying on that test for password-check behavior.
+Known test-risk resolved when touching auth:
+- `backend/src/modules/auth/auth.routes.test.ts` now mocks `@/lib/password-check.js`.
 
 ---
 
 ### Task 1: Refactor Auth Module
+
+Status: Complete in commit `371b3ee`.
 
 **Files:**
 - Create: `backend/src/modules/auth/auth.schema.ts`
@@ -158,6 +182,8 @@ git commit -m "refactor(auth): split routes schemas and service"
 
 ### Task 2: Add Admin Route Tests
 
+Status: Complete in commit `371b3ee`.
+
 **Files:**
 - Create: `backend/src/modules/admin/admin.routes.test.ts`
 - Read: `backend/test/helpers.ts`
@@ -193,6 +219,8 @@ git commit -m "test(admin): cover existing admin routes"
 ---
 
 ### Task 3: Refactor Admin Module
+
+Status: Complete in commit `371b3ee`.
 
 **Files:**
 - Create: `backend/src/modules/admin/admin.schema.ts`
@@ -276,9 +304,16 @@ Create service functions for:
 
 Move access checks, proposal lookup, version locking, storage path generation, Supabase upload, DB insert, rollback removal, signed URL generation, and audit writes into the service.
 
+Also move the private `canAccessProposalDocuments` and `generateSecureStoragePath` helpers into the service rather than exporting them from routes.
+
 **Step 3: Keep multipart parsing in routes**
 
-Routes should still call `await c.req.formData()` and validate that `file instanceof File` before calling the upload service.
+Routes should still perform the content-length precheck, call `await c.req.formData()`, and validate that `file instanceof File` before calling the upload service. Preserve empty-file, 50 MB, and PDF MIME validation before the service call.
+
+**Parity requirements:**
+- Keep the version calculation locked with `FOR UPDATE`.
+- Upload to Supabase outside the DB transaction, then remove the uploaded object if the DB insert fails.
+- Preserve proposal-document access behavior and audit IP capture.
 
 **Step 4: Verify storage**
 
@@ -327,7 +362,17 @@ Create service functions for:
 
 Move member existence checks, Director/Project Leader/member authorization, Supabase upload, duplicate SO handling, rollback removal, record formatting, and audit writes into the service.
 
-**Step 3: Verify special orders**
+**Step 3: Strengthen special-order characterization tests**
+
+Before extraction, add coverage for:
+- multipart upload rejects missing files, oversized files, and non-PDF files;
+- upload accepts a Director or the relevant project leader and rejects unauthorized users;
+- signed URL access permits only a Director, the linked member, or the project leader;
+- duplicate SO-number handling retains its PostgreSQL `23505` response mapping.
+
+Do not add new authorization to create or update routes. Current behavior requires authentication for those routes but reserves the stricter role checks for upload and signed-URL access.
+
+**Step 4: Verify special orders**
 
 Run: `pnpm typecheck`
 
@@ -335,7 +380,7 @@ Run: `pnpm exec vitest run src/modules/special-orders/special-orders.routes.test
 
 Expected: Both pass.
 
-**Step 4: Commit**
+**Step 5: Commit**
 
 ```bash
 git add backend/src/modules/special-orders
@@ -384,6 +429,8 @@ Create service functions for:
 
 Move role scoping, membership checks, sequential schedule checks, reporting-date completion, project status transitions, audit diffs, audit writes, notifications, and response enrichment into the service.
 
+Preserve the Faculty and RET Chair department/campus scopes, the schedule-completion transaction, the transition to Pending Closure only when both closure reports are complete, the Overdue reset, and the post-insert enriched response query.
+
 **Step 4: Verify reports**
 
 Run: `pnpm typecheck`
@@ -428,6 +475,10 @@ Create service functions for:
 
 Move proposal lookup, project-leader checks, target-user validation, duplicate checks, single-leader enforcement, insert/delete transactions, and audit writes into the service.
 
+Continue using `isProjectLeader` and `PROJECT_LEADER_ROLE` from `@/services/auth-user.service.js`; do not create a duplicate leader-check implementation.
+
+Before extraction, add characterization coverage for a non-leader attempting add/remove, a missing target user, enforcing one leader, successful removal, missing member removal, and pagination.
+
 **Step 3: Verify members**
 
 Run: `pnpm typecheck`
@@ -460,6 +511,10 @@ Cover:
 - Director or RET Chair can request MOA results
 - Super Admin can request user results
 - search term with only symbols returns `400 BAD_REQUEST`
+- default `type` and `limit` values plus invalid `type` and out-of-range `limit` validation
+- the fixed result-group order (proposals, projects, reports, MOAs, then users), which is not globally re-ranked after flattening
+- role-ineligible requested types return no results rather than `403`
+- RET Chair main-campus scope behavior and the Faculty campus fallback when no department exists
 
 **Step 2: Verify search tests**
 
@@ -503,6 +558,13 @@ Create service functions for:
 
 Move full-text query construction, role-based result eligibility, ranking, and multi-query execution into the service.
 
+Preserve these semantics exactly:
+- `buildTsQuery` lowercases, caps at ten alphanumeric tokens, and builds prefix terms joined with ` & `.
+- Every role excludes archived proposals; Faculty and RET Chair apply the existing department/campus scope rules.
+- MOAs are eligible only for RET Chair and Director; users are eligible only for Super Admin.
+- Project and report result titles use the parent proposal title.
+- Report result `id` currently maps to `projects.projectId`, not `projectReports.reportId`; characterize and preserve this behavior during the structural refactor.
+
 **Step 3: Verify search**
 
 Run: `pnpm typecheck`
@@ -534,6 +596,10 @@ Cover:
 - `PATCH /notifications/{id}/read` returns `404` when no row updates.
 - `PATCH /notifications/{id}/read` returns `{ ok: true }` when updated.
 - `POST /notifications/read-all` returns `{ ok: true }`.
+- list responses serialize populated `readAt` values and preserve `null` for unread rows.
+- unread-count falls back to `{ count: 0 }` when the query yields no row.
+- malformed notification UUIDs return validation `400` without issuing an update.
+- read-all remains scoped to the current user and unread notifications, including when no records are unread.
 
 **Step 2: Verify notifications tests**
 
@@ -576,6 +642,8 @@ Create service functions for:
 
 Move all notification DB queries and date formatting into the service.
 
+Preserve the list order (`createdAt` descending) and 20-record limit, recipient ownership in the single-read update predicate, and the exact `404 NOT_FOUND` result when no row updates. Do not move notification-creation or email logic from `@/lib/notification.helpers.js`; this task covers read-state routes only.
+
 **Step 3: Verify notifications**
 
 Run: `pnpm typecheck`
@@ -617,6 +685,8 @@ Create service functions for:
 
 Move settings cache reads/writes, DB upsert, Super Admin check, audit write, and cache clearing into the service.
 
+Preserve the cache key format `settings:list:${page}:${limit}`, cache gating by `cacheEnabled`, full settings-list cache invalidation after every successful upsert, ISO date conversion, and atomic conflict upsert behavior.
+
 **Step 3: Verify settings**
 
 Run: `pnpm typecheck`
@@ -648,6 +718,8 @@ Add coverage for:
 - `GET /audit-logs/stats` response shape.
 - search query filters list results.
 - UUID label replacement in audit action text.
+- stats use the existing local-start-of-day calculation.
+- search remains case-insensitive prefix matching (`${search}%`), not contains matching.
 
 Run: `pnpm exec vitest run src/modules/audit/audit.routes.test.ts`
 
@@ -668,6 +740,8 @@ Create service functions for:
 - `listAuditLogs(user, query, ipAddress)`
 
 Move stats queries, viewed-audit audit write, filtered list query, UUID extraction, UUID label lookup, and action formatting into the service.
+
+Keep the parallel total/data list queries, UUID lowercasing, five lookup domains, quoted-label substitution, and unmatched UUID fallback. Pass the authenticated user and IP address to `listAuditLogs` because reading the list creates the existing "Viewed audit logs" audit entry.
 
 **Step 4: Verify audit**
 
@@ -714,7 +788,7 @@ export default app;
 
 Change `backend/src/app.ts` imports for these modules from direct `.routes.js` imports to `./modules/<module>/index.js`.
 
-Do not change route mount order.
+Do not change route mount order or app variable names. Replace only the ten small-module route imports at `backend/src/app.ts` lines 14-16, 20, and 23-27; retain existing index imports for action-center, director, moas, projects, and proposals.
 
 **Step 3: Verify app wiring**
 
@@ -750,15 +824,27 @@ Run: `pnpm test`
 
 Expected: All tests pass.
 
-**Step 3: Run build**
+**Step 3: Run targeted boundary tests**
+
+Run:
+
+```bash
+pnpm exec vitest run src/modules/search/search.routes.test.ts
+pnpm exec vitest run src/modules/notifications/notifications.routes.test.ts
+pnpm exec vitest run src/app.test.ts
+```
+
+Expected: All three targeted suites pass after the final module and barrel changes.
+
+**Step 4: Run build**
 
 Run: `pnpm build`
 
 Expected: Build completes successfully.
 
-**Step 4: Commit final fixes if needed**
+**Step 5: Commit final fixes if needed**
 
-Only if Step 1-3 required fixes:
+Only if Step 1-4 required fixes:
 
 ```bash
 git add backend/src backend/test
