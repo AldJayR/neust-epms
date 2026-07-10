@@ -36,6 +36,26 @@ describe("GET /proposals/:proposalId/members", () => {
 		const body = await res.json();
 		expect(body.items).toHaveLength(1);
 	});
+
+	it("should return empty list when no members", async () => {
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
+
+		const res = await app.request(
+			"/proposals/eeeeeeee-5555-4555-8555-eeeeeeeeeeee/members",
+		);
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.items).toHaveLength(0);
+	});
+
+	it("should handle pagination parameters", async () => {
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
+
+		const res = await app.request(
+			"/proposals/eeeeeeee-5555-4555-8555-eeeeeeeeeeee/members?page=2&limit=10",
+		);
+		expect(res.status).toBe(200);
+	});
 });
 
 describe("POST /proposals/:proposalId/members", () => {
@@ -58,17 +78,92 @@ describe("POST /proposals/:proposalId/members", () => {
 		expect(body.error.code).toBe("NOT_FOUND");
 	});
 
+	it("should reject non-leader attempting to add member", async () => {
+		// Mock isProjectLeader to return empty (user is NOT a leader)
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
+
+		// Mock transaction - proposal exists but isProjectLeader check fails
+		vi.mocked(db.transaction).mockImplementation(async (callback) => {
+			const tx = {
+				select: vi
+					.fn()
+					.mockReturnValueOnce(mockSelectChain([{ proposalId }])),
+				insert: vi.fn(() => mockMutationChain([])),
+				update: vi.fn(() => mockMutationChain([])),
+				delete: vi.fn(() => mockMutationChain([])),
+			};
+			return callback(tx as never);
+		});
+
+		const res = await app.request(`/proposals/${proposalId}/members`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				userId: "new-user",
+				projectRole: "Member",
+			}),
+		});
+
+		expect(res.status).toBe(403);
+		const body = await res.json();
+		expect(body.error.code).toBe("NOT_LEADER");
+	});
+
+	it("should reject when target user not found", async () => {
+		// Mock isProjectLeader to return truthy (user IS a leader)
+		vi.mocked(db.select).mockReturnValue(
+			mockSelectChain([{ memberId: "leader-m" }]) as never,
+		);
+
+		vi.mocked(db.transaction).mockImplementation(async (callback) => {
+			const tx = {
+				select: vi
+					.fn()
+					.mockReturnValueOnce(mockSelectChain([{ proposalId }]))
+					.mockReturnValueOnce(mockSelectChain([])),
+				insert: vi.fn(() => mockMutationChain([])),
+				update: vi.fn(() => mockMutationChain([])),
+				delete: vi.fn(() => mockMutationChain([])),
+			};
+			return callback(tx as never);
+		});
+
+		const res = await app.request(`/proposals/${proposalId}/members`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				userId: "nonexistent-user",
+				projectRole: "Member",
+			}),
+		});
+
+		expect(res.status).toBe(404);
+		const body = await res.json();
+		expect(body.error.code).toBe("USER_NOT_FOUND");
+	});
+
 	it("should reject duplicate membership", async () => {
 		const proposal = { proposalId };
 		const targetUser = { userId: "existing-user" };
 		const existing = { memberId: "m1" };
 
-		let callCount = 0;
-		vi.mocked(db.select).mockImplementation(() => {
-			callCount++;
-			if (callCount === 1) return mockSelectChain([proposal]) as never;
-			if (callCount === 2) return mockSelectChain([targetUser]) as never;
-			return mockSelectChain([existing]) as never;
+		// Mock isProjectLeader to return truthy (user IS a leader)
+		vi.mocked(db.select).mockReturnValue(
+			mockSelectChain([{ memberId: "leader-m" }]) as never,
+		);
+
+		vi.mocked(db.transaction).mockImplementation(async (callback) => {
+			const tx = {
+				select: vi
+					.fn()
+					.mockReturnValueOnce(mockSelectChain([proposal]))
+					.mockReturnValueOnce(mockSelectChain([targetUser]))
+					.mockReturnValueOnce(mockSelectChain([existing])),
+				insert: vi.fn(() => mockMutationChain([])),
+				update: vi.fn(() => mockMutationChain([])),
+				delete: vi.fn(() => mockMutationChain([])),
+			};
+			return callback(tx as never);
 		});
 
 		const res = await app.request(`/proposals/${proposalId}/members`, {
@@ -83,6 +178,45 @@ describe("POST /proposals/:proposalId/members", () => {
 		expect(res.status).toBe(409);
 		const body = await res.json();
 		expect(body.error.code).toBe("DUPLICATE");
+	});
+
+	it("should enforce single project leader per proposal", async () => {
+		const proposal = { proposalId };
+		const targetUser = { userId: "new-leader" };
+		const existingLeader = { memberId: "existing-leader" };
+
+		// Mock isProjectLeader to return truthy (user IS a leader)
+		vi.mocked(db.select).mockReturnValue(
+			mockSelectChain([{ memberId: "leader-m" }]) as never,
+		);
+
+		vi.mocked(db.transaction).mockImplementation(async (callback) => {
+			const tx = {
+				select: vi
+					.fn()
+					.mockReturnValueOnce(mockSelectChain([proposal]))
+					.mockReturnValueOnce(mockSelectChain([targetUser]))
+					.mockReturnValueOnce(mockSelectChain([]))
+					.mockReturnValueOnce(mockSelectChain([existingLeader])),
+				insert: vi.fn(() => mockMutationChain([])),
+				update: vi.fn(() => mockMutationChain([])),
+				delete: vi.fn(() => mockMutationChain([])),
+			};
+			return callback(tx as never);
+		});
+
+		const res = await app.request(`/proposals/${proposalId}/members`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				userId: "new-leader",
+				projectRole: "Project Leader",
+			}),
+		});
+
+		expect(res.status).toBe(409);
+		const body = await res.json();
+		expect(body.error.code).toBe("DUPLICATE_LEADER");
 	});
 
 	it("should add a member successfully", async () => {
@@ -151,5 +285,89 @@ describe("DELETE /proposals/:proposalId/members/:memberId", () => {
 		);
 
 		expect(res.status).toBe(404);
+	});
+
+	it("should reject non-leader attempting to remove member", async () => {
+		// Mock isProjectLeader to return empty (user is NOT a leader)
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
+
+		vi.mocked(db.transaction).mockImplementation(async (callback) => {
+			const tx = {
+				select: vi
+					.fn()
+					.mockReturnValueOnce(mockSelectChain([{ proposalId }])),
+				insert: vi.fn(() => mockMutationChain([])),
+				update: vi.fn(() => mockMutationChain([])),
+				delete: vi.fn(() => mockMutationChain([])),
+			};
+			return callback(tx as never);
+		});
+
+		const res = await app.request(
+			`/proposals/${proposalId}/members/${memberId}`,
+			{ method: "DELETE" },
+		);
+
+		expect(res.status).toBe(403);
+		const body = await res.json();
+		expect(body.error.code).toBe("NOT_LEADER");
+	});
+
+	it("should reject removal when member not found", async () => {
+		// Mock isProjectLeader to return truthy (user IS a leader)
+		vi.mocked(db.select).mockReturnValue(
+			mockSelectChain([{ memberId: "leader-m" }]) as never,
+		);
+
+		vi.mocked(db.transaction).mockImplementation(async (callback) => {
+			const tx = {
+				select: vi
+					.fn()
+					.mockReturnValueOnce(mockSelectChain([{ proposalId }])),
+				insert: vi.fn(() => mockMutationChain([])),
+				update: vi.fn(() => mockMutationChain([])),
+				delete: vi.fn(() => mockMutationChain([])),
+			};
+			return callback(tx as never);
+		});
+
+		const res = await app.request(
+			`/proposals/${proposalId}/members/${memberId}`,
+			{ method: "DELETE" },
+		);
+
+		expect(res.status).toBe(404);
+		const body = await res.json();
+		expect(body.error.code).toBe("MEMBER_NOT_FOUND");
+	});
+
+	it("should remove a member successfully", async () => {
+		const deleted = { memberId };
+
+		// Mock isProjectLeader to return truthy (user IS a leader)
+		vi.mocked(db.select).mockReturnValue(
+			mockSelectChain([{ memberId: "leader-m" }]) as never,
+		);
+
+		vi.mocked(db.transaction).mockImplementation(async (callback) => {
+			const tx = {
+				select: vi
+					.fn()
+					.mockReturnValueOnce(mockSelectChain([{ proposalId }])),
+				insert: vi.fn(() => mockMutationChain([])),
+				update: vi.fn(() => mockMutationChain([])),
+				delete: vi.fn(() => mockMutationChain([deleted])),
+			};
+			return callback(tx as never);
+		});
+
+		const res = await app.request(
+			`/proposals/${proposalId}/members/${memberId}`,
+			{ method: "DELETE" },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.message).toBe("Member removed");
 	});
 });
