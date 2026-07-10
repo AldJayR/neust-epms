@@ -11,6 +11,7 @@ import {
 	deriveProjectState,
 	deriveProposalState,
 } from "@/lib/derived-states.js";
+import { buildProposalScopeClause } from "@/lib/scope-helpers.js";
 import {
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
@@ -35,15 +36,6 @@ function buildLeaderSubquery() {
 		.from(proposalMembers)
 		.where(eq(proposalMembers.projectRole, "Project Leader"))
 		.as("leader_members");
-}
-
-function buildScopeClause(user: AuthUser): SQL | undefined {
-	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		return user.isMainCampus && user.departmentId !== null
-			? eq(proposals.departmentId, user.departmentId)
-			: eq(proposals.campusId, user.campusId);
-	}
-	return undefined;
 }
 
 // ── Unified queries ──
@@ -403,7 +395,7 @@ export async function getActionItemsForRole(
 	let projectsNeedingActivation = 0;
 
 	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		const scope = buildScopeClause(user);
+		const scope = buildProposalScopeClause(user);
 		const scopeProps = scope !== undefined ? { scopeClause: scope } : {};
 
 		const pending = await getPendingProposals({

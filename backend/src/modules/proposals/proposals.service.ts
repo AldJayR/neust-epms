@@ -4,7 +4,6 @@ import {
 	ilike,
 	isNull,
 	or,
-	type SQL,
 	sql,
 } from "drizzle-orm";
 import { db } from "@/db/client.js";
@@ -31,24 +30,6 @@ import {
 } from "@/services/auth-user.service.js";
 
 // ── Shared helpers ──
-
-export function buildProposalScopeConditions(user: AuthUser): SQL[] {
-	const conditions: SQL[] = [];
-	if (user.roleName === ROLE_NAMES.FACULTY) {
-		if (user.departmentId !== null) {
-			conditions.push(eq(proposals.departmentId, user.departmentId));
-		} else {
-			conditions.push(eq(proposals.campusId, user.campusId));
-		}
-	} else if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		if (user.isMainCampus && user.departmentId !== null) {
-			conditions.push(eq(proposals.departmentId, user.departmentId));
-		} else {
-			conditions.push(eq(proposals.campusId, user.campusId));
-		}
-	}
-	return conditions;
-}
 
 export function getLeaderSubquery() {
 	return db

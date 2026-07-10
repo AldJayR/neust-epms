@@ -7,6 +7,7 @@ import { projects } from "@/db/schema/projects.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { users } from "@/db/schema/users.js";
 import { ApiError } from "@/lib/errors.js";
+import { buildProposalScope } from "@/lib/scope-helpers.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import type { SearchKind, SearchResultItem } from "./search.schema.js";
 
@@ -33,24 +34,7 @@ export function buildTsQuery(raw: string): string {
 	return tokens.map((t) => `${t}:*`).join(" & ");
 }
 
-/** Role-based scoping conditions applied to the `proposals` table. */
-export function proposalScope(user: AuthUser): SQL[] {
-	const conditions: SQL[] = [isNull(proposals.archivedAt)];
-	if (user.roleName === ROLE_NAMES.FACULTY) {
-		conditions.push(
-			user.departmentId !== null
-				? eq(proposals.departmentId, user.departmentId)
-				: eq(proposals.campusId, user.campusId),
-		);
-	} else if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		conditions.push(
-			user.isMainCampus && user.departmentId !== null
-				? eq(proposals.departmentId, user.departmentId)
-				: eq(proposals.campusId, user.campusId),
-		);
-	}
-	return conditions;
-}
+
 
 export async function searchEntities(
 	user: AuthUser,
@@ -83,7 +67,7 @@ export async function searchEntities(
 				.from(proposals)
 				.where(
 					and(
-						...proposalScope(user),
+						...buildProposalScope(user),
 						sql`to_tsvector('simple', ${proposals.title}) @@ to_tsquery('simple', ${tsQuery})`,
 					),
 				)
@@ -107,7 +91,7 @@ export async function searchEntities(
 				.where(
 					and(
 						isNull(projects.archivedAt),
-						...proposalScope(user),
+						...buildProposalScope(user),
 						sql`to_tsvector('simple', ${proposals.title}) @@ to_tsquery('simple', ${tsQuery})`,
 					),
 				)
@@ -132,7 +116,7 @@ export async function searchEntities(
 				.where(
 					and(
 						isNull(projectReports.archivedAt),
-						...proposalScope(user),
+						...buildProposalScope(user),
 						sql`to_tsvector('simple', ${proposals.title}) @@ to_tsquery('simple', ${tsQuery})`,
 					),
 				)

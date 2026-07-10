@@ -7,7 +7,6 @@ import {
 	isNotNull,
 	isNull,
 	or,
-	type SQL,
 	sql,
 } from "drizzle-orm";
 import { db } from "@/db/client.js";
@@ -39,26 +38,9 @@ import {
 	ROLE_NAMES,
 	type AuthUser,
 } from "@/lib/types.js";
+import { buildProposalScope } from "@/lib/scope-helpers.js";
 
 // ── Shared helpers ──
-
-export function buildUserProjectScope(user: AuthUser): SQL[] {
-	const conditions: SQL[] = [isNull(proposals.archivedAt)];
-	if (user.roleName === ROLE_NAMES.FACULTY) {
-		if (user.departmentId !== null) {
-			conditions.push(eq(proposals.departmentId, user.departmentId));
-		} else {
-			conditions.push(eq(proposals.campusId, user.campusId));
-		}
-	} else if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		if (user.isMainCampus && user.departmentId !== null) {
-			conditions.push(eq(proposals.departmentId, user.departmentId));
-		} else {
-			conditions.push(eq(proposals.campusId, user.campusId));
-		}
-	}
-	return conditions;
-}
 
 export function getLeaderSubquery() {
 	return db
@@ -81,7 +63,7 @@ export async function listProjects(
 	const offset = (page - 1) * limit;
 	const showArchived = archived === "true";
 
-	const proposalConditions = buildUserProjectScope(user);
+	const proposalConditions = buildProposalScope(user);
 
 	const allowedProposals = db
 		.select({ proposalId: proposals.proposalId })
@@ -165,7 +147,7 @@ export async function listProjects(
 }
 
 export async function getProjectDerivedState(id: string, user: AuthUser) {
-	const proposalConditions = buildUserProjectScope(user);
+	const proposalConditions = buildProposalScope(user);
 
 	const allowedProposals = db
 		.select({ proposalId: proposals.proposalId })

@@ -19,6 +19,7 @@ import { proposals } from "@/db/schema/proposals.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { ApiError } from "@/lib/errors.js";
+import { buildProposalScopeClause } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import { sanitizeFilename } from "@/services/file.service.js";
@@ -252,13 +253,8 @@ export async function getLinkedProjects(id: string, user: AuthUser) {
 
 	const conditions = [eq(projects.moaId, id)];
 
-	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		if (user.isMainCampus && user.departmentId !== null) {
-			conditions.push(eq(proposals.departmentId, user.departmentId));
-		} else {
-			conditions.push(eq(proposals.campusId, user.campusId));
-		}
-	}
+	const scopeClause = buildProposalScopeClause(user);
+	if (scopeClause) conditions.push(scopeClause);
 
 	const rows = await db
 		.select({

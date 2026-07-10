@@ -11,6 +11,7 @@ import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { ApiError } from "@/lib/errors.js";
+import { buildProposalScope } from "@/lib/scope-helpers.js";
 import {
 	createNotification,
 	getUserIdsByRole,
@@ -26,24 +27,6 @@ import type { CreateReportSchema, PaginationQuery } from "./reports.schema.js";
 
 type CreateReportBody = z.infer<typeof CreateReportSchema>;
 type Pagination = z.infer<typeof PaginationQuery>;
-
-function scopeConditions(user: AuthUser): SQL[] {
-	const conditions: SQL[] = [isNull(projectReports.archivedAt)];
-	if (user.roleName === ROLE_NAMES.FACULTY) {
-		conditions.push(
-			user.departmentId !== null
-				? eq(proposals.departmentId, user.departmentId)
-				: eq(proposals.campusId, user.campusId),
-		);
-	} else if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		conditions.push(
-			user.isMainCampus && user.departmentId !== null
-				? eq(proposals.departmentId, user.departmentId)
-				: eq(proposals.campusId, user.campusId),
-		);
-	}
-	return conditions;
-}
 
 function serializeReport(report: {
 	reportId: string;
@@ -100,7 +83,7 @@ const reportSelection = {
 
 export async function listReports(user: AuthUser, query: Pagination) {
 	const { page, limit } = query;
-	const whereConditions = scopeConditions(user);
+	const whereConditions: SQL[] = [isNull(projectReports.archivedAt), ...buildProposalScope(user)];
 	const rows = await db
 		.select(reportSelection)
 		.from(projectReports)
@@ -122,7 +105,7 @@ export async function listReports(user: AuthUser, query: Pagination) {
 }
 
 export async function getReportStats(user: AuthUser) {
-	const whereConditions = scopeConditions(user);
+	const whereConditions: SQL[] = [isNull(projectReports.archivedAt), ...buildProposalScope(user)];
 	const countReports = (conditions: SQL[]) =>
 		db
 			.select({ value: count() })

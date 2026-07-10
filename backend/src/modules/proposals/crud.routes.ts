@@ -17,6 +17,7 @@ import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { sdgs } from "@/db/schema/sdgs.js";
 import { users } from "@/db/schema/users.js";
+import { buildProposalScope, buildProposalScopeClause } from "@/lib/scope-helpers.js";
 import { deriveProposalState } from "@/lib/derived-states.js";
 import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
 import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
@@ -34,7 +35,6 @@ import {
 	ParamId,
 } from "./proposals.schema.js";
 import {
-	buildProposalScopeConditions,
 	getLeaderSubquery,
 	getUserMemberSubquery,
 	checkDuplicateTitle,
@@ -81,7 +81,8 @@ app.openapi(listRoute, async (c) => {
 		whereConditions.push(ilike(proposals.title, `%${search}%`));
 	}
 
-	whereConditions.push(...buildProposalScopeConditions(user));
+	const scopeClause = buildProposalScopeClause(user);
+	if (scopeClause) whereConditions.push(scopeClause);
 
 	const leaderSubquery = getLeaderSubquery();
 	const userMemberSubquery = getUserMemberSubquery(user.userId);
@@ -170,12 +171,7 @@ app.openapi(retStatsRoute, async (c) => {
 		);
 	}
 
-	const whereConditions: SQL[] = [isNull(proposals.archivedAt)];
-	if (user.isMainCampus && user.departmentId !== null) {
-		whereConditions.push(eq(proposals.departmentId, user.departmentId));
-	} else {
-		whereConditions.push(eq(proposals.campusId, user.campusId));
-	}
+	const whereConditions: SQL[] = [...buildProposalScope(user)];
 
 	const [pending, approved, denied] = await Promise.all([
 		db
@@ -237,10 +233,8 @@ app.openapi(getRoute, async (c) => {
 
 	const whereConditions: SQL[] = [
 		eq(proposals.proposalId, id),
-		isNull(proposals.archivedAt),
+		...buildProposalScope(user),
 	];
-
-	whereConditions.push(...buildProposalScopeConditions(user));
 
 	const [row] = await db
 		.select({
@@ -309,10 +303,8 @@ app.openapi(derivedStateRoute, async (c) => {
 
 	const whereConditions: SQL[] = [
 		eq(proposals.proposalId, id),
-		isNull(proposals.archivedAt),
+		...buildProposalScope(user),
 	];
-
-	whereConditions.push(...buildProposalScopeConditions(user));
 
 	const leaderSubquery = getLeaderSubquery();
 
