@@ -374,13 +374,24 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 		const scope = buildProposalScopeClause(user);
 		const scopeProps = scope !== undefined ? { scopeClause: scope } : {};
 
-		const pending = await getPendingProposals({
-			statusFilter: and(
-				eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
-				eq(proposals.bypassedRetChair, false),
-			)!,
-			...scopeProps,
-		});
+		const [pending, returned, overdue, reports] = await Promise.all([
+			getPendingProposals({
+				statusFilter: and(
+					eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
+					eq(proposals.bypassedRetChair, false),
+				)!,
+				...scopeProps,
+			}),
+			getReturnedProposals({
+				...scopeProps,
+			}),
+			getProjectsByStatus({
+				projectStatus: PROJECT_STATUS.OVERDUE,
+				...scopeProps,
+			}),
+			getUpcomingReports({ now, ...scopeProps }),
+		]);
+
 		pendingReviews = pending.length;
 		for (const p of pending) {
 			const item = buildProposalItem(p, user, "soon", {
@@ -390,19 +401,12 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 
-		const returned = await getReturnedProposals({
-			...scopeProps,
-		});
 		returnedProposals = returned.length;
 		for (const p of returned) {
 			const item = buildProposalItem(p, user, "routine", { isRtChair: true });
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 
-		const overdue = await getProjectsByStatus({
-			projectStatus: PROJECT_STATUS.OVERDUE,
-			...scopeProps,
-		});
 		overdueReports = overdue.length;
 		const schedMap = await batchFetchScheduleExists(
 			overdue.map((p) => p.projectId),
@@ -419,21 +423,30 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 
-		const reports = await getUpcomingReports({ now, ...scopeProps });
 		for (const r of reports) {
 			const item = buildReportItem(r, now, user.roleName);
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 	} else if (user.roleName === ROLE_NAMES.DIRECTOR) {
-		const pending = await getPendingProposals({
-			statusFilter: or(
-				eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
-				and(
-					eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
-					eq(proposals.bypassedRetChair, true),
-				),
-			)!,
-		});
+		const [pending, approved, overdue, reports] = await Promise.all([
+			getPendingProposals({
+				statusFilter: or(
+					eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
+					and(
+						eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
+						eq(proposals.bypassedRetChair, true),
+					),
+				)!,
+			}),
+			getProjectsByStatus({
+				projectStatus: PROJECT_STATUS.APPROVED,
+			}),
+			getProjectsByStatus({
+				projectStatus: PROJECT_STATUS.OVERDUE,
+			}),
+			getUpcomingReports({ now }),
+		]);
+
 		pendingReviews = pending.length;
 		for (const p of pending) {
 			const item = buildProposalItem(p, user, "soon", {
@@ -443,13 +456,14 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 
-		const approved = await getProjectsByStatus({
-			projectStatus: PROJECT_STATUS.APPROVED,
-		});
 		projectsNeedingActivation = approved.length;
-		const approvedSchedMap = await batchFetchScheduleExists(
-			approved.map((p) => p.projectId),
-		);
+		overdueReports = overdue.length;
+
+		const [approvedSchedMap, overdueSchedMap] = await Promise.all([
+			batchFetchScheduleExists(approved.map((p) => p.projectId)),
+			batchFetchScheduleExists(overdue.map((p) => p.projectId)),
+		]);
+
 		for (const p of approved) {
 			const derived = deriveProjectState(
 				{
@@ -472,13 +486,6 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 
-		const overdue = await getProjectsByStatus({
-			projectStatus: PROJECT_STATUS.OVERDUE,
-		});
-		overdueReports = overdue.length;
-		const overdueSchedMap = await batchFetchScheduleExists(
-			overdue.map((p) => p.projectId),
-		);
 		for (const p of overdue) {
 			const item = buildProjectItem(
 				p,
@@ -489,25 +496,31 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 
-		const reports = await getUpcomingReports({ now });
 		for (const r of reports) {
 			const item = buildReportItem(r, now, user.roleName);
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 	} else if (user.roleName === ROLE_NAMES.FACULTY) {
-		const returned = await getReturnedProposals({
-			joinWithMember: true,
-		});
+		const [returned, overdue, reports] = await Promise.all([
+			getReturnedProposals({
+				joinWithMember: true,
+			}),
+			getProjectsByStatus({
+				projectStatus: PROJECT_STATUS.OVERDUE,
+				joinWithMember: true,
+			}),
+			getUpcomingReports({
+				now,
+				joinWithMember: true,
+			}),
+		]);
+
 		returnedProposals = returned.length;
 		for (const p of returned) {
 			const item = buildProposalItem(p, user, "urgent");
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 
-		const overdue = await getProjectsByStatus({
-			projectStatus: PROJECT_STATUS.OVERDUE,
-			joinWithMember: true,
-		});
 		overdueReports = overdue.length;
 		const schedMap = await batchFetchScheduleExists(
 			overdue.map((p) => p.projectId),
@@ -524,10 +537,6 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 
-		const reports = await getUpcomingReports({
-			now,
-			joinWithMember: true,
-		});
 		for (const r of reports) {
 			const item = buildReportItem(r, now, user.roleName);
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);

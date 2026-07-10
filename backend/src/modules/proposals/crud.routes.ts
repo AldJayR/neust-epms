@@ -95,45 +95,51 @@ app.openapi(listRoute, async (c) => {
 	const leaderSubquery = getLeaderSubquery();
 	const userMemberSubquery = getUserMemberSubquery(user.userId);
 
-	const rows = await db
-		.select({
-			proposalId: proposals.proposalId,
-			campusId: proposals.campusId,
-			departmentId: proposals.departmentId,
-			title: proposals.title,
-			bannerProgram: proposals.bannerProgram,
-			projectLocale: proposals.projectLocale,
-			extensionCategory: proposals.extensionCategory,
-			budgetPartner: proposals.budgetPartner,
-			budgetNeust: proposals.budgetNeust,
-			status: sql<string>`COALESCE(${projects.projectStatus}, ${proposals.status})`,
-			bypassedRetChair: proposals.bypassedRetChair,
-			revisionNum: proposals.revisionNum,
-			targetStartDate: proposals.targetStartDate,
-			targetEndDate: proposals.targetEndDate,
-			createdAt: proposals.createdAt,
-			updatedAt: proposals.updatedAt,
-			archivedAt: proposals.archivedAt,
-			leaderFirstName: users.firstName,
-			leaderLastName: users.lastName,
-			leaderAcademicRank: users.academicRank,
-			isMember: sql<boolean>`COALESCE(${userMemberSubquery.isMember}, false)`,
-		})
-		.from(proposals)
-		.leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
-		.leftJoin(
-			leaderSubquery,
-			eq(proposals.proposalId, leaderSubquery.proposalId),
-		)
-		.leftJoin(users, eq(leaderSubquery.userId, users.userId))
-		.leftJoin(
-			userMemberSubquery,
-			eq(proposals.proposalId, userMemberSubquery.proposalId),
-		)
-		.where(and(...whereConditions))
-		.orderBy(desc(proposals.createdAt))
-		.limit(limit)
-		.offset(offset);
+	const [rows, [totalResult]] = await Promise.all([
+		db
+			.select({
+				proposalId: proposals.proposalId,
+				campusId: proposals.campusId,
+				departmentId: proposals.departmentId,
+				title: proposals.title,
+				bannerProgram: proposals.bannerProgram,
+				projectLocale: proposals.projectLocale,
+				extensionCategory: proposals.extensionCategory,
+				budgetPartner: proposals.budgetPartner,
+				budgetNeust: proposals.budgetNeust,
+				status: sql<string>`COALESCE(${projects.projectStatus}, ${proposals.status})`,
+				bypassedRetChair: proposals.bypassedRetChair,
+				revisionNum: proposals.revisionNum,
+				targetStartDate: proposals.targetStartDate,
+				targetEndDate: proposals.targetEndDate,
+				createdAt: proposals.createdAt,
+				updatedAt: proposals.updatedAt,
+				archivedAt: proposals.archivedAt,
+				leaderFirstName: users.firstName,
+				leaderLastName: users.lastName,
+				leaderAcademicRank: users.academicRank,
+				isMember: sql<boolean>`COALESCE(${userMemberSubquery.isMember}, false)`,
+			})
+			.from(proposals)
+			.leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
+			.leftJoin(
+				leaderSubquery,
+				eq(proposals.proposalId, leaderSubquery.proposalId),
+			)
+			.leftJoin(users, eq(leaderSubquery.userId, users.userId))
+			.leftJoin(
+				userMemberSubquery,
+				eq(proposals.proposalId, userMemberSubquery.proposalId),
+			)
+			.where(and(...whereConditions))
+			.orderBy(desc(proposals.createdAt))
+			.limit(limit)
+			.offset(offset),
+		db
+			.select({ value: count() })
+			.from(proposals)
+			.where(and(...whereConditions)),
+	]);
 
 	const items = rows.map((r) => ({
 		...r,
@@ -144,10 +150,6 @@ app.openapi(listRoute, async (c) => {
 		targetEndDate: r.targetEndDate?.toISOString() ?? null,
 	}));
 
-	const [totalResult] = await db
-		.select({ value: count() })
-		.from(proposals)
-		.where(and(...whereConditions));
 	const total = Number(totalResult?.value ?? 0);
 
 	return c.json({ items, total }, 200);
@@ -316,37 +318,38 @@ app.openapi(derivedStateRoute, async (c) => {
 
 	const leaderSubquery = getLeaderSubquery();
 
-	const [row] = await db
-		.select({
-			proposalId: proposals.proposalId,
-			status: proposals.status,
-			bypassedRetChair: proposals.bypassedRetChair,
-			leaderId: leaderSubquery.userId,
-			campusId: proposals.campusId,
-			departmentId: proposals.departmentId,
-		})
-		.from(proposals)
-		.leftJoin(
-			leaderSubquery,
-			eq(proposals.proposalId, leaderSubquery.proposalId),
-		)
-		.where(and(...whereConditions))
-		.limit(1);
+	const [[row], [review]] = await Promise.all([
+		db
+			.select({
+				proposalId: proposals.proposalId,
+				status: proposals.status,
+				bypassedRetChair: proposals.bypassedRetChair,
+				leaderId: leaderSubquery.userId,
+				campusId: proposals.campusId,
+				departmentId: proposals.departmentId,
+			})
+			.from(proposals)
+			.leftJoin(
+				leaderSubquery,
+				eq(proposals.proposalId, leaderSubquery.proposalId),
+			)
+			.where(and(...whereConditions))
+			.limit(1),
+		db
+			.select({ reviewId: proposalReviews.reviewId })
+			.from(proposalReviews)
+			.where(
+				and(
+					eq(proposalReviews.proposalId, id),
+					eq(proposalReviews.reviewerId, user.userId),
+				),
+			)
+			.limit(1),
+	]);
 
 	if (!row) {
 		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
 	}
-
-	const [review] = await db
-		.select({ reviewId: proposalReviews.reviewId })
-		.from(proposalReviews)
-		.where(
-			and(
-				eq(proposalReviews.proposalId, id),
-				eq(proposalReviews.reviewerId, user.userId),
-			),
-		)
-		.limit(1);
 
 	const derived = deriveProposalState(
 		{

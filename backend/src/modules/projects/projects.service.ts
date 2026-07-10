@@ -69,44 +69,57 @@ export async function listProjects(
 		.where(eq(proposalMembers.userId, user.userId))
 		.as("user_member");
 
-	const rows = await db
-		.select({
-			projectId: projects.projectId,
-			proposalId: projects.proposalId,
-			moaId: projects.moaId,
-			title: proposals.title,
-			extensionCategory: proposals.extensionCategory,
-			targetStartDate: proposals.targetStartDate,
-			targetEndDate: proposals.targetEndDate,
-			actualEndDate: projects.actualEndDate,
-			projectStatus: projects.projectStatus,
-			createdAt: projects.createdAt,
-			updatedAt: projects.updatedAt,
-			archivedAt: projects.archivedAt,
-			leaderFirstName: users.firstName,
-			leaderLastName: users.lastName,
-			leaderAcademicRank: users.academicRank,
-			isMember: sql<boolean>`COALESCE(${userMemberSubquery.isMember}, false)`,
-		})
-		.from(projects)
-		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-		.leftJoin(leaderMembers, eq(projects.proposalId, leaderMembers.proposalId))
-		.leftJoin(users, eq(leaderMembers.userId, users.userId))
-		.leftJoin(
-			userMemberSubquery,
-			eq(projects.proposalId, userMemberSubquery.proposalId),
-		)
-		.where(
-			and(
-				showArchived
-					? isNotNull(projects.archivedAt)
-					: isNull(projects.archivedAt),
-				inArray(projects.proposalId, allowedProposals),
+	const [rows, [totalResult]] = await Promise.all([
+		db
+			.select({
+				projectId: projects.projectId,
+				proposalId: projects.proposalId,
+				moaId: projects.moaId,
+				title: proposals.title,
+				extensionCategory: proposals.extensionCategory,
+				targetStartDate: proposals.targetStartDate,
+				targetEndDate: proposals.targetEndDate,
+				actualEndDate: projects.actualEndDate,
+				projectStatus: projects.projectStatus,
+				createdAt: projects.createdAt,
+				updatedAt: projects.updatedAt,
+				archivedAt: projects.archivedAt,
+				leaderFirstName: users.firstName,
+				leaderLastName: users.lastName,
+				leaderAcademicRank: users.academicRank,
+				isMember: sql<boolean>`COALESCE(${userMemberSubquery.isMember}, false)`,
+			})
+			.from(projects)
+			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+			.leftJoin(leaderMembers, eq(projects.proposalId, leaderMembers.proposalId))
+			.leftJoin(users, eq(leaderMembers.userId, users.userId))
+			.leftJoin(
+				userMemberSubquery,
+				eq(projects.proposalId, userMemberSubquery.proposalId),
+			)
+			.where(
+				and(
+					showArchived
+						? isNotNull(projects.archivedAt)
+						: isNull(projects.archivedAt),
+					inArray(projects.proposalId, allowedProposals),
+				),
+			)
+			.orderBy(desc(projects.createdAt))
+			.limit(limit)
+			.offset(offset),
+		db
+			.select({ value: count() })
+			.from(projects)
+			.where(
+				and(
+					showArchived
+						? isNotNull(projects.archivedAt)
+						: isNull(projects.archivedAt),
+					inArray(projects.proposalId, allowedProposals),
+				),
 			),
-		)
-		.orderBy(desc(projects.createdAt))
-		.limit(limit)
-		.offset(offset);
+	]);
 
 	const items = rows.map((r) => ({
 		...r,
@@ -118,17 +131,6 @@ export async function listProjects(
 		archivedAt: r.archivedAt?.toISOString() ?? null,
 	}));
 
-	const [totalResult] = await db
-		.select({ value: count() })
-		.from(projects)
-		.where(
-			and(
-				showArchived
-					? isNotNull(projects.archivedAt)
-					: isNull(projects.archivedAt),
-				inArray(projects.proposalId, allowedProposals),
-			),
-		);
 	const total = Number(totalResult?.value ?? 0);
 
 	return { items, total };
@@ -144,42 +146,42 @@ export async function getProjectDerivedState(id: string, user: AuthUser) {
 
 	const leaderMembers = getLeaderSubquery();
 
-	const [row] = await db
-		.select({
-			projectId: projects.projectId,
-			projectStatus: projects.projectStatus,
-			moaId: projects.moaId,
-			leaderId: leaderMembers.userId,
-		})
-		.from(projects)
-		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-		.leftJoin(leaderMembers, eq(projects.proposalId, leaderMembers.proposalId))
-		.where(
-			and(
-				eq(projects.projectId, id),
-				isNull(projects.archivedAt),
-				inArray(projects.proposalId, allowedProposals),
-			),
-		)
-		.limit(1);
+	const [[row], [schedule], [report]] = await Promise.all([
+		db
+			.select({
+				projectId: projects.projectId,
+				projectStatus: projects.projectStatus,
+				moaId: projects.moaId,
+				leaderId: leaderMembers.userId,
+			})
+			.from(projects)
+			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+			.leftJoin(leaderMembers, eq(projects.proposalId, leaderMembers.proposalId))
+			.where(
+				and(
+					eq(projects.projectId, id),
+					isNull(projects.archivedAt),
+					inArray(projects.proposalId, allowedProposals),
+				),
+			)
+			.limit(1),
+		db
+			.select({ scheduleId: projectReportingSchedules.scheduleId })
+			.from(projectReportingSchedules)
+			.where(eq(projectReportingSchedules.projectId, id))
+			.limit(1),
+		db
+			.select({ reportId: projectReports.reportId })
+			.from(projectReports)
+			.where(
+				and(eq(projectReports.projectId, id), isNull(projectReports.archivedAt)),
+			)
+			.limit(1),
+	]);
 
 	if (!row) {
 		throw new ApiError(404, "NOT_FOUND", "Project not found");
 	}
-
-	const [schedule] = await db
-		.select({ scheduleId: projectReportingSchedules.scheduleId })
-		.from(projectReportingSchedules)
-		.where(eq(projectReportingSchedules.projectId, id))
-		.limit(1);
-
-	const [report] = await db
-		.select({ reportId: projectReports.reportId })
-		.from(projectReports)
-		.where(
-			and(eq(projectReports.projectId, id), isNull(projectReports.archivedAt)),
-		)
-		.limit(1);
 
 	return deriveProjectState(
 		{
