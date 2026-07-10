@@ -1,87 +1,20 @@
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import {
-	and,
-	count,
-	desc,
-	eq,
-	gte,
-	ilike,
-	inArray,
-	or,
-	type SQL,
-	sql,
-} from "drizzle-orm";
-import { db } from "@/db/client.js";
-import { auditLogs } from "@/db/schema/audit-logs.js";
-import { partners } from "@/db/schema/partners.js";
-import { projectReports } from "@/db/schema/project-reports.js";
-import { projects } from "@/db/schema/projects.js";
-import { proposals } from "@/db/schema/proposals.js";
-import { roles } from "@/db/schema/roles.js";
-import { users } from "@/db/schema/users.js";
-import { insertAuditLog } from "@/lib/audit.js";
+import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { getClientIp } from "@/lib/client-ip.js";
 import { installApiErrorHandler } from "@/lib/errors.js";
 import { ErrorSchema } from "@/lib/schemas.js";
 import { ROLE_NAMES } from "@/lib/types.js";
-import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
+import type { AuthEnv } from "@/middleware/auth.js";
+import { authMiddleware } from "@/middleware/auth.js";
 import { requireRole } from "@/middleware/rbac.js";
+import {
+	AuditLogListSchema,
+	AuditStatsSchema,
+	PaginationQuery,
+} from "./audit.schema.js";
+import { getAuditStats, listAuditLogs } from "./audit.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 installApiErrorHandler(app);
-
-// ── Schemas ──
-const AuditLogSchema = z
-	.object({
-		logId: z.string().uuid(),
-		userId: z.string().uuid(),
-		action: z.string(),
-		tableAffected: z.string(),
-		ipAddress: z.string().nullable(),
-		createdAt: z.string(),
-		actorName: z.string().nullable(),
-		actorRole: z.string().nullable(),
-	})
-	.openapi("AuditLog");
-
-const AuditLogListSchema = z
-	.object({ items: z.array(AuditLogSchema), total: z.number() })
-	.openapi("AuditLogList");
-
-const AuditStatsSchema = z
-	.object({
-		totalActionsToday: z.number(),
-		uniqueUsersActive: z.number(),
-		accountChanges: z.number(),
-		failedLogins: z.number(),
-	})
-	.openapi("AuditStats");
-
-const PaginationQuery = z.object({
-	page: z.coerce
-		.number()
-		.int()
-		.min(1)
-		.default(1)
-		.openapi({
-			param: { name: "page", in: "query" },
-		}),
-	limit: z.coerce
-		.number()
-		.int()
-		.min(1)
-		.max(100)
-		.default(50)
-		.openapi({
-			param: { name: "limit", in: "query" },
-		}),
-	search: z
-		.string()
-		.optional()
-		.openapi({
-			param: { name: "search", in: "query" },
-		}),
-});
 
 app.use("/audit-logs", authMiddleware);
 app.use("/audit-logs/*", authMiddleware);
@@ -104,50 +37,8 @@ const statsRoute = createRoute({
 });
 
 app.openapi(statsRoute, async (c) => {
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
-
-	const [totalActionsResult, accountChangesResult, failedLoginsResult] =
-		await Promise.all([
-			db
-				.select({ value: count() })
-				.from(auditLogs)
-				.where(gte(auditLogs.createdAt, today)),
-			db
-				.select({ value: count() })
-				.from(auditLogs)
-				.where(
-					and(
-						eq(auditLogs.tableAffected, "users"),
-						gte(auditLogs.createdAt, today),
-					),
-				),
-			db
-				.select({ value: count() })
-				.from(auditLogs)
-				.where(
-					and(
-						ilike(auditLogs.action, "%failed login%"),
-						gte(auditLogs.createdAt, today),
-					),
-				),
-		]);
-
-	const [uniqueUsersResult] = await db
-		.select({ value: sql<number>`count(distinct ${auditLogs.userId})` })
-		.from(auditLogs)
-		.where(gte(auditLogs.createdAt, today));
-	const uniqueUsersCount = Number(uniqueUsersResult?.value ?? 0);
-
-	return c.json(
-		{
-			totalActionsToday: Number(totalActionsResult[0]?.value ?? 0),
-			uniqueUsersActive: uniqueUsersCount,
-			accountChanges: Number(accountChangesResult[0]?.value ?? 0),
-			failedLogins: Number(failedLoginsResult[0]?.value ?? 0),
-		},
-		200,
-	);
+	const result = await getAuditStats();
+	return c.json(result, 200);
 });
 
 // ── GET /audit-logs ──
@@ -173,120 +64,9 @@ const listRoute = createRoute({
 app.openapi(listRoute, async (c) => {
 	const user = c.get("user");
 	const { page, limit, search } = c.req.valid("query");
-	const offset = (page - 1) * limit;
-
-	await insertAuditLog({
-		userId: user.userId,
-		action: `Viewed audit logs (page ${page}, limit ${limit}${search ? `, search: ${search}` : ""})`,
-		tableAffected: "audit_logs",
-		ipAddress: getClientIp(c),
-	});
-
-	let whereClause: SQL | undefined;
-	if (search) {
-		whereClause = or(
-			ilike(auditLogs.action, `${search}%`),
-			ilike(users.firstName, `${search}%`),
-			ilike(users.lastName, `${search}%`),
-			ilike(users.email, `${search}%`),
-		);
-	}
-
-	const [totalResult, rows] = await Promise.all([
-		db
-			.select({ value: count() })
-			.from(auditLogs)
-			.leftJoin(users, eq(auditLogs.userId, users.userId))
-			.where(whereClause),
-		db
-			.select({
-				logId: auditLogs.logId,
-				userId: auditLogs.userId,
-				action: auditLogs.action,
-				tableAffected: auditLogs.tableAffected,
-				ipAddress: auditLogs.ipAddress,
-				createdAt: auditLogs.createdAt,
-				actorName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
-				actorRole: roles.roleName,
-			})
-			.from(auditLogs)
-			.leftJoin(users, eq(auditLogs.userId, users.userId))
-			.leftJoin(roles, eq(users.roleId, roles.roleId))
-			.where(whereClause)
-			.orderBy(desc(auditLogs.createdAt))
-			.limit(limit)
-			.offset(offset),
-	]);
-
-	// Resolve names/labels for UUIDs present in rows
-	const uuids = new Set<string>();
-	const uuidRegex =
-		/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
-	for (const r of rows) {
-		const matches = r.action.match(uuidRegex);
-		if (matches) {
-			for (const u of matches) {
-				uuids.add(u.toLowerCase());
-			}
-		}
-	}
-
-	const lookup = new Map<string, string>();
-
-	if (uuids.size > 0) {
-		const uuidList = Array.from(uuids);
-		const [proposalsList, projectsList, usersList, partnersList, reportsList] =
-			await Promise.all([
-				db
-					.select({ id: proposals.proposalId, label: proposals.title })
-					.from(proposals)
-					.where(inArray(proposals.proposalId, uuidList)),
-				db
-					.select({ id: projects.projectId, label: proposals.title })
-					.from(projects)
-					.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-					.where(inArray(projects.projectId, uuidList)),
-				db
-					.select({
-						id: users.userId,
-						label: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
-					})
-					.from(users)
-					.where(inArray(users.userId, uuidList)),
-				db
-					.select({ id: partners.partnerId, label: partners.partnerName })
-					.from(partners)
-					.where(inArray(partners.partnerId, uuidList)),
-				db
-					.select({
-						id: projectReports.reportId,
-						label: projectReports.reportType,
-					})
-					.from(projectReports)
-					.where(inArray(projectReports.reportId, uuidList)),
-			]);
-
-		for (const p of proposalsList) lookup.set(p.id.toLowerCase(), p.label);
-		for (const p of projectsList) lookup.set(p.id.toLowerCase(), p.label);
-		for (const u of usersList) lookup.set(u.id.toLowerCase(), u.label);
-		for (const pt of partnersList) lookup.set(pt.id.toLowerCase(), pt.label);
-		for (const r of reportsList) lookup.set(r.id.toLowerCase(), r.label);
-	}
-
-	const items = rows.map((r) => {
-		let action = r.action;
-		action = action.replace(uuidRegex, (match) => {
-			const label = lookup.get(match.toLowerCase());
-			return label ? `"${label}"` : match;
-		});
-		return {
-			...r,
-			action,
-			createdAt: r.createdAt.toISOString(),
-		};
-	});
-
-	return c.json({ items, total: Number(totalResult[0]?.value ?? 0) }, 200);
+	const ipAddress = getClientIp(c);
+	const result = await listAuditLogs(user, { page, limit, search }, ipAddress);
+	return c.json(result, 200);
 });
 
 export default app;
