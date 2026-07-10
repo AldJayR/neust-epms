@@ -8,6 +8,9 @@ import {
 	mockMutationChain,
 } from "../../../test/helpers.js";
 import app from "./reports.routes.js";
+import { installApiErrorHandler } from "@/lib/errors.js";
+
+installApiErrorHandler(app);
 
 beforeEach(() => {
 	vi.mocked(db.select).mockReset();

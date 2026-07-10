@@ -5,8 +5,8 @@ import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { specialOrders } from "@/db/schema/special-orders.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { ApiError } from "@/lib/errors.js";
-import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import { supabase } from "@/lib/supabase.js";
+import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import { sanitizeFilename } from "@/services/file.service.js";
 
 const specialOrderColumns = {
@@ -41,7 +41,10 @@ function serializeSpecialOrder(order: {
 	};
 }
 
-export async function listSpecialOrders(query: { page: number; limit: number }) {
+export async function listSpecialOrders(query: {
+	page: number;
+	limit: number;
+}) {
 	const rows = await db
 		.select(specialOrderColumns)
 		.from(specialOrders)
@@ -199,7 +202,11 @@ export async function uploadSpecialOrder(
 				.where(eq(specialOrders.specialOrderId, existing.specialOrderId))
 				.returning();
 			if (!updated) {
-				throw new ApiError(500, "UPDATE_FAILED", "Failed to update special order");
+				throw new ApiError(
+					500,
+					"UPDATE_FAILED",
+					"Failed to update special order",
+				);
 			}
 			record = updated;
 		} else {
@@ -208,7 +215,11 @@ export async function uploadSpecialOrder(
 				.values({ memberId, soNumber, storagePath })
 				.returning();
 			if (!inserted) {
-				throw new ApiError(500, "INSERT_FAILED", "Failed to create special order");
+				throw new ApiError(
+					500,
+					"INSERT_FAILED",
+					"Failed to create special order",
+				);
 			}
 			record = inserted;
 			isNew = true;
@@ -300,7 +311,11 @@ export async function getSpecialOrderSignedUrl(
 	}
 
 	if (!order.storagePath) {
-		throw new ApiError(404, "NO_FILE", "No file uploaded for this special order");
+		throw new ApiError(
+			404,
+			"NO_FILE",
+			"No file uploaded for this special order",
+		);
 	}
 
 	const { data, error } = await supabase.storage

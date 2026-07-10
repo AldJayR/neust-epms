@@ -3,18 +3,16 @@ import { getClientIp } from "@/lib/client-ip.js";
 import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
 import type { AuthEnv } from "@/middleware/auth.js";
 import {
-	MemberSchema,
-	MemberListSchema,
 	AddMemberSchema,
-	ProposalParam,
+	MemberListSchema,
 	MemberParam,
+	MemberSchema,
 	PaginationQuery,
+	ProposalParam,
 } from "./members.schema.js";
-import { listMembers, addMember, removeMember } from "./members.service.js";
-import { installApiErrorHandler } from "@/lib/errors.js";
+import { addMember, listMembers, removeMember } from "./members.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 // Auth for /proposals/* is registered once at the root app (see app.ts).
 

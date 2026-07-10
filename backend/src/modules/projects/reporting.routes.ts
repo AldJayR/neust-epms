@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { ErrorSchema } from "@/lib/schemas.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
-import { installApiErrorHandler } from "@/lib/errors.js";
+
 import {
 	ParamId,
 	ProjectReadinessSchema,
@@ -13,7 +13,6 @@ import {
 } from "./projects.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 app.use("/projects/:id/readiness", authMiddleware);
 app.use("/projects/:id/reporting-schedule", authMiddleware);

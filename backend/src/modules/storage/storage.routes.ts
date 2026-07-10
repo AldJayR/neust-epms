@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { getClientIp } from "@/lib/client-ip.js";
-import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
+import { ApiError } from "@/lib/errors.js";
 import { ErrorSchema } from "@/lib/schemas.js";
 import type { AuthEnv } from "@/middleware/auth.js";
 import {
@@ -19,7 +19,6 @@ import {
 } from "./storage.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
@@ -37,8 +36,14 @@ const listDocsRoute = createRoute({
 			content: { "application/json": { schema: DocumentListSchema } },
 			description: "Document versions",
 		},
-		403: { content: { "application/json": { schema: ErrorSchema } }, description: "Forbidden" },
-		404: { content: { "application/json": { schema: ErrorSchema } }, description: "Proposal not found" },
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Forbidden",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Proposal not found",
+		},
 	},
 });
 
@@ -55,17 +60,39 @@ const uploadRoute = createRoute({
 	path: "/proposals/{proposalId}/documents/upload",
 	tags: ["Storage"],
 	summary: "Upload a new proposal document version via backend proxy",
-	description: "Proxies file upload to Supabase Storage. EC-04: new uploads increment version_num.",
+	description:
+		"Proxies file upload to Supabase Storage. EC-04: new uploads increment version_num.",
 	security: [{ Bearer: [] }],
 	request: { params: ProposalParam },
 	responses: {
-		201: { content: { "application/json": { schema: UploadResponseSchema } }, description: "Document uploaded" },
-		400: { content: { "application/json": { schema: ErrorSchema } }, description: "Upload failed" },
-		404: { content: { "application/json": { schema: ErrorSchema } }, description: "Proposal not found" },
-		403: { content: { "application/json": { schema: ErrorSchema } }, description: "Forbidden" },
-		413: { content: { "application/json": { schema: ErrorSchema } }, description: "File too large" },
-		422: { content: { "application/json": { schema: ErrorSchema } }, description: "Invalid file type" },
-		500: { content: { "application/json": { schema: ErrorSchema } }, description: "Internal server error" },
+		201: {
+			content: { "application/json": { schema: UploadResponseSchema } },
+			description: "Document uploaded",
+		},
+		400: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Upload failed",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Proposal not found",
+		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Forbidden",
+		},
+		413: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "File too large",
+		},
+		422: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid file type",
+		},
+		500: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Internal server error",
+		},
 	},
 });
 
@@ -111,10 +138,22 @@ const getUrlRoute = createRoute({
 	security: [{ Bearer: [] }],
 	request: { params: DocumentParam },
 	responses: {
-		200: { content: { "application/json": { schema: PresignedUrlSchema } }, description: "Signed URL" },
-		404: { content: { "application/json": { schema: ErrorSchema } }, description: "Document not found" },
-		403: { content: { "application/json": { schema: ErrorSchema } }, description: "Forbidden" },
-		500: { content: { "application/json": { schema: ErrorSchema } }, description: "Internal server error" },
+		200: {
+			content: { "application/json": { schema: PresignedUrlSchema } },
+			description: "Signed URL",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Document not found",
+		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Forbidden",
+		},
+		500: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Internal server error",
+		},
 	},
 });
 

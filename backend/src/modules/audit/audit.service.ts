@@ -1,3 +1,4 @@
+import type { z } from "@hono/zod-openapi";
 import {
 	and,
 	count,
@@ -20,7 +21,6 @@ import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import type { AuthUser } from "@/lib/types.js";
-import type { z } from "@hono/zod-openapi";
 import type { AuditLogSchema } from "./audit.schema.js";
 
 type AuditLog = z.infer<typeof AuditLogSchema>;

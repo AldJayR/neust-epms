@@ -145,7 +145,9 @@ export async function bulkUpdateUserStatus(
 }
 
 export async function listRoles() {
-	return db.select({ roleId: roles.roleId, roleName: roles.roleName }).from(roles);
+	return db
+		.select({ roleId: roles.roleId, roleName: roles.roleName })
+		.from(roles);
 }
 
 export async function bulkApproveUsers(
@@ -199,7 +201,10 @@ export async function bulkApproveUsers(
 			title: "Account Activated",
 			message: "Your account has been approved and activated.",
 		}).catch((err) => {
-			console.error("[notification] Failed to send activation notification:", err);
+			console.error(
+				"[notification] Failed to send activation notification:",
+				err,
+			);
 		});
 	}
 

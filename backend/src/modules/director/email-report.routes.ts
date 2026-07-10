@@ -1,13 +1,11 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { env } from "@/env.js";
-import { installApiErrorHandler } from "@/lib/errors.js";
+import { ROLE_NAMES } from "@/lib/types.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import { requireRole } from "@/middleware/rbac.js";
-import { ROLE_NAMES } from "@/lib/types.js";
 import { sendEmailReport } from "./director.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 app.use("/director/*", authMiddleware);
 app.use(

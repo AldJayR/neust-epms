@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { getClientIp } from "@/lib/client-ip.js";
-import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
+import { ApiError } from "@/lib/errors.js";
 import { ErrorSchema } from "@/lib/schemas.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import {
@@ -21,7 +21,6 @@ import {
 } from "./special-orders.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
@@ -54,12 +53,24 @@ const createRoute_ = createRoute({
 	summary: "Create a special order linked to a proposal member (EC-03)",
 	security: [{ Bearer: [] }],
 	request: {
-		body: { content: { "application/json": { schema: CreateSpecialOrderSchema } }, required: true },
+		body: {
+			content: { "application/json": { schema: CreateSpecialOrderSchema } },
+			required: true,
+		},
 	},
 	responses: {
-		201: { content: { "application/json": { schema: SpecialOrderSchema } }, description: "Special order created" },
-		400: { content: { "application/json": { schema: ErrorSchema } }, description: "Validation error" },
-		404: { content: { "application/json": { schema: ErrorSchema } }, description: "Member not found" },
+		201: {
+			content: { "application/json": { schema: SpecialOrderSchema } },
+			description: "Special order created",
+		},
+		400: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Validation error",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Member not found",
+		},
 	},
 });
 
@@ -80,11 +91,20 @@ const updateRoute = createRoute({
 	security: [{ Bearer: [] }],
 	request: {
 		params: ParamId,
-		body: { content: { "application/json": { schema: UpdateSpecialOrderSchema } }, required: true },
+		body: {
+			content: { "application/json": { schema: UpdateSpecialOrderSchema } },
+			required: true,
+		},
 	},
 	responses: {
-		200: { content: { "application/json": { schema: SpecialOrderSchema } }, description: "Updated" },
-		404: { content: { "application/json": { schema: ErrorSchema } }, description: "Not found" },
+		200: {
+			content: { "application/json": { schema: SpecialOrderSchema } },
+			description: "Updated",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Not found",
+		},
 	},
 });
 
@@ -103,15 +123,42 @@ const uploadRoute = createRoute({
 	summary: "Upload a special order PDF and create/update record",
 	security: [{ Bearer: [] }],
 	responses: {
-		200: { content: { "application/json": { schema: SpecialOrderSchema } }, description: "Special order updated" },
-		201: { content: { "application/json": { schema: SpecialOrderSchema } }, description: "Special order created" },
-		400: { content: { "application/json": { schema: ErrorSchema } }, description: "Invalid file" },
-		403: { content: { "application/json": { schema: ErrorSchema } }, description: "Forbidden" },
-		404: { content: { "application/json": { schema: ErrorSchema } }, description: "Member not found" },
-		409: { content: { "application/json": { schema: ErrorSchema } }, description: "Duplicate SO number" },
-		413: { content: { "application/json": { schema: ErrorSchema } }, description: "File too large" },
-		422: { content: { "application/json": { schema: ErrorSchema } }, description: "Invalid file type" },
-		500: { content: { "application/json": { schema: ErrorSchema } }, description: "Internal server error" },
+		200: {
+			content: { "application/json": { schema: SpecialOrderSchema } },
+			description: "Special order updated",
+		},
+		201: {
+			content: { "application/json": { schema: SpecialOrderSchema } },
+			description: "Special order created",
+		},
+		400: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid file",
+		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Forbidden",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Member not found",
+		},
+		409: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Duplicate SO number",
+		},
+		413: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "File too large",
+		},
+		422: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid file type",
+		},
+		500: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Internal server error",
+		},
 	},
 });
 
@@ -162,9 +209,18 @@ const getUrlRoute = createRoute({
 	security: [{ Bearer: [] }],
 	request: { params: ParamId },
 	responses: {
-		200: { content: { "application/json": { schema: SignedUrlSchema } }, description: "Signed URL" },
-		404: { content: { "application/json": { schema: ErrorSchema } }, description: "Not found or no file uploaded" },
-		500: { content: { "application/json": { schema: ErrorSchema } }, description: "Internal server error" },
+		200: {
+			content: { "application/json": { schema: SignedUrlSchema } },
+			description: "Signed URL",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Not found or no file uploaded",
+		},
+		500: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Internal server error",
+		},
 	},
 });
 

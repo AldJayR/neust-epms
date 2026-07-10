@@ -1,13 +1,11 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { installApiErrorHandler } from "@/lib/errors.js";
+import { ROLE_NAMES } from "@/lib/types.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import { requireRole } from "@/middleware/rbac.js";
-import { ROLE_NAMES } from "@/lib/types.js";
 import { MoaRepositorySchema } from "./director.schema.js";
-import { getMoaRepository, getActiveMoas } from "./director.service.js";
+import { getActiveMoas, getMoaRepository } from "./director.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 app.use("/director/*", authMiddleware);
 app.use(

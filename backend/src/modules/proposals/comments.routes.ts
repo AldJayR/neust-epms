@@ -6,20 +6,18 @@ import { proposalDocuments } from "@/db/schema/proposal-documents.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
-import { installApiErrorHandler } from "@/lib/errors.js";
+import { ApiError } from "@/lib/errors.js";
 import { ErrorSchema } from "@/lib/schemas.js";
 import { ROLE_NAMES } from "@/lib/types.js";
 import type { AuthEnv } from "@/middleware/auth.js";
 import {
-	CommentParams,
-	CreateCommentSchema,
-	CommentResponseSchema,
 	CommentListSchema,
+	CommentParams,
+	CommentResponseSchema,
+	CreateCommentSchema,
 } from "./proposals.schema.js";
-import { ApiError } from "@/lib/errors.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 // ── POST /proposals/:id/documents/:docId/comments ──
 const createCommentRoute = createRoute({

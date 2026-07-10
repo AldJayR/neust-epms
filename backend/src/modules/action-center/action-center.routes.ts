@@ -1,11 +1,10 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
-import { installApiErrorHandler } from "@/lib/errors.js";
+
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import { getActionCenterRoute } from "./action-center.schema.js";
 import { getActionItemsForRole } from "./action-center.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 app.use("/action-center", authMiddleware);
 app.use("/action-center/*", authMiddleware);

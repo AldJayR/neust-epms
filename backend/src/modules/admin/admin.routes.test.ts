@@ -7,6 +7,9 @@ import {
 	setMockUser,
 } from "../../../test/helpers.js";
 import app from "./admin.routes.js";
+import { installApiErrorHandler } from "@/lib/errors.js";
+
+installApiErrorHandler(app);
 
 beforeEach(() => {
 	setMockUser(MOCK_USERS.superAdmin);

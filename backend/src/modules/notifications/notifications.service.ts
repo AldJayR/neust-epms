@@ -1,13 +1,15 @@
+import type { z } from "@hono/zod-openapi";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { notifications } from "@/db/schema/notifications.js";
 import { ApiError } from "@/lib/errors.js";
-import type { z } from "@hono/zod-openapi";
 import type { NotificationSchema } from "./notifications.schema.js";
 
 type Notification = z.infer<typeof NotificationSchema>;
 
-export async function listNotifications(userId: string): Promise<Notification[]> {
+export async function listNotifications(
+	userId: string,
+): Promise<Notification[]> {
 	const rows = await db
 		.select()
 		.from(notifications)
@@ -22,7 +24,9 @@ export async function listNotifications(userId: string): Promise<Notification[]>
 	}));
 }
 
-export async function getUnreadNotificationCount(userId: string): Promise<number> {
+export async function getUnreadNotificationCount(
+	userId: string,
+): Promise<number> {
 	const [result] = await db
 		.select({ count: sql<number>`count(*)::int` })
 		.from(notifications)

@@ -1,11 +1,9 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
-import { installApiErrorHandler } from "@/lib/errors.js";
 import type { AuthEnv } from "@/middleware/auth.js";
 import { SearchQuerySchema, SearchResponseSchema } from "./search.schema.js";
 import { searchEntities } from "./search.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 // Auth for /search is registered in this module
 

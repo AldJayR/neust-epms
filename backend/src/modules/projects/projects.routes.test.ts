@@ -17,6 +17,9 @@ import {
 	mockMutationChain,
 } from "../../../test/helpers.js";
 import app from "./index.js";
+import { installApiErrorHandler } from "@/lib/errors.js";
+
+installApiErrorHandler(app);
 import { insertAuditLog } from "@/lib/audit.js";
 
 beforeEach(() => {

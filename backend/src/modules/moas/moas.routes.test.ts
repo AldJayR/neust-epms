@@ -8,6 +8,9 @@ import {
 	mockMutationChain,
 } from "../../../test/helpers.js";
 import app from "./index.js";
+import { installApiErrorHandler } from "@/lib/errors.js";
+
+installApiErrorHandler(app);
 
 beforeEach(() => {
 	setMockUser(MOCK_USERS.director);

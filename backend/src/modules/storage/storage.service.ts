@@ -115,7 +115,11 @@ export async function uploadProposalDocument(
 		return Number(result[0]?.max_ver ?? 1);
 	});
 
-	const storagePath = generateSecureStoragePath(proposalId, nextVersion, file.name);
+	const storagePath = generateSecureStoragePath(
+		proposalId,
+		nextVersion,
+		file.name,
+	);
 	const { error: uploadError } = await supabase.storage
 		.from("documents")
 		.upload(storagePath, file, {

@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { getClientIp } from "@/lib/client-ip.js";
-import { installApiErrorHandler } from "@/lib/errors.js";
+
 import { ErrorSchema, MessageSchema, ParamId } from "@/lib/schemas.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import {
@@ -23,7 +23,6 @@ import {
 } from "./moas.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 app.use("/moas/*", authMiddleware);
 app.use("/moas", authMiddleware);
@@ -193,7 +192,12 @@ app.openapi(uploadMoaRoute, async (c) => {
 	const user = c.get("user");
 	const contentLength = Number(c.req.header("content-length") ?? 0);
 	const formData = await c.req.formData();
-	const result = await uploadMoaDocument(formData, user, getClientIp(c), contentLength);
+	const result = await uploadMoaDocument(
+		formData,
+		user,
+		getClientIp(c),
+		contentLength,
+	);
 	return c.json(result, 201);
 });
 

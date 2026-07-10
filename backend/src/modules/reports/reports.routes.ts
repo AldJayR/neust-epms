@@ -1,6 +1,5 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { getClientIp } from "@/lib/client-ip.js";
-import { installApiErrorHandler } from "@/lib/errors.js";
 import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import {
@@ -19,7 +18,6 @@ import {
 } from "./reports.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 app.use("/reports/*", authMiddleware);
 app.use("/reports", authMiddleware);
 

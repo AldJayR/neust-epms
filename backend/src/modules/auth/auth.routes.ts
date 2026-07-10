@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { rateLimiter } from "hono-rate-limiter";
 import { getClientIp } from "@/lib/client-ip.js";
-import { installApiErrorHandler } from "@/lib/errors.js";
+
 import { ErrorSchema } from "@/lib/schemas.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import {
@@ -31,7 +31,6 @@ import {
 } from "./auth.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 // ── POST /auth/check-password (Public) ──
 const checkPasswordRoute = createRoute({

@@ -1,23 +1,21 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { installApiErrorHandler } from "@/lib/errors.js";
 import { ErrorSchema } from "@/lib/schemas.js";
 import type { AuthEnv } from "@/middleware/auth.js";
 import { authMiddleware } from "@/middleware/auth.js";
 import {
-	NotificationSchema,
-	UnreadCountSchema,
 	MarkReadParamsSchema,
+	NotificationSchema,
 	OkResponseSchema,
+	UnreadCountSchema,
 } from "./notifications.schema.js";
 import {
-	listNotifications,
 	getUnreadNotificationCount,
-	markNotificationRead,
+	listNotifications,
 	markAllNotificationsRead,
+	markNotificationRead,
 } from "./notifications.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 // ── All routes require authentication ──
 app.use("/notifications", authMiddleware);

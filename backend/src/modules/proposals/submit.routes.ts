@@ -1,22 +1,23 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { and, eq, isNull, or } from "drizzle-orm";
 import { db } from "@/db/client.js";
+import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposals } from "@/db/schema/proposals.js";
-import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
+import { insertAuditLog } from "@/lib/audit.js";
+import { getClientIp } from "@/lib/client-ip.js";
+import { ApiError } from "@/lib/errors.js";
+import { createNotification } from "@/lib/notification.helpers.js";
 import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
 import { PROPOSAL_STATUS } from "@/lib/types.js";
 import type { AuthEnv } from "@/middleware/auth.js";
-import { isProjectLeader } from "@/services/auth-user.service.js";
+import {
+	isProjectLeader,
+	PROJECT_LEADER_ROLE,
+} from "@/services/auth-user.service.js";
 import { ParamId } from "./proposals.schema.js";
 import { validateCompleteness } from "./proposals.service.js";
-import { insertAuditLog } from "@/lib/audit.js";
-import { getClientIp } from "@/lib/client-ip.js";
-import { createNotification } from "@/lib/notification.helpers.js";
-import { proposalMembers } from "@/db/schema/proposal-members.js";
-import { PROJECT_LEADER_ROLE } from "@/services/auth-user.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 // ── POST /proposals/:id/submit ──
 const submitRoute = createRoute({

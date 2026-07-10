@@ -21,7 +21,7 @@ import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { getClientIp } from "@/lib/client-ip.js";
 import { deriveProposalState } from "@/lib/derived-states.js";
-import { ApiError, installApiErrorHandler } from "@/lib/errors.js";
+import { ApiError } from "@/lib/errors.js";
 import { getLeaderSubquery } from "@/lib/leader-subquery.js";
 import { createNotification } from "@/lib/notification.helpers.js";
 import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
@@ -54,7 +54,6 @@ import {
 } from "./proposals.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 // ── GET /proposals ──
 const listRoute = createRoute({

@@ -1,19 +1,17 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { getClientIp } from "@/lib/client-ip.js";
-import { installApiErrorHandler } from "@/lib/errors.js";
 import { ErrorSchema } from "@/lib/schemas.js";
 import type { AuthEnv } from "@/middleware/auth.js";
 import { authMiddleware } from "@/middleware/auth.js";
 import {
-	SettingSchema,
-	SettingListSchema,
-	UpsertSettingSchema,
 	PaginationQuery,
+	SettingListSchema,
+	SettingSchema,
+	UpsertSettingSchema,
 } from "./settings.schema.js";
 import { listSettings, upsertSetting } from "./settings.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 app.use("/settings/*", authMiddleware);
 app.use("/settings", authMiddleware);

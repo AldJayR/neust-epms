@@ -8,6 +8,9 @@ import {
 	mockMutationChain,
 } from "../../../test/helpers.js";
 import app from "./special-orders.routes.js";
+import { installApiErrorHandler } from "@/lib/errors.js";
+
+installApiErrorHandler(app);
 
 beforeEach(() => {
 	setMockUser(MOCK_USERS.faculty);

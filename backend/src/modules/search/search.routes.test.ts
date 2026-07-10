@@ -4,10 +4,12 @@ import { setMockUser, MOCK_USERS, mockSelectChain } from "../../../test/helpers.
 import baseApp from "./search.routes.js";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { authMiddleware } from "@/middleware/auth.js";
+import { installApiErrorHandler } from "@/lib/errors.js";
 
 const app = new OpenAPIHono();
 app.use("*", authMiddleware);
 app.route("/", baseApp);
+installApiErrorHandler(app);
 
 beforeEach(() => {
 	setMockUser(MOCK_USERS.faculty);

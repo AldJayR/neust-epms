@@ -34,8 +34,6 @@ export function buildTsQuery(raw: string): string {
 	return tokens.map((t) => `${t}:*`).join(" & ");
 }
 
-
-
 export async function searchEntities(
 	user: AuthUser,
 	query: { q: string; type: SearchKind; limit: number },

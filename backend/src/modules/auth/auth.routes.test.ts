@@ -7,6 +7,9 @@ import {
 	mockMutationChain,
 } from "../../../test/helpers.js";
 import app from "./auth.routes.js";
+import { installApiErrorHandler } from "@/lib/errors.js";
+
+installApiErrorHandler(app);
 
 vi.mock("@/lib/password-check.js", () => ({
 	isPasswordCompromised: vi.fn().mockResolvedValue(false),

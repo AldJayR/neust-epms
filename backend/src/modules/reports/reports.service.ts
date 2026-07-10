@@ -1,3 +1,4 @@
+import type { z } from "@hono/zod-openapi";
 import { and, count, desc, eq, isNull, type SQL } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { departments } from "@/db/schema/departments.js";
@@ -11,18 +12,17 @@ import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { ApiError } from "@/lib/errors.js";
-import { buildProposalScope } from "@/lib/scope-helpers.js";
 import {
 	createNotification,
 	getUserIdsByRole,
 } from "@/lib/notification.helpers.js";
+import { buildProposalScope } from "@/lib/scope-helpers.js";
 import {
+	type AuthUser,
 	PROJECT_STATUS,
 	REPORT_TYPE,
 	ROLE_NAMES,
-	type AuthUser,
 } from "@/lib/types.js";
-import type { z } from "@hono/zod-openapi";
 import type { CreateReportSchema, PaginationQuery } from "./reports.schema.js";
 
 type CreateReportBody = z.infer<typeof CreateReportSchema>;
@@ -83,7 +83,10 @@ const reportSelection = {
 
 export async function listReports(user: AuthUser, query: Pagination) {
 	const { page, limit } = query;
-	const whereConditions: SQL[] = [isNull(projectReports.archivedAt), ...buildProposalScope(user)];
+	const whereConditions: SQL[] = [
+		isNull(projectReports.archivedAt),
+		...buildProposalScope(user),
+	];
 	const rows = await db
 		.select(reportSelection)
 		.from(projectReports)
@@ -105,7 +108,10 @@ export async function listReports(user: AuthUser, query: Pagination) {
 }
 
 export async function getReportStats(user: AuthUser) {
-	const whereConditions: SQL[] = [isNull(projectReports.archivedAt), ...buildProposalScope(user)];
+	const whereConditions: SQL[] = [
+		isNull(projectReports.archivedAt),
+		...buildProposalScope(user),
+	];
 	const countReports = (conditions: SQL[]) =>
 		db
 			.select({ value: count() })

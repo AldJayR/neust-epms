@@ -1,3 +1,4 @@
+import type { z } from "@hono/zod-openapi";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
@@ -10,8 +11,7 @@ import {
 	isProjectLeader,
 	PROJECT_LEADER_ROLE,
 } from "@/services/auth-user.service.js";
-import type { z } from "@hono/zod-openapi";
-import type { MemberSchema, AddMemberSchema } from "./members.schema.js";
+import type { AddMemberSchema, MemberSchema } from "./members.schema.js";
 
 type Member = z.infer<typeof MemberSchema>;
 

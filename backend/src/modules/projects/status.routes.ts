@@ -4,16 +4,15 @@ import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
 import { ROLE_NAMES } from "@/lib/types.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import { requireRole } from "@/middleware/rbac.js";
-import { installApiErrorHandler } from "@/lib/errors.js";
-import { ParamId, LinkMoaSchema, TransitionSchema } from "./projects.schema.js";
+
+import { LinkMoaSchema, ParamId, TransitionSchema } from "./projects.schema.js";
 import {
+	closeProject,
 	linkMoaToProject,
 	transitionProjectStatus,
-	closeProject,
 } from "./projects.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 app.use("/projects/:id/link-moa", authMiddleware);
 app.use("/projects/:id/link-moa", requireRole(ROLE_NAMES.DIRECTOR));

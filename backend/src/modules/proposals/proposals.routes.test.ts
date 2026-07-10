@@ -17,10 +17,12 @@ import {
 import baseApp from "./index.js";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { authMiddleware } from "@/middleware/auth.js";
+import { installApiErrorHandler } from "@/lib/errors.js";
 
 const app = new OpenAPIHono();
 app.use("*", authMiddleware);
 app.route("/", baseApp);
+installApiErrorHandler(app);
 
 const PROPOSAL_ID = "eeeeeeee-5555-4555-8555-eeeeeeeeeeee";
 

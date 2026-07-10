@@ -1,3 +1,4 @@
+import type { z } from "@hono/zod-openapi";
 import { db } from "@/db/client.js";
 import { systemSettings } from "@/db/schema/system-settings.js";
 import { insertAuditLog } from "@/lib/audit.js";
@@ -9,14 +10,14 @@ import {
 import { ApiError } from "@/lib/errors.js";
 import type { AuthUser } from "@/lib/types.js";
 import { ROLE_NAMES } from "@/lib/types.js";
-import type { z } from "@hono/zod-openapi";
 import type { SettingSchema, UpsertSettingSchema } from "./settings.schema.js";
 
 type Setting = z.infer<typeof SettingSchema>;
 
-export async function listSettings(
-	query: { page: number; limit: number },
-): Promise<{ items: Setting[] }> {
+export async function listSettings(query: {
+	page: number;
+	limit: number;
+}): Promise<{ items: Setting[] }> {
 	const { page, limit } = query;
 	const offset = (page - 1) * limit;
 	const cacheKey = `settings:list:${page}:${limit}`;

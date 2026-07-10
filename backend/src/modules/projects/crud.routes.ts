@@ -4,26 +4,25 @@ import { ErrorSchema } from "@/lib/schemas.js";
 import { ROLE_NAMES } from "@/lib/types.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import { requireRole } from "@/middleware/rbac.js";
-import { installApiErrorHandler } from "@/lib/errors.js";
+
 import {
-	ProjectSchema,
-	ProjectListSchema,
+	CreateProjectSchema,
+	PaginationQuery,
+	ParamId,
 	ProjectDerivedStateSchema,
 	ProjectDetailsSchema,
-	ParamId,
-	PaginationQuery,
-	CreateProjectSchema,
+	ProjectListSchema,
+	ProjectSchema,
 } from "./projects.schema.js";
 import {
-	listProjects,
 	createProjectFromProposal,
-	getProjectDetails,
 	getProjectDerivedState,
+	getProjectDetails,
+	listProjects,
 	restoreProject,
 } from "./projects.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
-installApiErrorHandler(app);
 
 app.use("/projects", authMiddleware);
 app.use("/projects/*", authMiddleware);
@@ -88,7 +87,11 @@ const createProjectRoute = createRoute({
 app.openapi(createProjectRoute, async (c) => {
 	const user = c.get("user");
 	const body = c.req.valid("json");
-	const created = await createProjectFromProposal(body.proposalId, user, getClientIp(c));
+	const created = await createProjectFromProposal(
+		body.proposalId,
+		user,
+		getClientIp(c),
+	);
 	return c.json(created, 201);
 });
 

@@ -632,7 +632,11 @@ export async function updateMoa(
 	};
 }
 
-export async function restoreMoa(id: string, user: AuthUser, ipAddress: string) {
+export async function restoreMoa(
+	id: string,
+	user: AuthUser,
+	ipAddress: string,
+) {
 	if (!canManageMoas(user)) {
 		throw new ApiError(
 			403,
@@ -648,7 +652,11 @@ export async function restoreMoa(id: string, user: AuthUser, ipAddress: string) 
 		.returning();
 
 	if (!updated) {
-		throw new ApiError(404, "NOT_FOUND", "MOA not found or could not be restored");
+		throw new ApiError(
+			404,
+			"NOT_FOUND",
+			"MOA not found or could not be restored",
+		);
 	}
 
 	await insertAuditLog({
