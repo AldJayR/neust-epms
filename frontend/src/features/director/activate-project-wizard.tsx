@@ -65,6 +65,7 @@ export function ActivateProjectWizard({
 }: ActivateProjectWizardProps) {
 	const [step, setStep] = React.useState(1);
 	const [selectedMoaId, setSelectedMoaId] = React.useState<string>("");
+	const [moaSearch, setMoaSearch] = React.useState("");
 	const [frequency, setFrequency] = React.useState<ReportingFrequency | "">("");
 	const [dueDates, setDueDates] = React.useState<DueDateEntry[]>([]);
 
@@ -74,6 +75,13 @@ export function ActivateProjectWizard({
 		queryKey: ["director", "moas", "active"],
 		queryFn: () => getActiveMoasFn(),
 	});
+
+	const filteredMoas = React.useMemo(() => {
+		if (!moaSearch) return moas;
+		return moas.filter((moa) =>
+			moa.partnerName.toLowerCase().includes(moaSearch.toLowerCase()),
+		);
+	}, [moas, moaSearch]);
 
 	const selectedMoa = moas.find((m) => m.moaId === selectedMoaId);
 
@@ -95,6 +103,7 @@ export function ActivateProjectWizard({
 	function resetWizard() {
 		setStep(1);
 		setSelectedMoaId("");
+		setMoaSearch("");
 		setFrequency("");
 		setDueDates([]);
 	}
@@ -190,12 +199,16 @@ export function ActivateProjectWizard({
 									>
 										<ComboboxInput
 											placeholder="Search MOA by partner name..."
+											value={moaSearch}
+											onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+												setMoaSearch(e.target.value)
+											}
+											showClear
 											className="w-full"
 										/>
-										<ComboboxContent>
+										<ComboboxContent className="bg-popover before:hidden">
 											<ComboboxList>
-												<ComboboxEmpty>No MOAs found</ComboboxEmpty>
-												{moas.map((moa) => (
+												{filteredMoas.map((moa) => (
 													<ComboboxItem key={moa.moaId} value={moa.moaId}>
 														<div className="flex flex-col">
 															<span>{moa.partnerName}</span>
@@ -211,6 +224,9 @@ export function ActivateProjectWizard({
 													</ComboboxItem>
 												))}
 											</ComboboxList>
+											{filteredMoas.length === 0 && (
+												<ComboboxEmpty>No MOAs found</ComboboxEmpty>
+											)}
 										</ComboboxContent>
 									</Combobox>
 								)}

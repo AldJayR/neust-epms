@@ -226,7 +226,7 @@ export function SubmitReportModal({
 									showClear
 									className="w-full"
 								/>
-								<ComboboxContent className="w-full z-50">
+								<ComboboxContent className="w-full z-50 bg-popover before:hidden">
 									<ComboboxList className="w-full">
 										{filteredProjects.map((p) => (
 											<ComboboxItem key={p.projectId} value={p.projectId}>
@@ -234,7 +234,9 @@ export function SubmitReportModal({
 											</ComboboxItem>
 										))}
 									</ComboboxList>
-									<ComboboxEmpty>No projects found</ComboboxEmpty>
+									{filteredProjects.length === 0 && (
+										<ComboboxEmpty>No projects found</ComboboxEmpty>
+									)}
 								</ComboboxContent>
 							</Combobox>
 						</div>
