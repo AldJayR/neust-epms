@@ -11,7 +11,6 @@ import {
 	sql,
 } from "drizzle-orm";
 import { db } from "@/db/client.js";
-import { beneficiarySectors } from "@/db/schema/beneficiary-sectors.js";
 import { projects } from "@/db/schema/projects.js";
 import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposals } from "@/db/schema/proposals.js";
@@ -566,31 +565,6 @@ app.openapi(listSdgsRoute, async (c) => {
 		})
 		.from(sdgs)
 		.orderBy(sdgs.sdgId);
-
-	return c.json(rows, 200);
-});
-
-// ── GET /proposals/metadata/sectors ──
-const listSectorsRoute = createRoute({
-	method: "get",
-	path: "/proposals/metadata/sectors",
-	tags: ["Proposals"],
-	summary: "List all beneficiary sectors",
-	responses: {
-		200: {
-			description: "Sectors list",
-		},
-	},
-});
-
-app.openapi(listSectorsRoute, async (c) => {
-	const rows = await db
-		.select({
-			sectorId: beneficiarySectors.sectorId,
-			sectorName: beneficiarySectors.sectorName,
-		})
-		.from(beneficiarySectors)
-		.orderBy(beneficiarySectors.sectorName);
 
 	return c.json(rows, 200);
 });
