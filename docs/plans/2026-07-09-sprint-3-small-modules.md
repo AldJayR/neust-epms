@@ -30,6 +30,9 @@ Do not repeat route-directory deletion, test-file moves, or shared foundation ex
 - Complete: `storage` refactor in commit `22bc44c`
 - Complete: `special-orders` refactor in commit `22bc44c`
 - Complete: `reports` refactor in commit `4eeeb8d`
+- Complete: `members` refactor in commit `08bc2f5`
+- Complete: `search` route tests in commit `3362591`
+- Complete: `search` refactor in commit `e6912b3`
 - Verified with `pnpm typecheck` and targeted Vitest runs
 
 ## Remaining-Work Findings
@@ -459,6 +462,8 @@ git commit -m "refactor(reports): split routes schemas and service"
 
 ### Task 7: Refactor Members Module
 
+Status: Complete in commit `08bc2f5`.
+
 **Files:**
 - Create: `backend/src/modules/members/members.schema.ts`
 - Create: `backend/src/modules/members/members.service.ts`
@@ -507,6 +512,8 @@ git commit -m "refactor(members): split routes schemas and service"
 
 ### Task 8: Add Search Route Tests
 
+Status: Complete in commit `3362591`.
+
 **Files:**
 - Create: `backend/src/modules/search/search.routes.test.ts`
 - Read: `backend/src/modules/search/search.routes.ts`
@@ -541,6 +548,8 @@ git commit -m "test(search): cover existing search routes"
 ---
 
 ### Task 9: Refactor Search Module
+
+Status: Complete in commit `e6912b3`.
 
 **Files:**
 - Create: `backend/src/modules/search/search.schema.ts`
