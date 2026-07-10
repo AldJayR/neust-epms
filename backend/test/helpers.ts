@@ -155,6 +155,7 @@ export function mockSelectChain(result: unknown[]) {
 	chain.innerJoin = returnChain;
 	chain.leftJoin = returnChain;
 	chain.orderBy = returnChain;
+	chain.groupBy = returnChain;
 	chain.offset = returnChain;
 	chain.limit = returnChain;
 	chain.as = returnChain;

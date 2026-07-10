@@ -3,9 +3,11 @@ import {
 	count,
 	desc,
 	eq,
+	exists,
 	ilike,
 	inArray,
 	isNull,
+	ne,
 	or,
 	type SQL,
 	sql,
@@ -19,6 +21,7 @@ import { partners } from "@/db/schema/partners.js";
 import { projectReports } from "@/db/schema/project-reports.js";
 import { projects } from "@/db/schema/projects.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
+import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
@@ -30,6 +33,8 @@ import {
 	PROPOSAL_STATUS,
 	type ProjectStatus,
 	ROLE_NAMES,
+	REVIEW_STAGE,
+	REVIEW_DECISION,
 } from "@/lib/types.js";
 
 // ── Helper: format relative time ──
@@ -673,14 +678,20 @@ export async function getHubProjects(
 
 	const whereConditions = [
 		isNull(proposals.archivedAt),
+		ne(proposals.status, PROPOSAL_STATUS.DRAFT),
 		or(
-			eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
-			eq(proposals.status, PROPOSAL_STATUS.APPROVED),
-			eq(proposals.status, PROPOSAL_STATUS.RETURNED),
-			eq(proposals.status, PROPOSAL_STATUS.REJECTED),
-			and(
-				eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
-				eq(proposals.bypassedRetChair, true),
+			eq(proposals.bypassedRetChair, true),
+			exists(
+				db
+					.select()
+					.from(proposalReviews)
+					.where(
+						and(
+							eq(proposalReviews.proposalId, proposals.proposalId),
+							eq(proposalReviews.reviewStage, REVIEW_STAGE.ENDORSEMENT),
+							eq(proposalReviews.decision, REVIEW_DECISION.ENDORSED),
+						),
+					),
 			),
 		),
 	];

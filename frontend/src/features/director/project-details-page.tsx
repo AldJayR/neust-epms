@@ -202,6 +202,9 @@ function ProjectOverviewCard({
 				<DetailsRow label="Department / Unit">{metadata.department}</DetailsRow>
 				<DetailsRow label="Duration">{metadata.duration}</DetailsRow>
 				<DetailsRow label="SDGs">{metadata.sdgs ?? "None"}</DetailsRow>
+				{!["Draft", "Pending Review", "Endorsed", "Approved", "Returned", "Rejected"].includes(status) && (
+					<DetailsRow label="Active MOA">{metadata.moaLinked}</DetailsRow>
+				)}
 				<DetailsRow label="Total Budget">
 					<div className="flex flex-col items-end">
 						<span className="text-sm font-semibold text-heading">
