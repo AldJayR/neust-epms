@@ -179,7 +179,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		if (isRETChair(user) && (data?.bypassedRetChair || endorsement)) {
 			return;
 		}
-		const decision = data?.status === "Endorsed" ? "Approved" : "Endorsed";
+		const decision = isDirector(user) ? "Approved" : "Endorsed";
 		await reviewMutation.mutateAsync({
 			proposalId,
 			decision,
