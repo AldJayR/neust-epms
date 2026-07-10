@@ -6,6 +6,9 @@ import {
 	mockSelectChain,
 } from "../../../test/helpers.js";
 import app from "./audit.routes.js";
+import { installApiErrorHandler } from "@/lib/errors.js";
+
+installApiErrorHandler(app);
 
 beforeEach(() => {
 	setMockUser(MOCK_USERS.superAdmin);

@@ -11,14 +11,17 @@ import proposalsApp from "./index.js";
 import projectsApp from "../projects/index.js";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { authMiddleware } from "@/middleware/auth.js";
+import { installApiErrorHandler } from "@/lib/errors.js";
 
 const propApp = new OpenAPIHono();
 propApp.use("*", authMiddleware);
 propApp.route("/", proposalsApp);
+installApiErrorHandler(propApp);
 
 const projApp = new OpenAPIHono();
 projApp.use("*", authMiddleware);
 projApp.route("/", projectsApp);
+installApiErrorHandler(projApp);
 
 describe("GET /proposals/:id/derived-state", () => {
 	beforeEach(() => {
