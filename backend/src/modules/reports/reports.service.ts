@@ -17,12 +17,7 @@ import {
 	getUserIdsByRole,
 } from "@/lib/notification.helpers.js";
 import { buildProposalScope } from "@/lib/scope-helpers.js";
-import {
-	type AuthUser,
-	PROJECT_STATUS,
-	REPORT_TYPE,
-	ROLE_NAMES,
-} from "@/lib/types.js";
+import { type AuthUser, PROJECT_STATUS, REPORT_TYPE } from "@/lib/types.js";
 import type { CreateReportSchema, PaginationQuery } from "./reports.schema.js";
 
 type CreateReportBody = z.infer<typeof CreateReportSchema>;
@@ -340,56 +335,4 @@ export async function createReport(
 			"Failed to retrieve created report",
 		);
 	return serializeReport(enriched);
-}
-
-export async function archiveReport(
-	user: AuthUser,
-	id: string,
-	ipAddress: string,
-) {
-	const [report] = await db
-		.select({
-			reportId: projectReports.reportId,
-			submittedById: projectReports.submittedById,
-			departmentId: proposals.departmentId,
-			campusId: proposals.campusId,
-		})
-		.from(projectReports)
-		.innerJoin(projects, eq(projectReports.projectId, projects.projectId))
-		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-		.where(
-			and(eq(projectReports.reportId, id), isNull(projectReports.archivedAt)),
-		)
-		.limit(1);
-	if (!report) throw new ApiError(404, "NOT_FOUND", "Report not found");
-	let allowed =
-		user.roleName === ROLE_NAMES.SUPER_ADMIN ||
-		user.roleName === ROLE_NAMES.DIRECTOR ||
-		report.submittedById === user.userId;
-	if (!allowed && user.roleName === ROLE_NAMES.RET_CHAIR)
-		allowed =
-			user.isMainCampus && user.departmentId !== null
-				? report.departmentId === user.departmentId
-				: report.campusId === user.campusId;
-	if (!allowed)
-		throw new ApiError(
-			403,
-			"FORBIDDEN",
-			"You do not have permission to archive this report",
-		);
-	const [updated] = await db
-		.update(projectReports)
-		.set({ archivedAt: new Date() })
-		.where(
-			and(eq(projectReports.reportId, id), isNull(projectReports.archivedAt)),
-		)
-		.returning();
-	if (!updated) throw new ApiError(404, "NOT_FOUND", "Report not found");
-	await insertAuditLog({
-		userId: user.userId,
-		action: `Archived project report ${id}`,
-		tableAffected: "project_reports",
-		ipAddress,
-	});
-	return { message: "Report archived" };
 }

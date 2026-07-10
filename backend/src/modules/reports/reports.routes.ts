@@ -1,17 +1,15 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { getClientIp } from "@/lib/client-ip.js";
-import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
+import { ErrorSchema } from "@/lib/schemas.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import {
 	CreateReportSchema,
 	PaginationQuery,
-	ParamId,
 	ReportListSchema,
 	ReportSchema,
 	ReportStatsSchema,
 } from "./reports.schema.js";
 import {
-	archiveReport,
 	createReport,
 	getReportStats,
 	listReports,
@@ -91,35 +89,6 @@ app.openapi(createReportRoute, async (c) => {
 	const body = c.req.valid("json");
 	const ipAddress = getClientIp(c);
 	return c.json(await createReport(user, body, ipAddress), 201);
-});
-
-const archiveRoute = createRoute({
-	method: "delete",
-	path: "/reports/{id}",
-	tags: ["Reports"],
-	summary: "Archive a project report (soft delete)",
-	security: [{ Bearer: [] }],
-	request: { params: ParamId },
-	responses: {
-		200: {
-			content: { "application/json": { schema: MessageSchema } },
-			description: "Report archived",
-		},
-		403: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Not authorized to archive this report",
-		},
-		404: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Not found",
-		},
-	},
-});
-app.openapi(archiveRoute, async (c) => {
-	const user = c.get("user");
-	const { id } = c.req.valid("param");
-	const ipAddress = getClientIp(c);
-	return c.json(await archiveReport(user, id, ipAddress), 200);
 });
 
 export default app;
