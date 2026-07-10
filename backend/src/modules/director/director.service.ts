@@ -107,24 +107,6 @@ export async function getDashboardStats(user: AuthUser) {
 		}
 	}
 
-	const [projectMetrics, underEvaluationResult] = await Promise.all([
-		db
-			.select({
-				total: sql<number>`count(*)`,
-				ongoing: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.ONGOING})`,
-				completed: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.COMPLETED})`,
-				overdue: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.OVERDUE})`,
-				pendingClosure: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.PENDING_CLOSURE})`,
-			})
-			.from(projects)
-			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-			.where(and(...projectMetricsConditions)),
-		db
-			.select({ value: count() })
-			.from(proposals)
-			.where(and(...underEvalConditions)),
-	]);
-
 	const chartConditions = [isNull(proposals.archivedAt)];
 	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
 		if (user.isMainCampus && user.departmentId !== null) {
@@ -133,39 +115,6 @@ export async function getDashboardStats(user: AuthUser) {
 			chartConditions.push(eq(proposals.campusId, user.campusId));
 		}
 	}
-
-	const chartRows = await db
-		.select({
-			label: campuses.campusName,
-			department: departments.departmentName,
-			departmentCode: departments.departmentCode,
-			value: count(),
-		})
-		.from(proposals)
-		.innerJoin(campuses, eq(proposals.campusId, campuses.campusId))
-		.innerJoin(
-			departments,
-			eq(proposals.departmentId, departments.departmentId),
-		)
-		.where(and(...chartConditions))
-		.groupBy(
-			campuses.campusName,
-			departments.departmentName,
-			departments.departmentCode,
-		);
-
-	const recentLogRows = await db
-		.select({
-			action: auditLogs.action,
-			tableAffected: auditLogs.tableAffected,
-			createdAt: auditLogs.createdAt,
-			actorName: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
-		})
-		.from(auditLogs)
-		.innerJoin(users, eq(auditLogs.userId, users.userId))
-		.where(eq(auditLogs.userId, user.userId))
-		.orderBy(desc(auditLogs.createdAt))
-		.limit(3);
 
 	const expiringMoaConditions = [
 		isNull(moas.archivedAt),
@@ -181,18 +130,72 @@ export async function getDashboardStats(user: AuthUser) {
 		}
 	}
 
-	const expiringMoaRows = await db
-		.select({
-			partnerName: partners.partnerName,
-			validUntil: moas.validUntil,
-		})
-		.from(moas)
-		.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
-		.innerJoin(projects, eq(moas.moaId, projects.moaId))
-		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-		.where(and(...expiringMoaConditions))
-		.orderBy(moas.validUntil)
-		.limit(2);
+	const [
+		projectMetrics,
+		underEvaluationResult,
+		chartRows,
+		recentLogRows,
+		expiringMoaRows,
+	] = await Promise.all([
+		db
+			.select({
+				total: sql<number>`count(*)`,
+				ongoing: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.ONGOING})`,
+				completed: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.COMPLETED})`,
+				overdue: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.OVERDUE})`,
+				pendingClosure: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.PENDING_CLOSURE})`,
+			})
+			.from(projects)
+			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+			.where(and(...projectMetricsConditions)),
+		db
+			.select({ value: count() })
+			.from(proposals)
+			.where(and(...underEvalConditions)),
+		db
+			.select({
+				label: campuses.campusName,
+				department: departments.departmentName,
+				departmentCode: departments.departmentCode,
+				value: count(),
+			})
+			.from(proposals)
+			.innerJoin(campuses, eq(proposals.campusId, campuses.campusId))
+			.innerJoin(
+				departments,
+				eq(proposals.departmentId, departments.departmentId),
+			)
+			.where(and(...chartConditions))
+			.groupBy(
+				campuses.campusName,
+				departments.departmentName,
+				departments.departmentCode,
+			),
+		db
+			.select({
+				action: auditLogs.action,
+				tableAffected: auditLogs.tableAffected,
+				createdAt: auditLogs.createdAt,
+				actorName: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
+			})
+			.from(auditLogs)
+			.innerJoin(users, eq(auditLogs.userId, users.userId))
+			.where(eq(auditLogs.userId, user.userId))
+			.orderBy(desc(auditLogs.createdAt))
+			.limit(3),
+		db
+			.select({
+				partnerName: partners.partnerName,
+				validUntil: moas.validUntil,
+			})
+			.from(moas)
+			.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
+			.innerJoin(projects, eq(moas.moaId, projects.moaId))
+			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+			.where(and(...expiringMoaConditions))
+			.orderBy(moas.validUntil)
+			.limit(2),
+	]);
 
 	return {
 		metrics: {
@@ -778,19 +781,20 @@ export async function getHubProjects(
 		.where(and(...whereConditions))
 		.orderBy(desc(proposals.createdAt));
 
-	const totalResult = await db
-		.select({ value: count() })
-		.from(proposals)
-		.innerJoin(
-			leaderMembersSubquery,
-			eq(proposals.proposalId, leaderMembersSubquery.proposalId),
-		)
-		.innerJoin(users, eq(leaderMembersSubquery.userId, users.userId))
-		.leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
-		.leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
-		.where(and(...whereConditions));
-
-	const rows = await queryBuilder.limit(limit).offset(offset);
+	const [totalResult, rows] = await Promise.all([
+		db
+			.select({ value: count() })
+			.from(proposals)
+			.innerJoin(
+				leaderMembersSubquery,
+				eq(proposals.proposalId, leaderMembersSubquery.proposalId),
+			)
+			.innerJoin(users, eq(leaderMembersSubquery.userId, users.userId))
+			.leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
+			.leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
+			.where(and(...whereConditions)),
+		queryBuilder.limit(limit).offset(offset),
+	]);
 
 	const items = rows.map((r) => ({
 		id: r.id,

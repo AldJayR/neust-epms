@@ -296,11 +296,39 @@ export async function updateProposalWithSectors(
 // ── Submit flow ──
 
 export async function validateCompleteness(proposalId: string): Promise<void> {
-	const docs = await db
-		.select({ documentId: proposalDocuments.documentId })
-		.from(proposalDocuments)
-		.where(eq(proposalDocuments.proposalId, proposalId))
-		.limit(1);
+	const [docs, members, sectors, sdgAlignments, [proposalDetails]] = await Promise.all([
+		db
+			.select({ documentId: proposalDocuments.documentId })
+			.from(proposalDocuments)
+			.where(eq(proposalDocuments.proposalId, proposalId))
+			.limit(1),
+		db
+			.select({
+				memberId: proposalMembers.memberId,
+				projectRole: proposalMembers.projectRole,
+			})
+			.from(proposalMembers)
+			.where(eq(proposalMembers.proposalId, proposalId)),
+		db
+			.select({ sectorId: proposalBeneficiaries.sectorId })
+			.from(proposalBeneficiaries)
+			.where(eq(proposalBeneficiaries.proposalId, proposalId))
+			.limit(1),
+		db
+			.select({ sdgId: proposalSdgs.sdgId })
+			.from(proposalSdgs)
+			.where(eq(proposalSdgs.proposalId, proposalId))
+			.limit(1),
+		db
+			.select({
+				targetStartDate: proposals.targetStartDate,
+				targetEndDate: proposals.targetEndDate,
+			})
+			.from(proposals)
+			.where(eq(proposals.proposalId, proposalId))
+			.limit(1),
+	]);
+
 	if (docs.length === 0) {
 		throw new ApiError(
 			400,
@@ -309,13 +337,6 @@ export async function validateCompleteness(proposalId: string): Promise<void> {
 		);
 	}
 
-	const members = await db
-		.select({
-			memberId: proposalMembers.memberId,
-			projectRole: proposalMembers.projectRole,
-		})
-		.from(proposalMembers)
-		.where(eq(proposalMembers.proposalId, proposalId));
 	if (members.length === 0) {
 		throw new ApiError(
 			400,
@@ -331,11 +352,6 @@ export async function validateCompleteness(proposalId: string): Promise<void> {
 		);
 	}
 
-	const sectors = await db
-		.select({ sectorId: proposalBeneficiaries.sectorId })
-		.from(proposalBeneficiaries)
-		.where(eq(proposalBeneficiaries.proposalId, proposalId))
-		.limit(1);
 	if (sectors.length === 0) {
 		throw new ApiError(
 			400,
@@ -344,11 +360,6 @@ export async function validateCompleteness(proposalId: string): Promise<void> {
 		);
 	}
 
-	const sdgAlignments = await db
-		.select({ sdgId: proposalSdgs.sdgId })
-		.from(proposalSdgs)
-		.where(eq(proposalSdgs.proposalId, proposalId))
-		.limit(1);
 	if (sdgAlignments.length === 0) {
 		throw new ApiError(
 			400,
@@ -356,15 +367,6 @@ export async function validateCompleteness(proposalId: string): Promise<void> {
 			"At least one Sustainable Development Goal (SDG) alignment must be specified.",
 		);
 	}
-
-	const [proposalDetails] = await db
-		.select({
-			targetStartDate: proposals.targetStartDate,
-			targetEndDate: proposals.targetEndDate,
-		})
-		.from(proposals)
-		.where(eq(proposals.proposalId, proposalId))
-		.limit(1);
 	if (!proposalDetails?.targetStartDate || !proposalDetails?.targetEndDate) {
 		throw new ApiError(
 			400,

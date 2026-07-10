@@ -44,7 +44,9 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 	const projectsList = projectsData?.items ?? [];
 	const proposalsList = proposalsData?.items ?? [];
 
-	const activeProposals = proposalsList.filter((p) => p.status !== "Approved");
+	const activeProposals = proposalsList.filter(
+		(p) => !projectsList.some((proj) => proj.proposalId === p.proposalId),
+	);
 
 	const userFullName = `${user.firstName} ${user.lastName}`;
 

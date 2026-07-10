@@ -828,17 +828,35 @@ export async function getProjectReadiness(id: string) {
 		throw new ApiError(404, "NOT_FOUND", "Project not found");
 	}
 
-	// 2. Get proposal
-	const [proposal] = await db
-		.select({
-			status: proposals.status,
-			title: proposals.title,
-			createdAt: proposals.createdAt,
-			updatedAt: proposals.updatedAt,
-		})
-		.from(proposals)
-		.where(eq(proposals.proposalId, project.proposalId))
-		.limit(1);
+	// 2. Fetch proposal, members, moa, and reporting schedule in parallel
+	const [[proposal], pMembers, [moa], [schedule]] = await Promise.all([
+		db
+			.select({
+				status: proposals.status,
+				title: proposals.title,
+				createdAt: proposals.createdAt,
+				updatedAt: proposals.updatedAt,
+			})
+			.from(proposals)
+			.where(eq(proposals.proposalId, project.proposalId))
+			.limit(1),
+		db
+			.select({ memberId: proposalMembers.memberId })
+			.from(proposalMembers)
+			.where(eq(proposalMembers.proposalId, project.proposalId)),
+		project.moaId
+			? db
+					.select({ validUntil: moas.validUntil })
+					.from(moas)
+					.where(and(eq(moas.moaId, project.moaId), isNull(moas.archivedAt)))
+					.limit(1)
+			: Promise.resolve([]),
+		db
+			.select({ scheduleId: projectReportingSchedules.scheduleId })
+			.from(projectReportingSchedules)
+			.where(eq(projectReportingSchedules.projectId, id))
+			.limit(1),
+	]);
 
 	if (!proposal) {
 		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
@@ -854,65 +872,47 @@ export async function getProjectReadiness(id: string) {
 		year: "numeric",
 	});
 
-	// Check Special Orders Uploaded
-	const pMembers = await db
-		.select({ memberId: proposalMembers.memberId })
-		.from(proposalMembers)
-		.where(eq(proposalMembers.proposalId, project.proposalId));
-
+	// 3. Fetch special orders and reporting dates in parallel
 	const memberIds = pMembers.map((m) => m.memberId);
-	let specialOrdersUploadedCount = 0;
-	if (memberIds.length > 0) {
-		const sOrders = await db
-			.select({ memberId: specialOrders.memberId })
-			.from(specialOrders)
-			.where(
-				and(
-					inArray(specialOrders.memberId, memberIds),
-					isNull(specialOrders.archivedAt),
-					sql`${specialOrders.storagePath} IS NOT NULL`,
-				),
-			);
-		specialOrdersUploadedCount = sOrders.length;
-	}
+	const [sOrders, dates] = await Promise.all([
+		memberIds.length > 0
+			? db
+					.select({ memberId: specialOrders.memberId })
+					.from(specialOrders)
+					.where(
+						and(
+							inArray(specialOrders.memberId, memberIds),
+							isNull(specialOrders.archivedAt),
+							sql`${specialOrders.storagePath} IS NOT NULL`,
+						),
+					)
+			: Promise.resolve([]),
+		schedule
+			? db
+					.select({ id: projectReportingDates.id })
+					.from(projectReportingDates)
+					.where(eq(projectReportingDates.scheduleId, schedule.scheduleId))
+			: Promise.resolve([]),
+	]);
+
+	const specialOrdersUploadedCount = sOrders.length;
 	const isSpecialOrdersComplete =
 		pMembers.length > 0 ? specialOrdersUploadedCount === pMembers.length : true;
 
 	// Check Valid MOA Assigned
 	let isMoaValid = false;
 	let moaValidUntilDate = "";
-	if (project.moaId) {
-		const [moa] = await db
-			.select({ validUntil: moas.validUntil })
-			.from(moas)
-			.where(and(eq(moas.moaId, project.moaId), isNull(moas.archivedAt)))
-			.limit(1);
-
-		if (moa) {
-			isMoaValid = new Date(moa.validUntil) > new Date();
-			moaValidUntilDate = new Date(moa.validUntil).toLocaleDateString("en-US", {
-				month: "short",
-				day: "numeric",
-				year: "numeric",
-			});
-		}
+	if (moa) {
+		isMoaValid = new Date(moa.validUntil) > new Date();
+		moaValidUntilDate = new Date(moa.validUntil).toLocaleDateString("en-US", {
+			month: "short",
+			day: "numeric",
+			year: "numeric",
+		});
 	}
 
 	// Check Reporting Schedule Established
-	const [schedule] = await db
-		.select({ scheduleId: projectReportingSchedules.scheduleId })
-		.from(projectReportingSchedules)
-		.where(eq(projectReportingSchedules.projectId, id))
-		.limit(1);
-
-	let reportingDatesCount = 0;
-	if (schedule) {
-		const dates = await db
-			.select({ id: projectReportingDates.id })
-			.from(projectReportingDates)
-			.where(eq(projectReportingDates.scheduleId, schedule.scheduleId));
-		reportingDatesCount = dates.length;
-	}
+	const reportingDatesCount = dates.length;
 	const isScheduleEstablished = reportingDatesCount > 0;
 
 	// Construct prerequisites list
