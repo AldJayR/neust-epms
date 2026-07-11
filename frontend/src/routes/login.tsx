@@ -87,6 +87,7 @@ function LoginPage() {
 			return;
 		}
 
+		queryClient.clear();
 		setCachedUser(result.user); // Cache the authenticated user on client
 
 		const isSA = isSuperAdmin(result?.user);

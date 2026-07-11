@@ -20,6 +20,9 @@ import {
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+	type ArchivedMoa,
+	type ArchivedProject,
+	type ArchivedProposal,
 	archivedMoasQueryOptions,
 	archivedProjectsQueryOptions,
 	archivedProposalsQueryOptions,
@@ -80,8 +83,10 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 			queryClient.invalidateQueries({ queryKey: ["archives", "proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["dashboard", "proposals"] });
 		},
-		onError: (err: any) => {
-			toast.error(err.message || "Failed to restore proposal");
+		onError: (err) => {
+			toast.error(
+				err instanceof Error ? err.message : "Failed to restore proposal",
+			);
 		},
 	});
 
@@ -92,8 +97,10 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 			queryClient.invalidateQueries({ queryKey: ["archives", "projects"] });
 			queryClient.invalidateQueries({ queryKey: ["dashboard", "projects"] });
 		},
-		onError: (err: any) => {
-			toast.error(err.message || "Failed to restore project");
+		onError: (err) => {
+			toast.error(
+				err instanceof Error ? err.message : "Failed to restore project",
+			);
 		},
 	});
 
@@ -104,8 +111,8 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 			queryClient.invalidateQueries({ queryKey: ["archives", "moas"] });
 			queryClient.invalidateQueries({ queryKey: ["dashboard", "moas"] });
 		},
-		onError: (err: any) => {
-			toast.error(err.message || "Failed to restore MOA");
+		onError: (err) => {
+			toast.error(err instanceof Error ? err.message : "Failed to restore MOA");
 		},
 	});
 
@@ -134,7 +141,7 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 	};
 
 	// Column definitions
-	const proposalColumns: DataTableColumnDef<any>[] = [
+	const proposalColumns: DataTableColumnDef<ArchivedProposal>[] = [
 		{
 			id: "title",
 			accessorKey: "title",
@@ -222,7 +229,7 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 		},
 	];
 
-	const projectColumns: DataTableColumnDef<any>[] = [
+	const projectColumns: DataTableColumnDef<ArchivedProject>[] = [
 		{
 			id: "title",
 			accessorKey: "title",
@@ -310,7 +317,7 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 		},
 	];
 
-	const moaColumns: DataTableColumnDef<any>[] = [
+	const moaColumns: DataTableColumnDef<ArchivedMoa>[] = [
 		{
 			id: "partner",
 			accessorKey: "partnerId",
@@ -419,7 +426,11 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 
 			<Tabs
 				value={activeTab}
-				onValueChange={(v) => setActiveTab(v as any)}
+				onValueChange={(v) => {
+					if (v === "proposals" || v === "projects" || v === "moas") {
+						setActiveTab(v);
+					}
+				}}
 				className="w-full flex flex-col gap-6"
 			>
 				<TabsList

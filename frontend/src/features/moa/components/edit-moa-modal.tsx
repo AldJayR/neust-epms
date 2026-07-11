@@ -49,12 +49,12 @@ export function EditMoaModal({
 		initialValidUntil ? new Date(initialValidUntil) : undefined,
 	);
 	const updateMutation = useMutation({
-		mutationFn: () =>
+		mutationFn: (dates: { validFrom: Date; validUntil: Date }) =>
 			updateMoaFn({
 				data: {
 					moaId,
-					validFrom: validFrom!.toISOString(),
-					validUntil: validUntil!.toISOString(),
+					validFrom: dates.validFrom.toISOString(),
+					validUntil: dates.validUntil.toISOString(),
 				},
 			}),
 		onSuccess: () => {
@@ -77,7 +77,7 @@ export function EditMoaModal({
 			toast.error("Expiration date must be after the signed from date.");
 			return;
 		}
-		updateMutation.mutate();
+		updateMutation.mutate({ validFrom, validUntil });
 	};
 
 	return (

@@ -91,7 +91,10 @@ export async function listProjects(
 			})
 			.from(projects)
 			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-			.leftJoin(leaderMembers, eq(projects.proposalId, leaderMembers.proposalId))
+			.leftJoin(
+				leaderMembers,
+				eq(projects.proposalId, leaderMembers.proposalId),
+			)
 			.leftJoin(users, eq(leaderMembers.userId, users.userId))
 			.leftJoin(
 				userMemberSubquery,
@@ -156,7 +159,10 @@ export async function getProjectDerivedState(id: string, user: AuthUser) {
 			})
 			.from(projects)
 			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-			.leftJoin(leaderMembers, eq(projects.proposalId, leaderMembers.proposalId))
+			.leftJoin(
+				leaderMembers,
+				eq(projects.proposalId, leaderMembers.proposalId),
+			)
 			.where(
 				and(
 					eq(projects.projectId, id),
@@ -174,7 +180,10 @@ export async function getProjectDerivedState(id: string, user: AuthUser) {
 			.select({ reportId: projectReports.reportId })
 			.from(projectReports)
 			.where(
-				and(eq(projectReports.projectId, id), isNull(projectReports.archivedAt)),
+				and(
+					eq(projectReports.projectId, id),
+					isNull(projectReports.archivedAt),
+				),
 			)
 			.limit(1),
 	]);
@@ -749,6 +758,35 @@ export async function activateProject(
 			"INVALID_TRANSITION",
 			"Only Approved projects can be activated",
 		);
+	}
+
+	const members = await db
+		.select({ memberId: proposalMembers.memberId })
+		.from(proposalMembers)
+		.innerJoin(proposals, eq(proposalMembers.proposalId, proposals.proposalId))
+		.innerJoin(projects, eq(projects.proposalId, proposals.proposalId))
+		.where(eq(projects.projectId, project.projectId));
+	if (members.length > 0) {
+		const uploadedOrders = await db
+			.select({ memberId: specialOrders.memberId })
+			.from(specialOrders)
+			.where(
+				and(
+					inArray(
+						specialOrders.memberId,
+						members.map((member) => member.memberId),
+					),
+					isNull(specialOrders.archivedAt),
+					isNotNull(specialOrders.storagePath),
+				),
+			);
+		if (uploadedOrders.length !== members.length) {
+			throw new ApiError(
+				400,
+				"INCOMPLETE_SPECIAL_ORDERS",
+				"Special Orders must be uploaded for every project member before activation",
+			);
+		}
 	}
 
 	// Validate MOA exists and is not expired

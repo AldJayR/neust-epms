@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { z } from "@hono/zod-openapi";
 import { and, count, desc, eq, ilike, isNull, or, type SQL } from "drizzle-orm";
 import { db } from "@/db/client.js";
@@ -17,7 +18,9 @@ import {
 	getUserIdsByRole,
 } from "@/lib/notification.helpers.js";
 import { buildProposalScope } from "@/lib/scope-helpers.js";
+import { supabase } from "@/lib/supabase.js";
 import { type AuthUser, PROJECT_STATUS, REPORT_TYPE } from "@/lib/types.js";
+import { sanitizeFilename } from "@/services/file.service.js";
 import type { CreateReportSchema, PaginationQuery } from "./reports.schema.js";
 
 type CreateReportBody = z.infer<typeof CreateReportSchema>;
@@ -342,4 +345,77 @@ export async function createReport(
 			"Failed to retrieve created report",
 		);
 	return serializeReport(enriched);
+}
+
+export async function uploadReportDocument(
+	user: AuthUser,
+	reportId: string,
+	file: File,
+	ipAddress: string,
+) {
+	const [report] = await db
+		.select({
+			reportId: projectReports.reportId,
+			projectId: projectReports.projectId,
+			submittedById: projectReports.submittedById,
+		})
+		.from(projectReports)
+		.where(
+			and(
+				eq(projectReports.reportId, reportId),
+				isNull(projectReports.archivedAt),
+			),
+		)
+		.limit(1);
+
+	if (!report) throw new ApiError(404, "NOT_FOUND", "Report not found");
+	if (report.submittedById !== user.userId) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"Only the report submitter can upload its document",
+		);
+	}
+
+	const storagePath = `reports/${report.projectId}/${reportId}_${Date.now()}_${randomUUID()}_${sanitizeFilename(file.name)}`;
+	const { error: uploadError } = await supabase.storage
+		.from("documents")
+		.upload(storagePath, file, { contentType: file.type, upsert: false });
+	if (uploadError) {
+		throw new ApiError(
+			400,
+			"UPLOAD_FAILED",
+			`Supabase storage upload failed: ${uploadError.message}`,
+		);
+	}
+
+	try {
+		const [updated] = await db
+			.update(projectReports)
+			.set({ storagePath })
+			.where(eq(projectReports.reportId, reportId))
+			.returning({
+				reportId: projectReports.reportId,
+				storagePath: projectReports.storagePath,
+			});
+		if (!updated)
+			throw new ApiError(
+				500,
+				"UPDATE_FAILED",
+				"Failed to record report document",
+			);
+		await insertAuditLog({
+			userId: user.userId,
+			action: `Uploaded document for project report ${reportId}`,
+			tableAffected: "project_reports",
+			ipAddress,
+		});
+		return updated;
+	} catch (error) {
+		await supabase.storage
+			.from("documents")
+			.remove([storagePath])
+			.catch(() => undefined);
+		throw error;
+	}
 }

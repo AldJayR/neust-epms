@@ -12,6 +12,28 @@ const archiveParamsSchema = z.object({
 	limit: z.number(),
 });
 
+export interface ArchivedProposal {
+	proposalId: string;
+	title: string;
+	extensionCategory: string;
+	archivedAt: string | null;
+}
+
+export interface ArchivedProject {
+	projectId: string;
+	title: string;
+	projectStatus: string;
+	archivedAt: string | null;
+}
+
+export interface ArchivedMoa {
+	moaId: string;
+	partnerId: string | null;
+	validFrom: string;
+	validUntil: string;
+	archivedAt: string | null;
+}
+
 export const getArchivedProposalsFn = createServerFn({ method: "GET" })
 	.validator(archiveParamsSchema)
 	.handler(async ({ data: { page, limit } }) => {
@@ -35,7 +57,10 @@ export const getArchivedProposalsFn = createServerFn({ method: "GET" })
 			throw new Error(message);
 		}
 
-		return (await response.json()) as { items: any[]; total: number };
+		return (await response.json()) as {
+			items: ArchivedProposal[];
+			total: number;
+		};
 	});
 
 export const getArchivedProjectsFn = createServerFn({ method: "GET" })
@@ -61,7 +86,10 @@ export const getArchivedProjectsFn = createServerFn({ method: "GET" })
 			throw new Error(message);
 		}
 
-		return (await response.json()) as { items: any[]; total: number };
+		return (await response.json()) as {
+			items: ArchivedProject[];
+			total: number;
+		};
 	});
 
 export const getArchivedMoasFn = createServerFn({ method: "GET" })
@@ -87,7 +115,7 @@ export const getArchivedMoasFn = createServerFn({ method: "GET" })
 			throw new Error(message);
 		}
 
-		return (await response.json()) as { items: any[]; total: number };
+		return (await response.json()) as { items: ArchivedMoa[]; total: number };
 	});
 
 export function archivedProposalsQueryOptions(params: {

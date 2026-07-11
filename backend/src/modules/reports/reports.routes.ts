@@ -13,6 +13,7 @@ import {
 	createReport,
 	getReportStats,
 	listReports,
+	uploadReportDocument,
 } from "./reports.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
@@ -89,6 +90,43 @@ app.openapi(createReportRoute, async (c) => {
 	const body = c.req.valid("json");
 	const ipAddress = getClientIp(c);
 	return c.json(await createReport(user, body, ipAddress), 201);
+});
+
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+app.post("/reports/:id/document", async (c) => {
+	const user = c.get("user");
+	const contentLength = Number(c.req.header("content-length") ?? 0);
+	if (contentLength > MAX_UPLOAD_BYTES) {
+		return c.json(
+			{ error: { code: "FILE_TOO_LARGE", message: "File exceeds 10MB limit" } },
+			413,
+		);
+	}
+	const formData = await c.req.formData();
+	const file = formData.get("file");
+	if (!(file instanceof File)) throw new Error("A PDF file is required");
+	if (file.size <= 0 || file.type !== "application/pdf") {
+		return c.json(
+			{
+				error: {
+					code: "INVALID_FILE",
+					message: "A non-empty PDF file is required",
+				},
+			},
+			422,
+		);
+	}
+	if (file.size > MAX_UPLOAD_BYTES) {
+		return c.json(
+			{ error: { code: "FILE_TOO_LARGE", message: "File exceeds 10MB limit" } },
+			413,
+		);
+	}
+	return c.json(
+		await uploadReportDocument(user, c.req.param("id"), file, getClientIp(c)),
+		201,
+	);
 });
 
 export default app;

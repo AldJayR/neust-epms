@@ -32,9 +32,9 @@ import {
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
 	type ProjectStatus,
-	ROLE_NAMES,
-	REVIEW_STAGE,
 	REVIEW_DECISION,
+	REVIEW_STAGE,
+	ROLE_NAMES,
 } from "@/lib/types.js";
 
 // ── Helper: format relative time ──
@@ -790,7 +790,10 @@ export async function getHubProjects(
 				eq(proposals.proposalId, leaderMembersSubquery.proposalId),
 			)
 			.innerJoin(users, eq(leaderMembersSubquery.userId, users.userId))
-			.leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
+			.leftJoin(
+				departments,
+				eq(proposals.departmentId, departments.departmentId),
+			)
 			.leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
 			.where(and(...whereConditions)),
 		queryBuilder.limit(limit).offset(offset),

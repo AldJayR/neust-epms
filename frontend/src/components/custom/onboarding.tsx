@@ -11,6 +11,8 @@ import {
 import type { AuthUser } from "@/lib/auth";
 import { completeOnboardingFn } from "@/lib/auth.functions";
 
+const STEP_KEYS = ["first", "second", "third", "fourth", "fifth"];
+
 interface OnboardingProps {
 	user: AuthUser | null;
 }
@@ -168,9 +170,9 @@ export function Onboarding({ user }: OnboardingProps) {
 					</Button>
 
 					<div className="flex gap-1">
-						{Array.from({ length: stepsCount }).map((_, idx) => (
+						{STEP_KEYS.slice(0, stepsCount).map((key, idx) => (
 							<div
-								key={idx}
+								key={key}
 								className={`size-1.5 rounded-full transition-all duration-300 ${
 									step === idx + 1 ? "bg-brand-primary w-3" : "bg-muted"
 								}`}

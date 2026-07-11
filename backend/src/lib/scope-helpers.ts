@@ -1,6 +1,6 @@
 import { eq, isNull, type SQL } from "drizzle-orm";
 import { proposals } from "@/db/schema/proposals.js";
-import { ROLE_NAMES, type AuthUser } from "@/lib/types.js";
+import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 
 /**
  * Build the role-based scope clause for a user on the proposals table.

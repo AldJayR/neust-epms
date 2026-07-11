@@ -145,14 +145,18 @@ export async function listMoas(opts: {
 				archivedAt: moas.archivedAt,
 			})
 			.from(moas)
-			.where(showArchived ? isNotNull(moas.archivedAt) : isNull(moas.archivedAt))
+			.where(
+				showArchived ? isNotNull(moas.archivedAt) : isNull(moas.archivedAt),
+			)
 			.orderBy(desc(moas.validUntil))
 			.limit(limit)
 			.offset(offset),
 		db
 			.select({ value: count() })
 			.from(moas)
-			.where(showArchived ? isNotNull(moas.archivedAt) : isNull(moas.archivedAt)),
+			.where(
+				showArchived ? isNotNull(moas.archivedAt) : isNull(moas.archivedAt),
+			),
 	]);
 	const total = Number(totalResult?.value ?? 0);
 
@@ -192,11 +196,7 @@ export async function getMoaById(id: string, user: AuthUser) {
 	]);
 
 	if (!linked) {
-		throw new ApiError(
-			403,
-			"FORBIDDEN",
-			"You do not have access to this MOA",
-		);
+		throw new ApiError(403, "FORBIDDEN", "You do not have access to this MOA");
 	}
 
 	if (!row) {
@@ -272,11 +272,7 @@ export async function getLinkedProjects(id: string, user: AuthUser) {
 	]);
 
 	if (!linked) {
-		throw new ApiError(
-			403,
-			"FORBIDDEN",
-			"You do not have access to this MOA",
-		);
+		throw new ApiError(403, "FORBIDDEN", "You do not have access to this MOA");
 	}
 
 	if (!moaExists) {

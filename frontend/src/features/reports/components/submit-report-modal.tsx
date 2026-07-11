@@ -39,7 +39,10 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { submitReportFn } from "@/lib/dashboard.functions";
+import {
+	submitReportFn,
+	uploadReportDocumentFn,
+} from "@/lib/dashboard.functions";
 import { facultyProjectsQueryOptions } from "@/lib/faculty.functions";
 
 interface SubmitReportModalProps {
@@ -144,8 +147,10 @@ export function SubmitReportModal({
 			const isoEnd = periodEnd ? new Date(periodEnd).toISOString() : undefined;
 
 			if (reportType === "Progress") {
+				const document = progressFile;
+				if (!document) return;
 				// Submit progress report
-				await submitReportFn({
+				const report = await submitReportFn({
 					data: {
 						projectId: selectedProjectId,
 						reportType: "Progress",
@@ -154,10 +159,17 @@ export function SubmitReportModal({
 						periodEnd: isoEnd,
 					},
 				});
+				const formData = new FormData();
+				formData.set("reportId", report.reportId);
+				formData.set("file", document);
+				await uploadReportDocumentFn({ data: formData });
 				toast.success("Progress Report submitted successfully!");
 			} else {
+				const finalDocument = finalAccFile;
+				const terminalDocument = terminalFile;
+				if (!finalDocument || !terminalDocument) return;
 				// Submit two reports for project closure (Final Accomplishment and Terminal)
-				await submitReportFn({
+				const finalReport = await submitReportFn({
 					data: {
 						projectId: selectedProjectId,
 						reportType: "Final Accomplishment",
@@ -166,7 +178,7 @@ export function SubmitReportModal({
 						periodEnd: isoEnd,
 					},
 				});
-				await submitReportFn({
+				const terminalReport = await submitReportFn({
 					data: {
 						projectId: selectedProjectId,
 						reportType: "Terminal",
@@ -175,6 +187,16 @@ export function SubmitReportModal({
 						periodEnd: isoEnd,
 					},
 				});
+				const finalFormData = new FormData();
+				finalFormData.set("reportId", finalReport.reportId);
+				finalFormData.set("file", finalDocument);
+				const terminalFormData = new FormData();
+				terminalFormData.set("reportId", terminalReport.reportId);
+				terminalFormData.set("file", terminalDocument);
+				await Promise.all([
+					uploadReportDocumentFn({ data: finalFormData }),
+					uploadReportDocumentFn({ data: terminalFormData }),
+				]);
 				toast.success("Project Closure reports submitted successfully!");
 			}
 

@@ -296,38 +296,39 @@ export async function updateProposalWithSectors(
 // ── Submit flow ──
 
 export async function validateCompleteness(proposalId: string): Promise<void> {
-	const [docs, members, sectors, sdgAlignments, [proposalDetails]] = await Promise.all([
-		db
-			.select({ documentId: proposalDocuments.documentId })
-			.from(proposalDocuments)
-			.where(eq(proposalDocuments.proposalId, proposalId))
-			.limit(1),
-		db
-			.select({
-				memberId: proposalMembers.memberId,
-				projectRole: proposalMembers.projectRole,
-			})
-			.from(proposalMembers)
-			.where(eq(proposalMembers.proposalId, proposalId)),
-		db
-			.select({ sectorId: proposalBeneficiaries.sectorId })
-			.from(proposalBeneficiaries)
-			.where(eq(proposalBeneficiaries.proposalId, proposalId))
-			.limit(1),
-		db
-			.select({ sdgId: proposalSdgs.sdgId })
-			.from(proposalSdgs)
-			.where(eq(proposalSdgs.proposalId, proposalId))
-			.limit(1),
-		db
-			.select({
-				targetStartDate: proposals.targetStartDate,
-				targetEndDate: proposals.targetEndDate,
-			})
-			.from(proposals)
-			.where(eq(proposals.proposalId, proposalId))
-			.limit(1),
-	]);
+	const [docs, members, sectors, sdgAlignments, [proposalDetails]] =
+		await Promise.all([
+			db
+				.select({ documentId: proposalDocuments.documentId })
+				.from(proposalDocuments)
+				.where(eq(proposalDocuments.proposalId, proposalId))
+				.limit(1),
+			db
+				.select({
+					memberId: proposalMembers.memberId,
+					projectRole: proposalMembers.projectRole,
+				})
+				.from(proposalMembers)
+				.where(eq(proposalMembers.proposalId, proposalId)),
+			db
+				.select({ sectorId: proposalBeneficiaries.sectorId })
+				.from(proposalBeneficiaries)
+				.where(eq(proposalBeneficiaries.proposalId, proposalId))
+				.limit(1),
+			db
+				.select({ sdgId: proposalSdgs.sdgId })
+				.from(proposalSdgs)
+				.where(eq(proposalSdgs.proposalId, proposalId))
+				.limit(1),
+			db
+				.select({
+					targetStartDate: proposals.targetStartDate,
+					targetEndDate: proposals.targetEndDate,
+				})
+				.from(proposals)
+				.where(eq(proposals.proposalId, proposalId))
+				.limit(1),
+		]);
 
 	if (docs.length === 0) {
 		throw new ApiError(

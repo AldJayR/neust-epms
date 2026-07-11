@@ -1,5 +1,8 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
+const METRIC_KEYS = ["first", "second", "third", "fourth", "fifth"];
+const ROW_KEYS = ["first", "second", "third", "fourth", "fifth"];
+
 interface PageSkeletonProps {
 	title: string;
 	actionText?: string;
@@ -24,9 +27,9 @@ export function PageSkeleton({
 			{/* Metric Cards */}
 			{metricsCount > 0 && (
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-					{Array.from({ length: metricsCount }).map((_, i) => (
+					{METRIC_KEYS.slice(0, metricsCount).map((key) => (
 						<div
-							key={i}
+							key={key}
 							className="flex flex-col gap-3 rounded-xl border border-border bg-card p-6 shadow-sm"
 						>
 							<Skeleton className="h-4 w-24 rounded" />
@@ -45,20 +48,20 @@ export function PageSkeleton({
 				</div>
 				{/* Headers */}
 				<div className="flex gap-4 border-b border-border pb-3 pt-2">
-					{columnWidths.map((width, idx) => (
-						<div key={idx} className={width}>
+					{columnWidths.map((width) => (
+						<div key={`header-${width}`} className={width}>
 							<Skeleton className="h-4 w-[75%] rounded" />
 						</div>
 					))}
 				</div>
 				{/* Rows */}
-				{Array.from({ length: 5 }).map((_, rowIdx) => (
+				{ROW_KEYS.map((rowKey) => (
 					<div
-						key={rowIdx}
+						key={rowKey}
 						className="flex gap-4 py-4 border-b border-border/40"
 					>
-						{columnWidths.map((width, colIdx) => (
-							<div key={colIdx} className={width}>
+						{columnWidths.map((width) => (
+							<div key={`cell-${width}`} className={width}>
 								<Skeleton className="h-4 w-[85%] rounded" />
 							</div>
 						))}

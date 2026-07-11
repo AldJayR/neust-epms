@@ -56,29 +56,30 @@ export async function checkPassword(password: string): Promise<boolean> {
 }
 
 export async function registerUser(body: RegisterUserBody, ipAddress: string) {
-	const [[existing], [duplicateName], compromised, [facultyRole]] = await Promise.all([
-		db
-			.select({ userId: users.userId })
-			.from(users)
-			.where(eq(users.email, body.email))
-			.limit(1),
-		db
-			.select({ userId: users.userId })
-			.from(users)
-			.where(
-				and(
-					ilike(users.firstName, body.firstName.trim()),
-					ilike(users.lastName, body.lastName.trim()),
-				),
-			)
-			.limit(1),
-		isPasswordCompromised(body.password),
-		db
-			.select({ roleId: roles.roleId })
-			.from(roles)
-			.where(eq(roles.roleName, ROLE_NAMES.FACULTY))
-			.limit(1),
-	]);
+	const [[existing], [duplicateName], compromised, [facultyRole]] =
+		await Promise.all([
+			db
+				.select({ userId: users.userId })
+				.from(users)
+				.where(eq(users.email, body.email))
+				.limit(1),
+			db
+				.select({ userId: users.userId })
+				.from(users)
+				.where(
+					and(
+						ilike(users.firstName, body.firstName.trim()),
+						ilike(users.lastName, body.lastName.trim()),
+					),
+				)
+				.limit(1),
+			isPasswordCompromised(body.password),
+			db
+				.select({ roleId: roles.roleId })
+				.from(roles)
+				.where(eq(roles.roleName, ROLE_NAMES.FACULTY))
+				.limit(1),
+		]);
 
 	if (existing) {
 		throw new ApiError(400, "USER_EXISTS", "Email already registered");

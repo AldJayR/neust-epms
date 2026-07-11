@@ -751,6 +751,33 @@ export const submitReportFn = createServerFn({ method: "POST" })
 		return (await response.json()) as ReportItem;
 	});
 
+export const uploadReportDocumentFn = createServerFn({ method: "POST" })
+	.validator((data: FormData) => {
+		const reportId = data.get("reportId");
+		const file = data.get("file");
+		if (typeof reportId !== "string" || !reportId || !(file instanceof File)) {
+			throw new Error("A report ID and PDF file are required");
+		}
+		if (file.type !== "application/pdf")
+			throw new Error("Only PDF documents are allowed");
+		return data;
+	})
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("Faculty", "RET Chair", "Director");
+		const token = await getValidAccessToken();
+		const reportId = data.get("reportId") as string;
+		const response = await fetch(`${API_BASE}/reports/${reportId}/document`, {
+			method: "POST",
+			headers: { Authorization: `Bearer ${token}` },
+			body: data,
+		});
+		if (!response.ok)
+			throw new Error(
+				await getErrorMessage(response, "Failed to upload report document"),
+			);
+		return (await response.json()) as { reportId: string; storagePath: string };
+	});
+
 // ── Transition Project Status ──
 export const transitionProjectFn = createServerFn({ method: "POST" })
 	.validator(

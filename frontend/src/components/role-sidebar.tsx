@@ -1,4 +1,5 @@
 import type { useRender } from "@base-ui/react/use-render";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, type LinkProps } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronRight, Loader2, LogOut, type LucideIcon } from "lucide-react";
@@ -73,12 +74,14 @@ export function RoleSidebar({
 	const roleLabel = user ? user.roleName : fallbackRole;
 
 	const logout = useServerFn(logoutFn);
+	const queryClient = useQueryClient();
 	const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
 	const handleLogout = async () => {
 		setIsLoggingOut(true);
 		try {
 			clearAuthCache(); // Clear the client-side auth cache
+			queryClient.clear();
 			await logout();
 			// Hard navigation to avoid SSR flash during SPA redirect
 			window.location.href = "/login";

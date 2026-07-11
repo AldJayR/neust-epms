@@ -144,7 +144,9 @@ export function ActivateProjectWizard({
 	function handleSubmit() {
 		if (!selectedMoaId || !frequency) return;
 
-		const validDueDates = dueDates.filter((d) => d.dueDate);
+		const validDueDates = dueDates.filter(
+			(d): d is DueDateEntry & { dueDate: Date } => d.dueDate !== null,
+		);
 		if (validDueDates.length === 0) {
 			toast.error("Please add at least one due date");
 			return;
@@ -157,7 +159,7 @@ export function ActivateProjectWizard({
 				reportingFrequency: frequency,
 				dueDates: validDueDates.map((d) => ({
 					reportType: d.reportType,
-					dueDate: d.dueDate!.toISOString(),
+					dueDate: d.dueDate.toISOString(),
 				})),
 			},
 		});

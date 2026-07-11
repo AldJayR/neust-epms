@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Download } from "lucide-react";
-import { createContext, useContext, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useRef, useState } from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
 import { PdfViewer, type PdfViewerRef } from "@/components/pdf-viewer";
@@ -163,17 +163,15 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		},
 	});
 
-	const isReviewer = isDirector(user) || isRETChair(user);
+	const isReviewable = isRETChair(user)
+		? data?.status === "Pending Review" &&
+			!data.bypassedRetChair &&
+			!endorsement
+		: isDirector(user) &&
+			(data?.status === "Endorsed" ||
+				(data?.status === "Pending Review" && data.bypassedRetChair));
 
-	const isReviewable =
-		isReviewer &&
-		(data?.status === "Endorsed" || data?.status === "Pending Review") &&
-		!(isRETChair(user) && (data?.bypassedRetChair || endorsement));
-
-	const canAnnotate =
-		isReviewer &&
-		(data?.status === "Endorsed" || data?.status === "Pending Review") &&
-		!(isRETChair(user) && (data?.bypassedRetChair || endorsement));
+	const canAnnotate = isReviewable;
 
 	const handleApprove = async (comments?: string) => {
 		if (isRETChair(user) && (data?.bypassedRetChair || endorsement)) {
@@ -213,32 +211,21 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		});
 	};
 
-	const contextValue = useMemo(() => {
-		if (!data) return null;
-		return {
-			data,
-			endorsement,
-			activeAttachmentId,
-			setActiveAttachmentId,
-			isReviewable,
-			handleDeny,
-			handleReject,
-			handleApprove,
-			isPending: reviewMutation.isPending,
-			isRET: isRETChair(user),
-			bypassedRetChair: data.bypassedRetChair,
-		};
-	}, [
-		data,
-		endorsement,
-		activeAttachmentId,
-		isReviewable,
-		handleDeny,
-		handleReject,
-		handleApprove,
-		reviewMutation.isPending,
-		user,
-	]);
+	const contextValue = data
+		? {
+				data,
+				endorsement,
+				activeAttachmentId,
+				setActiveAttachmentId,
+				isReviewable,
+				handleDeny,
+				handleReject,
+				handleApprove,
+				isPending: reviewMutation.isPending,
+				isRET: isRETChair(user),
+				bypassedRetChair: data.bypassedRetChair,
+			}
+		: null;
 
 	if (isLoading) {
 		return <ProposalReviewSkeleton />;

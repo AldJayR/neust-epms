@@ -6,10 +6,7 @@ import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import { requireRole } from "@/middleware/rbac.js";
 
 import { ParamId, TransitionSchema } from "./projects.schema.js";
-import {
-	closeProject,
-	transitionProjectStatus,
-} from "./projects.service.js";
+import { closeProject, transitionProjectStatus } from "./projects.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 

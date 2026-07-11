@@ -202,7 +202,14 @@ function ProjectOverviewCard({
 				<DetailsRow label="Department / Unit">{metadata.department}</DetailsRow>
 				<DetailsRow label="Duration">{metadata.duration}</DetailsRow>
 				<DetailsRow label="SDGs">{metadata.sdgs ?? "None"}</DetailsRow>
-				{!["Draft", "Pending Review", "Endorsed", "Approved", "Returned", "Rejected"].includes(status) && (
+				{![
+					"Draft",
+					"Pending Review",
+					"Endorsed",
+					"Approved",
+					"Returned",
+					"Rejected",
+				].includes(status) && (
 					<DetailsRow label="Active MOA">{metadata.moaLinked}</DetailsRow>
 				)}
 				<DetailsRow label="Total Budget">
@@ -309,9 +316,13 @@ function ProjectOverviewCard({
 														size="sm"
 														variant="outline"
 														className="h-7 text-xs"
-														onClick={() =>
-															handleViewSO(member.specialOrder!.specialOrderId)
-														}
+														onClick={() => {
+															if (member.specialOrder) {
+																handleViewSO(
+																	member.specialOrder.specialOrderId,
+																);
+															}
+														}}
 													>
 														<Eye className="mr-1 size-3" />
 														View
@@ -589,7 +600,7 @@ export function ProjectDetailsPage({
 	const isAllowedToReadProposal =
 		currentUserRole === "Director" ||
 		currentUserRole === "RET Chair" ||
-		(data.members && data.members.some((m) => m.userId === currentUserId));
+		data.members?.some((m) => m.userId === currentUserId);
 
 	const isProjectLeader =
 		data.members?.some(

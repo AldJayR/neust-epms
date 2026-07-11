@@ -242,13 +242,7 @@ export function UsersPage({
 				},
 			}),
 		],
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[
-			setViewingUser,
-			setEditingUser,
-			setDeactivatingUser,
-			updateStatusMutation.isPending,
-		],
+		[updateStatusMutation.isPending, updateStatusMutation.mutate],
 	);
 
 	return (

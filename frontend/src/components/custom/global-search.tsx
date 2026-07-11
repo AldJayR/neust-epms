@@ -1,6 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ClipboardCheck, Clock, CornerDownLeft, FileText, FolderOpen, Handshake, Search, User } from "lucide-react";
+import {
+	ClipboardCheck,
+	Clock,
+	CornerDownLeft,
+	FileText,
+	FolderOpen,
+	Handshake,
+	Search,
+	User,
+} from "lucide-react";
 import * as React from "react";
 import {
 	Command,
@@ -226,7 +235,9 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 											<div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
 												<Clock className="size-4" />
 											</div>
-											<span className="flex-1 font-medium text-sm truncate">{r.query}</span>
+											<span className="flex-1 font-medium text-sm truncate">
+												{r.query}
+											</span>
 											<span className="rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
 												{TYPE_LABELS[r.type]}
 											</span>
@@ -245,11 +256,18 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 												onSelect={() => goTo(item)}
 												className="flex items-center gap-3 px-3 py-2.5"
 											>
-												<div className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg", TYPE_BG_CLASSES[item.type])}>
+												<div
+													className={cn(
+														"flex size-8 shrink-0 items-center justify-center rounded-lg",
+														TYPE_BG_CLASSES[item.type],
+													)}
+												>
 													{TYPE_ICONS[item.type]}
 												</div>
 												<div className="flex min-w-0 flex-1 flex-col gap-0.5">
-													<span className="truncate font-medium text-foreground text-sm leading-none">{item.title}</span>
+													<span className="truncate font-medium text-foreground text-sm leading-none">
+														{item.title}
+													</span>
 													{item.subtitle && (
 														<span className="truncate text-xs text-muted-foreground">
 															{item.subtitle}

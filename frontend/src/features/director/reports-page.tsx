@@ -268,7 +268,7 @@ export function ReportsPage() {
 		);
 
 		return baseColumns;
-	}, [isRET, isFaculty, userFullName]);
+	}, [isRET]);
 
 	const progressReportSequences = useMemo(() => {
 		const progressByProject: Record<string, typeof reports> = {};
@@ -396,7 +396,7 @@ export function ReportsPage() {
 				),
 			}),
 		],
-		[progressReportSequences, setIsSubmitModalOpen],
+		[progressReportSequences],
 	);
 
 	const columnsToUse = isFaculty ? facultyColumns : columns;
@@ -408,7 +408,7 @@ export function ReportsPage() {
 				title={<h1 className="text-2xl font-semibold text-heading">Reports</h1>}
 				actions={
 					<div className="flex items-center gap-3">
-						{isFaculty && (
+						{(isFaculty || isRET) && (
 							<BrandButton
 								className="gap-2"
 								onClick={() => setIsSubmitModalOpen(true)}
@@ -518,7 +518,7 @@ export function ReportsPage() {
 				ariaLabel="Reports"
 			/>
 
-			{isFaculty && (
+			{(isFaculty || isRET) && (
 				<SubmitReportModal
 					open={isSubmitModalOpen}
 					onOpenChange={setIsSubmitModalOpen}

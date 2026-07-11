@@ -1,0 +1,113 @@
+[33m20a75d8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mrefactor/backend[m[33m, [m[1;31morigin/refactor/backend[m[33m)[m perf(backend): remove request-path bottlenecks
+[33m33f4e43[m perf(auth): optimize login and logout endpoints using cache resolution, async logging, and parallel execution
+[33mfab3135[m perf(auth): parallelize validation checks and external API queries in registerUser endpoint
+[33m7cf64e9[m perf(backend): parallelize access validation and query executions in MOA service endpoints
+[33m22260f4[m perf(backend): parallelize queries in Action Center, listProposals, listProjects, and project derived-state endpoints
+[33m6cc1610[m perf(backend): parallelize db queries with Promise.all and fix project duplication in Faculty Hub
+[33m8d2355f[m fix(frontend): override Combobox popover gradient styling and empty state bug
+[33m2a3c292[m fix(projects): allow activation when MOA/schedule are pending
+[33md9b8408[m fix(frontend): send Approved decision for Director review on bypassed proposals
+[33m1fbb4e9[m fix(db): drop unique constraint on proposal_reviews
+[33m29fed4f[m feat(director): restrict hub proposals & add Active MOA row
+[33ma1ea885[m fix(api): enforce critical frontend-backend contracts
+[33m71de9d7[m fix(notifications): change read-all route from POST to PATCH
+[33mc968fb4[m fix(notifications): change read-all route from POST to PATCH
+[33m7ffcc7b[m fix(projects): remove unused imports after dead route deletion
+[33m88755ac[m chore(projects): remove dead create and link-moa routes
+[33m36e8f0f[m chore(director): remove dead GET /director/projects/{proposalId} route
+[33m088e497[m chore(special-orders): remove dead JSON create/update routes
+[33mca28da9[m chore(moas): remove dead POST /moas route (JSON create)
+[33mf64e20c[m chore(proposals): remove dead GET /proposals/metadata/sectors route
+[33m0b619e3[m chore(auth): remove dead POST /auth/users route
+[33m4ba10ab[m chore(reports): remove dead DELETE /reports/{id} route
+[33m32247e8[m test: install global error handler in 3 route test files
+[33m3f13ef0[m refactor: remove redundant installApiErrorHandler from route files
+[33m9064d6c[m feat(lib): extract shared getLeaderSubquery to lib/leader-subquery.ts
+[33mc163fb3[m refactor: replace duplicated scoping logic with shared scope-helpers
+[33m9c78038[m feat(lib): extract shared role-based proposal scoping logic
+[33me5f7586[m test(audit): add missing audit route characterization tests
+[33m76bcdce[m docs(plans): record fourth sprint three batch
+[33m792330c[m refactor(modules): add barrels for small modules
+[33mcd9b2de[m refactor(audit): split routes schemas and service
+[33mfd1c23f[m docs(plans): record third sprint three batch
+[33m49d136c[m refactor(settings): split routes schemas and service
+[33ma6fae5e[m refactor(notifications): split routes schemas and service
+[33m3882530[m test(notifications): cover existing notification routes
+[33ma57ece6[m docs(plans): record second sprint three batch
+[33me6912b3[m refactor(search): split routes schemas and service
+[33m3362591[m test(search): cover existing search routes
+[33m08bc2f5[m refactor(members): split routes schemas and service
+[33m07c0b1c[m docs(plans): record first sprint three batch
+[33m4eeeb8d[m refactor(reports): isolate reporting workflows
+[33m22bc44c[m refactor(storage,special-orders): split route concerns
+[33m371b3ee[m refactor(auth,admin): split routes into service layers
+[33m636f60a[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m fix(search): secure /search endpoints with authMiddleware to prevent unauthenticated crashes
+[33me90971d[m fix: scope middlewares, secure base paths, and update archives UX copy
+[33m5ea11bd[m style(search): restore border, enhance command search menu layout, align search icon
+[33m06bda21[m fix(projects): scope sub-route middleware to projects prefix to prevent global bleeding
+[33mdc75a7d[m docs: add Sprint 3 task details to master refactor plan
+[33m1445325[m docs: mark Sprint 2 backend refactoring complete
+[33m2c35a36[m refactor: delete old routes/ dir, move test files, final cleanup
+[33m9a2afbe[m docs: mark Task 5 complete in sprint plan
+[33m504e643[m refactor(moas): extract moas module with service layer
+[33m12a7665[m fix(action-center): remove dead deriveOptions param, add projectId dedup
+[33m6d10630[m refactor(action-center): extract action-center to schema + service + thin route
+[33m1d2279e[m fix(projects): move derived-state logic to service, add departmentCode to schema
+[33m9890af8[m refactor(projects): split projects routes into sub-routes + service + schema
+[33m53da159[m refactor(modules): split proposals into 4 sub-routes + service + schema
+[33m6c53e1a[m refactor(director): extract service layer and split into sub-routes
+[33m71ef413[m docs: update refactor plan with Sprint 2 analysis and write self-contained sprint 2 plan
+[33m93fd48c[m docs: mark sprint 1 as completed with summary
+[33m1ee716f[m biome: applied biome check formatting to frontend
+[33m3268a29[m biome: applied biome check formatting
+[33m8cf4aa8[m refactor(backend): normalize all imports to use @/ path alias
+[33mca04f69[m refactor(backend): extract shared lib/services and modernize tsconfig
+[33m8bcef6f[m docs: add domain module refactor implementation plan
+[33m10cd51e[m feat(search): add global search palette with Postgres full-text search
+[33m8fc9304[m fix(onboarding): correct role-specific messages (move MOAs to Director, drop institutional settings)
+[33m3c6605b[m feat(archives): implement compliance archives and restore flows
+[33mfb8e757[m fix(details-page): add nativeButton={false} to AttachmentAction links
+[33m636a648[m ux(proposal-review): create and integrate 1:1 proposal review loading skeleton
+[33mac59c7d[m ux(director): stabilize confirm dialog loading state and add toast feedback
+[33m568bf76[m refactor(frontend): implement modern React 19 patterns and code audit cleanup
+[33m71afa26[m fix: replace as any casts with proper ProposalStatus/ProjectStatus type narrowing
+[33mb3f0a79[m fix: keep pdf toolbar visible, hide annotate on approved proposals, update dashboard
+[33mcd34715[m fix: resolve PostgresError import, stepper reactivity, and UI polish
+[33m5487788[m biome: applied format and lint changes
+[33m0c8215d[m feat(ux): implement global ux heuristics remediation and onboarding persistence
+[33m7c3a7bb[m feat: add Zod validation error handler to global error interceptor
+[33mbdbca14[m fix: normalize notification type casing to lowercase
+[33m5326a3b[m fix: use standardized ApiError for project details 404 response
+[33m97ddcf8[m fix: removed edit button for states
+[33mc1541a0[m fix: include sectorNames in proposal update flow so editing a draft preserves beneficiary sectors
+[33m941f70e[m feat: add target beneficiary sector multi-tag input to proposal creation
+[33m44efa17[m fix: Save as Draft button shows 'Saving...' instead of triggering 'Submitting...' on the Submit for Review button
+[33m2e2f52c[m feat: enrich Action Center Monitoring tab with graduated report urgency and blocker details
+[33m29e1de0[m fix: sequential report submission enforcement and anchor style override
+[33m6df1d93[m fix: readiness and reporting-schedule routes accept proposalId or projectId via or() query
+[33mbb4d901[m fix: rename Active Project to Ongoing in status descriptions
+[33ma424786[m fix: deduplicate faculty dashboard by filtering proposals that already have a project
+[33me569de1[m revert: restore stacked Action Center above MetricCards layout on all dashboards
+[33mf51f197[m fix: set nativeButton={false} on action center Link buttons to suppress Base UI warning
+[33m81a16c4[m fix: use unique dateId as React key for report items in action center
+[33m016c336[m fix: null-safe campusId in CreateProposalModal defaults for RET Chair/Faculty
+[33mae87927[m fix: de-AI-slop UI components and fix project details UUID routing bug
+[33mfe6711e[m fix: always create proposals as Draft, enforce completeness via submit route
+[33meee86e0[m feat(ux): implement unified action center, project readiness, draft saving, and reporting schedule
+[33ma4ce325[m fix: date serialization and MOA linked projects returning wrong ID
+[33m5cb472c[m docs: add UX research-driven improvements plan and UX research artifacts
+[33m0be040e[m feat: add audit logging for audit log access
+[33m6264a2c[m feat: implement Phase 3 - reject button, edit for pending/endorsed, remove withdrawal
+[33m326875d[m feat: implement Phase 2 backend core features
+[33mdce81c4[m feat: implement Phase 1 backend quick fixes and fix pre-existing test failures
+[33m826a7e2[m docs: added updated dfd and usecases
+[33m2a97332[m docs: rewrite DFD gaps analysis and add implementation plan for remaining 14 gaps
+[33m1501d81[m ux: add NEUST branding to auth page layout
+[33m4259ee7[m ux: add descriptive placeholders to all input fields
+[33m46d08fb[m fix: resolve UUIDs in audit logs, fix select labels, wrap action column
+[33md0ccc1a[m feat(db): track migrations for notifications table
+[33m9355945[m fix(frontend): resolve client-side Vite import protection for session.server.ts
+[33m24c910b[m feat(admin): implement view details, edit user profile modals and avatar support
+[33mf64a7e2[m feat(security): implement duplicate profile check, sidebar gating, and route restriction
+[33mfe9bfd6[m feat(admin): add direct user provisioning for Director accounts
+[33ma5f5d84[m feat(cron): add project status flagging, audit logging, and MOA auto-sync on renewal
