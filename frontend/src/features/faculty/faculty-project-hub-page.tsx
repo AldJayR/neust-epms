@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { startTransition, useDeferredValue, useState } from "react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { DataTablePage } from "@/components/custom/data-table-page";
@@ -33,6 +33,7 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 	const [currentPage, setCurrentPage] = useState(1);
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const itemsPerPage = 5;
+	const deferredSearchQuery = useDeferredValue(searchQuery);
 
 	const { data: projectsData, isLoading: isProjectsLoading } = useQuery(
 		facultyProjectsQueryOptions(),
@@ -127,7 +128,7 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 	const filteredItems = tabFilteredItems.filter((item) => {
 		const matchesSearch = item.title
 			.toLowerCase()
-			.includes(searchQuery.toLowerCase());
+			.includes(deferredSearchQuery.toLowerCase());
 		const matchesCategory =
 			selectedCategory === "all" || item.category === selectedCategory;
 		const matchesStatus =
@@ -145,12 +146,12 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 
 	const handleSearchChange = (val: string) => {
 		setSearchQuery(val);
-		setCurrentPage(1);
+		startTransition(() => setCurrentPage(1));
 	};
 
 	const handleTabChange = (tab: "my" | "college") => {
 		setActiveTab(tab);
-		setCurrentPage(1);
+		startTransition(() => setCurrentPage(1));
 	};
 
 	const categories = (() => {

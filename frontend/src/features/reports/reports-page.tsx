@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { Download, EllipsisVertical, ListFilter, Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { startTransition, useDeferredValue, useMemo, useState } from "react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { DataTablePage } from "@/components/custom/data-table-page";
@@ -67,12 +67,13 @@ export function ReportsPage() {
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
 	const limit = 10;
+	const deferredSearch = useDeferredValue(search);
 
 	const { data: listData, isLoading: listLoading } = useQuery(
 		reportsListQueryOptions({
 			page: 1,
 			limit: 100,
-			search: search || undefined,
+			search: deferredSearch || undefined,
 		}),
 	);
 
@@ -121,7 +122,7 @@ export function ReportsPage() {
 
 	const handleTabChange = (tab: "my" | "college") => {
 		setActiveTab(tab);
-		setPage(1);
+		startTransition(() => setPage(1));
 	};
 
 	const columns = useMemo<DataTableColumnDef<ReportItem>[]>(() => {
@@ -451,7 +452,7 @@ export function ReportsPage() {
 				enableSorting
 				onSearch={(val) => {
 					setSearch(val);
-					setPage(1);
+					startTransition(() => setPage(1));
 				}}
 				searchPlaceholder="Search reports"
 				filters={

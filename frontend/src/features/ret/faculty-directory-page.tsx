@@ -217,10 +217,13 @@ export function RetFacultyDirectoryPage({
 													checked={isChecked}
 													onCheckedChange={(checked) => {
 														if (checked) {
-															setSelectedRanks([...selectedRanks, r.val]);
+															setSelectedRanks((currentRanks) => [
+																...currentRanks,
+																r.val,
+															]);
 														} else {
-															setSelectedRanks(
-																selectedRanks.filter((x) => x !== r.val),
+															setSelectedRanks((currentRanks) =>
+																currentRanks.filter((x) => x !== r.val),
 															);
 														}
 													}}
@@ -257,10 +260,13 @@ export function RetFacultyDirectoryPage({
 													checked={isChecked}
 													onCheckedChange={(checked) => {
 														if (checked) {
-															setSelectedLoads([...selectedLoads, l.val]);
+															setSelectedLoads((currentLoads) => [
+																...currentLoads,
+																l.val,
+															]);
 														} else {
-															setSelectedLoads(
-																selectedLoads.filter((x) => x !== l.val),
+															setSelectedLoads((currentLoads) =>
+																currentLoads.filter((x) => x !== l.val),
 															);
 														}
 													}}

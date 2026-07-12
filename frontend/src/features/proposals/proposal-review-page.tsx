@@ -325,7 +325,9 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 												: undefined
 										}
 										isTheaterMode={isTheaterMode}
-										onToggleTheaterMode={() => setIsTheaterMode(!isTheaterMode)}
+										onToggleTheaterMode={() =>
+											setIsTheaterMode((currentMode) => !currentMode)
+										}
 									/>
 								) : (
 									<div className="flex items-center justify-center h-full text-muted-foreground">

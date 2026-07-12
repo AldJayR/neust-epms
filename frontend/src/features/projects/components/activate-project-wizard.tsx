@@ -54,9 +54,8 @@ interface DueDateEntry {
 	dueDate: Date | undefined;
 }
 
-let nextId = 0;
 function generateId() {
-	return `due-${++nextId}-${Date.now()}`;
+	return crypto.randomUUID();
 }
 
 export function ActivateProjectWizard({
@@ -69,6 +68,7 @@ export function ActivateProjectWizard({
 	const [moaSearch, setMoaSearch] = React.useState("");
 	const [frequency, setFrequency] = React.useState<ReportingFrequency | "">("");
 	const [dueDates, setDueDates] = React.useState<DueDateEntry[]>([]);
+	const deferredMoaSearch = React.useDeferredValue(moaSearch);
 
 	const queryClient = useQueryClient();
 
@@ -78,11 +78,11 @@ export function ActivateProjectWizard({
 	});
 
 	const filteredMoas = React.useMemo(() => {
-		if (!moaSearch) return moas;
+		if (!deferredMoaSearch) return moas;
 		return moas.filter((moa) =>
-			moa.partnerName.toLowerCase().includes(moaSearch.toLowerCase()),
+			moa.partnerName.toLowerCase().includes(deferredMoaSearch.toLowerCase()),
 		);
-	}, [moas, moaSearch]);
+	}, [moas, deferredMoaSearch]);
 
 	const selectedMoa = moas.find((m) => m.moaId === selectedMoaId);
 
@@ -115,30 +115,30 @@ export function ActivateProjectWizard({
 			return;
 		}
 		if (step < 2) {
-			setStep(step + 1);
+			setStep((currentStep) => currentStep + 1);
 		}
 	}
 
 	function handleBack() {
 		if (step > 1) {
-			setStep(step - 1);
+			setStep((currentStep) => currentStep - 1);
 		}
 	}
 
 	function handleAddDueDate(reportType: string) {
-		setDueDates([
-			...dueDates,
+		setDueDates((currentDates) => [
+			...currentDates,
 			{ id: generateId(), reportType, dueDate: undefined },
 		]);
 	}
 
 	function handleRemoveDueDate(id: string) {
-		setDueDates(dueDates.filter((d) => d.id !== id));
+		setDueDates((currentDates) => currentDates.filter((d) => d.id !== id));
 	}
 
 	function handleUpdateDueDate(id: string, date: Date | undefined) {
-		setDueDates(
-			dueDates.map((d) => (d.id === id ? { ...d, dueDate: date } : d)),
+		setDueDates((currentDates) =>
+			currentDates.map((d) => (d.id === id ? { ...d, dueDate: date } : d)),
 		);
 	}
 
