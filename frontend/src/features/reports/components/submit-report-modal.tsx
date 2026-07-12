@@ -42,7 +42,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
 	submitReportFn,
 	uploadReportDocumentFn,
-} from "@/lib/dashboard.functions";
+} from "../functions";
 import { facultyProjectsQueryOptions } from "@/lib/faculty.functions";
 
 interface SubmitReportModalProps {

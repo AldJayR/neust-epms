@@ -28,7 +28,7 @@ import {
 	type MoaLinkedProject,
 	moaDetailsQueryOptions,
 	moaLinkedProjectsQueryOptions,
-} from "@/lib/moa.functions";
+} from "./functions";
 import { isDirector } from "@/lib/permissions";
 import { EditMoaModal } from "./components/edit-moa-modal";
 import { MoaDetailsSkeleton } from "./moa-details-skeleton";

@@ -24,14 +24,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { AuthUser } from "@/lib/auth";
 import {
-	type ProposalItem,
 	type ProposalStatusFilter,
 	retDashboardStatsQueryOptions,
 	retProposalsQueryOptions,
 } from "@/lib/ret.functions";
+import type { ProposalItem } from "@/types/proposal";
 import { formatAcademicRank } from "@/lib/utils";
-import { ActionCenterCard } from "../action-center/action-center-card";
-import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
+import { ActionCenterCard } from "@/features/action-center";
+import { CreateProposalModal } from "@/features/proposals";
 
 interface RETDashboardPageProps {
 	user: AuthUser;

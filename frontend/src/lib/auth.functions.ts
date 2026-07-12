@@ -4,33 +4,11 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import type { ApiErrorResponse, AuthUser } from "./auth";
+import { API_BASE } from "@/config/api";
+import { getErrorMessage } from "@/lib/api/client";
+import type { AuthUser } from "./auth";
 
-const API_BASE = process.env.API_URL ?? "http://localhost:3001/api/v1";
 const USER_PROFILE_CACHE_TTL_MS = 1000 * 30; // 30 seconds
-
-/**
- * Safely extracts error messages from API responses, handling both JSON and non-JSON errors
- */
-export async function getErrorMessage(
-	response: Response,
-	defaultMessage: string,
-): Promise<string> {
-	try {
-		const contentType = response.headers.get("content-type");
-		if (contentType?.includes("application/json")) {
-			const body = (await response.json()) as ApiErrorResponse;
-			return body.error?.message ?? defaultMessage;
-		}
-		const text = await response.text();
-		if (text && text.length < 200) {
-			return text;
-		}
-	} catch {
-		// Ignore parsing errors
-	}
-	return defaultMessage;
-}
 
 // ── Schemas ───────────────────────────────────────────────
 

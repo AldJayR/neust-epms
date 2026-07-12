@@ -12,11 +12,11 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AuthUser } from "@/lib/auth";
+import { directorDashboardQueryOptions } from "@/features/dashboard/functions";
 import {
-	directorDashboardQueryOptions,
 	type HubProject,
 	projectHubQueryOptions,
-} from "@/lib/dashboard.functions";
+} from "@/features/projects/functions";
 import { formatAcademicRank } from "@/lib/utils";
 
 interface ProjectMonitoringPageProps {

@@ -18,7 +18,7 @@ import {
 	facultyProjectsQueryOptions,
 	facultyProposalsQueryOptions,
 } from "@/lib/faculty.functions";
-import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
+import { CreateProposalModal } from "@/features/proposals";
 
 interface FacultyProjectHubPageProps {
 	user: AuthUser;

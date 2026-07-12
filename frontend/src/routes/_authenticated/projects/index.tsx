@@ -1,13 +1,11 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { PageSkeleton } from "@/components/custom/page-skeleton";
-import { ProjectHubPage } from "@/features/director/project-hub-page";
+import { ProjectHubPage } from "@/features/projects";
 import { FacultyProjectHubPage } from "@/features/faculty/faculty-project-hub-page";
 import { ProjectMonitoringPage } from "@/features/ret/project-monitoring-page";
-import {
-	directorDashboardQueryOptions,
-	projectHubQueryOptions,
-} from "@/lib/dashboard.functions";
+import { directorDashboardQueryOptions } from "@/features/dashboard/functions";
+import { projectHubQueryOptions } from "@/features/projects/functions";
 import {
 	facultyProjectsQueryOptions,
 	facultyProposalsQueryOptions,

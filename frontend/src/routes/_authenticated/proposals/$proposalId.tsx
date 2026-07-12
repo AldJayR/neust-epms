@@ -1,7 +1,9 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { ProposalReviewSkeleton } from "@/features/director/components/proposal-review-skeleton";
-import { ProposalReviewPage } from "@/features/director/proposal-review-page";
-import { projectDetailsQueryOptions } from "@/lib/dashboard.functions";
+import {
+	ProposalReviewPage,
+	ProposalReviewSkeleton,
+} from "@/features/proposals";
+import { projectDetailsQueryOptions } from "@/features/projects/functions";
 import { isDeniedAccess } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/proposals/$proposalId")({

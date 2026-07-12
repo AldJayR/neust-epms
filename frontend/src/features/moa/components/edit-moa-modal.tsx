@@ -21,7 +21,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { updateMoaFn } from "@/lib/moa.functions";
+import { updateMoaFn } from "../functions";
 
 interface EditMoaModalProps {
 	open: boolean;

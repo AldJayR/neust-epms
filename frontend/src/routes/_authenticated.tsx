@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { Onboarding } from "@/components/custom/onboarding";
-import { AppShell } from "@/features/layout/app-shell";
+import { AppShell } from "@/components/layout/app-shell";
 import type { AuthUser } from "../lib/auth.js";
 
 export const Route = createFileRoute("/_authenticated")({

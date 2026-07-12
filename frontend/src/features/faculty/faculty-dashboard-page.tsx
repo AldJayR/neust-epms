@@ -14,8 +14,8 @@ import {
 	facultyProjectsQueryOptions,
 	facultyProposalsQueryOptions,
 } from "@/lib/faculty.functions";
-import { ActionCenterCard } from "../action-center/action-center-card";
-import { CreateProposalModal } from "../proposals/components/create-proposal-modal";
+import { ActionCenterCard } from "@/features/action-center";
+import { CreateProposalModal } from "@/features/proposals";
 
 export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);

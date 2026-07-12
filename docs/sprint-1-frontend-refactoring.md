@@ -1,5 +1,7 @@
 # Sprint 1: Frontend Architecture Refactoring
 
+> **Status:** Completed 2026-07-12
+
 ## Goal
 Restructure the frontend codebase for modularity, maintainability, and clear domain boundaries — no logic changes, only file moves, splits, and import updates.
 
@@ -19,7 +21,7 @@ Restructure the frontend codebase for modularity, maintainability, and clear dom
 - DRY: Single source for types, config, column definitions
 - KISS: No new abstraction layers
 - YAGNI: Types stay in feature files if not shared
-- Modular: Features own their code, never import from other features
+- Modular: Features own their code; unavoidable page-composition dependencies use documented public feature-barrel exports, never internal files
 - High cohesion: All related code lives together
 
 ## Target Structure
@@ -43,18 +45,18 @@ src/
 │   └── ret/                 # dash + monitoring + thin faculty wrapper
 ├── hooks/                   # shared hooks (unchanged)
 ├── lib/                     # refactored
-│   ├── api/client.ts        # API_BASE + getErrorMessage
-│   ├── utils/               # cn, pagination, etc.
-│   ├── auth/                # types, cache, permissions
-│   └── server/              # session, supabase (server-only)
+│   ├── api/client.ts        # getErrorMessage only
+│   ├── auth.ts              # existing shared auth types
+│   ├── session.server.ts    # existing server-only session helper
+│   └── utils.ts             # existing utilities
 ├── types/                   # shared domain types
-├── config/api.ts            # API_BASE (single source)
+├── config/api.ts            # API_BASE (single source for all 15 .functions.ts files)
 ├── routes/                  # unchanged
 └── router.tsx
 ```
 
 ## Key Decisions
-- PDF viewer co-located with projects (its only consumer) — YAGNI
+- PDF viewer co-located with proposals: it is rendered by proposal review, while the existing shared wrapper dynamically imports the director implementation
 - Two column definitions kept separate (director vs RET have different columns) — no forced dedup
 - `getErrorMessage()` extracted to `lib/api/client.ts` — eliminates circular import risk
 - All changes in one coordinated, verified commit
@@ -71,7 +73,17 @@ src/
 9. Delete old files
 10. Run lint + typecheck → fix → commit
 
+During step 4, update every `@/lib/dashboard.functions` consumer before deletion. The current import inventory includes 22 consumers, including the report submit modal, RET project monitoring, MOA creation modal, project details, proposal review, chart, and directory-column components.
+
+During steps 5-7, move `components/pdf-viewer.tsx` and the director PDF implementation together to `features/proposals/components/pdf-viewer/`; do not place it under projects.
+
 ## Verification Gates
 - `npm run lint` (frontend) — Biome must pass
-- `npm run typecheck` (frontend) — TypeScript must pass
+- `pnpm --filter frontend exec tsc --noEmit` — TypeScript must pass
+- `pnpm --filter frontend test` — existing frontend tests must pass
 - No runtime behavior changes (purely structural)
+
+## Completion
+- The legacy dashboard module and director feature folder were removed.
+- Domain server functions, shared types, layout, PDF viewer, and public barrels were relocated to their documented owners.
+- Frontend lint, typecheck, tests, and production build passed.

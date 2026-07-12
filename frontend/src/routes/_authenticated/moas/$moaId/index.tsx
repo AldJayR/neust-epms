@@ -4,7 +4,7 @@ import { MoaDetailsSkeleton } from "@/features/moa/moa-details-skeleton";
 import {
 	moaDetailsQueryOptions,
 	moaLinkedProjectsQueryOptions,
-} from "@/lib/moa.functions";
+} from "@/features/moa/functions";
 import { isDeniedAccess } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/moas/$moaId/")({

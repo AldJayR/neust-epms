@@ -1,7 +1,9 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { ProjectDetailsPage } from "@/features/director/project-details-page";
-import { ProjectDetailsSkeleton } from "@/features/director/project-details-skeleton";
-import { projectDetailsQueryOptions } from "@/lib/dashboard.functions";
+import {
+	ProjectDetailsPage,
+	ProjectDetailsSkeleton,
+} from "@/features/projects";
+import { projectDetailsQueryOptions } from "@/features/projects/functions";
 import { isDeniedAccess } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId/")({

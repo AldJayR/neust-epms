@@ -1,11 +1,13 @@
 # Frontend Refactoring Plan
 
+> **Status:** Completed 2026-07-12
+
 ## Principles
 - **DRY**: Single source for types, config, column definitions
 - **KISS**: No new abstraction layers, no renaming `components/custom/`
 - **YAGNI**: Types stay in `.functions.ts` if only used by one feature
 - **Modular**: Features own their code, import from shared layers only
-- **Loose coupling**: Features never import from other features
+- **Loose coupling**: Avoid feature-to-feature imports; when page composition requires one, import only a documented public export from that feature's barrel, never an internal file
 - **High cohesion**: All related code lives in one feature folder
 
 ---
@@ -13,7 +15,7 @@
 ## Phase 1: Foundation (additive, no breakage)
 
 ### 1.1 Create `src/config/api.ts`
-Single source for `API_BASE` — used by all server functions.
+Single source for `API_BASE` — used by all server functions. Replace the local declaration in every current `.functions.ts` file: `action-center`, `admin`, `archives`, `auth`, `comments`, `dashboard`, `derived-states`, `faculty`, `moa`, `notifications`, `project-readiness`, `reporting-schedule`, `ret`, `search`, and `settings`.
 
 ```
 src/config/api.ts
@@ -29,7 +31,7 @@ Centralized `getErrorMessage()` — currently duplicated in every `.functions.ts
 src/lib/api/client.ts
 ```
 ```ts
-import type { ApiErrorResponse } from "../auth/auth";
+import type { ApiErrorResponse } from "@/lib/auth";
 
 export async function getErrorMessage(
   response: Response,
@@ -38,6 +40,8 @@ export async function getErrorMessage(
   // ... (extracted from lib/auth.functions.ts lines 15-33)
 }
 ```
+
+`lib/api/client.ts` owns only response-error parsing. `config/api.ts` remains the sole owner of `API_BASE`; do not re-export the constant from the client module.
 
 ### 1.3 Create `src/types/` — shared domain types
 Extract types used across multiple features. Keep types that are only used within one feature in that feature's `functions.ts`.
@@ -161,6 +165,18 @@ features/<domain>/functions.ts
 | `features/director/activate-project-wizard.tsx` | `@/features/projects/functions` + `@/features/moa/functions` |
 | `features/ret/faculty-directory-page.tsx` | `@/features/faculty/functions` |
 
+### Complete dashboard-consumer migration manifest
+The table above is not exhaustive. Before deleting `lib/dashboard.functions.ts`, update all 22 current consumers, including:
+- `features/reports/components/submit-report-modal.tsx` → reports and faculty functions
+- `features/director/proposal-review-page.tsx` → proposals functions
+- `features/director/project-details-page.tsx` → projects, special-orders, and shared project types
+- `features/director/activate-project-wizard.tsx` → projects and MOA functions
+- `features/director/components/create-moa-modal.tsx` → MOA functions
+- `features/ret/project-monitoring-page.tsx` → projects functions
+- `features/director/projects-chart-card.tsx` and both faculty-directory column files → their extracted type modules
+
+Keep the route and page imports listed above, then use a repository search for `@/lib/dashboard.functions` as the deletion gate. The query-option keys and stale-time values must be copied unchanged; this sprint is structural only.
+
 ### Delete `lib/dashboard.functions.ts` after all imports updated
 
 ---
@@ -259,13 +275,9 @@ Both pages now import from `@/features/faculty/components/director-directory-col
 | `components/create-moa-modal.tsx` | `features/moa/components/create-moa-modal.tsx` |
 
 ### PDF files — decision
-The PDF viewer (`pdf-inner.tsx`, `pdf-ssr-polyfill.ts`, `components/pdf-*.tsx`, `components/hooks/`) is used by `features/director/project-details-page.tsx`. After the move, project-details-page will be in `features/projects/`.
+The PDF viewer is consumed by proposal review, not project details: `components/pdf-viewer.tsx` dynamically imports `features/director/pdf-inner.tsx`, and `proposal-review-page.tsx` renders the public viewer.
 
-**Options:**
-A) Move PDF files to `features/projects/components/pdf-viewer/` (co-located with consumer)
-B) Move PDF files to `components/pdf-viewer/` (shared, in case other features need it later)
-
-Recommend **Option A** — YAGNI, only one consumer currently.
+Move the public `components/pdf-viewer.tsx` wrapper and the implementation (`pdf-inner.tsx`, `pdf-ssr-polyfill.ts`, `components/pdf-*.tsx`, and `components/hooks/`) to `features/proposals/components/pdf-viewer/`. Update `proposal-review-page.tsx`, `comments-tab.tsx`, and the implementation's type imports together. This co-locates the only consumer and avoids a projects-to-proposals dependency.
 
 ### Delete `features/director/` folder entirely
 After all files relocated, `features/director/` becomes empty and is removed.
@@ -275,7 +287,7 @@ After all files relocated, `features/director/` becomes empty and is removed.
 ## Phase 6: Standardize imports & barrel exports sweep
 
 ### 6.1 Ensure all imports use `@/` path alias
-Search for relative imports across features (e.g., `../lib/`, `../../components/`) and convert to `@/`.
+Convert cross-folder and shared-layer imports (for example `../lib/` and `../../components/`) to `@/`. Keep same-folder relative imports where they make a component's local structure clearer; this is not an all-relative-import ban.
 
 ### 6.2 Add barrel exports everywhere
 Add `index.ts` to every folder that's imported by others. This allows:
@@ -288,6 +300,8 @@ import { ActivateProjectWizard } from "@/features/projects/components/activate-p
 // After:
 import { ProjectHubPage, ProjectDetailsPage, ActivateProjectWizard } from "@/features/projects";
 ```
+
+Feature-to-feature composition is permitted only through these barrels. Existing cases such as dashboards rendering `ActionCenterCard` or `CreateProposalModal` must import from `@/features/action-center` or `@/features/proposals`, rather than deep component paths.
 
 ### 6.3 Remove unused files
 - `lib/dashboard.functions.ts` (after split completes)
@@ -328,4 +342,13 @@ Per the user's constraint, do this as a single coordinated commit. The sequence 
 10. Delete features/director/ (now empty)
 ```
 
-Run lint + typecheck after each verification gate.
+Run the actual frontend verification commands after each gate:
+
+```
+pnpm --filter frontend lint
+pnpm --filter frontend exec tsc --noEmit
+pnpm --filter frontend test
+```
+
+## Completion
+All phases were implemented on the `frontend-refactoring` branch. The legacy dashboard and director modules were removed after their domain behavior, shared types, and consumers were migrated.

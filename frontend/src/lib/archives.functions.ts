@@ -1,10 +1,10 @@
 import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getErrorMessage } from "./auth.functions";
+import { API_BASE } from "@/config/api";
+import { getErrorMessage } from "@/lib/api/client";
 import { authorizeSessionUser, getValidAccessToken } from "./session.server";
 
-export const API_BASE = process.env.API_URL ?? "http://localhost:3001/api/v1";
 const ARCHIVE_QUERY_STALE_TIME_MS = 1000 * 60; // 1 minute stale time for archives
 
 const archiveParamsSchema = z.object({

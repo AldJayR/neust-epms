@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { PageSkeleton } from "@/components/custom/page-skeleton";
-import { ReportsPage } from "@/features/director/reports-page";
-import { reportsListQueryOptions } from "@/lib/dashboard.functions";
+import { ReportsPage } from "@/features/reports";
+import { reportsListQueryOptions } from "@/features/reports/functions";
 import { isDeniedAccess } from "@/lib/permissions";
 
 const ReportsPendingComponent = () => (

@@ -1,10 +1,11 @@
 import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getErrorMessage } from "./auth.functions";
+import { API_BASE } from "@/config/api";
+import { getErrorMessage } from "@/lib/api/client";
 import { authorizeSessionUser, getValidAccessToken } from "./session.server";
+import type { ProposalFull, ProposalItem } from "@/types/proposal";
 
-const API_BASE = process.env.API_URL ?? "http://localhost:3001/api/v1";
 const RET_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
 const proposalStatusFilterSchema = z.enum([
 	"all",
@@ -57,29 +58,6 @@ export interface RETDashboardStats {
 	pendingReview: number;
 	approvedProjects: number;
 	deniedProjects: number;
-}
-
-export interface ProposalItem {
-	proposalId: string;
-	campusId: number;
-	departmentId: number | null;
-	title: string;
-	bannerProgram: string;
-	projectLocale: string;
-	extensionCategory: string;
-	budgetPartner: string | null;
-	budgetNeust: string | null;
-	status: string;
-	bypassedRetChair: boolean;
-	revisionNum: number;
-	targetStartDate?: string | null;
-	targetEndDate?: string | null;
-	createdAt: string;
-	updatedAt: string;
-	archivedAt: string | null;
-	leaderFirstName?: string | null;
-	leaderLastName?: string | null;
-	leaderAcademicRank?: string | null;
 }
 
 export interface ProposalListResponse {
@@ -287,21 +265,6 @@ export function sdgsQueryOptions() {
 }
 
 // ── Edit Proposal Functions ─────────────────────────────
-
-export interface ProposalFull {
-	proposalId: string;
-	campusId: number;
-	departmentId: number | null;
-	title: string;
-	bannerProgram: string;
-	projectLocale: string;
-	extensionCategory: string;
-	budgetPartner: string | null;
-	budgetNeust: string | null;
-	status: string;
-	targetStartDate: string | null;
-	targetEndDate: string | null;
-}
 
 export const getProposalByIdFn = createServerFn({ method: "GET" })
 	.validator(z.object({ proposalId: z.string() }))

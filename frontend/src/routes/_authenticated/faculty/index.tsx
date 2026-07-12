@@ -1,9 +1,9 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { PageSkeleton } from "@/components/custom/page-skeleton";
-import { FacultyDirectoryPage } from "@/features/director/faculty-directory-page";
+import { FacultyDirectoryPage } from "@/features/faculty";
 import { RetFacultyDirectoryPage } from "@/features/ret/faculty-directory-page";
-import { facultyDirectoryQueryOptions } from "@/lib/dashboard.functions";
+import { facultyDirectoryQueryOptions } from "@/features/faculty/functions";
 import { isDeniedAccess, isRETChair } from "@/lib/permissions";
 
 const facultySearchSchema = z.object({

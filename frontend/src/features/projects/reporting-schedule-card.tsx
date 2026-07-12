@@ -134,11 +134,13 @@ export function ReportingScheduleCard({
 												variant="outline"
 												className="gap-1"
 												render={
+													// biome-ignore lint/a11y/useAnchorContent: Button provides the link content.
 													<a
 														href={item.storagePath}
-														target="_blank"
-														rel="noopener noreferrer"
-														className="text-foreground no-underline hover:underline"
+																target="_blank"
+																rel="noopener noreferrer"
+																aria-label="Download completed report"
+																className="text-foreground no-underline hover:underline"
 													/>
 												}
 											>
