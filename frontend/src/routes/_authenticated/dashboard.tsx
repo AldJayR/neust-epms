@@ -14,7 +14,7 @@ import { directorDashboardQueryOptions } from "@/features/dashboard";
 import {
 	facultyProjectsQueryOptions,
 	facultyProposalsQueryOptions,
-} from "@/features/faculty";
+} from "@/features/faculty/public";
 import {
 	isDeniedAccess,
 	isDirector,
@@ -24,7 +24,7 @@ import {
 import {
 	retDashboardStatsQueryOptions,
 	retProposalsQueryOptions,
-} from "@/features/proposals";
+} from "@/features/proposals/public";
 
 const dashboardSearchSchema = z.object({
 	page: z.number().optional().default(1),

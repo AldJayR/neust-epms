@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { useProposalReview } from "../proposal-review-page";
+import { useProposalReview } from "./proposal-review-context";
 
 const formatBudget = (value: number) => `P${value.toLocaleString("en-PH")}`;
 

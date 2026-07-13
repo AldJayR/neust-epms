@@ -23,7 +23,8 @@ describe("projectHubQueryOptions", () => {
 		vi.stubGlobal("fetch", fetchMock);
 
 		const options = projectHubQueryOptions({ page: 2, limit: 10 });
-		const result = await options.queryFn!({
+		if (!options.queryFn) throw new Error("Expected a project query function");
+		const result = await options.queryFn({
 			queryKey: options.queryKey,
 		} as never);
 

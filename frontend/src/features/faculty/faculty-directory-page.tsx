@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { AuthUser } from "@/lib/auth";
 import { facultyDirectoryQueryOptions } from "./functions";
-import { emailReportFn } from "@/features/reports";
+import { emailReportFn } from "@/features/reports/public";
 import { formatAcademicRank } from "@/lib/utils";
 import { getFacultyDirectoryColumns } from "./components/director-directory-columns";
 

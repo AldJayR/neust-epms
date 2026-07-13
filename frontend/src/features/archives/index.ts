@@ -1,4 +1,7 @@
 export { ArchivesPage } from "./archives-page";
+export { ArchivedMoasTable } from "./components/archived-moas-table";
+export { ArchivedProjectsTable } from "./components/archived-projects-table";
+export { ArchivedProposalsTable } from "./components/archived-proposals-table";
 export {
 	archivedMoasQueryOptions,
 	archivedProjectsQueryOptions,

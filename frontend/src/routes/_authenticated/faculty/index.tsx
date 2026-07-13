@@ -3,7 +3,7 @@ import { z } from "zod";
 import { PageSkeleton } from "@/components/custom/page-skeleton";
 import { FacultyDirectoryPage } from "@/features/faculty";
 import { RetFacultyDirectoryPage } from "@/features/ret/faculty-directory-page";
-import { facultyDirectoryQueryOptions } from "@/features/faculty";
+import { facultyDirectoryQueryOptions } from "@/features/faculty/public";
 import { isDeniedAccess, isRETChair } from "@/lib/permissions";
 
 const facultySearchSchema = z.object({

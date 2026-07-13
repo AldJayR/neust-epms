@@ -27,7 +27,7 @@ import {
 	type ProposalStatusFilter,
 	retDashboardStatsQueryOptions,
 	retProposalsQueryOptions,
-} from "@/features/proposals";
+} from "@/features/proposals/public";
 import type { ProposalItem } from "@/types/proposal";
 import { formatAcademicRank } from "@/lib/utils";
 import { ActionCenterCard } from "@/features/action-center";

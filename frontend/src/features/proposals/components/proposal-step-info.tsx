@@ -19,7 +19,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import type { AuthUser } from "@/lib/auth";
-import type { FormValues } from "./create-proposal-modal";
+import type { FormValues } from "./proposal-form";
 
 interface ProposalStepInfoProps {
 	form: UseFormReturn<FormValues>;

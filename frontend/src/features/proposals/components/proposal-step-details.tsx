@@ -16,7 +16,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import type { FormValues } from "./create-proposal-modal";
+import type { FormValues } from "./proposal-form";
 
 function formatPeso(value: number): string {
 	if (!value && value !== 0) return "";

@@ -43,7 +43,7 @@ import {
 	submitReportFn,
 	uploadReportDocumentFn,
 } from "../functions";
-import { facultyProjectsQueryOptions } from "@/features/faculty";
+import { facultyProjectsQueryOptions } from "@/features/faculty/public";
 
 interface SubmitReportModalProps {
 	open: boolean;

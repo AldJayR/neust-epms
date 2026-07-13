@@ -2,6 +2,10 @@ export { ProjectDetailsPage } from "./project-details-page";
 export { ProjectHubPage } from "./project-hub-page";
 export { ActivateProjectWizard } from "./components/activate-project-wizard";
 export { ProjectDetailsSkeleton } from "./components/project-details-skeleton";
+export { ActivityHistoryCard } from "./components/activity-history-card";
+export { AttachmentsCard } from "./components/attachments-card";
+export { ProjectDetailsHeader } from "./components/project-details-header";
+export { ProjectOverviewCard } from "./components/project-overview-card";
 export { default as ProjectsChartCard } from "./components/projects-chart-card";
 export {
 	activateProjectFn,

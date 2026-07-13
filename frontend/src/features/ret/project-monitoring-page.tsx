@@ -16,7 +16,7 @@ import { directorDashboardQueryOptions } from "@/features/dashboard";
 import {
 	type HubProject,
 	projectHubQueryOptions,
-} from "@/features/projects";
+} from "@/features/projects/public";
 import { formatAcademicRank } from "@/lib/utils";
 
 interface ProjectMonitoringPageProps {

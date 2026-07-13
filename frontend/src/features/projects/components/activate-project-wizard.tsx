@@ -38,7 +38,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { activateProjectFn } from "../functions";
-import { getActiveMoasFn } from "@/features/moa";
+import { getActiveMoasFn } from "@/features/moa/public";
 
 interface ActivateProjectWizardProps {
 	open: boolean;

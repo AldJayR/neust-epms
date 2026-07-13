@@ -1,5 +1,6 @@
 export { ReportsPage } from "./reports-page";
 export { SubmitReportModal } from "./components/submit-report-modal";
+export { ReportsFilterTabs } from "./components/reports-filter-tabs";
 export {
 	emailReportFn,
 	reportsListQueryOptions,

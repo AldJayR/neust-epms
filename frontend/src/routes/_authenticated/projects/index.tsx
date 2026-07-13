@@ -5,11 +5,11 @@ import { ProjectHubPage } from "@/features/projects";
 import { FacultyProjectHubPage } from "@/features/faculty/faculty-project-hub-page";
 import { ProjectMonitoringPage } from "@/features/ret/project-monitoring-page";
 import { directorDashboardQueryOptions } from "@/features/dashboard";
-import { projectHubQueryOptions } from "@/features/projects";
+import { projectHubQueryOptions } from "@/features/projects/public";
 import {
 	facultyProjectsQueryOptions,
 	facultyProposalsQueryOptions,
-} from "@/features/faculty";
+} from "@/features/faculty/public";
 import {
 	isDeniedAccess,
 	isDirector,

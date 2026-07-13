@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 
 import type { AuthUser } from "@/lib/auth";
 import { searchUsersFn } from "@/features/auth";
-import type { FormValues } from "./create-proposal-modal";
+import type { FormValues } from "./proposal-form";
 
 interface ProposalStepMembersProps {
 	form: UseFormReturn<FormValues>;
