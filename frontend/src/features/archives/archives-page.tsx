@@ -29,7 +29,7 @@ import {
 	restoreMoaFn,
 	restoreProjectFn,
 	restoreProposalFn,
-} from "@/lib/archives.functions";
+} from "./functions";
 import type { AuthUser } from "@/lib/auth";
 import { isDirector, isRETChair } from "@/lib/permissions";
 

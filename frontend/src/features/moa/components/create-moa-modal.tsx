@@ -31,7 +31,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { uploadMoaFn } from "@/features/moa/functions";
+import { uploadMoaFn } from "../functions";
 
 interface CreateMoaModalProps {
 	open: boolean;

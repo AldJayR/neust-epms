@@ -3,7 +3,7 @@ import {
 	ProjectDetailsPage,
 	ProjectDetailsSkeleton,
 } from "@/features/projects";
-import { projectDetailsQueryOptions } from "@/features/projects/functions";
+import { projectDetailsQueryOptions } from "@/features/projects";
 import { isDeniedAccess } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId/")({

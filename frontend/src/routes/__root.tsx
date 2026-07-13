@@ -14,7 +14,7 @@ import { Toaster, toast } from "sonner";
 import { Devtools } from "../components/devtools";
 import { TooltipProvider } from "../components/ui/tooltip";
 import type { AuthContext } from "../lib/auth";
-import { getCurrentUserFn } from "../lib/auth.functions";
+import { getCurrentUserFn } from "@/features/auth";
 import { getCachedUser, isCacheStale, setCachedUser } from "../lib/auth-cache";
 import appCss from "../styles.css?url";
 

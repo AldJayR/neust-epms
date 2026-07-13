@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AuthUser } from "@/lib/auth";
-import { facultyDirectoryQueryOptions } from "@/features/faculty/functions";
+import { facultyDirectoryQueryOptions } from "@/features/faculty";
 import { retFacultyDirectoryColumns } from "@/features/faculty";
 
 interface RetFacultyDirectoryPageProps {

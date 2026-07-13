@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { UserResponse } from "@/lib/admin.functions";
+import type { UserResponse } from "./functions";
 import { formatAcademicRank } from "@/lib/utils";
 
 interface ViewUserDialogProps {

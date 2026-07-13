@@ -3,18 +3,18 @@ import { z } from "zod";
 import { PageHeader } from "@/components/custom/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UsersPage } from "@/features/admin/users-page";
-import { DirectorDashboardPage } from "@/features/dashboard/director/director-dashboard-page";
+import { DirectorDashboardPage } from "@/features/dashboard";
 import { FacultyDashboardPage } from "@/features/faculty/faculty-dashboard-page";
 import { RETDashboardPage } from "@/features/ret/ret-dashboard-page";
 import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
-} from "@/lib/admin.functions";
-import { directorDashboardQueryOptions } from "@/features/dashboard/functions";
+} from "@/features/admin";
+import { directorDashboardQueryOptions } from "@/features/dashboard";
 import {
 	facultyProjectsQueryOptions,
 	facultyProposalsQueryOptions,
-} from "@/lib/faculty.functions";
+} from "@/features/faculty";
 import {
 	isDeniedAccess,
 	isDirector,
@@ -24,7 +24,7 @@ import {
 import {
 	retDashboardStatsQueryOptions,
 	retProposalsQueryOptions,
-} from "@/lib/ret.functions";
+} from "@/features/proposals";
 
 const dashboardSearchSchema = z.object({
 	page: z.number().optional().default(1),

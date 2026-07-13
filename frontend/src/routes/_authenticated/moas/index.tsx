@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { PageSkeleton } from "@/components/custom/page-skeleton";
 import { MoaRepositoryPage } from "@/features/moa";
-import { moaRepositoryQueryOptions } from "@/features/moa/functions";
+import { moaRepositoryQueryOptions } from "@/features/moa";
 import { isDeniedAccess } from "@/lib/permissions";
 
 const moasSearchSchema = z.object({

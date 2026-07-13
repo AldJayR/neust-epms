@@ -29,7 +29,7 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import type { AuthUser } from "@/lib/auth";
-import { logoutFn } from "@/lib/auth.functions";
+import { logoutFn } from "@/features/auth";
 import { clearAuthCache } from "@/lib/auth-cache";
 
 export type RoleSidebarItem = {

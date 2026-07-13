@@ -31,7 +31,7 @@ import {
 	type AuditLog,
 	auditLogsQueryOptions,
 	auditStatsQueryOptions,
-} from "@/lib/admin.functions";
+} from "./functions";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
 	month: "short",

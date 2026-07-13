@@ -61,11 +61,8 @@ import {
 	closeProjectFn,
 	projectDetailsQueryOptions,
 } from "./functions";
-import {
-	getSpecialOrderSignedUrlFn,
-	uploadSpecialOrderFn,
-} from "@/lib/special-orders.functions";
-import { getProposalByIdFn } from "@/lib/ret.functions";
+import { getSpecialOrderSignedUrlFn, uploadSpecialOrderFn } from "./special-orders.functions";
+import { getProposalByIdFn } from "@/features/proposals";
 import { getStatusDescription } from "@/lib/status-descriptions";
 import type { ProjectMember } from "@/types/project";
 import { ProjectReadinessCard } from "./project-readiness-card";

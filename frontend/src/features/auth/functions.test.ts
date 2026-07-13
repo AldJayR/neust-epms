@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { checkPasswordSafety } from "./auth.functions";
+import { checkPasswordSafety } from "./functions";
 
 describe("checkPasswordSafety", () => {
 	afterEach(() => {

@@ -28,7 +28,7 @@ import {
 	adminUsersQueryOptions,
 	bulkUpdateUserStatusFn,
 	type UserResponse,
-} from "@/lib/admin.functions";
+} from "./functions";
 import { formatAcademicRank } from "@/lib/utils";
 import { AddUserDialog } from "./add-user-dialog";
 import { BulkApproveDialog } from "./bulk-approve-dialog";

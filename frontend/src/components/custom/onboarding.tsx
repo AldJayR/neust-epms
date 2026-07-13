@@ -9,7 +9,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import type { AuthUser } from "@/lib/auth";
-import { completeOnboardingFn } from "@/lib/auth.functions";
+import { completeOnboardingFn } from "@/features/auth";
 
 const STEP_KEYS = ["first", "second", "third", "fourth", "fifth"];
 

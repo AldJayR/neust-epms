@@ -26,7 +26,7 @@ import {
 	getUnreadCountQueryOptions,
 	markAllNotificationsReadFn,
 	markNotificationReadFn,
-} from "@/lib/notifications.functions";
+} from "@/features/notifications";
 import { cn } from "@/lib/utils";
 
 function timeAgo(dateStr: string): string {

@@ -26,8 +26,8 @@ import {
 	getRolesFn,
 	type UserResponse,
 	updateUserFn,
-} from "@/lib/admin.functions";
-import { getCampusesFn, getDepartmentsFn } from "@/lib/auth.functions";
+} from "./functions";
+import { getCampusesFn, getDepartmentsFn } from "@/features/auth";
 
 const rankOptions = [
 	{ label: "Instructor I", value: "instructor-1" },

@@ -5,7 +5,7 @@ import { UsersPage } from "@/features/admin/users-page";
 import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
-} from "@/lib/admin.functions";
+} from "@/features/admin";
 import { isDeniedAccess } from "@/lib/permissions";
 
 const usersSearchSchema = z.object({

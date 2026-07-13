@@ -1,6 +1,6 @@
 import * as pdfjsLib from "pdfjs-dist";
 import { useEffect, useReducer, useRef } from "react";
-import type { AnnotationData, ProposalComment } from "@/lib/comments.functions";
+import type { AnnotationData, ProposalComment } from "../../comments.functions";
 import { stateReducer } from "@/lib/state-reducer";
 import { CommentCreationPopover, CommentHighlights } from "./pdf-annotations";
 

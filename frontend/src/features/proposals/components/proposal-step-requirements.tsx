@@ -5,7 +5,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { proposalRequirementsQueryOptions } from "@/lib/ret.functions";
+import { proposalRequirementsQueryOptions } from "../ret.functions";
 
 export function ProposalStepRequirements() {
 	const { data: requirements, isLoading } = useQuery(

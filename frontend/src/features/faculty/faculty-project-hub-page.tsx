@@ -17,7 +17,7 @@ import type { AuthUser } from "@/lib/auth";
 import {
 	facultyProjectsQueryOptions,
 	facultyProposalsQueryOptions,
-} from "@/lib/faculty.functions";
+} from "@/features/faculty";
 import { CreateProposalModal } from "@/features/proposals";
 
 interface FacultyProjectHubPageProps {

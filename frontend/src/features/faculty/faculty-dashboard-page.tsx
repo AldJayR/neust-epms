@@ -13,7 +13,7 @@ import type { AuthUser } from "@/lib/auth";
 import {
 	facultyProjectsQueryOptions,
 	facultyProposalsQueryOptions,
-} from "@/lib/faculty.functions";
+} from "@/features/faculty";
 import { ActionCenterCard } from "@/features/action-center";
 import { CreateProposalModal } from "@/features/proposals";
 

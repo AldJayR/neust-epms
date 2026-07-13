@@ -1,8 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-	projectDerivedStateQueryOptions,
-	proposalDerivedStateQueryOptions,
-} from "@/lib/derived-states.functions";
+import { proposalDerivedStateQueryOptions } from "@/features/proposals";
+import { projectDerivedStateQueryOptions } from "@/features/projects";
 
 export function useProposalDerivedState(proposalId: string) {
 	return useQuery(proposalDerivedStateQueryOptions(proposalId));

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import {
 	settingsQueryOptions,
 	updateSettingFn,
-} from "@/lib/settings.functions";
+} from "./settings.functions";
 
 export function SettingsPage() {
 	const queryClient = useQueryClient();

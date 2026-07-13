@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useActionCenter } from "@/hooks/use-action-center";
-import type { ActionItem } from "@/lib/action-center.functions";
+import type { ActionItem } from "./functions";
 
 function getCategoryIcon(type: ActionItem["type"]) {
 	const classes = "size-4 shrink-0";

@@ -18,7 +18,7 @@ import {
 	InputOTPGroup,
 	InputOTPSlot,
 } from "../components/ui/input-otp";
-import { sendResetCodeFn, verifyResetCodeFn } from "../lib/auth.functions";
+import { sendResetCodeFn, verifyResetCodeFn } from "@/features/auth";
 
 const otpSchema = z.object({
 	code: z.string().length(6, "Verification code must be 6 digits"),

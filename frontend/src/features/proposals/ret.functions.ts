@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { API_BASE } from "@/config/api";
 import { getErrorMessage } from "@/lib/api/client";
-import { authorizeSessionUser, getValidAccessToken } from "./session.server";
+import { authorizeSessionUser, getValidAccessToken } from "@/lib/session.server";
 import type { ProposalFull, ProposalItem } from "@/types/proposal";
 
 const RET_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
@@ -389,3 +389,5 @@ export function proposalRequirementsQueryOptions() {
 		staleTime: 1000 * 60 * 60, // 1 hour
 	});
 }
+
+export type { ProposalFull, ProposalItem } from "@/types/proposal";

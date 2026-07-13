@@ -25,7 +25,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AuthUser } from "@/lib/auth";
 import { reportsListQueryOptions } from "./functions";
 import type { ReportItem } from "@/types/report";
-import { facultyProjectsQueryOptions } from "@/lib/faculty.functions";
+import { facultyProjectsQueryOptions } from "@/features/faculty";
 import { formatAcademicRank } from "@/lib/utils";
 import { SubmitReportModal } from "./components/submit-report-modal";
 

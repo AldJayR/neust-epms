@@ -21,12 +21,12 @@ import type { AuthUser } from "@/lib/auth";
 import {
 	getProposalCommentsFn,
 	saveProposalCommentFn,
-} from "@/lib/comments.functions";
+} from "./comments.functions";
 import { reviewProposalFn } from "./functions";
 import {
 	type ProjectDetailsResponse,
 	projectDetailsQueryOptions,
-} from "@/features/projects/functions";
+} from "@/features/projects";
 import type { ProjectHistoryItem } from "@/types/project";
 import { isDirector, isRETChair } from "@/lib/permissions";
 import { CommentsTab } from "./components/comments-tab";

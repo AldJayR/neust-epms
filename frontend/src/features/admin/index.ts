@@ -5,3 +5,32 @@ export { EditUserDialog } from "./edit-user-dialog";
 export { SettingsPage } from "./settings-page";
 export { UsersPage } from "./users-page";
 export { ViewUserDialog } from "./view-user-dialog";
+export {
+	adminStatsQueryOptions,
+	adminUsersQueryOptions,
+	auditLogsQueryOptions,
+	auditStatsQueryOptions,
+	bulkApproveUsersFn,
+	bulkUpdateUserStatusFn,
+	getAdminUsersFn,
+	getRolesFn,
+	provisionDirectorFn,
+	updateUserFn,
+} from "./functions";
+export {
+	getSettingsFn,
+	settingsQueryOptions,
+	updateSettingFn,
+} from "./settings.functions";
+export type {
+	AdminStats,
+	AdminUsersQueryParams,
+	AuditLog,
+	AuditLogListResponse,
+	AuditStats,
+	ProvisionDirectorInput,
+	RoleResponse,
+	UpdateUserInput,
+	UserResponse,
+	UsersListResponse,
+} from "./functions";

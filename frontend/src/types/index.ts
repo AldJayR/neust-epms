@@ -19,4 +19,5 @@ export type {
 export type { ProposalFull, ProposalItem } from "./proposal";
 export type { ReportItem, ReportsResponse, ReportStatsResponse } from "./report";
 export type { SearchUserResponse } from "./search";
+export type { DerivedStateResponse } from "./derived-state";
 export type { AuthUser, FacultyDirectoryResponse, FacultyInvolvement } from "./user";

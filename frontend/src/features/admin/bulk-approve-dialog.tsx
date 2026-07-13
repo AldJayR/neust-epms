@@ -29,7 +29,7 @@ import {
 	getAdminUsersFn,
 	getRolesFn,
 	type UserResponse,
-} from "@/lib/admin.functions";
+} from "./functions";
 
 interface UserApprovalListProps {
 	users: UserResponse[];

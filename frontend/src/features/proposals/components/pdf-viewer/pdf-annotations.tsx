@@ -7,7 +7,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { AnnotationData, ProposalComment } from "@/lib/comments.functions";
+import type { AnnotationData, ProposalComment } from "../../comments.functions";
 
 interface CommentHighlightsProps {
 	comments: ProposalComment[];

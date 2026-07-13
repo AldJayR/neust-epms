@@ -10,7 +10,7 @@ import {
 	RHFSubmitButton,
 } from "../components/rhf-auth-fields";
 import { FieldGroup } from "../components/ui/field";
-import { setNewPasswordFn } from "../lib/auth.functions";
+import { setNewPasswordFn } from "@/features/auth";
 
 const resetPasswordSchema = z
 	.object({

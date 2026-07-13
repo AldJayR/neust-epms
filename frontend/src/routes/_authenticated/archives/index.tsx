@@ -4,7 +4,7 @@ import { ArchivesPage } from "@/features/archives/archives-page";
 import {
 	archivedProjectsQueryOptions,
 	archivedProposalsQueryOptions,
-} from "@/lib/archives.functions";
+} from "@/features/archives";
 import { isDeniedAccess } from "@/lib/permissions";
 
 const ArchivesPendingComponent = () => (

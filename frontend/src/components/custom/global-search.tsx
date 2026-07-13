@@ -26,7 +26,7 @@ import {
 	globalSearchFn,
 	type SearchResultItem,
 	type SearchType,
-} from "@/lib/search.functions";
+} from "@/features/search";
 import { cn } from "@/lib/utils";
 
 const TYPE_ICONS = {

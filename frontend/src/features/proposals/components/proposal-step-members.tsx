@@ -8,7 +8,7 @@ import { FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
 import type { AuthUser } from "@/lib/auth";
-import { searchUsersFn } from "@/lib/auth.functions";
+import { searchUsersFn } from "@/features/auth";
 import type { FormValues } from "./create-proposal-modal";
 
 interface ProposalStepMembersProps {

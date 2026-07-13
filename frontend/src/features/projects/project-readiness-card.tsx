@@ -12,7 +12,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { ReadinessPrerequisite } from "@/lib/project-readiness.functions";
+import type { ReadinessPrerequisite } from "./readiness.functions";
 
 interface ProjectReadinessCardProps {
 	isReady: boolean;

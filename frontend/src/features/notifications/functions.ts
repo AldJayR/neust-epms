@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { API_BASE } from "@/config/api";
-import { authorizeSessionUser, getValidAccessToken } from "./session.server";
+import { authorizeSessionUser, getValidAccessToken } from "@/lib/session.server";
 
 
 export interface Notification {

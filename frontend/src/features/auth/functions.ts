@@ -6,7 +6,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { API_BASE } from "@/config/api";
 import { getErrorMessage } from "@/lib/api/client";
-import type { AuthUser } from "./auth";
+import type { AuthUser } from "@/types/user";
+import type { SearchUserResponse } from "@/types/search";
 
 const USER_PROFILE_CACHE_TTL_MS = 1000 * 30; // 30 seconds
 
@@ -32,7 +33,9 @@ const signupSchema = z.object({
 export const loginFn = createServerFn({ method: "POST" })
 	.validator(loginSchema)
 	.handler(async ({ data }) => {
-		const [{ getAppSession }] = await Promise.all([import("./session.server")]);
+		const [{ getAppSession }] = await Promise.all([
+			import("@/lib/session.server"),
+		]);
 
 		const response = await fetch(`${API_BASE}/auth/login`, {
 			method: "POST",
@@ -67,18 +70,11 @@ export const loginFn = createServerFn({ method: "POST" })
 		return { error: false as const, user };
 	});
 
-export interface SearchUserResponse {
-	userId: string;
-	firstName: string;
-	lastName: string;
-	email: string;
-}
-
 export const searchUsersFn = createServerFn({ method: "GET" })
 	.validator(z.object({ search: z.string().min(1) }))
 	.handler(async ({ data }) => {
 		const [{ authorizeSessionUser, getValidAccessToken }] = await Promise.all([
-			import("./session.server"),
+			import("@/lib/session.server"),
 		]);
 		// Require an authenticated user with any of our active roles
 		const [_, accessToken] = await Promise.all([
@@ -135,7 +131,7 @@ export const signupFn = createServerFn({ method: "POST" })
 
 export const logoutFn = createServerFn({ method: "POST" }).handler(async () => {
 	const { getAppSession, getValidAccessToken } = await import(
-		"./session.server"
+		"@/lib/session.server"
 	);
 	const session = await getAppSession();
 	const accessToken = await getValidAccessToken().catch(() => null);
@@ -202,8 +198,8 @@ export const getCurrentUserFn = createServerFn({ method: "POST" })
 	.handler(async () => {
 		const [{ getAppSession, getValidAccessToken }, { supabase }] =
 			await Promise.all([
-				import("./session.server"),
-				import("./supabase.server"),
+				import("@/lib/session.server"),
+				import("@/lib/supabase.server"),
 			]);
 
 		const session = await getAppSession();
@@ -308,7 +304,7 @@ export const getCurrentUserFn = createServerFn({ method: "POST" })
 export const sendResetCodeFn = createServerFn({ method: "POST" })
 	.validator(z.object({ email: z.string().email() }))
 	.handler(async ({ data }) => {
-		const { supabase } = await import("./supabase.server");
+		const { supabase } = await import("@/lib/supabase.server");
 		const { error } = await supabase.auth.resetPasswordForEmail(data.email);
 		if (error) {
 			return { error: true as const, message: error.message };
@@ -321,7 +317,7 @@ export const verifyResetCodeFn = createServerFn({ method: "POST" })
 		z.object({ email: z.string().email(), code: z.string().length(6) }),
 	)
 	.handler(async ({ data }) => {
-		const { supabase } = await import("./supabase.server");
+		const { supabase } = await import("@/lib/supabase.server");
 		const { data: verifyData, error } = await supabase.auth.verifyOtp({
 			email: data.email,
 			token: data.code,
@@ -334,7 +330,7 @@ export const verifyResetCodeFn = createServerFn({ method: "POST" })
 			};
 		}
 
-		const { getAppSession } = await import("./session.server");
+		const { getAppSession } = await import("@/lib/session.server");
 		const session = await getAppSession();
 		await session.update({
 			accessToken: verifyData.session.access_token,
@@ -347,7 +343,7 @@ export const verifyResetCodeFn = createServerFn({ method: "POST" })
 export const setNewPasswordFn = createServerFn({ method: "POST" })
 	.validator(z.object({ password: z.string().min(8) }))
 	.handler(async ({ data }) => {
-		const { getAppSession } = await import("./session.server");
+		const { getAppSession } = await import("@/lib/session.server");
 		const session = await getAppSession();
 		const { accessToken, refreshToken } = session.data;
 
@@ -412,7 +408,7 @@ export const completeOnboardingFn = createServerFn({ method: "POST" })
 	.validator(z.void())
 	.handler(async () => {
 		const [{ getValidAccessToken, getAppSession }] = await Promise.all([
-			import("./session.server"),
+			import("@/lib/session.server"),
 		]);
 
 		const token = await getValidAccessToken();
@@ -444,3 +440,5 @@ export const completeOnboardingFn = createServerFn({ method: "POST" })
 
 		return (await response.json()) as { success: boolean };
 	});
+
+export type { SearchUserResponse } from "@/types/search";

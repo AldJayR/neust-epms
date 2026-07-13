@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { API_BASE } from "@/config/api";
 import { getErrorMessage } from "@/lib/api/client";
-import { getValidAccessToken } from "./session.server";
+import { getValidAccessToken } from "@/lib/session.server";
 
 
 export const SearchTypeSchema = z.enum([

@@ -20,9 +20,9 @@ import { FieldGroup } from "../components/ui/field";
 import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
-} from "../lib/admin.functions";
+} from "@/features/admin";
 import type { AuthUser } from "../lib/auth";
-import { loginFn } from "../lib/auth.functions";
+import { loginFn } from "@/features/auth";
 import { setCachedUser } from "../lib/auth-cache";
 
 const loginSchema = z.object({

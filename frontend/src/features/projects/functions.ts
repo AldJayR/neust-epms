@@ -157,4 +157,6 @@ export type {
 	ProjectDetailsResponse,
 	ProjectHistoryItem,
 	ProjectMember,
+	ProjectHubParams,
+	ProjectHubResponse,
 } from "@/types/project";

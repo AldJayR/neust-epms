@@ -5,8 +5,8 @@ import { MetricCard } from "@/components/custom/metric-card";
 import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
 import type { AuthUser } from "@/lib/auth";
-import { getCampusesFn } from "@/lib/auth.functions";
-import { directorDashboardQueryOptions } from "@/features/dashboard/functions";
+import { getCampusesFn } from "@/features/auth";
+import { directorDashboardQueryOptions } from "../functions";
 import { ActionCenterCard } from "@/features/action-center";
 
 const ProjectsChartCard = React.lazy(() =>

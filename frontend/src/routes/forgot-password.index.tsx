@@ -8,7 +8,7 @@ import { z } from "zod";
 import { AuthPageLayout } from "../components/custom/auth-page-layout";
 import { RHFSubmitButton, RHFTextField } from "../components/rhf-auth-fields";
 import { FieldGroup } from "../components/ui/field";
-import { sendResetCodeFn } from "../lib/auth.functions";
+import { sendResetCodeFn } from "@/features/auth";
 
 const forgotPasswordSchema = z.object({
 	email: z.string().email("Please enter a valid email address"),

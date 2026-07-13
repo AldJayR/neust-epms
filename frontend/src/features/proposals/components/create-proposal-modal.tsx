@@ -21,7 +21,7 @@ import {
 	submitProposalFn,
 	updateProposalFn,
 	uploadProposalDocumentFn,
-} from "@/lib/ret.functions";
+} from "../ret.functions";
 import { ProposalStepDetails } from "./proposal-step-details";
 import { ProposalStepDocuments } from "./proposal-step-documents";
 import { ProposalStepInfo } from "./proposal-step-info";

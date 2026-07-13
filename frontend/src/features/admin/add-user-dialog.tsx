@@ -26,8 +26,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { provisionDirectorFn } from "@/lib/admin.functions";
-import { getDepartmentsFn } from "@/lib/auth.functions";
+import { provisionDirectorFn } from "./functions";
+import { getDepartmentsFn } from "@/features/auth";
 
 const rankOptions = [
 	{ label: "Instructor I", value: "instructor-1" },

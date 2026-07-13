@@ -13,7 +13,7 @@ import {
 } from "react";
 import type { PdfViewerRef } from "../pdf-viewer";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import type { AnnotationData, ProposalComment } from "@/lib/comments.functions";
+import type { AnnotationData, ProposalComment } from "../../comments.functions";
 import { useHandDrag } from "./hooks/use-hand-drag";
 import { usePdfDocument } from "./hooks/use-pdf-document";
 import { usePdfKeyboard } from "./hooks/use-pdf-keyboard";

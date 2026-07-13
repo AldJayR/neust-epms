@@ -4,12 +4,12 @@ import { PageSkeleton } from "@/components/custom/page-skeleton";
 import { ProjectHubPage } from "@/features/projects";
 import { FacultyProjectHubPage } from "@/features/faculty/faculty-project-hub-page";
 import { ProjectMonitoringPage } from "@/features/ret/project-monitoring-page";
-import { directorDashboardQueryOptions } from "@/features/dashboard/functions";
-import { projectHubQueryOptions } from "@/features/projects/functions";
+import { directorDashboardQueryOptions } from "@/features/dashboard";
+import { projectHubQueryOptions } from "@/features/projects";
 import {
 	facultyProjectsQueryOptions,
 	facultyProposalsQueryOptions,
-} from "@/lib/faculty.functions";
+} from "@/features/faculty";
 import {
 	isDeniedAccess,
 	isDirector,
