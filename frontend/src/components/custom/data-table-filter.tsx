@@ -35,7 +35,7 @@ export function DataTableFilter({
 		>
 			<SelectTrigger
 				className={cn(
-					"h-9 w-[180px] rounded-lg border-border bg-background shadow-sm",
+					"h-9 w-[180px] shrink-0 rounded-lg border-border bg-background shadow-sm",
 					className,
 				)}
 			>

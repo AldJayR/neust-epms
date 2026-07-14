@@ -1,4 +1,4 @@
-import { Download, Plus } from "lucide-react";
+import { Download, ListFilter, Plus } from "lucide-react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { DataTablePage } from "@/components/custom/data-table-page";
 import { MetricCard } from "@/components/custom/metric-card";
@@ -72,7 +72,9 @@ export function ReportsPage() {
 									variant="outline"
 									className="h-9 w-9 p-0 border-border rounded-[8px] shadow-sm animate-fade-in"
 									aria-label="Filter reports"
-								/>
+								>
+									<ListFilter className="size-4" />
+								</Button>
 							}
 						/>
 						<DropdownMenuContent align="end" className="w-48">

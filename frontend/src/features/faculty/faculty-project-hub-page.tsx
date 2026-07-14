@@ -357,7 +357,9 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 									value="college"
 									className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
 								>
-									College-wide Projects
+									{user?.isMainCampus
+										? "Department Projects"
+										: "Campus-wide Projects"}
 								</TabsTrigger>
 							</TabsList>
 						</Tabs>

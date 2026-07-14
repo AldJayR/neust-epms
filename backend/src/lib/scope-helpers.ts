@@ -4,13 +4,13 @@ import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 
 /**
  * Build the role-based scope clause for a user on the proposals table.
- * - Faculty: scoped to their department (if assigned) or campus.
+ * - Faculty: scoped to department (if main campus + department) or campus.
  * - RET Chair: scoped to department (if main campus + department) or campus.
  * - Director / Super Admin: returns undefined (full access).
  */
 function buildRoleScopeClause(user: AuthUser): SQL | undefined {
 	if (user.roleName === ROLE_NAMES.FACULTY) {
-		return user.departmentId !== null
+		return user.isMainCampus && user.departmentId !== null
 			? eq(proposals.departmentId, user.departmentId)
 			: eq(proposals.campusId, user.campusId);
 	}

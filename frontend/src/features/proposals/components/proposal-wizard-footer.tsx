@@ -23,23 +23,28 @@ export function ProposalWizardFooter({
 	onSubmit,
 }: ProposalWizardFooterProps) {
 	return (
-		<div className="flex items-center justify-between w-full">
-			{step > 1 ? (
-				<Button type="button" variant="outline" onClick={onPrevious}>
-					<ChevronLeft className="size-4" />
-					Previous
-				</Button>
-			) : (
-				<Button type="button" variant="ghost" onClick={onCancel}>
-					Cancel
-				</Button>
-			)}
+		<div className="flex w-full items-center justify-between gap-3">
+			<div className="flex min-w-0 items-center gap-3">
+				{step > 1 ? (
+					<Button type="button" variant="outline" onClick={onPrevious} className="shrink-0">
+						<ChevronLeft className="size-4" />
+						Previous
+					</Button>
+				) : (
+					<Button type="button" variant="ghost" onClick={onCancel} className="shrink-0">
+						Cancel
+					</Button>
+				)}
+				<p className="hidden truncate text-xs text-muted-foreground md:block">
+					Your progress is saved only when you choose Save as Draft.
+				</p>
+			</div>
 
 			{step < 5 ? (
 				<Button
 					type="button"
 					onClick={onNext}
-					className="bg-primary text-primary-foreground hover:bg-primary/90"
+					className="shrink-0 bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
 				>
 					Next
 					<ChevronRight className="size-4" />

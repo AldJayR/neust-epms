@@ -38,42 +38,44 @@ export function CreateProposalModal({
 
 	return (
 		<Dialog open={open} onOpenChange={wizard.handleOpenChange}>
-			<DialogContent className="sm:max-w-[700px] p-0 overflow-hidden gap-0">
+			<DialogContent className="h-[min(780px,calc(100vh-2rem))] max-w-[calc(100vw-2rem)] gap-0 overflow-hidden p-0 sm:max-w-[960px]">
 				<form
 					onSubmit={(event) => event.preventDefault()}
-					className="flex flex-col h-full"
+					className="flex h-full min-h-0 flex-col"
 				>
 					<ProposalWizardHeader step={wizard.step} isEditing={wizard.isEditing} />
 
-					<div className="p-6 overflow-y-auto max-h-[60vh]">
-						{wizard.step === 1 && <ProposalStepRequirements />}
+					<div className="min-h-0 flex-1 overflow-y-auto bg-muted/20 px-4 py-6 sm:px-8 sm:py-8">
+						<div className="mx-auto max-w-2xl rounded-2xl border border-border bg-card p-5 shadow-sm [&_[data-slot=field-label]]:text-foreground sm:p-8">
+							{wizard.step === 1 && <ProposalStepRequirements />}
 
-						{wizard.step === 2 && (
-							<ProposalStepInfo
-								form={wizard.form}
-								user={user}
-								sdgsData={wizard.sdgsData}
-							/>
-						)}
+							{wizard.step === 2 && (
+								<ProposalStepInfo
+									form={wizard.form}
+									user={user}
+									sdgsData={wizard.sdgsData}
+								/>
+							)}
 
-						{wizard.step === 3 && <ProposalStepDetails form={wizard.form} />}
+							{wizard.step === 3 && <ProposalStepDetails form={wizard.form} />}
 
-						{wizard.step === 4 && (
-							<ProposalStepMembers form={wizard.form} user={user} />
-						)}
+							{wizard.step === 4 && (
+								<ProposalStepMembers form={wizard.form} user={user} />
+							)}
 
-						{wizard.step === 5 && (
-							<ProposalStepDocuments
-								file={wizard.file}
-								setFile={wizard.setFile}
-								uploadPhase={wizard.uploadPhase}
-								uploadProgress={wizard.uploadProgress}
-								isEditing={wizard.isEditing}
-							/>
-						)}
+							{wizard.step === 5 && (
+								<ProposalStepDocuments
+									file={wizard.file}
+									setFile={wizard.setFile}
+									uploadPhase={wizard.uploadPhase}
+									uploadProgress={wizard.uploadProgress}
+									isEditing={wizard.isEditing}
+								/>
+							)}
+						</div>
 					</div>
 
-					<DialogFooter className="p-6 border-t border-border bg-card">
+					<DialogFooter className="border-t border-border bg-card px-6 py-4 sm:px-8">
 						<ProposalWizardFooter
 							step={wizard.step}
 							isBusy={wizard.isBusy}

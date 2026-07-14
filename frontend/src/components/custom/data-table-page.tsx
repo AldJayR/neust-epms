@@ -99,7 +99,7 @@ export function DataTablePage<TData>({
 						/>
 					)}
 					{filters && (
-						<div className="flex w-full flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
+						<div className="flex w-full flex-nowrap items-center justify-start gap-2 overflow-x-auto sm:w-max sm:shrink-0 sm:justify-end sm:overflow-visible">
 							{filters}
 						</div>
 					)}

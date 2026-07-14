@@ -66,7 +66,7 @@ async function getPendingProposals(opts: {
 
 async function getReturnedProposals(opts: {
 	scopeClause?: SQL;
-	joinWithMember?: boolean;
+	memberUserId?: string;
 }) {
 	const leaderSubquery = getLeaderSubquery();
 	const query = db
@@ -91,10 +91,13 @@ async function getReturnedProposals(opts: {
 		isNull(proposals.archivedAt),
 	];
 	if (opts.scopeClause) conditions.push(opts.scopeClause);
-	if (opts.joinWithMember) {
+	if (opts.memberUserId) {
 		query.innerJoin(
 			proposalMembers,
-			eq(proposals.proposalId, proposalMembers.proposalId),
+			and(
+				eq(proposals.proposalId, proposalMembers.proposalId),
+				eq(proposalMembers.userId, opts.memberUserId),
+			),
 		);
 	}
 
@@ -104,7 +107,7 @@ async function getReturnedProposals(opts: {
 async function getProjectsByStatus(opts: {
 	projectStatus: ProjectStatus;
 	scopeClause?: SQL;
-	joinWithMember?: boolean;
+	memberUserId?: string;
 }) {
 	const leaderSubquery = getLeaderSubquery();
 	const query = db
@@ -129,10 +132,13 @@ async function getProjectsByStatus(opts: {
 		isNull(projects.archivedAt),
 	];
 	if (opts.scopeClause) conditions.push(opts.scopeClause);
-	if (opts.joinWithMember) {
+	if (opts.memberUserId) {
 		query.innerJoin(
 			proposalMembers,
-			eq(proposals.proposalId, proposalMembers.proposalId),
+			and(
+				eq(proposals.proposalId, proposalMembers.proposalId),
+				eq(proposalMembers.userId, opts.memberUserId),
+			),
 		);
 	}
 
@@ -142,7 +148,7 @@ async function getProjectsByStatus(opts: {
 async function getUpcomingReports(opts: {
 	now: Date;
 	scopeClause?: SQL;
-	joinWithMember?: boolean;
+	memberUserId?: string;
 }) {
 	const leaderSubquery = getLeaderSubquery();
 	const query = db
@@ -180,10 +186,13 @@ async function getUpcomingReports(opts: {
 		isNull(projects.archivedAt),
 	];
 	if (opts.scopeClause) conditions.push(opts.scopeClause);
-	if (opts.joinWithMember) {
+	if (opts.memberUserId) {
 		query.innerJoin(
 			proposalMembers,
-			eq(proposals.proposalId, proposalMembers.proposalId),
+			and(
+				eq(proposals.proposalId, proposalMembers.proposalId),
+				eq(proposalMembers.userId, opts.memberUserId),
+			),
 		);
 	}
 
@@ -503,15 +512,15 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 	} else if (user.roleName === ROLE_NAMES.FACULTY) {
 		const [returned, overdue, reports] = await Promise.all([
 			getReturnedProposals({
-				joinWithMember: true,
+				memberUserId: user.userId,
 			}),
 			getProjectsByStatus({
 				projectStatus: PROJECT_STATUS.OVERDUE,
-				joinWithMember: true,
+				memberUserId: user.userId,
 			}),
 			getUpcomingReports({
 				now,
-				joinWithMember: true,
+				memberUserId: user.userId,
 			}),
 		]);
 
