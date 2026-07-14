@@ -30,6 +30,7 @@ import {
 } from "@/features/proposals/public";
 import type { ProposalItem } from "@/types/proposal";
 import { formatAcademicRank } from "@/lib/utils";
+import { toStableDate } from "@/lib/utils";
 import { ActionCenterCard } from "@/features/action-center";
 import { CreateProposalModal } from "@/features/proposals";
 
@@ -158,7 +159,7 @@ export function RETDashboardPage({
 			cellClassName: "px-4 py-3 align-middle text-sm text-foreground",
 			cell: ({ row }) => {
 				const proposal = row.original;
-				return format(new Date(proposal.createdAt), "MMM dd, yyyy");
+				return format(toStableDate(proposal.createdAt), "MMM dd, yyyy");
 			},
 			skeleton: <Skeleton className="h-4 w-20 rounded" />,
 		},

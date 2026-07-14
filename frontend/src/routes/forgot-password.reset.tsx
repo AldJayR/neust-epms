@@ -23,6 +23,7 @@ const resetPasswordSchema = z
 	});
 
 export const Route = createFileRoute("/forgot-password/reset")({
+	ssr: false,
 	beforeLoad: () => {
 		if (typeof window !== "undefined") {
 			const storedEmail = sessionStorage.getItem("forgot_password_email:v1");

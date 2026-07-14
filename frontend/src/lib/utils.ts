@@ -20,3 +20,20 @@ export function formatAcademicRank(rank: string | null): string {
 	if (!rank) return "Faculty";
 	return academicRankLabels[rank] ?? rank;
 }
+
+/**
+ * Keeps date-fns output identical between the server timezone and the browser timezone.
+ */
+export function toStableDate(value: string | Date): Date {
+	const date = value instanceof Date ? value : new Date(value);
+
+	return new Date(
+		date.getUTCFullYear(),
+		date.getUTCMonth(),
+		date.getUTCDate(),
+		date.getUTCHours(),
+		date.getUTCMinutes(),
+		date.getUTCSeconds(),
+		date.getUTCMilliseconds(),
+	);
+}

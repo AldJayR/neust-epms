@@ -6,6 +6,7 @@ import { UsersPage } from "@/features/admin/users-page";
 import { DirectorDashboardPage } from "@/features/dashboard";
 import { FacultyDashboardPage } from "@/features/faculty/faculty-dashboard-page";
 import { actionCenterQueryOptions } from "@/features/action-center";
+import { getCampusesFn } from "@/features/auth";
 import { RETDashboardPage } from "@/features/ret/ret-dashboard-page";
 import {
 	adminStatsQueryOptions,
@@ -42,49 +43,62 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 		search: search.search,
 		isActive: search.isActive,
 	}),
-	loader: ({ context, deps }) => {
+	loader: async ({ context, deps }) => {
 		if (
 			isDeniedAccess(context.auth.user, "Super Admin", "Director", "RET Chair")
 		) {
-			context.queryClient.prefetchQuery(actionCenterQueryOptions());
-			context.queryClient.prefetchQuery(
-				facultyProposalsQueryOptions({ page: 1, limit: 100 }),
-			);
-			context.queryClient.prefetchQuery(
-				facultyProjectsQueryOptions({ page: 1, limit: 100 }),
-			);
+			await Promise.all([
+				context.queryClient.ensureQueryData(actionCenterQueryOptions()),
+				context.queryClient.ensureQueryData(
+					facultyProposalsQueryOptions({ page: 1, limit: 100 }),
+				),
+				context.queryClient.ensureQueryData(
+					facultyProjectsQueryOptions({ page: 1, limit: 100 }),
+				),
+			]);
 			return null;
 		}
 
 		if (isSuperAdmin(context.auth.user)) {
-			context.queryClient.prefetchQuery(adminStatsQueryOptions());
-			context.queryClient.prefetchQuery(
-				adminUsersQueryOptions({
-					page: deps.page,
-					pageSize: deps.pageSize,
-					search: deps.search,
-					isActive: deps.isActive,
-				}),
-			);
+			await Promise.all([
+				context.queryClient.ensureQueryData(adminStatsQueryOptions()),
+				context.queryClient.ensureQueryData(
+					adminUsersQueryOptions({
+						page: deps.page,
+						pageSize: deps.pageSize,
+						search: deps.search,
+						isActive: deps.isActive,
+					}),
+				),
+			]);
 			return null;
 		}
 
 		if (isRETChair(context.auth.user)) {
-			context.queryClient.prefetchQuery(actionCenterQueryOptions());
-			context.queryClient.prefetchQuery(retDashboardStatsQueryOptions());
-			context.queryClient.prefetchQuery(
-				retProposalsQueryOptions({
-					page: deps.page,
-					limit: deps.pageSize,
-					search: deps.search,
-				}),
-			);
+			await Promise.all([
+				context.queryClient.ensureQueryData(actionCenterQueryOptions()),
+				context.queryClient.ensureQueryData(retDashboardStatsQueryOptions()),
+				context.queryClient.ensureQueryData(
+					retProposalsQueryOptions({
+						page: deps.page,
+						limit: deps.pageSize,
+						search: deps.search,
+					}),
+				),
+			]);
 			return null;
 		}
 
 		// Director path
-		context.queryClient.prefetchQuery(actionCenterQueryOptions());
-		context.queryClient.prefetchQuery(directorDashboardQueryOptions());
+		await Promise.all([
+			context.queryClient.ensureQueryData(actionCenterQueryOptions()),
+			context.queryClient.ensureQueryData(directorDashboardQueryOptions()),
+			context.queryClient.ensureQueryData({
+				queryKey: ["campuses"],
+				queryFn: () => getCampusesFn(),
+				staleTime: Number.POSITIVE_INFINITY,
+			}),
+		]);
 		return null;
 	},
 	component: DashboardPage,

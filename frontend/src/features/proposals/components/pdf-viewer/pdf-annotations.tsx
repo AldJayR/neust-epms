@@ -8,6 +8,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { AnnotationData, ProposalComment } from "../../comments.functions";
+import { toStableDate } from "@/lib/utils";
 
 interface CommentHighlightsProps {
 	comments: ProposalComment[];
@@ -50,7 +51,9 @@ export function CommentHighlights({ comments }: CommentHighlightsProps) {
 									"{comment.content}"
 								</p>
 								<span className="text-[9px] block text-zinc-500 text-right">
-									{new Date(comment.createdAt).toLocaleDateString()}
+									{toStableDate(comment.createdAt).toLocaleDateString("en-US", {
+										timeZone: "UTC",
+									})}
 								</span>
 							</div>
 						</TooltipContent>

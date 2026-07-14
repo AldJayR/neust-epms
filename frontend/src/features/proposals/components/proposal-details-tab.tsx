@@ -14,13 +14,15 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { toStableDate } from "@/lib/utils";
 import { useProposalReview } from "./proposal-review-context";
 
 const formatBudget = (value: number) => `P${value.toLocaleString("en-PH")}`;
 
 const formatReviewDate = (dateStr: string) => {
 	try {
-		return new Date(dateStr).toLocaleDateString("en-US", {
+		return toStableDate(dateStr).toLocaleDateString("en-US", {
+			timeZone: "UTC",
 			month: "long",
 			day: "numeric",
 			year: "numeric",

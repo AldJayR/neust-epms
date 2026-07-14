@@ -3,6 +3,7 @@ import { FileText } from "lucide-react";
 import { PageCard } from "@/components/custom/page-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toStableDate } from "@/lib/utils";
 
 export interface Activity {
 	id: string | number;
@@ -50,7 +51,7 @@ export function ActivityHistoryCard({ history }: { history: Activity[] }) {
 										</Badge>
 									</div>
 									<span className="text-xs text-muted-foreground">
-										{format(new Date(item.date), "MMM dd, yyyy · hh:mm a")}
+										{format(toStableDate(item.date), "MMM dd, yyyy · hh:mm a")}
 									</span>
 								</div>
 								<p className="text-[13px] text-muted-foreground">

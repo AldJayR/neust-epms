@@ -8,6 +8,7 @@ import {
 	FilePlus,
 	Loader2,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -17,6 +18,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { useProjectReportingSchedule } from "@/hooks/use-project-reporting-schedule";
+import { toStableDate } from "@/lib/utils";
 
 interface ReportingScheduleCardProps {
 	projectId: string;
@@ -68,7 +70,11 @@ export function ReportingScheduleCard({
 		);
 	}
 
-	const now = new Date();
+	const [now, setNow] = useState<Date | null>(null);
+
+	useEffect(() => {
+		setNow(new Date());
+	}, []);
 
 	return (
 		<Card size="sm" className={className}>
@@ -83,8 +89,8 @@ export function ReportingScheduleCard({
 			<CardContent className="pt-0">
 				<div className="relative border-l border-border pl-6 ml-3 space-y-6">
 					{dueDates.map((item, idx) => {
-						const dateObj = new Date(item.date);
-						const isOverdue = !item.isCompleted && dateObj < now;
+						const dateObj = toStableDate(item.date);
+						const isOverdue = !item.isCompleted && now !== null && dateObj < now;
 						const allPreviousComplete = dueDates
 							.slice(0, idx)
 							.every((d) => d.isCompleted);
@@ -112,14 +118,14 @@ export function ReportingScheduleCard({
 										{item.isCompleted && item.completedAt && (
 											<p className="text-xs text-green-600">
 												Completed{" "}
-												{format(new Date(item.completedAt), "MMM d, yyyy")}
+												{format(toStableDate(item.completedAt), "MMM d, yyyy")}
 											</p>
 										)}
 										{isOverdue && (
 											<p className="text-xs text-red-500">
 												Overdue by{" "}
 												{Math.ceil(
-													(now.getTime() - dateObj.getTime()) /
+													((now?.getTime() ?? 0) - dateObj.getTime()) /
 														(1000 * 60 * 60 * 24),
 												)}{" "}
 												days

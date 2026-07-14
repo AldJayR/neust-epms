@@ -81,10 +81,16 @@ export function ThemeProvider({
 
 	return (
 		<ThemeProviderContext value={{ theme, setTheme }}>
-			<ScriptOnce>{getThemeScript(storageKey, defaultTheme)}</ScriptOnce>
 			{children}
 		</ThemeProviderContext>
 	);
+}
+
+export function ThemeScript({
+	defaultTheme = "system",
+	storageKey = "theme",
+}: Pick<ThemeProviderProps, "defaultTheme" | "storageKey">) {
+	return <ScriptOnce>{getThemeScript(storageKey, defaultTheme)}</ScriptOnce>;
 }
 
 export function useTheme() {

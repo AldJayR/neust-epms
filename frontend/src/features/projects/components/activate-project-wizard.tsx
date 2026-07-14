@@ -12,6 +12,7 @@ import {
 import * as React from "react";
 import { toast } from "sonner";
 import { cn } from "#/lib/utils";
+import { toStableDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -216,10 +217,10 @@ export function ActivateProjectWizard({
 														<div className="flex flex-col">
 															<span>{moa.partnerName}</span>
 															<span className="text-xs text-muted-foreground">
-																{format(new Date(moa.validFrom), "MMM d, yyyy")}{" "}
+																{format(toStableDate(moa.validFrom), "MMM d, yyyy")}{" "}
 																-{" "}
 																{format(
-																	new Date(moa.validUntil),
+																	toStableDate(moa.validUntil),
 																	"MMM d, yyyy",
 																)}
 															</span>
@@ -240,8 +241,8 @@ export function ActivateProjectWizard({
 									<p className="font-medium">{selectedMoa.partnerName}</p>
 									<p className="text-muted-foreground">
 										Valid:{" "}
-										{format(new Date(selectedMoa.validFrom), "MMM d, yyyy")} -{" "}
-										{format(new Date(selectedMoa.validUntil), "MMM d, yyyy")}
+										{format(toStableDate(selectedMoa.validFrom), "MMM d, yyyy")} -{" "}
+										{format(toStableDate(selectedMoa.validUntil), "MMM d, yyyy")}
 									</p>
 								</div>
 							)}

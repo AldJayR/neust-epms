@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ClientOnly, Link } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { useState } from "react";
@@ -15,6 +15,7 @@ import {
 	projectHubQueryOptions,
 } from "./functions";
 import { formatAcademicRank } from "@/lib/utils";
+import { toStableDate } from "@/lib/utils";
 
 interface ProjectHubPageProps {
 	user?: AuthUser | null;
@@ -111,11 +112,8 @@ export function ProjectHubPage({
 			),
 			headerClassName: "w-[15%] font-medium text-muted-foreground",
 			cellClassName: "text-foreground text-left",
-			cell: ({ row }) => (
-				<ClientOnly fallback="...">
-					{format(new Date(row.original.dateSubmitted), "MMM dd, yyyy")}
-				</ClientOnly>
-			),
+			cell: ({ row }) =>
+				format(toStableDate(row.original.dateSubmitted), "MMM dd, yyyy"),
 		},
 		{
 			id: "status",

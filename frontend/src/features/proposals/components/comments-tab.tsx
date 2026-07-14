@@ -1,4 +1,5 @@
 import { MessageSquare } from "lucide-react";
+import { toStableDate } from "@/lib/utils";
 import type { PdfViewerRef } from "./pdf-viewer";
 
 interface CommentsTabProps {
@@ -58,7 +59,9 @@ export function CommentsTab({
 									</span>
 								</div>
 								<span className="text-3xs text-muted-foreground/60">
-									{new Date(comment.createdAt).toLocaleDateString()}
+									{toStableDate(comment.createdAt).toLocaleDateString("en-US", {
+										timeZone: "UTC",
+									})}
 								</span>
 							</div>
 							<p className="text-xs text-foreground/80 leading-relaxed break-words">

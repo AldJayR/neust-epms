@@ -10,11 +10,11 @@ export function getCachedUser(): AuthUser | null {
 
 export function setCachedUser(user: AuthUser | null): void {
 	cachedUser = user;
-	lastFetched = user ? Date.now() : 0;
+	lastFetched = Date.now();
 }
 
 export function isCacheStale(): boolean {
-	return !cachedUser || Date.now() - lastFetched > CACHE_DURATION_MS;
+	return Date.now() - lastFetched > CACHE_DURATION_MS;
 }
 
 export function clearAuthCache(): void {

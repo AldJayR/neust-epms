@@ -13,15 +13,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { ReportItem } from "@/types/report";
-import { formatAcademicRank } from "@/lib/utils";
+import { formatAcademicRank, toStableDate } from "@/lib/utils";
 import { EllipsisVertical } from "lucide-react";
 
 function formatDate(dateStr: string) {
 	try {
-		return new Date(dateStr).toLocaleDateString("en-US", {
+		return toStableDate(dateStr).toLocaleDateString("en-US", {
 			month: "short",
 			day: "numeric",
 			year: "numeric",
+			timeZone: "UTC",
 		});
 	} catch {
 		return dateStr;

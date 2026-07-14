@@ -1,5 +1,4 @@
 import { ClientOnly } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
 import * as React from "react";
 import {
 	Select,
@@ -84,16 +83,12 @@ export default function ProjectsChartCard({
 				) : (
 				<ClientOnly
 					fallback={
-						<div className="flex h-full items-center justify-center">
-							<Loader2 className="size-8 animate-spin text-brand-primary/20" />
-						</div>
+						<div className="h-full w-full animate-pulse rounded-lg bg-muted/50" />
 					}
 				>
 					<React.Suspense
 						fallback={
-							<div className="flex h-full items-center justify-center">
-								<Loader2 className="size-8 animate-spin text-brand-primary/20" />
-							</div>
+							<div className="h-full w-full animate-pulse rounded-lg bg-muted/50" />
 						}
 					>
 						<ProjectsChart chartData={bars} />

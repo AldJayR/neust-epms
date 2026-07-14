@@ -25,6 +25,7 @@ const otpSchema = z.object({
 });
 
 export const Route = createFileRoute("/forgot-password/otp")({
+	ssr: false,
 	beforeLoad: () => {
 		if (typeof window !== "undefined") {
 			const storedEmail = sessionStorage.getItem("forgot_password_email:v1");

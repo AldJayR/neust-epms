@@ -7,9 +7,9 @@ import {
 	useDeferredValue,
 	useEffect,
 	useImperativeHandle,
+	useMemo,
 	useRef,
 	useState,
-	useSyncExternalStore,
 } from "react";
 import type { PdfViewerRef } from "../pdf-viewer";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -39,19 +39,6 @@ interface PdfInnerProps {
 	isTheaterMode?: boolean;
 	onToggleTheaterMode?: () => void;
 	ref?: Ref<PdfViewerRef>;
-}
-
-function subscribeWidth(callback: () => void) {
-	window.addEventListener("resize", callback);
-	return () => window.removeEventListener("resize", callback);
-}
-
-function getWidthSnapshot() {
-	return window.innerWidth;
-}
-
-function getServerWidthSnapshot() {
-	return 1024;
 }
 
 const EMPTY_COMMENTS: ProposalComment[] = [];
@@ -88,12 +75,42 @@ const PdfInner = ({
 	usePdfKeyboard({ zoomIn, zoomOut, resetZoom });
 
 	const deferredScale = useDeferredValue(scale);
-	const windowWidth = useSyncExternalStore(
-		subscribeWidth,
-		getWidthSnapshot,
-		getServerWidthSnapshot,
-	);
-	const pageWidth = Math.min(BASE_WIDTH, windowWidth - 120);
+	const [viewerWidth, setViewerWidth] = useState(1024);
+
+	useEffect(() => {
+		const element = scrollRef.current;
+		if (!element) return;
+
+		let frame = 0;
+		const updateWidth = () => {
+			cancelAnimationFrame(frame);
+			frame = requestAnimationFrame(() => {
+				setViewerWidth(element.clientWidth);
+			});
+		};
+
+		updateWidth();
+		const observer = new ResizeObserver(updateWidth);
+		observer.observe(element);
+
+		return () => {
+			cancelAnimationFrame(frame);
+			observer.disconnect();
+		};
+	}, [loadingDoc]);
+
+	const pageWidth = Math.max(240, Math.min(BASE_WIDTH, viewerWidth - 120));
+	const commentsByPage = useMemo(() => {
+		const grouped = new Map<number, ProposalComment[]>();
+		for (const comment of comments) {
+			const page = comment.annotationJson?.page;
+			if (!page) continue;
+			const pageComments = grouped.get(page) ?? [];
+			pageComments.push(comment);
+			grouped.set(page, pageComments);
+		}
+		return grouped;
+	}, [comments]);
 
 	const [pageAspectRatios, setPageAspectRatios] = useState<
 		Record<number, number>
@@ -223,12 +240,10 @@ const PdfInner = ({
 												pdfDoc={pdfDoc}
 												pageNumber={pg}
 												width={pageWidth}
-												scale={deferredScale}
-												aspectRatio={aspect}
-												toolMode={toolMode}
-												comments={comments.filter(
-													(c) => c.annotationJson?.page === pg,
-												)}
+														scale={deferredScale}
+															aspectRatio={aspect}
+															toolMode={toolMode}
+															comments={commentsByPage.get(pg) ?? EMPTY_COMMENTS}
 												onAddComment={onAddComment}
 											/>
 										) : (

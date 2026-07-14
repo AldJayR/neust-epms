@@ -30,6 +30,7 @@ import {
 	moaLinkedProjectsQueryOptions,
 } from "./functions";
 import { isDirector } from "@/lib/permissions";
+import { toStableDate } from "@/lib/utils";
 import { EditMoaModal } from "./components/edit-moa-modal";
 import { MoaDetailsSkeleton } from "./moa-details-skeleton";
 
@@ -135,7 +136,7 @@ export function MoaDetailsPage({ moaId, currentUser }: MoaDetailsPageProps) {
 									Date Signed
 								</span>
 								<span className="text-sm font-medium">
-									{format(new Date(moa.validFrom), "MMM d, yyyy")}
+									{format(toStableDate(moa.validFrom), "MMM d, yyyy")}
 								</span>
 							</div>
 							<Separator />
@@ -144,7 +145,7 @@ export function MoaDetailsPage({ moaId, currentUser }: MoaDetailsPageProps) {
 									Expiry Date
 								</span>
 								<span className="text-sm font-medium">
-									{format(new Date(moa.validUntil), "MMM d, yyyy")}
+									{format(toStableDate(moa.validUntil), "MMM d, yyyy")}
 								</span>
 							</div>
 							{moa.storagePath && (

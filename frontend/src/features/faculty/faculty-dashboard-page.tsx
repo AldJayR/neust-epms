@@ -16,9 +16,16 @@ import {
 } from "@/features/faculty";
 import { ActionCenterCard } from "@/features/action-center";
 import { CreateProposalModal } from "@/features/proposals";
+import { toStableDate } from "@/lib/utils";
 
 export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
+	const [timeOfDay, setTimeOfDay] = React.useState("Day");
+
+	React.useEffect(() => {
+		const hour = new Date().getHours();
+		setTimeOfDay(hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening");
+	}, []);
 
 	const { data: proposalsData, isLoading: isProposalsLoading } = useQuery(
 		facultyProposalsQueryOptions({
@@ -97,20 +104,13 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 	const formatDateRange = (start?: string | null, end?: string | null) => {
 		if (!start && !end) return "No duration set";
 		try {
-			const startStr = start ? format(new Date(start), "MMM yyyy") : "";
-			const endStr = end ? format(new Date(end), "MMM yyyy") : "";
+			const startStr = start ? format(toStableDate(start), "MMM yyyy") : "";
+			const endStr = end ? format(toStableDate(end), "MMM yyyy") : "";
 			if (startStr && endStr) return `${startStr} - ${endStr}`;
 			return startStr || endStr;
 		} catch {
 			return "Invalid Date";
 		}
-	};
-
-	const getTimeOfDay = () => {
-		const hour = new Date().getHours();
-		if (hour < 12) return "Morning";
-		if (hour < 18) return "Afternoon";
-		return "Evening";
 	};
 
 	return (
@@ -119,7 +119,7 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 					title={
 						<div className="flex flex-col gap-2">
 						<h1 className="text-2xl font-semibold text-heading">
-							Good {getTimeOfDay()}, {user.firstName}
+							Good {timeOfDay}, {user.firstName}
 						</h1>
 							<p className="text-sm text-muted-foreground">
 								Your proposals, projects, and upcoming obligations

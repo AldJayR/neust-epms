@@ -17,6 +17,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import type { FormValues } from "./proposal-form";
+import { toStableDate } from "@/lib/utils";
 
 function formatPeso(value: number): string {
 	if (!value && value !== 0) return "";
@@ -41,10 +42,9 @@ interface CurrencyInputProps {
 function CurrencyInput({ value, onChange, placeholder }: CurrencyInputProps) {
 	const [display, setDisplay] = React.useState(() => formatPeso(value));
 
-	const currentNumValue = parsePesoInput(display);
-	if (currentNumValue !== value) {
+	React.useEffect(() => {
 		setDisplay(formatPeso(value));
-	}
+	}, [value]);
 
 	return (
 		<div className="relative">
@@ -96,7 +96,7 @@ export function ProposalStepDetails({ form }: ProposalStepDetailsProps) {
 									>
 										<CalendarIcon className="mr-2 size-4 text-muted-foreground" />
 										{field.value ? (
-											format(new Date(field.value), "PPP")
+											format(toStableDate(field.value), "PPP")
 										) : (
 											<span className="text-muted-foreground">
 												Pick a start date
@@ -106,7 +106,7 @@ export function ProposalStepDetails({ form }: ProposalStepDetailsProps) {
 									<PopoverContent className="w-auto p-0" align="start">
 										<Calendar
 											mode="single"
-											selected={field.value ? new Date(field.value) : undefined}
+											selected={field.value ? toStableDate(field.value) : undefined}
 											onSelect={(date) =>
 												field.onChange(date ? format(date, "yyyy-MM-dd") : "")
 											}
@@ -137,7 +137,7 @@ export function ProposalStepDetails({ form }: ProposalStepDetailsProps) {
 									>
 										<CalendarIcon className="mr-2 size-4 text-muted-foreground" />
 										{field.value ? (
-											format(new Date(field.value), "PPP")
+											format(toStableDate(field.value), "PPP")
 										) : (
 											<span className="text-muted-foreground">
 												Pick an end date
@@ -147,7 +147,7 @@ export function ProposalStepDetails({ form }: ProposalStepDetailsProps) {
 									<PopoverContent className="w-auto p-0" align="start">
 										<Calendar
 											mode="single"
-											selected={field.value ? new Date(field.value) : undefined}
+											selected={field.value ? toStableDate(field.value) : undefined}
 											onSelect={(date) =>
 												field.onChange(date ? format(date, "yyyy-MM-dd") : "")
 											}

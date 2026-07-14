@@ -19,6 +19,7 @@ import {
 	facultyProposalsQueryOptions,
 } from "@/features/faculty";
 import { CreateProposalModal } from "@/features/proposals";
+import { toStableDate } from "@/lib/utils";
 
 interface FacultyProjectHubPageProps {
 	user: AuthUser;
@@ -218,7 +219,7 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 			),
 			headerClassName: "w-[20%] font-medium text-muted-foreground",
 			cellClassName: "text-foreground text-left",
-			cell: ({ row }) => format(new Date(row.original.date), "MMM dd, yyyy"),
+			cell: ({ row }) => format(toStableDate(row.original.date), "MMM dd, yyyy"),
 		},
 		{
 			id: "status",

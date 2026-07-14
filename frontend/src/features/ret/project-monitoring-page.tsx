@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ClientOnly, Link } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { useState } from "react";
@@ -18,6 +18,7 @@ import {
 	projectHubQueryOptions,
 } from "@/features/projects/public";
 import { formatAcademicRank } from "@/lib/utils";
+import { toStableDate } from "@/lib/utils";
 
 interface ProjectMonitoringPageProps {
 	user?: AuthUser | null;
@@ -113,15 +114,12 @@ export function ProjectMonitoringPage({
 			),
 			headerClassName: "w-[20%] font-medium text-muted-foreground",
 			cellClassName: "text-foreground text-left",
-			cell: ({ row }) => (
-				<ClientOnly fallback="...">
-					{row.original.lastReportDate ? (
-						format(new Date(row.original.lastReportDate), "MMM dd, yyyy")
-					) : (
-						<span className="text-muted-foreground/60">—</span>
-					)}
-				</ClientOnly>
-			),
+			cell: ({ row }) =>
+				row.original.lastReportDate ? (
+					format(toStableDate(row.original.lastReportDate), "MMM dd, yyyy")
+				) : (
+					<span className="text-muted-foreground/60">—</span>
+				),
 		},
 		{
 			id: "status",

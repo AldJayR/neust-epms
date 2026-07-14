@@ -1,4 +1,3 @@
-import { ClientOnly } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { EllipsisVertical, RotateCcw } from "lucide-react";
@@ -13,6 +12,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { ArchivedMoa } from "../functions";
+import { toStableDate } from "@/lib/utils";
 
 export function ArchivedMoasTable({
 	data,
@@ -52,10 +52,10 @@ export function ArchivedMoasTable({
 			headerClassName: "w-[240px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => (
-				<ClientOnly fallback="...">
-					{format(new Date(row.original.validFrom), "MM/dd/yyyy")} - {" "}
-					{format(new Date(row.original.validUntil), "MM/dd/yyyy")}
-				</ClientOnly>
+				<>
+					{format(toStableDate(row.original.validFrom), "MM/dd/yyyy")} - {" "}
+					{format(toStableDate(row.original.validUntil), "MM/dd/yyyy")}
+				</>
 			),
 		},
 		{
@@ -66,13 +66,10 @@ export function ArchivedMoasTable({
 			),
 			headerClassName: "w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
-			cell: ({ row }) => (
-				<ClientOnly fallback="...">
-					{row.original.archivedAt
-						? format(new Date(row.original.archivedAt), "MMM dd, yyyy")
-						: "-"}
-				</ClientOnly>
-			),
+			cell: ({ row }) =>
+				row.original.archivedAt
+					? format(toStableDate(row.original.archivedAt), "MMM dd, yyyy")
+					: "-",
 		},
 		{
 			id: "actions",

@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { getCurrentUserFn } from "@/features/auth";
 import { Devtools } from "../components/devtools";
 import { ThemeToaster } from "../components/custom/theme-toaster";
-import { ThemeProvider } from "../components/theme-provider";
+import { ThemeProvider, ThemeScript } from "../components/theme-provider";
 import { TooltipProvider } from "../components/ui/tooltip";
 import type { AuthContext } from "../lib/auth";
 import { getCachedUser, isCacheStale, setCachedUser } from "../lib/auth-cache";
@@ -27,10 +27,11 @@ interface MyRouterContext {
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
 	beforeLoad: async () => {
-		let user = getCachedUser();
-		if (typeof window === "undefined" || isCacheStale()) {
+		const isServer = typeof window === "undefined";
+		let user = isServer ? null : getCachedUser();
+		if (isServer || isCacheStale()) {
 			user = await getCurrentUserFn();
-			setCachedUser(user);
+			if (!isServer) setCachedUser(user);
 		}
 
 		return {
@@ -240,6 +241,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
+				<ThemeScript defaultTheme="system" storageKey="theme" />
 				<HeadContent />
 			</head>
 			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">

@@ -65,6 +65,8 @@ interface RecentEntry {
 }
 
 function loadRecents(): RecentEntry[] {
+	if (typeof window === "undefined") return [];
+
 	try {
 		const raw = localStorage.getItem(RECENTS_KEY);
 		if (!raw) return [];
@@ -84,7 +86,9 @@ function pushRecent(entry: RecentEntry) {
 		(e) => !(e.query === entry.query && e.type === entry.type),
 	);
 	list.unshift(entry);
-	localStorage.setItem(RECENTS_KEY, JSON.stringify(list.slice(0, RECENTS_MAX)));
+	const next = list.slice(0, RECENTS_MAX);
+	localStorage.setItem(RECENTS_KEY, JSON.stringify(next));
+	return next;
 }
 
 interface GlobalSearchProps {
@@ -94,8 +98,9 @@ interface GlobalSearchProps {
 export function GlobalSearch({ user }: GlobalSearchProps) {
 	const [open, setOpen] = React.useState(false);
 	const [query, setQuery] = React.useState("");
-	const [debounced, setDebounced] = React.useState("");
 	const [type, setType] = React.useState<SearchType>("all");
+	const [recents, setRecents] = React.useState<RecentEntry[]>([]);
+	const deferredQuery = React.useDeferredValue(query);
 	const navigate = useNavigate();
 
 	const allowedTypes = React.useMemo(() => {
@@ -106,37 +111,30 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 	}, [user]);
 
 	React.useEffect(() => {
+		setRecents(loadRecents());
+	}, []);
+
+	React.useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey)) {
 				e.preventDefault();
-				setOpen((o) => !o);
+				setQuery("");
+				setOpen(true);
 			}
 		};
 		document.addEventListener("keydown", onKey);
 		return () => document.removeEventListener("keydown", onKey);
 	}, []);
 
-	React.useEffect(() => {
-		if (open) {
-			setQuery("");
-			setDebounced("");
-		}
-	}, [open]);
-
-	React.useEffect(() => {
-		const t = setTimeout(() => setDebounced(query), 250);
-		return () => clearTimeout(t);
-	}, [query]);
-
 	const { data, isFetching } = useQuery({
-		queryKey: ["global-search", debounced, type],
-		queryFn: () => globalSearchFn({ data: { q: debounced, type, limit: 5 } }),
-		enabled: debounced.trim().length > 0,
+		queryKey: ["global-search", deferredQuery, type],
+		queryFn: () =>
+			globalSearchFn({ data: { q: deferredQuery, type, limit: 5 } }),
+		enabled: deferredQuery.trim().length > 0,
+		staleTime: 30_000,
 	});
 
 	const results = data?.results ?? [];
-	const recents = loadRecents();
-
 	const grouped = React.useMemo(
 		() =>
 			(["proposals", "projects", "reports", "moas", "users"] as const)
@@ -147,7 +145,7 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 
 	const goTo = React.useCallback(
 		(item: SearchResultItem) => {
-			pushRecent({ query, type });
+			setRecents(pushRecent({ query, type }));
 			switch (item.type) {
 				case "proposals":
 					navigate({
@@ -179,11 +177,16 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 		setQuery(entry.query);
 	};
 
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (nextOpen) setQuery("");
+		setOpen(nextOpen);
+	};
+
 	return (
 		<>
 			<button
 				type="button"
-				onClick={() => setOpen(true)}
+				onClick={() => handleOpenChange(true)}
 				className="relative flex h-8 w-full max-w-[212px] items-center gap-2 rounded-lg border border-border bg-background px-3 text-sm text-muted-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
 				aria-label="Open global search"
 			>
@@ -194,7 +197,7 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 				</kbd>
 			</button>
 
-			<CommandDialog open={open} onOpenChange={setOpen}>
+			<CommandDialog open={open} onOpenChange={handleOpenChange}>
 				<Command shouldFilter={false} className="gap-0">
 					<CommandInput
 						value={query}

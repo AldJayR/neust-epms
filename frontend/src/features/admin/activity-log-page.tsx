@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { ClientOnly } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import {
 	CircleCheck,
@@ -36,12 +35,14 @@ import {
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
 	month: "short",
 	day: "numeric",
+	timeZone: "UTC",
 });
 
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
 	hour: "numeric",
 	minute: "2-digit",
 	hour12: true,
+	timeZone: "UTC",
 });
 
 interface ActivityLogPageProps {
@@ -136,21 +137,12 @@ export function ActivityLogPage({
 				const createdAt = new Date(row.original.createdAt);
 				return (
 					<div className="flex flex-col">
-						<ClientOnly
-							fallback={
-								<div className="flex flex-col">
-									<span className="text-sm text-foreground">...</span>
-									<span className="text-xs text-muted-foreground">...</span>
-								</div>
-							}
-						>
-							<span className="text-sm text-foreground">
-								{dateFormatter.format(createdAt)}
-							</span>
-							<span className="text-xs text-muted-foreground">
-								{timeFormatter.format(createdAt)}
-							</span>
-						</ClientOnly>
+						<span className="text-sm text-foreground">
+							{dateFormatter.format(createdAt)}
+						</span>
+						<span className="text-xs text-muted-foreground">
+							{timeFormatter.format(createdAt)}
+						</span>
 					</div>
 				);
 			},

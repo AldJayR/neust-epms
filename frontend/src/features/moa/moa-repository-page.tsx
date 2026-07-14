@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ClientOnly, Link } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { EllipsisVertical, ListFilter, Plus } from "lucide-react";
@@ -25,6 +25,7 @@ import type { AuthUser } from "@/lib/auth";
 import { moaRepositoryQueryOptions } from "./functions";
 import type { MoaItem } from "@/types/moa";
 import { isDirector } from "@/lib/permissions";
+import { toStableDate } from "@/lib/utils";
 import { CreateMoaModal } from "./components/create-moa-modal";
 
 interface MoaRepositoryPageProps {
@@ -97,11 +98,8 @@ export function MoaRepositoryPage({
 			headerClassName:
 				"w-[223px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
-			cell: ({ row }) => (
-				<ClientOnly fallback="...">
-					{format(new Date(row.original.dateSigned), "MMM dd, yyyy")}
-				</ClientOnly>
-			),
+			cell: ({ row }) =>
+				format(toStableDate(row.original.dateSigned), "MMM dd, yyyy"),
 		},
 		{
 			id: "daysToExpiry",

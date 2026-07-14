@@ -9,6 +9,7 @@ import {
 	useRouterState,
 } from "@tanstack/react-router";
 import { AnimatePresence, domMax, LazyMotion, m } from "motion/react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -118,24 +119,25 @@ function RegisterStepOneForm() {
 	const form = useForm<z.infer<typeof registerStep1Schema>>({
 		resolver: zodResolver(registerStep1Schema),
 		mode: "onBlur",
-		defaultValues: (() => {
-			const saved = sessionStorage.getItem("register_step1:v1");
-			if (saved) {
-				try {
-					return JSON.parse(saved);
-				} catch {
-					toast.error("Failed to restore registration data.");
-				}
-			}
-			return {
-				firstName: "",
-				lastName: "",
-				departmentId: "",
-				campusId: "",
-				academicRank: "",
-			};
-		})(),
+		defaultValues: {
+			firstName: "",
+			lastName: "",
+			departmentId: "",
+			campusId: "",
+			academicRank: "",
+		},
 	});
+
+	useEffect(() => {
+		const saved = sessionStorage.getItem("register_step1:v1");
+		if (!saved) return;
+
+		try {
+			form.reset(JSON.parse(saved));
+		} catch {
+			toast.error("Failed to restore registration data.");
+		}
+	}, [form]);
 
 	function onSubmit(data: z.infer<typeof registerStep1Schema>) {
 		// Store step 1 data for step 2 to read on final submit
