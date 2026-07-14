@@ -25,69 +25,69 @@ const STATUS_MAP: Record<string, StatusConfig> = {
 	Approved: {
 		label: "Approved",
 		icon: CheckCircle2,
-		iconClassName: "text-green-500",
+		iconClassName: "text-success",
 	},
 	"Pending Review": {
 		label: "For Review",
 		icon: Loader2,
-		iconClassName: "text-amber-500",
+		iconClassName: "text-warning",
 		iconSpin: true,
 	},
 	Endorsed: {
 		label: "For Review",
 		icon: Loader2,
-		iconClassName: "text-amber-500",
+		iconClassName: "text-warning",
 		iconSpin: true,
 	},
 	Returned: {
 		label: "Needs Revision",
 		icon: RotateCcw,
-		iconClassName: "text-orange-500",
+		iconClassName: "text-warning",
 	},
 	Ongoing: {
 		label: "Ongoing",
 		icon: Play,
-		iconClassName: "text-blue-500 fill-blue-500",
+		iconClassName: "fill-info text-info",
 	},
 	Overdue: {
 		label: "Overdue",
 		icon: AlertTriangle,
-		iconClassName: "text-red-500",
+		iconClassName: "text-danger",
 	},
 	"Pending Closure": {
 		label: "Pending Closure",
 		icon: Clock,
-		iconClassName: "text-amber-500",
+		iconClassName: "text-warning",
 	},
 	Valid: {
 		label: "Valid",
 		icon: CheckCircle2,
-		iconClassName: "text-green-500",
+		iconClassName: "text-success",
 	},
 	"Renewal Needed": {
 		label: "Renewal Needed",
 		icon: AlertCircle,
-		iconClassName: "text-orange-500",
+		iconClassName: "text-warning",
 	},
 	Expired: {
 		label: "Expired",
 		icon: XCircle,
-		iconClassName: "text-red-500",
+		iconClassName: "text-danger",
 	},
 	Terminated: {
 		label: "Terminated",
 		icon: XCircle,
-		iconClassName: "text-red-500",
+		iconClassName: "text-danger",
 	},
 	Active: {
 		label: "Active",
 		icon: CheckCircle2,
-		iconClassName: "text-emerald-500",
+		iconClassName: "text-success",
 	},
 	Deactivated: {
 		label: "Deactivated",
 		icon: XCircle,
-		iconClassName: "text-red-500",
+		iconClassName: "text-danger",
 	},
 	Draft: {
 		label: "Draft",
@@ -97,12 +97,12 @@ const STATUS_MAP: Record<string, StatusConfig> = {
 	Completed: {
 		label: "Completed",
 		icon: CheckCircle2,
-		iconClassName: "text-green-500",
+		iconClassName: "text-success",
 	},
 	Rejected: {
 		label: "Rejected",
 		icon: XCircle,
-		iconClassName: "text-red-500",
+		iconClassName: "text-danger",
 	},
 	Closed: {
 		label: "Closed",
@@ -112,17 +112,17 @@ const STATUS_MAP: Record<string, StatusConfig> = {
 	Progress: {
 		label: "Progress",
 		icon: Clock,
-		iconClassName: "text-blue-500",
+		iconClassName: "text-info",
 	},
 	Terminal: {
 		label: "Terminal",
 		icon: CheckCircle2,
-		iconClassName: "text-amber-500",
+		iconClassName: "text-warning",
 	},
 	"Final Accomplishment": {
 		label: "Final Accomplishment",
 		icon: CheckCircle2,
-		iconClassName: "text-emerald-500",
+		iconClassName: "text-success",
 	},
 };
 

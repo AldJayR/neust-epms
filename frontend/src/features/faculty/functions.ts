@@ -4,7 +4,10 @@ import { z } from "zod";
 import { API_BASE } from "@/config/api";
 import { getErrorMessage } from "@/lib/api/client";
 import { authorizeSessionUser, getValidAccessToken } from "@/lib/session.server";
-import type { FacultyInvolvement } from "@/types/user";
+import type {
+	FacultyContributorAvatar,
+	FacultyInvolvement,
+} from "@/types/user";
 
 const STALE_TIME = 1000 * 60 * 5;
 
@@ -42,7 +45,11 @@ const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 			metrics: {
 				totalActiveExtension: number;
 				averageProjectsPerFaculty: number;
-				mostActiveCollege: { name: string; contributors: number };
+				mostActiveCollege: {
+					name: string;
+					contributors: number;
+					contributorAvatars: FacultyContributorAvatar[];
+				};
 			};
 		};
 	});

@@ -196,7 +196,7 @@ export function FacultyDirectoryPage({
 	const metrics = data?.metrics ?? {
 		totalActiveExtension: 0,
 		averageProjectsPerFaculty: 0,
-		mostActiveCollege: { name: "", contributors: 0 },
+		mostActiveCollege: { name: "", contributors: 0, contributorAvatars: [] },
 	};
 
 	const columns = getFacultyDirectoryColumns(page, limit);
@@ -270,6 +270,7 @@ export function FacultyDirectoryPage({
 					label="Most Active College"
 					college={metrics.mostActiveCollege.name}
 					contributors={metrics.mostActiveCollege.contributors}
+					contributorAvatars={metrics.mostActiveCollege.contributorAvatars}
 					className="flex-1"
 				/>
 			</div>

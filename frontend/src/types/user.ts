@@ -38,6 +38,16 @@ export interface FacultyDirectoryResponse {
 	metrics: {
 		totalActiveExtension: number;
 		averageProjectsPerFaculty: number;
-		mostActiveCollege: { name: string; contributors: number };
+		mostActiveCollege: {
+			name: string;
+			contributors: number;
+			contributorAvatars: FacultyContributorAvatar[];
+		};
 	};
+}
+
+export interface FacultyContributorAvatar {
+	userId: string;
+	name: string;
+	avatarUrl: string | null;
 }

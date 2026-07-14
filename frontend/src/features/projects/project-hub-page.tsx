@@ -27,7 +27,6 @@ interface ProjectHubPageProps {
 	onSearchChange: (search: string) => void;
 	onCollegeChange: (college: string) => void;
 	onStatusChange: (status: string) => void;
-	onProjectClick?: (projectId: string) => void;
 }
 
 export function ProjectHubPage({
@@ -40,7 +39,6 @@ export function ProjectHubPage({
 	onSearchChange,
 	onCollegeChange,
 	onStatusChange,
-	onProjectClick,
 }: ProjectHubPageProps) {
 	const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -185,7 +183,6 @@ export function ProjectHubPage({
 			activeFilters={{ search, college, status }}
 			emptyMessage="No projects found."
 			ariaLabel="Projects"
-			onRowClick={(project) => onProjectClick?.(project.id)}
 		/>
 	);
 }

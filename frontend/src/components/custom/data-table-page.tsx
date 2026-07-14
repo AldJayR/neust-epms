@@ -77,24 +77,32 @@ export function DataTablePage<TData>({
 	return (
 		<div className="flex flex-col gap-8">
 			{(title || actions) && (
-				<div className="flex items-start justify-between">
-					{title && <div>{title}</div>}
-					{actions && <div>{actions}</div>}
+				<div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+					{title && <div className="min-w-0 flex-1">{title}</div>}
+					{actions && (
+						<div className="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:justify-end">
+							{actions}
+						</div>
+					)}
 				</div>
 			)}
 
 			{(onSearch || filters) && (
-				<div className="flex items-center justify-between gap-4">
+				<div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
 					{onSearch && (
 						<SearchInput
 							value={search ?? ""}
 							onChange={onSearch}
 							placeholder={searchPlaceholder}
 							ariaLabel={searchPlaceholder}
-							className="max-w-[352px]"
+							className="w-full max-w-none sm:max-w-[352px]"
 						/>
 					)}
-					{filters && <div className="flex items-center gap-2">{filters}</div>}
+					{filters && (
+						<div className="flex w-full flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
+							{filters}
+						</div>
+					)}
 				</div>
 			)}
 

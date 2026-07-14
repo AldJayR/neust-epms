@@ -142,13 +142,6 @@ function ProjectsIndexPage() {
 		});
 	};
 
-	const handleProjectClick = (projectId: string) => {
-		navigate({
-			to: "/projects/$projectId",
-			params: { projectId },
-		});
-	};
-
 	if (!user) {
 		return null;
 	}
@@ -169,7 +162,6 @@ function ProjectsIndexPage() {
 				onSearchChange={handleSearch}
 				onCollegeChange={handleCollegeChange}
 				onStatusChange={handleStatusChange}
-				onProjectClick={handleProjectClick}
 			/>
 		);
 	}
@@ -187,7 +179,6 @@ function ProjectsIndexPage() {
 				onSearchChange={handleSearch}
 				onStatusChange={handleStatusChange}
 				onMyProjectsOnlyChange={handleMyProjectsOnlyChange}
-				onProjectClick={handleProjectClick}
 			/>
 		);
 	}

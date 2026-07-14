@@ -30,7 +30,6 @@ interface ProjectMonitoringPageProps {
 	onSearchChange: (search: string) => void;
 	onStatusChange: (status: string) => void;
 	onMyProjectsOnlyChange: (myProjectsOnly: boolean) => void;
-	onProjectClick?: (projectId: string) => void;
 }
 
 export function ProjectMonitoringPage({
@@ -44,7 +43,6 @@ export function ProjectMonitoringPage({
 	onSearchChange,
 	onStatusChange,
 	onMyProjectsOnlyChange,
-	onProjectClick,
 }: ProjectMonitoringPageProps) {
 	const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -199,7 +197,6 @@ export function ProjectMonitoringPage({
 				activeFilters={{ search, status }}
 				emptyMessage="No projects found."
 				ariaLabel="Projects"
-				onRowClick={(project) => onProjectClick?.(project.id)}
 				cardHeader={
 					<div className="border-b border-border bg-background p-2">
 						<Tabs

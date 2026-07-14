@@ -23,7 +23,7 @@ interface MyRouterContext {
 	auth: AuthContext;
 }
 
-const THEME_INIT_SCRIPT = `(function(){try{var root=document.documentElement;root.classList.remove('light','dark');root.classList.add('light');root.setAttribute('data-theme','light');root.style.colorScheme='light';window.localStorage.setItem('theme','light');}catch(e){}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{var root=document.documentElement;var stored=window.localStorage.getItem('theme');var theme=stored==='dark'||stored==='light'?stored:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');root.classList.remove('light','dark');root.classList.add(theme);root.setAttribute('data-theme',theme);root.style.colorScheme=theme;}catch(e){}})();`;
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
 	beforeLoad: async () => {
@@ -73,14 +73,15 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	shellComponent: RootDocument,
 });
 
-function RootError({ error, reset }: { error: Error; reset: () => void }) {
+function RootError({ reset }: { error: Error; reset: () => void }) {
 	const router = useRouter();
 
 	return (
 		<div className="flex min-h-dvh flex-col items-center justify-center p-8 text-center">
 			<h1 className="text-4xl font-semibold">Something went wrong</h1>
 			<p className="mt-4 max-w-md text-muted-foreground">
-				{error.message || "An unexpected error occurred."}
+				We could not load this page. Try again, or return home if the problem
+				continues.
 			</p>
 			<div className="mt-8 flex gap-3">
 				<button

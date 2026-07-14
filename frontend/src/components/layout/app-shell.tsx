@@ -11,7 +11,7 @@ export function AppShell({ children }: AppShellProps) {
 	return (
 		<SidebarProvider>
 			<AppSidebar />
-			<SidebarInset className="bg-background">
+			<SidebarInset id="main-content" className="bg-background">
 				<a
 					href="#main-content"
 					className="sr-only focus:not-sr-only focus:absolute focus:z-[9999] focus:bg-background focus:p-2 focus:ring-2 focus:ring-ring"
@@ -19,10 +19,7 @@ export function AppShell({ children }: AppShellProps) {
 					Skip to content
 				</a>
 				<AppHeader />
-				<div
-					id="main-content"
-					className="flex flex-1 flex-col gap-4 p-4 lg:px-8 lg:py-6"
-				>
+				<div className="flex flex-1 flex-col gap-4 p-4 lg:px-8 lg:py-6">
 					{children}
 				</div>
 			</SidebarInset>

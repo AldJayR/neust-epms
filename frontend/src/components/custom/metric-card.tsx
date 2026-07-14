@@ -1,8 +1,15 @@
 import { TrendingUp } from "lucide-react";
 import { cn } from "#/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarGroup } from "@/components/ui/avatar-group";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+
+interface MetricContributorAvatar {
+	userId: string;
+	name: string;
+	avatarUrl: string | null;
+}
 
 interface MetricCardProps {
 	label: string;
@@ -10,6 +17,7 @@ interface MetricCardProps {
 	trend?: string;
 	college?: string;
 	contributors?: number;
+	contributorAvatars?: MetricContributorAvatar[];
 	className?: string;
 	variant?: "default" | "card";
 	isLoading?: boolean;
@@ -21,6 +29,7 @@ export function MetricCard({
 	trend,
 	college,
 	contributors,
+	contributorAvatars,
 	className,
 	variant = "default",
 	isLoading = false,
@@ -29,11 +38,11 @@ export function MetricCard({
 		return (
 			<Card
 				className={cn(
-					"border-border shadow-[0px_1px_3px_0px_var(--shadow-card)] rounded-xl",
+					"rounded-xl border-border bg-card shadow-[0_1px_2px_0_var(--shadow-card)]",
 					className,
 				)}
 			>
-				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
+				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-3">
 					<CardTitle className="text-sm font-normal text-muted-foreground">
 						{label}
 					</CardTitle>
@@ -42,7 +51,7 @@ export function MetricCard({
 					{isLoading ? (
 						<Skeleton className="h-10 w-24 rounded" />
 					) : (
-						<div className="text-4xl font-semibold text-heading">{value}</div>
+						<div className="text-3xl font-semibold leading-none text-heading">{value}</div>
 					)}
 				</CardContent>
 			</Card>
@@ -53,8 +62,7 @@ export function MetricCard({
 	return (
 		<div
 			className={cn(
-				"flex flex-col gap-4 overflow-hidden rounded-xl border border-border bg-background p-4 shadow-[0px_1px_3px_0px_var(--shadow-card)]",
-				isFacultyCustom ? "h-[116px]" : "h-[104px]",
+				"flex min-h-[104px] flex-col gap-3 overflow-hidden rounded-xl border border-border bg-card p-4 shadow-[0_1px_2px_0_var(--shadow-card)]",
 				className,
 			)}
 		>
@@ -63,17 +71,7 @@ export function MetricCard({
 				isFacultyCustom ? (
 					<div className="flex flex-col gap-2">
 						<Skeleton className="h-5 w-3/4 rounded" />
-						<div className="flex items-center gap-2">
-							<div className="flex -space-x-2">
-								{[1, 2, 3].map((i) => (
-									<Skeleton
-										key={i}
-										className="size-6 rounded-full border border-white bg-muted"
-									/>
-								))}
-							</div>
-							<Skeleton className="h-4 w-28 rounded" />
-						</div>
+						<Skeleton className="h-4 w-28 rounded" />
 					</div>
 				) : (
 					<div className="flex items-end gap-4">
@@ -82,31 +80,54 @@ export function MetricCard({
 				)
 			) : isFacultyCustom ? (
 				<div className="flex flex-col gap-1">
-					<p className="text-base font-medium leading-5 text-heading truncate">
+					<p className="truncate text-base font-medium leading-5 text-heading">
 						{college}
 					</p>
 					<div className="flex items-center gap-2">
-						<div className="flex -space-x-2">
-							{[1, 2, 3].map((i) => (
-								<Avatar key={i} className="size-6 border-2 border-white">
-									<AvatarFallback className="bg-muted text-[8px]" />
-								</Avatar>
-							))}
-						</div>
+						{contributorAvatars && contributorAvatars.length > 0 && (
+							<AvatarGroup
+								size={28}
+								max={4}
+								role="img"
+								aria-label={`${contributors ?? 0} contributors in ${college}`}
+								renderOverflow={() => (
+									<div className="inline-flex size-full items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+										+{Math.max((contributors ?? 0) - 3, 1)}
+									</div>
+								)}
+							>
+								{contributorAvatars.map((contributor) => (
+									<Avatar
+										key={contributor.userId}
+										className="border-2 border-card"
+									>
+										{contributor.avatarUrl && (
+											<AvatarImage
+												src={contributor.avatarUrl}
+												alt={contributor.name}
+											/>
+										)}
+										<AvatarFallback className="bg-muted text-[10px] text-muted-foreground">
+											{getInitials(contributor.name)}
+										</AvatarFallback>
+									</Avatar>
+								))}
+							</AvatarGroup>
+						)}
 						<p className="text-sm text-muted-foreground">
-							+{contributors} Contributors
+							{contributors ?? 0} contributors
 						</p>
 					</div>
 				</div>
 			) : (
 				<div className="flex items-end gap-4">
-					<p className="text-[36px] font-semibold leading-9 text-heading">
+					<p className="text-3xl font-semibold leading-none text-heading">
 						{value}
 					</p>
 					{trend && (
-						<div className="flex h-[22px] items-center gap-1 rounded-lg border border-border bg-background px-1.5 py-0.5 shadow-sm">
-							<TrendingUp className="size-3 text-green-500" />
-							<span className="text-xs font-medium text-green-500">
+						<div className="flex items-center gap-1 rounded-md border border-success/20 bg-success/10 px-1.5 py-1">
+							<TrendingUp className="size-3 text-success" />
+							<span className="text-xs font-medium text-success">
 								{trend}
 							</span>
 						</div>
@@ -114,5 +135,17 @@ export function MetricCard({
 				</div>
 			)}
 		</div>
+	);
+}
+
+function getInitials(name: string) {
+	return (
+		name
+			.split(" ")
+			.filter(Boolean)
+			.slice(0, 2)
+			.map((part) => part[0])
+			.join("")
+			.toUpperCase() || "?"
 	);
 }

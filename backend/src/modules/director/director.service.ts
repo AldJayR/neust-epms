@@ -363,6 +363,31 @@ export async function getFacultyDirectory(
 	const totalFacultyRow = totalFaculty[0];
 	const totalProjectsRow = totalProjects[0];
 	const mostActiveCollegeRow = mostActiveCollege[0];
+	const contributorAvatarRows = mostActiveCollegeRow?.name
+		? await db
+				.select({
+					userId: users.userId,
+					name: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
+					avatarUrl: users.avatarUrl,
+				})
+				.from(users)
+				.innerJoin(roles, eq(users.roleId, roles.roleId))
+				.innerJoin(departments, eq(users.departmentId, departments.departmentId))
+				.where(
+					and(
+						...mostActiveCollegeConditions,
+						eq(departments.departmentName, mostActiveCollegeRow.name),
+					),
+				)
+				.orderBy(users.lastName)
+				.limit(4)
+		: [];
+
+	const mostActiveCollegeMetric = {
+		name: mostActiveCollegeRow?.name ?? "N/A",
+		contributors: Number(mostActiveCollegeRow?.contributors ?? 0),
+		contributorAvatars: contributorAvatarRows,
+	};
 
 	if (userIds.length === 0) {
 		return {
@@ -371,10 +396,7 @@ export async function getFacultyDirectory(
 			metrics: {
 				totalActiveExtension: Number(totalFacultyRow?.value ?? 0),
 				averageProjectsPerFaculty: 0,
-				mostActiveCollege: {
-					name: mostActiveCollegeRow?.name ?? "N/A",
-					contributors: Number(mostActiveCollegeRow?.contributors ?? 0),
-				},
+				mostActiveCollege: mostActiveCollegeMetric,
 			},
 		};
 	}
@@ -449,10 +471,7 @@ export async function getFacultyDirectory(
 						).toFixed(1)
 					: 0,
 			),
-			mostActiveCollege: {
-				name: mostActiveCollegeRow?.name ?? "N/A",
-				contributors: Number(mostActiveCollegeRow?.contributors ?? 0),
-			},
+			mostActiveCollege: mostActiveCollegeMetric,
 		},
 	};
 }

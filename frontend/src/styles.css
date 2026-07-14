@@ -3,8 +3,6 @@
 
 @import 'tw-animate-css';
 
-@import "tw-animate-css";
-
 @import "shadcn/tailwind.css";
 
 @import "@fontsource-variable/roboto";
@@ -19,56 +17,62 @@
   --palm: #2f6a4a;
   --sand: #e7f0e8;
   --foam: #f3faf5;
-  --surface: rgba(255, 255, 255, 0.74);
-  --surface-strong: rgba(255, 255, 255, 0.9);
+  --surface: #ffffff;
+  --surface-strong: #ffffff;
   --line: rgba(23, 58, 64, 0.14);
-  --inset-glint: rgba(255, 255, 255, 0.82);
+  --inset-glint: rgba(255, 255, 255, 0.64);
   --kicker: rgba(47, 106, 74, 0.9);
-  --bg-base: #e7f3ec;
-  --header-bg: rgba(251, 255, 248, 0.84);
-  --chip-bg: rgba(255, 255, 255, 0.8);
+  --bg-base: #f3f8f4;
+  --header-bg: #ffffff;
+  --chip-bg: #f7fbf8;
   --chip-line: rgba(47, 106, 74, 0.18);
-  --link-bg-hover: rgba(255, 255, 255, 0.9);
-  --hero-a: rgba(79, 184, 178, 0.36);
-  --hero-b: rgba(47, 106, 74, 0.2);
+  --link-bg-hover: #edf6f1;
 
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.457 0.24 277.023);
-  --primary-foreground: oklch(0.962 0.018 272.314);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --brand-primary: #14369c;
-  --brand-primary-hover: #11308a;
-  --heading: #11215a;
-  --shadow-card: rgba(0, 0, 0, 0.1);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.855 0.138 181.071);
-  --chart-2: oklch(0.704 0.14 182.503);
-  --chart-3: oklch(0.6 0.118 184.704);
-  --chart-4: oklch(0.511 0.096 186.391);
-  --chart-5: oklch(0.437 0.078 188.216);
-  --radius: 0.45rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.511 0.262 276.966);
-  --sidebar-primary-foreground: oklch(0.962 0.018 272.314);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: #f3f8f4;
+  --foreground: var(--sea-ink);
+  --card: #ffffff;
+  --card-foreground: var(--sea-ink);
+  --popover: #ffffff;
+  --popover-foreground: var(--sea-ink);
+  --primary: var(--lagoon-deep);
+  --primary-foreground: #ffffff;
+  --secondary: var(--sand);
+  --secondary-foreground: var(--sea-ink);
+  --muted: #edf4ef;
+  --muted-foreground: var(--sea-ink-soft);
+  --accent: #e7f0e8;
+  --accent-foreground: var(--sea-ink);
+  --destructive: #b42318;
+  --destructive-foreground: #ffffff;
+  --success: var(--palm);
+  --success-foreground: #ffffff;
+  --warning: #a15c00;
+  --warning-foreground: #ffffff;
+  --danger: #b42318;
+  --danger-foreground: #ffffff;
+  --info: var(--lagoon-deep);
+  --info-foreground: #ffffff;
+  --brand-primary: var(--lagoon-deep);
+  --brand-primary-hover: #28777d;
+  --heading: var(--sea-ink);
+  --shadow-card: rgba(23, 58, 64, 0.08);
+  --border: #d7e5dc;
+  --input: #c9dbd0;
+  --ring: var(--lagoon-deep);
+  --chart-1: var(--lagoon-deep);
+  --chart-2: var(--lagoon);
+  --chart-3: var(--palm);
+  --chart-4: #7f9f8b;
+  --chart-5: var(--sea-ink-soft);
+  --radius: 0.625rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: var(--sea-ink);
+  --sidebar-primary: var(--lagoon-deep);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--muted);
+  --sidebar-accent-foreground: var(--sea-ink);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 }
 
 .dark {
@@ -80,54 +84,60 @@
   --sand: #0f1a1e;
   --foam: #101d22;
   --surface: rgba(16, 30, 34, 0.8);
-  --surface-strong: rgba(15, 27, 31, 0.92);
+  --surface-strong: #101d22;
   --line: rgba(141, 229, 219, 0.18);
   --inset-glint: rgba(194, 247, 238, 0.14);
   --kicker: #b8efe5;
   --bg-base: #0a1418;
-  --header-bg: rgba(10, 20, 24, 0.8);
+  --header-bg: #101d22;
   --chip-bg: rgba(13, 28, 32, 0.9);
   --chip-line: rgba(141, 229, 219, 0.24);
-  --link-bg-hover: rgba(24, 44, 49, 0.8);
-  --hero-a: rgba(96, 215, 207, 0.18);
-  --hero-b: rgba(110, 200, 154, 0.12);
+  --link-bg-hover: #182c31;
 
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.398 0.195 277.366);
-  --primary-foreground: oklch(0.962 0.018 272.314);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --brand-primary: #14369c;
-  --brand-primary-hover: #11308a;
-  --heading: #c8d6f0;
-  --shadow-card: rgba(0, 0, 0, 0.25);
+  --background: #0a1418;
+  --foreground: var(--sea-ink);
+  --card: #101d22;
+  --card-foreground: var(--sea-ink);
+  --popover: #101d22;
+  --popover-foreground: var(--sea-ink);
+  --primary: var(--lagoon);
+  --primary-foreground: #0a1418;
+  --secondary: #1b302f;
+  --secondary-foreground: var(--sea-ink);
+  --muted: #17272b;
+  --muted-foreground: var(--sea-ink-soft);
+  --accent: #1b302f;
+  --accent-foreground: var(--sea-ink);
+  --destructive: #f97066;
+  --destructive-foreground: #2d0a08;
+  --success: var(--palm);
+  --success-foreground: #0a1418;
+  --warning: #f0ad4e;
+  --warning-foreground: #2b1a05;
+  --danger: #f97066;
+  --danger-foreground: #2d0a08;
+  --info: var(--lagoon);
+  --info-foreground: #0a1418;
+  --brand-primary: var(--lagoon);
+  --brand-primary-hover: #84e6df;
+  --heading: var(--sea-ink);
+  --shadow-card: rgba(0, 0, 0, 0.22);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.855 0.138 181.071);
-  --chart-2: oklch(0.704 0.14 182.503);
-  --chart-3: oklch(0.6 0.118 184.704);
-  --chart-4: oklch(0.511 0.096 186.391);
-  --chart-5: oklch(0.437 0.078 188.216);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.585 0.233 277.117);
-  --sidebar-primary-foreground: oklch(0.962 0.018 272.314);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --chart-1: var(--lagoon);
+  --chart-2: var(--lagoon-deep);
+  --chart-3: var(--palm);
+  --chart-4: #8bc5a8;
+  --chart-5: var(--sea-ink-soft);
+  --sidebar: #101d22;
+  --sidebar-foreground: var(--sea-ink);
+  --sidebar-primary: var(--lagoon);
+  --sidebar-primary-foreground: #0a1418;
+  --sidebar-accent: #17272b;
+  --sidebar-accent-foreground: var(--sea-ink);
+  --sidebar-border: rgba(141, 229, 219, 0.18);
+  --sidebar-ring: var(--lagoon);
 }
 
 @theme inline {
@@ -150,6 +160,14 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --color-brand-primary: var(--brand-primary);
   --color-brand-primary-hover: var(--brand-primary-hover);
   --color-heading: var(--heading);
@@ -190,44 +208,11 @@ body {
   color: var(--sea-ink);
   font-family: var(--font-sans);
   background-color: var(--bg-base);
-  background:
-    radial-gradient(1100px 620px at -8% -10%, var(--hero-a), transparent 58%),
-    radial-gradient(1050px 620px at 112% -12%, var(--hero-b), transparent 62%),
-    radial-gradient(720px 380px at 50% 115%, rgba(79, 184, 178, 0.1), transparent 68%),
-    linear-gradient(180deg, color-mix(in oklab, var(--sand) 68%, white) 0%, var(--foam) 44%, var(--bg-base) 100%);
+  background: var(--bg-base);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  opacity: 0.28;
-  background:
-    radial-gradient(circle at 20% 15%, rgba(255, 255, 255, 0.8), transparent 34%),
-    radial-gradient(circle at 78% 26%, rgba(79, 184, 178, 0.2), transparent 42%),
-    radial-gradient(circle at 42% 82%, rgba(47, 106, 74, 0.14), transparent 36%);
-}
-
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  opacity: 0.14;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: radial-gradient(circle at 50% 30%, black, transparent 78%);
-}
-
-
 
 code {
   font-size: 0.9em;
@@ -264,32 +249,23 @@ pre code {
 
 .island-shell {
   border: 1px solid var(--line);
-  background: linear-gradient(165deg, var(--surface-strong), var(--surface));
-  box-shadow:
-    0 1px 0 var(--inset-glint) inset,
-    0 22px 44px rgba(30, 90, 72, 0.1),
-    0 6px 18px rgba(23, 58, 64, 0.08);
-  backdrop-filter: blur(4px);
+  background: var(--surface-strong);
+  box-shadow: 0 1px 2px var(--shadow-card);
 }
 
 .feature-card {
-  background: linear-gradient(165deg, color-mix(in oklab, var(--surface-strong) 93%, white 7%), var(--surface));
-  box-shadow:
-    0 1px 0 var(--inset-glint) inset,
-    0 18px 34px rgba(30, 90, 72, 0.1),
-    0 4px 14px rgba(23, 58, 64, 0.06);
+  background: var(--surface-strong);
+  box-shadow: 0 1px 2px var(--shadow-card);
 }
 
 .feature-card:hover {
-  transform: translateY(-2px);
   border-color: color-mix(in oklab, var(--lagoon-deep) 35%, var(--line));
 }
 
 button,
 .island-shell,
 a {
-  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease,
-    transform 180ms ease;
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
 }
 
 .island-kicker {

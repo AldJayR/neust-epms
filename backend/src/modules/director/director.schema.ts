@@ -124,6 +124,12 @@ export const FacultyInvolvementSchema = z.object({
 	totalInvolvement: z.number(),
 });
 
+export const FacultyContributorAvatarSchema = z.object({
+	userId: z.string(),
+	name: z.string(),
+	avatarUrl: z.string().nullable(),
+});
+
 export const FacultyDirectorySchema = z.object({
 	items: z.array(FacultyInvolvementSchema),
 	total: z.number(),
@@ -133,6 +139,7 @@ export const FacultyDirectorySchema = z.object({
 		mostActiveCollege: z.object({
 			name: z.string(),
 			contributors: z.number(),
+			contributorAvatars: z.array(FacultyContributorAvatarSchema),
 		}),
 	}),
 });
