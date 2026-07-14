@@ -225,14 +225,14 @@ export function RETDashboardPage({
 		<div className="flex flex-col gap-8">
 			{/* Welcome Header */}
 			<PageHeader
-				title={
-					<div className="flex flex-col gap-2">
+					title={
+						<div className="flex flex-col gap-2">
 						<h1 className="text-2xl font-semibold text-heading">
 							Welcome, {user.firstName}!
 						</h1>
-						<p className="text-sm text-brand-primary">
-							{user.departmentName ?? user.campusName}
-						</p>
+							<p className="text-sm text-muted-foreground">
+								{user.departmentName ?? user.campusName} · Review, endorsement, and project monitoring
+							</p>
 					</div>
 				}
 				actions={

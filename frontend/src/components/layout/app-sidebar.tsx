@@ -32,7 +32,7 @@ type NavGroup = {
 
 const adminNav: NavGroup[] = [
 	{
-		title: "Overview",
+		title: "Administration",
 		items: [
 			{
 				title: "User Management",
@@ -47,7 +47,7 @@ const adminNav: NavGroup[] = [
 		],
 	},
 	{
-		title: "Management",
+		title: "System",
 		items: [
 			{
 				title: "Settings",
@@ -67,6 +67,11 @@ const directorNav: NavGroup[] = [
 				url: "/dashboard",
 				icon: LayoutDashboard,
 			},
+		],
+	},
+	{
+		title: "Program Management",
+		items: [
 			{
 				title: "Projects",
 				url: "/projects",
@@ -85,7 +90,7 @@ const directorNav: NavGroup[] = [
 		],
 	},
 	{
-		title: "Management",
+		title: "Reports & Records",
 		items: [
 			{
 				title: "Reports",
@@ -110,20 +115,30 @@ const facultyNav: NavGroup[] = [
 				url: "/dashboard",
 				icon: LayoutDashboard,
 			},
+		],
+	},
+	{
+		title: "My Work",
+		items: [
 			{
 				title: "Projects",
 				url: "/projects",
 				icon: FolderKanban,
 			},
-			{
-				title: "Archives",
-				url: "/archives",
-				icon: Archive,
-			},
+		],
+	},
+	{
+		title: "Reporting & Records",
+		items: [
 			{
 				title: "Reports",
 				url: "/reports",
 				icon: BarChart3,
+			},
+			{
+				title: "Archives",
+				url: "/archives",
+				icon: Archive,
 			},
 		],
 	},
@@ -138,6 +153,11 @@ const retNav: NavGroup[] = [
 				url: "/dashboard",
 				icon: LayoutDashboard,
 			},
+		],
+	},
+	{
+		title: "Program Management",
+		items: [
 			{
 				title: "Project Monitoring",
 				url: "/projects",
@@ -153,6 +173,11 @@ const retNav: NavGroup[] = [
 				url: "/moas",
 				icon: Scroll,
 			},
+		],
+	},
+	{
+		title: "Reports & Records",
+		items: [
 			{
 				title: "Reports",
 				url: "/reports",

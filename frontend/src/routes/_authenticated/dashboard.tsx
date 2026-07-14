@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { UsersPage } from "@/features/admin/users-page";
 import { DirectorDashboardPage } from "@/features/dashboard";
 import { FacultyDashboardPage } from "@/features/faculty/faculty-dashboard-page";
+import { actionCenterQueryOptions } from "@/features/action-center";
 import { RETDashboardPage } from "@/features/ret/ret-dashboard-page";
 import {
 	adminStatsQueryOptions,
@@ -45,6 +46,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 		if (
 			isDeniedAccess(context.auth.user, "Super Admin", "Director", "RET Chair")
 		) {
+			context.queryClient.prefetchQuery(actionCenterQueryOptions());
 			context.queryClient.prefetchQuery(
 				facultyProposalsQueryOptions({ page: 1, limit: 100 }),
 			);
@@ -68,6 +70,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 		}
 
 		if (isRETChair(context.auth.user)) {
+			context.queryClient.prefetchQuery(actionCenterQueryOptions());
 			context.queryClient.prefetchQuery(retDashboardStatsQueryOptions());
 			context.queryClient.prefetchQuery(
 				retProposalsQueryOptions({
@@ -80,6 +83,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 		}
 
 		// Director path
+		context.queryClient.prefetchQuery(actionCenterQueryOptions());
 		context.queryClient.prefetchQuery(directorDashboardQueryOptions());
 		return null;
 	},

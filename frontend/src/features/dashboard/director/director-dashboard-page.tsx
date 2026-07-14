@@ -28,24 +28,24 @@ function RecentActivitiesCard({
 	activities: { title: string; description: string; time: string }[];
 }) {
 	return (
-		<PageCard className="flex h-[370px] flex-col">
+		<PageCard className="flex min-h-[300px] max-h-[370px] flex-col">
 			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
 				<h2 className="text-sm font-semibold leading-5 text-heading">
 					Recent Activities
 				</h2>
 			</div>
-			<ul className="flex min-h-0 flex-1 flex-col overflow-hidden">
+			<ul className="flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
 				{activities.length > 0 ? (
-					activities.map((activity, index) => (
+					activities.map((activity) => (
 						<li
 							key={`${activity.title}-${activity.time}`}
 							className="border-t border-border p-4"
 						>
-							<div className="flex flex-col gap-6">
+							<div className="flex flex-col gap-3">
 								<div className="flex flex-col gap-1">
 									<div className="flex items-center gap-1.5">
 										<span
-											className={`size-2 shrink-0 rounded-full ${["bg-brand-primary", "bg-green-600", "bg-amber-500"][index % 3]}`}
+											className="size-2 shrink-0 rounded-full bg-muted-foreground/50"
 											aria-hidden="true"
 										/>
 										<p className="text-sm font-medium leading-5 text-foreground">
@@ -80,7 +80,7 @@ function ExpiringMoasCard({
 	moas: { name: string; dueText: string }[];
 }) {
 	return (
-		<PageCard className="flex h-[148px] flex-col">
+		<PageCard className="flex min-h-[148px] max-h-[220px] flex-col">
 			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
 				<h2 className="text-sm font-semibold leading-5 text-heading">
 					Expiring MOAs
@@ -93,7 +93,7 @@ function ExpiringMoasCard({
 					View All
 				</Link>
 			</div>
-			<ul className="flex flex-1 flex-col overflow-hidden">
+			<ul className="flex flex-1 flex-col overflow-y-auto pr-1">
 				{moas.length > 0 ? (
 					moas.map((moa) => (
 						<li
@@ -104,7 +104,15 @@ function ExpiringMoasCard({
 								<p className="text-sm font-medium leading-5 text-foreground">
 									{moa.name}
 								</p>
-								<p className="text-sm leading-5 text-red-600">{moa.dueText}</p>
+								<p
+									className={
+										/is today|in 1 day|in 2 days/i.test(moa.dueText)
+											? "text-sm leading-5 text-danger"
+											: "text-sm leading-5 text-warning"
+									}
+								>
+									{moa.dueText}
+								</p>
 							</div>
 						</li>
 					))
@@ -136,9 +144,6 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 		completed: 0,
 	};
 	const allChartData = dashboard?.chartData ?? [];
-	const chartData = !selectedCampus
-		? allChartData
-		: allChartData.filter((point) => point.label === selectedCampus);
 	const activities = dashboard?.recentActivities ?? [];
 	const moas = dashboard?.expiringMoas ?? [];
 
@@ -146,10 +151,15 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 		<section>
 			<div className="flex min-h-full flex-col gap-8">
 				<PageHeader
-					title={
-						<h1 className="text-2xl font-semibold text-heading">
-							Welcome, {user?.firstName ? `${user.firstName}!` : "Director"}!
-						</h1>
+						title={
+						<div className="flex flex-col gap-1">
+							<h1 className="text-2xl font-semibold text-heading">
+								Welcome, {user?.firstName ? `${user.firstName}!` : "Director"}!
+							</h1>
+							<p className="text-sm text-muted-foreground">
+								Project approvals, activation, and reporting overview
+							</p>
+						</div>
 					}
 				/>
 				<ActionCenterCard />
@@ -165,11 +175,11 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 				<div className="grid gap-8 lg:grid-cols-[minmax(0,630px)_minmax(0,1fr)]">
 					<React.Suspense
 						fallback={
-							<div className="h-[370px] animate-pulse rounded-[12px] border border-border bg-background" />
+							<div className="min-h-[340px] animate-pulse rounded-xl border border-border bg-card" />
 						}
 					>
 						<ProjectsChartCard
-							chartData={chartData}
+							chartData={allChartData}
 							campuses={campuses}
 							selectedCampus={selectedCampus}
 							onCampusChange={setSelectedCampus}
