@@ -78,9 +78,8 @@ export function CreateMoaModal({ open, onOpenChange }: CreateMoaModalProps) {
 			setFile(null);
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : "Failed to create MOA");
-		} finally {
-			setIsSubmitting(false);
 		}
+		setIsSubmitting(false);
 	};
 
 	return (

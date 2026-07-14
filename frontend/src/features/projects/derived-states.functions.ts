@@ -7,7 +7,7 @@ import { authorizeSessionUser, getValidAccessToken } from "@/lib/session.server"
 import type { DerivedStateResponse } from "@/types/derived-state";
 
 const getProjectDerivedStateFn = createServerFn({ method: "GET" })
-	.validator(z.string().uuid())
+	.validator(z.uuid())
 	.handler(async ({ data: projectId }) => {
 		await authorizeSessionUser(
 			"Faculty",

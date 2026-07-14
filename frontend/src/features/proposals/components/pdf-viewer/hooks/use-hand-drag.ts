@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 interface UseHandDragOptions {
 	scrollRef: React.RefObject<HTMLDivElement | null>;
@@ -9,8 +9,7 @@ export function useHandDrag({ scrollRef, toolMode }: UseHandDragOptions) {
 	const [isDragging, setIsDragging] = useState(false);
 	const dragStartScroll = useRef({ left: 0, top: 0, x: 0, y: 0 });
 
-	const onMouseDown = useCallback(
-		(e: React.MouseEvent<HTMLDivElement>) => {
+	const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
 			if (toolMode !== "hand" || !scrollRef.current) return;
 			if (e.button !== 0) return;
 
@@ -33,12 +32,9 @@ export function useHandDrag({ scrollRef, toolMode }: UseHandDragOptions) {
 				x: e.clientX,
 				y: e.clientY,
 			};
-		},
-		[toolMode, scrollRef],
-	);
+	};
 
-	const onMouseMove = useCallback(
-		(e: React.MouseEvent<HTMLDivElement>) => {
+	const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
 			if (!isDragging || toolMode !== "hand" || !scrollRef.current) return;
 			e.preventDefault();
 
@@ -47,9 +43,7 @@ export function useHandDrag({ scrollRef, toolMode }: UseHandDragOptions) {
 
 			scrollRef.current.scrollLeft = dragStartScroll.current.left - dx;
 			scrollRef.current.scrollTop = dragStartScroll.current.top - dy;
-		},
-		[isDragging, toolMode, scrollRef],
-	);
+	};
 
 	const onMouseUpOrLeave = () => setIsDragging(false);
 

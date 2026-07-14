@@ -33,15 +33,14 @@ const signupSchema = z.object({
 export const loginFn = createServerFn({ method: "POST" })
 	.validator(loginSchema)
 	.handler(async ({ data }) => {
-		const [{ getAppSession }] = await Promise.all([
+		const [{ getAppSession }, response] = await Promise.all([
 			import("@/lib/session.server"),
+			fetch(`${API_BASE}/auth/login`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(data),
+			}),
 		]);
-
-		const response = await fetch(`${API_BASE}/auth/login`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(data),
-		});
 
 		if (!response.ok) {
 			const body = (await response.json().catch(() => null)) as {
@@ -302,7 +301,7 @@ export const getCurrentUserFn = createServerFn({ method: "POST" })
 // ── Password Reset Functions ──
 
 export const sendResetCodeFn = createServerFn({ method: "POST" })
-	.validator(z.object({ email: z.string().email() }))
+	.validator(z.object({ email: z.email() }))
 	.handler(async ({ data }) => {
 		const { supabase } = await import("@/lib/supabase.server");
 		const { error } = await supabase.auth.resetPasswordForEmail(data.email);
@@ -314,7 +313,7 @@ export const sendResetCodeFn = createServerFn({ method: "POST" })
 
 export const verifyResetCodeFn = createServerFn({ method: "POST" })
 	.validator(
-		z.object({ email: z.string().email(), code: z.string().length(6) }),
+		z.object({ email: z.email(), code: z.string().length(6) }),
 	)
 	.handler(async ({ data }) => {
 		const { supabase } = await import("@/lib/supabase.server");

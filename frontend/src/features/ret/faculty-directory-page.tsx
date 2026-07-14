@@ -34,7 +34,10 @@ export function RetFacultyDirectoryPage({
 	onPageChange,
 	onSearchChange,
 }: RetFacultyDirectoryPageProps) {
-	const [activeTab, setActiveTab] = React.useState<string>("department");
+	const [activeTab, dispatchActiveTab] = React.useReducer(
+		(_state: string, value: string) => value,
+		"department",
+	);
 	const [selectedRanks, setSelectedRanks] = React.useState<string[]>([]);
 	const [selectedLoads, setSelectedLoads] = React.useState<string[]>([]); // "0", "1-2", "3+"
 	const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -48,6 +51,14 @@ export function RetFacultyDirectoryPage({
 			status: activeTab === "pending" ? "pending" : "active",
 		}),
 	);
+	const selectedRankPattern = selectedRanks.length
+		? new RegExp(
+				selectedRanks
+					.map((rank) => rank.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+					.join("|"),
+				"i",
+			)
+		: null;
 
 	const filteredItems = (() => {
 		let result = data?.items ?? [];
@@ -56,7 +67,7 @@ export function RetFacultyDirectoryPage({
 		if (selectedRanks.length > 0) {
 			result = result.filter((item) => {
 				const rank = item.academicRank?.toLowerCase() ?? "";
-				return selectedRanks.some((r) => rank.includes(r.toLowerCase()));
+				return selectedRankPattern?.test(rank) ?? true;
 			});
 		}
 
@@ -307,8 +318,8 @@ export function RetFacultyDirectoryPage({
 						<Tabs
 							value={activeTab}
 							onValueChange={(val) => {
-								setActiveTab(val);
-								onPageChange(1);
+									dispatchActiveTab(val);
+									onPageChange(1);
 							}}
 							className="w-fit"
 						>

@@ -344,7 +344,7 @@ const provisionDirectorSchema = z.object({
 	middleName: z.string().optional().nullable(),
 	lastName: z.string().min(1, "Last name is required"),
 	nameSuffix: z.string().optional().nullable(),
-	email: z.string().email("Invalid email address"),
+	email: z.email("Invalid email address"),
 	academicRank: z.string().min(1, "Academic rank is required"),
 	departmentId: z.number().optional().nullable(),
 });

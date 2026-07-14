@@ -29,7 +29,7 @@ export const getAccessTokenForUploadFn = createServerFn({ method: "GET" })
 	});
 
 const uploadSchema = z.object({
-	memberId: z.string().uuid("Invalid member ID"),
+		memberId: z.uuid("Invalid member ID"),
 	soNumber: z.string().min(1, "SO number is required"),
 	file: z
 		.instanceof(File, { message: "A PDF file is required" })

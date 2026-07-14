@@ -18,13 +18,15 @@ export const Route = createFileRoute("/_authenticated")({
 		};
 	},
 	loader: () => void 0,
-	component: () => {
-		const { user } = Route.useRouteContext();
-		return (
-			<AppShell>
-				<Onboarding user={user} />
-				<Outlet />
-			</AppShell>
-		);
-	},
+	component: AuthenticatedLayout,
 });
+
+function AuthenticatedLayout() {
+	const { user } = Route.useRouteContext();
+	return (
+		<AppShell>
+			<Onboarding user={user} />
+			<Outlet />
+		</AppShell>
+	);
+}

@@ -189,6 +189,8 @@ const searchUsersRoute = createRoute({
 	},
 });
 
+app.use("/auth/users/search", authMiddleware);
+
 app.openapi(searchUsersRoute, async (c) => {
 	const { search } = c.req.valid("query");
 	const result = await searchUsers(search);

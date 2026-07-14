@@ -1,7 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
-import { startTransition, useDeferredValue, useMemo, useState } from "react";
+import {
+	startTransition,
+	useDeferredValue,
+	useReducer,
+	useState,
+} from "react";
 import type { AuthUser } from "@/lib/auth";
 import { facultyProjectsQueryOptions } from "@/features/faculty/public";
 import { reportsListQueryOptions } from "../functions";
@@ -15,6 +20,31 @@ import {
 	createDirectorReportColumns,
 	createFacultyReportColumns,
 } from "../components/report-columns";
+
+interface ReportsViewState {
+	activeTab: "my" | "college";
+	search: string;
+	page: number;
+}
+
+type ReportsViewAction =
+	| { type: "tab"; value: "my" | "college" }
+	| { type: "search"; value: string }
+	| { type: "page"; value: number };
+
+function reportsViewReducer(
+	state: ReportsViewState,
+	action: ReportsViewAction,
+): ReportsViewState {
+	switch (action.type) {
+		case "tab":
+			return { ...state, activeTab: action.value, page: 1 };
+		case "search":
+			return { ...state, search: action.value, page: 1 };
+		case "page":
+			return { ...state, page: action.value };
+	}
+}
 
 export function useReportsView() {
 	const user = useRouterState({
@@ -31,11 +61,12 @@ export function useReportsView() {
 	const isFaculty = user?.roleName === "Faculty";
 	const isRET = user?.roleName === "RET Chair";
 	const userFullName = user ? `${user.firstName} ${user.lastName}` : "";
-	const [activeTab, setActiveTab] = useState<"my" | "college">(
-		isFaculty || isRET ? "my" : "college",
-	);
-	const [search, setSearch] = useState("");
-	const [page, setPage] = useState(1);
+	const [viewState, dispatchView] = useReducer(reportsViewReducer, {
+		activeTab: isFaculty || isRET ? "my" : "college",
+		search: "",
+		page: 1,
+	});
+	const { activeTab, search, page } = viewState;
 	const [typeFilter, setTypeFilter] = useState<"All" | "Progress" | "Terminal">(
 		"All",
 	);
@@ -67,18 +98,9 @@ export function useReportsView() {
 		myProjectIds,
 	});
 	const filteredReports = filterReportsByType(tabFilteredReports, typeFilter);
-	const progressReportSequences = useMemo(
-		() => getProgressReportSequences(reports),
-		[reports],
-	);
-	const directorColumns = useMemo(
-		() => createDirectorReportColumns(Boolean(isRET)),
-		[isRET],
-	);
-	const facultyColumns = useMemo(
-		() => createFacultyReportColumns(progressReportSequences),
-		[progressReportSequences],
-	);
+	const progressReportSequences = getProgressReportSequences(reports);
+	const directorColumns = createDirectorReportColumns(Boolean(isRET));
+	const facultyColumns = createFacultyReportColumns(progressReportSequences);
 
 	return {
 		user,
@@ -99,14 +121,12 @@ export function useReportsView() {
 		filteredReports,
 		columns: isFaculty ? facultyColumns : directorColumns,
 		handleTabChange: (tab: "my" | "college") => {
-			setActiveTab(tab);
-			startTransition(() => setPage(1));
+			startTransition(() => dispatchView({ type: "tab", value: tab }));
 		},
 		handleSearch: (value: string) => {
-			setSearch(value);
-			startTransition(() => setPage(1));
+			startTransition(() => dispatchView({ type: "search", value }));
 		},
-		setPage,
+		setPage: (value: number) => dispatchView({ type: "page", value }),
 		setSorting,
 		setTypeFilter,
 		setIsSubmitModalOpen,

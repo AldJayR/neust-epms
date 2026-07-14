@@ -11,6 +11,7 @@ import {
 } from "../components/rhf-auth-fields";
 import { FieldGroup } from "../components/ui/field";
 import { setNewPasswordFn } from "@/features/auth";
+import { passwordResetSearchSchema } from "@/features/auth/password-reset-search";
 
 const resetPasswordSchema = z
 	.object({
@@ -23,13 +24,11 @@ const resetPasswordSchema = z
 	});
 
 export const Route = createFileRoute("/forgot-password/reset")({
+	validateSearch: passwordResetSearchSchema,
 	ssr: false,
-	beforeLoad: () => {
-		if (typeof window !== "undefined") {
-			const storedEmail = sessionStorage.getItem("forgot_password_email:v1");
-			if (!storedEmail) {
-				throw redirect({ to: "/forgot-password" });
-			}
+	beforeLoad: ({ search }) => {
+		if (!search.email) {
+			throw redirect({ to: "/forgot-password" });
 		}
 	},
 	component: ResetPasswordPage,
@@ -66,7 +65,6 @@ function ResetPasswordPage() {
 			toast.success("Success", {
 				description: "Password saved successfully. Please log in.",
 			});
-			sessionStorage.removeItem("forgot_password_email:v1");
 			await navigate({ to: "/login" });
 		} catch {
 			toast.error("Failed to save password. Please try again.");

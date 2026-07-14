@@ -65,12 +65,38 @@ const globalLimiter = rateLimiter({
 app.use("*", globalLimiter);
 
 // ── Global body size limit: 1MB for JSON, uploads handled per-route ──
+const MAX_MULTIPART_BYTES = 50 * 1024 * 1024;
+
 app.use("*", async (c, next) => {
-	const contentLength = Number(c.req.header("content-length") ?? 0);
+	const contentLengthHeader = c.req.header("content-length");
+	const contentLength = Number(contentLengthHeader ?? 0);
 	const contentType = c.req.header("content-type") ?? "";
 
-	// Skip for file uploads (handled by storage route)
 	if (contentType.includes("multipart/form-data")) {
+		// Hono buffers form data before route handlers can inspect individual files.
+		// Require an upfront, server-enforced bound to prevent unbounded buffering.
+		if (!contentLengthHeader || !Number.isSafeInteger(contentLength)) {
+			return c.json(
+				{
+					error: {
+						code: "LENGTH_REQUIRED",
+						message: "Multipart uploads require a valid Content-Length header",
+					},
+				},
+				411,
+			);
+		}
+		if (contentLength > MAX_MULTIPART_BYTES) {
+			return c.json(
+				{
+					error: {
+						code: "PAYLOAD_TOO_LARGE",
+						message: "Upload exceeds 50MB limit",
+					},
+				},
+				413,
+			);
+		}
 		return next();
 	}
 

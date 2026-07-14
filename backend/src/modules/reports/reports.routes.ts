@@ -2,6 +2,7 @@ import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { getClientIp } from "@/lib/client-ip.js";
 import { ErrorSchema } from "@/lib/schemas.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
+import { isPdfFile } from "@/services/file.service.js";
 import {
 	CreateReportSchema,
 	PaginationQuery,
@@ -106,7 +107,7 @@ app.post("/reports/:id/document", async (c) => {
 	const formData = await c.req.formData();
 	const file = formData.get("file");
 	if (!(file instanceof File)) throw new Error("A PDF file is required");
-	if (file.size <= 0 || file.type !== "application/pdf") {
+	if (file.size <= 0 || !(await isPdfFile(file))) {
 		return c.json(
 			{
 				error: {

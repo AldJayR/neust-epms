@@ -26,6 +26,7 @@ import { proposals } from "@/db/schema/proposals.js";
 import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
 import { env } from "@/env.js";
+import { escapeHtml } from "@/lib/html.js";
 import { getLeaderSubquery } from "@/lib/leader-subquery.js";
 import {
 	type AuthUser,
@@ -924,7 +925,7 @@ export async function sendEmailReport(
 	};
 	const formatRank = (rank: string | null): string => {
 		if (!rank) return "Faculty";
-		return academicRankLabels[rank] ?? rank;
+		return escapeHtml(academicRankLabels[rank] ?? rank);
 	};
 
 	const htmlReport = `
@@ -956,11 +957,11 @@ export async function sendEmailReport(
 									(faculty, index) => `
 								<tr style="border-bottom: 1px solid #ddd; background-color: ${index % 2 === 0 ? "#ffffff" : "#f9f9f9"};">
 									<td style="padding: 8px 10px; border: 1px solid #ddd;">${index + 1}</td>
-									<td style="padding: 8px 10px; border: 1px solid #ddd; font-weight: bold;">${faculty.firstName} ${faculty.lastName}</td>
+									<td style="padding: 8px 10px; border: 1px solid #ddd; font-weight: bold;">${escapeHtml(faculty.firstName)} ${escapeHtml(faculty.lastName)}</td>
 									<td style="padding: 8px 10px; border: 1px solid #ddd;">${formatRank(faculty.academicRank)}</td>
 									<td style="padding: 8px 10px; border: 1px solid #ddd;">
-										${faculty.departmentCode ?? faculty.college ?? ""}
-										${faculty.isMainCampus === false && faculty.campusName ? `<br/><span style="font-size: 11px; color: #666;">(${faculty.campusName})</span>` : ""}
+										${escapeHtml(faculty.departmentCode ?? faculty.college ?? "")}
+										${faculty.isMainCampus === false && faculty.campusName ? `<br/><span style="font-size: 11px; color: #666;">(${escapeHtml(faculty.campusName)})</span>` : ""}
 									</td>
 									<td style="padding: 8px 10px; border: 1px solid #ddd; text-align: right;">${faculty.leadProjects}</td>
 									<td style="padding: 8px 10px; border: 1px solid #ddd; text-align: right;">${faculty.collaboratorProjects}</td>

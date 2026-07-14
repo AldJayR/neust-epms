@@ -17,6 +17,7 @@ import {
 	listProposalDocuments,
 	uploadProposalDocument,
 } from "./storage.service.js";
+import { isPdfFile } from "@/services/file.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 
@@ -116,7 +117,7 @@ app.openapi(uploadRoute, async (c) => {
 	if (file.size > MAX_UPLOAD_BYTES) {
 		throw new ApiError(413, "FILE_TOO_LARGE", "File exceeds 50MB limit");
 	}
-	if (file.type !== "application/pdf") {
+	if (!(await isPdfFile(file))) {
 		throw new ApiError(422, "INVALID_FILE_TYPE", "Only PDF files are allowed");
 	}
 

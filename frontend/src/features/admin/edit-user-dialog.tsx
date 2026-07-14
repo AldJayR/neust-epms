@@ -40,6 +40,57 @@ const rankOptions = [
 	{ label: "Professor I", value: "professor-1" },
 ];
 
+interface LookupItem {
+	id: number;
+	name: string;
+}
+
+interface EditUserFormState {
+	firstName: string;
+	middleName: string;
+	lastName: string;
+	nameSuffix: string;
+	academicRank: string;
+	roleName: string;
+	campusId: string;
+	departmentId: string;
+}
+
+type EditUserFormAction = {
+	type: "field";
+	field: keyof EditUserFormState;
+	value: string;
+};
+
+function createEditUserFormState(
+	user: UserResponse,
+	campuses: LookupItem[],
+	departments: LookupItem[],
+): EditUserFormState {
+	const campus = campuses.find((item) => item.name === user.campusName);
+	const department = departments.find(
+		(item) => item.name === user.departmentName,
+	);
+
+	return {
+		firstName: user.firstName,
+		middleName: user.middleName ?? "",
+		lastName: user.lastName,
+		nameSuffix: user.nameSuffix ?? "",
+		academicRank: user.academicRank ?? "",
+		roleName: user.roleName,
+		campusId: campus ? String(campus.id) : "",
+		departmentId: department ? String(department.id) : "none",
+	};
+}
+
+function editUserFormReducer(
+	state: EditUserFormState,
+	action: EditUserFormAction,
+): EditUserFormState {
+	return { ...state, [action.field]: action.value };
+}
+
 interface EditUserDialogProps {
 	user: UserResponse;
 	children?: React.ReactNode;
@@ -80,45 +131,42 @@ export function EditUserDialog({
 		staleTime: Number.POSITIVE_INFINITY,
 	});
 
-	// State initialized from props — safe because this component is conditionally
-	// mounted (remounts fresh per user). Campus/dept resolved from cached queries.
-	const [firstName, setFirstName] = useState(user.firstName);
-	const [middleName, setMiddleName] = useState(user.middleName ?? "");
-	const [lastName, setLastName] = useState(user.lastName);
-	const [nameSuffix, setNameSuffix] = useState(user.nameSuffix ?? "");
-	const [academicRank, setAcademicRank] = useState(user.academicRank ?? "");
-	const [roleName, setRoleName] = useState(user.roleName);
-
-	const [campusId, setCampusId] = useState<string>(() => {
-		const cached =
-			queryClient.getQueryData<typeof campuses>(["campuses"]) ?? campuses;
-		const match = cached.find((c) => c.name === user.campusName);
-		return match ? String(match.id) : "";
-	});
-
-	const [departmentId, setDepartmentId] = useState<string>(() => {
-		const cached =
-			queryClient.getQueryData<typeof departments>(["departments"]) ??
-			departments;
-		const match = cached.find((d) => d.name === user.departmentName);
-		return match ? String(match.id) : "none";
-	});
+	const [formState, dispatch] = React.useReducer(
+		editUserFormReducer,
+		{
+			user,
+			campuses:
+				queryClient.getQueryData<LookupItem[]>(["campuses"]) ?? campuses,
+			departments:
+				queryClient.getQueryData<LookupItem[]>(["departments"]) ?? departments,
+		},
+		({ user: initialUser, campuses: initialCampuses, departments: initialDepartments }) =>
+			createEditUserFormState(
+				initialUser,
+				initialCampuses,
+				initialDepartments,
+			),
+	);
 
 	const updateMutation = useMutation({
 		mutationFn: () => {
-			const selectedRole = roles.find((r) => r.roleName === roleName);
+			const selectedRole = roles.find(
+				(r) => r.roleName === formState.roleName,
+			);
 			return updateUserFn({
 				data: {
 					userId: user.userId,
-					firstName,
-					middleName: middleName || null,
-					lastName,
-					nameSuffix: nameSuffix || null,
-					academicRank: academicRank || null,
-					campusId: campusId ? Number(campusId) : undefined,
+					firstName: formState.firstName,
+					middleName: formState.middleName || null,
+					lastName: formState.lastName,
+					nameSuffix: formState.nameSuffix || null,
+					academicRank: formState.academicRank || null,
+					campusId: formState.campusId
+						? Number(formState.campusId)
+						: undefined,
 					departmentId:
-						departmentId && departmentId !== "none"
-							? Number(departmentId)
+						formState.departmentId && formState.departmentId !== "none"
+							? Number(formState.departmentId)
 							: null,
 					roleId: selectedRole?.roleId,
 				},
@@ -136,7 +184,12 @@ export function EditUserDialog({
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!firstName || !lastName || !academicRank || !campusId) {
+		if (
+			!formState.firstName ||
+			!formState.lastName ||
+			!formState.academicRank ||
+			!formState.campusId
+		) {
 			toast.error("Please fill in all required fields.");
 			return;
 		}
@@ -170,8 +223,14 @@ export function EditUserDialog({
 								<Input
 									id="edit-firstName"
 									placeholder="First name"
-									value={firstName}
-									onChange={(e) => setFirstName(e.target.value)}
+									value={formState.firstName}
+									onChange={(e) =>
+										dispatch({
+											type: "field",
+											field: "firstName",
+											value: e.target.value,
+										})
+									}
 									required
 								/>
 							</div>
@@ -182,8 +241,14 @@ export function EditUserDialog({
 								<Input
 									id="edit-lastName"
 									placeholder="Last name"
-									value={lastName}
-									onChange={(e) => setLastName(e.target.value)}
+									value={formState.lastName}
+									onChange={(e) =>
+										dispatch({
+											type: "field",
+											field: "lastName",
+											value: e.target.value,
+										})
+									}
 									required
 								/>
 							</div>
@@ -200,8 +265,14 @@ export function EditUserDialog({
 								<Input
 									id="edit-middleName"
 									placeholder="Middle name"
-									value={middleName}
-									onChange={(e) => setMiddleName(e.target.value)}
+									value={formState.middleName}
+									onChange={(e) =>
+										dispatch({
+											type: "field",
+											field: "middleName",
+											value: e.target.value,
+										})
+									}
 								/>
 							</div>
 							<div className="flex flex-col gap-1.5">
@@ -214,8 +285,14 @@ export function EditUserDialog({
 								<Input
 									id="edit-nameSuffix"
 									placeholder="e.g. Jr., III"
-									value={nameSuffix}
-									onChange={(e) => setNameSuffix(e.target.value)}
+									value={formState.nameSuffix}
+									onChange={(e) =>
+										dispatch({
+											type: "field",
+											field: "nameSuffix",
+											value: e.target.value,
+										})
+									}
 								/>
 							</div>
 						</div>
@@ -240,8 +317,14 @@ export function EditUserDialog({
 									Academic Rank <span className="text-destructive">*</span>
 								</Label>
 								<Select
-									value={academicRank}
-									onValueChange={(val) => setAcademicRank(val ?? "")}
+									value={formState.academicRank}
+									onValueChange={(val) =>
+										dispatch({
+											type: "field",
+											field: "academicRank",
+											value: val ?? "",
+										})
+									}
 								>
 									<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
 										<SelectValue placeholder="Select rank">
@@ -265,8 +348,14 @@ export function EditUserDialog({
 									Role <span className="text-destructive">*</span>
 								</Label>
 								<Select
-									value={roleName}
-									onValueChange={(val) => setRoleName(val ?? "")}
+									value={formState.roleName}
+									onValueChange={(val) =>
+										dispatch({
+											type: "field",
+											field: "roleName",
+											value: val ?? "",
+										})
+									}
 								>
 									<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
 										<SelectValue placeholder="Select role">
@@ -290,8 +379,14 @@ export function EditUserDialog({
 									Campus <span className="text-destructive">*</span>
 								</Label>
 								<Select
-									value={campusId}
-									onValueChange={(val) => setCampusId(val ?? "")}
+									value={formState.campusId}
+									onValueChange={(val) =>
+										dispatch({
+											type: "field",
+											field: "campusId",
+											value: val ?? "",
+										})
+									}
 								>
 									<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
 										<SelectValue placeholder="Select campus">
@@ -318,8 +413,14 @@ export function EditUserDialog({
 									Department (Optional)
 								</Label>
 								<Select
-									value={departmentId}
-									onValueChange={(val) => setDepartmentId(val ?? "")}
+									value={formState.departmentId}
+									onValueChange={(val) =>
+										dispatch({
+											type: "field",
+											field: "departmentId",
+											value: val ?? "",
+										})
+									}
 								>
 									<SelectTrigger className="w-full h-9 border-border bg-background shadow-sm text-left">
 										<SelectValue placeholder="Select department">

@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useCallback, useReducer } from "react";
 import { stateReducer } from "@/lib/state-reducer";
 import { DEFAULT_SCALE, ZOOM_STEPS } from "../pdf-constants";
 
@@ -16,7 +16,7 @@ export function usePdfZoom(initialScale = DEFAULT_SCALE) {
 		scale: initialScale,
 	});
 
-	function zoomIn() {
+	const zoomIn = useCallback(() => {
 		dispatch((prev) => {
 			let nextScale = ZOOM_STEPS[ZOOM_STEPS.length - 1] ?? DEFAULT_SCALE;
 			for (const s of ZOOM_STEPS) {
@@ -27,9 +27,9 @@ export function usePdfZoom(initialScale = DEFAULT_SCALE) {
 			}
 			return { scale: nextScale };
 		});
-	}
+	}, []);
 
-	function zoomOut() {
+	const zoomOut = useCallback(() => {
 		dispatch((prev) => {
 			let nextScale = ZOOM_STEPS[0] ?? DEFAULT_SCALE;
 			for (let i = ZOOM_STEPS.length - 1; i >= 0; i--) {
@@ -41,11 +41,11 @@ export function usePdfZoom(initialScale = DEFAULT_SCALE) {
 			}
 			return { scale: nextScale };
 		});
-	}
+	}, []);
 
-	function resetZoom() {
+	const resetZoom = useCallback(() => {
 		dispatch({ scale: DEFAULT_SCALE });
-	}
+	}, []);
 
 	return {
 		scale: state.scale,

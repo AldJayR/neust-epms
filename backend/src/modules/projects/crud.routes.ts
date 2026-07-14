@@ -1,6 +1,9 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { ErrorSchema } from "@/lib/schemas.js";
+import { getClientIp } from "@/lib/client-ip.js";
+import { ROLE_NAMES } from "@/lib/types.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
+import { requireRole } from "@/middleware/rbac.js";
 
 import {
 	PaginationQuery,
@@ -20,6 +23,10 @@ const app = new OpenAPIHono<AuthEnv>();
 
 app.use("/projects", authMiddleware);
 app.use("/projects/*", authMiddleware);
+app.use(
+	"/projects/:id/restore",
+	requireRole(ROLE_NAMES.DIRECTOR, ROLE_NAMES.SUPER_ADMIN),
+);
 
 // ── GET /projects ──
 const listRoute = createRoute({
@@ -102,7 +109,7 @@ app.openapi(projectDerivedStateRoute, async (c) => {
 // ── POST /projects/:id/restore ──
 app.post("/projects/:id/restore", async (c) => {
 	const id = c.req.param("id");
-	const updated = await restoreProject(id);
+	const updated = await restoreProject(id, c.get("user"), getClientIp(c));
 
 	if (!updated) {
 		return c.json({ error: "Project not found or could not be restored" }, 404);

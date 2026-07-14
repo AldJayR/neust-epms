@@ -262,7 +262,7 @@ export function ActivityLogPage({
 						<DropdownMenuContent align="end" className="w-48">
 							<DropdownMenuRadioGroup
 								value={typeFilter}
-								onValueChange={(val) => setTypeFilter(val)}
+								onValueChange={setTypeFilter}
 							>
 								<DropdownMenuRadioItem value="all">
 									All Actions

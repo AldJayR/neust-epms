@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Upload } from "lucide-react";
-import { useState } from "react";
+import { useReducer, useState } from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,39 @@ import {
 } from "../functions";
 import { facultyProjectsQueryOptions } from "@/features/faculty/public";
 
+interface ProjectSelectionState {
+	selectedProjectId: string;
+	projectSearch: string;
+}
+
+type ProjectSelectionAction =
+	| { type: "select"; projectId: string; projectSearch: string }
+	| { type: "search"; projectSearch: string }
+	| { type: "reset" };
+
+function projectSelectionReducer(
+	state: ProjectSelectionState,
+	action: ProjectSelectionAction,
+): ProjectSelectionState {
+	switch (action.type) {
+		case "select":
+			return {
+				selectedProjectId: action.projectId,
+				projectSearch: action.projectSearch,
+			};
+		case "search":
+			return {
+				selectedProjectId:
+					action.projectSearch === state.projectSearch
+						? state.selectedProjectId
+						: "",
+				projectSearch: action.projectSearch,
+			};
+		case "reset":
+			return { selectedProjectId: "", projectSearch: "" };
+	}
+}
+
 interface SubmitReportModalProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -63,8 +96,11 @@ export function SubmitReportModal({
 	);
 
 	// Form States
-	const [selectedProjectId, setSelectedProjectId] = useState<string>("");
-	const [projectSearch, setProjectSearch] = useState("");
+	const [projectSelection, dispatchProjectSelection] = useReducer(
+		projectSelectionReducer,
+		{ selectedProjectId: "", projectSearch: "" },
+	);
+	const { selectedProjectId, projectSearch } = projectSelection;
 	const [reportType, setReportType] = useState<"Progress" | "Closure" | "">("");
 	const [periodStart, setPeriodStart] = useState("");
 	const [periodEnd, setPeriodEnd] = useState("");
@@ -94,18 +130,19 @@ export function SubmitReportModal({
 
 	const handleProjectSelect = (val: string | null) => {
 		if (!val) {
-			setSelectedProjectId("");
-			setProjectSearch("");
+			dispatchProjectSelection({ type: "reset" });
 			return;
 		}
-		setSelectedProjectId(val);
 		const proj = projects.find((p) => p.projectId === val);
-		setProjectSearch(proj?.title ?? "");
+		dispatchProjectSelection({
+			type: "select",
+			projectId: val,
+			projectSearch: proj?.title ?? "",
+		});
 	};
 
 	const resetForm = () => {
-		setSelectedProjectId("");
-		setProjectSearch("");
+		dispatchProjectSelection({ type: "reset" });
 		setReportType("");
 		setPeriodStart("");
 		setPeriodEnd("");
@@ -148,7 +185,10 @@ export function SubmitReportModal({
 
 			if (reportType === "Progress") {
 				const document = progressFile;
-				if (!document) return;
+				if (!document) {
+					setIsSubmitting(false);
+					return;
+				}
 				// Submit progress report
 				const report = await submitReportFn({
 					data: {
@@ -167,7 +207,10 @@ export function SubmitReportModal({
 			} else {
 				const finalDocument = finalAccFile;
 				const terminalDocument = terminalFile;
-				if (!finalDocument || !terminalDocument) return;
+				if (!finalDocument || !terminalDocument) {
+					setIsSubmitting(false);
+					return;
+				}
 				// Submit two reports for project closure (Final Accomplishment and Terminal)
 				const finalReport = await submitReportFn({
 					data: {
@@ -209,9 +252,8 @@ export function SubmitReportModal({
 		} catch (err: unknown) {
 			const error = err as Error;
 			toast.error(error.message || "Failed to submit report");
-		} finally {
-			setIsSubmitting(false);
 		}
+		setIsSubmitting(false);
 	};
 
 	return (
@@ -240,10 +282,10 @@ export function SubmitReportModal({
 									placeholder="Search and select a project..."
 									value={projectSearch}
 									onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-										setProjectSearch(e.target.value);
-										if (selectedProjectId && e.target.value !== projectSearch) {
-											setSelectedProjectId("");
-										}
+										dispatchProjectSelection({
+											type: "search",
+											projectSearch: e.target.value,
+										});
 									}}
 									showClear
 									className="w-full"

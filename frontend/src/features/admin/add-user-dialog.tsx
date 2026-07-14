@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Loader2 } from "lucide-react";
 import * as React from "react";
-import { useState } from "react";
+import { useReducer } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -45,7 +45,7 @@ const addUserSchema = z.object({
 	middleName: z.string().optional(),
 	lastName: z.string().min(1, "Last name is required"),
 	nameSuffix: z.string().optional(),
-	email: z.string().email("Invalid email address"),
+	email: z.email("Invalid email address"),
 	academicRank: z.string().min(1, "Academic rank is required"),
 	departmentId: z.string().optional(),
 });
@@ -54,7 +54,10 @@ type AddUserFormValues = z.infer<typeof addUserSchema>;
 
 export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 	const queryClient = useQueryClient();
-	const [isOpen, setIsOpen] = useState(false);
+	const [isOpen, dispatchOpen] = useReducer(
+		(_state: boolean, value: boolean) => value,
+		false,
+	);
 
 	const form = useForm<AddUserFormValues>({
 		resolver: zodResolver(addUserSchema),
@@ -97,7 +100,7 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 				{ duration: 15000 },
 			);
 			queryClient.invalidateQueries({ queryKey: ["admin"] });
-			setIsOpen(false);
+			dispatchOpen(false);
 			form.reset();
 		},
 		onError: (error: Error) => {
@@ -113,7 +116,7 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 		<Dialog
 			open={isOpen}
 			onOpenChange={(val) => {
-				setIsOpen(val);
+				dispatchOpen(val);
 				if (!val) form.reset();
 			}}
 		>
@@ -299,7 +302,7 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 						<Button
 							type="button"
 							variant="outline"
-							onClick={() => setIsOpen(false)}
+							onClick={() => dispatchOpen(false)}
 							disabled={provisionMutation.isPending}
 							className="border-border text-foreground hover:bg-muted"
 						>

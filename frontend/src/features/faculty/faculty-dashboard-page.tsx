@@ -20,12 +20,8 @@ import { toStableDate } from "@/lib/utils";
 
 export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
-	const [timeOfDay, setTimeOfDay] = React.useState("Day");
-
-	React.useEffect(() => {
-		const hour = new Date().getHours();
-		setTimeOfDay(hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening");
-	}, []);
+	const hour = new Date().getHours();
+	const timeOfDay = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
 
 	const { data: proposalsData, isLoading: isProposalsLoading } = useQuery(
 		facultyProposalsQueryOptions({

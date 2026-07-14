@@ -10,6 +10,7 @@ import { proposals } from "@/db/schema/proposals.js";
 import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
+import { escapeHtml } from "@/lib/html.js";
 import { createNotification } from "@/lib/notification.helpers.js";
 
 const PROJECT_LEADER_ROLE = "Project Leader";
@@ -170,7 +171,7 @@ export function startReportOverdueCron(): void {
 						message: `Your report for "${row.proposalTitle}" was due on ${dateStr}. Please submit immediately.`,
 						sendEmail: true,
 						emailSubject: `Overdue Report: ${row.proposalTitle}`,
-						emailHtml: `<p>Your report for "<strong>${row.proposalTitle}</strong>" was due on <strong>${dateStr}</strong>. Please submit immediately.</p>`,
+						emailHtml: `<p>Your report for "<strong>${escapeHtml(row.proposalTitle)}</strong>" was due on <strong>${escapeHtml(dateStr)}</strong>. Please submit immediately.</p>`,
 					});
 					notifiedCount++;
 				}
@@ -184,7 +185,7 @@ export function startReportOverdueCron(): void {
 						message: `A report for "${row.proposalTitle}" (${row.proposalLocale}) was due on ${dateStr} and has not been submitted.`,
 						sendEmail: true,
 						emailSubject: `Overdue Report: ${row.proposalTitle}`,
-						emailHtml: `<p>A report for "<strong>${row.proposalTitle}</strong>" (${row.proposalLocale}) was due on <strong>${dateStr}</strong> and has not been submitted.</p>`,
+						emailHtml: `<p>A report for "<strong>${escapeHtml(row.proposalTitle)}</strong>" (${escapeHtml(row.proposalLocale)}) was due on <strong>${escapeHtml(dateStr)}</strong> and has not been submitted.</p>`,
 					});
 					notifiedCount++;
 				}

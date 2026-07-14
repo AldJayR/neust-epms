@@ -19,19 +19,18 @@ import {
 	InputOTPSlot,
 } from "../components/ui/input-otp";
 import { sendResetCodeFn, verifyResetCodeFn } from "@/features/auth";
+import { passwordResetSearchSchema } from "@/features/auth/password-reset-search";
 
 const otpSchema = z.object({
 	code: z.string().length(6, "Verification code must be 6 digits"),
 });
 
 export const Route = createFileRoute("/forgot-password/otp")({
+	validateSearch: passwordResetSearchSchema,
 	ssr: false,
-	beforeLoad: () => {
-		if (typeof window !== "undefined") {
-			const storedEmail = sessionStorage.getItem("forgot_password_email:v1");
-			if (!storedEmail) {
-				throw redirect({ to: "/forgot-password" });
-			}
+	beforeLoad: ({ search }) => {
+		if (!search.email) {
+			throw redirect({ to: "/forgot-password" });
 		}
 	},
 	component: OtpVerificationPage,
@@ -39,12 +38,7 @@ export const Route = createFileRoute("/forgot-password/otp")({
 
 function OtpVerificationPage() {
 	const navigate = useNavigate();
-	const [email] = useState(() => {
-		if (typeof window !== "undefined") {
-			return sessionStorage.getItem("forgot_password_email:v1") ?? "";
-		}
-		return "";
-	});
+	const email = Route.useSearch().email ?? "";
 	const [serverError, setServerError] = useState<string | null>(null);
 	const [isResending, setIsResending] = useState(false);
 
@@ -73,7 +67,10 @@ function OtpVerificationPage() {
 			}
 
 			toast.success("Success", { description: "Verification successful." });
-			await navigate({ to: "/forgot-password/reset" });
+			await navigate({
+				to: "/forgot-password/reset",
+				search: { email },
+			});
 		} catch {
 			toast.error("Verification failed. Please try again.");
 		}
@@ -86,16 +83,15 @@ function OtpVerificationPage() {
 			const result = await sendResetCodeFn({ data: { email } });
 			if (result.error) {
 				toast.error("Resend Failed", { description: result.message });
-				return;
+			} else {
+				toast.success("Resent", {
+					description: "A new code has been sent to your email.",
+				});
 			}
-			toast.success("Resent", {
-				description: "A new code has been sent to your email.",
-			});
 		} catch {
 			toast.error("Failed to resend code. Please try again.");
-		} finally {
-			setIsResending(false);
 		}
+		setIsResending(false);
 	}
 
 	return (

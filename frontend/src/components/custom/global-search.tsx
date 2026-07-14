@@ -56,12 +56,41 @@ const TYPE_LABELS: Record<SearchType, string> = {
 	users: "Users",
 };
 
-const RECENTS_KEY = "epms.recentSearches";
+const RECENTS_KEY = "epms.recentSearches:v1";
 const RECENTS_MAX = 8;
 
 interface RecentEntry {
 	query: string;
 	type: SearchType;
+}
+
+interface SearchState {
+	open: boolean;
+	query: string;
+	type: SearchType;
+}
+
+type SearchAction =
+	| { type: "open"; open: boolean }
+	| { type: "query"; query: string }
+	| { type: "type"; searchType: SearchType }
+	| { type: "recent"; entry: RecentEntry };
+
+function searchReducer(state: SearchState, action: SearchAction): SearchState {
+	switch (action.type) {
+		case "open":
+			return {
+				...state,
+				open: action.open,
+				query: action.open ? "" : state.query,
+			};
+		case "query":
+			return { ...state, query: action.query };
+		case "type":
+			return { ...state, type: action.searchType };
+		case "recent":
+			return { ...state, type: action.entry.type, query: action.entry.query };
+	}
 }
 
 function loadRecents(): RecentEntry[] {
@@ -96,30 +125,28 @@ interface GlobalSearchProps {
 }
 
 export function GlobalSearch({ user }: GlobalSearchProps) {
-	const [open, setOpen] = React.useState(false);
-	const [query, setQuery] = React.useState("");
-	const [type, setType] = React.useState<SearchType>("all");
-	const [recents, setRecents] = React.useState<RecentEntry[]>([]);
+	const [searchState, dispatch] = React.useReducer(searchReducer, {
+		open: false,
+		query: "",
+		type: "all",
+	});
+	const { open, query, type } = searchState;
+	const [recents, setRecents] = React.useState<RecentEntry[]>(loadRecents);
 	const deferredQuery = React.useDeferredValue(query);
 	const navigate = useNavigate();
 
-	const allowedTypes = React.useMemo(() => {
+	const allowedTypes = (() => {
 		const base: SearchType[] = ["all", "proposals", "projects", "reports"];
 		if (isRETChair(user) || isDirector(user)) base.push("moas");
 		if (isSuperAdmin(user)) base.push("users");
 		return base;
-	}, [user]);
-
-	React.useEffect(() => {
-		setRecents(loadRecents());
-	}, []);
+	})();
 
 	React.useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey)) {
 				e.preventDefault();
-				setQuery("");
-				setOpen(true);
+				dispatch({ type: "open", open: true });
 			}
 		};
 		document.addEventListener("keydown", onKey);
@@ -135,18 +162,16 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 	});
 
 	const results = data?.results ?? [];
-	const grouped = React.useMemo(
-		() =>
-			(["proposals", "projects", "reports", "moas", "users"] as const)
-				.map((t) => ({ type: t, items: results.filter((r) => r.type === t) }))
-				.filter((g) => g.items.length > 0),
-		[results],
-	);
+	const grouped = (["proposals", "projects", "reports", "moas", "users"] as const)
+		.map((resultType) => ({
+			type: resultType,
+			items: results.filter((result) => result.type === resultType),
+		}))
+		.filter((group) => group.items.length > 0);
 
-	const goTo = React.useCallback(
-		(item: SearchResultItem) => {
-			setRecents(pushRecent({ query, type }));
-			switch (item.type) {
+	const goTo = (item: SearchResultItem) => {
+		setRecents(pushRecent({ query, type }));
+		switch (item.type) {
 				case "proposals":
 					navigate({
 						to: "/proposals/$proposalId",
@@ -166,20 +191,16 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 				case "users":
 					navigate({ to: "/admin/users" });
 					break;
-			}
-			setOpen(false);
-		},
-		[query, type, navigate],
-	);
+		}
+		dispatch({ type: "open", open: false });
+	};
 
 	const runRecent = (entry: RecentEntry) => {
-		setType(entry.type);
-		setQuery(entry.query);
+		dispatch({ type: "recent", entry });
 	};
 
 	const handleOpenChange = (nextOpen: boolean) => {
-		if (nextOpen) setQuery("");
-		setOpen(nextOpen);
+		dispatch({ type: "open", open: nextOpen });
 	};
 
 	return (
@@ -201,7 +222,7 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 				<Command shouldFilter={false} className="gap-0">
 					<CommandInput
 						value={query}
-						onValueChange={setQuery}
+					onValueChange={(value) => dispatch({ type: "query", query: value })}
 						placeholder="Search proposals, projects, reports…"
 						autoFocus
 					/>
@@ -211,7 +232,7 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 							<button
 								key={t}
 								type="button"
-								onClick={() => setType(t)}
+								onClick={() => dispatch({ type: "type", searchType: t })}
 								className={cn(
 									"rounded-full px-3 py-1 text-xs font-medium transition-all shadow-none hover:scale-[1.02]",
 									type === t

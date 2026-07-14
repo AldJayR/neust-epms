@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 interface UsePdfKeyboardOptions {
 	zoomIn: () => void;
@@ -11,9 +11,6 @@ export function usePdfKeyboard({
 	zoomOut,
 	resetZoom,
 }: UsePdfKeyboardOptions) {
-	const callbacksRef = useRef({ zoomIn, zoomOut, resetZoom });
-	callbacksRef.current = { zoomIn, zoomOut, resetZoom };
-
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			const activeEl = document.activeElement;
@@ -25,12 +22,6 @@ export function usePdfKeyboard({
 			) {
 				return;
 			}
-
-			const {
-				zoomIn: zIn,
-				zoomOut: zOut,
-				resetZoom: zReset,
-			} = callbacksRef.current;
 
 			const isZoomIn =
 				e.key === "=" ||
@@ -49,17 +40,17 @@ export function usePdfKeyboard({
 
 			if (isZoomIn) {
 				e.preventDefault();
-				zIn();
+				zoomIn();
 			} else if (isZoomOut) {
 				e.preventDefault();
-				zOut();
+				zoomOut();
 			} else if (isZoomReset) {
 				e.preventDefault();
-				zReset();
+				resetZoom();
 			}
 		};
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, []);
+	}, [resetZoom, zoomIn, zoomOut]);
 }

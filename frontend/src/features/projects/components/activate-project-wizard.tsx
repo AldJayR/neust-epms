@@ -78,12 +78,12 @@ export function ActivateProjectWizard({
 		queryFn: () => getActiveMoasFn(),
 	});
 
-	const filteredMoas = React.useMemo(() => {
+	const filteredMoas = (() => {
 		if (!deferredMoaSearch) return moas;
 		return moas.filter((moa) =>
 			moa.partnerName.toLowerCase().includes(deferredMoaSearch.toLowerCase()),
 		);
-	}, [moas, deferredMoaSearch]);
+	})();
 
 	const selectedMoa = moas.find((m) => m.moaId === selectedMoaId);
 

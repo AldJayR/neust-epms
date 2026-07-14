@@ -59,57 +59,59 @@ export function useProposalWizard({
 	);
 
 	const queryClient = useQueryClient();
+	const defaultValues: FormValues = {
+		title: "",
+		bannerProgram: "",
+		projectLocale: "",
+		extensionCategory: "",
+		campusId: user.campusId?.toString() ?? "",
+		departmentId: user.departmentId?.toString() ?? "",
+		sdgIds: [],
+		beneficiarySectors: [],
+		targetStartDate: "",
+		targetEndDate: "",
+		budgetPartner: 0,
+		budgetNeust: 0,
+		members: [
+			{
+				userId: user.userId,
+				projectRole: "Project Leader",
+				name: `${user.firstName} ${user.lastName}`,
+			},
+		],
+	};
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
 		mode: "onChange",
-		defaultValues: {
-			title: "",
-			bannerProgram: "",
-			projectLocale: "",
-			extensionCategory: "",
-			campusId: user.campusId?.toString() ?? "",
-			departmentId: user.departmentId?.toString() ?? "",
-			sdgIds: [],
-			beneficiarySectors: [],
-			targetStartDate: "",
-			targetEndDate: "",
-			budgetPartner: 0,
-			budgetNeust: 0,
-			members: [
-				{
-					userId: user.userId,
-					projectRole: "Project Leader",
-					name: `${user.firstName} ${user.lastName}`,
-				},
-			],
+		defaultValues,
+		values: initialData ? { ...defaultValues, ...initialData } : undefined,
+		resetOptions: {
+			keepDirtyValues: true,
+			keepErrors: true,
 		},
 	});
 
-	const [previousInitialData, setPreviousInitialData] = React.useState(initialData);
-	if (initialData !== previousInitialData) {
-		setPreviousInitialData(initialData);
-		if (initialData) form.reset(initialData);
-		else form.reset();
-	}
-
 	const { data: sdgsData } = useQuery(sdgsQueryOptions());
-	const updateProposalMutation = useMutation({ mutationFn: updateProposalFn });
-	const submitProposalMutation = useMutation({ mutationFn: submitProposalFn });
+	const invalidateProposalData = () => {
+		queryClient.invalidateQueries({ queryKey: ["proposals"] });
+		queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+		queryClient.invalidateQueries({ queryKey: ["ret"] });
+	};
+	const updateProposalMutation = useMutation({
+		mutationFn: updateProposalFn,
+		onSuccess: invalidateProposalData,
+	});
+	const submitProposalMutation = useMutation({
+		mutationFn: submitProposalFn,
+		onSuccess: invalidateProposalData,
+	});
 	const createProposalMutation = useMutation({
 		mutationFn: createProposalFn,
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["proposals"] });
-			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-			queryClient.invalidateQueries({ queryKey: ["ret"] });
-		},
+		onSuccess: invalidateProposalData,
 	});
 	const uploadDocumentMutation = useMutation({
 		mutationFn: uploadProposalDocumentFn,
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["proposals"] });
-			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-			queryClient.invalidateQueries({ queryKey: ["ret"] });
-		},
+		onSuccess: invalidateProposalData,
 	});
 
 	const handleOpenChange = (isOpen: boolean) => {

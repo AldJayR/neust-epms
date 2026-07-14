@@ -3,6 +3,7 @@ import { getClientIp } from "@/lib/client-ip.js";
 import { ApiError } from "@/lib/errors.js";
 import { ErrorSchema } from "@/lib/schemas.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
+import { isPdfFile } from "@/services/file.service.js";
 import {
 	PaginationQuery,
 	ParamId,
@@ -107,7 +108,7 @@ app.openapi(uploadRoute, async (c) => {
 	if (file.size > MAX_UPLOAD_BYTES) {
 		throw new ApiError(413, "FILE_TOO_LARGE", "File exceeds 50MB limit");
 	}
-	if (file.type !== "application/pdf") {
+	if (!(await isPdfFile(file))) {
 		throw new ApiError(422, "INVALID_FILE_TYPE", "Only PDF files are allowed");
 	}
 	if (typeof memberId !== "string" || !memberId) {

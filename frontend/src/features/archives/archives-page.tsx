@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { SortingState } from "@tanstack/react-table";
 import { Archive } from "lucide-react";
-import { useState } from "react";
+import { useReducer, useState } from "react";
 import { ConfirmDialog } from "@/components/custom/confirm-dialog";
 import { PageHeader } from "@/components/custom/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,8 +22,15 @@ interface ArchivesPageProps {
 }
 
 export function ArchivesPage({ user }: ArchivesPageProps) {
-	const [activeTab, setActiveTab] = useState<"proposals" | "projects" | "moas">(
-		"proposals",
+	const [activeTab, setActiveTab] = useReducer(
+		(
+			state: "proposals" | "projects" | "moas",
+			value: string,
+		) =>
+			value === "proposals" || value === "projects" || value === "moas"
+				? value
+				: state,
+		"proposals" as const,
 	);
 	const [proposalPage, setProposalPage] = useState(1);
 	const [projectPage, setProjectPage] = useState(1);
@@ -64,11 +71,7 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 
 			<Tabs
 				value={activeTab}
-				onValueChange={(value) => {
-					if (value === "proposals" || value === "projects" || value === "moas") {
-						setActiveTab(value);
-					}
-				}}
+				onValueChange={setActiveTab}
 				className="w-full flex flex-col gap-6"
 			>
 				<TabsList

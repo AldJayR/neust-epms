@@ -61,9 +61,8 @@ export function ConfirmDialog({
 			handleOpenChange(false);
 		} catch (error) {
 			console.error("Confirmation action failed:", error);
-		} finally {
-			setIsSubmitting(false);
 		}
+		setIsSubmitting(false);
 	};
 
 	const isValid = !requireTyping || typedText === requireTyping;

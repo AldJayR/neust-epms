@@ -11,7 +11,7 @@ import { FieldGroup } from "../components/ui/field";
 import { sendResetCodeFn } from "@/features/auth";
 
 const forgotPasswordSchema = z.object({
-	email: z.string().email("Please enter a valid email address"),
+	email: z.email("Please enter a valid email address"),
 });
 
 export const Route = createFileRoute("/forgot-password/")({
@@ -40,12 +40,13 @@ function ForgotPasswordPage() {
 				return;
 			}
 
-			// Store email in sessionStorage to use in step 2 (OTP verification)
-			sessionStorage.setItem("forgot_password_email:v1", data.email);
 			toast.success("Success", {
 				description: "Reset code sent to your email.",
 			});
-			await navigate({ to: "/forgot-password/otp" });
+			await navigate({
+				to: "/forgot-password/otp",
+				search: { email: data.email },
+			});
 		} catch {
 			toast.error("Failed to send reset code. Please try again.");
 		}

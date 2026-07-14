@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SortingState } from "@tanstack/react-table";
 import { CheckCircle2, ListFilter, MoreVertical, Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
 import { ConfirmDialog } from "@/components/custom/confirm-dialog";
@@ -110,8 +110,7 @@ export function UsersPage({
 	const users = usersData?.users ?? [];
 	const hasSearch = !!search?.trim();
 
-	const columns = useMemo<DataTableColumnDef<UserResponse>[]>(
-		() => [
+	const columns: DataTableColumnDef<UserResponse>[] = [
 			{
 				id: "name",
 				accessorFn: (row) => `${row.firstName} ${row.lastName}`,
@@ -241,9 +240,7 @@ export function UsersPage({
 					);
 				},
 			}),
-		],
-		[updateStatusMutation.isPending, updateStatusMutation.mutate],
-	);
+		];
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -356,6 +353,7 @@ export function UsersPage({
 			)}
 			{editingUser && (
 				<EditUserDialog
+					key={editingUser.userId}
 					user={editingUser}
 					isOpen={!!editingUser}
 					onOpenChange={(open) => {

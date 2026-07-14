@@ -8,6 +8,7 @@ import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
 import { env } from "@/env.js";
 import { insertAuditLog } from "@/lib/audit.js";
+import { escapeHtml } from "@/lib/html.js";
 import {
 	createNotification,
 	getUserIdsByRole,
@@ -99,7 +100,7 @@ export function startMoaExpirationCron(): void {
 						message: `MOA with "${moa.partnerName}" expired on ${expiryDate}. Please renew.`,
 						sendEmail: true,
 						emailSubject: `MOA Expired: ${moa.partnerName}`,
-						emailHtml: `<p>MOA with "<strong>${moa.partnerName}</strong>" expired on <strong>${expiryDate}</strong>. Please renew.</p>`,
+						emailHtml: `<p>MOA with "<strong>${escapeHtml(moa.partnerName)}</strong>" expired on <strong>${escapeHtml(expiryDate)}</strong>. Please renew.</p>`,
 					});
 				}
 

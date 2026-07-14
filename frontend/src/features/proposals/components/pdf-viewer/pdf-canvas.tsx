@@ -73,12 +73,8 @@ export function PdfPageCanvas({
 
 	const overlayRef = useRef<HTMLButtonElement>(null);
 
-	const activeCanvasRef = useRef(activeCanvas);
-	const hasRenderedRef = useRef(hasRendered);
-
-	// Assign refs during render — safe for mutable refs (not reactive)
-	activeCanvasRef.current = activeCanvas;
-	hasRenderedRef.current = hasRendered;
+	const activeCanvasRef = useRef<1 | 2>(1);
+	const hasRenderedRef = useRef(false);
 
 	useEffect(() => {
 		let activeRenderTask: pdfjsLib.RenderTask | null = null;
@@ -130,6 +126,8 @@ export function PdfPageCanvas({
 
 				await activeRenderTask.promise;
 				if (!isDestroyed) {
+					activeCanvasRef.current = targetCanvasIndex;
+					hasRenderedRef.current = true;
 					dispatch({
 						activeCanvas: targetCanvasIndex,
 						lastRendered: { width, scale },

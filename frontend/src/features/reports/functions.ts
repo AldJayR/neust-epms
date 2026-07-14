@@ -72,7 +72,7 @@ export const emailReportFn = createServerFn({ method: "POST" })
 export const submitReportFn = createServerFn({ method: "POST" })
 	.validator(
 		z.object({
-			projectId: z.string().uuid(),
+			projectId: z.uuid(),
 			reportType: z.enum(["Progress", "Final Accomplishment", "Terminal"]),
 			remarks: z.string().optional(),
 			periodStart: z.string().optional(),

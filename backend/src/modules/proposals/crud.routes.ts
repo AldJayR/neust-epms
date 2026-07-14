@@ -34,6 +34,7 @@ import {
 	ROLE_NAMES,
 } from "@/lib/types.js";
 import type { AuthEnv } from "@/middleware/auth.js";
+import { requireRole } from "@/middleware/rbac.js";
 import { PROJECT_LEADER_ROLE } from "@/services/auth-user.service.js";
 import {
 	CreateProposalSchema,
@@ -53,6 +54,11 @@ import {
 } from "./proposals.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
+
+app.use(
+	"/proposals/:id/restore",
+	requireRole(ROLE_NAMES.DIRECTOR, ROLE_NAMES.SUPER_ADMIN),
+);
 
 // ── GET /proposals ──
 const listRoute = createRoute({
@@ -648,6 +654,7 @@ const restoreRoute = createRoute({
 });
 
 app.openapi(restoreRoute, async (c) => {
+	const user = c.get("user");
 	const { id } = c.req.valid("param");
 
 	const [updated] = await db
@@ -659,6 +666,13 @@ app.openapi(restoreRoute, async (c) => {
 	if (!updated) {
 		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
 	}
+
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Restored proposal ${id}`,
+		tableAffected: "proposals",
+		ipAddress: getClientIp(c),
+	});
 
 	return c.json({ message: "Proposal restored successfully" }, 200);
 });

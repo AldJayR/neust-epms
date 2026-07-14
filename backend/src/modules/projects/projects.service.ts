@@ -1125,12 +1125,25 @@ export async function getProjectReportingSchedule(id: string) {
 
 // ── Restore ──
 
-export async function restoreProject(projectId: string) {
+export async function restoreProject(
+	projectId: string,
+	user: AuthUser,
+	ipAddress: string,
+) {
 	const [updated] = await db
 		.update(projects)
 		.set({ archivedAt: null })
 		.where(eq(projects.projectId, projectId))
 		.returning();
+
+	if (updated) {
+		await insertAuditLog({
+			userId: user.userId,
+			action: `Restored project ${projectId}`,
+			tableAffected: "projects",
+			ipAddress,
+		});
+	}
 
 	return updated;
 }

@@ -8,7 +8,7 @@ import {
 	FilePlus,
 	Loader2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -32,6 +32,7 @@ export function ReportingScheduleCard({
 	className,
 }: ReportingScheduleCardProps) {
 	const { data, isLoading, error } = useProjectReportingSchedule(projectId);
+	const [now] = useState(() => new Date());
 
 	if (isLoading) {
 		return (
@@ -70,12 +71,6 @@ export function ReportingScheduleCard({
 		);
 	}
 
-	const [now, setNow] = useState<Date | null>(null);
-
-	useEffect(() => {
-		setNow(new Date());
-	}, []);
-
 	return (
 		<Card size="sm" className={className}>
 			<CardHeader className="pb-3">
@@ -90,7 +85,7 @@ export function ReportingScheduleCard({
 				<div className="relative border-l border-border pl-6 ml-3 space-y-6">
 					{dueDates.map((item, idx) => {
 						const dateObj = toStableDate(item.date);
-						const isOverdue = !item.isCompleted && now !== null && dateObj < now;
+						const isOverdue = !item.isCompleted && dateObj < now;
 						const allPreviousComplete = dueDates
 							.slice(0, idx)
 							.every((d) => d.isCompleted);
@@ -125,7 +120,7 @@ export function ReportingScheduleCard({
 											<p className="text-xs text-red-500">
 												Overdue by{" "}
 												{Math.ceil(
-													((now?.getTime() ?? 0) - dateObj.getTime()) /
+													(now.getTime() - dateObj.getTime()) /
 														(1000 * 60 * 60 * 24),
 												)}{" "}
 												days

@@ -22,7 +22,7 @@ import { ApiError } from "@/lib/errors.js";
 import { buildProposalScopeClause } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
-import { sanitizeFilename } from "@/services/file.service.js";
+import { isPdfFile, sanitizeFilename } from "@/services/file.service.js";
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
@@ -325,7 +325,7 @@ export async function uploadMoaDocument(
 		throw new ApiError(413, "FILE_TOO_LARGE", "File exceeds 50MB limit");
 	}
 
-	if (file.type !== "application/pdf") {
+	if (!(await isPdfFile(file))) {
 		throw new ApiError(422, "INVALID_FILE_TYPE", "Only PDF files are allowed");
 	}
 

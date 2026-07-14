@@ -1,6 +1,5 @@
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
-import * as React from "react";
 import { Controller, type UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -40,12 +39,6 @@ interface CurrencyInputProps {
 }
 
 function CurrencyInput({ value, onChange, placeholder }: CurrencyInputProps) {
-	const [display, setDisplay] = React.useState(() => formatPeso(value));
-
-	React.useEffect(() => {
-		setDisplay(formatPeso(value));
-	}, [value]);
-
 	return (
 		<div className="relative">
 			<span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -55,15 +48,12 @@ function CurrencyInput({ value, onChange, placeholder }: CurrencyInputProps) {
 				type="text"
 				inputMode="decimal"
 				className="pl-7"
-				value={display}
+				value={formatPeso(value)}
 				placeholder={placeholder}
 				onChange={(e) => {
 					const raw = e.target.value;
-					const num = parsePesoInput(raw);
-					setDisplay(raw === "" ? "" : formatPeso(num));
-					onChange(num);
+					onChange(raw === "" ? 0 : parsePesoInput(raw));
 				}}
-				onBlur={() => setDisplay(formatPeso(value))}
 			/>
 		</div>
 	);

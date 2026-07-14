@@ -61,6 +61,8 @@ export function ProposalStepInfo({
 		);
 	};
 
+	const watchedSdgIdSet = new Set(watchedSdgIds);
+
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 			<div className="md:col-span-2">
@@ -162,7 +164,7 @@ export function ProposalStepInfo({
 						>
 							<Checkbox
 								id={`sdg-${sdg.sdgId}`}
-								checked={watchedSdgIds.includes(sdg.sdgId)}
+								checked={watchedSdgIdSet.has(sdg.sdgId)}
 								onCheckedChange={(checked) => {
 									const current = form.getValues("sdgIds") || [];
 									if (checked) {
@@ -193,10 +195,11 @@ export function ProposalStepInfo({
 					{watchedSectors.map((sector) => (
 						<Badge key={sector} variant="secondary" className="gap-1 pr-1">
 							{sector}
-							<button
-								type="button"
-								onClick={() => removeSector(sector)}
-								className="rounded-full p-0.5 hover:bg-muted"
+									<button
+										type="button"
+										onClick={() => removeSector(sector)}
+										aria-label={`Remove ${sector}`}
+										className="rounded-full p-0.5 hover:bg-muted"
 							>
 								<X className="size-3" />
 							</button>

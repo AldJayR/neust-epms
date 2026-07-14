@@ -11,6 +11,8 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { authMiddleware } from "@/middleware/auth.js";
 import { installApiErrorHandler } from "@/lib/errors.js";
 
+const PDF_BYTES = "%PDF-1.4\n";
+
 const app = new OpenAPIHono();
 app.use("*", authMiddleware);
 app.route("/", baseApp);
@@ -244,7 +246,7 @@ describe("POST /proposals/:proposalId/documents/upload", () => {
 		const formData = new FormData();
 		formData.set(
 			"file",
-			new File(["dummy"], "Proposal File.pdf", { type: "application/pdf" }),
+			new File([PDF_BYTES], "Proposal File.pdf", { type: "application/pdf" }),
 		);
 
 		const res = await app.request(

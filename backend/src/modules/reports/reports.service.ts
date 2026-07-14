@@ -13,6 +13,7 @@ import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { ApiError } from "@/lib/errors.js";
+import { escapeHtml } from "@/lib/html.js";
 import {
 	createNotification,
 	getUserIdsByRole,
@@ -327,7 +328,7 @@ export async function createReport(
 			message: `A ${readableType} has been submitted for "${projectTitle}".`,
 			sendEmail: true,
 			emailSubject: `New Report: ${projectTitle}`,
-			emailHtml: `<p>A <strong>${readableType}</strong> has been submitted for "<strong>${projectTitle}</strong>".</p>`,
+			emailHtml: `<p>A <strong>${escapeHtml(readableType)}</strong> has been submitted for "<strong>${escapeHtml(projectTitle)}</strong>".</p>`,
 		});
 	const [enriched] = await db
 		.select(reportSelection)

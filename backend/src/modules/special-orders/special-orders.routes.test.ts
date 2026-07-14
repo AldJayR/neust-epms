@@ -10,6 +10,8 @@ import {
 import app from "./special-orders.routes.js";
 import { installApiErrorHandler } from "@/lib/errors.js";
 
+const PDF_BYTES = "%PDF-1.4\n";
+
 installApiErrorHandler(app);
 
 beforeEach(() => {
@@ -105,7 +107,7 @@ describe("POST /special-orders/upload", () => {
 		const formData = new FormData();
 		formData.set(
 			"file",
-			new File(["pdf"], "special-order.pdf", { type: "application/pdf" }),
+			new File([PDF_BYTES], "special-order.pdf", { type: "application/pdf" }),
 		);
 		formData.set("memberId", "member-1");
 		formData.set("soNumber", "SO-004");
@@ -130,7 +132,7 @@ describe("POST /special-orders/upload", () => {
 		const formData = new FormData();
 		formData.set(
 			"file",
-			new File(["pdf"], "special-order.pdf", { type: "application/pdf" }),
+			new File([PDF_BYTES], "special-order.pdf", { type: "application/pdf" }),
 		);
 		formData.set("memberId", "member-1");
 		formData.set("soNumber", "SO-004");
@@ -166,7 +168,7 @@ describe("POST /special-orders/upload", () => {
 		const formData = new FormData();
 		formData.set(
 			"file",
-			new File(["pdf"], "special-order.pdf", { type: "application/pdf" }),
+			new File([PDF_BYTES], "special-order.pdf", { type: "application/pdf" }),
 		);
 		formData.set("memberId", "member-1");
 		formData.set("soNumber", "SO-004");
@@ -206,7 +208,7 @@ describe("POST /special-orders/upload", () => {
 		const formData = new FormData();
 		formData.set(
 			"file",
-			new File(["pdf"], "special-order.pdf", { type: "application/pdf" }),
+			new File([PDF_BYTES], "special-order.pdf", { type: "application/pdf" }),
 		);
 		formData.set("memberId", "member-1");
 		formData.set("soNumber", "SO-004");

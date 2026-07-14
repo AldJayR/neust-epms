@@ -4,6 +4,7 @@ import { notifications } from "@/db/schema/notifications.js";
 import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
 import { env } from "@/env.js";
+import { escapeHtml } from "@/lib/html.js";
 
 export type NotificationType =
 	| "proposal"
@@ -65,7 +66,7 @@ export async function createNotification(
 					from: env.RESEND_FROM,
 					to: user.email,
 					subject: emailSubject ?? title,
-					html: emailHtml ?? `<p>${message}</p>`,
+					html: emailHtml ?? `<p>${escapeHtml(message)}</p>`,
 				});
 			} catch (e) {
 				console.error("[notification] Failed to send email:", e);

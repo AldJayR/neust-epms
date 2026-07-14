@@ -7,7 +7,6 @@ import {
 	useDeferredValue,
 	useEffect,
 	useImperativeHandle,
-	useMemo,
 	useRef,
 	useState,
 } from "react";
@@ -100,7 +99,7 @@ const PdfInner = ({
 	}, [loadingDoc]);
 
 	const pageWidth = Math.max(240, Math.min(BASE_WIDTH, viewerWidth - 120));
-	const commentsByPage = useMemo(() => {
+	const commentsByPage = (() => {
 		const grouped = new Map<number, ProposalComment[]>();
 		for (const comment of comments) {
 			const page = comment.annotationJson?.page;
@@ -110,7 +109,7 @@ const PdfInner = ({
 			grouped.set(page, pageComments);
 		}
 		return grouped;
-	}, [comments]);
+	})();
 
 	const [pageAspectRatios, setPageAspectRatios] = useState<
 		Record<number, number>

@@ -10,10 +10,10 @@ const STALE_TIME = 1000 * 60 * 5;
 // ── Schemas ─────────────────────────────────────────────────
 
 const updateMoaSchema = z.object({
-	moaId: z.string().uuid(),
-	validFrom: z.string().datetime().optional(),
-	validUntil: z.string().datetime().optional(),
-	partnerId: z.string().uuid().optional(),
+	moaId: z.uuid(),
+	validFrom: z.iso.datetime().optional(),
+	validUntil: z.iso.datetime().optional(),
+	partnerId: z.uuid().optional(),
 });
 
 // ── Interfaces ──────────────────────────────────────────────
@@ -43,7 +43,7 @@ export interface MoaLinkedProject {
 // ── Server Functions ────────────────────────────────────────
 
 export const getMoaDetailsFn = createServerFn({ method: "GET" })
-	.validator(z.object({ moaId: z.string().uuid() }))
+	.validator(z.object({ moaId: z.uuid() }))
 	.handler(async ({ data }) => {
 		await authorizeSessionUser("Director", "RET Chair");
 		const token = await getValidAccessToken();
@@ -61,7 +61,7 @@ export const getMoaDetailsFn = createServerFn({ method: "GET" })
 	});
 
 export const getMoaLinkedProjectsFn = createServerFn({ method: "GET" })
-	.validator(z.object({ moaId: z.string().uuid() }))
+	.validator(z.object({ moaId: z.uuid() }))
 	.handler(async ({ data }) => {
 		await authorizeSessionUser("Director", "RET Chair");
 		const token = await getValidAccessToken();

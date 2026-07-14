@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Info } from "lucide-react";
-import { useState } from "react";
+import { useReducer, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/custom/confirm-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -39,7 +39,10 @@ export function ProjectDetailsPage({
 	const queryClient = useQueryClient();
 	const { data, isLoading } = useQuery(projectDetailsQueryOptions(proposalId));
 
-	const [isEditing, setIsEditing] = useState(false);
+	const [isEditing, dispatchEditing] = useReducer(
+		(_state: boolean, open: boolean) => open,
+		false,
+	);
 	const { data: editProposalData } = useQuery({
 		queryKey: ["proposal", "edit", proposalId],
 		queryFn: () => getProposalByIdFn({ data: { proposalId } }),
@@ -123,7 +126,7 @@ export function ProjectDetailsPage({
 				showCloseButton={showCloseButton}
 				activateReady={readiness?.isReady ?? false}
 				statusDescription={statusDescription}
-				onEdit={() => setIsEditing(true)}
+				onEdit={() => dispatchEditing(true)}
 				onActivate={() => setShowActivateWizard(true)}
 				onClose={() => setShowCloseDialog(true)}
 			/>
@@ -201,12 +204,12 @@ export function ProjectDetailsPage({
 			<CreateProposalModal
 				open={isEditing}
 				onOpenChange={(open) => {
-					setIsEditing(open);
 					if (!open) {
 						queryClient.invalidateQueries({
 							queryKey: ["dashboard", "proposals", proposalId],
 						});
 					}
+					dispatchEditing(open);
 				}}
 				user={currentUser}
 				initialData={editInitialData}

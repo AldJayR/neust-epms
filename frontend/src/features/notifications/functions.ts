@@ -53,7 +53,7 @@ export const getUnreadCountFn = createServerFn({ method: "GET" }).handler(
 );
 
 export const markNotificationReadFn = createServerFn({ method: "POST" })
-	.validator(z.object({ notificationId: z.string().uuid() }))
+	.validator(z.object({ notificationId: z.uuid() }))
 	.handler(async ({ data }) => {
 		await authorizeSessionUser(
 			"Faculty",

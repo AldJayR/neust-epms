@@ -3,7 +3,12 @@ import { Link } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Plus } from "lucide-react";
-import { startTransition, useDeferredValue, useState } from "react";
+import {
+	startTransition,
+	useDeferredValue,
+	useReducer,
+	useState,
+} from "react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { DataTablePage } from "@/components/custom/data-table-page";
@@ -25,13 +30,41 @@ interface FacultyProjectHubPageProps {
 	user: AuthUser;
 }
 
+interface ProjectHubViewState {
+	activeTab: "my" | "college";
+	searchQuery: string;
+	currentPage: number;
+}
+
+type ProjectHubViewAction =
+	| { type: "search"; value: string }
+	| { type: "tab"; value: "my" | "college" }
+	| { type: "page"; value: number };
+
+function projectHubViewReducer(
+	state: ProjectHubViewState,
+	action: ProjectHubViewAction,
+): ProjectHubViewState {
+	switch (action.type) {
+		case "search":
+			return { ...state, searchQuery: action.value, currentPage: 1 };
+		case "tab":
+			return { ...state, activeTab: action.value, currentPage: 1 };
+		case "page":
+			return { ...state, currentPage: action.value };
+	}
+}
+
 export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
-	const [activeTab, setActiveTab] = useState<"my" | "college">("my");
-	const [searchQuery, setSearchQuery] = useState("");
+	const [viewState, dispatchView] = useReducer(projectHubViewReducer, {
+		activeTab: "my",
+		searchQuery: "",
+		currentPage: 1,
+	});
+	const { activeTab, searchQuery, currentPage } = viewState;
 	const [selectedCategory, setSelectedCategory] = useState<string>("all");
 	const [selectedStatus, setSelectedStatus] = useState<string>("all");
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-	const [currentPage, setCurrentPage] = useState(1);
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const itemsPerPage = 5;
 	const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -146,13 +179,11 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 	);
 
 	const handleSearchChange = (val: string) => {
-		setSearchQuery(val);
-		startTransition(() => setCurrentPage(1));
+		startTransition(() => dispatchView({ type: "search", value: val }));
 	};
 
 	const handleTabChange = (tab: "my" | "college") => {
-		setActiveTab(tab);
-		startTransition(() => setCurrentPage(1));
+		startTransition(() => dispatchView({ type: "tab", value: tab }));
 	};
 
 	const categories = (() => {
@@ -272,7 +303,7 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 				isLoading={isLoading}
 				page={currentPage}
 				pageSize={itemsPerPage}
-				onPageChange={setCurrentPage}
+				onPageChange={(page) => dispatchView({ type: "page", value: page })}
 				search={searchQuery}
 				onSearch={handleSearchChange}
 				searchPlaceholder="Search projects"

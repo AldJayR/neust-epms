@@ -77,7 +77,7 @@ export const transitionProjectFn = createServerFn({ method: "POST" })
 	});
 
 export const closeProjectFn = createServerFn({ method: "POST" })
-	.validator(z.object({ projectId: z.string().uuid() }))
+	.validator(z.object({ projectId: z.uuid() }))
 	.handler(async ({ data }) => {
 		await authorizeSessionUser("Director");
 		const token = await getValidAccessToken();

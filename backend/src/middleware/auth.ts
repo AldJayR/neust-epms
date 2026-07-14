@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { eq } from "drizzle-orm";
 import { createMiddleware } from "hono/factory";
@@ -8,7 +7,7 @@ import { departments } from "@/db/schema/departments.js";
 import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
 import { env } from "@/env.js";
-import { authUserCache, cacheEnabled, tokenCache } from "@/lib/cache.js";
+import { authUserCache, cacheEnabled } from "@/lib/cache.js";
 import { ApiError } from "@/lib/errors.js";
 import type { AuthUser } from "@/lib/types.js";
 
@@ -38,40 +37,25 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
 	}
 
 	const token = authHeader.slice(7);
-	const tokenHash = createHash("sha256").update(token).digest("hex");
-	const tokenCacheKey = `auth:token:${tokenHash}`;
+	// Validate every bearer token with Supabase so expiry, logout, password changes,
+	// and server-side session revocation take effect immediately.
+	const {
+		data: { user: supabaseUser },
+		error,
+	} = await supabase.auth.getUser(token);
 
-	let supabaseUserId: string | null = null;
-
-	if (cacheEnabled) {
-		// 1. Try to resolve user ID from token cache (bypasses Supabase HTTPS call)
-		supabaseUserId = tokenCache.get(tokenCacheKey) ?? null;
-
-		if (supabaseUserId) {
-			// 2. Try to resolve user profile from authUserCache (bypasses PostgreSQL DB query)
-			const cachedUser = authUserCache.get(`auth:user:${supabaseUserId}`);
-			if (cachedUser) {
-				c.set("user", cachedUser);
-				await next();
-				return;
-			}
-		}
+	if (error || !supabaseUser) {
+		throw new ApiError(401, "INVALID_TOKEN", "Invalid or expired token");
 	}
 
-	// If token mapping is not cached, validate it with Supabase
-	if (!supabaseUserId) {
-		const {
-			data: { user: supabaseUser },
-			error,
-		} = await supabase.auth.getUser(token);
+	const supabaseUserId = supabaseUser.id;
 
-		if (error || !supabaseUser) {
-			throw new ApiError(401, "INVALID_TOKEN", "Invalid or expired token");
-		}
-
-		supabaseUserId = supabaseUser.id;
-		if (cacheEnabled) {
-			tokenCache.set(tokenCacheKey, supabaseUserId);
+	if (cacheEnabled) {
+		const cachedUser = authUserCache.get(`auth:user:${supabaseUserId}`);
+		if (cachedUser) {
+			c.set("user", cachedUser);
+			await next();
+			return;
 		}
 	}
 

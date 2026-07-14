@@ -26,7 +26,7 @@ export interface ProjectReportingScheduleResponse {
 }
 
 const getProjectReportingScheduleFn = createServerFn({ method: "GET" })
-	.validator(z.string().uuid())
+	.validator(z.uuid())
 	.handler(async ({ data: projectId }) => {
 		await authorizeSessionUser(
 			"Faculty",
