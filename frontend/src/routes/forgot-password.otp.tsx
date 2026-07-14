@@ -98,7 +98,7 @@ function OtpVerificationPage() {
 	}
 
 	return (
-		<main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8">
+		<main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8 dark:bg-background">
 			<AuthPageLayout
 				title="Enter verification code"
 				description={`A 6-digit code was sent to ${email || "your email"}. Enter it below. The code expires in 10 minutes.`}
@@ -123,27 +123,27 @@ function OtpVerificationPage() {
 									<InputOTPGroup className="gap-2">
 										<InputOTPSlot
 											index={0}
-											className="w-12 h-12 text-lg rounded-md border border-zinc-300 bg-background shadow-xs text-center"
+											className="w-12 h-12 text-lg rounded-md border border-zinc-300 bg-background shadow-xs text-center dark:border-input"
 										/>
 										<InputOTPSlot
 											index={1}
-											className="w-12 h-12 text-lg rounded-md border border-zinc-300 bg-background shadow-xs text-center"
+											className="w-12 h-12 text-lg rounded-md border border-zinc-300 bg-background shadow-xs text-center dark:border-input"
 										/>
 										<InputOTPSlot
 											index={2}
-											className="w-12 h-12 text-lg rounded-md border border-zinc-300 bg-background shadow-xs text-center"
+											className="w-12 h-12 text-lg rounded-md border border-zinc-300 bg-background shadow-xs text-center dark:border-input"
 										/>
 										<InputOTPSlot
 											index={3}
-											className="w-12 h-12 text-lg rounded-md border border-zinc-300 bg-background shadow-xs text-center"
+											className="w-12 h-12 text-lg rounded-md border border-zinc-300 bg-background shadow-xs text-center dark:border-input"
 										/>
 										<InputOTPSlot
 											index={4}
-											className="w-12 h-12 text-lg rounded-md border border-zinc-300 bg-background shadow-xs text-center"
+											className="w-12 h-12 text-lg rounded-md border border-zinc-300 bg-background shadow-xs text-center dark:border-input"
 										/>
 										<InputOTPSlot
 											index={5}
-											className="w-12 h-12 text-lg rounded-md border border-zinc-300 bg-background shadow-xs text-center"
+											className="w-12 h-12 text-lg rounded-md border border-zinc-300 bg-background shadow-xs text-center dark:border-input"
 										/>
 									</InputOTPGroup>
 								</InputOTP>
@@ -152,13 +152,13 @@ function OtpVerificationPage() {
 						<FieldError errors={[form.formState.errors.code]} />
 					</div>
 
-					<div className="text-sm text-zinc-600 flex items-center justify-start gap-1">
+					<div className="text-sm text-zinc-600 flex items-center justify-start gap-1 dark:text-muted-foreground">
 						<span>Didn&apos;t receive a code?</span>{" "}
 						<button
 							type="button"
 							onClick={handleResendCode}
 							disabled={isResending}
-							className="text-brand-primary font-medium hover:underline focus:outline-none disabled:opacity-50 disabled:no-underline"
+							className="text-brand-primary font-medium hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 disabled:no-underline"
 						>
 							{isResending ? "Resending..." : "Resend code"}
 						</button>
@@ -167,7 +167,7 @@ function OtpVerificationPage() {
 					<div className="flex gap-3 items-center justify-end w-full mt-7">
 						<Link
 							to="/forgot-password"
-							className="flex h-9 items-center justify-center rounded-lg border border-brand-primary !text-brand-primary text-sm font-medium px-4 hover:bg-zinc-50 transition-colors w-[126px]"
+							className="flex h-9 items-center justify-center rounded-lg border border-brand-primary !text-brand-primary text-sm font-medium px-4 hover:bg-zinc-50 transition-colors w-[126px] dark:hover:bg-muted"
 						>
 							<ArrowLeft className="mr-2 size-4" />
 							Back

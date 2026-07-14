@@ -134,9 +134,9 @@ function RegisterStepTwo() {
 	if (isRegistered) {
 		return (
 			<section className="w-full rounded-xl p-6 text-center">
-				<div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-green-100">
+				<div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-950/40">
 					<svg
-						className="size-6 text-green-600"
+						className="size-6 text-green-600 dark:text-green-300"
 						fill="none"
 						viewBox="0 0 24 24"
 						strokeWidth="2"
@@ -186,7 +186,7 @@ function RegisterStepTwo() {
 					Already have an account?{" "}
 					<Link
 						to="/login"
-						className="text-black hover:text-black underline underline-offset-2"
+						className="text-black hover:text-black underline underline-offset-2 dark:text-foreground dark:hover:text-foreground"
 					>
 						Log in
 					</Link>

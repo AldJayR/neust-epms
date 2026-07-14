@@ -76,7 +76,7 @@ export function ProposalStepMembers({ form, user }: ProposalStepMembersProps) {
 							<button
 								key={u.userId}
 								type="button"
-								className="w-full text-left p-2 flex items-center justify-between hover:bg-slate-50 cursor-pointer"
+								className="w-full text-left p-2 flex items-center justify-between hover:bg-slate-50 cursor-pointer dark:hover:bg-muted"
 								onClick={() => handleAddMember(u)}
 							>
 								<div className="text-sm">
@@ -101,12 +101,12 @@ export function ProposalStepMembers({ form, user }: ProposalStepMembersProps) {
 							className="p-3 flex items-center justify-between gap-4"
 						>
 							<div className="flex-1 flex items-center justify-between gap-4">
-								<span className="text-sm font-medium text-slate-900 truncate">
+								<span className="text-sm font-medium text-slate-900 truncate dark:text-foreground">
 									{field.name}
 								</span>
 								<div className="flex items-center gap-2">
 									{field.userId === user.userId ? (
-										<span className="text-xs text-muted-foreground bg-slate-100 px-2 py-0.5 rounded">
+										<span className="text-xs text-muted-foreground bg-slate-100 px-2 py-0.5 rounded dark:bg-muted">
 											{watchedMembers?.[index]?.projectRole ??
 												field.projectRole}
 										</span>
@@ -125,7 +125,7 @@ export function ProposalStepMembers({ form, user }: ProposalStepMembersProps) {
 								<Button
 									variant="ghost"
 									size="icon"
-									className="text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0"
+									className="text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0 dark:text-red-300 dark:hover:text-red-200 dark:hover:bg-red-950/30"
 									onClick={() => removeMember(index)}
 								>
 									<Trash2 className="size-4" />

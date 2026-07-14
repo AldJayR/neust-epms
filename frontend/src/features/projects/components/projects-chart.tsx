@@ -52,9 +52,14 @@ export default function ProjectsChart({ chartData }: ProjectsChartProps) {
 					<Tooltip
 						cursor={{ fill: "transparent" }}
 						contentStyle={{
+							backgroundColor: "var(--popover)",
+							color: "var(--popover-foreground)",
 							borderRadius: "8px",
 							border: "1px solid var(--border)",
+							boxShadow: "0 8px 24px var(--shadow-card)",
 						}}
+						labelStyle={{ color: "var(--popover-foreground)" }}
+						itemStyle={{ color: "var(--popover-foreground)" }}
 					/>
 					<Bar
 						dataKey="value"

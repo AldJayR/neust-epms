@@ -62,19 +62,19 @@ export function ProposalDetailsTab() {
 					<span className="text-muted-foreground font-medium">
 						Submitted by
 					</span>
-					<span className="text-black font-medium">
+					<span className="text-black font-medium dark:text-foreground">
 						{data.metadata.leader.name}
 					</span>
 				</div>
 				<div className="flex justify-between items-center text-sm">
 					<span className="text-muted-foreground font-medium">Department</span>
-					<span className="text-black font-medium">
+					<span className="text-black font-medium dark:text-foreground">
 						{data.metadata.departmentCode}
 					</span>
 				</div>
 				<div className="flex justify-between items-center text-sm">
 					<span className="text-muted-foreground font-medium">Duration</span>
-					<span className="text-black font-medium">
+					<span className="text-black font-medium dark:text-foreground">
 						{data.metadata.duration}
 					</span>
 				</div>
@@ -82,13 +82,13 @@ export function ProposalDetailsTab() {
 					<span className="text-muted-foreground font-medium">
 						Budget (NEUST)
 					</span>
-					<span className="text-black font-medium">
+					<span className="text-black font-medium dark:text-foreground">
 						{formatBudget(data.metadata.budget.neust)}
 					</span>
 				</div>
 				<div className="flex justify-between items-center text-sm">
 					<span className="text-muted-foreground font-medium">SDGs</span>
-					<span className="text-black font-medium">
+					<span className="text-black font-medium dark:text-foreground">
 						{data.metadata.sdgs ?? "None"}
 					</span>
 				</div>
@@ -101,13 +101,13 @@ export function ProposalDetailsTab() {
 			{endorsement && (
 				<>
 					<div className="p-5 space-y-4">
-						<h2 className="text-sm font-medium text-black">
+						<h2 className="text-sm font-medium text-black dark:text-foreground">
 							{endorsement.status === "Approved" ? "Approval" : "Endorsement"}
 						</h2>
 						<div className="rounded-lg border border-border p-3 space-y-1">
 							<div className="flex items-center gap-3">
-								<CheckCircle2 className="size-4 text-black" />
-								<span className="text-sm font-medium text-black">
+								<CheckCircle2 className="size-4 text-black dark:text-foreground" />
+								<span className="text-sm font-medium text-black dark:text-foreground">
 									{endorsement.status} by {endorsement.actorName}
 								</span>
 							</div>
@@ -120,9 +120,9 @@ export function ProposalDetailsTab() {
 
 						{endorsement.comment && (
 							<>
-								<h2 className="text-sm font-medium text-black mt-6">Remarks</h2>
+								<h2 className="text-sm font-medium text-black mt-6 dark:text-foreground">Remarks</h2>
 								<div className="rounded-lg border border-border p-3">
-									<p className="text-sm text-black font-light leading-relaxed">
+									<p className="text-sm text-black font-light leading-relaxed dark:text-foreground">
 										"{endorsement.comment}"
 									</p>
 								</div>
@@ -137,7 +137,7 @@ export function ProposalDetailsTab() {
 			)}
 
 			<div className="p-5 space-y-3">
-				<h2 className="text-sm font-medium text-black">Attached documents</h2>
+				<h2 className="text-sm font-medium text-black dark:text-foreground">Attached documents</h2>
 				<div className="space-y-1">
 					{data.attachments?.map((file) => {
 						const isActive =
@@ -157,10 +157,10 @@ export function ProposalDetailsTab() {
 										setActiveAttachmentId(file.id);
 									}
 								}}
-								className={`w-full px-3 py-2 rounded-[5px] flex flex-col gap-0.5 cursor-pointer text-left ${isActive ? "bg-[#caf1f6]" : "bg-transparent hover:bg-gray-50"}`}
+								className={`w-full px-3 py-2 rounded-[5px] flex flex-col gap-0.5 cursor-pointer text-left ${isActive ? "bg-[#caf1f6] dark:bg-primary/20" : "bg-transparent hover:bg-gray-50 dark:hover:bg-muted"}`}
 							>
 								<span
-									className={`text-xs font-semibold ${isActive ? "text-[#0d74ce]" : "text-black"}`}
+									className={`text-xs font-semibold ${isActive ? "text-[#0d74ce] dark:text-primary" : "text-black dark:text-foreground"}`}
 								>
 									{file.name}
 								</span>
@@ -256,7 +256,7 @@ export function ProposalDetailsTab() {
 					<DialogFooter className="flex gap-3 mt-4">
 						<Button
 							variant="outline"
-							className="flex-1 border border-border rounded-lg text-gray-500 font-medium h-9 text-sm shadow-sm cursor-pointer"
+							className="flex-1 border border-border rounded-lg text-gray-500 font-medium h-9 text-sm shadow-sm cursor-pointer dark:text-muted-foreground"
 							onClick={() => setIsConfirmOpen(false)}
 						>
 							Cancel
@@ -298,7 +298,7 @@ export function ProposalDetailsTab() {
 					<DialogFooter className="flex gap-3 mt-4">
 						<Button
 							variant="outline"
-							className="flex-1 border border-border rounded-lg text-gray-500 font-medium h-9 text-sm shadow-sm cursor-pointer"
+							className="flex-1 border border-border rounded-lg text-gray-500 font-medium h-9 text-sm shadow-sm cursor-pointer dark:text-muted-foreground"
 							onClick={() => setIsReturnOpen(false)}
 						>
 							Cancel
@@ -328,9 +328,9 @@ export function ProposalDetailsTab() {
 						</DialogDescription>
 					</DialogHeader>
 
-					<div className="rounded-lg border border-red-200 bg-red-50 p-3 flex gap-3">
-						<AlertTriangle className="size-4 text-red-600 mt-0.5 shrink-0" />
-						<p className="text-sm text-red-800">
+						<div className="rounded-lg border border-red-200 bg-red-50 p-3 flex gap-3 dark:border-red-900/60 dark:bg-red-950/30">
+							<AlertTriangle className="size-4 text-red-600 mt-0.5 shrink-0 dark:text-red-300" />
+							<p className="text-sm text-red-800 dark:text-red-200">
 							This will permanently decline the proposal. The project leader
 							will be notified that the proposal has been rejected.
 						</p>
@@ -348,7 +348,7 @@ export function ProposalDetailsTab() {
 					<DialogFooter className="flex gap-3 mt-4">
 						<Button
 							variant="outline"
-							className="flex-1 border border-border rounded-lg text-gray-500 font-medium h-9 text-sm shadow-sm cursor-pointer"
+							className="flex-1 border border-border rounded-lg text-gray-500 font-medium h-9 text-sm shadow-sm cursor-pointer dark:text-muted-foreground"
 							onClick={() => setIsRejectOpen(false)}
 						>
 							Cancel

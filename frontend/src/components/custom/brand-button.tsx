@@ -16,7 +16,7 @@ export function BrandButton({
 		<Button
 			ref={ref}
 			className={cn(
-				"bg-brand-primary text-white hover:bg-brand-primary/90 rounded-lg gap-2",
+				"bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg gap-2",
 				className,
 			)}
 			{...props}

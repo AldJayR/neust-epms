@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Alert } from "@/components/ui/alert";
+import { ModeToggle } from "../mode-toggle";
 
 interface AuthPageLayoutProps {
 	children: ReactNode;
@@ -34,6 +35,9 @@ export function AuthPageLayout({
 						Extension Services Department
 					</span>
 				</div>
+				<div className="ml-auto">
+					<ModeToggle />
+				</div>
 			</div>
 			<header className="flex items-start justify-between gap-4">
 				<div className="space-y-1">
@@ -54,7 +58,7 @@ export function AuthPageLayout({
 			{children}
 
 			{footer && (
-				<p className="pt-4 text-center text-sm leading-5 text-zinc-600">
+				<p className="pt-4 text-center text-sm leading-5 text-zinc-600 dark:text-muted-foreground">
 					{footer}
 				</p>
 			)}

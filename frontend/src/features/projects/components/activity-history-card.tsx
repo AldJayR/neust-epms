@@ -25,7 +25,7 @@ export function ActivityHistoryCard({ history }: { history: Activity[] }) {
 					{history.map((item, index) => (
 						<li key={item.id} className="relative flex items-start gap-4 pl-8">
 							<div
-								className={`absolute left-0 mt-1 size-[22px] rounded-full border-[3px] border-white shadow-sm ring-1 ring-border ${index === 0 ? "bg-brand-primary" : "bg-background"}`}
+								className={`absolute left-0 mt-1 size-[22px] rounded-full border-[3px] border-white shadow-sm ring-1 ring-border dark:border-border ${index === 0 ? "bg-brand-primary" : "bg-background"}`}
 							/>
 							<div className="flex flex-1 flex-col gap-1">
 								<div className="flex items-center justify-between">
@@ -38,12 +38,12 @@ export function ActivityHistoryCard({ history }: { history: Activity[] }) {
 										<Badge
 											className={`${
 												item.status === "Current"
-													? "bg-blue-50 text-blue-600 border-blue-100"
+												? "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900/60"
 													: item.status === "Returned"
-														? "bg-red-50 text-red-600 border-red-100"
+													? "bg-red-50 text-red-600 border-red-100 dark:bg-red-950/30 dark:text-red-300 dark:border-red-900/60"
 														: item.status === "Updated"
-															? "bg-amber-50 text-amber-600 border-amber-100"
-															: "bg-gray-50 text-gray-600 border-gray-100"
+														? "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/60"
+														: "bg-gray-50 text-gray-600 border-gray-100 dark:bg-muted dark:text-muted-foreground dark:border-border"
 											} rounded-md px-2 py-0 h-5 text-[10px] font-semibold uppercase`}
 										>
 											{item.status}

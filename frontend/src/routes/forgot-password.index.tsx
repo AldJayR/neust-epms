@@ -52,7 +52,7 @@ function ForgotPasswordPage() {
 	}
 
 	return (
-		<main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8">
+		<main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8 dark:bg-background">
 			<AuthPageLayout
 				title="Reset your password"
 				description="Enter the email address associated with your account. We'll send a one-time code to that address."
@@ -76,7 +76,7 @@ function ForgotPasswordPage() {
 					<div className="flex gap-3 items-center justify-end w-full mt-7">
 						<Link
 							to="/login"
-							className="flex h-9 items-center justify-center rounded-lg border border-brand-primary !text-brand-primary text-sm font-medium px-4 hover:bg-zinc-50 transition-colors whitespace-nowrap"
+							className="flex h-9 items-center justify-center rounded-lg border border-brand-primary !text-brand-primary text-sm font-medium px-4 hover:bg-zinc-50 transition-colors whitespace-nowrap dark:hover:bg-muted"
 						>
 							<ArrowLeft className="mr-2 size-4" />
 							Back to login

@@ -2,7 +2,15 @@ import type { useRender } from "@base-ui/react/use-render";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, type LinkProps } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronRight, Loader2, LogOut, type LucideIcon } from "lucide-react";
+import {
+	ChevronRight,
+	Laptop,
+	Loader2,
+	LogOut,
+	Moon,
+	Sun,
+	type LucideIcon,
+} from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import * as React from "react";
 import { toast } from "sonner";
@@ -13,7 +21,12 @@ import {
 	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
 	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -31,6 +44,7 @@ import {
 import type { AuthUser } from "@/lib/auth";
 import { logoutFn } from "@/features/auth";
 import { clearAuthCache } from "@/lib/auth-cache";
+import { useTheme } from "@/components/theme-provider";
 
 export type RoleSidebarItem = {
 	title: string;
@@ -75,6 +89,7 @@ export function RoleSidebar({
 
 	const logout = useServerFn(logoutFn);
 	const queryClient = useQueryClient();
+	const { theme, setTheme } = useTheme();
 	const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
 	const handleLogout = async () => {
@@ -177,6 +192,35 @@ export function RoleSidebar({
 										</div>
 									</DropdownMenuLabel>
 								</DropdownMenuGroup>
+								<DropdownMenuSeparator />
+								<DropdownMenuSub>
+									<DropdownMenuSubTrigger>
+										{theme === "light" ? (
+											<Sun />
+										) : theme === "dark" ? (
+											<Moon />
+										) : (
+											<Laptop />
+										)}
+										Theme
+									</DropdownMenuSubTrigger>
+									<DropdownMenuSubContent>
+										<DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+											<DropdownMenuRadioItem value="light">
+												<Sun />
+												Light
+											</DropdownMenuRadioItem>
+											<DropdownMenuRadioItem value="dark">
+												<Moon />
+												Dark
+											</DropdownMenuRadioItem>
+											<DropdownMenuRadioItem value="system">
+												<Laptop />
+												System
+											</DropdownMenuRadioItem>
+										</DropdownMenuRadioGroup>
+									</DropdownMenuSubContent>
+								</DropdownMenuSub>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem
 									onClick={handleLogout}

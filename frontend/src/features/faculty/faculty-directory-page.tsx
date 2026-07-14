@@ -210,7 +210,7 @@ export function FacultyDirectoryPage({
 					</h1>
 				}
 				actions={
-					<div className="flex items-center gap-4">
+					<div className="flex flex-wrap items-center justify-end gap-4">
 						<div className="flex h-9 items-center gap-2 rounded-lg border border-border bg-background px-3 shadow-sm">
 							<Calendar className="size-4 text-foreground" />
 							<span className="text-sm font-medium text-foreground">
@@ -254,7 +254,7 @@ export function FacultyDirectoryPage({
 				}
 			/>
 
-			<div className="flex items-center gap-6">
+			<div className="grid gap-6 md:grid-cols-3">
 				<MetricCard
 					label="Total Active Extension"
 					value={metrics.totalActiveExtension.toLocaleString()}

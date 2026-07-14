@@ -33,7 +33,7 @@ export function ProposalReviewDocumentPane({
 		<div
 			className={`${isTheaterMode ? "lg:col-span-12 w-full" : "lg:col-span-8"} flex flex-col gap-4`}
 		>
-			<div className="bg-muted border border-border rounded-[12px] shadow-[0_1px_3px_0_var(--shadow-card)] overflow-hidden h-[844px]">
+			<div className="bg-muted border border-border rounded-[12px] shadow-[0_1px_3px_0_var(--shadow-card)] overflow-hidden min-h-[480px] h-[min(844px,calc(100dvh-10rem))] lg:h-[844px]">
 				{currentDocument ? (
 					<PdfViewer
 						ref={viewerRef}

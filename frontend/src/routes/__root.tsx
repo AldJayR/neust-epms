@@ -10,11 +10,13 @@ import {
 } from "@tanstack/react-router";
 import { Loader2, Wifi, WifiOff } from "lucide-react";
 import { useEffect } from "react";
-import { Toaster, toast } from "sonner";
+import { toast } from "sonner";
+import { getCurrentUserFn } from "@/features/auth";
 import { Devtools } from "../components/devtools";
+import { ThemeToaster } from "../components/custom/theme-toaster";
+import { ThemeProvider } from "../components/theme-provider";
 import { TooltipProvider } from "../components/ui/tooltip";
 import type { AuthContext } from "../lib/auth";
-import { getCurrentUserFn } from "@/features/auth";
 import { getCachedUser, isCacheStale, setCachedUser } from "../lib/auth-cache";
 import appCss from "../styles.css?url";
 
@@ -22,8 +24,6 @@ interface MyRouterContext {
 	queryClient: QueryClient;
 	auth: AuthContext;
 }
-
-const THEME_INIT_SCRIPT = `(function(){try{var root=document.documentElement;var stored=window.localStorage.getItem('theme');var theme=stored==='dark'||stored==='light'?stored:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');root.classList.remove('light','dark');root.classList.add(theme);root.setAttribute('data-theme',theme);root.style.colorScheme=theme;}catch(e){}})();`;
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
 	beforeLoad: async () => {
@@ -138,7 +138,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			disconnectToastId = toast.custom(
 				() => (
 					<div className="relative flex items-center gap-4 border border-border bg-background rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
-						<div className="flex size-9 items-center justify-center rounded-full bg-red-50 text-red-500 shrink-0">
+						<div className="flex size-9 items-center justify-center rounded-full bg-red-50 text-red-500 dark:bg-red-950/40 dark:text-red-300 shrink-0">
 							<WifiOff className="size-5" />
 						</div>
 						<div className="flex flex-col text-left">
@@ -167,7 +167,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				toast.custom(
 					() => (
 						<div className="relative flex items-center gap-4 border border-border bg-background rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
-							<div className="flex size-9 items-center justify-center rounded-full bg-red-50 text-red-500 shrink-0">
+						<div className="flex size-9 items-center justify-center rounded-full bg-red-50 text-red-500 dark:bg-red-950/40 dark:text-red-300 shrink-0">
 								<WifiOff className="size-5" />
 							</div>
 							<div className="flex flex-col text-left">
@@ -203,7 +203,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			toast.custom(
 				() => (
 					<div className="relative flex items-center gap-4 border border-border bg-background rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
-						<div className="flex size-9 items-center justify-center rounded-full bg-green-50 text-green-600 shrink-0">
+						<div className="flex size-9 items-center justify-center rounded-full bg-green-50 text-green-600 dark:bg-green-950/40 dark:text-green-300 shrink-0">
 							<Wifi className="size-5" />
 						</div>
 						<div className="flex flex-col text-left">
@@ -240,15 +240,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
-				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: theme init script prevents flash */}
-				<script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
 				<HeadContent />
 			</head>
 			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
 				{isPending && <div className="global-loading-bar" />}
-				<TooltipProvider>{children}</TooltipProvider>
-				<Toaster position="top-right" />
-				<Devtools />
+				<ThemeProvider defaultTheme="system" storageKey="theme">
+					<TooltipProvider>{children}</TooltipProvider>
+					<ThemeToaster position="top-right" />
+					<Devtools />
+				</ThemeProvider>
 				<Scripts />
 			</body>
 		</html>

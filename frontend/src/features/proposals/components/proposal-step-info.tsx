@@ -133,7 +133,7 @@ export function ProposalStepInfo({
 						<Input
 							readOnly
 							value={user.campusName}
-							className="bg-slate-50 text-slate-500 cursor-not-allowed"
+								className="bg-slate-50 text-slate-500 cursor-not-allowed dark:bg-muted dark:text-muted-foreground"
 						/>
 					</FieldContent>
 				</Field>
@@ -146,7 +146,7 @@ export function ProposalStepInfo({
 						<Input
 							readOnly
 							value={user.departmentName ?? ""}
-							className="bg-slate-50 text-slate-500 cursor-not-allowed"
+								className="bg-slate-50 text-slate-500 cursor-not-allowed dark:bg-muted dark:text-muted-foreground"
 						/>
 					</FieldContent>
 				</Field>
@@ -158,7 +158,7 @@ export function ProposalStepInfo({
 					{sdgsData?.map((sdg) => (
 						<div
 							key={sdg.sdgId}
-							className="flex flex-row items-center space-x-2.5 p-1 hover:bg-slate-50/50 rounded transition-colors"
+								className="flex flex-row items-center space-x-2.5 p-1 hover:bg-slate-50/50 rounded transition-colors dark:hover:bg-muted/50"
 						>
 							<Checkbox
 								id={`sdg-${sdg.sdgId}`}
@@ -177,7 +177,7 @@ export function ProposalStepInfo({
 							/>
 							<label
 								htmlFor={`sdg-${sdg.sdgId}`}
-								className="text-xs font-normal text-slate-600 cursor-pointer select-none"
+								className="text-xs font-normal text-slate-600 cursor-pointer select-none dark:text-muted-foreground"
 							>
 								{sdg.sdgName}
 							</label>

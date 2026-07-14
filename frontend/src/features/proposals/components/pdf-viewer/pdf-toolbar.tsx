@@ -105,7 +105,7 @@ export function PdfToolbar({
 										aria-label={
 											isTheaterMode ? "Exit Theater Mode" : "Enter Theater Mode"
 										}
-										className="size-8 rounded-full cursor-pointer text-muted-foreground hover:bg-gray-100"
+										className="size-8 rounded-full cursor-pointer text-muted-foreground hover:bg-gray-100 dark:hover:bg-muted"
 										onClick={onToggleTheaterMode}
 									>
 										{isTheaterMode ? (

@@ -73,7 +73,7 @@ function ResetPasswordPage() {
 	}
 
 	return (
-		<main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8">
+		<main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8 dark:bg-background">
 			<AuthPageLayout
 				title="Set new password"
 				description="Choose a strong password for your account. You will be redirected to login after saving."

@@ -52,9 +52,9 @@ export function ProposalReviewHeader({
 				</BreadcrumbList>
 			</Breadcrumb>
 
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-4">
-					<h1 className="text-2xl font-semibold text-heading tracking-tight">
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				<div className="flex min-w-0 flex-wrap items-center gap-4">
+					<h1 className="min-w-0 break-words text-2xl font-semibold text-heading tracking-tight">
 						{title}
 					</h1>
 					<StatusBadge status={status} variant="outline" />

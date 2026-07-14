@@ -39,7 +39,7 @@ export function ProposalWizardFooter({
 				<Button
 					type="button"
 					onClick={onNext}
-					className="bg-brand-primary hover:bg-brand-primary-hover"
+					className="bg-primary text-primary-foreground hover:bg-primary/90"
 				>
 					Next
 					<ChevronRight className="size-4" />
@@ -64,7 +64,7 @@ export function ProposalWizardFooter({
 					<Button
 						type="button"
 						onClick={onSubmit}
-						className="bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold"
+						className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
 						disabled={isBusy}
 					>
 						{isSubmitting ? (

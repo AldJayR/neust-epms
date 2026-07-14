@@ -71,7 +71,7 @@ function RegisterRoute() {
 	});
 
 	return (
-		<main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8 w-full">
+		<main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8 w-full dark:bg-background">
 			<LazyMotion features={domMax}>
 				<AnimatePresence mode="wait" initial={false}>
 					<m.div
@@ -153,7 +153,7 @@ function RegisterStepOneForm() {
 					Already have an account?{" "}
 					<Link
 						to="/login"
-						className="text-black hover:text-black underline underline-offset-2"
+						className="text-black hover:text-black underline underline-offset-2 dark:text-foreground dark:hover:text-foreground"
 					>
 						Log in
 					</Link>

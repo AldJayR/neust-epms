@@ -36,13 +36,13 @@ import { cn } from "#/lib/utils";
 type Option = { label: string; value: string };
 
 const inputClassName =
-	"bg-background text-black placeholder:text-zinc-500 border-zinc-300 shadow-sm ring-1 ring-black/5 focus-visible:border-brand-primary focus-visible:ring-brand-primary/20 rounded-md";
+	"bg-background text-black placeholder:text-zinc-500 border-zinc-300 shadow-sm ring-1 ring-black/5 focus-visible:border-brand-primary focus-visible:ring-brand-primary/20 rounded-md dark:text-foreground dark:placeholder:text-muted-foreground dark:border-input dark:ring-white/10";
 
 const selectContentClassName =
-	"bg-background text-black border-zinc-200 shadow-xl ring-1 ring-black/10 before:!bg-background";
+	"bg-background text-black border-zinc-200 shadow-xl ring-1 ring-black/10 before:!bg-background dark:text-foreground dark:border-input dark:ring-white/10";
 
 const selectItemClassName =
-	"text-black data-[highlighted]:!bg-zinc-100 data-[highlighted]:!text-black";
+	"text-black data-[highlighted]:!bg-zinc-100 data-[highlighted]:!text-black dark:text-foreground dark:data-[highlighted]:!bg-muted dark:data-[highlighted]:!text-foreground";
 
 export function RHFTextField<TFieldValues extends FieldValues>({
 	control,
@@ -73,7 +73,9 @@ export function RHFTextField<TFieldValues extends FieldValues>({
 
 	return (
 		<Field data-invalid={fieldState.invalid}>
-			<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+			<FieldLabel htmlFor={field.name} className="text-foreground">
+				{label}
+			</FieldLabel>
 			<Input
 				{...field}
 				id={field.name}
@@ -122,7 +124,9 @@ export function RHFPasswordField<TFieldValues extends FieldValues>({
 	return (
 		<Field data-invalid={fieldState.invalid}>
 			<div className="flex items-center justify-between">
-				<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+				<FieldLabel htmlFor={field.name} className="text-foreground">
+					{label}
+				</FieldLabel>
 				{labelAction}
 			</div>
 			<InputGroup className={inputClassName}>
@@ -133,7 +137,7 @@ export function RHFPasswordField<TFieldValues extends FieldValues>({
 					placeholder={placeholder ?? "••••••••"}
 					aria-invalid={fieldState.invalid}
 					aria-describedby={describedBy || undefined}
-					className="text-black placeholder:text-zinc-500"
+					className="text-black placeholder:text-zinc-500 dark:text-foreground dark:placeholder:text-muted-foreground"
 					onBlur={() => {
 						field.onBlur();
 						onBlurProp?.();
@@ -145,7 +149,7 @@ export function RHFPasswordField<TFieldValues extends FieldValues>({
 						variant="ghost"
 						type="button"
 						aria-label="Toggle password visibility"
-						className="text-zinc-500 hover:!bg-black/5 hover:!text-zinc-700 dark:hover:!bg-black/5 dark:hover:!text-zinc-700 rounded-full transition-colors"
+								className="text-zinc-500 hover:!bg-black/5 hover:!text-zinc-700 dark:text-muted-foreground dark:hover:!bg-white/10 dark:hover:!text-foreground rounded-full transition-colors"
 						onClick={() => setShowPassword((prev) => !prev)}
 					>
 						{showPassword ? (
@@ -186,7 +190,9 @@ export function RHFSelectField<TFieldValues extends FieldValues>({
 
 	return (
 		<Field data-invalid={fieldState.invalid}>
-			<FieldLabel htmlFor={triggerId}>{label}</FieldLabel>
+			<FieldLabel htmlFor={triggerId} className="text-foreground">
+				{label}
+			</FieldLabel>
 			<Select
 				name={field.name}
 				value={typeof field.value === "string" ? field.value : ""}
@@ -250,10 +256,10 @@ export function RHFCheckboxField<TFieldValues extends FieldValues>({
 				aria-invalid={fieldState.invalid}
 				onCheckedChange={(checked) => field.onChange(checked === true)}
 				onBlur={field.onBlur}
-				className="bg-background shadow-sm ring-1 ring-black/5 data-checked:ring-transparent"
+				className="bg-background shadow-sm ring-1 ring-black/5 data-checked:ring-transparent dark:ring-white/10"
 			/>
 			<FieldContent>
-				<FieldLabel htmlFor={field.name} className="font-normal">
+				<FieldLabel htmlFor={field.name} className="font-normal text-foreground">
 					{label}
 				</FieldLabel>
 				<FieldError errors={[fieldState.error]} />

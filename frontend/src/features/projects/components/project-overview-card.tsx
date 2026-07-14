@@ -146,10 +146,10 @@ export function ProjectOverviewCard({
 								{members.slice(0, 4).map((member) => (
 									<Avatar
 										key={member.userId}
-										className="size-8 border-2 border-white ring-1 ring-border"
+										className="size-8 border-2 border-white ring-1 ring-border dark:border-border"
 									>
 										<AvatarImage src={member.avatarUrl} alt={member.name} />
-										<AvatarFallback className="bg-gray-100 text-gray-600 text-[10px]">
+										<AvatarFallback className="bg-gray-100 text-gray-600 text-[10px] dark:bg-muted dark:text-muted-foreground">
 											{member.name
 												.split(" ")
 												.map((name) => name[0])
@@ -158,7 +158,7 @@ export function ProjectOverviewCard({
 									</Avatar>
 								))}
 								{members.length > 4 && (
-									<div className="flex size-8 items-center justify-center rounded-full border-2 border-white bg-gray-50 text-[10px] font-bold text-muted-foreground ring-1 ring-border">
+									<div className="flex size-8 items-center justify-center rounded-full border-2 border-white bg-gray-50 text-[10px] font-bold text-muted-foreground ring-1 ring-border dark:border-border dark:bg-muted">
 										+{members.length - 4}
 									</div>
 								)}
@@ -187,7 +187,7 @@ export function ProjectOverviewCard({
 									<div className="flex items-center gap-3">
 										<Avatar className="size-9 border border-border">
 											<AvatarImage src={member.avatarUrl} alt={member.name} />
-											<AvatarFallback className="bg-gray-100 text-gray-600">
+											<AvatarFallback className="bg-gray-100 text-gray-600 dark:bg-muted dark:text-muted-foreground">
 												<User className="size-4" />
 											</AvatarFallback>
 										</Avatar>
@@ -205,7 +205,7 @@ export function ProjectOverviewCard({
 												<div className="flex items-center gap-2">
 													<Badge
 														variant="outline"
-														className="text-green-600 border-green-200 bg-green-50 text-[10px] px-1.5"
+												className="text-green-600 border-green-200 bg-green-50 text-[10px] px-1.5 dark:text-green-300 dark:border-green-900/60 dark:bg-green-950/30"
 													>
 														{member.specialOrder.soNumber}
 													</Badge>

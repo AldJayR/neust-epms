@@ -35,7 +35,7 @@ export function ReportsPage() {
 						)}
 						<Button
 							variant="outline"
-							className="border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white rounded-lg gap-2"
+							className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-lg gap-2"
 						>
 							<Download className="size-4" />
 							Export Reports

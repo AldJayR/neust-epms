@@ -173,16 +173,16 @@ export function CreateMoaModal({ open, onOpenChange }: CreateMoaModalProps) {
 							accept="application/pdf"
 						>
 							{!file && (
-								<FileUploadDropzone className="border border-dashed border-zinc-300 rounded-lg p-6 bg-zinc-50 hover:bg-zinc-100/50 cursor-pointer">
+								<FileUploadDropzone className="border border-dashed border-zinc-300 rounded-lg p-6 bg-zinc-50 hover:bg-zinc-100/50 cursor-pointer dark:border-input dark:bg-muted/50 dark:hover:bg-muted">
 									<div className="flex flex-col items-center gap-1 text-center">
-										<Upload className="size-6 text-zinc-400 mb-1" />
+										<Upload className="size-6 text-zinc-400 mb-1 dark:text-muted-foreground" />
 										<p className="text-sm font-medium">
 											Drag & drop PDF, or{" "}
 											<FileUploadTrigger className="text-brand-primary hover:underline cursor-pointer">
 												browse
 											</FileUploadTrigger>
 										</p>
-										<p className="text-xs text-zinc-400">PDF only (max 50MB)</p>
+									<p className="text-xs text-zinc-400 dark:text-muted-foreground">PDF only (max 50MB)</p>
 									</div>
 								</FileUploadDropzone>
 							)}

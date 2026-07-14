@@ -40,11 +40,11 @@ const TYPE_ICONS = {
 
 const TYPE_BG_CLASSES = {
 	all: "",
-	proposals: "bg-violet-50 dark:bg-violet-950/30",
-	projects: "bg-blue-50 dark:bg-blue-950/30",
-	reports: "bg-amber-50 dark:bg-amber-950/30",
-	moas: "bg-emerald-50 dark:bg-emerald-950/30",
-	users: "bg-slate-50 dark:bg-slate-950/30",
+	proposals: "bg-violet-50 dark:bg-muted/80",
+	projects: "bg-blue-50 dark:bg-muted/80",
+	reports: "bg-amber-50 dark:bg-muted/80",
+	moas: "bg-emerald-50 dark:bg-muted/80",
+	users: "bg-slate-50 dark:bg-muted/80",
 };
 
 const TYPE_LABELS: Record<SearchType, string> = {

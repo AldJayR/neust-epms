@@ -116,7 +116,7 @@ function LoginPage() {
 	}
 
 	return (
-		<main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8">
+		<main className="flex min-h-dvh items-center justify-center bg-[#fafafa] px-4 py-8 dark:bg-background">
 			<AuthPageLayout
 				title="Login to your account"
 				description="Enter your email below to login to your account"
@@ -126,7 +126,7 @@ function LoginPage() {
 						Don&apos;t have an account?{" "}
 						<Link
 							to="/register"
-							className="text-black hover:text-black underline underline-offset-2"
+							className="text-black hover:text-black underline underline-offset-2 dark:text-foreground dark:hover:text-foreground"
 						>
 							Register
 						</Link>
@@ -154,7 +154,7 @@ function LoginPage() {
 							labelAction={
 								<Link
 									to="/forgot-password"
-									className="text-sm leading-5 text-black hover:text-black hover:underline"
+									className="text-sm leading-5 text-black hover:text-black hover:underline dark:text-foreground dark:hover:text-foreground"
 								>
 									Forgot password?
 								</Link>
