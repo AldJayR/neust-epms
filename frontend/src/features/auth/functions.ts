@@ -298,6 +298,44 @@ export const getCurrentUserFn = createServerFn({ method: "POST" })
 		return currentUser;
 	});
 
+const profileSchema = z.object({
+	firstName: z.string().min(1),
+	middleName: z.string().nullable(),
+	lastName: z.string().min(1),
+	nameSuffix: z.string().nullable(),
+	academicRank: z.string().nullable(),
+});
+
+export const updateProfileFn = createServerFn({ method: "POST" })
+	.validator(profileSchema)
+	.handler(async ({ data }) => {
+		const [{ getAppSession, getValidAccessToken }, { authorizeSessionUser }] = await Promise.all([
+			import("@/lib/session.server"),
+			import("@/lib/session.server"),
+		]);
+		await authorizeSessionUser("Faculty", "RET Chair", "Director", "Super Admin");
+		const token = await getValidAccessToken();
+		const response = await fetch(`${API_BASE}/auth/profile`, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(data) });
+		if (!response.ok) throw new Error(await getErrorMessage(response, "Unable to update profile"));
+		const user = (await response.json()) as AuthUser;
+		const session = await getAppSession();
+		await session.update({ ...session.data, user, email: user.email, createdAt: Date.now() });
+		return user;
+	});
+
+export const changePasswordFn = createServerFn({ method: "POST" })
+	.validator(z.object({ currentPassword: z.string().min(1), newPassword: z.string().min(8) }))
+	.handler(async ({ data }) => {
+		const [{ getValidAccessToken }, { authorizeSessionUser }] = await Promise.all([
+			import("@/lib/session.server"),
+			import("@/lib/session.server"),
+		]);
+		await authorizeSessionUser("Faculty", "RET Chair", "Director", "Super Admin");
+		const token = await getValidAccessToken();
+		const response = await fetch(`${API_BASE}/auth/change-password`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(data) });
+		if (!response.ok) throw new Error(await getErrorMessage(response, "Unable to change password"));
+	});
+
 // ── Password Reset Functions ──
 
 export const sendResetCodeFn = createServerFn({ method: "POST" })

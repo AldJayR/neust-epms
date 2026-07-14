@@ -8,6 +8,7 @@ import {
 	Loader2,
 	LogOut,
 	Moon,
+	Settings,
 	Sun,
 	type LucideIcon,
 } from "lucide-react";
@@ -45,6 +46,7 @@ import type { AuthUser } from "@/lib/auth";
 import { logoutFn } from "@/features/auth";
 import { clearAuthCache } from "@/lib/auth-cache";
 import { useTheme } from "@/components/theme-provider";
+import { SettingsDialog } from "@/components/settings-dialog";
 
 export type RoleSidebarItem = {
 	title: string;
@@ -78,19 +80,28 @@ export function RoleSidebar({
 	fallbackRole = "User",
 	...props
 }: RoleSidebarProps) {
-	const initials = user
-		? `${user.firstName?.charAt(0) ?? ""}${user.lastName?.charAt(0) ?? ""}` ||
+	const [userOverride, setUserOverride] = React.useState<Partial<AuthUser>>({});
+	const displayUser = user
+		? {
+				...user,
+				...(userOverride.userId === user.userId ? userOverride : {}),
+			}
+		: null;
+
+	const initials = displayUser
+		? `${displayUser.firstName?.charAt(0) ?? ""}${displayUser.lastName?.charAt(0) ?? ""}` ||
 			"JD"
 		: "JD";
-	const fullName = user
-		? `${user.firstName} ${user.lastName}`
+	const fullName = displayUser
+		? `${displayUser.firstName} ${displayUser.lastName}`
 		: fallbackFullName;
-	const roleLabel = user ? user.roleName : fallbackRole;
+	const roleLabel = displayUser ? displayUser.roleName : fallbackRole;
 
 	const logout = useServerFn(logoutFn);
 	const queryClient = useQueryClient();
 	const { theme, setTheme } = useTheme();
 	const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+	const [settingsOpen, setSettingsOpen] = React.useState(false);
 
 	const handleLogout = async () => {
 		setIsLoggingOut(true);
@@ -108,6 +119,13 @@ export function RoleSidebar({
 
 	return (
 		<Sidebar collapsible="icon" {...props}>
+			<SettingsDialog
+				key={displayUser?.userId ?? "settings"}
+				open={settingsOpen}
+				onOpenChange={setSettingsOpen}
+				user={displayUser}
+				onUserUpdated={(updatedUser) => setUserOverride(updatedUser)}
+			/>
 			<SidebarHeader>
 				<SidebarMenu>
 					<SidebarMenuItem>
@@ -153,7 +171,7 @@ export function RoleSidebar({
 								className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 							>
 								<Avatar className="size-8 rounded-lg">
-									<AvatarImage src="" alt={fullName} />
+									<AvatarImage src={displayUser?.avatarUrl ?? undefined} alt={fullName} />
 									<AvatarFallback className="rounded-lg">
 										{initials}
 									</AvatarFallback>
@@ -178,7 +196,7 @@ export function RoleSidebar({
 									<DropdownMenuLabel className="p-0 font-normal">
 										<div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
 											<Avatar className="size-8 rounded-lg">
-												<AvatarImage src="" alt={fullName} />
+												<AvatarImage src={displayUser?.avatarUrl ?? undefined} alt={fullName} />
 												<AvatarFallback className="rounded-lg">
 													{initials}
 												</AvatarFallback>
@@ -221,6 +239,10 @@ export function RoleSidebar({
 										</DropdownMenuRadioGroup>
 									</DropdownMenuSubContent>
 								</DropdownMenuSub>
+								<DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+									<Settings className="mr-2 size-4" />
+									Settings
+								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem
 									onClick={handleLogout}

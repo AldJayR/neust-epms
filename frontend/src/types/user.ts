@@ -13,6 +13,7 @@ export interface AuthUser {
 	lastName: string;
 	nameSuffix: string | null;
 	academicRank: string | null;
+	avatarUrl: string | null;
 	isActive: boolean;
 	hasCompletedOnboarding: boolean;
 }

@@ -25,6 +25,10 @@ export const PresignedUrlSchema = z
 	.object({ url: z.string().url() })
 	.openapi("PresignedUrl");
 
+export const AvatarUploadResponseSchema = z
+	.object({ avatarUrl: z.string().url() })
+	.openapi("AvatarUploadResponse");
+
 export const ProposalParam = z.object({
 	proposalId: z
 		.string()

@@ -18,6 +18,7 @@ const mockFacultyUser: AuthUser = {
 	lastName: "Santos",
 	nameSuffix: null,
 	academicRank: "Instructor I",
+	avatarUrl: null,
 	isActive: true,
 };
 
@@ -36,6 +37,7 @@ const mockRtChairUser: AuthUser = {
 	lastName: "Cruz",
 	nameSuffix: null,
 	academicRank: "Associate Professor I",
+	avatarUrl: null,
 	isActive: true,
 };
 
@@ -54,6 +56,7 @@ const mockDirectorUser: AuthUser = {
 	lastName: "Reyes",
 	nameSuffix: null,
 	academicRank: "Professor IV",
+	avatarUrl: null,
 	isActive: true,
 };
 

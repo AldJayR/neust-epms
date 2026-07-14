@@ -38,15 +38,15 @@ export function CreateProposalModal({
 
 	return (
 		<Dialog open={open} onOpenChange={wizard.handleOpenChange}>
-			<DialogContent className="h-[min(780px,calc(100vh-2rem))] max-w-[calc(100vw-2rem)] gap-0 overflow-hidden p-0 sm:max-w-[960px]">
+			<DialogContent className="flex h-[min(720px,calc(100vh-2rem))] w-[calc(100vw-2rem)] !max-w-[1040px] flex-col gap-0 overflow-hidden p-0">
 				<form
 					onSubmit={(event) => event.preventDefault()}
 					className="flex h-full min-h-0 flex-col"
 				>
 					<ProposalWizardHeader step={wizard.step} isEditing={wizard.isEditing} />
 
-					<div className="min-h-0 flex-1 overflow-y-auto bg-muted/20 px-4 py-6 sm:px-8 sm:py-8">
-						<div className="mx-auto max-w-2xl rounded-2xl border border-border bg-card p-5 shadow-sm [&_[data-slot=field-label]]:text-foreground sm:p-8">
+					<div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 sm:py-7">
+						<div className="mx-auto w-full max-w-none [&_[data-slot=field-label]]:text-foreground">
 							{wizard.step === 1 && <ProposalStepRequirements />}
 
 							{wizard.step === 2 && (
@@ -75,7 +75,7 @@ export function CreateProposalModal({
 						</div>
 					</div>
 
-					<DialogFooter className="border-t border-border bg-card px-6 py-4 sm:px-8">
+					<DialogFooter className="shrink-0 border-t border-border px-5 py-3 sm:px-6">
 						<ProposalWizardFooter
 							step={wizard.step}
 							isBusy={wizard.isBusy}

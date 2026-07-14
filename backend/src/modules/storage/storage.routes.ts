@@ -2,7 +2,7 @@ import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { getClientIp } from "@/lib/client-ip.js";
 import { ApiError } from "@/lib/errors.js";
 import { ErrorSchema } from "@/lib/schemas.js";
-import type { AuthEnv } from "@/middleware/auth.js";
+import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import {
 	DocumentListSchema,
 	DocumentParam,
@@ -10,18 +10,64 @@ import {
 	PresignedUrlSchema,
 	ProposalParam,
 	UploadResponseSchema,
+	AvatarUploadResponseSchema,
 } from "./storage.schema.js";
 import {
 	ensureUploadProposalDocumentAccess,
 	getDocumentSignedUrl,
 	listProposalDocuments,
 	uploadProposalDocument,
+	uploadUserAvatar,
 } from "./storage.service.js";
-import { isPdfFile } from "@/services/file.service.js";
+import { getAvatarExtension, isPdfFile } from "@/services/file.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+
+app.use("/storage/avatar", authMiddleware);
+
+const avatarRoute = createRoute({
+	method: "post",
+	path: "/storage/avatar",
+	tags: ["Storage"],
+	summary: "Upload the authenticated user's avatar",
+	security: [{ Bearer: [] }],
+	responses: {
+		200: {
+			content: { "application/json": { schema: AvatarUploadResponseSchema } },
+			description: "Avatar uploaded",
+		},
+		422: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid avatar",
+		},
+	},
+});
+
+app.openapi(avatarRoute, async (c) => {
+	const contentLength = Number(c.req.header("content-length") ?? 0);
+	if (contentLength > MAX_AVATAR_BYTES) {
+		throw new ApiError(413, "FILE_TOO_LARGE", "Avatar must be 5MB or smaller");
+	}
+
+	const formData = await c.req.formData();
+	const file = formData.get("file");
+	if (!(file instanceof File) || file.size <= 0) {
+		throw new ApiError(422, "INVALID_AVATAR", "A valid avatar image is required");
+	}
+	if (file.size > MAX_AVATAR_BYTES || !(await getAvatarExtension(file))) {
+		throw new ApiError(
+			422,
+			"INVALID_AVATAR",
+			"Avatar must be a valid JPEG, PNG, or WebP image under 5MB",
+		);
+	}
+
+	const result = await uploadUserAvatar(c.get("user"), file, getClientIp(c));
+	return c.json(result, 200);
+});
 
 // Auth for /proposals/* is registered once at the root app (see app.ts).
 

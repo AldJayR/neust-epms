@@ -14,12 +14,47 @@ import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import type {
 	LoginBodySchema,
 	RegisterUserBodySchema,
+	UpdateProfileBodySchema,
+	ChangePasswordBodySchema,
 	UserSearchQuerySchema,
 } from "./auth.schema.js";
 
 type RegisterUserBody = z.infer<typeof RegisterUserBodySchema>;
 type LoginBody = z.infer<typeof LoginBodySchema>;
 type UserSearchQuery = z.infer<typeof UserSearchQuerySchema>;
+
+export async function updateOwnProfile(
+	user: AuthUser,
+	body: z.infer<typeof UpdateProfileBodySchema>,
+	ipAddress: string,
+) {
+	const [updated] = await db
+		.update(users)
+		.set({ ...body, updatedAt: new Date() })
+		.where(eq(users.userId, user.userId))
+		.returning();
+	if (!updated) throw new ApiError(404, "NOT_FOUND", "User profile not found");
+	if (cacheEnabled) authUserCache.delete(`auth:user:${user.userId}`);
+	await insertAuditLog({ userId: user.userId, action: "Updated own profile", tableAffected: "users", ipAddress });
+	const profile = await getUserProfileById(user.userId);
+	if (!profile) throw new ApiError(404, "NOT_FOUND", "User profile not found");
+	return profile;
+}
+
+export async function changeOwnPassword(
+	user: AuthUser,
+	body: z.infer<typeof ChangePasswordBodySchema>,
+	ipAddress: string,
+) {
+	const compromised = await isPasswordCompromised(body.newPassword);
+	if (compromised) throw new ApiError(400, "COMPROMISED_PASSWORD", "Choose a password that has not appeared in a known data breach.");
+	const { error: verifyError } = await supabase.auth.signInWithPassword({ email: user.email, password: body.currentPassword });
+	if (verifyError) throw new ApiError(400, "INVALID_PASSWORD", "Your current password is incorrect.");
+	const { error } = await supabase.auth.admin.updateUserById(user.userId, { password: body.newPassword });
+	if (error) throw new ApiError(400, "PASSWORD_UPDATE_FAILED", error.message);
+	await insertAuditLog({ userId: user.userId, action: "Changed own password", tableAffected: "users", ipAddress });
+	return { success: true };
+}
 
 async function getUserProfileById(userId: string) {
 	const [row] = await db
@@ -31,6 +66,7 @@ async function getUserProfileById(userId: string) {
 			nameSuffix: users.nameSuffix,
 			academicRank: users.academicRank,
 			email: users.email,
+			avatarUrl: users.avatarUrl,
 			roleId: users.roleId,
 			roleName: roles.roleName,
 			campusId: users.campusId,

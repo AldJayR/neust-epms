@@ -9,6 +9,7 @@ export const UserResponseSchema = z
 		nameSuffix: z.string().nullable(),
 		academicRank: z.string().nullable(),
 		email: z.string().email(),
+		avatarUrl: z.string().url().nullable(),
 		roleId: z.number(),
 		roleName: z.string(),
 		campusId: z.number(),
@@ -49,6 +50,21 @@ export const LoginBodySchema = z
 		password: z.string().min(1),
 	})
 	.openapi("LoginBody");
+
+export const UpdateProfileBodySchema = z.object({
+	firstName: z.string().trim().min(1).max(100),
+	middleName: z.string().trim().max(100).nullable(),
+	lastName: z.string().trim().min(1).max(100),
+	nameSuffix: z.string().trim().max(20).nullable(),
+	academicRank: z.string().trim().max(100).nullable(),
+});
+
+export const ChangePasswordBodySchema = z
+	.object({
+		currentPassword: z.string().min(1),
+		newPassword: z.string().min(8),
+	})
+	.openapi("ChangePasswordBody");
 
 export const LoginResponseSchema = z
 	.object({

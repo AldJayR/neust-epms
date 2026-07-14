@@ -76,6 +76,7 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
 			lastName: users.lastName,
 			nameSuffix: users.nameSuffix,
 			academicRank: users.academicRank,
+			avatarUrl: users.avatarUrl,
 			isActive: users.isActive,
 			hasCompletedOnboarding: users.hasCompletedOnboarding,
 		})
@@ -113,6 +114,7 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
 		lastName: appUser.lastName,
 		nameSuffix: appUser.nameSuffix,
 		academicRank: appUser.academicRank,
+		avatarUrl: appUser.avatarUrl,
 		isActive: appUser.isActive,
 		hasCompletedOnboarding: appUser.hasCompletedOnboarding,
 	};

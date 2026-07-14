@@ -3,11 +3,17 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { proposalDocuments } from "@/db/schema/proposal-documents.js";
 import { proposals } from "@/db/schema/proposals.js";
+import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { ApiError } from "@/lib/errors.js";
 import { supabase } from "@/lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
-import { sanitizeFilename } from "@/services/file.service.js";
+import {
+	getAvatarExtension,
+	sanitizeFilename,
+} from "@/services/file.service.js";
+
+const AVATARS_BUCKET = "avatars";
 
 function canAccessProposalDocuments(
 	user: AuthUser,
@@ -230,4 +236,75 @@ export async function getDocumentSignedUrl(
 	});
 
 	return { url: data.signedUrl };
+}
+
+function getManagedAvatarPath(avatarUrl: string | null): string | null {
+	if (!avatarUrl) return null;
+	const marker = `/storage/v1/object/public/${AVATARS_BUCKET}/`;
+	const markerIndex = avatarUrl.indexOf(marker);
+	return markerIndex === -1
+		? null
+		: avatarUrl.slice(markerIndex + marker.length);
+}
+
+export async function uploadUserAvatar(
+	user: AuthUser,
+	file: File,
+	ipAddress: string,
+) {
+	const extension = await getAvatarExtension(file);
+	if (!extension) {
+		throw new ApiError(
+			422,
+			"INVALID_AVATAR",
+			"Avatar must be a valid JPEG, PNG, or WebP image",
+		);
+	}
+
+	const [current] = await db
+		.select({ avatarUrl: users.avatarUrl })
+		.from(users)
+		.where(eq(users.userId, user.userId))
+		.limit(1);
+
+	if (!current) {
+		throw new ApiError(404, "NOT_FOUND", "User profile not found");
+	}
+
+	const storagePath = `users/${user.userId}/${randomUUID()}.${extension}`;
+	const bucket = supabase.storage.from(AVATARS_BUCKET);
+	const { error: uploadError } = await bucket.upload(storagePath, file, {
+		contentType: file.type,
+		upsert: false,
+	});
+
+	if (uploadError) {
+		throw new ApiError(400, "UPLOAD_FAILED", "Unable to upload avatar");
+	}
+
+	const avatarUrl = bucket.getPublicUrl(storagePath).data.publicUrl;
+	const [updated] = await db
+		.update(users)
+		.set({ avatarUrl, updatedAt: new Date() })
+		.where(eq(users.userId, user.userId))
+		.returning({ avatarUrl: users.avatarUrl });
+
+	if (!updated) {
+		await bucket.remove([storagePath]).catch(() => undefined);
+		throw new ApiError(500, "UPDATE_FAILED", "Unable to update avatar");
+	}
+
+	const previousPath = getManagedAvatarPath(current.avatarUrl);
+	if (previousPath && previousPath !== storagePath) {
+		await bucket.remove([previousPath]).catch(() => undefined);
+	}
+
+	await insertAuditLog({
+		userId: user.userId,
+		action: "Updated profile avatar",
+		tableAffected: "users",
+		ipAddress,
+	});
+
+	return { avatarUrl };
 }

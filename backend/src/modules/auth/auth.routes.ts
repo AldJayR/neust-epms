@@ -6,6 +6,7 @@ import { ErrorSchema } from "@/lib/schemas.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import {
 	CheckPasswordBodySchema,
+	ChangePasswordBodySchema,
 	CheckPasswordResponseSchema,
 	LoginBodySchema,
 	LoginResponseSchema,
@@ -15,16 +16,19 @@ import {
 	UserResponseSchema,
 	UserSearchQuerySchema,
 	UserSearchResponseSchema,
+	UpdateProfileBodySchema,
 } from "./auth.schema.js";
 import {
 	checkPassword,
 	completeOnboarding,
+	changeOwnPassword,
 	listCampuses,
 	listDepartments,
 	login,
 	logout,
 	registerUser,
 	searchUsers,
+	updateOwnProfile,
 } from "./auth.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
@@ -131,6 +135,8 @@ app.openapi(registerRoute, async (c) => {
 
 // ── Protected Routes ──
 app.use("/auth/me", authMiddleware);
+app.use("/auth/profile", authMiddleware);
+app.use("/auth/change-password", authMiddleware);
 
 app.openapi(getMeRoute, async (c) => {
 	const authUser = c.get("user");
@@ -187,6 +193,18 @@ const searchUsersRoute = createRoute({
 			description: "Matching users",
 		},
 	},
+});
+
+app.put("/auth/profile", async (c) => {
+	const body = UpdateProfileBodySchema.parse(await c.req.json());
+	const result = await updateOwnProfile(c.get("user"), body, getClientIp(c));
+	return c.json(result, 200);
+});
+
+app.post("/auth/change-password", async (c) => {
+	const body = ChangePasswordBodySchema.parse(await c.req.json());
+	const result = await changeOwnPassword(c.get("user"), body, getClientIp(c));
+	return c.json(result, 200);
 });
 
 app.use("/auth/users/search", authMiddleware);
