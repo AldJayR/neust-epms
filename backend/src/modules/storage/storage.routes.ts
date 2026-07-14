@@ -3,14 +3,15 @@ import { getClientIp } from "@/lib/client-ip.js";
 import { ApiError } from "@/lib/errors.js";
 import { ErrorSchema } from "@/lib/schemas.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
+import { getAvatarExtension, isPdfFile } from "@/services/file.service.js";
 import {
+	AvatarUploadResponseSchema,
 	DocumentListSchema,
 	DocumentParam,
 	PaginationQuery,
 	PresignedUrlSchema,
 	ProposalParam,
 	UploadResponseSchema,
-	AvatarUploadResponseSchema,
 } from "./storage.schema.js";
 import {
 	ensureUploadProposalDocumentAccess,
@@ -19,7 +20,6 @@ import {
 	uploadProposalDocument,
 	uploadUserAvatar,
 } from "./storage.service.js";
-import { getAvatarExtension, isPdfFile } from "@/services/file.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 
@@ -55,7 +55,11 @@ app.openapi(avatarRoute, async (c) => {
 	const formData = await c.req.formData();
 	const file = formData.get("file");
 	if (!(file instanceof File) || file.size <= 0) {
-		throw new ApiError(422, "INVALID_AVATAR", "A valid avatar image is required");
+		throw new ApiError(
+			422,
+			"INVALID_AVATAR",
+			"A valid avatar image is required",
+		);
 	}
 	if (file.size > MAX_AVATAR_BYTES || !(await getAvatarExtension(file))) {
 		throw new ApiError(

@@ -58,7 +58,7 @@ export default function ProjectsChartCard({
 					}}
 					modal={false}
 				>
-						<SelectTrigger className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-muted-foreground shadow-sm sm:w-[200px]">
+					<SelectTrigger className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-muted-foreground shadow-sm sm:w-[200px]">
 						<SelectValue placeholder="Select campus..." />
 					</SelectTrigger>
 					<SelectContent
@@ -81,19 +81,19 @@ export default function ProjectsChartCard({
 						No project data for the selected campus.
 					</div>
 				) : (
-				<ClientOnly
-					fallback={
-						<div className="h-full w-full animate-pulse rounded-lg bg-muted/50" />
-					}
-				>
-					<React.Suspense
+					<ClientOnly
 						fallback={
 							<div className="h-full w-full animate-pulse rounded-lg bg-muted/50" />
 						}
 					>
-						<ProjectsChart chartData={bars} />
-					</React.Suspense>
-				</ClientOnly>
+						<React.Suspense
+							fallback={
+								<div className="h-full w-full animate-pulse rounded-lg bg-muted/50" />
+							}
+						>
+							<ProjectsChart chartData={bars} />
+						</React.Suspense>
+					</ClientOnly>
 				)}
 			</div>
 		</div>

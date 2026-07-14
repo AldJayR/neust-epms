@@ -7,8 +7,8 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { AnnotationData, ProposalComment } from "../../comments.functions";
 import { toStableDate } from "@/lib/utils";
+import type { AnnotationData, ProposalComment } from "../../comments.functions";
 
 interface CommentHighlightsProps {
 	comments: ProposalComment[];
@@ -98,7 +98,7 @@ export function CommentCreationPopover({
 			className="bg-background border border-border rounded-xl shadow-xl p-4 w-[280px] flex flex-col gap-3 z-50"
 		>
 			<div className="flex flex-col gap-0.5">
-								<span className="text-xs font-semibold text-black dark:text-foreground">
+				<span className="text-xs font-semibold text-black dark:text-foreground">
 					Add Remark / Comment
 				</span>
 				<span className="text-3xs text-muted-foreground">

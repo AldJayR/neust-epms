@@ -106,18 +106,12 @@ export function createFacultyDirectoryPdf({
 								{faculty.firstName} {faculty.lastName}
 							</Text>
 							<Text
-								style={[
-									facultyPdfStyles.cell,
-									facultyPdfStyles.academicRank,
-								]}
+								style={[facultyPdfStyles.cell, facultyPdfStyles.academicRank]}
 							>
 								{formatAcademicRank(faculty.academicRank)}
 							</Text>
 							<Text
-								style={[
-									facultyPdfStyles.cell,
-									facultyPdfStyles.department,
-								]}
+								style={[facultyPdfStyles.cell, facultyPdfStyles.department]}
 							>
 								{faculty.departmentCode ?? faculty.college ?? ""}
 							</Text>
@@ -128,10 +122,7 @@ export function createFacultyDirectoryPdf({
 							].map((value, metricIndex) => (
 								<Text
 									key={`${faculty.userId}-${metricIndex}`}
-									style={[
-										facultyPdfStyles.cell,
-										facultyPdfStyles.metric,
-									]}
+									style={[facultyPdfStyles.cell, facultyPdfStyles.metric]}
 								>
 									{value}
 								</Text>

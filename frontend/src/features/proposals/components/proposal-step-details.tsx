@@ -15,8 +15,8 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import type { FormValues } from "./proposal-form";
 import { toStableDate } from "@/lib/utils";
+import type { FormValues } from "./proposal-form";
 
 function formatPeso(value: number): string {
 	if (!value && value !== 0) return "";
@@ -96,7 +96,9 @@ export function ProposalStepDetails({ form }: ProposalStepDetailsProps) {
 									<PopoverContent className="w-auto p-0" align="start">
 										<Calendar
 											mode="single"
-											selected={field.value ? toStableDate(field.value) : undefined}
+											selected={
+												field.value ? toStableDate(field.value) : undefined
+											}
 											onSelect={(date) =>
 												field.onChange(date ? format(date, "yyyy-MM-dd") : "")
 											}
@@ -137,7 +139,9 @@ export function ProposalStepDetails({ form }: ProposalStepDetailsProps) {
 									<PopoverContent className="w-auto p-0" align="start">
 										<Calendar
 											mode="single"
-											selected={field.value ? toStableDate(field.value) : undefined}
+											selected={
+												field.value ? toStableDate(field.value) : undefined
+											}
 											onSelect={(date) =>
 												field.onChange(date ? format(date, "yyyy-MM-dd") : "")
 											}

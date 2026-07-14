@@ -1,8 +1,8 @@
 import { format } from "date-fns";
 import { FileText } from "lucide-react";
 import { PageCard } from "@/components/custom/page-card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { toStableDate } from "@/lib/utils";
 
 export interface Activity {
@@ -39,12 +39,12 @@ export function ActivityHistoryCard({ history }: { history: Activity[] }) {
 										<Badge
 											className={`${
 												item.status === "Current"
-												? "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900/60"
+													? "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900/60"
 													: item.status === "Returned"
-													? "bg-red-50 text-red-600 border-red-100 dark:bg-red-950/30 dark:text-red-300 dark:border-red-900/60"
+														? "bg-red-50 text-red-600 border-red-100 dark:bg-red-950/30 dark:text-red-300 dark:border-red-900/60"
 														: item.status === "Updated"
-														? "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/60"
-														: "bg-gray-50 text-gray-600 border-gray-100 dark:bg-muted dark:text-muted-foreground dark:border-border"
+															? "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/60"
+															: "bg-gray-50 text-gray-600 border-gray-100 dark:bg-muted dark:text-muted-foreground dark:border-border"
 											} rounded-md px-2 py-0 h-5 text-[10px] font-semibold uppercase`}
 										>
 											{item.status}

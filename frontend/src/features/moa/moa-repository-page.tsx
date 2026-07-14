@@ -22,11 +22,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { AuthUser } from "@/lib/auth";
-import { moaRepositoryQueryOptions } from "./functions";
-import type { MoaItem } from "@/types/moa";
 import { isDirector } from "@/lib/permissions";
 import { toStableDate } from "@/lib/utils";
+import type { MoaItem } from "@/types/moa";
 import { CreateMoaModal } from "./components/create-moa-modal";
+import { moaRepositoryQueryOptions } from "./functions";
 
 interface MoaRepositoryPageProps {
 	user?: AuthUser | null;

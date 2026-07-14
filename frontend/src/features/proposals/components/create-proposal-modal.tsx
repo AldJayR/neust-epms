@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import type { AuthUser } from "@/lib/auth";
 import { useProposalWizard } from "../hooks/use-proposal-wizard";
+import type { FormValues } from "./proposal-form";
 import { ProposalStepDetails } from "./proposal-step-details";
 import { ProposalStepDocuments } from "./proposal-step-documents";
 import { ProposalStepInfo } from "./proposal-step-info";
@@ -8,7 +9,6 @@ import { ProposalStepMembers } from "./proposal-step-members";
 import { ProposalStepRequirements } from "./proposal-step-requirements";
 import { ProposalWizardFooter } from "./proposal-wizard-footer";
 import { ProposalWizardHeader } from "./proposal-wizard-header";
-import type { FormValues } from "./proposal-form";
 
 interface CreateProposalModalProps {
 	open: boolean;
@@ -43,7 +43,10 @@ export function CreateProposalModal({
 					onSubmit={(event) => event.preventDefault()}
 					className="flex h-full min-h-0 flex-col"
 				>
-					<ProposalWizardHeader step={wizard.step} isEditing={wizard.isEditing} />
+					<ProposalWizardHeader
+						step={wizard.step}
+						isEditing={wizard.isEditing}
+					/>
 
 					<div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 sm:py-7">
 						<div className="mx-auto w-full max-w-none [&_[data-slot=field-label]]:text-foreground">

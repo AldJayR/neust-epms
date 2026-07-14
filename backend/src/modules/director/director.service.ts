@@ -373,7 +373,10 @@ export async function getFacultyDirectory(
 				})
 				.from(users)
 				.innerJoin(roles, eq(users.roleId, roles.roleId))
-				.innerJoin(departments, eq(users.departmentId, departments.departmentId))
+				.innerJoin(
+					departments,
+					eq(users.departmentId, departments.departmentId),
+				)
 				.where(
 					and(
 						...mostActiveCollegeConditions,

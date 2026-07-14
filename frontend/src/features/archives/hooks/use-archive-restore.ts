@@ -7,10 +7,10 @@ import {
 	restoreProposalFn,
 } from "../functions";
 import {
-	createArchiveRestoreItem,
-	getArchiveRestoreId,
 	type ArchiveRestoreItem,
 	type ArchiveRestoreType,
+	createArchiveRestoreItem,
+	getArchiveRestoreId,
 } from "../helpers/archive-helpers";
 
 export function useArchiveRestore() {
@@ -54,7 +54,9 @@ export function useArchiveRestore() {
 			queryClient.invalidateQueries({ queryKey: ["dashboard", "moas"] });
 		},
 		onError: (error) => {
-			toast.error(error instanceof Error ? error.message : "Failed to restore MOA");
+			toast.error(
+				error instanceof Error ? error.message : "Failed to restore MOA",
+			);
 		},
 	});
 

@@ -155,7 +155,9 @@ export function ActionCenterCard() {
 			<Card size="sm" className="w-full">
 				<CardContent className="flex min-h-32 items-center justify-center gap-2">
 					<Loader2 className="size-5 animate-spin text-muted-foreground" />
-					<span className="text-sm text-muted-foreground">Loading your work queue...</span>
+					<span className="text-sm text-muted-foreground">
+						Loading your work queue...
+					</span>
 				</CardContent>
 			</Card>
 		);
@@ -172,7 +174,8 @@ export function ActionCenterCard() {
 								Action Center unavailable
 							</p>
 							<p className="text-xs text-muted-foreground">
-								Your dashboard is still available. Try loading your work queue again.
+								Your dashboard is still available. Try loading your work queue
+								again.
 							</p>
 						</div>
 					</div>
@@ -201,7 +204,9 @@ export function ActionCenterCard() {
 				<CardContent className="flex items-center gap-3 py-4">
 					<CheckCircle className="size-5 text-success" />
 					<div>
-						<p className="text-sm font-medium text-foreground">You are all caught up</p>
+						<p className="text-sm font-medium text-foreground">
+							You are all caught up
+						</p>
 						<p className="text-xs text-muted-foreground">
 							No action is required from your current work queue.
 						</p>
@@ -227,7 +232,9 @@ export function ActionCenterCard() {
 						["Monitoring", watchItems.length, "text-muted-foreground"],
 					].map(([label, count, color]) => (
 						<div key={label} className="min-w-0">
-							<p className="truncate text-[11px] text-muted-foreground">{label}</p>
+							<p className="truncate text-[11px] text-muted-foreground">
+								{label}
+							</p>
 							<p className={`text-lg font-semibold ${color}`}>{count}</p>
 						</div>
 					))}

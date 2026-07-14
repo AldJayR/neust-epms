@@ -1,3 +1,4 @@
+export type { Notification } from "./functions";
 export {
 	getNotificationsFn,
 	getNotificationsQueryOptions,
@@ -6,4 +7,3 @@ export {
 	markAllNotificationsReadFn,
 	markNotificationReadFn,
 } from "./functions";
-export type { Notification } from "./functions";

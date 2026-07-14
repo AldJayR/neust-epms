@@ -181,7 +181,9 @@ export function CreateMoaModal({ open, onOpenChange }: CreateMoaModalProps) {
 												browse
 											</FileUploadTrigger>
 										</p>
-									<p className="text-xs text-zinc-400 dark:text-muted-foreground">PDF only (max 50MB)</p>
+										<p className="text-xs text-zinc-400 dark:text-muted-foreground">
+											PDF only (max 50MB)
+										</p>
 									</div>
 								</FileUploadDropzone>
 							)}

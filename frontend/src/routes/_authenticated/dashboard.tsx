@@ -2,31 +2,33 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { PageHeader } from "@/components/custom/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UsersPage } from "@/features/admin/users-page";
-import { DirectorDashboardPage } from "@/features/dashboard";
-import { FacultyDashboardPage } from "@/features/faculty/faculty-dashboard-page";
 import { actionCenterQueryOptions } from "@/features/action-center";
-import { getCampusesFn } from "@/features/auth";
-import { RETDashboardPage } from "@/features/ret/ret-dashboard-page";
 import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
 } from "@/features/admin";
-import { directorDashboardQueryOptions } from "@/features/dashboard";
+import { UsersPage } from "@/features/admin/users-page";
+import { getCampusesFn } from "@/features/auth";
+import {
+	DirectorDashboardPage,
+	directorDashboardQueryOptions,
+} from "@/features/dashboard";
+import { FacultyDashboardPage } from "@/features/faculty/faculty-dashboard-page";
 import {
 	facultyProjectsQueryOptions,
 	facultyProposalsQueryOptions,
 } from "@/features/faculty/public";
+import {
+	retDashboardStatsQueryOptions,
+	retProposalsQueryOptions,
+} from "@/features/proposals/public";
+import { RETDashboardPage } from "@/features/ret/ret-dashboard-page";
 import {
 	isDeniedAccess,
 	isDirector,
 	isRETChair,
 	isSuperAdmin,
 } from "@/lib/permissions";
-import {
-	retDashboardStatsQueryOptions,
-	retProposalsQueryOptions,
-} from "@/features/proposals/public";
 
 const dashboardSearchSchema = z.object({
 	page: z.number().optional().default(1),

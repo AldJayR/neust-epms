@@ -9,6 +9,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { checkPasswordFn, signupFn } from "@/features/auth";
 import { AuthPageLayout } from "../components/custom/auth-page-layout";
 import { AuthStepIndicator } from "../components/custom/auth-step-indicator";
 import {
@@ -18,7 +19,6 @@ import {
 	RHFTextField,
 } from "../components/rhf-auth-fields";
 import { FieldGroup } from "../components/ui/field";
-import { checkPasswordFn, signupFn } from "@/features/auth";
 
 const registerStep2Schema = z
 	.object({

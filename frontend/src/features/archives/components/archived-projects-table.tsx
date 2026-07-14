@@ -12,8 +12,8 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { ArchivedProject } from "../functions";
 import { toStableDate } from "@/lib/utils";
+import type { ArchivedProject } from "../functions";
 
 export function ArchivedProjectsTable({
 	data,
@@ -41,17 +41,24 @@ export function ArchivedProjectsTable({
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Project Title" />
 			),
-			headerClassName: "w-[380px] px-4 py-2 text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-sm font-semibold text-foreground text-left",
+			headerClassName:
+				"w-[380px] px-4 py-2 text-sm font-medium text-muted-foreground",
+			cellClassName:
+				"px-4 py-3 text-sm font-semibold text-foreground text-left",
 			cell: ({ row }) => row.original.title,
 		},
 		{
 			id: "status",
 			accessorKey: "projectStatus",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Last Status" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Last Status"
+					className="justify-center"
+				/>
 			),
-			headerClassName: "w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => <StatusBadge status={row.original.projectStatus} />,
 		},
@@ -59,9 +66,14 @@ export function ArchivedProjectsTable({
 			id: "archivedAt",
 			accessorKey: "archivedAt",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Archived Date" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Archived Date"
+					className="justify-center"
+				/>
 			),
-			headerClassName: "w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) =>
 				row.original.archivedAt
@@ -70,17 +82,22 @@ export function ArchivedProjectsTable({
 		},
 		{
 			id: "actions",
-			headerClassName: "w-[100px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"w-[100px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => (
 				<div className="flex items-center justify-end">
 					<DropdownMenu>
-						<DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+						<DropdownMenuTrigger
+							render={<Button variant="ghost" size="icon" className="size-8" />}
+						>
 							<EllipsisVertical className="size-4" />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
 							<DropdownMenuItem
-								onClick={() => onRestore(row.original.projectId, row.original.title)}
+								onClick={() =>
+									onRestore(row.original.projectId, row.original.title)
+								}
 								className="flex items-center gap-2 cursor-pointer"
 							>
 								<RotateCcw className="size-4 text-blue-500" />

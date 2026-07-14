@@ -1,11 +1,9 @@
 import { Camera, Laptop, Moon, Settings2, Sun, UserRound } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
-import { changePasswordFn, updateProfileFn } from "@/features/auth";
-import { uploadAvatarFn } from "@/features/settings/functions";
 import { useTheme } from "@/components/theme-provider";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -15,6 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { changePasswordFn, updateProfileFn } from "@/features/auth";
+import { uploadAvatarFn } from "@/features/settings/functions";
 import type { AuthUser } from "@/lib/auth";
 
 interface SettingsDialogProps {
@@ -84,7 +84,9 @@ export function SettingsDialog({
 	if (!user || !profile) return null;
 
 	const updateProfileField = (field: keyof ProfileState, value: string) => {
-		setProfile((current) => (current ? { ...current, [field]: value } : current));
+		setProfile((current) =>
+			current ? { ...current, [field]: value } : current,
+		);
 	};
 
 	const saveProfile = async () => {
@@ -102,7 +104,9 @@ export function SettingsDialog({
 			toast.success("Profile updated");
 			setSavingProfile(false);
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : "Unable to update profile");
+			toast.error(
+				error instanceof Error ? error.message : "Unable to update profile",
+			);
 			setSavingProfile(false);
 		}
 	};
@@ -120,12 +124,15 @@ export function SettingsDialog({
 			toast.success("Avatar updated");
 			setUploadingAvatar(false);
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : "Unable to upload avatar");
+			toast.error(
+				error instanceof Error ? error.message : "Unable to upload avatar",
+			);
 			setUploadingAvatar(false);
 		}
 	};
 
-	const initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+	const initials =
+		`${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
 
 	const savePassword = async () => {
 		if (password.newPassword !== password.confirmPassword) {
@@ -141,11 +148,17 @@ export function SettingsDialog({
 					newPassword: password.newPassword,
 				},
 			});
-			setPassword({ currentPassword: "", newPassword: "", confirmPassword: "" });
+			setPassword({
+				currentPassword: "",
+				newPassword: "",
+				confirmPassword: "",
+			});
 			toast.success("Password changed");
 			setSavingPassword(false);
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : "Unable to change password");
+			toast.error(
+				error instanceof Error ? error.message : "Unable to change password",
+			);
 			setSavingPassword(false);
 		}
 	};
@@ -210,7 +223,10 @@ export function SettingsDialog({
 							<section className="space-y-4">
 								<div className="flex items-center gap-4">
 									<Avatar className="size-16" size="lg">
-										<AvatarImage src={avatarPreview ?? user.avatarUrl ?? undefined} alt={user.firstName} />
+										<AvatarImage
+											src={avatarPreview ?? user.avatarUrl ?? undefined}
+											alt={user.firstName}
+										/>
 										<AvatarFallback>{initials}</AvatarFallback>
 									</Avatar>
 									<div className="min-w-0 flex-1">
@@ -224,7 +240,9 @@ export function SettingsDialog({
 												type="file"
 												accept="image/jpeg,image/png,image/webp"
 												className="sr-only"
-												onChange={(event) => setAvatarFile(event.target.files?.[0] ?? null)}
+												onChange={(event) =>
+													setAvatarFile(event.target.files?.[0] ?? null)
+												}
 											/>
 											<Button
 												type="button"
@@ -236,12 +254,19 @@ export function SettingsDialog({
 												Choose photo
 											</Button>
 											{avatarFile && (
-												<Button type="button" size="sm" onClick={uploadAvatar} disabled={uploadingAvatar}>
+												<Button
+													type="button"
+													size="sm"
+													onClick={uploadAvatar}
+													disabled={uploadingAvatar}
+												>
 													{uploadingAvatar ? "Uploading..." : "Upload photo"}
 												</Button>
 											)}
 										</div>
-										<p className="mt-1 text-xs text-muted-foreground">JPEG, PNG, or WebP up to 5MB.</p>
+										<p className="mt-1 text-xs text-muted-foreground">
+											JPEG, PNG, or WebP up to 5MB.
+										</p>
 									</div>
 								</div>
 								<div className="grid gap-4 sm:grid-cols-2">
@@ -263,7 +288,9 @@ export function SettingsDialog({
 											<Input
 												id={`settings-${field}`}
 												value={profile[field]}
-												onChange={(event) => updateProfileField(field, event.target.value)}
+												onChange={(event) =>
+													updateProfileField(field, event.target.value)
+												}
 											/>
 										</label>
 									))}
@@ -281,7 +308,9 @@ export function SettingsDialog({
 									["Department", user.departmentName ?? "Not assigned"],
 								].map(([label, value]) => (
 									<p key={label}>
-										<span className="mb-1 block text-xs text-muted-foreground">{label}</span>
+										<span className="mb-1 block text-xs text-muted-foreground">
+											{label}
+										</span>
 										<span className="font-medium">{value}</span>
 									</p>
 								))}
@@ -313,13 +342,20 @@ export function SettingsDialog({
 												type="password"
 												value={password[field]}
 												onChange={(event) =>
-													setPassword((current) => ({ ...current, [field]: event.target.value }))
+													setPassword((current) => ({
+														...current,
+														[field]: event.target.value,
+													}))
 												}
 											/>
 										</label>
 									))}
 								</div>
-								<Button variant="outline" onClick={savePassword} disabled={savingPassword}>
+								<Button
+									variant="outline"
+									onClick={savePassword}
+									disabled={savingPassword}
+								>
 									{savingPassword ? "Changing..." : "Change password"}
 								</Button>
 							</section>

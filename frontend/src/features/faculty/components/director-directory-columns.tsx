@@ -2,8 +2,8 @@ import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
-import type { FacultyInvolvement } from "@/types/user";
 import { formatAcademicRank } from "@/lib/utils";
+import type { FacultyInvolvement } from "@/types/user";
 
 export function getFacultyDirectoryColumns(
 	page: number,

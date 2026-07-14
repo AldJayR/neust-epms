@@ -3,7 +3,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { API_BASE } from "@/config/api";
 import { getErrorMessage } from "@/lib/api/client";
-import { authorizeSessionUser, getValidAccessToken } from "@/lib/session.server";
+import {
+	authorizeSessionUser,
+	getValidAccessToken,
+} from "@/lib/session.server";
 import type { ReportItem, ReportsResponse } from "@/types/report";
 
 const STALE_TIME = 1000 * 60 * 5;
@@ -28,7 +31,9 @@ const getReportsListFn = createServerFn({ method: "GET" })
 			headers: { Authorization: `Bearer ${token}` },
 		});
 		if (!response.ok) {
-			throw new Error(await getErrorMessage(response, "Failed to fetch reports"));
+			throw new Error(
+				await getErrorMessage(response, "Failed to fetch reports"),
+			);
 		}
 		return (await response.json()) as ReportsResponse;
 	});
@@ -42,9 +47,15 @@ const getReportStatsFn = createServerFn({ method: "GET" })
 			headers: { Authorization: `Bearer ${token}` },
 		});
 		if (!response.ok) {
-			throw new Error(await getErrorMessage(response, "Failed to fetch report stats"));
+			throw new Error(
+				await getErrorMessage(response, "Failed to fetch report stats"),
+			);
 		}
-		return (await response.json()) as { total: number; progress: number; terminal: number };
+		return (await response.json()) as {
+			total: number;
+			progress: number;
+			terminal: number;
+		};
 	});
 
 export const emailReportFn = createServerFn({ method: "POST" })
@@ -60,11 +71,16 @@ export const emailReportFn = createServerFn({ method: "POST" })
 		const token = await getValidAccessToken();
 		const response = await fetch(`${API_BASE}/director/email-report`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
 			body: JSON.stringify(data),
 		});
 		if (!response.ok) {
-			throw new Error(await getErrorMessage(response, "Failed to send email report"));
+			throw new Error(
+				await getErrorMessage(response, "Failed to send email report"),
+			);
 		}
 		return (await response.json()) as { success: boolean; message: string };
 	});
@@ -84,11 +100,16 @@ export const submitReportFn = createServerFn({ method: "POST" })
 		const token = await getValidAccessToken();
 		const response = await fetch(`${API_BASE}/reports`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
 			body: JSON.stringify(data),
 		});
 		if (!response.ok) {
-			throw new Error(await getErrorMessage(response, "Failed to submit report"));
+			throw new Error(
+				await getErrorMessage(response, "Failed to submit report"),
+			);
 		}
 		return (await response.json()) as ReportItem;
 	});
@@ -100,7 +121,8 @@ export const uploadReportDocumentFn = createServerFn({ method: "POST" })
 		if (typeof reportId !== "string" || !reportId || !(file instanceof File)) {
 			throw new Error("A report ID and PDF file are required");
 		}
-		if (file.type !== "application/pdf") throw new Error("Only PDF documents are allowed");
+		if (file.type !== "application/pdf")
+			throw new Error("Only PDF documents are allowed");
 		return data;
 	})
 	.handler(async ({ data }) => {
@@ -128,7 +150,9 @@ export function reportsQueryOptions() {
 	});
 }
 
-export function reportsListQueryOptions(params: z.infer<typeof reportsListParamsSchema>) {
+export function reportsListQueryOptions(
+	params: z.infer<typeof reportsListParamsSchema>,
+) {
 	return queryOptions({
 		queryKey: ["dashboard", "reports", "list", params],
 		queryFn: () => getReportsListFn({ data: params }),

@@ -5,23 +5,23 @@ import { getClientIp } from "@/lib/client-ip.js";
 import { ErrorSchema } from "@/lib/schemas.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import {
-	CheckPasswordBodySchema,
 	ChangePasswordBodySchema,
+	CheckPasswordBodySchema,
 	CheckPasswordResponseSchema,
 	LoginBodySchema,
 	LoginResponseSchema,
 	LogoutResponseSchema,
 	OnboardingCompleteResponseSchema,
 	RegisterUserBodySchema,
+	UpdateProfileBodySchema,
 	UserResponseSchema,
 	UserSearchQuerySchema,
 	UserSearchResponseSchema,
-	UpdateProfileBodySchema,
 } from "./auth.schema.js";
 import {
+	changeOwnPassword,
 	checkPassword,
 	completeOnboarding,
-	changeOwnPassword,
 	listCampuses,
 	listDepartments,
 	login,

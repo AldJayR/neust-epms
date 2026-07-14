@@ -3,7 +3,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { API_BASE } from "@/config/api";
 import { getErrorMessage } from "@/lib/api/client";
-import { authorizeSessionUser, getValidAccessToken } from "@/lib/session.server";
+import {
+	authorizeSessionUser,
+	getValidAccessToken,
+} from "@/lib/session.server";
 import type { MoaItem } from "@/types/moa";
 
 const STALE_TIME = 1000 * 60 * 5;
@@ -74,7 +77,10 @@ const uploadMoaSchema = z.object({
 	validUntil: z.string().min(1, "Expiration date is required"),
 	file: z
 		.instanceof(File, { message: "A PDF document is required" })
-		.refine((file) => file.type === "application/pdf", "Only PDF files are allowed"),
+		.refine(
+			(file) => file.type === "application/pdf",
+			"Only PDF files are allowed",
+		),
 });
 
 export const uploadMoaFn = createServerFn({ method: "POST" })

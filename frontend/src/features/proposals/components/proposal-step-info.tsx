@@ -135,7 +135,7 @@ export function ProposalStepInfo({
 						<Input
 							readOnly
 							value={user.campusName}
-								className="bg-slate-50 text-slate-500 cursor-not-allowed dark:bg-muted dark:text-muted-foreground"
+							className="bg-slate-50 text-slate-500 cursor-not-allowed dark:bg-muted dark:text-muted-foreground"
 						/>
 					</FieldContent>
 				</Field>
@@ -148,7 +148,7 @@ export function ProposalStepInfo({
 						<Input
 							readOnly
 							value={user.departmentName ?? ""}
-								className="bg-slate-50 text-slate-500 cursor-not-allowed dark:bg-muted dark:text-muted-foreground"
+							className="bg-slate-50 text-slate-500 cursor-not-allowed dark:bg-muted dark:text-muted-foreground"
 						/>
 					</FieldContent>
 				</Field>
@@ -160,7 +160,7 @@ export function ProposalStepInfo({
 					{sdgsData?.map((sdg) => (
 						<div
 							key={sdg.sdgId}
-								className="flex flex-row items-center space-x-2.5 p-1 hover:bg-slate-50/50 rounded transition-colors dark:hover:bg-muted/50"
+							className="flex flex-row items-center space-x-2.5 p-1 hover:bg-slate-50/50 rounded transition-colors dark:hover:bg-muted/50"
 						>
 							<Checkbox
 								id={`sdg-${sdg.sdgId}`}
@@ -195,11 +195,11 @@ export function ProposalStepInfo({
 					{watchedSectors.map((sector) => (
 						<Badge key={sector} variant="secondary" className="gap-1 pr-1">
 							{sector}
-									<button
-										type="button"
-										onClick={() => removeSector(sector)}
-										aria-label={`Remove ${sector}`}
-										className="rounded-full p-0.5 hover:bg-muted"
+							<button
+								type="button"
+								onClick={() => removeSector(sector)}
+								aria-label={`Remove ${sector}`}
+								className="rounded-full p-0.5 hover:bg-muted"
 							>
 								<X className="size-3" />
 							</button>

@@ -13,6 +13,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { getCampusesFn, getDepartmentsFn } from "@/features/auth";
 import { AuthPageLayout } from "../components/custom/auth-page-layout";
 import { AuthStepIndicator } from "../components/custom/auth-step-indicator";
 import {
@@ -21,7 +22,6 @@ import {
 	RHFTextField,
 } from "../components/rhf-auth-fields";
 import { FieldGroup } from "../components/ui/field";
-import { getCampusesFn, getDepartmentsFn } from "@/features/auth";
 
 const registerStep1Schema = z.object({
 	firstName: z.string().min(1, "First name is required"),

@@ -1,23 +1,23 @@
-import { PdfViewer, type PdfViewerRef } from "./pdf-viewer";
 import type { ProposalComment } from "../comments.functions";
+import { PdfViewer, type PdfViewerRef } from "./pdf-viewer";
 
 interface ProposalReviewDocumentPaneProps {
-		viewerRef: React.RefObject<PdfViewerRef | null>;
-		currentDocument?: { url: string };
-		comments: ProposalComment[];
-		canAnnotate: boolean;
-		isTheaterMode: boolean;
-		onAddComment: (
-			content: string,
-			annotation: {
-				x: number;
-				y: number;
-				width: number;
-				height: number;
-				page: number;
-			} | null,
-		) => Promise<void>;
-		onToggleTheaterMode: () => void;
+	viewerRef: React.RefObject<PdfViewerRef | null>;
+	currentDocument?: { url: string };
+	comments: ProposalComment[];
+	canAnnotate: boolean;
+	isTheaterMode: boolean;
+	onAddComment: (
+		content: string,
+		annotation: {
+			x: number;
+			y: number;
+			width: number;
+			height: number;
+			page: number;
+		} | null,
+	) => Promise<void>;
+	onToggleTheaterMode: () => void;
 }
 
 export function ProposalReviewDocumentPane({

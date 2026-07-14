@@ -1,6 +1,7 @@
+export type { SearchUserResponse } from "./functions";
 export {
-	checkPasswordFn,
 	changePasswordFn,
+	checkPasswordFn,
 	completeOnboardingFn,
 	getCampusesFn,
 	getCurrentUserFn,
@@ -11,7 +12,6 @@ export {
 	sendResetCodeFn,
 	setNewPasswordFn,
 	signupFn,
-	verifyResetCodeFn,
 	updateProfileFn,
+	verifyResetCodeFn,
 } from "./functions";
-export type { SearchUserResponse } from "./functions";

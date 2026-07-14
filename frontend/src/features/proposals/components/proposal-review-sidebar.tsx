@@ -1,10 +1,10 @@
 import { useState } from "react";
-import type { PdfViewerRef } from "./pdf-viewer";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProposalDetailsTab } from "./proposal-details-tab";
-import { CommentsTab } from "./comments-tab";
 import type { ProposalComment } from "../comments.functions";
+import { CommentsTab } from "./comments-tab";
+import type { PdfViewerRef } from "./pdf-viewer";
+import { ProposalDetailsTab } from "./proposal-details-tab";
 
 interface ProposalReviewSidebarProps {
 	comments: ProposalComment[];
@@ -25,7 +25,9 @@ export function ProposalReviewSidebar({
 				<Tabs
 					defaultValue="details"
 					value={activeTab}
-					onValueChange={(value) => setActiveTab(value as "details" | "comments")}
+					onValueChange={(value) =>
+						setActiveTab(value as "details" | "comments")
+					}
 					className="w-full"
 				>
 					<TabsList

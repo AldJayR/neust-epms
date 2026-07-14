@@ -14,9 +14,9 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { AuthUser } from "@/lib/auth";
-import { facultyDirectoryQueryOptions } from "./functions";
 import { getFacultyDirectoryColumns } from "./components/director-directory-columns";
 import { useFacultyDirectoryExport } from "./faculty-directory-export";
+import { facultyDirectoryQueryOptions } from "./functions";
 
 interface FacultyDirectoryPageProps {
 	user?: AuthUser | null;

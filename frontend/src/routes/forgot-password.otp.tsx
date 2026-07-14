@@ -10,6 +10,8 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { sendResetCodeFn, verifyResetCodeFn } from "@/features/auth";
+import { passwordResetSearchSchema } from "@/features/auth/password-reset-search";
 import { AuthPageLayout } from "../components/custom/auth-page-layout";
 import { RHFSubmitButton } from "../components/rhf-auth-fields";
 import { FieldError } from "../components/ui/field";
@@ -18,8 +20,6 @@ import {
 	InputOTPGroup,
 	InputOTPSlot,
 } from "../components/ui/input-otp";
-import { sendResetCodeFn, verifyResetCodeFn } from "@/features/auth";
-import { passwordResetSearchSchema } from "@/features/auth/password-reset-search";
 
 const otpSchema = z.object({
 	code: z.string().length(6, "Verification code must be 6 digits"),

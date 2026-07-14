@@ -122,7 +122,9 @@ export function ProposalDetailsTab() {
 
 						{endorsement.comment && (
 							<>
-								<h2 className="text-sm font-medium text-black mt-6 dark:text-foreground">Remarks</h2>
+								<h2 className="text-sm font-medium text-black mt-6 dark:text-foreground">
+									Remarks
+								</h2>
 								<div className="rounded-lg border border-border p-3">
 									<p className="text-sm text-black font-light leading-relaxed dark:text-foreground">
 										"{endorsement.comment}"
@@ -139,7 +141,9 @@ export function ProposalDetailsTab() {
 			)}
 
 			<div className="p-5 space-y-3">
-				<h2 className="text-sm font-medium text-black dark:text-foreground">Attached documents</h2>
+				<h2 className="text-sm font-medium text-black dark:text-foreground">
+					Attached documents
+				</h2>
 				<div className="space-y-1">
 					{data.attachments?.map((file) => {
 						const isActive =
@@ -330,9 +334,9 @@ export function ProposalDetailsTab() {
 						</DialogDescription>
 					</DialogHeader>
 
-						<div className="rounded-lg border border-red-200 bg-red-50 p-3 flex gap-3 dark:border-red-900/60 dark:bg-red-950/30">
-							<AlertTriangle className="size-4 text-red-600 mt-0.5 shrink-0 dark:text-red-300" />
-							<p className="text-sm text-red-800 dark:text-red-200">
+					<div className="rounded-lg border border-red-200 bg-red-50 p-3 flex gap-3 dark:border-red-900/60 dark:bg-red-950/30">
+						<AlertTriangle className="size-4 text-red-600 mt-0.5 shrink-0 dark:text-red-300" />
+						<p className="text-sm text-red-800 dark:text-red-200">
 							This will permanently decline the proposal. The project leader
 							will be notified that the proposal has been rejected.
 						</p>

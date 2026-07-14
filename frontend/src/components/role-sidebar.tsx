@@ -7,14 +7,16 @@ import {
 	Laptop,
 	Loader2,
 	LogOut,
+	type LucideIcon,
 	Moon,
 	Settings,
 	Sun,
-	type LucideIcon,
 } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import * as React from "react";
 import { toast } from "sonner";
+import { SettingsDialog } from "@/components/settings-dialog";
+import { useTheme } from "@/components/theme-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
@@ -42,11 +44,9 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import type { AuthUser } from "@/lib/auth";
 import { logoutFn } from "@/features/auth";
+import type { AuthUser } from "@/lib/auth";
 import { clearAuthCache } from "@/lib/auth-cache";
-import { useTheme } from "@/components/theme-provider";
-import { SettingsDialog } from "@/components/settings-dialog";
 
 export type RoleSidebarItem = {
 	title: string;
@@ -171,7 +171,10 @@ export function RoleSidebar({
 								className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 							>
 								<Avatar className="size-8 rounded-lg">
-									<AvatarImage src={displayUser?.avatarUrl ?? undefined} alt={fullName} />
+									<AvatarImage
+										src={displayUser?.avatarUrl ?? undefined}
+										alt={fullName}
+									/>
 									<AvatarFallback className="rounded-lg">
 										{initials}
 									</AvatarFallback>
@@ -196,7 +199,10 @@ export function RoleSidebar({
 									<DropdownMenuLabel className="p-0 font-normal">
 										<div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
 											<Avatar className="size-8 rounded-lg">
-												<AvatarImage src={displayUser?.avatarUrl ?? undefined} alt={fullName} />
+												<AvatarImage
+													src={displayUser?.avatarUrl ?? undefined}
+													alt={fullName}
+												/>
 												<AvatarFallback className="rounded-lg">
 													{initials}
 												</AvatarFallback>
@@ -223,7 +229,10 @@ export function RoleSidebar({
 										Theme
 									</DropdownMenuSubTrigger>
 									<DropdownMenuSubContent>
-										<DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+										<DropdownMenuRadioGroup
+											value={theme}
+											onValueChange={setTheme}
+										>
 											<DropdownMenuRadioItem value="light">
 												<Sun />
 												Light

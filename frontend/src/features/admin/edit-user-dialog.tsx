@@ -22,12 +22,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	getRolesFn,
-	type UserResponse,
-	updateUserFn,
-} from "./functions";
 import { getCampusesFn, getDepartmentsFn } from "@/features/auth";
+import { getRolesFn, type UserResponse, updateUserFn } from "./functions";
 
 const rankOptions = [
 	{ label: "Instructor I", value: "instructor-1" },
@@ -140,19 +136,17 @@ export function EditUserDialog({
 			departments:
 				queryClient.getQueryData<LookupItem[]>(["departments"]) ?? departments,
 		},
-		({ user: initialUser, campuses: initialCampuses, departments: initialDepartments }) =>
-			createEditUserFormState(
-				initialUser,
-				initialCampuses,
-				initialDepartments,
-			),
+		({
+			user: initialUser,
+			campuses: initialCampuses,
+			departments: initialDepartments,
+		}) =>
+			createEditUserFormState(initialUser, initialCampuses, initialDepartments),
 	);
 
 	const updateMutation = useMutation({
 		mutationFn: () => {
-			const selectedRole = roles.find(
-				(r) => r.roleName === formState.roleName,
-			);
+			const selectedRole = roles.find((r) => r.roleName === formState.roleName);
 			return updateUserFn({
 				data: {
 					userId: user.userId,
@@ -161,9 +155,7 @@ export function EditUserDialog({
 					lastName: formState.lastName,
 					nameSuffix: formState.nameSuffix || null,
 					academicRank: formState.academicRank || null,
-					campusId: formState.campusId
-						? Number(formState.campusId)
-						: undefined,
+					campusId: formState.campusId ? Number(formState.campusId) : undefined,
 					departmentId:
 						formState.departmentId && formState.departmentId !== "none"
 							? Number(formState.departmentId)

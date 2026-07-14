@@ -4,14 +4,14 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { setNewPasswordFn } from "@/features/auth";
+import { passwordResetSearchSchema } from "@/features/auth/password-reset-search";
 import { AuthPageLayout } from "../components/custom/auth-page-layout";
 import {
 	RHFPasswordField,
 	RHFSubmitButton,
 } from "../components/rhf-auth-fields";
 import { FieldGroup } from "../components/ui/field";
-import { setNewPasswordFn } from "@/features/auth";
-import { passwordResetSearchSchema } from "@/features/auth/password-reset-search";
 
 const resetPasswordSchema = z
 	.object({

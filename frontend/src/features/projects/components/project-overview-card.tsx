@@ -1,12 +1,9 @@
-import {
-	ChevronRight,
-	Eye,
-	User,
-} from "lucide-react";
-import { PageCard } from "@/components/custom/page-card";
+import { ChevronRight, Eye, User } from "lucide-react";
 import { DetailsRow } from "@/components/custom/details-row";
+import { PageCard } from "@/components/custom/page-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -14,7 +11,6 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import type { ProjectMember } from "@/types/project";
@@ -205,7 +201,7 @@ export function ProjectOverviewCard({
 												<div className="flex items-center gap-2">
 													<Badge
 														variant="outline"
-												className="text-green-600 border-green-200 bg-green-50 text-[10px] px-1.5 dark:text-green-300 dark:border-green-900/60 dark:bg-green-950/30"
+														className="text-green-600 border-green-200 bg-green-50 text-[10px] px-1.5 dark:text-green-300 dark:border-green-900/60 dark:bg-green-950/30"
 													>
 														{member.specialOrder.soNumber}
 													</Badge>
@@ -214,7 +210,9 @@ export function ProjectOverviewCard({
 														variant="outline"
 														className="h-7 text-xs"
 														onClick={() =>
-															handleViewSO(member.specialOrder?.specialOrderId ?? "")
+															handleViewSO(
+																member.specialOrder?.specialOrderId ?? "",
+															)
 														}
 													>
 														<Eye className="mr-1 size-3" />
@@ -266,7 +264,9 @@ export function ProjectOverviewCard({
 													</Button>
 												</div>
 											) : (
-												<span className="text-xs text-muted-foreground">No SO</span>
+												<span className="text-xs text-muted-foreground">
+													No SO
+												</span>
 											))}
 									</div>
 									{uploadErrors[member.userId] && (

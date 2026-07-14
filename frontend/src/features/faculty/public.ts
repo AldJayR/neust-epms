@@ -1,8 +1,3 @@
-export {
-	facultyDirectoryQueryOptions,
-	facultyProjectsQueryOptions,
-	facultyProposalsQueryOptions,
-} from "./functions";
 export type {
 	FacultyInvolvement,
 	FacultyProjectItem,
@@ -10,4 +5,9 @@ export type {
 	FacultyProposalItem,
 	FacultyProposalListResponse,
 	ProposalStatusFilter,
+} from "./functions";
+export {
+	facultyDirectoryQueryOptions,
+	facultyProjectsQueryOptions,
+	facultyProposalsQueryOptions,
 } from "./functions";

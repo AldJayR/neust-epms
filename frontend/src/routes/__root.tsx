@@ -12,8 +12,8 @@ import { Loader2, Wifi, WifiOff } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { getCurrentUserFn } from "@/features/auth";
-import { Devtools } from "../components/devtools";
 import { ThemeToaster } from "../components/custom/theme-toaster";
+import { Devtools } from "../components/devtools";
 import { ThemeProvider, ThemeScript } from "../components/theme-provider";
 import { TooltipProvider } from "../components/ui/tooltip";
 import type { AuthContext } from "../lib/auth";
@@ -168,7 +168,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				toast.custom(
 					() => (
 						<div className="relative flex items-center gap-4 border border-border bg-background rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
-						<div className="flex size-9 items-center justify-center rounded-full bg-red-50 text-red-500 dark:bg-red-950/40 dark:text-red-300 shrink-0">
+							<div className="flex size-9 items-center justify-center rounded-full bg-red-50 text-red-500 dark:bg-red-950/40 dark:text-red-300 shrink-0">
 								<WifiOff className="size-5" />
 							</div>
 							<div className="flex flex-col text-left">

@@ -4,10 +4,10 @@ import * as React from "react";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
-import type { AuthUser } from "@/lib/auth";
-import { getCampusesFn } from "@/features/auth";
-import { directorDashboardQueryOptions } from "../functions";
 import { ActionCenterCard } from "@/features/action-center";
+import { getCampusesFn } from "@/features/auth";
+import type { AuthUser } from "@/lib/auth";
+import { directorDashboardQueryOptions } from "../functions";
 
 const ProjectsChartCard = React.lazy(() =>
 	import("@/features/projects").then(({ ProjectsChartCard }) => ({
@@ -151,7 +151,7 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 		<section>
 			<div className="flex min-h-full flex-col gap-8">
 				<PageHeader
-						title={
+					title={
 						<div className="flex flex-col gap-1">
 							<h1 className="text-2xl font-semibold text-heading">
 								Welcome, {user?.firstName ? `${user.firstName}!` : "Director"}!

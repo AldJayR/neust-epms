@@ -14,7 +14,8 @@ const URGENCY_ORDER: Record<ActionItem["urgency"], number> = {
 
 export function sortActionItems(items: ActionItem[]) {
 	return [...items].sort((a, b) => {
-		const urgencyDifference = URGENCY_ORDER[a.urgency] - URGENCY_ORDER[b.urgency];
+		const urgencyDifference =
+			URGENCY_ORDER[a.urgency] - URGENCY_ORDER[b.urgency];
 		if (urgencyDifference !== 0) return urgencyDifference;
 		return b.createdAt.localeCompare(a.createdAt);
 	});

@@ -1,10 +1,10 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { MoaDetailsPage } from "@/features/moa/moa-details-page";
-import { MoaDetailsSkeleton } from "@/features/moa/moa-details-skeleton";
 import {
 	moaDetailsQueryOptions,
 	moaLinkedProjectsQueryOptions,
 } from "@/features/moa";
+import { MoaDetailsPage } from "@/features/moa/moa-details-page";
+import { MoaDetailsSkeleton } from "@/features/moa/moa-details-skeleton";
 import { isDeniedAccess } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/moas/$moaId/")({

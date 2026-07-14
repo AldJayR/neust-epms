@@ -1,14 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
-import {
-	startTransition,
-	useDeferredValue,
-	useReducer,
-	useState,
-} from "react";
-import type { AuthUser } from "@/lib/auth";
+import { startTransition, useDeferredValue, useReducer, useState } from "react";
 import { facultyProjectsQueryOptions } from "@/features/faculty/public";
+import type { AuthUser } from "@/lib/auth";
+import {
+	createDirectorReportColumns,
+	createFacultyReportColumns,
+} from "../components/report-columns";
 import { reportsListQueryOptions } from "../functions";
 import {
 	filterReportsByType,
@@ -16,10 +15,6 @@ import {
 	getProgressReportSequences,
 	paginateReports,
 } from "../helpers/reports-helpers";
-import {
-	createDirectorReportColumns,
-	createFacultyReportColumns,
-} from "../components/report-columns";
 
 interface ReportsViewState {
 	activeTab: "my" | "college";
@@ -53,7 +48,8 @@ export function useReportsView() {
 				(match) => match.routeId === "/_authenticated",
 			);
 			return (
-				(authMatch?.context as { user: AuthUser | null } | undefined)?.user ?? null
+				(authMatch?.context as { user: AuthUser | null } | undefined)?.user ??
+				null
 			);
 		},
 	});
@@ -115,8 +111,12 @@ export function useReportsView() {
 		isSubmitModalOpen,
 		isLoading: listLoading || (!!user && projectsLoading),
 		totalReports: tabFilteredReports.length,
-		progressCount: tabFilteredReports.filter((report) => report.reportType === "Progress").length,
-		terminalCount: tabFilteredReports.filter((report) => report.reportType === "Terminal").length,
+		progressCount: tabFilteredReports.filter(
+			(report) => report.reportType === "Progress",
+		).length,
+		terminalCount: tabFilteredReports.filter(
+			(report) => report.reportType === "Terminal",
+		).length,
 		paginatedReports: paginateReports(filteredReports, page, limit),
 		filteredReports,
 		columns: isFaculty ? facultyColumns : directorColumns,

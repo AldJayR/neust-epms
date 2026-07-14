@@ -7,14 +7,14 @@ import { PageHeader } from "@/components/custom/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AuthUser } from "@/lib/auth";
 import { isDirector, isRETChair } from "@/lib/permissions";
+import { ArchivedMoasTable } from "./components/archived-moas-table";
+import { ArchivedProjectsTable } from "./components/archived-projects-table";
+import { ArchivedProposalsTable } from "./components/archived-proposals-table";
 import {
 	archivedMoasQueryOptions,
 	archivedProjectsQueryOptions,
 	archivedProposalsQueryOptions,
 } from "./functions";
-import { ArchivedMoasTable } from "./components/archived-moas-table";
-import { ArchivedProjectsTable } from "./components/archived-projects-table";
-import { ArchivedProposalsTable } from "./components/archived-proposals-table";
 import { useArchiveRestore } from "./hooks/use-archive-restore";
 
 interface ArchivesPageProps {
@@ -23,10 +23,7 @@ interface ArchivesPageProps {
 
 export function ArchivesPage({ user }: ArchivesPageProps) {
 	const [activeTab, setActiveTab] = useReducer(
-		(
-			state: "proposals" | "projects" | "moas",
-			value: string,
-		) =>
+		(state: "proposals" | "projects" | "moas", value: string) =>
 			value === "proposals" || value === "projects" || value === "moas"
 				? value
 				: state,
@@ -46,7 +43,9 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 	const projectsQuery = useQuery(
 		archivedProjectsQueryOptions({ page: projectPage, limit }),
 	);
-	const moasQuery = useQuery(archivedMoasQueryOptions({ page: moaPage, limit }));
+	const moasQuery = useQuery(
+		archivedMoasQueryOptions({ page: moaPage, limit }),
+	);
 	const canManageMoas = isDirector(user) || isRETChair(user);
 	const restore = useArchiveRestore();
 
@@ -78,14 +77,23 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 					variant="line"
 					className="w-full justify-start border-b border-border px-0"
 				>
-					<TabsTrigger value="proposals" className="px-4 py-2.5 text-sm font-medium cursor-pointer">
+					<TabsTrigger
+						value="proposals"
+						className="px-4 py-2.5 text-sm font-medium cursor-pointer"
+					>
 						Proposals
 					</TabsTrigger>
-					<TabsTrigger value="projects" className="px-4 py-2.5 text-sm font-medium cursor-pointer">
+					<TabsTrigger
+						value="projects"
+						className="px-4 py-2.5 text-sm font-medium cursor-pointer"
+					>
 						Projects
 					</TabsTrigger>
 					{canManageMoas && (
-						<TabsTrigger value="moas" className="px-4 py-2.5 text-sm font-medium cursor-pointer">
+						<TabsTrigger
+							value="moas"
+							className="px-4 py-2.5 text-sm font-medium cursor-pointer"
+						>
 							MOA Repository
 						</TabsTrigger>
 					)}
@@ -131,7 +139,9 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 							onPageChange={setMoaPage}
 							sorting={moaSorting}
 							onSortingChange={setMoaSorting}
-							onRestore={(id, title) => restore.handleRestoreClick(id, "moa", title)}
+							onRestore={(id, title) =>
+								restore.handleRestoreClick(id, "moa", title)
+							}
 						/>
 					</TabsContent>
 				)}

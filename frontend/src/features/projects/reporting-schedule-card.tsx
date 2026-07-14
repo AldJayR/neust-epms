@@ -138,10 +138,10 @@ export function ReportingScheduleCard({
 													// biome-ignore lint/a11y/useAnchorContent: Button provides the link content.
 													<a
 														href={item.storagePath}
-																target="_blank"
-																rel="noopener noreferrer"
-																aria-label="Download completed report"
-																className="text-foreground no-underline hover:underline"
+														target="_blank"
+														rel="noopener noreferrer"
+														aria-label="Download completed report"
+														className="text-foreground no-underline hover:underline"
 													/>
 												}
 											>

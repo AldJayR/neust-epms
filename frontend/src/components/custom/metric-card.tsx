@@ -51,7 +51,9 @@ export function MetricCard({
 					{isLoading ? (
 						<Skeleton className="h-10 w-24 rounded" />
 					) : (
-						<div className="text-3xl font-semibold leading-none text-heading">{value}</div>
+						<div className="text-3xl font-semibold leading-none text-heading">
+							{value}
+						</div>
 					)}
 				</CardContent>
 			</Card>
@@ -127,9 +129,7 @@ export function MetricCard({
 					{trend && (
 						<div className="flex items-center gap-1 rounded-md border border-success/20 bg-success/10 px-1.5 py-1">
 							<TrendingUp className="size-3 text-success" />
-							<span className="text-xs font-medium text-success">
-								{trend}
-							</span>
+							<span className="text-xs font-medium text-success">{trend}</span>
 						</div>
 					)}
 				</div>

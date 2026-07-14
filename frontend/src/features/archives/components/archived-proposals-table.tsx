@@ -11,8 +11,8 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { ArchivedProposal } from "../functions";
 import { toStableDate } from "@/lib/utils";
+import type { ArchivedProposal } from "../functions";
 
 export function ArchivedProposalsTable({
 	data,
@@ -40,17 +40,24 @@ export function ArchivedProposalsTable({
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Proposal Title" />
 			),
-			headerClassName: "w-[380px] px-4 py-2 text-sm font-medium text-muted-foreground",
-			cellClassName: "px-4 py-3 text-sm font-semibold text-foreground text-left",
+			headerClassName:
+				"w-[380px] px-4 py-2 text-sm font-medium text-muted-foreground",
+			cellClassName:
+				"px-4 py-3 text-sm font-semibold text-foreground text-left",
 			cell: ({ row }) => row.original.title,
 		},
 		{
 			id: "extensionCategory",
 			accessorKey: "extensionCategory",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Category" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Category"
+					className="justify-center"
+				/>
 			),
-			headerClassName: "w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => row.original.extensionCategory,
 		},
@@ -58,9 +65,14 @@ export function ArchivedProposalsTable({
 			id: "archivedAt",
 			accessorKey: "archivedAt",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Archived Date" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Archived Date"
+					className="justify-center"
+				/>
 			),
-			headerClassName: "w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) =>
 				row.original.archivedAt
@@ -69,17 +81,22 @@ export function ArchivedProposalsTable({
 		},
 		{
 			id: "actions",
-			headerClassName: "w-[100px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"w-[100px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => (
 				<div className="flex items-center justify-end">
 					<DropdownMenu>
-						<DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+						<DropdownMenuTrigger
+							render={<Button variant="ghost" size="icon" className="size-8" />}
+						>
 							<EllipsisVertical className="size-4" />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
 							<DropdownMenuItem
-								onClick={() => onRestore(row.original.proposalId, row.original.title)}
+								onClick={() =>
+									onRestore(row.original.proposalId, row.original.title)
+								}
 								className="flex items-center gap-2 cursor-pointer"
 							>
 								<RotateCcw className="size-4 text-blue-500" />

@@ -22,17 +22,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { AuthUser } from "@/lib/auth";
+import { ActionCenterCard } from "@/features/action-center";
+import { CreateProposalModal } from "@/features/proposals";
 import {
 	type ProposalStatusFilter,
 	retDashboardStatsQueryOptions,
 	retProposalsQueryOptions,
 } from "@/features/proposals/public";
+import type { AuthUser } from "@/lib/auth";
+import { formatAcademicRank, toStableDate } from "@/lib/utils";
 import type { ProposalItem } from "@/types/proposal";
-import { formatAcademicRank } from "@/lib/utils";
-import { toStableDate } from "@/lib/utils";
-import { ActionCenterCard } from "@/features/action-center";
-import { CreateProposalModal } from "@/features/proposals";
 
 interface RETDashboardPageProps {
 	user: AuthUser;
@@ -226,14 +225,15 @@ export function RETDashboardPage({
 		<div className="flex flex-col gap-8">
 			{/* Welcome Header */}
 			<PageHeader
-					title={
-						<div className="flex flex-col gap-2">
+				title={
+					<div className="flex flex-col gap-2">
 						<h1 className="text-2xl font-semibold text-heading">
 							Welcome, {user.firstName}!
 						</h1>
-							<p className="text-sm text-muted-foreground">
-								{user.departmentName ?? user.campusName} · Review, endorsement, and project monitoring
-							</p>
+						<p className="text-sm text-muted-foreground">
+							{user.departmentName ?? user.campusName} · Review, endorsement,
+							and project monitoring
+						</p>
 					</div>
 				}
 				actions={

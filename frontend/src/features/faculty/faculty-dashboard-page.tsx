@@ -9,13 +9,13 @@ import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { AuthUser } from "@/lib/auth";
+import { ActionCenterCard } from "@/features/action-center";
 import {
 	facultyProjectsQueryOptions,
 	facultyProposalsQueryOptions,
 } from "@/features/faculty";
-import { ActionCenterCard } from "@/features/action-center";
 import { CreateProposalModal } from "@/features/proposals";
+import type { AuthUser } from "@/lib/auth";
 import { toStableDate } from "@/lib/utils";
 
 export function FacultyDashboardPage({ user }: { user: AuthUser }) {
@@ -112,14 +112,14 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 	return (
 		<div className="flex flex-col gap-8">
 			<PageHeader
-					title={
-						<div className="flex flex-col gap-2">
+				title={
+					<div className="flex flex-col gap-2">
 						<h1 className="text-2xl font-semibold text-heading">
 							Good {timeOfDay}, {user.firstName}
 						</h1>
-							<p className="text-sm text-muted-foreground">
-								Your proposals, projects, and upcoming obligations
-							</p>
+						<p className="text-sm text-muted-foreground">
+							Your proposals, projects, and upcoming obligations
+						</p>
 					</div>
 				}
 				actions={
@@ -155,7 +155,7 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 					[1, 2, 3, 4].map((i) => (
 						<PageCard
 							key={i}
-												className="flex min-h-[112px] flex-col gap-4 p-4 animate-pulse"
+							className="flex min-h-[112px] flex-col gap-4 p-4 animate-pulse"
 						>
 							<div className="flex justify-between items-start">
 								<div className="flex flex-col gap-2 w-1/3">
@@ -171,13 +171,13 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 						</PageCard>
 					))
 				) : userItems.length === 0 ? (
-						<PageCard className="p-8 text-center">
-							<p className="text-sm font-medium text-foreground">
-								No proposals or projects yet
-							</p>
-							<p className="mt-1 text-sm text-muted-foreground">
-								Start a proposal to begin tracking your extension work here.
-							</p>
+					<PageCard className="p-8 text-center">
+						<p className="text-sm font-medium text-foreground">
+							No proposals or projects yet
+						</p>
+						<p className="mt-1 text-sm text-muted-foreground">
+							Start a proposal to begin tracking your extension work here.
+						</p>
 					</PageCard>
 				) : (
 					userItems.map((item) => (

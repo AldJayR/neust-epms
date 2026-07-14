@@ -1,6 +1,5 @@
-import {
-	createActionsColumn,
-} from "@/components/custom/data-table-columns";
+import { EllipsisVertical } from "lucide-react";
+import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
@@ -12,9 +11,8 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { ReportItem } from "@/types/report";
 import { formatAcademicRank, toStableDate } from "@/lib/utils";
-import { EllipsisVertical } from "lucide-react";
+import type { ReportItem } from "@/types/report";
 
 function formatDate(dateStr: string) {
 	try {
@@ -99,7 +97,9 @@ export function createDirectorReportColumns(
 				return (
 					<div className="flex items-center gap-3">
 						<Avatar className="size-9">
-							{item.avatarUrl && <AvatarImage src={item.avatarUrl} alt={item.leader} />}
+							{item.avatarUrl && (
+								<AvatarImage src={item.avatarUrl} alt={item.leader} />
+							)}
 							<AvatarFallback className="bg-muted text-muted-foreground">
 								{initials}
 							</AvatarFallback>
@@ -136,9 +136,14 @@ export function createDirectorReportColumns(
 			id: "reportType",
 			accessorKey: "reportType",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Report Type" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Report Type"
+					className="justify-center"
+				/>
 			),
-			headerClassName: "px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center",
 			cell: ({ row }) => (
 				<div className="flex justify-center">
@@ -150,9 +155,14 @@ export function createDirectorReportColumns(
 			id: "submitted",
 			accessorKey: "submitted",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Submitted" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Submitted"
+					className="justify-center"
+				/>
 			),
-			headerClassName: "px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => formatDate(row.original.submitted),
 		},
@@ -200,9 +210,14 @@ export function createFacultyReportColumns(
 			id: "reportType",
 			accessorKey: "reportType",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Report Type" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Report Type"
+					className="justify-center"
+				/>
 			),
-			headerClassName: "px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center",
 			cell: ({ row }) => (
 				<div className="flex justify-center">
@@ -214,9 +229,14 @@ export function createFacultyReportColumns(
 			id: "submitted",
 			accessorKey: "submitted",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Submitted" className="justify-center" />
+				<DataTableColumnHeader
+					column={column}
+					title="Submitted"
+					className="justify-center"
+				/>
 			),
-			headerClassName: "px-4 py-2 text-center text-sm font-medium text-muted-foreground",
+			headerClassName:
+				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => formatDate(row.original.submitted),
 		},

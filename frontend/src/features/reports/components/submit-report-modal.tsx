@@ -39,11 +39,8 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-	submitReportFn,
-	uploadReportDocumentFn,
-} from "../functions";
 import { facultyProjectsQueryOptions } from "@/features/faculty/public";
+import { submitReportFn, uploadReportDocumentFn } from "../functions";
 
 interface ProjectSelectionState {
 	selectedProjectId: string;

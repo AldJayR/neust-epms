@@ -1,3 +1,4 @@
+export type { ReportItem } from "./functions";
 export {
 	emailReportFn,
 	reportsListQueryOptions,
@@ -5,4 +6,3 @@ export {
 	submitReportFn,
 	uploadReportDocumentFn,
 } from "./functions";
-export type { ReportItem } from "./functions";

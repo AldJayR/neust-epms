@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { UserResponse } from "./functions";
 import { formatAcademicRank } from "@/lib/utils";
+import type { UserResponse } from "./functions";
 
 interface ViewUserDialogProps {
 	user: UserResponse;

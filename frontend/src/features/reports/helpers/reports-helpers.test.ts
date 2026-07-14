@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
+import type { ReportItem } from "@/types/report";
 import {
 	filterReportsByType,
 	filterReportsForView,
 	getProgressReportSequences,
 	paginateReports,
 } from "./reports-helpers";
-import type { ReportItem } from "@/types/report";
 
 const reports: ReportItem[] = [
 	{
@@ -77,8 +77,8 @@ describe("reports helpers", () => {
 		const sequences = getProgressReportSequences(reports);
 		expect(sequences.get("r-1")).toBe(1);
 		expect(sequences.get("r-2")).toBe(2);
-		expect(paginateReports(reports, 2, 2).map((report) => report.reportId)).toEqual([
-			"r-3",
-		]);
+		expect(
+			paginateReports(reports, 2, 2).map((report) => report.reportId),
+		).toEqual(["r-3"]);
 	});
 });

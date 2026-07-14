@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Eye, Pencil, Play, Info } from "lucide-react";
+import { Eye, Info, Pencil, Play } from "lucide-react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { PageHeader } from "@/components/custom/page-header";
 import {
@@ -48,7 +48,9 @@ export function ProjectDetailsHeader({
 				<BreadcrumbList>
 					<BreadcrumbItem>
 						<BreadcrumbLink
-							render={<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />}
+							render={
+								<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />
+							}
 						>
 							Dashboard
 						</BreadcrumbLink>
@@ -73,10 +75,14 @@ export function ProjectDetailsHeader({
 							<BrandButton
 								nativeButton={false}
 								className="flex w-fit items-center gap-2 px-5 h-9 !text-white hover:!text-white shadow-[0px_1px_2px_0px_var(--shadow-card)] hover:bg-brand-primary-hover"
-								render={<Link to="/proposals/$proposalId" params={{ proposalId }} />}
+								render={
+									<Link to="/proposals/$proposalId" params={{ proposalId }} />
+								}
 							>
 								<Eye className="size-4" />
-								<span className="text-sm font-medium">Read Proposal Document</span>
+								<span className="text-sm font-medium">
+									Read Proposal Document
+								</span>
 							</BrandButton>
 						) : undefined}
 						{isEditable && (

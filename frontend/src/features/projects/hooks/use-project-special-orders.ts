@@ -1,10 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import type { ProjectMember } from "@/types/project";
 import {
 	getSpecialOrderSignedUrlFn,
 	uploadSpecialOrderFn,
 } from "../special-orders.functions";
-import type { ProjectMember } from "@/types/project";
 
 export function useProjectSpecialOrders(proposalId: string) {
 	const queryClient = useQueryClient();

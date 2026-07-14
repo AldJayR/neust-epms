@@ -1,6 +1,6 @@
-export { ReportsPage } from "./reports-page";
-export { SubmitReportModal } from "./components/submit-report-modal";
 export { ReportsFilterTabs } from "./components/reports-filter-tabs";
+export { SubmitReportModal } from "./components/submit-report-modal";
+export type { ReportItem } from "./functions";
 export {
 	emailReportFn,
 	reportsListQueryOptions,
@@ -8,4 +8,4 @@ export {
 	submitReportFn,
 	uploadReportDocumentFn,
 } from "./functions";
-export type { ReportItem } from "./functions";
+export { ReportsPage } from "./reports-page";

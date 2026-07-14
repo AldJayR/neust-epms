@@ -4,8 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { FacultyInvolvement } from "@/types/user";
 import { formatAcademicRank } from "@/lib/utils";
+import type { FacultyInvolvement } from "@/types/user";
 
 export const retFacultyDirectoryColumns: DataTableColumnDef<FacultyInvolvement>[] =
 	[

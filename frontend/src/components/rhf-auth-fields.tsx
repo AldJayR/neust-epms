@@ -149,7 +149,7 @@ export function RHFPasswordField<TFieldValues extends FieldValues>({
 						variant="ghost"
 						type="button"
 						aria-label="Toggle password visibility"
-								className="text-zinc-500 hover:!bg-black/5 hover:!text-zinc-700 dark:text-muted-foreground dark:hover:!bg-white/10 dark:hover:!text-foreground rounded-full transition-colors"
+						className="text-zinc-500 hover:!bg-black/5 hover:!text-zinc-700 dark:text-muted-foreground dark:hover:!bg-white/10 dark:hover:!text-foreground rounded-full transition-colors"
 						onClick={() => setShowPassword((prev) => !prev)}
 					>
 						{showPassword ? (
@@ -259,7 +259,10 @@ export function RHFCheckboxField<TFieldValues extends FieldValues>({
 				className="bg-background shadow-sm ring-1 ring-black/5 data-checked:ring-transparent dark:ring-white/10"
 			/>
 			<FieldContent>
-				<FieldLabel htmlFor={field.name} className="font-normal text-foreground">
+				<FieldLabel
+					htmlFor={field.name}
+					className="font-normal text-foreground"
+				>
 					{label}
 				</FieldLabel>
 				<FieldError errors={[fieldState.error]} />

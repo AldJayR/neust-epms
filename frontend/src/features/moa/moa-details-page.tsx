@@ -24,14 +24,14 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { AuthUser } from "@/lib/auth";
+import { isDirector } from "@/lib/permissions";
+import { toStableDate } from "@/lib/utils";
+import { EditMoaModal } from "./components/edit-moa-modal";
 import {
 	type MoaLinkedProject,
 	moaDetailsQueryOptions,
 	moaLinkedProjectsQueryOptions,
 } from "./functions";
-import { isDirector } from "@/lib/permissions";
-import { toStableDate } from "@/lib/utils";
-import { EditMoaModal } from "./components/edit-moa-modal";
 import { MoaDetailsSkeleton } from "./moa-details-skeleton";
 
 interface MoaDetailsPageProps {

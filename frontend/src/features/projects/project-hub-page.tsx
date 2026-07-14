@@ -10,12 +10,8 @@ import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { AuthUser } from "@/lib/auth";
-import {
-	type HubProject,
-	projectHubQueryOptions,
-} from "./functions";
-import { formatAcademicRank } from "@/lib/utils";
-import { toStableDate } from "@/lib/utils";
+import { formatAcademicRank, toStableDate } from "@/lib/utils";
+import { type HubProject, projectHubQueryOptions } from "./functions";
 
 interface ProjectHubPageProps {
 	user?: AuthUser | null;

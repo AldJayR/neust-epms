@@ -6,10 +6,7 @@ import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	settingsQueryOptions,
-	updateSettingFn,
-} from "./settings.functions";
+import { settingsQueryOptions, updateSettingFn } from "./settings.functions";
 
 export function SettingsPage() {
 	const queryClient = useQueryClient();

@@ -1,8 +1,6 @@
 import type { FormValues } from "../components/proposal-form";
 
-export function getFieldsToValidate(
-	step: number,
-): (keyof FormValues)[] {
+export function getFieldsToValidate(step: number): (keyof FormValues)[] {
 	if (step === 2) {
 		return [
 			"title",

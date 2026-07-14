@@ -37,7 +37,9 @@ export function getReviewDecision(
 export function getDefaultReviewComment(
 	decision: "Approved" | "Endorsed",
 ): string {
-	return decision === "Approved" ? "Approved via review" : "Endorsed via review";
+	return decision === "Approved"
+		? "Approved via review"
+		: "Endorsed via review";
 }
 
 export function shouldBlockReviewAction(

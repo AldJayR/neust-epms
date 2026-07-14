@@ -30,7 +30,9 @@ export function ProposalReviewHeader({
 				<BreadcrumbList>
 					<BreadcrumbItem>
 						<BreadcrumbLink
-							render={<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />}
+							render={
+								<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />
+							}
 						>
 							Dashboard
 						</BreadcrumbLink>
@@ -39,7 +41,10 @@ export function ProposalReviewHeader({
 					<BreadcrumbItem>
 						<BreadcrumbLink
 							render={
-								<Link to="/projects/$projectId" params={{ projectId: proposalId }} />
+								<Link
+									to="/projects/$projectId"
+									params={{ projectId: proposalId }}
+								/>
 							}
 						>
 							Project Details
@@ -60,7 +65,11 @@ export function ProposalReviewHeader({
 					<StatusBadge status={status} variant="outline" />
 				</div>
 				{currentDocument && (
-					<a href={currentDocument.url} target="_blank" rel="noopener noreferrer">
+					<a
+						href={currentDocument.url}
+						target="_blank"
+						rel="noopener noreferrer"
+					>
 						<BrandButton className="h-9 px-4 gap-2 text-sm font-medium">
 							<Download className="size-4" />
 							Download

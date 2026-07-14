@@ -29,7 +29,9 @@ export function canUploadSpecialOrder(
 	members: ProjectMember[],
 ): boolean {
 	if (status !== "Approved") return false;
-	return currentUserRole === "Director" || isProjectLeader(currentUserId, members);
+	return (
+		currentUserRole === "Director" || isProjectLeader(currentUserId, members)
+	);
 }
 
 export function canReadProject(

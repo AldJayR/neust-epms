@@ -44,20 +44,46 @@ function getNotificationIcon(type: string) {
 	const iconClassName = "size-4 shrink-0 mt-0.5";
 	switch (type) {
 		case "moa_expiry":
-			return <Clock className={cn(iconClassName, "text-amber-500 dark:text-amber-300")} />;
+			return (
+				<Clock
+					className={cn(iconClassName, "text-amber-500 dark:text-amber-300")}
+				/>
+			);
 		case "report_overdue":
 			return (
 				<AlertTriangle className={cn(iconClassName, "text-destructive")} />
 			);
 		case "report_submitted":
-			return <FileCheck className={cn(iconClassName, "text-emerald-500 dark:text-emerald-300")} />;
+			return (
+				<FileCheck
+					className={cn(
+						iconClassName,
+						"text-emerald-500 dark:text-emerald-300",
+					)}
+				/>
+			);
 		case "schedule_adjustment_requested":
 		case "schedule_adjustment_approved":
-			return <Calendar className={cn(iconClassName, "text-blue-500 dark:text-blue-300")} />;
+			return (
+				<Calendar
+					className={cn(iconClassName, "text-blue-500 dark:text-blue-300")}
+				/>
+			);
 		case "proposal_status_update":
-			return <FileSignature className={cn(iconClassName, "text-indigo-500 dark:text-indigo-300")} />;
+			return (
+				<FileSignature
+					className={cn(iconClassName, "text-indigo-500 dark:text-indigo-300")}
+				/>
+			);
 		case "account_activated":
-			return <UserCheck className={cn(iconClassName, "text-emerald-500 dark:text-emerald-300")} />;
+			return (
+				<UserCheck
+					className={cn(
+						iconClassName,
+						"text-emerald-500 dark:text-emerald-300",
+					)}
+				/>
+			);
 		default:
 			return <Bell className={cn(iconClassName, "text-muted-foreground")} />;
 	}
@@ -179,7 +205,7 @@ export function NotificationDropdown() {
 											</div>
 										</div>
 										{!n.isRead && (
-										<span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" />
+											<span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" />
 										)}
 									</div>
 									<span className="ml-6.5 text-[10px] text-muted-foreground/60">

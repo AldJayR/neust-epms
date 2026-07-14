@@ -11,14 +11,13 @@ import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { AuthUser } from "@/lib/auth";
 import { directorDashboardQueryOptions } from "@/features/dashboard";
 import {
 	type HubProject,
 	projectHubQueryOptions,
 } from "@/features/projects/public";
-import { formatAcademicRank } from "@/lib/utils";
-import { toStableDate } from "@/lib/utils";
+import type { AuthUser } from "@/lib/auth";
+import { formatAcademicRank, toStableDate } from "@/lib/utils";
 
 interface ProjectMonitoringPageProps {
 	user?: AuthUser | null;

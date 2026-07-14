@@ -4,6 +4,12 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { AuthUser } from "@/lib/auth";
+import { type FormValues, formSchema } from "../components/proposal-form";
+import {
+	canSubmitEditingProposal,
+	getFieldsToValidate,
+	requiresProposalDocument,
+} from "../helpers/proposal-wizard-helpers";
 import {
 	createProposalFn,
 	sdgsQueryOptions,
@@ -11,12 +17,6 @@ import {
 	updateProposalFn,
 	uploadProposalDocumentFn,
 } from "../ret.functions";
-import { formSchema, type FormValues } from "../components/proposal-form";
-import {
-	canSubmitEditingProposal,
-	getFieldsToValidate,
-	requiresProposalDocument,
-} from "../helpers/proposal-wizard-helpers";
 
 interface UseProposalWizardOptions {
 	open: boolean;
@@ -45,7 +45,9 @@ export function useProposalWizard({
 	const [state, setState] = React.useReducer(
 		(
 			previous: WizardState,
-			next: Partial<WizardState> | ((current: WizardState) => Partial<WizardState>),
+			next:
+				| Partial<WizardState>
+				| ((current: WizardState) => Partial<WizardState>),
 		) => {
 			const patch = typeof next === "function" ? next(previous) : next;
 			return { ...previous, ...patch };
@@ -198,7 +200,9 @@ export function useProposalWizard({
 				(!isEditing || canSubmitEditingProposal(currentStatus))
 			) {
 				const targetId = editingProposalId ?? proposalId;
-				await submitProposalMutation.mutateAsync({ data: { proposalId: targetId } });
+				await submitProposalMutation.mutateAsync({
+					data: { proposalId: targetId },
+				});
 			}
 
 			setState({ uploadProgress: 100, uploadPhase: "done" });
@@ -212,11 +216,19 @@ export function useProposalWizard({
 			setState({ step: 1, file: null });
 			queryClient.invalidateQueries({ queryKey: ["ret", "dashboard"] });
 			queryClient.invalidateQueries({ queryKey: ["dashboard", "proposals"] });
-			setTimeout(() => setState({ uploadPhase: "idle", uploadProgress: 0 }), 1000);
+			setTimeout(
+				() => setState({ uploadPhase: "idle", uploadProgress: 0 }),
+				1000,
+			);
 		} catch (error: unknown) {
 			if (timer) clearInterval(timer);
-			toast.error(error instanceof Error ? error.message : "Something went wrong");
-			setTimeout(() => setState({ uploadPhase: "idle", uploadProgress: 0 }), 1000);
+			toast.error(
+				error instanceof Error ? error.message : "Something went wrong",
+			);
+			setTimeout(
+				() => setState({ uploadPhase: "idle", uploadProgress: 0 }),
+				1000,
+			);
 		}
 	};
 

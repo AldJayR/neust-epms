@@ -3,7 +3,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { API_BASE } from "@/config/api";
 import { getErrorMessage } from "@/lib/api/client";
-import { authorizeSessionUser, getValidAccessToken } from "@/lib/session.server";
+import {
+	authorizeSessionUser,
+	getValidAccessToken,
+} from "@/lib/session.server";
 import type {
 	ProjectDetailsResponse,
 	ProjectHubParams,
@@ -35,12 +38,13 @@ const getProjectHubFn = createServerFn({ method: "GET" })
 		if (data.status) query.append("status", data.status);
 		if (data.myProjectsOnly)
 			query.append("myProjectsOnly", data.myProjectsOnly);
-		const response = await fetch(
-			`${API_BASE}/director/hub/projects?${query}`,
-			{ headers: { Authorization: `Bearer ${token}` } },
-		);
+		const response = await fetch(`${API_BASE}/director/hub/projects?${query}`, {
+			headers: { Authorization: `Bearer ${token}` },
+		});
 		if (!response.ok) {
-			throw new Error(await getErrorMessage(response, "Failed to fetch project hub"));
+			throw new Error(
+				await getErrorMessage(response, "Failed to fetch project hub"),
+			);
 		}
 		return (await response.json()) as ProjectHubResponse;
 	});
@@ -71,7 +75,9 @@ export const transitionProjectFn = createServerFn({ method: "POST" })
 			},
 		);
 		if (!response.ok) {
-			throw new Error(await getErrorMessage(response, "Failed to activate project"));
+			throw new Error(
+				await getErrorMessage(response, "Failed to activate project"),
+			);
 		}
 		return (await response.json()) as { message: string };
 	});
@@ -81,12 +87,17 @@ export const closeProjectFn = createServerFn({ method: "POST" })
 	.handler(async ({ data }) => {
 		await authorizeSessionUser("Director");
 		const token = await getValidAccessToken();
-		const response = await fetch(`${API_BASE}/projects/${data.projectId}/close`, {
-			method: "POST",
-			headers: { Authorization: `Bearer ${token}` },
-		});
+		const response = await fetch(
+			`${API_BASE}/projects/${data.projectId}/close`,
+			{
+				method: "POST",
+				headers: { Authorization: `Bearer ${token}` },
+			},
+		);
 		if (!response.ok) {
-			throw new Error(await getErrorMessage(response, "Failed to close project"));
+			throw new Error(
+				await getErrorMessage(response, "Failed to close project"),
+			);
 		}
 		return (await response.json()) as { message: string };
 	});
@@ -110,20 +121,25 @@ export const activateProjectFn = createServerFn({ method: "POST" })
 	.handler(async ({ data }) => {
 		await authorizeSessionUser("Director");
 		const token = await getValidAccessToken();
-		const response = await fetch(`${API_BASE}/projects/${data.projectId}/activate`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+		const response = await fetch(
+			`${API_BASE}/projects/${data.projectId}/activate`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify({
+					moaId: data.moaId,
+					reportingFrequency: data.reportingFrequency,
+					dueDates: data.dueDates,
+				}),
 			},
-			body: JSON.stringify({
-				moaId: data.moaId,
-				reportingFrequency: data.reportingFrequency,
-				dueDates: data.dueDates,
-			}),
-		});
+		);
 		if (!response.ok) {
-			throw new Error(await getErrorMessage(response, "Failed to activate project"));
+			throw new Error(
+				await getErrorMessage(response, "Failed to activate project"),
+			);
 		}
 		return (await response.json()) as { message: string };
 	});
@@ -156,7 +172,7 @@ export type {
 	HubProject,
 	ProjectDetailsResponse,
 	ProjectHistoryItem,
-	ProjectMember,
 	ProjectHubParams,
 	ProjectHubResponse,
+	ProjectMember,
 } from "@/types/project";

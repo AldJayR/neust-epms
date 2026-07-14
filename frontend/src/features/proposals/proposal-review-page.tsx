@@ -2,18 +2,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { projectDetailsQueryOptions } from "@/features/projects/public";
+import type { AuthUser } from "@/lib/auth";
+import {
+	getProposalCommentsFn,
+	saveProposalCommentFn,
+} from "./comments.functions";
 import type { PdfViewerRef } from "./components/pdf-viewer";
 import { ProposalReviewProvider } from "./components/proposal-review-context";
 import { ProposalReviewDocumentPane } from "./components/proposal-review-document-pane";
 import { ProposalReviewHeader } from "./components/proposal-review-header";
 import { ProposalReviewSidebar } from "./components/proposal-review-sidebar";
 import { ProposalReviewSkeleton } from "./components/proposal-review-skeleton";
-import { ProposalLifecycleStepper } from "./proposal-lifecycle-stepper";
-import type { AuthUser } from "@/lib/auth";
-import {
-	getProposalCommentsFn,
-	saveProposalCommentFn,
-} from "./comments.functions";
 import { reviewProposalFn } from "./functions";
 import {
 	canReviewProposal,
@@ -21,7 +21,7 @@ import {
 	getReviewDecision,
 	shouldBlockReviewAction,
 } from "./helpers/proposal-review-helpers";
-import { projectDetailsQueryOptions } from "@/features/projects/public";
+import { ProposalLifecycleStepper } from "./proposal-lifecycle-stepper";
 
 interface ProposalReviewPageProps {
 	proposalId: string;
@@ -34,7 +34,8 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 				(match) => match.routeId === "/_authenticated",
 			);
 			return (
-				(authMatch?.context as { user: AuthUser | null } | undefined)?.user ?? null
+				(authMatch?.context as { user: AuthUser | null } | undefined)?.user ??
+				null
 			);
 		},
 	});
@@ -83,8 +84,9 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	);
 	const hasEndorsement = Boolean(endorsement);
 	const currentDoc =
-		data?.attachments?.find((attachment) => attachment.id === activeAttachmentId) ??
-		data?.attachments?.[0];
+		data?.attachments?.find(
+			(attachment) => attachment.id === activeAttachmentId,
+		) ?? data?.attachments?.[0];
 	const userRole = user?.roleName ?? "";
 	const isRET = userRole === "RET Chair";
 	const isDirector = userRole === "Director";
@@ -225,7 +227,9 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 
 				{error ? (
 					<div className="flex items-center justify-center h-[500px]">
-						<p className="text-muted-foreground">Failed to load proposal details.</p>
+						<p className="text-muted-foreground">
+							Failed to load proposal details.
+						</p>
 					</div>
 				) : (
 					<div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

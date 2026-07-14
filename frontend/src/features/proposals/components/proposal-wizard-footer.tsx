@@ -26,12 +26,22 @@ export function ProposalWizardFooter({
 		<div className="flex w-full items-center justify-between gap-3">
 			<div className="flex min-w-0 items-center">
 				{step > 1 ? (
-					<Button type="button" variant="outline" onClick={onPrevious} className="shrink-0">
+					<Button
+						type="button"
+						variant="outline"
+						onClick={onPrevious}
+						className="shrink-0"
+					>
 						<ChevronLeft className="size-4" />
 						Previous
 					</Button>
 				) : (
-					<Button type="button" variant="ghost" onClick={onCancel} className="shrink-0">
+					<Button
+						type="button"
+						variant="ghost"
+						onClick={onCancel}
+						className="shrink-0"
+					>
 						Cancel
 					</Button>
 				)}

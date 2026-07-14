@@ -1,7 +1,7 @@
 import * as pdfjsLib from "pdfjs-dist";
 import { useEffect, useReducer, useRef } from "react";
-import type { AnnotationData, ProposalComment } from "../../comments.functions";
 import { stateReducer } from "@/lib/state-reducer";
+import type { AnnotationData, ProposalComment } from "../../comments.functions";
 import { CommentCreationPopover, CommentHighlights } from "./pdf-annotations";
 
 interface PdfPageCanvasProps {

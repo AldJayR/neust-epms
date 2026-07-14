@@ -8,8 +8,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { AuthUser } from "@/lib/auth";
 import { completeOnboardingFn } from "@/features/auth";
+import type { AuthUser } from "@/lib/auth";
 
 const STEP_KEYS = ["first", "second", "third", "fourth", "fifth"];
 

@@ -10,9 +10,9 @@ import {
 	useRef,
 	useState,
 } from "react";
-import type { PdfViewerRef } from "../pdf-viewer";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { AnnotationData, ProposalComment } from "../../comments.functions";
+import type { PdfViewerRef } from "../pdf-viewer";
 import { useHandDrag } from "./hooks/use-hand-drag";
 import { usePdfDocument } from "./hooks/use-pdf-document";
 import { usePdfKeyboard } from "./hooks/use-pdf-keyboard";
@@ -239,10 +239,10 @@ const PdfInner = ({
 												pdfDoc={pdfDoc}
 												pageNumber={pg}
 												width={pageWidth}
-														scale={deferredScale}
-															aspectRatio={aspect}
-															toolMode={toolMode}
-															comments={commentsByPage.get(pg) ?? EMPTY_COMMENTS}
+												scale={deferredScale}
+												aspectRatio={aspect}
+												toolMode={toolMode}
+												comments={commentsByPage.get(pg) ?? EMPTY_COMMENTS}
 												onAddComment={onAddComment}
 											/>
 										) : (

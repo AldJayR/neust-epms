@@ -2,7 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { API_BASE } from "@/config/api";
 import { getErrorMessage } from "@/lib/api/client";
-import { authorizeSessionUser, getValidAccessToken } from "@/lib/session.server";
+import {
+	authorizeSessionUser,
+	getValidAccessToken,
+} from "@/lib/session.server";
 
 export const getSpecialOrderSignedUrlFn = createServerFn({ method: "GET" })
 	.validator(z.string())
@@ -29,11 +32,14 @@ export const getAccessTokenForUploadFn = createServerFn({ method: "GET" })
 	});
 
 const uploadSchema = z.object({
-		memberId: z.uuid("Invalid member ID"),
+	memberId: z.uuid("Invalid member ID"),
 	soNumber: z.string().min(1, "SO number is required"),
 	file: z
 		.instanceof(File, { message: "A PDF file is required" })
-		.refine((file) => file.type === "application/pdf", "Only PDF files are allowed"),
+		.refine(
+			(file) => file.type === "application/pdf",
+			"Only PDF files are allowed",
+		),
 });
 
 export const uploadSpecialOrderFn = createServerFn({ method: "POST" })

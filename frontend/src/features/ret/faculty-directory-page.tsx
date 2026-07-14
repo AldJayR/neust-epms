@@ -13,9 +13,9 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { AuthUser } from "@/lib/auth";
-import { facultyDirectoryQueryOptions } from "@/features/faculty/public";
 import { retFacultyDirectoryColumns } from "@/features/faculty";
+import { facultyDirectoryQueryOptions } from "@/features/faculty/public";
+import type { AuthUser } from "@/lib/auth";
 
 interface RetFacultyDirectoryPageProps {
 	user?: AuthUser | null;
@@ -182,7 +182,7 @@ export function RetFacultyDirectoryPage({
 									<Button
 										variant="secondary"
 										size="sm"
-									className="h-7 text-xs bg-primary/5 text-brand-primary border border-brand-primary/20 hover:bg-[#eaf1fd] rounded-md px-2.5 font-medium cursor-pointer dark:hover:bg-primary/15"
+										className="h-7 text-xs bg-primary/5 text-brand-primary border border-brand-primary/20 hover:bg-[#eaf1fd] rounded-md px-2.5 font-medium cursor-pointer dark:hover:bg-primary/15"
 										onClick={() => {
 											setSelectedLoads(["0"]);
 											setSelectedRanks([]);
@@ -193,7 +193,7 @@ export function RetFacultyDirectoryPage({
 									<Button
 										variant="secondary"
 										size="sm"
-									className="h-7 text-xs bg-[#fef2f2] text-destructive border border-destructive/20 hover:bg-[#fee2e2] rounded-md px-2.5 font-medium cursor-pointer dark:bg-destructive/10 dark:hover:bg-destructive/20"
+										className="h-7 text-xs bg-[#fef2f2] text-destructive border border-destructive/20 hover:bg-[#fee2e2] rounded-md px-2.5 font-medium cursor-pointer dark:bg-destructive/10 dark:hover:bg-destructive/20"
 										onClick={() => {
 											setSelectedLoads(["3+"]);
 											setSelectedRanks([]);
@@ -221,7 +221,7 @@ export function RetFacultyDirectoryPage({
 										return (
 											<div
 												key={r.val}
-													className="flex items-center gap-2 text-xs font-medium text-slate-700 select-none dark:text-foreground"
+												className="flex items-center gap-2 text-xs font-medium text-slate-700 select-none dark:text-foreground"
 											>
 												<Checkbox
 													id={checkboxId}
@@ -264,7 +264,7 @@ export function RetFacultyDirectoryPage({
 										return (
 											<div
 												key={l.val}
-													className="flex items-center gap-2 text-xs font-medium text-slate-700 select-none dark:text-foreground"
+												className="flex items-center gap-2 text-xs font-medium text-slate-700 select-none dark:text-foreground"
 											>
 												<Checkbox
 													id={checkboxId}
@@ -318,8 +318,8 @@ export function RetFacultyDirectoryPage({
 						<Tabs
 							value={activeTab}
 							onValueChange={(val) => {
-									dispatchActiveTab(val);
-									onPageChange(1);
+								dispatchActiveTab(val);
+								onPageChange(1);
 							}}
 							className="w-fit"
 						>

@@ -3,12 +3,7 @@ import { Link } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Plus } from "lucide-react";
-import {
-	startTransition,
-	useDeferredValue,
-	useReducer,
-	useState,
-} from "react";
+import { startTransition, useDeferredValue, useReducer, useState } from "react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { DataTablePage } from "@/components/custom/data-table-page";
@@ -18,12 +13,12 @@ import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { AuthUser } from "@/lib/auth";
 import {
 	facultyProjectsQueryOptions,
 	facultyProposalsQueryOptions,
 } from "@/features/faculty";
 import { CreateProposalModal } from "@/features/proposals";
+import type { AuthUser } from "@/lib/auth";
 import { toStableDate } from "@/lib/utils";
 
 interface FacultyProjectHubPageProps {
@@ -250,7 +245,8 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 			),
 			headerClassName: "w-[20%] font-medium text-muted-foreground",
 			cellClassName: "text-foreground text-left",
-			cell: ({ row }) => format(toStableDate(row.original.date), "MMM dd, yyyy"),
+			cell: ({ row }) =>
+				format(toStableDate(row.original.date), "MMM dd, yyyy"),
 		},
 		{
 			id: "status",

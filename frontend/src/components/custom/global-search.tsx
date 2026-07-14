@@ -20,13 +20,13 @@ import {
 	CommandItem,
 	CommandList,
 } from "@/components/ui/command";
-import type { AuthUser } from "@/lib/auth";
-import { isDirector, isRETChair, isSuperAdmin } from "@/lib/permissions";
 import {
 	globalSearchFn,
 	type SearchResultItem,
 	type SearchType,
 } from "@/features/search";
+import type { AuthUser } from "@/lib/auth";
+import { isDirector, isRETChair, isSuperAdmin } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
 const TYPE_ICONS = {
@@ -162,7 +162,9 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 	});
 
 	const results = data?.results ?? [];
-	const grouped = (["proposals", "projects", "reports", "moas", "users"] as const)
+	const grouped = (
+		["proposals", "projects", "reports", "moas", "users"] as const
+	)
 		.map((resultType) => ({
 			type: resultType,
 			items: results.filter((result) => result.type === resultType),
@@ -172,25 +174,25 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 	const goTo = (item: SearchResultItem) => {
 		setRecents(pushRecent({ query, type }));
 		switch (item.type) {
-				case "proposals":
-					navigate({
-						to: "/proposals/$proposalId",
-						params: { proposalId: item.id },
-					});
-					break;
-				case "projects":
-				case "reports":
-					navigate({
-						to: "/projects/$projectId",
-						params: { projectId: item.id },
-					});
-					break;
-				case "moas":
-					navigate({ to: "/moas/$moaId", params: { moaId: item.id } });
-					break;
-				case "users":
-					navigate({ to: "/admin/users" });
-					break;
+			case "proposals":
+				navigate({
+					to: "/proposals/$proposalId",
+					params: { proposalId: item.id },
+				});
+				break;
+			case "projects":
+			case "reports":
+				navigate({
+					to: "/projects/$projectId",
+					params: { projectId: item.id },
+				});
+				break;
+			case "moas":
+				navigate({ to: "/moas/$moaId", params: { moaId: item.id } });
+				break;
+			case "users":
+				navigate({ to: "/admin/users" });
+				break;
 		}
 		dispatch({ type: "open", open: false });
 	};
@@ -222,7 +224,7 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 				<Command shouldFilter={false} className="gap-0">
 					<CommandInput
 						value={query}
-					onValueChange={(value) => dispatch({ type: "query", query: value })}
+						onValueChange={(value) => dispatch({ type: "query", query: value })}
 						placeholder="Search proposals, projects, reports…"
 						autoFocus
 					/>

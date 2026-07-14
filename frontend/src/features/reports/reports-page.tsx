@@ -11,8 +11,8 @@ import {
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SubmitReportModal } from "./components/submit-report-modal";
 import { ReportsFilterTabs } from "./components/reports-filter-tabs";
+import { SubmitReportModal } from "./components/submit-report-modal";
 import { useReportsView } from "./hooks/use-reports-view";
 
 export function ReportsPage() {
@@ -84,7 +84,9 @@ export function ReportsPage() {
 									view.setTypeFilter(value as "All" | "Progress" | "Terminal")
 								}
 							>
-								<DropdownMenuRadioItem value="All">All Types</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="All">
+									All Types
+								</DropdownMenuRadioItem>
 								<DropdownMenuRadioItem value="Progress">
 									Progress Reports
 								</DropdownMenuRadioItem>

@@ -1,3 +1,4 @@
+export type { ActiveMoa, MoaItem } from "./functions";
 export {
 	getActiveMoasFn,
 	getMoaDetailsFn,
@@ -8,4 +9,3 @@ export {
 	updateMoaFn,
 	uploadMoaFn,
 } from "./functions";
-export type { ActiveMoa, MoaItem } from "./functions";

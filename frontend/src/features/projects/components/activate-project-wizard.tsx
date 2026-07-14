@@ -12,7 +12,6 @@ import {
 import * as React from "react";
 import { toast } from "sonner";
 import { cn } from "#/lib/utils";
-import { toStableDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -38,8 +37,9 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { activateProjectFn } from "../functions";
 import { getActiveMoasFn } from "@/features/moa/public";
+import { toStableDate } from "@/lib/utils";
+import { activateProjectFn } from "../functions";
 
 interface ActivateProjectWizardProps {
 	open: boolean;
@@ -217,7 +217,10 @@ export function ActivateProjectWizard({
 														<div className="flex flex-col">
 															<span>{moa.partnerName}</span>
 															<span className="text-xs text-muted-foreground">
-																{format(toStableDate(moa.validFrom), "MMM d, yyyy")}{" "}
+																{format(
+																	toStableDate(moa.validFrom),
+																	"MMM d, yyyy",
+																)}{" "}
 																-{" "}
 																{format(
 																	toStableDate(moa.validUntil),
@@ -241,8 +244,12 @@ export function ActivateProjectWizard({
 									<p className="font-medium">{selectedMoa.partnerName}</p>
 									<p className="text-muted-foreground">
 										Valid:{" "}
-										{format(toStableDate(selectedMoa.validFrom), "MMM d, yyyy")} -{" "}
-										{format(toStableDate(selectedMoa.validUntil), "MMM d, yyyy")}
+										{format(toStableDate(selectedMoa.validFrom), "MMM d, yyyy")}{" "}
+										-{" "}
+										{format(
+											toStableDate(selectedMoa.validUntil),
+											"MMM d, yyyy",
+										)}
 									</p>
 								</div>
 							)}

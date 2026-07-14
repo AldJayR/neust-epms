@@ -4,7 +4,6 @@ import { API_BASE } from "@/config/api";
 import { getErrorMessage } from "@/lib/api/client";
 import { getValidAccessToken } from "@/lib/session.server";
 
-
 export const SearchTypeSchema = z.enum([
 	"all",
 	"proposals",

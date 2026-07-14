@@ -1,10 +1,10 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { PageSkeleton } from "@/components/custom/page-skeleton";
-import { ArchivesPage } from "@/features/archives/archives-page";
 import {
 	archivedProjectsQueryOptions,
 	archivedProposalsQueryOptions,
 } from "@/features/archives";
+import { ArchivesPage } from "@/features/archives/archives-page";
 import { isDeniedAccess } from "@/lib/permissions";
 
 const ArchivesPendingComponent = () => (
