@@ -1,9 +1,8 @@
-import { and, eq, lt } from "drizzle-orm";
+import { and, eq, isNull, lt } from "drizzle-orm";
 import cron from "node-cron";
 import { db } from "@/db/client.js";
 import { campuses } from "@/db/schema/campuses.js";
-import { projectReportingDates } from "@/db/schema/project-reporting-dates.js";
-import { projectReportingSchedules } from "@/db/schema/project-reporting-schedules.js";
+import { projectReportingMilestones } from "@/db/schema/project-reporting-milestones.js";
 import { projects } from "@/db/schema/projects.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposals } from "@/db/schema/proposals.js";
@@ -66,8 +65,9 @@ export function startReportOverdueCron(): void {
 			// the schedule, project, proposal, and leader once per reporting date.
 			const overdueDates = await db
 				.select({
-					reportingDateId: projectReportingDates.id,
-					reportingDate: projectReportingDates.reportingDate,
+					reportingDateId: projectReportingMilestones.milestoneId,
+					reportingDate: projectReportingMilestones.dueAt,
+					reportType: projectReportingMilestones.reportType,
 					projectId: projects.projectId,
 					projectStatus: projects.projectStatus,
 					projectArchivedAt: projects.archivedAt,
@@ -78,17 +78,10 @@ export function startReportOverdueCron(): void {
 					proposalDepartmentId: proposals.departmentId,
 					leaderId: proposalMembers.userId,
 				})
-				.from(projectReportingDates)
-				.innerJoin(
-					projectReportingSchedules,
-					eq(
-						projectReportingDates.scheduleId,
-						projectReportingSchedules.scheduleId,
-					),
-				)
+				.from(projectReportingMilestones)
 				.innerJoin(
 					projects,
-					eq(projectReportingSchedules.projectId, projects.projectId),
+					eq(projectReportingMilestones.projectId, projects.projectId),
 				)
 				.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
 				.leftJoin(
@@ -100,8 +93,8 @@ export function startReportOverdueCron(): void {
 				)
 				.where(
 					and(
-						lt(projectReportingDates.reportingDate, now),
-						eq(projectReportingDates.isCompleted, false),
+						lt(projectReportingMilestones.dueAt, now),
+						isNull(projectReportingMilestones.completedAt),
 					),
 				);
 
@@ -168,10 +161,10 @@ export function startReportOverdueCron(): void {
 						recipientId: row.leaderId,
 						type: "report_overdue",
 						title: "Report Overdue",
-						message: `Your report for "${row.proposalTitle}" was due on ${dateStr}. Please submit immediately.`,
+						message: `Your ${row.reportType} report for "${row.proposalTitle}" was due on ${dateStr}. Please submit immediately.`,
 						sendEmail: true,
 						emailSubject: `Overdue Report: ${row.proposalTitle}`,
-						emailHtml: `<p>Your report for "<strong>${escapeHtml(row.proposalTitle)}</strong>" was due on <strong>${escapeHtml(dateStr)}</strong>. Please submit immediately.</p>`,
+						emailHtml: `<p>Your ${escapeHtml(row.reportType)} report for "<strong>${escapeHtml(row.proposalTitle)}</strong>" was due on <strong>${escapeHtml(dateStr)}</strong>. Please submit immediately.</p>`,
 					});
 					notifiedCount++;
 				}
@@ -182,10 +175,10 @@ export function startReportOverdueCron(): void {
 						recipientId: retChair.userId,
 						type: "report_overdue",
 						title: "Report Overdue",
-						message: `A report for "${row.proposalTitle}" (${row.proposalLocale}) was due on ${dateStr} and has not been submitted.`,
+						message: `A ${row.reportType} report for "${row.proposalTitle}" (${row.proposalLocale}) was due on ${dateStr} and has not been submitted.`,
 						sendEmail: true,
 						emailSubject: `Overdue Report: ${row.proposalTitle}`,
-						emailHtml: `<p>A report for "<strong>${escapeHtml(row.proposalTitle)}</strong>" (${escapeHtml(row.proposalLocale)}) was due on <strong>${escapeHtml(dateStr)}</strong> and has not been submitted.</p>`,
+						emailHtml: `<p>A ${escapeHtml(row.reportType)} report for "<strong>${escapeHtml(row.proposalTitle)}</strong>" (${escapeHtml(row.proposalLocale)}) was due on <strong>${escapeHtml(dateStr)}</strong> and has not been submitted.</p>`,
 					});
 					notifiedCount++;
 				}

@@ -5,8 +5,7 @@ import { campuses } from "./schema/campuses.js";
 import { departments } from "./schema/departments.js";
 import { moas } from "./schema/moas.js";
 import { partners } from "./schema/partners.js";
-import { projectReportingDates } from "./schema/project-reporting-dates.js";
-import { projectReportingSchedules } from "./schema/project-reporting-schedules.js";
+import { projectReportingMilestones } from "./schema/project-reporting-milestones.js";
 import { projectReports } from "./schema/project-reports.js";
 import { projects } from "./schema/projects.js";
 import { proposalBeneficiaries } from "./schema/proposal-beneficiaries.js";
@@ -226,7 +225,7 @@ export const projectsRelations = relations(projects, ({ many, one }) => ({
 		references: [moas.moaId],
 	}),
 	projectReports: many(projectReports),
-	reportingSchedules: many(projectReportingSchedules),
+	reportingMilestones: many(projectReportingMilestones),
 }));
 
 // ── Project Reports ──
@@ -239,27 +238,23 @@ export const projectReportsRelations = relations(projectReports, ({ one }) => ({
 		fields: [projectReports.submittedById],
 		references: [users.userId],
 	}),
+	milestone: one(projectReportingMilestones, {
+		fields: [projectReports.milestoneId],
+		references: [projectReportingMilestones.milestoneId],
+	}),
 }));
 
-// ── Project Reporting Schedules ──
-export const projectReportingSchedulesRelations = relations(
-	projectReportingSchedules,
-	({ one, many }) => ({
+// ── Project Reporting Milestones ──
+export const projectReportingMilestonesRelations = relations(
+	projectReportingMilestones,
+	({ one }) => ({
 		project: one(projects, {
-			fields: [projectReportingSchedules.projectId],
+			fields: [projectReportingMilestones.projectId],
 			references: [projects.projectId],
 		}),
-		dates: many(projectReportingDates),
-	}),
-);
-
-// ── Project Reporting Dates ──
-export const projectReportingDatesRelations = relations(
-	projectReportingDates,
-	({ one }) => ({
-		schedule: one(projectReportingSchedules, {
-			fields: [projectReportingDates.scheduleId],
-			references: [projectReportingSchedules.scheduleId],
+		report: one(projectReports, {
+			fields: [projectReportingMilestones.milestoneId],
+			references: [projectReports.milestoneId],
 		}),
 	}),
 );

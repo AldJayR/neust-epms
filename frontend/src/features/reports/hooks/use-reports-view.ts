@@ -67,7 +67,6 @@ export function useReportsView() {
 		"All",
 	);
 	const [sorting, setSorting] = useState<SortingState>([]);
-	const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
 	const limit = 10;
 	const deferredSearch = useDeferredValue(search);
 
@@ -108,7 +107,6 @@ export function useReportsView() {
 		limit,
 		typeFilter,
 		sorting,
-		isSubmitModalOpen,
 		isLoading: listLoading || (!!user && projectsLoading),
 		totalReports: tabFilteredReports.length,
 		progressCount: tabFilteredReports.filter(
@@ -129,6 +127,5 @@ export function useReportsView() {
 		setPage: (value: number) => dispatchView({ type: "page", value }),
 		setSorting,
 		setTypeFilter,
-		setIsSubmitModalOpen,
 	};
 }

@@ -47,11 +47,9 @@ interface ActivateProjectWizardProps {
 	projectId: string;
 }
 
-type ReportingFrequency = "Monthly" | "Quarterly" | "Semestral" | "Custom";
-
 interface DueDateEntry {
 	id: string;
-	reportType: string;
+	reportType: "Progress" | "Project Closure";
 	dueDate: Date | undefined;
 }
 
@@ -67,7 +65,6 @@ export function ActivateProjectWizard({
 	const [step, setStep] = React.useState(1);
 	const [selectedMoaId, setSelectedMoaId] = React.useState<string>("");
 	const [moaSearch, setMoaSearch] = React.useState("");
-	const [frequency, setFrequency] = React.useState<ReportingFrequency | "">("");
 	const [dueDates, setDueDates] = React.useState<DueDateEntry[]>([]);
 	const deferredMoaSearch = React.useDeferredValue(moaSearch);
 
@@ -106,7 +103,6 @@ export function ActivateProjectWizard({
 		setStep(1);
 		setSelectedMoaId("");
 		setMoaSearch("");
-		setFrequency("");
 		setDueDates([]);
 	}
 
@@ -126,7 +122,14 @@ export function ActivateProjectWizard({
 		}
 	}
 
-	function handleAddDueDate(reportType: string) {
+	function handleAddDueDate(reportType: DueDateEntry["reportType"]) {
+		if (
+			reportType === "Project Closure" &&
+			dueDates.some((entry) => entry.reportType === "Project Closure")
+		) {
+			toast.error("Only one Project Closure milestone can be added");
+			return;
+		}
 		setDueDates((currentDates) => [
 			...currentDates,
 			{ id: generateId(), reportType, dueDate: undefined },
@@ -144,10 +147,14 @@ export function ActivateProjectWizard({
 	}
 
 	function handleSubmit() {
-		if (!selectedMoaId || !frequency) return;
+		if (!selectedMoaId) return;
+		if (dueDates.some((entry) => !entry.dueDate)) {
+			toast.error("Please select a due date for every milestone");
+			return;
+		}
 
 		const validDueDates = dueDates.filter(
-			(d): d is DueDateEntry & { dueDate: Date } => d.dueDate !== null,
+			(d): d is DueDateEntry & { dueDate: Date } => Boolean(d.dueDate),
 		);
 		if (validDueDates.length === 0) {
 			toast.error("Please add at least one due date");
@@ -158,10 +165,9 @@ export function ActivateProjectWizard({
 			data: {
 				projectId,
 				moaId: selectedMoaId,
-				reportingFrequency: frequency,
-				dueDates: validDueDates.map((d) => ({
+				milestones: validDueDates.map((d) => ({
 					reportType: d.reportType,
-					dueDate: d.dueDate.toISOString(),
+					dueAt: d.dueDate.toISOString(),
 				})),
 			},
 		});
@@ -182,7 +188,7 @@ export function ActivateProjectWizard({
 					</DialogTitle>
 					<DialogDescription className="text-sm text-muted-foreground">
 						Step {step} of 2:{" "}
-						{step === 1 ? "Link MOA" : "Reporting Schedule & Due Dates"}
+						{step === 1 ? "Link MOA" : "Reporting Milestones"}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -258,38 +264,10 @@ export function ActivateProjectWizard({
 
 					{step === 2 && (
 						<div className="space-y-6">
-							{/* Reporting Frequency */}
-							<div className="space-y-3">
-								<Label>Reporting Frequency</Label>
-								<div className="grid grid-cols-4 gap-2">
-									{(
-										["Monthly", "Quarterly", "Semestral", "Custom"] as const
-									).map((freq) => (
-										<Button
-											key={freq}
-											variant={frequency === freq ? "default" : "outline"}
-											className={cn(
-												"h-auto py-3 flex flex-col gap-1",
-												frequency === freq && "bg-brand-primary text-white",
-											)}
-											onClick={() => setFrequency(freq)}
-										>
-											<span className="text-sm font-medium">{freq}</span>
-											<span className="text-[11px] text-muted-foreground">
-												{freq === "Monthly" && "12/yr"}
-												{freq === "Quarterly" && "4/yr"}
-												{freq === "Semestral" && "2/yr"}
-												{freq === "Custom" && "Manual"}
-											</span>
-										</Button>
-									))}
-								</div>
-							</div>
-
-							{/* Due Dates */}
+							{/* Reporting milestones */}
 							<div className="space-y-3">
 								<div className="flex items-center justify-between">
-									<Label>Report Due Dates</Label>
+									<Label>Report Milestones</Label>
 									<Popover>
 										<PopoverTrigger
 											render={
@@ -307,7 +285,7 @@ export function ActivateProjectWizard({
 											<Button
 												variant="ghost"
 												className="w-full justify-start gap-2"
-												onClick={() => handleAddDueDate("Progress Report")}
+												onClick={() => handleAddDueDate("Progress")}
 											>
 												Progress Report
 											</Button>
@@ -339,7 +317,9 @@ export function ActivateProjectWizard({
 											className="flex items-center gap-2 rounded-lg border border-border p-3"
 										>
 											<span className="flex-1 text-sm font-medium">
-												{entry.reportType}
+											{entry.reportType === "Progress"
+												? "Progress Report"
+												: "Project Closure (Terminal + Final Accomplishment)"}
 											</span>
 											<Popover>
 												<PopoverTrigger

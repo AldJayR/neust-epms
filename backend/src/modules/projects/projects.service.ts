@@ -13,8 +13,7 @@ import { db } from "@/db/client.js";
 import { departments } from "@/db/schema/departments.js";
 import { moas } from "@/db/schema/moas.js";
 import { partners } from "@/db/schema/partners.js";
-import { projectReportingDates } from "@/db/schema/project-reporting-dates.js";
-import { projectReportingSchedules } from "@/db/schema/project-reporting-schedules.js";
+import { projectReportingMilestones } from "@/db/schema/project-reporting-milestones.js";
 import { projectReports } from "@/db/schema/project-reports.js";
 import { projects } from "@/db/schema/projects.js";
 import { proposalDocuments } from "@/db/schema/proposal-documents.js";
@@ -149,7 +148,7 @@ export async function getProjectDerivedState(id: string, user: AuthUser) {
 
 	const leaderMembers = getLeaderSubquery();
 
-	const [[row], [schedule], [report]] = await Promise.all([
+	const [[row], [milestone], [report]] = await Promise.all([
 		db
 			.select({
 				projectId: projects.projectId,
@@ -172,9 +171,9 @@ export async function getProjectDerivedState(id: string, user: AuthUser) {
 			)
 			.limit(1),
 		db
-			.select({ scheduleId: projectReportingSchedules.scheduleId })
-			.from(projectReportingSchedules)
-			.where(eq(projectReportingSchedules.projectId, id))
+			.select({ milestoneId: projectReportingMilestones.milestoneId })
+			.from(projectReportingMilestones)
+			.where(eq(projectReportingMilestones.projectId, id))
 			.limit(1),
 		db
 			.select({ reportId: projectReports.reportId })
@@ -196,7 +195,7 @@ export async function getProjectDerivedState(id: string, user: AuthUser) {
 		{
 			projectStatus: row.projectStatus as ProjectStatus,
 			moaId: row.moaId,
-			reportingSchedule: !!schedule,
+			reportingSchedule: !!milestone,
 			hasReports: !!report,
 			leaderId: row.leaderId ?? undefined,
 		},
@@ -636,6 +635,7 @@ export async function closeProject(
 			and(
 				eq(projectReports.projectId, projectId),
 				isNull(projectReports.archivedAt),
+				isNotNull(projectReports.storagePath),
 			),
 		);
 
@@ -694,8 +694,7 @@ export async function activateProject(
 	id: string,
 	body: {
 		moaId: string;
-		reportingFrequency: string;
-		dueDates: Array<{ reportType: string; dueDate: string }>;
+		milestones: Array<{ reportType: string; dueAt: string }>;
 	},
 	user: AuthUser,
 	ipAddress: string,
@@ -815,22 +814,13 @@ export async function activateProject(
 			})
 			.where(eq(projects.projectId, project!.projectId));
 
-		// Create reporting schedule
-		const [schedule] = await tx
-			.insert(projectReportingSchedules)
-			.values({ projectId: project!.projectId })
-			.returning();
-
-		// Create reporting dates
-		if (body.dueDates.length > 0 && schedule) {
-			await tx.insert(projectReportingDates).values(
-				body.dueDates.map((dd) => ({
-					scheduleId: schedule!.scheduleId,
-					reportingDate: new Date(dd.dueDate),
-					isCompleted: false,
-				})),
-			);
-		}
+		await tx.insert(projectReportingMilestones).values(
+			body.milestones.map((milestone) => ({
+				projectId: project!.projectId,
+				reportType: milestone.reportType,
+				dueAt: new Date(milestone.dueAt),
+			})),
+		);
 
 		await insertAuditLog(
 			{
@@ -869,7 +859,7 @@ export async function getProjectReadiness(id: string) {
 	}
 
 	// 2. Fetch proposal, members, moa, and reporting schedule in parallel
-	const [[proposal], pMembers, [moa], [schedule]] = await Promise.all([
+	const [[proposal], pMembers, [moa], milestones] = await Promise.all([
 		db
 			.select({
 				status: proposals.status,
@@ -892,10 +882,9 @@ export async function getProjectReadiness(id: string) {
 					.limit(1)
 			: Promise.resolve([]),
 		db
-			.select({ scheduleId: projectReportingSchedules.scheduleId })
-			.from(projectReportingSchedules)
-			.where(eq(projectReportingSchedules.projectId, id))
-			.limit(1),
+			.select({ milestoneId: projectReportingMilestones.milestoneId })
+			.from(projectReportingMilestones)
+			.where(eq(projectReportingMilestones.projectId, project.projectId)),
 	]);
 
 	if (!proposal) {
@@ -914,7 +903,7 @@ export async function getProjectReadiness(id: string) {
 
 	// 3. Fetch special orders and reporting dates in parallel
 	const memberIds = pMembers.map((m) => m.memberId);
-	const [sOrders, dates] = await Promise.all([
+	const [sOrders] = await Promise.all([
 		memberIds.length > 0
 			? db
 					.select({ memberId: specialOrders.memberId })
@@ -926,12 +915,6 @@ export async function getProjectReadiness(id: string) {
 							sql`${specialOrders.storagePath} IS NOT NULL`,
 						),
 					)
-			: Promise.resolve([]),
-		schedule
-			? db
-					.select({ id: projectReportingDates.id })
-					.from(projectReportingDates)
-					.where(eq(projectReportingDates.scheduleId, schedule.scheduleId))
 			: Promise.resolve([]),
 	]);
 
@@ -952,7 +935,7 @@ export async function getProjectReadiness(id: string) {
 	}
 
 	// Check Reporting Schedule Established
-	const reportingDatesCount = dates.length;
+	const reportingDatesCount = milestones.length;
 	const isScheduleEstablished = reportingDatesCount > 0;
 
 	// Construct prerequisites list
@@ -1022,82 +1005,49 @@ export async function getProjectReportingSchedule(id: string) {
 		throw new ApiError(404, "NOT_FOUND", "Project not found");
 	}
 
-	// 2. Get schedule
-	const [scheduleRow] = await db
-		.select({ scheduleId: projectReportingSchedules.scheduleId })
-		.from(projectReportingSchedules)
-		.where(eq(projectReportingSchedules.projectId, project.projectId))
-		.limit(1);
-
-	if (!scheduleRow) {
-		return {
-			schedule: { frequency: "None", dueDates: [] },
-			upcoming: [],
-			overdue: [],
-		};
-	}
-
-	// 3. Get due dates (sorted chronologically)
-	const dueDatesList = await db
+	const milestones = await db
 		.select({
-			id: projectReportingDates.id,
-			reportingDate: projectReportingDates.reportingDate,
-			isCompleted: projectReportingDates.isCompleted,
-			completedAt: projectReportingDates.completedAt,
+			id: projectReportingMilestones.milestoneId,
+			date: projectReportingMilestones.dueAt,
+			reportType: projectReportingMilestones.reportType,
+			completedAt: projectReportingMilestones.completedAt,
 		})
-		.from(projectReportingDates)
-		.where(eq(projectReportingDates.scheduleId, scheduleRow.scheduleId))
-		.orderBy(projectReportingDates.reportingDate);
-
-	// 4. Get submitted reports (sorted chronologically)
-	const reportsList = await db
+		.from(projectReportingMilestones)
+		.where(eq(projectReportingMilestones.projectId, project.projectId))
+		.orderBy(projectReportingMilestones.dueAt);
+	const reports = await db
 		.select({
+			milestoneId: projectReports.milestoneId,
 			reportId: projectReports.reportId,
-			reportType: projectReports.reportType,
-			submittedAt: projectReports.submittedAt,
 			storagePath: projectReports.storagePath,
 		})
 		.from(projectReports)
 		.where(
-			and(eq(projectReports.projectId, id), isNull(projectReports.archivedAt)),
-		)
-		.orderBy(projectReports.submittedAt);
+			and(
+				eq(projectReports.projectId, project.projectId),
+				isNull(projectReports.archivedAt),
+				isNotNull(projectReports.storagePath),
+			),
+		);
 
-	// 5. Map completed due dates to reports chronologically
-	const mappedDueDates = dueDatesList.map((dueDate, idx) => {
-		let resolvedType =
-			idx === dueDatesList.length - 1 ? "Terminal" : "Progress";
-		let resolvedReportId: string | null = null;
-		let resolvedStoragePath: string | null = null;
-
-		if (dueDate.isCompleted) {
-			const completedIndex = dueDatesList
-				.slice(0, idx)
-				.filter((d) => d.isCompleted).length;
-
-			const correspondingReport = reportsList[completedIndex];
-			if (correspondingReport) {
-				resolvedType = correspondingReport.reportType;
-				resolvedReportId = correspondingReport.reportId;
-				resolvedStoragePath = correspondingReport.storagePath;
-			}
-		}
-
+	const mappedMilestones = milestones.map((milestone) => {
+		const milestoneReports = reports.filter(
+			(report) => report.milestoneId === milestone.id,
+		);
+		const singleReport = milestoneReports.length === 1 ? milestoneReports[0] : null;
 		return {
-			id: dueDate.id,
-			date: dueDate.reportingDate.toISOString(),
-			isCompleted: dueDate.isCompleted,
-			completedAt: dueDate.completedAt
-				? dueDate.completedAt.toISOString()
-				: null,
-			reportType: resolvedType,
-			reportId: resolvedReportId,
-			storagePath: resolvedStoragePath,
+			id: milestone.id,
+			date: milestone.date.toISOString(),
+			isCompleted: Boolean(milestone.completedAt),
+			completedAt: milestone.completedAt?.toISOString() ?? null,
+			reportType: milestone.reportType,
+			reportId: singleReport?.reportId ?? null,
+			storagePath: singleReport?.storagePath ?? null,
 		};
 	});
 
 	const now = new Date();
-	const upcoming = mappedDueDates
+	const upcoming = mappedMilestones
 		.filter((d) => !d.isCompleted && new Date(d.date) >= now)
 		.map((d) => ({
 			id: d.id,
@@ -1105,7 +1055,7 @@ export async function getProjectReportingSchedule(id: string) {
 			reportType: d.reportType,
 		}));
 
-	const overdue = mappedDueDates
+	const overdue = mappedMilestones
 		.filter((d) => !d.isCompleted && new Date(d.date) < now)
 		.map((d) => ({
 			id: d.id,
@@ -1115,8 +1065,7 @@ export async function getProjectReportingSchedule(id: string) {
 
 	return {
 		schedule: {
-			frequency: "Scheduled",
-			dueDates: mappedDueDates,
+			milestones: mappedMilestones,
 		},
 		upcoming,
 		overdue,

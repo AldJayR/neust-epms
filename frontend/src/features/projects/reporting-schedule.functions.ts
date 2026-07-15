@@ -20,8 +20,7 @@ export interface ScheduledDueDate {
 
 export interface ProjectReportingScheduleResponse {
 	schedule: {
-		frequency: string;
-		dueDates: ScheduledDueDate[];
+		milestones: ScheduledDueDate[];
 	};
 	upcoming: { id: string; date: string; reportType: string }[];
 	overdue: { id: string; date: string; reportType: string }[];

@@ -1,17 +1,10 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { Loader2, Upload } from "lucide-react";
-import { useReducer, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
-import {
-	Combobox,
-	ComboboxContent,
-	ComboboxEmpty,
-	ComboboxInput,
-	ComboboxItem,
-	ComboboxList,
-} from "@/components/ui/combobox";
 import {
 	Dialog,
 	DialogContent,
@@ -29,480 +22,208 @@ import {
 	FileUploadList,
 	FileUploadTrigger,
 } from "@/components/ui/file-upload";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { facultyProjectsQueryOptions } from "@/features/faculty/public";
+import { toStableDate } from "@/lib/utils";
 import { submitReportFn, uploadReportDocumentFn } from "../functions";
-
-interface ProjectSelectionState {
-	selectedProjectId: string;
-	projectSearch: string;
-}
-
-type ProjectSelectionAction =
-	| { type: "select"; projectId: string; projectSearch: string }
-	| { type: "search"; projectSearch: string }
-	| { type: "reset" };
-
-function projectSelectionReducer(
-	state: ProjectSelectionState,
-	action: ProjectSelectionAction,
-): ProjectSelectionState {
-	switch (action.type) {
-		case "select":
-			return {
-				selectedProjectId: action.projectId,
-				projectSearch: action.projectSearch,
-			};
-		case "search":
-			return {
-				selectedProjectId:
-					action.projectSearch === state.projectSearch
-						? state.selectedProjectId
-						: "",
-				projectSearch: action.projectSearch,
-			};
-		case "reset":
-			return { selectedProjectId: "", projectSearch: "" };
-	}
-}
 
 interface SubmitReportModalProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	milestone: {
+		id: string;
+		projectId: string;
+		reportType: string;
+		dueAt: string;
+	};
 }
 
 export function SubmitReportModal({
 	open,
 	onOpenChange,
+	milestone,
 }: SubmitReportModalProps) {
 	const queryClient = useQueryClient();
-
-	// Fetch projects
-	const { data: projectsData } = useQuery(facultyProjectsQueryOptions());
-	const projects = (projectsData?.items ?? []).filter(
-		(p) => p.projectStatus === "Ongoing",
-	);
-
-	// Form States
-	const [projectSelection, dispatchProjectSelection] = useReducer(
-		projectSelectionReducer,
-		{ selectedProjectId: "", projectSearch: "" },
-	);
-	const { selectedProjectId, projectSearch } = projectSelection;
-	const [reportType, setReportType] = useState<"Progress" | "Closure" | "">("");
-	const [periodStart, setPeriodStart] = useState("");
-	const [periodEnd, setPeriodEnd] = useState("");
 	const [remarks, setRemarks] = useState("");
-
-	// Files States
 	const [progressFile, setProgressFile] = useState<File | null>(null);
-	const [finalAccFile, setFinalAccFile] = useState<File | null>(null);
 	const [terminalFile, setTerminalFile] = useState<File | null>(null);
-
-	// Loading phase
+	const [finalFile, setFinalFile] = useState<File | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-
-	const filteredProjects = (() => {
-		if (!projectSearch) return projects;
-		// If the search matches the selected project title, don't filter out everything else
-		const selectedProj = projects.find(
-			(p) => p.projectId === selectedProjectId,
-		);
-		if (selectedProj && selectedProj.title === projectSearch) {
-			return projects;
-		}
-		return projects.filter((p) =>
-			(p.title || "").toLowerCase().includes(projectSearch.toLowerCase()),
-		);
-	})();
-
-	const handleProjectSelect = (val: string | null) => {
-		if (!val) {
-			dispatchProjectSelection({ type: "reset" });
-			return;
-		}
-		const proj = projects.find((p) => p.projectId === val);
-		dispatchProjectSelection({
-			type: "select",
-			projectId: val,
-			projectSearch: proj?.title ?? "",
-		});
-	};
+	const isClosure = milestone.reportType === "Project Closure";
 
 	const resetForm = () => {
-		dispatchProjectSelection({ type: "reset" });
-		setReportType("");
-		setPeriodStart("");
-		setPeriodEnd("");
 		setRemarks("");
 		setProgressFile(null);
-		setFinalAccFile(null);
 		setTerminalFile(null);
+		setFinalFile(null);
 	};
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-
-		if (!selectedProjectId) {
-			toast.error("Please select a project.");
-			return;
-		}
-
-		if (!reportType) {
-			toast.error("Please select a report type.");
-			return;
-		}
-
-		if (reportType === "Progress" && !progressFile) {
-			toast.error("Please upload the Progress Report document.");
-			return;
-		}
-
-		if (reportType === "Closure" && (!finalAccFile || !terminalFile)) {
-			toast.error("Please upload both required project closure documents.");
+	const handleSubmit = async (event: React.FormEvent) => {
+		event.preventDefault();
+		if ((!isClosure && !progressFile) || (isClosure && (!terminalFile || !finalFile))) {
+			toast.error(
+				isClosure
+					? "Please upload both the Terminal and Final Accomplishment reports."
+					: "Please upload the required PDF document.",
+			);
 			return;
 		}
 
 		setIsSubmitting(true);
 		try {
-			// Convert start/end dates to ISO-8601 strings if provided
-			const isoStart = periodStart
-				? new Date(periodStart).toISOString()
-				: undefined;
-			const isoEnd = periodEnd ? new Date(periodEnd).toISOString() : undefined;
-
-			if (reportType === "Progress") {
-				const document = progressFile;
-				if (!document) {
-					setIsSubmitting(false);
-					return;
-				}
-				// Submit progress report
+			const submitDocument = async (
+				reportType: "Progress" | "Terminal" | "Final Accomplishment",
+				document: File,
+			) => {
 				const report = await submitReportFn({
 					data: {
-						projectId: selectedProjectId,
-						reportType: "Progress",
-						remarks,
-						periodStart: isoStart,
-						periodEnd: isoEnd,
+						milestoneId: milestone.id,
+						reportType,
+						remarks: remarks || undefined,
 					},
 				});
 				const formData = new FormData();
 				formData.set("reportId", report.reportId);
 				formData.set("file", document);
 				await uploadReportDocumentFn({ data: formData });
-				toast.success("Progress Report submitted successfully!");
-			} else {
-				const finalDocument = finalAccFile;
-				const terminalDocument = terminalFile;
-				if (!finalDocument || !terminalDocument) {
-					setIsSubmitting(false);
-					return;
-				}
-				// Submit two reports for project closure (Final Accomplishment and Terminal)
-				const finalReport = await submitReportFn({
-					data: {
-						projectId: selectedProjectId,
-						reportType: "Final Accomplishment",
-						remarks,
-						periodStart: isoStart,
-						periodEnd: isoEnd,
-					},
-				});
-				const terminalReport = await submitReportFn({
-					data: {
-						projectId: selectedProjectId,
-						reportType: "Terminal",
-						remarks,
-						periodStart: isoStart,
-						periodEnd: isoEnd,
-					},
-				});
-				const finalFormData = new FormData();
-				finalFormData.set("reportId", finalReport.reportId);
-				finalFormData.set("file", finalDocument);
-				const terminalFormData = new FormData();
-				terminalFormData.set("reportId", terminalReport.reportId);
-				terminalFormData.set("file", terminalDocument);
+			};
+
+			if (isClosure) {
 				await Promise.all([
-					uploadReportDocumentFn({ data: finalFormData }),
-					uploadReportDocumentFn({ data: terminalFormData }),
+					submitDocument("Terminal", terminalFile!),
+					submitDocument("Final Accomplishment", finalFile!),
 				]);
-				toast.success("Project Closure reports submitted successfully!");
+			} else {
+				await submitDocument("Progress", progressFile!);
 			}
 
-			// Invalidate queries to refresh list
-			queryClient.invalidateQueries({ queryKey: ["dashboard", "reports"] });
-			queryClient.invalidateQueries({ queryKey: ["faculty", "projects"] });
-
+			await Promise.all([
+				queryClient.invalidateQueries({
+					queryKey: ["project-reporting-schedule", milestone.projectId],
+				}),
+				queryClient.invalidateQueries({ queryKey: ["dashboard", "reports"] }),
+				queryClient.invalidateQueries({ queryKey: ["faculty", "projects"] }),
+			]);
+			toast.success(`${milestone.reportType} Report submitted successfully!`);
 			onOpenChange(false);
 			resetForm();
-		} catch (err: unknown) {
-			const error = err as Error;
-			toast.error(error.message || "Failed to submit report");
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : "Failed to submit report");
+		} finally {
+			setIsSubmitting(false);
 		}
-		setIsSubmitting(false);
 	};
 
 	return (
 		<Dialog
 			open={open}
-			onOpenChange={(openVal) => {
-				if (!openVal) resetForm();
-				onOpenChange(openVal);
+			onOpenChange={(nextOpen) => {
+				if (!nextOpen) resetForm();
+				onOpenChange(nextOpen);
 			}}
 		>
 			<DialogContent className="max-w-lg pb-4">
 				<DialogHeader>
-					<DialogTitle>Submit Project Report</DialogTitle>
+					<DialogTitle>Submit {milestone.reportType} Report</DialogTitle>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="py-2">
-					<div className="max-h-[60vh] overflow-y-auto px-1 py-1 space-y-4 scrollbar-thin">
-						{/* Project Selector */}
-						<div className="flex flex-col gap-1.5 relative">
-							<Label>Project</Label>
-							<Combobox
-								value={selectedProjectId || null}
-								onValueChange={handleProjectSelect}
-							>
-								<ComboboxInput
-									placeholder="Search and select a project..."
-									value={projectSearch}
-									onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-										dispatchProjectSelection({
-											type: "search",
-											projectSearch: e.target.value,
-										});
-									}}
-									showClear
-									className="w-full"
-								/>
-								<ComboboxContent className="w-full z-50 bg-popover before:hidden">
-									<ComboboxList className="w-full">
-										{filteredProjects.map((p) => (
-											<ComboboxItem key={p.projectId} value={p.projectId}>
-												{p.title}
-											</ComboboxItem>
-										))}
-									</ComboboxList>
-									{filteredProjects.length === 0 && (
-										<ComboboxEmpty>No projects found</ComboboxEmpty>
-									)}
-								</ComboboxContent>
-							</Combobox>
-						</div>
-
-						{/* Report Type Selector */}
-						<div className="flex flex-col gap-1.5">
-							<Label>Report Type</Label>
-							<Select
-								value={reportType}
-								onValueChange={(val) =>
-									setReportType(val as "Progress" | "Closure")
-								}
-							>
-								<SelectTrigger className="w-full">
-									<SelectValue placeholder="Select report type">
-										{reportType === "Progress"
-											? "Progress Report"
-											: reportType === "Closure"
-												? "Project Closure"
-												: undefined}
-									</SelectValue>
-								</SelectTrigger>
-								<SelectContent className="w-full z-50">
-									<SelectItem value="Progress">Progress Report</SelectItem>
-									<SelectItem value="Closure">Project Closure</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-
-						{/* Reporting Period */}
-						<div className="grid grid-cols-2 gap-4">
-							<div className="flex flex-col gap-1.5">
-								<Label htmlFor="periodStart">Period Start</Label>
-								<Input
-									type="date"
-									id="periodStart"
-									value={periodStart}
-									onChange={(e) => setPeriodStart(e.target.value)}
-									required
-								/>
-							</div>
-							<div className="flex flex-col gap-1.5">
-								<Label htmlFor="periodEnd">Period End</Label>
-								<Input
-									type="date"
-									id="periodEnd"
-									value={periodEnd}
-									onChange={(e) => setPeriodEnd(e.target.value)}
-									required
-								/>
-							</div>
-						</div>
-
-						{/* Remarks */}
-						<div className="flex flex-col gap-1.5">
-							<Label htmlFor="remarks">Remarks (Optional)</Label>
-							<Textarea
-								id="remarks"
-								placeholder="Add any comments or notes about the submission..."
-								value={remarks}
-								onChange={(e) => setRemarks(e.target.value)}
-								rows={3}
-							/>
-						</div>
-
-						{/* Dropzones */}
-						{reportType === "Progress" && (
-							<div className="flex flex-col gap-1.5">
-								<Label>Progress Report Document</Label>
-								<FileUpload
-									value={progressFile ? [progressFile] : []}
-									onValueChange={(files) => setProgressFile(files[0] ?? null)}
-									maxFiles={1}
-									accept="application/pdf"
-								>
-									{!progressFile && (
-										<FileUploadDropzone>
-											<div className="flex flex-col items-center gap-1 text-center">
-												<Upload className="size-8 text-muted-foreground mb-2" />
-												<p className="text-sm font-medium">
-													Drag & drop Progress Report, or{" "}
-													<FileUploadTrigger className="text-primary hover:underline cursor-pointer">
-														browse
-													</FileUploadTrigger>
-												</p>
-												<p className="text-xs text-muted-foreground">
-													PDF only (max 10MB)
-												</p>
-											</div>
-										</FileUploadDropzone>
-									)}
-									<FileUploadList className="mt-2">
-										{progressFile && (
-											<FileUploadItem value={progressFile}>
-												<FileUploadItemPreview />
-												<FileUploadItemMetadata />
-												<FileUploadItemDelete />
-											</FileUploadItem>
-										)}
-									</FileUploadList>
-								</FileUpload>
-							</div>
-						)}
-						{reportType === "Closure" && (
-							<div className="space-y-4 border border-border rounded-lg p-4 bg-muted/20">
-								<div className="flex flex-col gap-1.5">
-									<Label>Final Accomplishment Report Document</Label>
-									<FileUpload
-										value={finalAccFile ? [finalAccFile] : []}
-										onValueChange={(files) => setFinalAccFile(files[0] ?? null)}
-										maxFiles={1}
-										accept="application/pdf"
-									>
-										{!finalAccFile && (
-											<FileUploadDropzone>
-												<div className="flex flex-col items-center gap-1 text-center">
-													<Upload className="size-8 text-muted-foreground mb-2" />
-													<p className="text-sm font-medium">
-														Drag & drop Final Accomplishment Report, or{" "}
-														<FileUploadTrigger className="text-primary hover:underline cursor-pointer">
-															browse
-														</FileUploadTrigger>
-													</p>
-													<p className="text-xs text-muted-foreground">
-														PDF only (max 10MB)
-													</p>
-												</div>
-											</FileUploadDropzone>
-										)}
-										<FileUploadList className="mt-2">
-											{finalAccFile && (
-												<FileUploadItem value={finalAccFile}>
-													<FileUploadItemPreview />
-													<FileUploadItemMetadata />
-													<FileUploadItemDelete />
-												</FileUploadItem>
-											)}
-										</FileUploadList>
-									</FileUpload>
-								</div>
-
-								<div className="flex flex-col gap-1.5">
-									<Label>Terminal Report Document</Label>
-									<FileUpload
-										value={terminalFile ? [terminalFile] : []}
-										onValueChange={(files) => setTerminalFile(files[0] ?? null)}
-										maxFiles={1}
-										accept="application/pdf"
-									>
-										{!terminalFile && (
-											<FileUploadDropzone>
-												<div className="flex flex-col items-center gap-1 text-center">
-													<Upload className="size-8 text-muted-foreground mb-2" />
-													<p className="text-sm font-medium">
-														Drag & drop Terminal Report, or{" "}
-														<FileUploadTrigger className="text-primary hover:underline cursor-pointer">
-															browse
-														</FileUploadTrigger>
-													</p>
-													<p className="text-xs text-muted-foreground">
-														PDF only (max 10MB)
-													</p>
-												</div>
-											</FileUploadDropzone>
-										)}
-										<FileUploadList className="mt-2">
-											{terminalFile && (
-												<FileUploadItem value={terminalFile}>
-													<FileUploadItemPreview />
-													<FileUploadItemMetadata />
-													<FileUploadItemDelete />
-												</FileUploadItem>
-											)}
-										</FileUploadList>
-									</FileUpload>
-								</div>
-							</div>
-						)}
+				<form onSubmit={handleSubmit} className="space-y-4 py-2">
+					<div className="rounded-lg border border-border bg-muted/30 p-3 text-sm">
+						<p className="font-medium">Required reporting milestone</p>
+						<p className="mt-1 text-muted-foreground">
+							Due {format(toStableDate(milestone.dueAt), "MMM d, yyyy")}
+						</p>
 					</div>
 
-					<DialogFooter className="mt-4 pt-3 pb-0 border-t border-border">
-						<Button
-							type="button"
-							variant="ghost"
-							onClick={() => {
-								onOpenChange(false);
-								resetForm();
-							}}
-							disabled={isSubmitting}
-						>
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="remarks">Remarks (Optional)</Label>
+						<Textarea
+							id="remarks"
+							placeholder="Add comments or notes about the submission..."
+							value={remarks}
+							onChange={(event) => setRemarks(event.target.value)}
+							rows={3}
+						/>
+					</div>
+
+					{isClosure ? (
+						<div className="space-y-4">
+							<ReportFileField
+								label="Terminal Report Document"
+								file={terminalFile}
+								onFileChange={setTerminalFile}
+							/>
+							<ReportFileField
+								label="Final Accomplishment Report Document"
+								file={finalFile}
+								onFileChange={setFinalFile}
+							/>
+						</div>
+					) : (
+						<ReportFileField
+							label="Progress Report Document"
+							file={progressFile}
+							onFileChange={setProgressFile}
+						/>
+					)}
+
+					<DialogFooter className="border-t border-border pt-3">
+						<Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
 							Cancel
 						</Button>
 						<BrandButton type="submit" disabled={isSubmitting}>
-							{isSubmitting ? (
-								<>
-									<Loader2 className="mr-2 size-4 animate-spin" />
-									Submitting...
-								</>
-							) : (
-								"Submit Report"
-							)}
+							{isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
+							{isSubmitting ? "Submitting..." : "Submit Report"}
 						</BrandButton>
 					</DialogFooter>
 				</form>
 			</DialogContent>
 		</Dialog>
+	);
+}
+
+function ReportFileField({
+	label,
+	file,
+	onFileChange,
+}: {
+	label: string;
+	file: File | null;
+	onFileChange: (file: File | null) => void;
+}) {
+	return (
+		<div className="flex flex-col gap-1.5">
+			<Label>{label}</Label>
+			<FileUpload
+				value={file ? [file] : []}
+				onValueChange={(files) => onFileChange(files[0] ?? null)}
+				maxFiles={1}
+				accept="application/pdf"
+			>
+				{!file && (
+					<FileUploadDropzone>
+						<div className="flex flex-col items-center gap-1 text-center">
+							<Upload className="mb-2 size-8 text-muted-foreground" />
+							<p className="text-sm font-medium">
+								Drag and drop the report, or{" "}
+								<FileUploadTrigger className="cursor-pointer text-primary hover:underline">
+									browse
+								</FileUploadTrigger>
+							</p>
+							<p className="text-xs text-muted-foreground">PDF only (max 10MB)</p>
+						</div>
+					</FileUploadDropzone>
+				)}
+				<FileUploadList className="mt-2">
+					{file && (
+						<FileUploadItem value={file}>
+							<FileUploadItemPreview />
+							<FileUploadItemMetadata />
+							<FileUploadItemDelete />
+						</FileUploadItem>
+					)}
+				</FileUploadList>
+			</FileUpload>
+		</div>
 	);
 }

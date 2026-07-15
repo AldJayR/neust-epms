@@ -2,8 +2,7 @@ import type { z } from "@hono/zod-openapi";
 import type { SQL } from "drizzle-orm";
 import { and, eq, gte, inArray, isNull, or } from "drizzle-orm";
 import { db } from "@/db/client.js";
-import { projectReportingDates } from "@/db/schema/project-reporting-dates.js";
-import { projectReportingSchedules } from "@/db/schema/project-reporting-schedules.js";
+import { projectReportingMilestones } from "@/db/schema/project-reporting-milestones.js";
 import { projects } from "@/db/schema/projects.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposals } from "@/db/schema/proposals.js";
@@ -153,26 +152,19 @@ async function getUpcomingReports(opts: {
 	const leaderSubquery = getLeaderSubquery();
 	const query = db
 		.select({
-			dateId: projectReportingDates.id,
-			reportingDate: projectReportingDates.reportingDate,
+			dateId: projectReportingMilestones.milestoneId,
+			reportingDate: projectReportingMilestones.dueAt,
 			title: proposals.title,
 			proposalId: projects.proposalId,
 			projectStatus: projects.projectStatus,
 			moaId: projects.moaId,
-			createdAt: projectReportingDates.createdAt,
+			createdAt: projectReportingMilestones.createdAt,
 			leaderId: leaderSubquery.userId,
 		})
-		.from(projectReportingDates)
-		.innerJoin(
-			projectReportingSchedules,
-			eq(
-				projectReportingDates.scheduleId,
-				projectReportingSchedules.scheduleId,
-			),
-		)
+		.from(projectReportingMilestones)
 		.innerJoin(
 			projects,
-			eq(projectReportingSchedules.projectId, projects.projectId),
+			eq(projectReportingMilestones.projectId, projects.projectId),
 		)
 		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
 		.leftJoin(
@@ -181,8 +173,8 @@ async function getUpcomingReports(opts: {
 		);
 
 	const conditions: SQL[] = [
-		eq(projectReportingDates.isCompleted, false),
-		gte(projectReportingDates.reportingDate, opts.now),
+		isNull(projectReportingMilestones.completedAt),
+		gte(projectReportingMilestones.dueAt, opts.now),
 		isNull(projects.archivedAt),
 	];
 	if (opts.scopeClause) conditions.push(opts.scopeClause);
@@ -205,9 +197,9 @@ async function batchFetchScheduleExists(
 	const unique = [...new Set(projectIds)];
 	if (unique.length === 0) return new Map();
 	const rows = await db
-		.select({ projectId: projectReportingSchedules.projectId })
-		.from(projectReportingSchedules)
-		.where(inArray(projectReportingSchedules.projectId, unique));
+		.select({ projectId: projectReportingMilestones.projectId })
+		.from(projectReportingMilestones)
+		.where(inArray(projectReportingMilestones.projectId, unique));
 	return new Map(rows.map((r) => [r.projectId, true]));
 }
 

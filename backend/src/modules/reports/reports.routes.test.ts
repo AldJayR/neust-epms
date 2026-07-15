@@ -64,10 +64,12 @@ describe("GET /reports/stats", () => {
 describe("POST /reports", () => {
 	it("should create a report for an existing project", async () => {
 		const project = createMockProject();
+		const milestoneId = "11111111-1111-4111-8111-111111111111";
 		const submittedAt = new Date("2026-01-01T00:00:00.000Z");
 		const report = {
 			reportId: "aaa",
 			projectId: project.projectId,
+			milestoneId,
 			submittedById: MOCK_USERS.faculty.userId,
 			reportType: "Progress",
 			storagePath: null,
@@ -78,6 +80,7 @@ describe("POST /reports", () => {
 		const enriched = {
 			reportId: "aaa",
 			projectId: project.projectId,
+			milestoneId,
 			projectTitle: "Test Project",
 			leaderFirstName: "John",
 			leaderLastName: "Doe",
@@ -88,22 +91,22 @@ describe("POST /reports", () => {
 			submittedAt,
 			storagePath: null,
 			remarks: "Good progress",
-			periodStart: null,
-			periodEnd: null,
 			archivedAt: null,
 		};
 		vi.mocked(db.select)
-			.mockReturnValueOnce(mockSelectChain([project]) as never)
+			.mockReturnValueOnce(
+				mockSelectChain([
+					{
+						milestoneId,
+						projectId: project.projectId,
+						reportType: "Progress",
+						projectStatus: "Ongoing",
+						proposalId: project.proposalId,
+					},
+				]) as never,
+			)
 			.mockReturnValueOnce(mockSelectChain([{ memberId: "member-1" }]) as never)
 			.mockReturnValueOnce(mockSelectChain([]) as never)
-			.mockReturnValueOnce(mockSelectChain([]) as never)
-			.mockReturnValueOnce(
-				mockSelectChain([{ projectStatus: "Ongoing" }]) as never,
-			)
-			.mockReturnValueOnce(mockSelectChain([]) as never)
-			.mockReturnValueOnce(
-				mockSelectChain([{ title: "Test Project" }]) as never,
-			)
 			.mockReturnValueOnce(mockSelectChain([enriched]) as never);
 		vi.mocked(db.transaction).mockImplementation(
 			(callback) =>
@@ -118,7 +121,7 @@ describe("POST /reports", () => {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
-				projectId: project.projectId,
+				milestoneId,
 				reportType: "Progress",
 				remarks: "Good progress",
 			}),
@@ -136,7 +139,7 @@ describe("POST /reports", () => {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
-				projectId: "ffffffff-0000-4000-8000-ffffffffffff",
+				milestoneId: "ffffffff-0000-4000-8000-ffffffffffff",
 				reportType: "Progress",
 			}),
 		});
@@ -145,15 +148,26 @@ describe("POST /reports", () => {
 
 	it("should reject a non-member with NOT_MEMBER", async () => {
 		const project = createMockProject();
+		const milestoneId = "11111111-1111-4111-8111-111111111111";
 		vi.mocked(db.select)
-			.mockReturnValueOnce(mockSelectChain([project]) as never)
+			.mockReturnValueOnce(
+				mockSelectChain([
+					{
+						milestoneId,
+						projectId: project.projectId,
+						reportType: "Progress",
+						projectStatus: "Ongoing",
+						proposalId: project.proposalId,
+					},
+				]) as never,
+			)
 			.mockReturnValueOnce(mockSelectChain([]) as never);
 
 		const res = await app.request("/reports", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
-				projectId: project.projectId,
+				milestoneId,
 				reportType: "Progress",
 			}),
 		});

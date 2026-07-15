@@ -1,10 +1,19 @@
 import { randomUUID } from "node:crypto";
 import type { z } from "@hono/zod-openapi";
-import { and, count, desc, eq, ilike, isNull, or, type SQL } from "drizzle-orm";
+import {
+	and,
+	count,
+	desc,
+	eq,
+	ilike,
+	isNotNull,
+	isNull,
+	or,
+	type SQL,
+} from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { departments } from "@/db/schema/departments.js";
-import { projectReportingDates } from "@/db/schema/project-reporting-dates.js";
-import { projectReportingSchedules } from "@/db/schema/project-reporting-schedules.js";
+import { projectReportingMilestones } from "@/db/schema/project-reporting-milestones.js";
 import { projectReports } from "@/db/schema/project-reports.js";
 import { projects } from "@/db/schema/projects.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
@@ -30,6 +39,7 @@ type Pagination = z.infer<typeof PaginationQuery>;
 function serializeReport(report: {
 	reportId: string;
 	projectId: string;
+	milestoneId: string;
 	projectTitle: string;
 	leaderFirstName: string;
 	leaderLastName: string;
@@ -40,13 +50,12 @@ function serializeReport(report: {
 	submittedAt: Date;
 	storagePath: string | null;
 	remarks: string | null;
-	periodStart: Date | null;
-	periodEnd: Date | null;
 	archivedAt: Date | null;
 }) {
 	return {
 		reportId: report.reportId,
 		projectId: report.projectId,
+		milestoneId: report.milestoneId,
 		project: report.projectTitle,
 		leader: `${report.leaderFirstName} ${report.leaderLastName}`,
 		academicRank: report.leaderAcademicRank,
@@ -56,8 +65,6 @@ function serializeReport(report: {
 		submitted: report.submittedAt.toISOString(),
 		storagePath: report.storagePath,
 		remarks: report.remarks,
-		periodStart: report.periodStart?.toISOString() ?? null,
-		periodEnd: report.periodEnd?.toISOString() ?? null,
 		archivedAt: report.archivedAt?.toISOString() ?? null,
 	};
 }
@@ -65,6 +72,7 @@ function serializeReport(report: {
 const reportSelection = {
 	reportId: projectReports.reportId,
 	projectId: projectReports.projectId,
+	milestoneId: projectReports.milestoneId,
 	projectTitle: proposals.title,
 	leaderFirstName: users.firstName,
 	leaderLastName: users.lastName,
@@ -75,8 +83,6 @@ const reportSelection = {
 	submittedAt: projectReports.submittedAt,
 	storagePath: projectReports.storagePath,
 	remarks: projectReports.remarks,
-	periodStart: projectReports.periodStart,
-	periodEnd: projectReports.periodEnd,
 	archivedAt: projectReports.archivedAt,
 };
 
@@ -84,6 +90,7 @@ export async function listReports(user: AuthUser, query: Pagination) {
 	const { page, limit, search } = query;
 	const whereConditions: SQL[] = [
 		isNull(projectReports.archivedAt),
+		isNotNull(projectReports.storagePath),
 		...buildProposalScope(user),
 	];
 	if (search) {
@@ -116,6 +123,7 @@ export async function listReports(user: AuthUser, query: Pagination) {
 export async function getReportStats(user: AuthUser) {
 	const whereConditions: SQL[] = [
 		isNull(projectReports.archivedAt),
+		isNotNull(projectReports.storagePath),
 		...buildProposalScope(user),
 	];
 	const countReports = (conditions: SQL[]) =>
@@ -148,20 +156,40 @@ export async function createReport(
 	body: CreateReportBody,
 	ipAddress: string,
 ) {
-	const [project] = await db
-		.select({ projectId: projects.projectId, proposalId: projects.proposalId })
-		.from(projects)
+	const [milestone] = await db
+		.select({
+			milestoneId: projectReportingMilestones.milestoneId,
+			projectId: projectReportingMilestones.projectId,
+			reportType: projectReportingMilestones.reportType,
+			projectStatus: projects.projectStatus,
+			proposalId: projects.proposalId,
+		})
+		.from(projectReportingMilestones)
+		.innerJoin(
+			projects,
+			eq(projectReportingMilestones.projectId, projects.projectId),
+		)
 		.where(
-			and(eq(projects.projectId, body.projectId), isNull(projects.archivedAt)),
+			and(
+				eq(projectReportingMilestones.milestoneId, body.milestoneId),
+				isNull(projects.archivedAt),
+			),
 		)
 		.limit(1);
-	if (!project) throw new ApiError(404, "NOT_FOUND", "Project not found");
+	if (!milestone) throw new ApiError(404, "NOT_FOUND", "Reporting milestone not found");
+	if (milestone.projectStatus !== PROJECT_STATUS.ONGOING) {
+		throw new ApiError(
+			400,
+			"INVALID_STATE",
+			"Reports can only be submitted for ongoing projects",
+		);
+	}
 	const [membership] = await db
 		.select({ memberId: proposalMembers.memberId })
 		.from(proposalMembers)
 		.where(
 			and(
-				eq(proposalMembers.proposalId, project.proposalId),
+				eq(proposalMembers.proposalId, milestone.proposalId),
 				eq(proposalMembers.userId, user.userId),
 			),
 		)
@@ -172,164 +200,64 @@ export async function createReport(
 			"NOT_MEMBER",
 			"Only project members can submit reports for this project",
 		);
-	const [schedule] = await db
-		.select({ scheduleId: projectReportingSchedules.scheduleId })
-		.from(projectReportingSchedules)
-		.where(eq(projectReportingSchedules.projectId, body.projectId))
-		.limit(1);
-	if (schedule) {
-		const allDueDates = await db
-			.select()
-			.from(projectReportingDates)
-			.where(eq(projectReportingDates.scheduleId, schedule.scheduleId))
-			.orderBy(projectReportingDates.reportingDate);
-		const earliestIncomplete = allDueDates.find((date) => !date.isCompleted);
-		if (
-			earliestIncomplete &&
-			allDueDates.filter(
-				(date) =>
-					!date.isCompleted &&
-					date.reportingDate < earliestIncomplete.reportingDate,
-			).length > 0
+	const isValidReportType =
+		(milestone.reportType === REPORT_TYPE.PROGRESS &&
+			body.reportType === REPORT_TYPE.PROGRESS) ||
+		(milestone.reportType === "Project Closure" &&
+			(body.reportType === REPORT_TYPE.TERMINAL ||
+				body.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT));
+	if (!isValidReportType) {
+		throw new ApiError(
+			400,
+			"REPORT_TYPE_MISMATCH",
+			"The report type does not match the selected milestone",
+		);
+	}
+	const [existing] = await db
+		.select({ reportId: projectReports.reportId, storagePath: projectReports.storagePath })
+		.from(projectReports)
+		.where(
+			and(
+				eq(projectReports.milestoneId, milestone.milestoneId),
+				eq(projectReports.reportType, body.reportType),
+				isNull(projectReports.archivedAt),
+			),
 		)
-			throw new ApiError(
-				400,
-				"SEQUENTIAL_VIOLATION",
-				"Previous report must be submitted before the next one",
-			);
+		.limit(1);
+	if (existing?.storagePath) {
+		throw new ApiError(409, "ALREADY_SUBMITTED", "This reporting milestone is already submitted");
 	}
 	const created = await db.transaction(async (tx) => {
+		if (existing) {
+			const [updated] = await tx
+				.update(projectReports)
+				.set({ remarks: body.remarks ?? null })
+				.where(eq(projectReports.reportId, existing.reportId))
+				.returning();
+			if (!updated) throw new ApiError(500, "UPDATE_FAILED", "Failed to update report draft");
+			return updated;
+		}
 		const [report] = await tx
 			.insert(projectReports)
 			.values({
-				projectId: body.projectId,
+				projectId: milestone.projectId,
+				milestoneId: milestone.milestoneId,
 				submittedById: user.userId,
 				reportType: body.reportType,
 				remarks: body.remarks ?? null,
 				storagePath: null,
-				periodStart: body.periodStart ? new Date(body.periodStart) : null,
-				periodEnd: body.periodEnd ? new Date(body.periodEnd) : null,
 			})
 			.returning();
 		if (!report)
 			throw new ApiError(500, "INSERT_FAILED", "Failed to create report");
-		const [transactionSchedule] = await tx
-			.select({ scheduleId: projectReportingSchedules.scheduleId })
-			.from(projectReportingSchedules)
-			.where(eq(projectReportingSchedules.projectId, body.projectId))
-			.limit(1);
-		if (transactionSchedule) {
-			const [earliestDueDate] = await tx
-				.select()
-				.from(projectReportingDates)
-				.where(
-					and(
-						eq(
-							projectReportingDates.scheduleId,
-							transactionSchedule.scheduleId,
-						),
-						eq(projectReportingDates.isCompleted, false),
-					),
-				)
-				.orderBy(projectReportingDates.reportingDate)
-				.limit(1);
-			if (earliestDueDate)
-				await tx
-					.update(projectReportingDates)
-					.set({ isCompleted: true, completedAt: new Date() })
-					.where(eq(projectReportingDates.id, earliestDueDate.id));
-		}
 		return report;
 	});
 	await insertAuditLog({
 		userId: user.userId,
-		action: `Submitted project report ${created.reportId} (${body.reportType}) for project ${body.projectId}`,
+		action: `Created report draft ${created.reportId} (${body.reportType}) for project ${milestone.projectId}`,
 		tableAffected: "project_reports",
 		ipAddress,
 	});
-	const reports = await db
-		.select({ reportType: projectReports.reportType })
-		.from(projectReports)
-		.where(
-			and(
-				eq(projectReports.projectId, body.projectId),
-				isNull(projectReports.archivedAt),
-			),
-		);
-	const hasFinalAccomplishment = reports.some(
-		(report) => report.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT,
-	);
-	const hasTerminal = reports.some(
-		(report) => report.reportType === REPORT_TYPE.TERMINAL,
-	);
-	const [projectStatusRow] = await db
-		.select({ projectStatus: projects.projectStatus })
-		.from(projects)
-		.where(eq(projects.projectId, body.projectId))
-		.limit(1);
-	if (hasFinalAccomplishment && hasTerminal) {
-		if (
-			projectStatusRow &&
-			projectStatusRow.projectStatus !== PROJECT_STATUS.PENDING_CLOSURE &&
-			projectStatusRow.projectStatus !== PROJECT_STATUS.CLOSED &&
-			projectStatusRow.projectStatus !== PROJECT_STATUS.COMPLETED
-		) {
-			const diff = captureAuditDiff(
-				{ projectStatus: projectStatusRow.projectStatus },
-				{ projectStatus: PROJECT_STATUS.PENDING_CLOSURE },
-				["projectStatus"],
-			);
-			await db
-				.update(projects)
-				.set({
-					projectStatus: PROJECT_STATUS.PENDING_CLOSURE,
-					updatedAt: new Date(),
-				})
-				.where(eq(projects.projectId, body.projectId));
-			await insertAuditLog({
-				userId: user.userId,
-				action: `Transitioned project ${body.projectId} to Pending Closure (all closure reports submitted)`,
-				tableAffected: "projects",
-				oldValue: diff.oldValue,
-				newValue: diff.newValue,
-				ipAddress,
-			});
-		}
-	} else if (projectStatusRow?.projectStatus === "Overdue") {
-		await db
-			.update(projects)
-			.set({ projectStatus: "Ongoing", updatedAt: new Date() })
-			.where(eq(projects.projectId, body.projectId));
-		await insertAuditLog({
-			userId: user.userId,
-			action: `Cleared Overdue flag for project ${body.projectId} after report submission`,
-			tableAffected: "projects",
-			ipAddress,
-		});
-	}
-	const directorIds = await getUserIdsByRole("Director");
-	const readableType =
-		body.reportType === "Progress"
-			? "Progress Report"
-			: body.reportType === "Terminal"
-				? "Terminal Report"
-				: "Final Accomplishment Report";
-	const [proposalRow] = await db
-		.select({ title: proposals.title })
-		.from(proposals)
-		.where(eq(proposals.proposalId, project.proposalId))
-		.limit(1);
-	const projectTitle = proposalRow?.title ?? "Unknown Project";
-	for (const directorId of directorIds)
-		await createNotification({
-			recipientId: directorId,
-			type: "report_submitted",
-			title: "New Report Submitted",
-			message: `A ${readableType} has been submitted for "${projectTitle}".`,
-			sendEmail: true,
-			emailSubject: `New Report: ${projectTitle}`,
-			emailHtml: `<p>A <strong>${escapeHtml(readableType)}</strong> has been submitted for "<strong>${escapeHtml(projectTitle)}</strong>".</p>`,
-		});
 	const [enriched] = await db
 		.select(reportSelection)
 		.from(projectReports)
@@ -358,7 +286,10 @@ export async function uploadReportDocument(
 		.select({
 			reportId: projectReports.reportId,
 			projectId: projectReports.projectId,
+			milestoneId: projectReports.milestoneId,
 			submittedById: projectReports.submittedById,
+			storagePath: projectReports.storagePath,
+			reportType: projectReports.reportType,
 		})
 		.from(projectReports)
 		.where(
@@ -376,6 +307,9 @@ export async function uploadReportDocument(
 			"FORBIDDEN",
 			"Only the report submitter can upload its document",
 		);
+	}
+	if (report.storagePath) {
+		throw new ApiError(409, "ALREADY_SUBMITTED", "This report document is already uploaded");
 	}
 
 	const storagePath = `reports/${report.projectId}/${reportId}_${Date.now()}_${randomUUID()}_${sanitizeFilename(file.name)}`;
@@ -411,6 +345,98 @@ export async function uploadReportDocument(
 			tableAffected: "project_reports",
 			ipAddress,
 		});
+		await insertAuditLog({
+			userId: user.userId,
+			action: `Submitted project report ${report.reportId} (${report.reportType}) for project ${report.projectId}`,
+			tableAffected: "project_reports",
+			ipAddress,
+		});
+
+		const milestoneReports = await db
+			.select({ reportType: projectReports.reportType })
+			.from(projectReports)
+			.where(
+				and(
+					eq(projectReports.milestoneId, report.milestoneId),
+					isNull(projectReports.archivedAt),
+					isNotNull(projectReports.storagePath),
+				),
+			);
+		const [milestone] = await db
+			.select({ reportType: projectReportingMilestones.reportType })
+			.from(projectReportingMilestones)
+			.where(eq(projectReportingMilestones.milestoneId, report.milestoneId))
+			.limit(1);
+		const hasFinalAccomplishment = milestoneReports.some(
+				(item) => item.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT,
+			);
+		const hasTerminal = milestoneReports.some(
+				(item) => item.reportType === REPORT_TYPE.TERMINAL,
+			);
+		const milestoneComplete =
+			milestone?.reportType === REPORT_TYPE.PROGRESS ||
+			(milestone?.reportType === "Project Closure" &&
+				hasFinalAccomplishment &&
+				hasTerminal);
+		if (milestoneComplete) {
+			await db
+				.update(projectReportingMilestones)
+				.set({ completedAt: new Date() })
+				.where(eq(projectReportingMilestones.milestoneId, report.milestoneId));
+		}
+		const [projectStatusRow] = await db
+			.select({ projectStatus: projects.projectStatus, proposalId: projects.proposalId })
+			.from(projects)
+			.where(eq(projects.projectId, report.projectId))
+			.limit(1);
+		if (
+			milestone?.reportType === "Project Closure" &&
+			hasFinalAccomplishment &&
+			hasTerminal &&
+			projectStatusRow?.projectStatus === PROJECT_STATUS.ONGOING
+		) {
+			const diff = captureAuditDiff(
+				{ projectStatus: projectStatusRow.projectStatus },
+				{ projectStatus: PROJECT_STATUS.PENDING_CLOSURE },
+				["projectStatus"],
+			);
+			await db
+				.update(projects)
+				.set({ projectStatus: PROJECT_STATUS.PENDING_CLOSURE, updatedAt: new Date() })
+				.where(eq(projects.projectId, report.projectId));
+			await insertAuditLog({
+				userId: user.userId,
+				action: `Transitioned project ${report.projectId} to Pending Closure (all closure reports submitted)`,
+				tableAffected: "projects",
+				oldValue: diff.oldValue,
+				newValue: diff.newValue,
+				ipAddress,
+			});
+		}
+		const directorIds = await getUserIdsByRole("Director");
+		const readableType =
+			report.reportType === REPORT_TYPE.PROGRESS
+				? "Progress Report"
+				: report.reportType === REPORT_TYPE.TERMINAL
+					? "Terminal Report"
+					: "Final Accomplishment Report";
+		const [proposalRow] = await db
+			.select({ title: proposals.title })
+			.from(proposals)
+			.where(eq(proposals.proposalId, projectStatusRow?.proposalId ?? ""))
+			.limit(1);
+		const projectTitle = proposalRow?.title ?? "Unknown Project";
+		for (const directorId of directorIds) {
+			await createNotification({
+				recipientId: directorId,
+				type: "report_submitted",
+				title: "New Report Submitted",
+				message: `A ${readableType} has been submitted for "${projectTitle}".`,
+				sendEmail: true,
+				emailSubject: `New Report: ${projectTitle}`,
+				emailHtml: `<p>A <strong>${escapeHtml(readableType)}</strong> has been submitted for "<strong>${escapeHtml(projectTitle)}</strong>".</p>`,
+			});
+		}
 		return updated;
 	} catch (error) {
 		await supabase.storage

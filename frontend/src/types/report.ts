@@ -1,6 +1,7 @@
 export interface ReportItem {
 	reportId: string;
 	projectId: string;
+	milestoneId: string;
 	project: string;
 	leader: string;
 	academicRank: string | null;

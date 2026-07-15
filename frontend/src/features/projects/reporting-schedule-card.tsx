@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import {
 	AlertCircle,
@@ -19,6 +18,8 @@ import {
 } from "@/components/ui/card";
 import { useProjectReportingSchedule } from "@/hooks/use-project-reporting-schedule";
 import { toStableDate } from "@/lib/utils";
+import { SubmitReportModal } from "@/features/reports/components/submit-report-modal";
+import type { ScheduledDueDate } from "./reporting-schedule.functions";
 
 interface ReportingScheduleCardProps {
 	projectId: string;
@@ -33,6 +34,7 @@ export function ReportingScheduleCard({
 }: ReportingScheduleCardProps) {
 	const { data, isLoading, error } = useProjectReportingSchedule(projectId);
 	const [now] = useState(() => new Date());
+	const [selectedMilestone, setSelectedMilestone] = useState<ScheduledDueDate | null>(null);
 
 	if (isLoading) {
 		return (
@@ -51,9 +53,9 @@ export function ReportingScheduleCard({
 		return null;
 	}
 
-	const { dueDates } = data.schedule;
+	const { milestones } = data.schedule;
 
-	if (dueDates.length === 0) {
+	if (milestones.length === 0) {
 		return (
 			<Card size="sm" className={className}>
 				<CardHeader className="pb-3">
@@ -83,10 +85,10 @@ export function ReportingScheduleCard({
 			</CardHeader>
 			<CardContent className="pt-0">
 				<div className="relative border-l border-border pl-6 ml-3 space-y-6">
-					{dueDates.map((item, idx) => {
+					{milestones.map((item, idx) => {
 						const dateObj = toStableDate(item.date);
 						const isOverdue = !item.isCompleted && dateObj < now;
-						const allPreviousComplete = dueDates
+						const allPreviousComplete = milestones
 							.slice(0, idx)
 							.every((d) => d.isCompleted);
 
@@ -156,7 +158,7 @@ export function ReportingScheduleCard({
 													size="xs"
 													variant="outline"
 													className="gap-1"
-													render={<Link to="/reports" />}
+													onClick={() => setSelectedMilestone(item)}
 												>
 													<FilePlus className="size-3" />
 													Submit
@@ -170,6 +172,20 @@ export function ReportingScheduleCard({
 					})}
 				</div>
 			</CardContent>
+			{selectedMilestone && (
+				<SubmitReportModal
+					open
+					onOpenChange={(open) => {
+						if (!open) setSelectedMilestone(null);
+					}}
+					milestone={{
+						id: selectedMilestone.id,
+						projectId,
+						reportType: selectedMilestone.reportType,
+						dueAt: selectedMilestone.date,
+					}}
+				/>
+			)}
 		</Card>
 	);
 }

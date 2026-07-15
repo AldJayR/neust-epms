@@ -115,8 +115,7 @@ export const ProjectReadinessSchema = z
 export const ProjectReportingScheduleSchema = z
 	.object({
 		schedule: z.object({
-			frequency: z.string(),
-			dueDates: z.array(
+			milestones: z.array(
 				z.object({
 					id: z.string(),
 					date: z.string(),
@@ -187,12 +186,13 @@ export const PaginationQuery = z.object({
 export const ActivateSchema = z
 	.object({
 		moaId: z.string().uuid(),
-		reportingFrequency: z.enum(["Monthly", "Quarterly", "Semestral", "Custom"]),
-		dueDates: z.array(
+		milestones: z
+			.array(
 			z.object({
-				reportType: z.string().min(1),
-				dueDate: z.string().datetime(),
+				reportType: z.enum(["Progress", "Project Closure"]),
+				dueAt: z.string().datetime(),
 			}),
-		),
+			)
+			.min(1),
 	})
 	.openapi("ActivateProject");

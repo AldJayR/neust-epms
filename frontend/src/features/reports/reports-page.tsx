@@ -1,5 +1,4 @@
-import { Download, ListFilter, Plus } from "lucide-react";
-import { BrandButton } from "@/components/custom/brand-button";
+import { Download, ListFilter } from "lucide-react";
 import { DataTablePage } from "@/components/custom/data-table-page";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageHeader } from "@/components/custom/page-header";
@@ -12,7 +11,6 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ReportsFilterTabs } from "./components/reports-filter-tabs";
-import { SubmitReportModal } from "./components/submit-report-modal";
 import { useReportsView } from "./hooks/use-reports-view";
 
 export function ReportsPage() {
@@ -24,15 +22,6 @@ export function ReportsPage() {
 				title={<h1 className="text-2xl font-semibold text-heading">Reports</h1>}
 				actions={
 					<div className="flex items-center gap-3">
-						{(view.isFaculty || view.isRET) && (
-							<BrandButton
-								className="gap-2"
-								onClick={() => view.setIsSubmitModalOpen(true)}
-							>
-								<Plus className="size-4" />
-								Submit Report
-							</BrandButton>
-						)}
 						<Button
 							variant="outline"
 							className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-lg gap-2"
@@ -110,12 +99,6 @@ export function ReportsPage() {
 				ariaLabel="Reports"
 			/>
 
-			{(view.isFaculty || view.isRET) && (
-				<SubmitReportModal
-					open={view.isSubmitModalOpen}
-					onOpenChange={view.setIsSubmitModalOpen}
-				/>
-			)}
 		</div>
 	);
 }

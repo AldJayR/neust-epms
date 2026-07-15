@@ -107,14 +107,8 @@ export const activateProjectFn = createServerFn({ method: "POST" })
 		z.object({
 			projectId: z.uuid(),
 			moaId: z.uuid(),
-			reportingFrequency: z.enum([
-				"Monthly",
-				"Quarterly",
-				"Semestral",
-				"Custom",
-			]),
-			dueDates: z.array(
-				z.object({ reportType: z.string(), dueDate: z.string() }),
+			milestones: z.array(
+				z.object({ reportType: z.string(), dueAt: z.string() }),
 			),
 		}),
 	)
@@ -131,8 +125,7 @@ export const activateProjectFn = createServerFn({ method: "POST" })
 				},
 				body: JSON.stringify({
 					moaId: data.moaId,
-					reportingFrequency: data.reportingFrequency,
-					dueDates: data.dueDates,
+				milestones: data.milestones,
 				}),
 			},
 		);
