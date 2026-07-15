@@ -12,6 +12,13 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { changePasswordFn, updateProfileFn } from "@/features/auth";
 import { uploadAvatarFn } from "@/features/settings/functions";
@@ -37,6 +44,17 @@ const themeOptions = [
 	{ value: "dark", label: "Dark", icon: Moon },
 	{ value: "system", label: "System", icon: Laptop },
 ] as const;
+
+const rankOptions = [
+	{ label: "Instructor I", value: "instructor-1" },
+	{ label: "Instructor II", value: "instructor-2" },
+	{ label: "Instructor III", value: "instructor-3" },
+	{ label: "Assistant Professor I", value: "assistant-prof-1" },
+	{ label: "Assistant Professor II", value: "assistant-prof-2" },
+	{ label: "Associate Professor I", value: "associate-prof-1" },
+	{ label: "Associate Professor II", value: "associate-prof-2" },
+	{ label: "Professor I", value: "professor-1" },
+];
 
 function getProfileState(user: AuthUser): ProfileState {
 	return {
@@ -276,7 +294,6 @@ export function SettingsDialog({
 											["middleName", "Middle name"],
 											["lastName", "Last name"],
 											["nameSuffix", "Suffix"],
-											["academicRank", "Academic rank"],
 										] as const
 									).map(([field, label]) => (
 										<label
@@ -294,6 +311,45 @@ export function SettingsDialog({
 											/>
 										</label>
 									))}
+									<label
+										htmlFor="settings-academic-rank"
+										className="space-y-1.5 text-sm font-medium"
+									>
+										<span>Academic rank</span>
+										<Select
+											value={profile.academicRank}
+											onValueChange={(value) =>
+												updateProfileField("academicRank", value ?? "")
+											}
+										>
+											<SelectTrigger
+												id="settings-academic-rank"
+												className="w-full"
+											>
+												<SelectValue placeholder="Select rank">
+													{(value) =>
+														value
+															? (rankOptions.find(
+																	(option) => option.value === value,
+																)?.label ?? value)
+															: "Select rank"
+													}
+												</SelectValue>
+											</SelectTrigger>
+											<SelectContent
+												side="bottom"
+												sideOffset={8}
+												align="start"
+												alignItemWithTrigger={false}
+											>
+												{rankOptions.map((option) => (
+													<SelectItem key={option.value} value={option.value}>
+														{option.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</label>
 								</div>
 								<Button onClick={saveProfile} disabled={savingProfile}>
 									{savingProfile ? "Saving..." : "Save profile"}

@@ -1,6 +1,13 @@
-import { createMiddleware, createStart } from "@tanstack/react-start";
+import {
+	createCsrfMiddleware,
+	createMiddleware,
+	createStart,
+} from "@tanstack/react-start";
 
 const CSP_NONCE_HEADER = "x-csp-nonce";
+const csrfMiddleware = createCsrfMiddleware({
+	filter: (context) => context.handlerType === "serverFn",
+});
 const apiOrigin = (() => {
 	try {
 		return new URL(process.env.API_URL ?? "http://localhost:3001").origin;
@@ -22,7 +29,7 @@ const securityHeadersMiddleware = createMiddleware().server(
 				"default-src 'self'",
 				`script-src 'self' 'nonce-${nonce}'`,
 				"style-src 'self' 'unsafe-inline'",
-				"img-src 'self' data: blob:",
+				"img-src 'self' data: blob: https://*.supabase.co",
 				"font-src 'self' data:",
 				`connect-src 'self' ${apiOrigin} https://*.supabase.co`,
 				"worker-src 'self' blob:",
@@ -57,5 +64,5 @@ const securityHeadersMiddleware = createMiddleware().server(
 );
 
 export const startInstance = createStart(() => ({
-	requestMiddleware: [securityHeadersMiddleware],
+	requestMiddleware: [csrfMiddleware, securityHeadersMiddleware],
 }));

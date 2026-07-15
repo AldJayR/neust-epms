@@ -1,6 +1,6 @@
 import type { useRender } from "@base-ui/react/use-render";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link, type LinkProps } from "@tanstack/react-router";
+import { Link, type LinkProps, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
 	ChevronRight,
@@ -46,7 +46,7 @@ import {
 } from "@/components/ui/sidebar";
 import { logoutFn } from "@/features/auth";
 import type { AuthUser } from "@/lib/auth";
-import { clearAuthCache } from "@/lib/auth-cache";
+import { clearAuthCache, setCachedUser } from "@/lib/auth-cache";
 
 export type RoleSidebarItem = {
 	title: string;
@@ -98,10 +98,18 @@ export function RoleSidebar({
 	const roleLabel = displayUser ? displayUser.roleName : fallbackRole;
 
 	const logout = useServerFn(logoutFn);
+	const router = useRouter();
 	const queryClient = useQueryClient();
 	const { theme, setTheme } = useTheme();
 	const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 	const [settingsOpen, setSettingsOpen] = React.useState(false);
+
+	const handleUserUpdated = (updatedUser: AuthUser) => {
+		setUserOverride(updatedUser);
+		setCachedUser(updatedUser);
+		void queryClient.invalidateQueries();
+		void router.invalidate();
+	};
 
 	const handleLogout = async () => {
 		setIsLoggingOut(true);
@@ -124,7 +132,7 @@ export function RoleSidebar({
 				open={settingsOpen}
 				onOpenChange={setSettingsOpen}
 				user={displayUser}
-				onUserUpdated={(updatedUser) => setUserOverride(updatedUser)}
+				onUserUpdated={handleUserUpdated}
 			/>
 			<SidebarHeader>
 				<SidebarMenu>
