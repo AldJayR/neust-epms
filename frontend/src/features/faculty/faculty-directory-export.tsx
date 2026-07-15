@@ -26,6 +26,8 @@ const csvHeaders = [
 	"Total Involvement",
 ];
 
+const pdfRendererPromise = import("@react-pdf/renderer");
+
 function downloadBlob(blob: Blob, filename: string) {
 	const url = URL.createObjectURL(blob);
 	const link = document.createElement("a");
@@ -57,7 +59,7 @@ export function useFacultyDirectoryExport({
 		if (exportFormat === "pdf") {
 			toast.info("Generating PDF report...");
 			try {
-				const { pdf, ...renderer } = await import("@react-pdf/renderer");
+				const { pdf, ...renderer } = await pdfRendererPromise;
 				const blob = await pdf(
 					createFacultyDirectoryPdf({
 						renderer,

@@ -1,6 +1,11 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { ActivityLogPage } from "@/features/admin/activity-log-page";
+import { ActivityLogPendingSkeleton } from "@/features/admin/activity-log-pending-skeleton";
+import {
+	auditLogsQueryOptions,
+	auditStatsQueryOptions,
+} from "@/features/admin/functions";
 import { isDeniedAccess } from "@/lib/permissions";
 
 const searchSchema = z.object({
@@ -11,6 +16,11 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/_authenticated/admin/activity-log/")({
 	validateSearch: (search) => searchSchema.parse(search),
+	loaderDeps: ({ search }) => ({
+		page: search.page,
+		limit: search.limit,
+		search: search.search,
+	}),
 	beforeLoad: ({ context }) => {
 		if (isDeniedAccess(context.auth.user, "Super Admin")) {
 			throw redirect({
@@ -19,6 +29,13 @@ export const Route = createFileRoute("/_authenticated/admin/activity-log/")({
 			});
 		}
 	},
+	loader: async ({ context, deps }) => {
+		await Promise.all([
+			context.queryClient.ensureQueryData(auditStatsQueryOptions()),
+			context.queryClient.ensureQueryData(auditLogsQueryOptions(deps)),
+		]);
+	},
+	pendingComponent: ActivityLogPendingSkeleton,
 	component: ActivityLogComponent,
 });
 
