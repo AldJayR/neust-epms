@@ -69,33 +69,27 @@ CREATE TABLE "password_reset_tokens" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "project_reporting_dates" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"schedule_id" uuid NOT NULL,
-	"reporting_date" timestamp with time zone NOT NULL,
-	"is_completed" boolean DEFAULT false NOT NULL,
-	"completed_at" timestamp with time zone,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "project_reporting_schedules" (
-	"schedule_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+CREATE TABLE "project_reporting_milestones" (
+	"milestone_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"project_id" uuid NOT NULL,
+	"report_type" varchar(100) NOT NULL,
+	"due_at" timestamp with time zone NOT NULL,
+	"completed_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	CONSTRAINT "project_reporting_milestones_project_type_due_unique" UNIQUE("project_id","report_type","due_at")
 );
 --> statement-breakpoint
 CREATE TABLE "project_reports" (
 	"report_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"project_id" uuid NOT NULL,
+	"milestone_id" uuid NOT NULL,
 	"submitted_by_id" uuid NOT NULL,
 	"report_type" varchar(100) NOT NULL,
 	"storage_path" varchar(500),
 	"remarks" text,
-	"period_start" timestamp with time zone,
-	"period_end" timestamp with time zone,
 	"submitted_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"archived_at" timestamp with time zone
+	"archived_at" timestamp with time zone,
+	CONSTRAINT "project_reports_milestone_type_unique" UNIQUE("milestone_id","report_type")
 );
 --> statement-breakpoint
 CREATE TABLE "projects" (
@@ -157,8 +151,7 @@ CREATE TABLE "proposal_reviews" (
 	"review_stage" varchar(50) NOT NULL,
 	"decision" varchar(50) NOT NULL,
 	"comments" text,
-	"reviewed_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "pr_proposal_reviewer_stage_unique" UNIQUE("proposal_id","reviewer_id","review_stage")
+	"reviewed_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "proposal_sdgs" (
@@ -233,6 +226,7 @@ CREATE TABLE "users" (
 	"email" varchar(255) NOT NULL,
 	"avatar_url" text,
 	"is_active" boolean DEFAULT true NOT NULL,
+	"has_completed_onboarding" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"archived_at" timestamp with time zone,
@@ -243,9 +237,9 @@ ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_user_id_users_user_id_fk" FO
 ALTER TABLE "moas" ADD CONSTRAINT "moas_partner_id_partners_partner_id_fk" FOREIGN KEY ("partner_id") REFERENCES "public"."partners"("partner_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_recipient_id_users_user_id_fk" FOREIGN KEY ("recipient_id") REFERENCES "public"."users"("user_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "project_reporting_dates" ADD CONSTRAINT "project_reporting_dates_schedule_id_project_reporting_schedules_schedule_id_fk" FOREIGN KEY ("schedule_id") REFERENCES "public"."project_reporting_schedules"("schedule_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "project_reporting_schedules" ADD CONSTRAINT "project_reporting_schedules_project_id_projects_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("project_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "project_reporting_milestones" ADD CONSTRAINT "project_reporting_milestones_project_id_projects_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("project_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project_reports" ADD CONSTRAINT "project_reports_project_id_projects_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("project_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "project_reports" ADD CONSTRAINT "project_reports_milestone_id_project_reporting_milestones_milestone_id_fk" FOREIGN KEY ("milestone_id") REFERENCES "public"."project_reporting_milestones"("milestone_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project_reports" ADD CONSTRAINT "project_reports_submitted_by_id_users_user_id_fk" FOREIGN KEY ("submitted_by_id") REFERENCES "public"."users"("user_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "projects" ADD CONSTRAINT "projects_proposal_id_proposals_proposal_id_fk" FOREIGN KEY ("proposal_id") REFERENCES "public"."proposals"("proposal_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "projects" ADD CONSTRAINT "projects_moa_id_moas_moa_id_fk" FOREIGN KEY ("moa_id") REFERENCES "public"."moas"("moa_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -276,9 +270,7 @@ CREATE INDEX "prtk_user_id_idx" ON "password_reset_tokens" USING btree ("user_id
 CREATE INDEX "prtk_token_hash_idx" ON "password_reset_tokens" USING btree ("token_hash");--> statement-breakpoint
 CREATE INDEX "prtk_expires_at_idx" ON "password_reset_tokens" USING btree ("expires_at");--> statement-breakpoint
 CREATE INDEX "prtk_active_token_idx" ON "password_reset_tokens" USING btree ("token_hash","expires_at") WHERE "password_reset_tokens"."used_at" IS NULL;--> statement-breakpoint
-CREATE INDEX "project_reporting_dates_schedule_id_idx" ON "project_reporting_dates" USING btree ("schedule_id");--> statement-breakpoint
-CREATE INDEX "project_reporting_dates_pending_idx" ON "project_reporting_dates" USING btree ("schedule_id","reporting_date") WHERE "project_reporting_dates"."is_completed" = false;--> statement-breakpoint
-CREATE INDEX "project_reporting_schedules_project_id_idx" ON "project_reporting_schedules" USING btree ("project_id");--> statement-breakpoint
+CREATE INDEX "project_reporting_milestones_project_id_idx" ON "project_reporting_milestones" USING btree ("project_id");--> statement-breakpoint
 CREATE INDEX "project_reports_project_id_idx" ON "project_reports" USING btree ("project_id");--> statement-breakpoint
 CREATE INDEX "project_reports_submitted_by_id_idx" ON "project_reports" USING btree ("submitted_by_id");--> statement-breakpoint
 CREATE INDEX "project_reports_active_project_idx" ON "project_reports" USING btree ("project_id") WHERE "project_reports"."archived_at" IS NULL;--> statement-breakpoint
