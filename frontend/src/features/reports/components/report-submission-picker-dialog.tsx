@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,10 +15,10 @@ import {
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
-	SelectValue,
 } from "@/components/ui/select";
 import type { FacultyProjectItem } from "@/features/faculty/public";
 import { projectReportingScheduleQueryOptions } from "@/features/projects/public";
+import { toStableDate } from "@/lib/utils";
 import { SubmitReportModal } from "./submit-report-modal";
 
 interface ReportSubmissionPickerDialogProps {
@@ -48,6 +49,12 @@ export function ReportSubmissionPickerDialog({
 	);
 	const milestones = schedule?.schedule.milestones.filter(
 		(milestone) => !milestone.isCompleted,
+	);
+	const selectedProject = eligibleProjects.find(
+		(project) => project.projectId === projectId,
+	);
+	const selectedMilestoneOption = milestones?.find(
+		(milestone) => milestone.id === milestoneId,
 	);
 
 	const handleProjectChange = (value: string) => {
@@ -80,7 +87,11 @@ export function ReportSubmissionPickerDialog({
 					<div className="space-y-4 py-2">
 						<Select value={projectId} onValueChange={handleProjectChange}>
 							<SelectTrigger>
-								<SelectValue placeholder="Select a project" />
+								<span
+									className={projectId ? undefined : "text-muted-foreground"}
+								>
+									{selectedProject?.title ?? "Select a project"}
+								</span>
 							</SelectTrigger>
 							<SelectContent>
 								{eligibleProjects.map((project) => (
@@ -96,12 +107,19 @@ export function ReportSubmissionPickerDialog({
 							disabled={!projectId}
 						>
 							<SelectTrigger>
-								<SelectValue placeholder="Select a reporting milestone" />
+								<span
+									className={milestoneId ? undefined : "text-muted-foreground"}
+								>
+									{selectedMilestoneOption
+										? `${selectedMilestoneOption.reportType} Report - Due ${format(toStableDate(selectedMilestoneOption.date), "MMM d, yyyy")}`
+										: "Select a reporting milestone"}
+								</span>
 							</SelectTrigger>
 							<SelectContent>
 								{milestones?.map((milestone) => (
 									<SelectItem key={milestone.id} value={milestone.id}>
-										{milestone.reportType} Report
+										{milestone.reportType} Report - Due{" "}
+										{format(toStableDate(milestone.date), "MMM d, yyyy")}
 									</SelectItem>
 								))}
 							</SelectContent>

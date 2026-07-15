@@ -89,6 +89,7 @@ export const submitReportFn = createServerFn({ method: "POST" })
 	.validator(
 		z.object({
 			milestoneId: z.uuid(),
+			reportType: z.enum(["Progress", "Terminal", "Final Accomplishment"]),
 			remarks: z.string().optional(),
 		}),
 	)
