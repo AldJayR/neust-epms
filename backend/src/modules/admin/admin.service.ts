@@ -342,31 +342,38 @@ export async function provisionDirector(
 		);
 	}
 
-	await db.transaction(async (tx) => {
-		await tx.insert(users).values({
-			userId: authData.user.id,
-			firstName: body.firstName,
-			middleName: body.middleName ?? null,
-			lastName: body.lastName,
-			nameSuffix: body.nameSuffix ?? null,
-			academicRank: body.academicRank,
-			email: body.email,
-			roleId: directorRole.roleId,
-			campusId: campusId,
-			departmentId: body.departmentId ?? null,
-			isActive: true,
-		});
+	try {
+		await db.transaction(async (tx) => {
+			await tx.insert(users).values({
+				userId: authData.user.id,
+				firstName: body.firstName,
+				middleName: body.middleName ?? null,
+				lastName: body.lastName,
+				nameSuffix: body.nameSuffix ?? null,
+				academicRank: body.academicRank,
+				email: body.email,
+				roleId: directorRole.roleId,
+				campusId: campusId,
+				departmentId: body.departmentId ?? null,
+				isActive: true,
+			});
 
-		await insertAuditLog(
-			{
-				userId: authUser.userId,
-				action: `Provisioned Director account for ${body.email}`,
-				tableAffected: "users",
-				ipAddress,
-			},
-			tx,
-		);
-	});
+			await insertAuditLog(
+				{
+					userId: authUser.userId,
+					action: `Provisioned Director account for ${body.email}`,
+					tableAffected: "users",
+					ipAddress,
+				},
+				tx,
+			);
+		});
+	} catch (error) {
+		await supabase.auth.admin
+			.deleteUser(authData.user.id)
+			.catch(() => undefined);
+		throw error;
+	}
 
 	return {
 		success: true,

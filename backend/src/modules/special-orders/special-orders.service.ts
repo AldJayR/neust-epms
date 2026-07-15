@@ -155,17 +155,17 @@ export async function uploadSpecialOrder(
 			isNew = true;
 		}
 	} catch (error: unknown) {
-		const err = error as Record<string, unknown> & { code?: string };
-		if (err?.code === "23505") {
+		const err = error as { code?: string; cause?: { code?: string } };
+		try {
+			await supabase.storage.from("documents").remove([storagePath]);
+		} catch {}
+		if (err.code === "23505" || err.cause?.code === "23505") {
 			throw new ApiError(
 				409,
 				"DUPLICATE_SO_NUMBER",
 				"A special order with this SO number already exists",
 			);
 		}
-		try {
-			await supabase.storage.from("documents").remove([storagePath]);
-		} catch {}
 		throw error;
 	}
 

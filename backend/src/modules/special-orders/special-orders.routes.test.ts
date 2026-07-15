@@ -220,7 +220,7 @@ describe("POST /special-orders/upload", () => {
 			.mockReturnValueOnce(mockSelectChain([]) as never);
 		vi.mocked(db.insert).mockReturnValue({
 			values: vi.fn().mockReturnValue({
-				returning: vi.fn().mockRejectedValue({ code: "23505" }),
+				returning: vi.fn().mockRejectedValue({ cause: { code: "23505" } }),
 			}),
 		} as never);
 

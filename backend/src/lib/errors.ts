@@ -18,6 +18,7 @@ type ErrorLike = {
 	name?: unknown;
 	message?: unknown;
 	status?: unknown;
+	cause?: unknown;
 };
 
 function isErrorLike(err: unknown): err is ErrorLike {
@@ -77,8 +78,14 @@ export function installApiErrorHandler(app: ErrorLikeApp): void {
 			);
 		}
 
-		if (err instanceof PostgresError) {
-			if (err.code === "23505") {
+		const databaseError =
+			err instanceof PostgresError
+				? err
+				: isErrorLike(err) && err.cause instanceof PostgresError
+					? err.cause
+					: undefined;
+		if (databaseError) {
+			if (databaseError.code === "23505") {
 				return c.json(
 					{
 						error: {
@@ -89,7 +96,7 @@ export function installApiErrorHandler(app: ErrorLikeApp): void {
 					409,
 				);
 			}
-			if (err.code === "23503") {
+			if (databaseError.code === "23503") {
 				return c.json(
 					{
 						error: {
@@ -101,7 +108,7 @@ export function installApiErrorHandler(app: ErrorLikeApp): void {
 					409,
 				);
 			}
-			if (err.code === "23514") {
+			if (databaseError.code === "23514") {
 				return c.json(
 					{
 						error: {
