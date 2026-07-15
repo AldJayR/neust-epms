@@ -31,7 +31,12 @@ export function getUserMemberSubquery(userId: string) {
 			isMember: sql<boolean>`true`.as("is_member"),
 		})
 		.from(proposalMembers)
-		.where(eq(proposalMembers.userId, userId))
+		.where(
+			and(
+				eq(proposalMembers.userId, userId),
+				isNull(proposalMembers.archivedAt),
+			),
+		)
 		.as("user_member");
 }
 
@@ -278,15 +283,44 @@ export async function updateProposalWithSectors(
 		}
 
 		if (sectorIds.length > 0) {
-			await db
-				.delete(proposalBeneficiaries)
+			const desiredSectorIds = new Set(sectorIds);
+			const existingLinks = await db
+				.select({
+					sectorId: proposalBeneficiaries.sectorId,
+					archivedAt: proposalBeneficiaries.archivedAt,
+				})
+				.from(proposalBeneficiaries)
 				.where(eq(proposalBeneficiaries.proposalId, id));
-			await db.insert(proposalBeneficiaries).values(
-				sectorIds.map((sectorId) => ({
-					proposalId: id,
-					sectorId,
-				})),
+
+			for (const link of existingLinks) {
+				const shouldBeActive = desiredSectorIds.has(link.sectorId);
+				if (shouldBeActive !== !link.archivedAt) {
+					await db
+						.update(proposalBeneficiaries)
+						.set({ archivedAt: shouldBeActive ? null : new Date() })
+						.where(
+							and(
+								eq(proposalBeneficiaries.proposalId, id),
+								eq(proposalBeneficiaries.sectorId, link.sectorId),
+							),
+						);
+				}
+			}
+
+			const existingSectorIds = new Set(
+				existingLinks.map((link) => link.sectorId),
 			);
+			const newSectorIds = sectorIds.filter(
+				(sectorId) => !existingSectorIds.has(sectorId),
+			);
+			if (newSectorIds.length > 0) {
+				await db.insert(proposalBeneficiaries).values(
+					newSectorIds.map((sectorId) => ({
+						proposalId: id,
+						sectorId,
+					})),
+				);
+			}
 		}
 	}
 
@@ -309,11 +343,21 @@ export async function validateCompleteness(proposalId: string): Promise<void> {
 					projectRole: proposalMembers.projectRole,
 				})
 				.from(proposalMembers)
-				.where(eq(proposalMembers.proposalId, proposalId)),
+				.where(
+					and(
+						eq(proposalMembers.proposalId, proposalId),
+						isNull(proposalMembers.archivedAt),
+					),
+				),
 			db
 				.select({ sectorId: proposalBeneficiaries.sectorId })
 				.from(proposalBeneficiaries)
-				.where(eq(proposalBeneficiaries.proposalId, proposalId))
+				.where(
+					and(
+						eq(proposalBeneficiaries.proposalId, proposalId),
+						isNull(proposalBeneficiaries.archivedAt),
+					),
+				)
 				.limit(1),
 			db
 				.select({ sdgId: proposalSdgs.sdgId })
@@ -591,6 +635,7 @@ export async function getLeaderUserId(
 			and(
 				eq(proposalMembers.proposalId, proposalId),
 				eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE),
+				isNull(proposalMembers.archivedAt),
 			),
 		)
 		.limit(1);

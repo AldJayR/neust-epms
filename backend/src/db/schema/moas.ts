@@ -8,6 +8,7 @@ import {
 	varchar,
 } from "drizzle-orm/pg-core";
 import { partners } from "./partners.js";
+import { users } from "./users.js";
 
 export const moas = pgTable(
 	"moas",
@@ -17,6 +18,9 @@ export const moas = pgTable(
 			.notNull()
 			.references(() => partners.partnerId),
 		storagePath: varchar("storage_path", { length: 500 }),
+		contentHash: varchar("content_hash", { length: 64 }),
+		uploadedBy: uuid("uploaded_by").references(() => users.userId),
+		sourceIp: varchar("source_ip", { length: 45 }),
 		validFrom: timestamp("valid_from", { withTimezone: true }).notNull(),
 		validUntil: timestamp("valid_until", { withTimezone: true }).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })

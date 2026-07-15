@@ -89,6 +89,7 @@ export function startReportOverdueCron(): void {
 					and(
 						eq(proposalMembers.proposalId, proposals.proposalId),
 						eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE),
+						isNull(proposalMembers.archivedAt),
 					),
 				)
 				.where(

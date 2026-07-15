@@ -42,3 +42,25 @@ export function buildProposalScope(user: AuthUser): SQL[] {
 export function buildProposalScopeClause(user: AuthUser): SQL | undefined {
 	return buildRoleScopeClause(user);
 }
+
+/**
+ * Apply the same campus/department rules to a proposal row already loaded by
+ * an endpoint that also needs to validate a child resource relationship.
+ */
+export function isProposalInScope(
+	user: AuthUser,
+	proposal: { campusId: number; departmentId: number },
+): boolean {
+	if (
+		user.roleName !== ROLE_NAMES.FACULTY &&
+		user.roleName !== ROLE_NAMES.RET_CHAIR
+	) {
+		return true;
+	}
+
+	if (user.isMainCampus && user.departmentId !== null) {
+		return proposal.departmentId === user.departmentId;
+	}
+
+	return proposal.campusId === user.campusId;
+}

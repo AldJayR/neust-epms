@@ -84,8 +84,9 @@ export async function listAuditLogs(
 
 	await insertAuditLog({
 		userId: user.userId,
-		action: `Viewed audit logs (page ${page}, limit ${limit}${search ? `, search: ${search}` : ""})`,
+		action: "Viewed audit logs",
 		tableAffected: "audit_logs",
+		newValue: { page, limit, hasSearch: Boolean(search) },
 		ipAddress,
 	});
 

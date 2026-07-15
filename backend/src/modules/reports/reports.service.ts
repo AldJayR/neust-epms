@@ -31,6 +31,7 @@ import { buildProposalScope } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
 import { type AuthUser, PROJECT_STATUS, REPORT_TYPE } from "@/lib/types.js";
 import { sanitizeFilename } from "@/services/file.service.js";
+import { hashFileSha256 } from "@/services/file-integrity.service.js";
 import type { CreateReportSchema, PaginationQuery } from "./reports.schema.js";
 
 type CreateReportBody = z.infer<typeof CreateReportSchema>;
@@ -90,6 +91,7 @@ export async function listReports(user: AuthUser, query: Pagination) {
 	const { page, limit, search } = query;
 	const whereConditions: SQL[] = [
 		isNull(projectReports.archivedAt),
+		isNull(projects.archivedAt),
 		isNotNull(projectReports.storagePath),
 		...buildProposalScope(user),
 	];
@@ -123,6 +125,7 @@ export async function listReports(user: AuthUser, query: Pagination) {
 export async function getReportStats(user: AuthUser) {
 	const whereConditions: SQL[] = [
 		isNull(projectReports.archivedAt),
+		isNull(projects.archivedAt),
 		isNotNull(projectReports.storagePath),
 		...buildProposalScope(user),
 	];
@@ -169,14 +172,17 @@ export async function createReport(
 			projects,
 			eq(projectReportingMilestones.projectId, projects.projectId),
 		)
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
 		.where(
 			and(
 				eq(projectReportingMilestones.milestoneId, body.milestoneId),
 				isNull(projects.archivedAt),
+				...buildProposalScope(user),
 			),
 		)
 		.limit(1);
-	if (!milestone) throw new ApiError(404, "NOT_FOUND", "Reporting milestone not found");
+	if (!milestone)
+		throw new ApiError(404, "NOT_FOUND", "Reporting milestone not found");
 	if (milestone.projectStatus !== PROJECT_STATUS.ONGOING) {
 		throw new ApiError(
 			400,
@@ -191,6 +197,7 @@ export async function createReport(
 			and(
 				eq(proposalMembers.proposalId, milestone.proposalId),
 				eq(proposalMembers.userId, user.userId),
+				isNull(proposalMembers.archivedAt),
 			),
 		)
 		.limit(1);
@@ -214,7 +221,10 @@ export async function createReport(
 		);
 	}
 	const [existing] = await db
-		.select({ reportId: projectReports.reportId, storagePath: projectReports.storagePath })
+		.select({
+			reportId: projectReports.reportId,
+			storagePath: projectReports.storagePath,
+		})
 		.from(projectReports)
 		.where(
 			and(
@@ -225,38 +235,56 @@ export async function createReport(
 		)
 		.limit(1);
 	if (existing?.storagePath) {
-		throw new ApiError(409, "ALREADY_SUBMITTED", "This reporting milestone is already submitted");
+		throw new ApiError(
+			409,
+			"ALREADY_SUBMITTED",
+			"This reporting milestone is already submitted",
+		);
 	}
 	const created = await db.transaction(async (tx) => {
+		let saved: typeof projectReports.$inferSelect;
 		if (existing) {
 			const [updated] = await tx
 				.update(projectReports)
 				.set({ remarks: body.remarks ?? null })
 				.where(eq(projectReports.reportId, existing.reportId))
 				.returning();
-			if (!updated) throw new ApiError(500, "UPDATE_FAILED", "Failed to update report draft");
-			return updated;
+			if (!updated)
+				throw new ApiError(
+					500,
+					"UPDATE_FAILED",
+					"Failed to update report draft",
+				);
+			saved = updated;
+		} else {
+			const [report] = await tx
+				.insert(projectReports)
+				.values({
+					projectId: milestone.projectId,
+					milestoneId: milestone.milestoneId,
+					submittedById: user.userId,
+					reportType: body.reportType,
+					remarks: body.remarks ?? null,
+					storagePath: null,
+				})
+				.returning();
+			if (!report)
+				throw new ApiError(500, "INSERT_FAILED", "Failed to create report");
+			saved = report;
 		}
-		const [report] = await tx
-			.insert(projectReports)
-			.values({
-				projectId: milestone.projectId,
-				milestoneId: milestone.milestoneId,
-				submittedById: user.userId,
-				reportType: body.reportType,
-				remarks: body.remarks ?? null,
-				storagePath: null,
-			})
-			.returning();
-		if (!report)
-			throw new ApiError(500, "INSERT_FAILED", "Failed to create report");
-		return report;
-	});
-	await insertAuditLog({
-		userId: user.userId,
-		action: `Created report draft ${created.reportId} (${body.reportType}) for project ${milestone.projectId}`,
-		tableAffected: "project_reports",
-		ipAddress,
+
+		await insertAuditLog(
+			{
+				userId: user.userId,
+				action: `${existing ? "Updated" : "Created"} report draft ${saved.reportId}`,
+				tableAffected: "project_reports",
+				newValue: { reportType: body.reportType },
+				ipAddress,
+			},
+			tx,
+		);
+
+		return saved;
 	});
 	const [enriched] = await db
 		.select(reportSelection)
@@ -292,10 +320,14 @@ export async function uploadReportDocument(
 			reportType: projectReports.reportType,
 		})
 		.from(projectReports)
+		.innerJoin(projects, eq(projectReports.projectId, projects.projectId))
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
 		.where(
 			and(
 				eq(projectReports.reportId, reportId),
 				isNull(projectReports.archivedAt),
+				isNull(projects.archivedAt),
+				...buildProposalScope(user),
 			),
 		)
 		.limit(1);
@@ -309,10 +341,15 @@ export async function uploadReportDocument(
 		);
 	}
 	if (report.storagePath) {
-		throw new ApiError(409, "ALREADY_SUBMITTED", "This report document is already uploaded");
+		throw new ApiError(
+			409,
+			"ALREADY_SUBMITTED",
+			"This report document is already uploaded",
+		);
 	}
 
 	const storagePath = `reports/${report.projectId}/${reportId}_${Date.now()}_${randomUUID()}_${sanitizeFilename(file.name)}`;
+	const contentHash = await hashFileSha256(file);
 	const { error: uploadError } = await supabase.storage
 		.from("documents")
 		.upload(storagePath, file, { contentType: file.type, upsert: false });
@@ -325,31 +362,46 @@ export async function uploadReportDocument(
 	}
 
 	try {
-		const [updated] = await db
-			.update(projectReports)
-			.set({ storagePath })
-			.where(eq(projectReports.reportId, reportId))
-			.returning({
-				reportId: projectReports.reportId,
-				storagePath: projectReports.storagePath,
-			});
-		if (!updated)
-			throw new ApiError(
-				500,
-				"UPDATE_FAILED",
-				"Failed to record report document",
+		const updated = await db.transaction(async (tx) => {
+			const [saved] = await tx
+				.update(projectReports)
+				.set({
+					storagePath,
+					contentHash,
+					uploadedBy: user.userId,
+					sourceIp: ipAddress,
+				})
+				.where(eq(projectReports.reportId, reportId))
+				.returning({
+					reportId: projectReports.reportId,
+					storagePath: projectReports.storagePath,
+				});
+			if (!saved)
+				throw new ApiError(
+					500,
+					"UPDATE_FAILED",
+					"Failed to record report document",
+				);
+			await insertAuditLog(
+				{
+					userId: user.userId,
+					action: `Uploaded document for project report ${reportId}`,
+					tableAffected: "project_reports",
+					newValue: { contentHash, uploadedBy: user.userId },
+					ipAddress,
+				},
+				tx,
 			);
-		await insertAuditLog({
-			userId: user.userId,
-			action: `Uploaded document for project report ${reportId}`,
-			tableAffected: "project_reports",
-			ipAddress,
-		});
-		await insertAuditLog({
-			userId: user.userId,
-			action: `Submitted project report ${report.reportId} (${report.reportType}) for project ${report.projectId}`,
-			tableAffected: "project_reports",
-			ipAddress,
+			await insertAuditLog(
+				{
+					userId: user.userId,
+					action: `Submitted project report ${report.reportId}`,
+					tableAffected: "project_reports",
+					ipAddress,
+				},
+				tx,
+			);
+			return saved;
 		});
 
 		const milestoneReports = await db
@@ -368,11 +420,11 @@ export async function uploadReportDocument(
 			.where(eq(projectReportingMilestones.milestoneId, report.milestoneId))
 			.limit(1);
 		const hasFinalAccomplishment = milestoneReports.some(
-				(item) => item.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT,
-			);
+			(item) => item.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT,
+		);
 		const hasTerminal = milestoneReports.some(
-				(item) => item.reportType === REPORT_TYPE.TERMINAL,
-			);
+			(item) => item.reportType === REPORT_TYPE.TERMINAL,
+		);
 		const milestoneComplete =
 			milestone?.reportType === REPORT_TYPE.PROGRESS ||
 			(milestone?.reportType === "Project Closure" &&
@@ -385,7 +437,10 @@ export async function uploadReportDocument(
 				.where(eq(projectReportingMilestones.milestoneId, report.milestoneId));
 		}
 		const [projectStatusRow] = await db
-			.select({ projectStatus: projects.projectStatus, proposalId: projects.proposalId })
+			.select({
+				projectStatus: projects.projectStatus,
+				proposalId: projects.proposalId,
+			})
 			.from(projects)
 			.where(eq(projects.projectId, report.projectId))
 			.limit(1);
@@ -402,7 +457,10 @@ export async function uploadReportDocument(
 			);
 			await db
 				.update(projects)
-				.set({ projectStatus: PROJECT_STATUS.PENDING_CLOSURE, updatedAt: new Date() })
+				.set({
+					projectStatus: PROJECT_STATUS.PENDING_CLOSURE,
+					updatedAt: new Date(),
+				})
 				.where(eq(projects.projectId, report.projectId));
 			await insertAuditLog({
 				userId: user.userId,

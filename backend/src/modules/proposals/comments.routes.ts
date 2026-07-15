@@ -1,13 +1,16 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { proposalComments } from "@/db/schema/proposal-comments.js";
 import { proposalDocuments } from "@/db/schema/proposal-documents.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
+import { insertAuditLog } from "@/lib/audit.js";
+import { getClientIp } from "@/lib/client-ip.js";
 import { ApiError } from "@/lib/errors.js";
 import { ErrorSchema } from "@/lib/schemas.js";
+import { isProposalInScope } from "@/lib/scope-helpers.js";
 import { ROLE_NAMES } from "@/lib/types.js";
 import type { AuthEnv } from "@/middleware/auth.js";
 import {
@@ -49,20 +52,39 @@ app.openapi(createCommentRoute, async (c) => {
 	const { id: proposalId, docId: documentId } = c.req.valid("param");
 	const { content, annotationJson } = c.req.valid("json");
 
-	const [proposal] = await db
+	const [document] = await db
 		.select({
-			proposalId: proposals.proposalId,
+			proposalId: proposalDocuments.proposalId,
+			campusId: proposals.campusId,
+			departmentId: proposals.departmentId,
 			bypassedRetChair: proposals.bypassedRetChair,
+			archivedAt: proposals.archivedAt,
 		})
-		.from(proposals)
-		.where(eq(proposals.proposalId, proposalId))
+		.from(proposalDocuments)
+		.innerJoin(
+			proposals,
+			eq(proposalDocuments.proposalId, proposals.proposalId),
+		)
+		.where(
+			and(
+				eq(proposalDocuments.documentId, documentId),
+				eq(proposalDocuments.proposalId, proposalId),
+			),
+		)
 		.limit(1);
 
-	if (!proposal) {
-		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+	if (!document || document.archivedAt) {
+		throw new ApiError(404, "NOT_FOUND", "Document not found");
+	}
+	if (!isProposalInScope(user, document)) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You do not have access to this document",
+		);
 	}
 
-	if (user.roleName === ROLE_NAMES.RET_CHAIR && proposal.bypassedRetChair) {
+	if (user.roleName === ROLE_NAMES.RET_CHAIR && document.bypassedRetChair) {
 		throw new ApiError(
 			403,
 			"FORBIDDEN",
@@ -70,19 +92,34 @@ app.openapi(createCommentRoute, async (c) => {
 		);
 	}
 
-	const [newComment] = await db
-		.insert(proposalComments)
-		.values({
-			documentId,
-			userId: user.userId,
-			content,
-			annotationJson: annotationJson ?? null,
-		})
-		.returning();
+	const newComment = await db.transaction(async (tx) => {
+		const [created] = await tx
+			.insert(proposalComments)
+			.values({
+				documentId,
+				userId: user.userId,
+				content,
+				annotationJson: annotationJson ?? null,
+			})
+			.returning();
 
-	if (!newComment) {
-		throw new ApiError(500, "INSERT_FAILED", "Failed to create comment");
-	}
+		if (!created) {
+			throw new ApiError(500, "INSERT_FAILED", "Failed to create comment");
+		}
+
+		await insertAuditLog(
+			{
+				userId: user.userId,
+				action: `Created comment ${created.commentId}`,
+				tableAffected: "proposal_comments",
+				newValue: { documentId },
+				ipAddress: getClientIp(c),
+			},
+			tx,
+		);
+
+		return created;
+	});
 
 	return c.json(
 		{
@@ -127,7 +164,37 @@ const listCommentsRoute = createRoute({
 });
 
 app.openapi(listCommentsRoute, async (c) => {
-	const { docId: documentId } = c.req.valid("param");
+	const user = c.get("user");
+	const { id: proposalId, docId: documentId } = c.req.valid("param");
+	const [document] = await db
+		.select({
+			proposalId: proposalDocuments.proposalId,
+			campusId: proposals.campusId,
+			departmentId: proposals.departmentId,
+			archivedAt: proposals.archivedAt,
+		})
+		.from(proposalDocuments)
+		.innerJoin(
+			proposals,
+			eq(proposalDocuments.proposalId, proposals.proposalId),
+		)
+		.where(
+			and(
+				eq(proposalDocuments.documentId, documentId),
+				eq(proposalDocuments.proposalId, proposalId),
+			),
+		)
+		.limit(1);
+	if (!document || document.archivedAt) {
+		throw new ApiError(404, "NOT_FOUND", "Document not found");
+	}
+	if (!isProposalInScope(user, document)) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You do not have access to this document",
+		);
+	}
 
 	const rows = await db
 		.select({

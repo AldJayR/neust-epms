@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
 	index,
 	pgTable,
@@ -23,10 +24,14 @@ export const proposalMembers = pgTable(
 		addedAt: timestamp("added_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
 	},
 	(table) => ({
 		proposalIdx: index("pm_proposal_id_idx").on(table.proposalId),
 		userIdx: index("pm_user_id_idx").on(table.userId),
+		activeProposalIdx: index("pm_active_proposal_id_idx")
+			.on(table.proposalId)
+			.where(sql`${table.archivedAt} IS NULL`),
 		uniqueProposalUser: unique("pm_proposal_user_unique").on(
 			table.proposalId,
 			table.userId,

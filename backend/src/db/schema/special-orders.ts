@@ -1,5 +1,6 @@
 import { index, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 import { proposalMembers } from "./proposal-members.js";
+import { users } from "./users.js";
 
 /**
  * EC-03: Special Orders are linked to proposal_members (not projects)
@@ -14,6 +15,9 @@ export const specialOrders = pgTable(
 			.references(() => proposalMembers.memberId),
 		soNumber: varchar("so_number", { length: 100 }).notNull().unique(),
 		storagePath: varchar("storage_path", { length: 500 }),
+		contentHash: varchar("content_hash", { length: 64 }),
+		uploadedBy: uuid("uploaded_by").references(() => users.userId),
+		sourceIp: varchar("source_ip", { length: 45 }),
 		dateIssued: timestamp("date_issued", { withTimezone: true }),
 		status: varchar("status", { length: 50 }).notNull().default("Pending"),
 		createdAt: timestamp("created_at", { withTimezone: true })

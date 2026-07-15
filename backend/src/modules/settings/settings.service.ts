@@ -65,31 +65,54 @@ export async function upsertSetting(
 		);
 	}
 
-	const [result] = await db
-		.insert(systemSettings)
-		.values({
-			settingKey: body.settingKey,
-			settingValue: body.settingValue,
-			updatedAt: new Date(),
-		})
-		.onConflictDoUpdate({
-			target: systemSettings.settingKey,
-			set: {
-				settingValue: body.settingValue,
-				updatedAt: new Date(),
-			},
-		})
-		.returning();
-
-	if (!result) {
-		throw new ApiError(500, "UPSERT_FAILED", "Failed to upsert setting");
+	if (body.settingKey === "project_retention_years") {
+		const retentionYears = Number(body.settingValue);
+		if (
+			!Number.isInteger(retentionYears) ||
+			retentionYears < 1 ||
+			retentionYears > 100
+		) {
+			throw new ApiError(
+				400,
+				"INVALID_SETTING",
+				"project_retention_years must be an integer between 1 and 100",
+			);
+		}
 	}
 
-	await insertAuditLog({
-		userId: user.userId,
-		action: `Upserted setting "${body.settingKey}"`,
-		tableAffected: "system_settings",
-		ipAddress,
+	const result = await db.transaction(async (tx) => {
+		const [saved] = await tx
+			.insert(systemSettings)
+			.values({
+				settingKey: body.settingKey,
+				settingValue: body.settingValue,
+				updatedAt: new Date(),
+			})
+			.onConflictDoUpdate({
+				target: systemSettings.settingKey,
+				set: {
+					settingValue: body.settingValue,
+					updatedAt: new Date(),
+				},
+			})
+			.returning();
+
+		if (!saved) {
+			throw new ApiError(500, "UPSERT_FAILED", "Failed to upsert setting");
+		}
+
+		await insertAuditLog(
+			{
+				userId: user.userId,
+				action: `Upserted setting ${body.settingKey}`,
+				tableAffected: "system_settings",
+				newValue: { settingKey: body.settingKey },
+				ipAddress,
+			},
+			tx,
+		);
+
+		return saved;
 	});
 
 	if (cacheEnabled) {

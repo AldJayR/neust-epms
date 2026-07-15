@@ -6,12 +6,14 @@ import { proposals } from "@/db/schema/proposals.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { ApiError } from "@/lib/errors.js";
+import { isProposalInScope } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
-import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
+import type { AuthUser } from "@/lib/types.js";
 import {
 	getAvatarExtension,
 	sanitizeFilename,
 } from "@/services/file.service.js";
+import { hashFileSha256 } from "@/services/file-integrity.service.js";
 
 const AVATARS_BUCKET = "avatars";
 
@@ -19,21 +21,7 @@ function canAccessProposalDocuments(
 	user: AuthUser,
 	proposal: { departmentId: number; campusId: number },
 ): boolean {
-	if (user.roleName === ROLE_NAMES.FACULTY) {
-		if (user.departmentId !== null) {
-			return proposal.departmentId === user.departmentId;
-		}
-		return proposal.campusId === user.campusId;
-	}
-
-	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		if (user.isMainCampus && user.departmentId !== null) {
-			return proposal.departmentId === user.departmentId;
-		}
-		return proposal.campusId === user.campusId;
-	}
-
-	return true;
+	return isProposalInScope(user, proposal);
 }
 
 function generateSecureStoragePath(
@@ -126,6 +114,7 @@ export async function uploadProposalDocument(
 		nextVersion,
 		file.name,
 	);
+	const contentHash = await hashFileSha256(file);
 	const { error: uploadError } = await supabase.storage
 		.from("documents")
 		.upload(storagePath, file, {
@@ -141,30 +130,44 @@ export async function uploadProposalDocument(
 		);
 	}
 
-	let doc;
+	let doc: typeof proposalDocuments.$inferSelect;
 	try {
-		const [inserted] = await db
-			.insert(proposalDocuments)
-			.values({ proposalId, storagePath, versionNum: nextVersion })
-			.returning();
+		doc = await db.transaction(async (tx) => {
+			const [inserted] = await tx
+				.insert(proposalDocuments)
+				.values({
+					proposalId,
+					storagePath,
+					versionNum: nextVersion,
+					contentHash,
+					uploadedBy: user.userId,
+					sourceIp: ipAddress,
+				})
+				.returning();
 
-		if (!inserted) {
-			throw new ApiError(500, "INSERT_FAILED", "Failed to record document");
-		}
-		doc = inserted;
+			if (!inserted) {
+				throw new ApiError(500, "INSERT_FAILED", "Failed to record document");
+			}
+
+			await insertAuditLog(
+				{
+					userId: user.userId,
+					action: `Uploaded document v${nextVersion} for proposal ${proposalId}`,
+					tableAffected: "proposal_documents",
+					newValue: { contentHash, uploadedBy: user.userId },
+					ipAddress,
+				},
+				tx,
+			);
+
+			return inserted;
+		});
 	} catch (error) {
 		try {
 			await supabase.storage.from("documents").remove([storagePath]);
 		} catch {}
 		throw error;
 	}
-
-	await insertAuditLog({
-		userId: user.userId,
-		action: `Uploaded document v${nextVersion} for proposal ${proposalId}`,
-		tableAffected: "proposal_documents",
-		ipAddress,
-	});
 
 	return {
 		documentId: doc.documentId,

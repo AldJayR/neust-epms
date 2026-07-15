@@ -1,4 +1,5 @@
 import {
+	boolean,
 	index,
 	pgTable,
 	timestamp,
@@ -25,6 +26,7 @@ export const projects = pgTable(
 		projectStatus: varchar("project_status", { length: 50 })
 			.notNull()
 			.default("Approved"),
+		onHold: boolean("on_hold").notNull().default(false),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),

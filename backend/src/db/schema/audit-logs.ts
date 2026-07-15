@@ -29,5 +29,7 @@ export const auditLogs = pgTable(
 			table.userId,
 			table.createdAt,
 		),
+		createdIdx: index("al_created_at_idx").on(table.createdAt),
+		tableIdx: index("al_table_affected_idx").on(table.tableAffected),
 	}),
 );

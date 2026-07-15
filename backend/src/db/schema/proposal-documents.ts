@@ -8,6 +8,7 @@ import {
 	varchar,
 } from "drizzle-orm/pg-core";
 import { proposals } from "./proposals.js";
+import { users } from "./users.js";
 
 /**
  * Versioned proposal documents.
@@ -22,6 +23,9 @@ export const proposalDocuments = pgTable(
 			.references(() => proposals.proposalId),
 		storagePath: varchar("storage_path", { length: 500 }).notNull(),
 		versionNum: integer("version_num").notNull(),
+		contentHash: varchar("content_hash", { length: 64 }),
+		uploadedBy: uuid("uploaded_by").references(() => users.userId),
+		sourceIp: varchar("source_ip", { length: 45 }),
 		uploadedAt: timestamp("uploaded_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),

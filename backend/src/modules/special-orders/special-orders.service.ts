@@ -2,12 +2,15 @@ import { randomUUID } from "node:crypto";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
+import { proposals } from "@/db/schema/proposals.js";
 import { specialOrders } from "@/db/schema/special-orders.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { ApiError } from "@/lib/errors.js";
+import { buildProposalScope } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import { sanitizeFilename } from "@/services/file.service.js";
+import { hashFileSha256 } from "@/services/file-integrity.service.js";
 
 const specialOrderColumns = {
 	specialOrderId: specialOrders.specialOrderId,
@@ -33,7 +36,11 @@ function serializeSpecialOrder(order: {
 	archivedAt: Date | null;
 }) {
 	return {
-		...order,
+		specialOrderId: order.specialOrderId,
+		memberId: order.memberId,
+		soNumber: order.soNumber,
+		storagePath: order.storagePath,
+		status: order.status,
 		dateIssued: order.dateIssued?.toISOString() ?? null,
 		createdAt: order.createdAt.toISOString(),
 		updatedAt: order.updatedAt.toISOString(),
@@ -41,14 +48,28 @@ function serializeSpecialOrder(order: {
 	};
 }
 
-export async function listSpecialOrders(query: {
-	page: number;
-	limit: number;
-}) {
+export async function listSpecialOrders(
+	query: {
+		page: number;
+		limit: number;
+	},
+	user: AuthUser,
+) {
 	const rows = await db
 		.select(specialOrderColumns)
 		.from(specialOrders)
-		.where(isNull(specialOrders.archivedAt))
+		.innerJoin(
+			proposalMembers,
+			eq(specialOrders.memberId, proposalMembers.memberId),
+		)
+		.innerJoin(proposals, eq(proposalMembers.proposalId, proposals.proposalId))
+		.where(
+			and(
+				isNull(specialOrders.archivedAt),
+				isNull(proposalMembers.archivedAt),
+				...buildProposalScope(user),
+			),
+		)
 		.orderBy(desc(specialOrders.createdAt))
 		.limit(query.limit)
 		.offset((query.page - 1) * query.limit);
@@ -69,7 +90,14 @@ export async function uploadSpecialOrder(
 			proposalId: proposalMembers.proposalId,
 		})
 		.from(proposalMembers)
-		.where(eq(proposalMembers.memberId, memberId))
+		.innerJoin(proposals, eq(proposalMembers.proposalId, proposals.proposalId))
+		.where(
+			and(
+				eq(proposalMembers.memberId, memberId),
+				isNull(proposalMembers.archivedAt),
+				...buildProposalScope(user),
+			),
+		)
 		.limit(1);
 
 	if (!member) {
@@ -85,6 +113,7 @@ export async function uploadSpecialOrder(
 					eq(proposalMembers.proposalId, member.proposalId),
 					eq(proposalMembers.userId, user.userId),
 					eq(proposalMembers.projectRole, "Project Leader"),
+					isNull(proposalMembers.archivedAt),
 				),
 			)
 			.limit(1);
@@ -99,6 +128,7 @@ export async function uploadSpecialOrder(
 	}
 
 	const storagePath = `special-orders/${memberId}/${Date.now()}_${randomUUID()}_${sanitizeFilename(file.name)}`;
+	const contentHash = await hashFileSha256(file);
 	const { error: uploadError } = await supabase.storage
 		.from("documents")
 		.upload(storagePath, file, { contentType: file.type, upsert: false });
@@ -125,35 +155,68 @@ export async function uploadSpecialOrder(
 	let record: typeof specialOrders.$inferSelect;
 	let isNew = false;
 	try {
-		if (existing) {
-			const [updated] = await db
-				.update(specialOrders)
-				.set({ storagePath, soNumber, updatedAt: new Date() })
-				.where(eq(specialOrders.specialOrderId, existing.specialOrderId))
-				.returning();
-			if (!updated) {
-				throw new ApiError(
-					500,
-					"UPDATE_FAILED",
-					"Failed to update special order",
-				);
+		const result = await db.transaction(async (tx) => {
+			let nextRecord: typeof specialOrders.$inferSelect;
+			let nextIsNew = false;
+			if (existing) {
+				const [updated] = await tx
+					.update(specialOrders)
+					.set({
+						storagePath,
+						soNumber,
+						contentHash,
+						uploadedBy: user.userId,
+						sourceIp: ipAddress,
+						updatedAt: new Date(),
+					})
+					.where(eq(specialOrders.specialOrderId, existing.specialOrderId))
+					.returning();
+				if (!updated) {
+					throw new ApiError(
+						500,
+						"UPDATE_FAILED",
+						"Failed to update special order",
+					);
+				}
+				nextRecord = updated;
+			} else {
+				const [inserted] = await tx
+					.insert(specialOrders)
+					.values({
+						memberId,
+						soNumber,
+						storagePath,
+						contentHash,
+						uploadedBy: user.userId,
+						sourceIp: ipAddress,
+					})
+					.returning();
+				if (!inserted) {
+					throw new ApiError(
+						500,
+						"INSERT_FAILED",
+						"Failed to create special order",
+					);
+				}
+				nextRecord = inserted;
+				nextIsNew = true;
 			}
-			record = updated;
-		} else {
-			const [inserted] = await db
-				.insert(specialOrders)
-				.values({ memberId, soNumber, storagePath })
-				.returning();
-			if (!inserted) {
-				throw new ApiError(
-					500,
-					"INSERT_FAILED",
-					"Failed to create special order",
-				);
-			}
-			record = inserted;
-			isNew = true;
-		}
+
+			await insertAuditLog(
+				{
+					userId: user.userId,
+					action: `${existing ? "Updated" : "Created"} special order ${nextRecord.specialOrderId}`,
+					tableAffected: "special_orders",
+					newValue: { contentHash, uploadedBy: user.userId },
+					ipAddress,
+				},
+				tx,
+			);
+
+			return { record: nextRecord, isNew: nextIsNew };
+		});
+		record = result.record;
+		isNew = result.isNew;
 	} catch (error: unknown) {
 		const err = error as { code?: string; cause?: { code?: string } };
 		try {
@@ -169,13 +232,6 @@ export async function uploadSpecialOrder(
 		throw error;
 	}
 
-	await insertAuditLog({
-		userId: user.userId,
-		action: `${existing ? "Updated" : "Created"} special order ${record.specialOrderId} for member ${memberId}`,
-		tableAffected: "special_orders",
-		ipAddress,
-	});
-
 	return { record: serializeSpecialOrder(record), isNew };
 }
 
@@ -187,10 +243,17 @@ export async function getSpecialOrderSignedUrl(
 	const [order] = await db
 		.select(specialOrderColumns)
 		.from(specialOrders)
+		.innerJoin(
+			proposalMembers,
+			eq(specialOrders.memberId, proposalMembers.memberId),
+		)
+		.innerJoin(proposals, eq(proposalMembers.proposalId, proposals.proposalId))
 		.where(
 			and(
 				eq(specialOrders.specialOrderId, id),
 				isNull(specialOrders.archivedAt),
+				isNull(proposalMembers.archivedAt),
+				...buildProposalScope(user),
 			),
 		)
 		.limit(1);
@@ -207,7 +270,12 @@ export async function getSpecialOrderSignedUrl(
 				userId: proposalMembers.userId,
 			})
 			.from(proposalMembers)
-			.where(eq(proposalMembers.memberId, order.memberId))
+			.where(
+				and(
+					eq(proposalMembers.memberId, order.memberId),
+					isNull(proposalMembers.archivedAt),
+				),
+			)
 			.limit(1);
 
 		if (!member) {

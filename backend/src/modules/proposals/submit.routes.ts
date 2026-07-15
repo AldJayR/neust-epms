@@ -113,6 +113,7 @@ app.openapi(submitRoute, async (c) => {
 			and(
 				eq(proposalMembers.proposalId, id),
 				eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE),
+				isNull(proposalMembers.archivedAt),
 			),
 		)
 		.limit(1);

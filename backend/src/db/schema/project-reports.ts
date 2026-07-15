@@ -8,8 +8,8 @@ import {
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { projects } from "./projects.js";
 import { projectReportingMilestones } from "./project-reporting-milestones.js";
+import { projects } from "./projects.js";
 import { users } from "./users.js";
 
 export const projectReports = pgTable(
@@ -27,6 +27,9 @@ export const projectReports = pgTable(
 			.references(() => users.userId),
 		reportType: varchar("report_type", { length: 100 }).notNull(),
 		storagePath: varchar("storage_path", { length: 500 }),
+		contentHash: varchar("content_hash", { length: 64 }),
+		uploadedBy: uuid("uploaded_by").references(() => users.userId),
+		sourceIp: varchar("source_ip", { length: 45 }),
 		remarks: text("remarks"),
 		submittedAt: timestamp("submitted_at", { withTimezone: true })
 			.notNull()

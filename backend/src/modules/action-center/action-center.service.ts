@@ -56,7 +56,10 @@ async function getPendingProposals(opts: {
 	if (opts.joinWithMember) {
 		query.innerJoin(
 			proposalMembers,
-			eq(proposals.proposalId, proposalMembers.proposalId),
+			and(
+				eq(proposals.proposalId, proposalMembers.proposalId),
+				isNull(proposalMembers.archivedAt),
+			),
 		);
 	}
 
@@ -96,6 +99,7 @@ async function getReturnedProposals(opts: {
 			and(
 				eq(proposals.proposalId, proposalMembers.proposalId),
 				eq(proposalMembers.userId, opts.memberUserId),
+				isNull(proposalMembers.archivedAt),
 			),
 		);
 	}
@@ -137,6 +141,7 @@ async function getProjectsByStatus(opts: {
 			and(
 				eq(proposals.proposalId, proposalMembers.proposalId),
 				eq(proposalMembers.userId, opts.memberUserId),
+				isNull(proposalMembers.archivedAt),
 			),
 		);
 	}
@@ -184,6 +189,7 @@ async function getUpcomingReports(opts: {
 			and(
 				eq(proposals.proposalId, proposalMembers.proposalId),
 				eq(proposalMembers.userId, opts.memberUserId),
+				isNull(proposalMembers.archivedAt),
 			),
 		);
 	}

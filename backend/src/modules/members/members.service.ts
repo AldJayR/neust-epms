@@ -1,11 +1,16 @@
 import type { z } from "@hono/zod-openapi";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { ApiError } from "@/lib/errors.js";
+import {
+	assertProposalAccess,
+	getProposalAccess,
+} from "@/lib/proposal-access.js";
+import { buildProposalScope } from "@/lib/scope-helpers.js";
 import type { AuthUser } from "@/lib/types.js";
 import {
 	isProjectLeader,
@@ -16,9 +21,11 @@ import type { AddMemberSchema, MemberSchema } from "./members.schema.js";
 type Member = z.infer<typeof MemberSchema>;
 
 export async function listMembers(
+	authUser: AuthUser,
 	proposalId: string,
 	query: { page: number; limit: number },
 ): Promise<{ items: Member[] }> {
+	await getProposalAccess(authUser, proposalId);
 	const { page, limit } = query;
 	const offset = (page - 1) * limit;
 
@@ -31,7 +38,14 @@ export async function listMembers(
 			addedAt: proposalMembers.addedAt,
 		})
 		.from(proposalMembers)
-		.where(eq(proposalMembers.proposalId, proposalId))
+		.innerJoin(proposals, eq(proposalMembers.proposalId, proposals.proposalId))
+		.where(
+			and(
+				eq(proposalMembers.proposalId, proposalId),
+				isNull(proposalMembers.archivedAt),
+				...buildProposalScope(authUser),
+			),
+		)
 		.orderBy(proposalMembers.addedAt)
 		.limit(limit)
 		.offset(offset);
@@ -52,7 +66,12 @@ export async function addMember(
 ): Promise<Member> {
 	const created = await db.transaction(async (tx) => {
 		const [proposal] = await tx
-			.select({ proposalId: proposals.proposalId })
+			.select({
+				proposalId: proposals.proposalId,
+				campusId: proposals.campusId,
+				departmentId: proposals.departmentId,
+				archivedAt: proposals.archivedAt,
+			})
 			.from(proposals)
 			.where(eq(proposals.proposalId, proposalId))
 			.limit(1);
@@ -60,6 +79,8 @@ export async function addMember(
 		if (!proposal) {
 			throw new ApiError(404, "NOT_FOUND", "Proposal not found");
 		}
+
+		assertProposalAccess(authUser, proposal);
 
 		if (!(await isProjectLeader(proposalId, authUser.userId))) {
 			throw new ApiError(
@@ -80,7 +101,10 @@ export async function addMember(
 		}
 
 		const [existingMember] = await tx
-			.select({ memberId: proposalMembers.memberId })
+			.select({
+				memberId: proposalMembers.memberId,
+				archivedAt: proposalMembers.archivedAt,
+			})
 			.from(proposalMembers)
 			.where(
 				and(
@@ -90,7 +114,7 @@ export async function addMember(
 			)
 			.limit(1);
 
-		if (existingMember) {
+		if (existingMember && !existingMember.archivedAt) {
 			throw new ApiError(409, "DUPLICATE", "User is already a member");
 		}
 
@@ -102,6 +126,7 @@ export async function addMember(
 					and(
 						eq(proposalMembers.proposalId, proposalId),
 						eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE),
+						isNull(proposalMembers.archivedAt),
 					),
 				)
 				.limit(1);
@@ -113,6 +138,31 @@ export async function addMember(
 					"A proposal can only have one project leader",
 				);
 			}
+		}
+
+		if (existingMember) {
+			const [reactivatedMember] = await tx
+				.update(proposalMembers)
+				.set({ projectRole: body.projectRole, archivedAt: null })
+				.where(eq(proposalMembers.memberId, existingMember.memberId))
+				.returning();
+
+			if (!reactivatedMember) {
+				throw new ApiError(500, "UPDATE_FAILED", "Failed to restore member");
+			}
+
+			await insertAuditLog(
+				{
+					userId: authUser.userId,
+					action: `Restored member ${existingMember.memberId} on proposal ${proposalId}`,
+					tableAffected: "proposal_members",
+					newValue: { archivedAt: null, projectRole: body.projectRole },
+					ipAddress,
+				},
+				tx,
+			);
+
+			return reactivatedMember;
 		}
 
 		const [createdMember] = await tx
@@ -152,7 +202,12 @@ export async function removeMember(
 ): Promise<void> {
 	await db.transaction(async (tx) => {
 		const [proposal] = await tx
-			.select({ proposalId: proposals.proposalId })
+			.select({
+				proposalId: proposals.proposalId,
+				campusId: proposals.campusId,
+				departmentId: proposals.departmentId,
+				archivedAt: proposals.archivedAt,
+			})
 			.from(proposals)
 			.where(eq(proposals.proposalId, proposalId))
 			.limit(1);
@@ -160,6 +215,7 @@ export async function removeMember(
 		if (!proposal) {
 			throw new ApiError(404, "NOT_FOUND", "Proposal not found");
 		}
+		assertProposalAccess(authUser, proposal);
 
 		if (!(await isProjectLeader(proposalId, authUser.userId))) {
 			throw new ApiError(
@@ -169,17 +225,19 @@ export async function removeMember(
 			);
 		}
 
-		const [deleted] = await tx
-			.delete(proposalMembers)
+		const [archived] = await tx
+			.update(proposalMembers)
+			.set({ archivedAt: new Date() })
 			.where(
 				and(
 					eq(proposalMembers.memberId, memberId),
 					eq(proposalMembers.proposalId, proposalId),
+					isNull(proposalMembers.archivedAt),
 				),
 			)
 			.returning();
 
-		if (!deleted) {
+		if (!archived) {
 			throw new ApiError(404, "MEMBER_NOT_FOUND", "Member not found");
 		}
 

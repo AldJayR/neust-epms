@@ -21,6 +21,13 @@ beforeEach(() => {
 });
 
 describe("GET /proposals/:proposalId/members", () => {
+	const proposalId = "eeeeeeee-5555-4555-8555-eeeeeeeeeeee";
+	const proposal = {
+		proposalId,
+		campusId: MOCK_USERS.faculty.campusId,
+		departmentId: MOCK_USERS.faculty.departmentId,
+		archivedAt: null,
+	};
 	it("should return the member list", async () => {
 		const mock = {
 			memberId: "aaa",
@@ -29,10 +36,12 @@ describe("GET /proposals/:proposalId/members", () => {
 			projectRole: "Researcher",
 			addedAt: new Date(),
 		};
-		vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
+		vi.mocked(db.select)
+			.mockReturnValueOnce(mockSelectChain([proposal]) as never)
+			.mockReturnValueOnce(mockSelectChain([mock]) as never);
 
 		const res = await app.request(
-			"/proposals/eeeeeeee-5555-4555-8555-eeeeeeeeeeee/members",
+			`/proposals/${proposalId}/members`,
 		);
 		expect(res.status).toBe(200);
 		const body = await res.json();
@@ -40,10 +49,12 @@ describe("GET /proposals/:proposalId/members", () => {
 	});
 
 	it("should return empty list when no members", async () => {
-		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
+		vi.mocked(db.select)
+			.mockReturnValueOnce(mockSelectChain([proposal]) as never)
+			.mockReturnValueOnce(mockSelectChain([]) as never);
 
 		const res = await app.request(
-			"/proposals/eeeeeeee-5555-4555-8555-eeeeeeeeeeee/members",
+			`/proposals/${proposalId}/members`,
 		);
 		expect(res.status).toBe(200);
 		const body = await res.json();
@@ -51,10 +62,12 @@ describe("GET /proposals/:proposalId/members", () => {
 	});
 
 	it("should handle pagination parameters", async () => {
-		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
+		vi.mocked(db.select)
+			.mockReturnValueOnce(mockSelectChain([proposal]) as never)
+			.mockReturnValueOnce(mockSelectChain([]) as never);
 
 		const res = await app.request(
-			"/proposals/eeeeeeee-5555-4555-8555-eeeeeeeeeeee/members?page=2&limit=10",
+			`/proposals/${proposalId}/members?page=2&limit=10`,
 		);
 		expect(res.status).toBe(200);
 	});
@@ -62,6 +75,12 @@ describe("GET /proposals/:proposalId/members", () => {
 
 describe("POST /proposals/:proposalId/members", () => {
 	const proposalId = "eeeeeeee-5555-4555-8555-eeeeeeeeeeee";
+	const proposal = {
+		proposalId,
+		campusId: MOCK_USERS.faculty.campusId,
+		departmentId: MOCK_USERS.faculty.departmentId,
+		archivedAt: null,
+	};
 
 	it("should reject adding a member if proposal not found", async () => {
 		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
@@ -89,7 +108,7 @@ describe("POST /proposals/:proposalId/members", () => {
 			const tx = {
 				select: vi
 					.fn()
-					.mockReturnValueOnce(mockSelectChain([{ proposalId }])),
+					.mockReturnValueOnce(mockSelectChain([proposal])),
 				insert: vi.fn(() => mockMutationChain([])),
 				update: vi.fn(() => mockMutationChain([])),
 				delete: vi.fn(() => mockMutationChain([])),
@@ -121,7 +140,7 @@ describe("POST /proposals/:proposalId/members", () => {
 			const tx = {
 				select: vi
 					.fn()
-					.mockReturnValueOnce(mockSelectChain([{ proposalId }]))
+					.mockReturnValueOnce(mockSelectChain([proposal]))
 					.mockReturnValueOnce(mockSelectChain([])),
 				insert: vi.fn(() => mockMutationChain([])),
 				update: vi.fn(() => mockMutationChain([])),
@@ -145,7 +164,6 @@ describe("POST /proposals/:proposalId/members", () => {
 	});
 
 	it("should reject duplicate membership", async () => {
-		const proposal = { proposalId };
 		const targetUser = { userId: "existing-user" };
 		const existing = { memberId: "m1" };
 
@@ -183,7 +201,6 @@ describe("POST /proposals/:proposalId/members", () => {
 	});
 
 	it("should enforce single project leader per proposal", async () => {
-		const proposal = { proposalId };
 		const targetUser = { userId: "new-leader" };
 		const existingLeader = { memberId: "existing-leader" };
 
@@ -222,7 +239,6 @@ describe("POST /proposals/:proposalId/members", () => {
 	});
 
 	it("should add a member successfully", async () => {
-		const proposal = { proposalId };
 		const targetUser = { userId: "new-u" };
 		const created = {
 			memberId: "new-m",
@@ -268,6 +284,12 @@ describe("POST /proposals/:proposalId/members", () => {
 describe("DELETE /proposals/:proposalId/members/:memberId", () => {
 	const proposalId = "eeeeeeee-5555-4555-8555-eeeeeeeeeeee";
 	const memberId = "aaaaaaaa-0000-4000-8000-aaaaaaaaaaaa";
+	const proposal = {
+		proposalId,
+		campusId: MOCK_USERS.faculty.campusId,
+		departmentId: MOCK_USERS.faculty.departmentId,
+		archivedAt: null,
+	};
 
 	it("should reject removal if proposal not found", async () => {
 		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
@@ -297,7 +319,7 @@ describe("DELETE /proposals/:proposalId/members/:memberId", () => {
 			const tx = {
 				select: vi
 					.fn()
-					.mockReturnValueOnce(mockSelectChain([{ proposalId }])),
+					.mockReturnValueOnce(mockSelectChain([proposal])),
 				insert: vi.fn(() => mockMutationChain([])),
 				update: vi.fn(() => mockMutationChain([])),
 				delete: vi.fn(() => mockMutationChain([])),
@@ -325,7 +347,16 @@ describe("DELETE /proposals/:proposalId/members/:memberId", () => {
 			const tx = {
 				select: vi
 					.fn()
-					.mockReturnValueOnce(mockSelectChain([{ proposalId }])),
+					.mockReturnValueOnce(
+						mockSelectChain([
+							{
+								proposalId,
+								campusId: MOCK_USERS.faculty.campusId,
+								departmentId: MOCK_USERS.faculty.departmentId,
+								archivedAt: null,
+							},
+						]),
+					),
 				insert: vi.fn(() => mockMutationChain([])),
 				update: vi.fn(() => mockMutationChain([])),
 				delete: vi.fn(() => mockMutationChain([])),
@@ -344,7 +375,7 @@ describe("DELETE /proposals/:proposalId/members/:memberId", () => {
 	});
 
 	it("should remove a member successfully", async () => {
-		const deleted = { memberId };
+		const archived = { memberId };
 
 		// Mock isProjectLeader to return truthy (user IS a leader)
 		vi.mocked(db.select).mockReturnValue(
@@ -355,10 +386,10 @@ describe("DELETE /proposals/:proposalId/members/:memberId", () => {
 			const tx = {
 				select: vi
 					.fn()
-					.mockReturnValueOnce(mockSelectChain([{ proposalId }])),
+					.mockReturnValueOnce(mockSelectChain([proposal])),
 				insert: vi.fn(() => mockMutationChain([])),
-				update: vi.fn(() => mockMutationChain([])),
-				delete: vi.fn(() => mockMutationChain([deleted])),
+				update: vi.fn(() => mockMutationChain([archived])),
+				delete: vi.fn(() => mockMutationChain([])),
 			};
 			return callback(tx as never);
 		});

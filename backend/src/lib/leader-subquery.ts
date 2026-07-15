@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
 
@@ -13,6 +13,11 @@ export function getLeaderSubquery() {
 			userId: proposalMembers.userId,
 		})
 		.from(proposalMembers)
-		.where(eq(proposalMembers.projectRole, "Project Leader"))
+		.where(
+			and(
+				eq(proposalMembers.projectRole, "Project Leader"),
+				isNull(proposalMembers.archivedAt),
+			),
+		)
 		.as("leader_members");
 }

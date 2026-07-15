@@ -40,7 +40,10 @@ const listRoute = createRoute({
 });
 
 app.openapi(listRoute, async (c) => {
-	return c.json(await listSpecialOrders(c.req.valid("query")), 200);
+	return c.json(
+		await listSpecialOrders(c.req.valid("query"), c.get("user")),
+		200,
+	);
 });
 
 const uploadRoute = createRoute({

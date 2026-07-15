@@ -150,6 +150,10 @@ export const TransitionSchema = z
 	.object({ status: z.enum(["Ongoing", "Completed"]) })
 	.openapi("TransitionProject");
 
+export const ProjectHoldSchema = z
+	.object({ onHold: z.boolean() })
+	.openapi("ProjectHold");
+
 export const ParamId = z.object({
 	id: z
 		.string()
@@ -188,10 +192,10 @@ export const ActivateSchema = z
 		moaId: z.string().uuid(),
 		milestones: z
 			.array(
-			z.object({
-				reportType: z.enum(["Progress", "Project Closure"]),
-				dueAt: z.string().datetime(),
-			}),
+				z.object({
+					reportType: z.enum(["Progress", "Project Closure"]),
+					dueAt: z.string().datetime(),
+				}),
 			)
 			.min(1),
 	})

@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import * as Sentry from "@sentry/node";
 import app from "./app.js";
 import { startMoaExpirationCron } from "./cron/moa-expiration.js";
+import { startPrivacyRetentionCron } from "./cron/privacy-retention.js";
 import { startReportOverdueCron } from "./cron/report-overdue.js";
 import { env } from "./env.js";
 
@@ -11,6 +12,18 @@ if (env.SENTRY_DSN) {
 		dsn: env.SENTRY_DSN,
 		environment: env.NODE_ENV,
 		tracesSampleRate: env.NODE_ENV === "production" ? 0.2 : 1.0,
+		beforeSend(event) {
+			if (event.request) {
+				delete event.request.headers;
+				delete event.request.data;
+				delete event.request.cookies;
+			}
+			if (event.user) {
+				delete event.user.email;
+				delete event.user.username;
+			}
+			return event;
+		},
 	});
 	console.log("[SENTRY] Initialized.");
 }
@@ -18,6 +31,7 @@ if (env.SENTRY_DSN) {
 // ── Start cron jobs ──
 startMoaExpirationCron();
 startReportOverdueCron();
+startPrivacyRetentionCron();
 
 // ── Start HTTP server ──
 const port = env.PORT;

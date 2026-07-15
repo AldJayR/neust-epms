@@ -421,6 +421,7 @@ export async function getFacultyDirectory(
 				and(
 					inArray(proposalMembers.userId, userIds),
 					isNull(projects.archivedAt),
+					isNull(proposalMembers.archivedAt),
 					eq(proposalMembers.projectRole, "Project Leader"),
 				),
 			)
@@ -440,6 +441,7 @@ export async function getFacultyDirectory(
 					inArray(proposalMembers.userId, userIds),
 					sql`${proposalMembers.projectRole} != 'Project Leader'`,
 					isNull(proposals.archivedAt),
+					isNull(proposalMembers.archivedAt),
 				),
 			)
 			.groupBy(proposalMembers.userId),
@@ -502,6 +504,7 @@ export async function getFacultyInvolvementCounts(
 				and(
 					inArray(proposalMembers.userId, userIds),
 					isNull(projects.archivedAt),
+					isNull(proposalMembers.archivedAt),
 					eq(proposalMembers.projectRole, "Project Leader"),
 				),
 			)
@@ -521,6 +524,7 @@ export async function getFacultyInvolvementCounts(
 					inArray(proposalMembers.userId, userIds),
 					sql`${proposalMembers.projectRole} != 'Project Leader'`,
 					isNull(proposals.archivedAt),
+					isNull(proposalMembers.archivedAt),
 				),
 			)
 			.groupBy(proposalMembers.userId),

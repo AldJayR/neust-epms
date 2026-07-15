@@ -1,4 +1,12 @@
-import { index, integer, pgTable, primaryKey, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import {
+	index,
+	integer,
+	pgTable,
+	primaryKey,
+	timestamp,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { beneficiarySectors } from "./beneficiary-sectors.js";
 import { proposals } from "./proposals.js";
 
@@ -15,6 +23,7 @@ export const proposalBeneficiaries = pgTable(
 		sectorId: integer("sector_id")
 			.notNull()
 			.references(() => beneficiarySectors.sectorId),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
 	},
 	(table) => ({
 		pk: primaryKey({ columns: [table.proposalId, table.sectorId] }),
@@ -22,5 +31,8 @@ export const proposalBeneficiaries = pgTable(
 			table.proposalId,
 		),
 		sectorIdx: index("proposal_beneficiaries_sector_id_idx").on(table.sectorId),
+		activeProposalIdx: index("proposal_beneficiaries_active_proposal_id_idx")
+			.on(table.proposalId)
+			.where(sql`${table.archivedAt} IS NULL`),
 	}),
 );

@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { roles } from "@/db/schema/roles.js";
@@ -18,6 +18,7 @@ export async function isProjectLeader(
 				eq(proposalMembers.proposalId, proposalId),
 				eq(proposalMembers.userId, userId),
 				eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE),
+				isNull(proposalMembers.archivedAt),
 			),
 		)
 		.limit(1);

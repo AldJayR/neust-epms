@@ -65,7 +65,12 @@ export async function listProjects(
 			isMember: sql<boolean>`true`.as("is_member"),
 		})
 		.from(proposalMembers)
-		.where(eq(proposalMembers.userId, user.userId))
+		.where(
+			and(
+				eq(proposalMembers.userId, user.userId),
+				isNull(proposalMembers.archivedAt),
+			),
+		)
 		.as("user_member");
 
 	const [rows, [totalResult]] = await Promise.all([
@@ -239,7 +244,13 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 		.leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
 		.leftJoin(moas, eq(projects.moaId, moas.moaId))
 		.leftJoin(partners, eq(moas.partnerId, partners.partnerId))
-		.where(or(eq(proposals.proposalId, id), eq(projects.projectId, id)));
+		.where(
+			and(
+				or(eq(proposals.proposalId, id), eq(projects.projectId, id)),
+				isNull(proposals.archivedAt),
+				isNull(projects.archivedAt),
+			),
+		);
 
 	if (!row) {
 		throw new ApiError(404, "NOT_FOUND", "Project not found");
@@ -284,7 +295,12 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 				})
 				.from(proposalMembers)
 				.innerJoin(users, eq(proposalMembers.userId, users.userId))
-				.where(eq(proposalMembers.proposalId, row.proposalId)),
+				.where(
+					and(
+						eq(proposalMembers.proposalId, row.proposalId),
+						isNull(proposalMembers.archivedAt),
+					),
+				),
 
 			db
 				.select({
@@ -338,6 +354,7 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 				.where(
 					and(
 						eq(proposalMembers.proposalId, row.proposalId),
+						isNull(proposalMembers.archivedAt),
 						isNull(specialOrders.archivedAt),
 					),
 				)
@@ -671,7 +688,11 @@ export async function closeProject(
 	await db.transaction(async (tx) => {
 		await tx
 			.update(projects)
-			.set({ projectStatus: PROJECT_STATUS.CLOSED, updatedAt: new Date() })
+			.set({
+				projectStatus: PROJECT_STATUS.CLOSED,
+				actualEndDate: new Date(),
+				updatedAt: new Date(),
+			})
 			.where(eq(projects.projectId, projectId));
 
 		await insertAuditLog(
@@ -685,6 +706,52 @@ export async function closeProject(
 			},
 			tx,
 		);
+	});
+}
+
+export async function setProjectHold(
+	projectId: string,
+	onHold: boolean,
+	user: AuthUser,
+	ipAddress: string,
+) {
+	const [existing] = await db
+		.select({ projectId: projects.projectId, onHold: projects.onHold })
+		.from(projects)
+		.where(and(eq(projects.projectId, projectId), isNull(projects.archivedAt)))
+		.limit(1);
+
+	if (!existing) {
+		throw new ApiError(404, "NOT_FOUND", "Project not found");
+	}
+
+	if (existing.onHold === onHold) return existing;
+
+	const diff = captureAuditDiff(existing, { ...existing, onHold }, ["onHold"]);
+	return db.transaction(async (tx) => {
+		const [updated] = await tx
+			.update(projects)
+			.set({ onHold, updatedAt: new Date() })
+			.where(eq(projects.projectId, projectId))
+			.returning({ projectId: projects.projectId, onHold: projects.onHold });
+
+		if (!updated) {
+			throw new ApiError(500, "UPDATE_FAILED", "Failed to update project hold");
+		}
+
+		await insertAuditLog(
+			{
+				userId: user.userId,
+				action: `${onHold ? "Placed" : "Removed"} hold on project ${projectId}`,
+				tableAffected: "projects",
+				oldValue: diff.oldValue,
+				newValue: diff.newValue,
+				ipAddress,
+			},
+			tx,
+		);
+
+		return updated;
 	});
 }
 
@@ -764,7 +831,12 @@ export async function activateProject(
 		.from(proposalMembers)
 		.innerJoin(proposals, eq(proposalMembers.proposalId, proposals.proposalId))
 		.innerJoin(projects, eq(projects.proposalId, proposals.proposalId))
-		.where(eq(projects.projectId, project.projectId));
+		.where(
+			and(
+				eq(projects.projectId, project.projectId),
+				isNull(proposalMembers.archivedAt),
+			),
+		);
 	if (members.length > 0) {
 		const uploadedOrders = await db
 			.select({ memberId: specialOrders.memberId })
@@ -873,7 +945,12 @@ export async function getProjectReadiness(id: string) {
 		db
 			.select({ memberId: proposalMembers.memberId })
 			.from(proposalMembers)
-			.where(eq(proposalMembers.proposalId, project.proposalId)),
+			.where(
+				and(
+					eq(proposalMembers.proposalId, project.proposalId),
+					isNull(proposalMembers.archivedAt),
+				),
+			),
 		project.moaId
 			? db
 					.select({ validUntil: moas.validUntil })
@@ -1034,7 +1111,8 @@ export async function getProjectReportingSchedule(id: string) {
 		const milestoneReports = reports.filter(
 			(report) => report.milestoneId === milestone.id,
 		);
-		const singleReport = milestoneReports.length === 1 ? milestoneReports[0] : null;
+		const singleReport =
+			milestoneReports.length === 1 ? milestoneReports[0] : null;
 		return {
 			id: milestone.id,
 			date: milestone.date.toISOString(),

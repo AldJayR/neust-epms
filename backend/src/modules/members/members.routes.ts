@@ -35,7 +35,7 @@ const listMembersRoute = createRoute({
 app.openapi(listMembersRoute, async (c) => {
 	const { proposalId } = c.req.valid("param");
 	const query = c.req.valid("query");
-	const result = await listMembers(proposalId, query);
+	const result = await listMembers(c.get("user"), proposalId, query);
 	return c.json(result, 200);
 });
 

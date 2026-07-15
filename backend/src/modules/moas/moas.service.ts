@@ -23,6 +23,7 @@ import { buildProposalScopeClause } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import { isPdfFile, sanitizeFilename } from "@/services/file.service.js";
+import { hashFileSha256 } from "@/services/file-integrity.service.js";
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
@@ -46,7 +47,13 @@ export async function isMoaLinkedToUserProject(
 			proposalMembers,
 			eq(projects.proposalId, proposalMembers.proposalId),
 		)
-		.where(and(eq(projects.moaId, moaId), eq(proposalMembers.userId, userId)))
+		.where(
+			and(
+				eq(projects.moaId, moaId),
+				eq(proposalMembers.userId, userId),
+				isNull(proposalMembers.archivedAt),
+			),
+		)
 		.limit(1);
 	return !!row;
 }
@@ -264,6 +271,7 @@ export async function getLinkedProjects(id: string, user: AuthUser) {
 				and(
 					eq(proposalMembers.proposalId, proposals.proposalId),
 					eq(proposalMembers.projectRole, "Project Leader"),
+					isNull(proposalMembers.archivedAt),
 				),
 			)
 			.leftJoin(users, eq(proposalMembers.userId, users.userId))
@@ -387,6 +395,7 @@ export async function uploadMoaDocument(
 	// 2. Upload to Supabase Storage
 	const sanitizedFilename = sanitizeFilename(file.name);
 	const storagePath = `moas/${partnerId}/${Date.now()}_${randomUUID()}_${sanitizedFilename}`;
+	const contentHash = await hashFileSha256(file);
 
 	const { error: uploadError } = await supabase.storage
 		.from("documents")
@@ -403,28 +412,52 @@ export async function uploadMoaDocument(
 		);
 	}
 
-	// 3. Create MOA record
-	const [created] = await db
-		.insert(moas)
-		.values({
-			partnerId,
-			storagePath,
-			validFrom,
-			validUntil,
-		})
-		.returning();
+	// 3. Create MOA record and its audit event atomically
+	let created: typeof moas.$inferSelect;
+	try {
+		created = await db.transaction(async (tx) => {
+			const [record] = await tx
+				.insert(moas)
+				.values({
+					partnerId,
+					storagePath,
+					contentHash,
+					uploadedBy: user.userId,
+					sourceIp: ipAddress,
+					validFrom,
+					validUntil,
+				})
+				.returning();
+
+			if (!record) {
+				throw new ApiError(500, "INSERT_FAILED", "Failed to create MOA");
+			}
+
+			await insertAuditLog(
+				{
+					userId: user.userId,
+					action: `Created MOA ${record.moaId}`,
+					tableAffected: "moas",
+					newValue: { contentHash, uploadedBy: user.userId },
+					ipAddress,
+				},
+				tx,
+			);
+
+			return record;
+		});
+	} catch (error) {
+		await supabase.storage
+			.from("documents")
+			.remove([storagePath])
+			.catch(() => undefined);
+		throw error;
+	}
 
 	if (!created) {
 		await supabase.storage.from("documents").remove([storagePath]);
 		throw new ApiError(500, "INSERT_FAILED", "Failed to create MOA");
 	}
-
-	await insertAuditLog({
-		userId: user.userId,
-		action: `Created MOA ${created.moaId} for partner ${partnerName}`,
-		tableAffected: "moas",
-		ipAddress,
-	});
 
 	await syncProjectsToNewMoa(
 		created.partnerId,
@@ -435,7 +468,9 @@ export async function uploadMoaDocument(
 	);
 
 	return {
-		...created,
+		moaId: created.moaId,
+		partnerId: created.partnerId,
+		storagePath: created.storagePath,
 		validFrom: created.validFrom.toISOString(),
 		validUntil: created.validUntil.toISOString(),
 		createdAt: created.createdAt.toISOString(),

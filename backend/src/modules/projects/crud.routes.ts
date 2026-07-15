@@ -10,6 +10,7 @@ import {
 	ParamId,
 	ProjectDerivedStateSchema,
 	ProjectDetailsSchema,
+	ProjectHoldSchema,
 	ProjectListSchema,
 } from "./projects.schema.js";
 import {
@@ -17,6 +18,7 @@ import {
 	getProjectDetails,
 	listProjects,
 	restoreProject,
+	setProjectHold,
 } from "./projects.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
@@ -27,6 +29,7 @@ app.use(
 	"/projects/:id/restore",
 	requireRole(ROLE_NAMES.DIRECTOR, ROLE_NAMES.SUPER_ADMIN),
 );
+app.use("/projects/:id/hold", requireRole(ROLE_NAMES.SUPER_ADMIN));
 
 // ── GET /projects ──
 const listRoute = createRoute({
@@ -104,6 +107,41 @@ app.openapi(projectDerivedStateRoute, async (c) => {
 	const { id } = c.req.valid("param");
 	const derived = await getProjectDerivedState(id, user);
 	return c.json(derived, 200);
+});
+
+const holdRoute = createRoute({
+	method: "patch",
+	path: "/projects/{id}/hold",
+	tags: ["Projects"],
+	summary: "Place or remove a retention hold on a project",
+	security: [{ Bearer: [] }],
+	request: {
+		params: ParamId,
+		body: {
+			content: { "application/json": { schema: ProjectHoldSchema } },
+			required: true,
+		},
+	},
+	responses: {
+		200: {
+			content: { "application/json": { schema: ProjectHoldSchema } },
+			description: "Project hold updated",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Project not found",
+		},
+	},
+});
+
+app.openapi(holdRoute, async (c) => {
+	const updated = await setProjectHold(
+		c.req.valid("param").id,
+		c.req.valid("json").onHold,
+		c.get("user"),
+		getClientIp(c),
+	);
+	return c.json(updated, 200);
 });
 
 // ── POST /projects/:id/restore ──
