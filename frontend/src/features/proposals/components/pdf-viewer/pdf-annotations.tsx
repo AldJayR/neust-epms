@@ -126,7 +126,7 @@ export function CommentCreationPopover({
 				</Button>
 				<Button
 					size="sm"
-					className="h-8 rounded-md text-xs bg-brand-primary hover:bg-brand-primary-hover text-white cursor-pointer"
+					className="h-8 rounded-md text-xs bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
 					onClick={onSave}
 					disabled={!commentText.trim()}
 				>

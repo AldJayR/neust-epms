@@ -396,7 +396,7 @@ export function ActivateProjectWizard({
 							<Button
 								type="button"
 								onClick={handleSubmit}
-								className="bg-brand-primary hover:bg-brand-primary-hover text-white"
+								className="bg-primary text-primary-foreground hover:bg-primary/90"
 								disabled={activateMutation.isPending}
 							>
 								{activateMutation.isPending ? (

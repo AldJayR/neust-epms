@@ -82,7 +82,7 @@ export function ProposalStepDocuments({
 								render={
 									<Button
 										variant="secondary"
-										className="bg-brand-primary hover:bg-brand-primary-hover text-white"
+										className="bg-primary text-primary-foreground hover:bg-primary/90"
 									/>
 								}
 							>

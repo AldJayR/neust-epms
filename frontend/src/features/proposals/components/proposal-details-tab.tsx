@@ -207,7 +207,7 @@ export function ProposalDetailsTab() {
 							Return
 						</Button>
 						<LoadingButton
-							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-brand-primary text-white hover:bg-brand-primary/90 rounded-lg"
+							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg"
 							onClick={() => {
 								if (isRET) {
 									setCommentsText("");
@@ -268,7 +268,7 @@ export function ProposalDetailsTab() {
 							Cancel
 						</Button>
 						<LoadingButton
-							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-brand-primary text-white hover:bg-brand-primary/90 rounded-lg"
+							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg"
 							onClick={async () => {
 								await handleApprove(commentsText);
 								setIsConfirmOpen(false);

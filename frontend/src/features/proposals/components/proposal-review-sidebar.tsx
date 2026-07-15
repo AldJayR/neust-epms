@@ -48,7 +48,7 @@ export function ProposalReviewSidebar({
 								Comments
 								{comments.length > 0 && (
 									<span
-										className={`px-1.5 py-0.5 rounded-full text-[10px] transition-colors ${activeTab === "comments" ? "bg-brand-primary text-white" : "bg-gray-100 text-muted-foreground dark:bg-muted"}`}
+										className={`px-1.5 py-0.5 rounded-full text-[10px] transition-colors ${activeTab === "comments" ? "bg-primary text-primary-foreground" : "bg-gray-100 text-muted-foreground dark:bg-muted"}`}
 									>
 										{comments.length}
 									</span>

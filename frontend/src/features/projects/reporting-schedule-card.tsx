@@ -23,13 +23,13 @@ import type { ScheduledDueDate } from "./reporting-schedule.functions";
 
 interface ReportingScheduleCardProps {
 	projectId: string;
-	isFaculty: boolean;
+	canSubmitReports: boolean;
 	className?: string;
 }
 
 export function ReportingScheduleCard({
 	projectId,
-	isFaculty,
+	canSubmitReports,
 	className,
 }: ReportingScheduleCardProps) {
 	const { data, isLoading, error } = useProjectReportingSchedule(projectId);
@@ -88,10 +88,6 @@ export function ReportingScheduleCard({
 					{milestones.map((item, idx) => {
 						const dateObj = toStableDate(item.date);
 						const isOverdue = !item.isCompleted && dateObj < now;
-						const allPreviousComplete = milestones
-							.slice(0, idx)
-							.every((d) => d.isCompleted);
-
 						return (
 							<div key={item.id} className="relative">
 								<div className="absolute -left-[35px] top-0.5 flex size-[18px] items-center justify-center rounded-full bg-background border-2 border-background">
@@ -151,8 +147,7 @@ export function ReportingScheduleCard({
 												Download
 											</Button>
 										) : (
-											isFaculty &&
-											allPreviousComplete &&
+											canSubmitReports &&
 											!item.isCompleted && (
 												<Button
 													size="xs"

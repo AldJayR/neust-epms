@@ -74,7 +74,7 @@ export function ProjectDetailsHeader({
 						{isAllowedToReadProposal ? (
 							<BrandButton
 								nativeButton={false}
-								className="flex w-fit items-center gap-2 px-5 h-9 !text-white hover:!text-white shadow-[0px_1px_2px_0px_var(--shadow-card)] hover:bg-brand-primary-hover"
+								className="flex w-fit items-center gap-2 px-5 h-9 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
 								render={
 									<Link to="/proposals/$proposalId" params={{ proposalId }} />
 								}

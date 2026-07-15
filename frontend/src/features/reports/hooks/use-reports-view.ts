@@ -99,6 +99,7 @@ export function useReportsView() {
 
 	return {
 		user,
+		projects: projectsData?.items ?? [],
 		isFaculty: Boolean(isFaculty),
 		isRET: Boolean(isRET),
 		activeTab,

@@ -159,7 +159,7 @@ function RegisterStepTwo() {
 				</p>
 				<Link
 					to="/login"
-					className="mt-6 inline-block rounded-lg bg-brand-primary px-6 py-2 text-sm font-medium !text-white hover:bg-brand-primary-hover"
+					className="mt-6 inline-block rounded-lg bg-primary px-6 py-2 text-sm font-medium !text-primary-foreground hover:bg-primary/90"
 				>
 					Go to Login
 				</Link>

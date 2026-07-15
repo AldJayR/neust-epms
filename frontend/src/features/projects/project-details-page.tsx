@@ -187,7 +187,10 @@ export function ProjectDetailsPage({
 					].includes(data.status) && (
 						<ReportingScheduleCard
 							projectId={proposalId}
-							isFaculty={currentUserRole === "Faculty"}
+							canSubmitReports={[
+								"Faculty",
+								"RET Chair",
+							].includes(currentUserRole)}
 						/>
 					)}
 					<ActivityHistoryCard history={data.history} />

@@ -1,4 +1,5 @@
-import { Download, ListFilter } from "lucide-react";
+import { Download, FilePlus, ListFilter } from "lucide-react";
+import { useState } from "react";
 import { DataTablePage } from "@/components/custom/data-table-page";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageHeader } from "@/components/custom/page-header";
@@ -11,18 +12,26 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ReportsFilterTabs } from "./components/reports-filter-tabs";
+import { ReportSubmissionPickerDialog } from "./components/report-submission-picker-dialog";
 import { useReportsView } from "./hooks/use-reports-view";
 
 export function ReportsPage() {
 	const view = useReportsView();
+	const [isSubmissionPickerOpen, setIsSubmissionPickerOpen] = useState(false);
 
 	return (
 		<div className="flex flex-col gap-8">
 			<PageHeader
 				title={<h1 className="text-2xl font-semibold text-heading">Reports</h1>}
-				actions={
-					<div className="flex items-center gap-3">
-						<Button
+					actions={
+						<div className="flex items-center gap-3">
+							{(view.isFaculty || view.isRET) && (
+								<Button onClick={() => setIsSubmissionPickerOpen(true)}>
+									<FilePlus className="size-4" />
+									Submit Report
+								</Button>
+							)}
+							<Button
 							variant="outline"
 							className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-lg gap-2"
 						>
@@ -97,6 +106,11 @@ export function ReportsPage() {
 				activeFilters={{ search: view.search }}
 				emptyMessage="No reports found."
 				ariaLabel="Reports"
+			/>
+			<ReportSubmissionPickerDialog
+				open={isSubmissionPickerOpen}
+				onOpenChange={setIsSubmissionPickerOpen}
+				projects={view.projects}
 			/>
 
 		</div>

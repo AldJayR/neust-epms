@@ -182,7 +182,7 @@ export function Onboarding({ user }: OnboardingProps) {
 
 					<Button
 						onClick={nextStep}
-						className="h-9 px-4 text-sm font-medium gap-1 cursor-pointer bg-brand-primary text-white hover:bg-brand-primary-hover"
+						className="h-9 px-4 text-sm font-medium gap-1 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
 					>
 						{step === stepsCount ? (
 							<>
