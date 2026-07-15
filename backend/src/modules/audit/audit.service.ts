@@ -21,7 +21,7 @@ import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import type { AuthUser } from "@/lib/types.js";
-import type { AuditLogSchema } from "./audit.schema.js";
+import { type AuditLogSchema, AuditValueSchema } from "./audit.schema.js";
 
 type AuditLog = z.infer<typeof AuditLogSchema>;
 
@@ -111,6 +111,8 @@ export async function listAuditLogs(
 				userId: auditLogs.userId,
 				action: auditLogs.action,
 				tableAffected: auditLogs.tableAffected,
+				oldValue: auditLogs.oldValue,
+				newValue: auditLogs.newValue,
 				ipAddress: auditLogs.ipAddress,
 				createdAt: auditLogs.createdAt,
 				actorName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
@@ -188,6 +190,8 @@ export async function listAuditLogs(
 		});
 		return {
 			...r,
+			oldValue: AuditValueSchema.parse(r.oldValue ?? null),
+			newValue: AuditValueSchema.parse(r.newValue ?? null),
 			action,
 			createdAt: r.createdAt.toISOString(),
 		};

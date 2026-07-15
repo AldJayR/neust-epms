@@ -245,11 +245,21 @@ export const bulkApproveUsersFn = createServerFn({ method: "POST" })
 
 // ── Audit Logs ───────────────────────────────────────────
 
+export type JsonValue =
+	| boolean
+	| number
+	| string
+	| null
+	| JsonValue[]
+	| { [key: string]: JsonValue };
+
 export interface AuditLog {
 	logId: string;
 	userId: string;
 	action: string;
 	tableAffected: string;
+	oldValue: Record<string, JsonValue> | null;
+	newValue: Record<string, JsonValue> | null;
 	ipAddress: string | null;
 	createdAt: string;
 	actorName: string | null;

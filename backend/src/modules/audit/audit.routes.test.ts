@@ -49,6 +49,8 @@ describe("GET /audit-logs", () => {
 			userId: "bbb",
 			action: "test",
 			tableAffected: "users",
+			oldValue: { isActive: false },
+			newValue: { isActive: true },
 			ipAddress: null,
 			createdAt: new Date(),
 			actorName: "John Doe",
@@ -60,6 +62,10 @@ describe("GET /audit-logs", () => {
 		const body = await res.json();
 		expect(body.items).toHaveLength(1);
 		expect(body).toHaveProperty("total");
+		expect(body.items[0]).toMatchObject({
+			oldValue: { isActive: false },
+			newValue: { isActive: true },
+		});
 	});
 
 	it("should reject non-Super Admin users", async () => {

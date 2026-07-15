@@ -7,42 +7,42 @@ export interface StatusDescription {
 export const STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 	Draft: {
 		label: "Draft",
-		explanation: "Your proposal is saved but not yet submitted for review.",
+		explanation: "This proposal is saved but not yet submitted for review.",
 		nextStep: "Edit and submit when ready.",
 	},
 	"Pending Review": {
 		label: "Awaiting Review",
-		explanation: "Your proposal has been submitted and is awaiting review.",
+		explanation: "This proposal has been submitted and is awaiting review.",
 		nextStep:
 			"No action required — you will be notified when a decision is made.",
 	},
 	Endorsed: {
 		label: "Endorsed — Awaiting Approval",
 		explanation:
-			"Your RET Chair has endorsed your proposal and forwarded it to the Extension Services office for final approval.",
+			"The RET Chair has endorsed this proposal and forwarded it to the Extension Services office for final approval.",
 		nextStep: "No action required — waiting for Director/Admin decision.",
 	},
 	Approved: {
 		label: "Approved — Activation Required",
 		explanation:
-			"Your proposal has been approved! However, the project is not yet authorized for implementation. Additional requirements must be completed before the project can begin.",
+			"This proposal has been approved. However, the project is not yet authorized for implementation. Additional requirements must be completed before the project can begin.",
 		nextStep: "Wait for Director/Admin to complete activation requirements.",
 	},
 	Returned: {
 		label: "Revision Required",
 		explanation:
-			"Your proposal has been returned for revision. Review the feedback carefully, make the requested changes, and resubmit.",
+			"This proposal has been returned for revision. Review the feedback carefully, make the requested changes, and resubmit.",
 		nextStep: "Review feedback and submit a revised proposal.",
 	},
 	Rejected: {
 		label: "Not Approved",
 		explanation:
-			"Your proposal was not approved. Please review the feedback for details.",
+			"This proposal was not approved. Please review the feedback for details.",
 		nextStep: "No further action on this proposal.",
 	},
 	Ongoing: {
 		label: "Ongoing",
-		explanation: "Your project is ongoing.",
+		explanation: "This project is ongoing.",
 		nextStep: "Submit reports on time per your schedule.",
 	},
 	Overdue: {

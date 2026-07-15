@@ -1,11 +1,15 @@
 import { z } from "@hono/zod-openapi";
 
+export const AuditValueSchema = z.record(z.string(), z.any()).nullable();
+
 export const AuditLogSchema = z
 	.object({
 		logId: z.string().uuid(),
 		userId: z.string().uuid(),
 		action: z.string(),
 		tableAffected: z.string(),
+		oldValue: AuditValueSchema,
+		newValue: AuditValueSchema,
 		ipAddress: z.string().nullable(),
 		createdAt: z.string(),
 		actorName: z.string().nullable(),
