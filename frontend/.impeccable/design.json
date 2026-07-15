@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-15T13:48:55.186Z",
+  "title": "Design System: NEUST Extension Project Monitoring System",
+  "extensions": {
+    "colorMeta": {
+      "sea-ink": {
+        "role": "neutral",
+        "displayName": "Sea Ink",
+        "canonical": "#173a40",
+        "tonalRamp": ["#0a1b1e", "#173a40", "#2b5359", "#416b71", "#64888c", "#91aaad", "#c2d0d1", "#eef3f3"]
+      },
+      "sea-ink-soft": {
+        "role": "neutral",
+        "displayName": "Soft Sea Ink",
+        "canonical": "#416166",
+        "tonalRamp": ["#132326", "#294247", "#416166", "#5e7b80", "#7f989c", "#a5b7ba", "#ccd6d8", "#f1f5f5"]
+      },
+      "lagoon": {
+        "role": "primary",
+        "displayName": "Lagoon",
+        "canonical": "#4fb8b2",
+        "tonalRamp": ["#0d302f", "#14504d", "#21716d", "#32938e", "#4fb8b2", "#79d0cb", "#afe5e1", "#e8f8f6"]
+      },
+      "lagoon-deep": {
+        "role": "primary",
+        "displayName": "Lagoon Deep",
+        "canonical": "#328f97",
+        "tonalRamp": ["#09292d", "#10474d", "#19656d", "#24838b", "#32a1aa", "#69bec4", "#a4dadd", "#e4f4f5"]
+      },
+      "palm": {
+        "role": "secondary",
+        "displayName": "Palm",
+        "canonical": "#2f6a4a",
+        "tonalRamp": ["#0d2418", "#173c29", "#22553b", "#2f6f4d", "#458a64", "#70a989", "#a8cab7", "#e8f2ec"]
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Foam Background",
+        "canonical": "#f3f8f4",
+        "tonalRamp": ["#18201a", "#344038", "#536159", "#748279", "#98a49c", "#bdc7c0", "#dce4de", "#f3f8f4"]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "White Surface",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#262626", "#454545", "#656565", "#868686", "#a8a8a8", "#cacaca", "#e8e8e8", "#ffffff"]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted Wash",
+        "canonical": "#edf4ef",
+        "tonalRamp": ["#18201a", "#354039", "#526057", "#718078", "#94a098", "#b8c2bb", "#d8e0da", "#edf4ef"]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Quiet Border",
+        "canonical": "#d7e5dc",
+        "tonalRamp": ["#17211a", "#344138", "#526159", "#718179", "#92a198", "#b3c2b8", "#d7e5dc", "#f0f6f2"]
+      },
+      "destructive": {
+        "role": "tertiary",
+        "displayName": "Destructive Red",
+        "canonical": "#b42318",
+        "tonalRamp": ["#350806", "#5c0f0b", "#84170f", "#ad2117", "#d93a2e", "#ea766d", "#f4b4af", "#fceceb"]
+      },
+      "warning": {
+        "role": "tertiary",
+        "displayName": "Warning Ochre",
+        "canonical": "#a15c00",
+        "tonalRamp": ["#2e1900", "#4d2b00", "#6e3e00", "#915300", "#b96d0b", "#d79642", "#ecc38e", "#fbefdc"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Exceptional top-level moments only." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles and dashboard greetings." },
+      "title": { "displayName": "Title", "purpose": "Card, dialog, and strong row titles." },
+      "body": { "displayName": "Body", "purpose": "Default product copy, fields, and table content." },
+      "label": { "displayName": "Label", "purpose": "Metadata, status, support, and navigation detail." }
+    },
+    "shadows": [
+      { "name": "structural-lift", "value": "0 1px 2px rgba(23, 58, 64, 0.08)", "purpose": "Minimal separation for bounded surfaces in the light theme." },
+      { "name": "night-structural-lift", "value": "0 1px 2px rgba(0, 0, 0, 0.22)", "purpose": "Minimal separation for bounded surfaces in the dark theme." }
+    ],
+    "motion": [
+      { "name": "state-transition", "value": "180ms ease", "purpose": "Color, border, and background feedback for interactive states." },
+      { "name": "state-reveal", "value": "700ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Rare non-blocking reveal where an existing surface requires it." },
+      { "name": "reduced-motion", "value": "0.01ms", "purpose": "Near-instant fallback for users who prefer reduced motion." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The decisive action within a local workflow area.",
+      "html": "<button class=\"ds-btn-primary\">Submit proposal</button>",
+      "css": ".ds-btn-primary { height: 36px; border: 1px solid transparent; border-radius: 8px; background: var(--primary); color: var(--primary-foreground); padding: 0 10px; font: 500 14px/1 'Roboto Variable', sans-serif; transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease; } .ds-btn-primary:hover { background: var(--brand-primary-hover); } .ds-btn-primary:focus-visible { outline: 3px solid color-mix(in srgb, var(--ring) 50%, transparent); outline-offset: 2px; } .ds-btn-primary:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "A secondary action that stays subordinate to the primary path.",
+      "html": "<button class=\"ds-btn-outline\">Export reports</button>",
+      "css": ".ds-btn-outline { height: 36px; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); padding: 0 10px; font: 500 14px/1 'Roboto Variable', sans-serif; transition: background-color 180ms ease, border-color 180ms ease; } .ds-btn-outline:hover { background: var(--muted); } .ds-btn-outline:focus-visible { outline: 3px solid color-mix(in srgb, var(--ring) 50%, transparent); outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Compact standard field for search, forms, and filters.",
+      "html": "<input class=\"ds-input\" value=\"Community Health Program\" aria-label=\"Project title\">",
+      "css": ".ds-input { width: 280px; height: 36px; border: 1px solid var(--input); border-radius: 8px; background: transparent; color: var(--foreground); padding: 4px 10px; font: 400 14px/1.5 'Roboto Variable', sans-serif; transition: border-color 180ms ease, box-shadow 180ms ease; } .ds-input:hover { border-color: var(--sea-ink-soft); } .ds-input:focus-visible { border-color: var(--ring); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 50%, transparent); }"
+    },
+    {
+      "name": "Work Surface",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "A bounded surface for one coherent work object or control area.",
+      "html": "<section class=\"ds-card\"><h3>Quarterly progress report</h3><p>Review the submission and record the next action.</p></section>",
+      "css": ".ds-card { width: 320px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--card-foreground); padding: 24px; box-shadow: 0 1px 2px var(--shadow-card); font-family: 'Roboto Variable', sans-serif; } .ds-card h3 { margin: 0; font-size: 16px; line-height: 1.5; font-weight: 500; } .ds-card p { margin: 8px 0 0; color: var(--muted-foreground); font-size: 14px; line-height: 1.5; }"
+    },
+    {
+      "name": "Approved Status",
+      "kind": "chip",
+      "refersTo": "status-badge",
+      "description": "Plain-language workflow state reinforced by icon and semantic color.",
+      "html": "<span class=\"ds-status\" role=\"status\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>Approved</span>",
+      "css": ".ds-status { display: inline-flex; align-items: center; gap: 4px; height: 22px; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--muted-foreground); padding: 2px 6px; font: 500 12px/1 'Roboto Variable', sans-serif; } .ds-status svg { width: 12px; height: 12px; color: var(--success); }"
+    },
+    {
+      "name": "Active Navigation Item",
+      "kind": "nav",
+      "description": "Role-specific destination with familiar icon, label, and selected state.",
+      "html": "<a class=\"ds-nav-item\" href=\"#\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg><span>Dashboard</span></a>",
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 8px; height: 32px; border-radius: 8px; background: var(--sidebar-accent); color: var(--sidebar-accent-foreground); padding: 0 8px; text-decoration: none; font: 400 14px/1 'Roboto Variable', sans-serif; transition: background-color 180ms ease; } .ds-nav-item svg { width: 16px; height: 16px; } .ds-nav-item:hover { background: var(--muted); } .ds-nav-item:focus-visible { outline: 3px solid color-mix(in srgb, var(--sidebar-ring) 50%, transparent); outline-offset: 2px; }"
+    },
+    {
+      "name": "Metric Summary",
+      "kind": "custom",
+      "description": "Compact operational context, never a decorative hero metric.",
+      "html": "<section class=\"ds-metric\"><span>Ongoing projects</span><strong>12</strong></section>",
+      "css": ".ds-metric { display: flex; min-height: 104px; flex-direction: column; gap: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--card-foreground); padding: 16px; box-shadow: 0 1px 2px var(--shadow-card); font-family: 'Roboto Variable', sans-serif; } .ds-metric span { color: var(--muted-foreground); font-size: 14px; line-height: 16px; } .ds-metric strong { margin-top: auto; color: var(--heading); font-size: 30px; line-height: 1; font-weight: 600; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Clear Current",
+    "overview": "EPMS should feel like work moving visibly and steadily through one connected institutional flow. Its visual language is calm, dependable, and direct: familiar controls, compact hierarchy, and explicit states keep faculty focused on the next required action while giving reviewing roles trustworthy oversight. The system uses restrained color, gently curved geometry, and role-aware navigation rather than spectacle. It explicitly rejects the generic SaaS dashboard: decorative metrics, excessive card grids, gradients, and startup-style flourishes must never compete with proposal, monitoring, or reporting work.",
+    "keyCharacteristics": [
+      "Restrained sea-ink and lagoon palette with semantic status colors.",
+      "Compact Roboto hierarchy optimized for forms, tables, and workflow labels.",
+      "Structural borders and tonal layers with minimal shadow.",
+      "Familiar, decisive controls with visible hover, focus, disabled, loading, and error states.",
+      "Responsive app shell with role-specific navigation and content-first mobile behavior."
+    ],
+    "rules": [
+      { "name": "The Current Rule", "body": "Every screen must reveal where the work is, who owns it, and what happens next.", "section": "overview" },
+      { "name": "The Accent Earns Its Place Rule", "body": "Lagoon is reserved for primary action, focus, selection, links, and state. Never use it as ambient decoration.", "section": "colors" },
+      { "name": "The Semantic Color Rule", "body": "Success, warning, destructive, and informational colors must always retain their established meaning and must be reinforced by text or iconography.", "section": "colors" },
+      { "name": "The One-Family Rule", "body": "Never introduce a display face into product labels, buttons, tables, or forms. Roboto carries the system.", "section": "typography" },
+      { "name": "The Fixed-Scale Rule", "body": "Product typography uses fixed rem sizes. Do not use fluid display scaling inside the authenticated application shell.", "section": "typography" },
+      { "name": "The Border-First Rule", "body": "If a surface can be understood through background and a one-pixel border, no additional shadow is allowed.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do make current status, owner, and next action visible without opening a secondary panel.",
+      "Do use Lagoon Deep (#328f97) only for primary action, focus, selection, links, and state.",
+      "Do preserve the same control shape and interaction vocabulary across faculty, RET Chair, Director, and administrator screens.",
+      "Do use skeletons for content loading and instructive empty states that explain the next available action.",
+      "Do maintain WCAG 2.2 AA contrast, keyboard behavior, visible focus, robust labels, and reduced-motion alternatives."
+    ],
+    "donts": [
+      "Don't resemble a generic SaaS dashboard: decorative metrics, excessive card grids, gradients, and startup-style visual flourishes are prohibited.",
+      "Don't nest cards or repeat identical icon-heading-copy cards as page scaffolding.",
+      "Don't use gradient text, glassmorphism, thick colored side stripes, or arbitrary z-index values.",
+      "Don't use lagoon, success, warning, or destructive colors as decoration detached from action or state.",
+      "Don't invent custom affordances when a standard button, field, table, menu, tooltip, or dialog already communicates the task.",
+      "Don't animate product content for spectacle; motion exists only to explain state and must stop or simplify under reduced-motion preferences."
+    ]
+  }
+}
