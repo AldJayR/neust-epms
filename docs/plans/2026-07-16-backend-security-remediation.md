@@ -4,7 +4,7 @@
 
 **Goal:** Eliminate the confirmed backend access-control, workflow-integrity, authentication, availability, file-handling, and operational-security weaknesses identified in the July 2026 audit, while making the Supabase deployment deny direct unauthorized data access.
 
-**Architecture:** Make authorization action-specific rather than treating campus/department visibility as write authority. Centralize active-record checks and state transitions, use compare-and-swap database updates for one-time file submission, and separate durable business mutations from best-effort notifications. Keep application authorization in Hono/Drizzle but enforce a database/Supabase deny-by-default backstop for direct API access.
+**Architecture:** Make authorization action-specific rather than treating campus/department visibility as write, download, or comment authority. Proposal document metadata may be listed by users within the documented department/campus scope; uploads and revisions are restricted to the active Project Leader, including a RET Chair only when they are also the Project Leader; downloads are restricted to authorized reviewers and active project members; comments are restricted to authorized reviewers. Centralize active-record checks and state transitions, use compare-and-swap database updates for one-time file submission, and separate durable business mutations from best-effort notifications. Keep application authorization in Hono/Drizzle but enforce a database/Supabase deny-by-default backstop for direct API access.
 
 **Tech Stack:** TypeScript, Hono, Zod, Vitest, Drizzle ORM/PostgreSQL, Supabase Auth/Storage, node-cron, Resend, pnpm.
 
@@ -24,7 +24,8 @@
 | Risk | Tasks |
 |---|---|
 | Direct Supabase Data API bypass | 1 |
-| Scope-only document access and upload | 2, 3 |
+| Scope-only write, download, and comment authorization | 2, 3 |
+| RET Chair evaluation bypass integrity | 2, 6 |
 | Project readiness/schedule BOLA | 2, 4 |
 | Stale leader/MOA/account authorization | 2, 5, 6 |
 | Report upload race and post-commit deletion | 7 |
@@ -132,10 +133,13 @@ git add backend/drizzle backend/docs/security/supabase-access-verification.md ba
 
 Cover these cases in table-driven tests using mocked Drizzle query results or pure predicates where possible:
 
-- Faculty may view only a proposal they actively belong to unless an explicit portfolio role policy grants access.
-- Project Leader may upload a proposal document only while their membership is active and proposal status is `Draft` or `Returned`.
-- Director and Super Admin may perform portfolio actions without membership where product policy permits.
-- RET Chair read access is limited to the documented campus/department portfolio; it does not imply document-write authority.
+- Faculty and RET Chair may list proposal document metadata when the proposal is within the documented department/campus scope; active membership is not required for listing.
+- Project Leader may upload or revise a proposal document only while their active leader relationship exists and proposal status is `Draft` or `Returned`.
+- A RET Chair may upload or revise only when they are also the Project Leader; the RET Chair role alone does not grant document-write authority.
+- Authorized reviewers and active project members may download proposal documents; reviewer access must match the proposal's evaluation stage.
+- Only an authorized reviewer may create proposal comments or annotations.
+- A RET Chair who is the Project Leader cannot review their own proposal; a RET Chair-created proposal bypasses RET Chair endorsement and routes to the Director.
+- A resubmission that previously cleared RET Chair endorsement retains the bypass and routes directly to the Director.
 - An archived proposal, archived membership, archived MOA, or non-active user never passes an active-resource predicate.
 
 **Step 2: Run the focused tests to establish failure**
@@ -150,15 +154,17 @@ Expected: FAIL because the policy modules do not yet exist.
 
 **Step 3: Implement narrow, action-specific helpers**
 
-Create `proposal-policy.ts` with functions such as:
+Create `proposal-policy.ts` with one action-specific access function (or a small set of cohesive wrappers) such as:
 
 ```ts
-export async function assertCanViewProposal(user: AuthUser, proposalId: string): Promise<ProposalAccess>
-export async function assertCanManageProposalDocuments(user: AuthUser, proposalId: string): Promise<ProposalAccess>
-export async function assertCanManageProposal(user: AuthUser, proposalId: string): Promise<ProposalAccess>
+export async function assertProposalDocumentAccess(
+  user: AuthUser,
+  proposalId: string,
+  action: "list" | "upload" | "download" | "comment",
+): Promise<ProposalAccess>
 ```
 
-Each function must load the proposal with `archivedAt IS NULL`, load active membership when needed, and make the role/action decision in one location. Do not return a boolean that callers can forget to check; throw `ApiError(403, ...)` on denial.
+The `list` action must use only the documented department/campus scope. The `upload` action must require the active Project Leader and `Draft` or `Returned` status. The `download` action must require an authorized reviewer or active project member. The `comment` action must require an authorized reviewer. Load the proposal with `archivedAt IS NULL`, load active membership or reviewer context when needed, and make the role/action decision in one location. Do not return a boolean that callers can forget to check; throw `ApiError(403, ...)` on denial.
 
 Create `project-policy.ts` with an `assertCanViewProject(user, projectOrProposalId)` helper that resolves the project and binds it to the proposal policy.
 
@@ -195,10 +201,12 @@ git add backend/src/lib/proposal-policy.ts backend/src/lib/project-policy.ts bac
 
 Add tests proving:
 
-- A same-department, non-member Faculty user receives 403 for document list, signed URL, upload, project detail attachment URLs, and comments where product policy requires membership.
+- A same-department or same-campus non-member Faculty user can list proposal document metadata within scope, but receives 403 for upload, signed URL, and comments.
 - An active Project Leader can upload only to `Draft` and `Returned` proposals.
+- A RET Chair can upload or revise only when they are also the Project Leader.
 - A Project Leader receives 403 when the proposal is pending review, endorsed, approved, rejected, or archived.
-- Director/Super Admin behavior matches the documented policy.
+- An authorized reviewer or active project member can receive a signed URL; unrelated same-scope users cannot.
+- A bypassed proposal permits Director review but not RET Chair review or commenting by the RET Chair Project Leader.
 - No signed URL is requested from Supabase when authorization fails.
 
 **Step 2: Run focused tests to verify failure**
@@ -213,7 +221,7 @@ Expected: FAIL because current access is department/campus-only.
 
 **Step 3: Replace scope-only checks**
 
-Replace `canAccessProposalDocuments()` and `ensureUploadProposalDocumentAccess()` with the Task 2 policy functions. Re-authorize inside `uploadProposalDocument()` immediately before assigning a version and inserting metadata, so route-level checks cannot become stale.
+Replace `canAccessProposalDocuments()` and `ensureUploadProposalDocumentAccess()` with the Task 2 action policy. Use scope only for listing metadata. Re-authorize upload access inside `uploadProposalDocument()` immediately before assigning a version and inserting metadata, so route-level checks cannot become stale.
 
 In project detail responses, return document metadata only. Do not create a signed URL for every attachment in `getProjectDetails()`. Keep explicit, authorization-checked document URL issuance in `getDocumentSignedUrl()`.
 
@@ -359,11 +367,18 @@ git add backend/src/modules/special-orders/special-orders.service.ts backend/src
 
 Cover proposal creation with:
 
-- More than one `Project Leader`.
-- A member from another campus/department where policy disallows it.
+- More than one active member assigned the reserved `Project Leader` role.
+- A custom collaborator role such as `Community Coordinator` or `Technical Adviser` is accepted when it is non-empty and within the input length limit.
+- A valid collaborator from another department/campus is accepted; organizational scope alone does not reject documented collaboration.
 - An inactive, rejected, or archived user ID.
 - Duplicate member IDs.
-- A creator omitted from members.
+- A creator omitted from the member payload is automatically normalized into `proposal_members` as the sole `Project Leader`.
+- A RET Chair creator is validated as the sole Project Leader and creates a proposal with `bypassedRetChair = true`.
+- A Faculty creator creates a proposal with `bypassedRetChair = false` and requires RET Chair endorsement.
+- A RET Chair cannot review their own proposal, including when the proposal bypasses RET Chair review.
+- A Director can review a RET Chair-created proposal directly at the approval stage.
+- A proposal previously endorsed by the RET Chair and returned by the Director retains the bypass on resubmission and routes directly to the Director.
+- The bypass flag is server-derived, cannot be supplied by the client, and is recorded in the audit trail when the bypass path is used.
 
 **Step 2: Run the focused suite**
 
@@ -373,13 +388,13 @@ Run:
 pnpm --filter backend test -- proposals.routes
 ```
 
-Expected: FAIL because creation currently maps client-controlled role strings directly.
+Expected: FAIL because creation does not yet enforce leader normalization, bounded free-form role labels, and server-derived bypass invariants.
 
 **Step 3: Restrict and validate server-side membership**
 
-Replace free-form `projectRole` with a Zod enum. Make the creator the sole initial Project Leader; accept only collaborator roles for supplied members unless an explicit transfer flow is designed. Validate each user is active, non-archived, and organizationally eligible before insert.
+Keep `projectRole` as bounded free-form text: require a trimmed non-empty value and enforce the existing storage-safe maximum length, but do not use an enum or general allowlist. Treat the existing `Project Leader` value as a reserved system role for leader authorization and cardinality; arbitrary collaborator labels remain valid. Normalize the authenticated creator into `proposal_members` as the sole initial Project Leader unless an explicit transfer flow is designed, and reject conflicting active leader assignments. Validate each user is active and non-archived before insert, while allowing documented cross-department/campus collaboration. Derive `bypassedRetChair` from the authenticated creator's validated role and active Project Leader membership: a RET Chair-created proposal bypasses RET Chair endorsement, while a Faculty-created proposal does not. Never accept the bypass flag from request data, and preserve it when a previously endorsed proposal is returned for revision.
 
-Add a partial unique PostgreSQL index enforcing one active `Project Leader` per proposal. Include a data-cleanup migration or fail migration explicitly if historical duplicates exist.
+Add a partial unique PostgreSQL index enforcing one active `Project Leader` role per proposal. Include a data-cleanup migration or fail migration explicitly if historical duplicates exist. Keep collaborator roles free-form and use the existing reserved leader value only for leader authorization.
 
 **Step 4: Run focused tests**
 
@@ -1129,8 +1144,9 @@ git add backend/src/lib/logger.ts backend/src/lib/logger.test.ts backend/src/ins
 
 Map each audit finding to one or more automated tests, including:
 
-- Same-scope non-member access denial.
+- Same-scope non-member denial for upload, download, and comments while allowing metadata listing.
 - Parent/child ID binding.
+- RET Chair bypass routing and self-review prevention.
 - Account state transitions and session revocation.
 - Direct Supabase role denial.
 - Report upload race and post-commit failure.
@@ -1182,7 +1198,8 @@ git commit -m "docs: map backend security regression coverage"
 ## Acceptance Criteria
 
 - No client role can directly access backend-owned Supabase data or private documents outside explicit policy.
-- Unrelated same-scope faculty cannot view, comment on, download, or alter a proposal unless an explicit reviewed policy grants that exact action.
+- Same-scope Faculty and RET Chair users can list proposal document metadata, while only the active Project Leader can upload or revise, authorized reviewers and active project members can download, and authorized reviewers can comment.
+- RET Chair-created proposals and previously endorsed resubmissions bypass RET Chair endorsement and route directly to the Director; the bypass is server-derived, audited, and cannot enable self-review.
 - Every ID-based project/proposal/document route performs object-level authorization.
 - Account, membership, MOA, and project lifecycle checks are centralized and tested against stale/archived records.
 - File submission is atomic from the user’s perspective and never leaves a committed row pointing to deleted content.
