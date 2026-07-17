@@ -2,11 +2,12 @@ import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
+import { getCspNonce as getRequestCspNonce } from "./lib/csp-nonce.server";
 import { getContext } from "./integrations/tanstack-query/root-provider";
 import { routeTree } from "./routeTree.gen";
 
 const getCspNonce = createIsomorphicFn()
-	.server(() => getRequest().headers.get("x-csp-nonce") ?? undefined)
+	.server(() => getRequestCspNonce(getRequest()))
 	.client(() => undefined);
 
 export function getRouter() {
