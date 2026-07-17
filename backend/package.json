@@ -34,6 +34,7 @@
 		"cors": "^2.8.6",
 		"dotenv": "^17.4.2",
 		"drizzle-orm": "^0.45.2",
+		"esbuild": "^0.28.1",
 		"hono": "^4.12.28",
 		"hono-rate-limiter": "^0.5.3",
 		"jsonwebtoken": "^9.0.3",
@@ -47,7 +48,6 @@
 		"@biomejs/biome": "2.5.2",
 		"@types/node": "^26.1.0",
 		"drizzle-kit": "^0.31.10",
-		"esbuild": "^0.28.1",
 		"tsx": "^4.23.0",
 		"typescript": "^6.0.3",
 		"vitest": "^4.1.10"
