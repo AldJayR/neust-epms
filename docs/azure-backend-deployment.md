@@ -20,9 +20,23 @@ Make sure `backend/package.json` contains:
 
 ```json
 "engines": {
-  "node": "24.x"
+	  "node": "22.x"
 },
 "packageManager": "pnpm@11.13.1"
+```
+
+Add `backend/server.js` so Azure's Node build detection recognizes the app:
+
+```js
+import "./dist/index.js";
+```
+
+Add `backend/pnpm-workspace.yaml` so the standalone deployment permits the
+esbuild install script:
+
+```yaml
+allowBuilds:
+  esbuild: true
 ```
 
 Make sure the backend has its own lockfile:
@@ -40,7 +54,7 @@ This must create `backend/pnpm-lock.yaml`. Do not commit `node_modules/`,
 In the Azure Portal, create an **App Service** with these settings:
 
 - Publish: **Code**
-- Runtime stack: **Node 24 LTS**
+- Runtime stack: **Node 22 LTS**
 - Operating system: **Linux**
 - Region: choose the region closest to your users and database
 - Pricing plan: **Basic B1 or higher** for production and Always On

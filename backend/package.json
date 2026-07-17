@@ -21,6 +21,9 @@
 	"keywords": [],
 	"author": "",
 	"license": "ISC",
+	"engines": {
+		"node": "22.x"
+	},
 	"packageManager": "pnpm@11.13.1",
 	"dependencies": {
 		"@hono/node-server": "^2.0.8",
