@@ -19,7 +19,10 @@ import {
 import { useProjectReportingSchedule } from "@/hooks/use-project-reporting-schedule";
 import { toStableDate } from "@/lib/utils";
 import { SubmitReportModal } from "@/features/reports/components/submit-report-modal";
-import type { ScheduledDueDate } from "./reporting-schedule.functions";
+import {
+	canSubmitMilestone,
+	type ScheduledDueDate,
+} from "./reporting-schedule.functions";
 
 interface ReportingScheduleCardProps {
 	projectId: string;
@@ -148,7 +151,7 @@ export function ReportingScheduleCard({
 											</Button>
 										) : (
 											canSubmitReports &&
-											!item.isCompleted && (
+											canSubmitMilestone(milestones, idx) && (
 												<Button
 													size="xs"
 													variant="outline"

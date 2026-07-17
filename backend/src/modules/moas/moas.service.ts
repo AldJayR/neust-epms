@@ -239,6 +239,33 @@ export async function getMoaById(id: string, user: AuthUser) {
 	};
 }
 
+export async function getMoaSignedUrl(
+	id: string,
+	user: AuthUser,
+	ipAddress: string,
+) {
+	const moa = await getMoaById(id, user);
+	if (!moa.storagePath) {
+		throw new ApiError(404, "NO_FILE", "No file uploaded for this MOA");
+	}
+
+	const { data, error } = await supabase.storage
+		.from("documents")
+		.createSignedUrl(moa.storagePath, 3600);
+	if (error || !data) {
+		throw new ApiError(500, "URL_FAILED", "Failed to generate signed URL");
+	}
+
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Accessed signed URL for MOA ${id}`,
+		tableAffected: "moas",
+		ipAddress,
+	});
+
+	return { url: data.signedUrl };
+}
+
 export async function getLinkedProjects(id: string, user: AuthUser) {
 	const conditions = [eq(projects.moaId, id)];
 

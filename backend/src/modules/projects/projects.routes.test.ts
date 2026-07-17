@@ -144,6 +144,29 @@ describe("POST /projects/:id/close", () => {
 		);
 	});
 
+	it("should close a project that is pending closure", async () => {
+		const project = createMockProject({ projectStatus: "Pending Closure" });
+		const reports = [
+			{ reportType: "Final Accomplishment" },
+			{ reportType: "Terminal" },
+		];
+
+		let callCount = 0;
+		vi.mocked(db.select).mockImplementation(() => {
+			callCount++;
+			if (callCount === 1) return mockSelectChain([project]) as never;
+			return mockSelectChain(reports) as never;
+		});
+		vi.mocked(db.update).mockReturnValue(mockMutationChain([project]) as never);
+
+		const res = await app.request(`/projects/${project.projectId}/close`, {
+			method: "POST",
+		});
+
+		expect(res.status).toBe(200);
+		expect(await res.json()).toMatchObject({ message: "Project closed" });
+	});
+
 	it("should reject close when Final Accomplishment report is missing", async () => {
 		const project = createMockProject({ projectStatus: "Ongoing" });
 		const reports = [{ reportType: "Terminal" }];

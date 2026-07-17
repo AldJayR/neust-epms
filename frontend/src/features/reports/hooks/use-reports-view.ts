@@ -2,13 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { startTransition, useDeferredValue, useReducer, useState } from "react";
+import { toast } from "sonner";
 import { facultyProjectsQueryOptions } from "@/features/faculty/public";
 import type { AuthUser } from "@/lib/auth";
 import {
 	createDirectorReportColumns,
 	createFacultyReportColumns,
 } from "../components/report-columns";
-import { reportsListQueryOptions } from "../functions";
+import { getReportSignedUrlFn, reportsListQueryOptions } from "../functions";
 import {
 	filterReportsByType,
 	filterReportsForView,
@@ -82,6 +83,23 @@ export function useReportsView() {
 		enabled: !!user,
 	});
 
+	const handleViewReport = async (reportId: string) => {
+		const reportWindow = window.open("about:blank", "_blank");
+		try {
+			const { url } = await getReportSignedUrlFn({ data: reportId });
+			if (reportWindow) {
+				reportWindow.location.href = url;
+			} else {
+				window.open(url, "_blank", "noopener,noreferrer");
+			}
+		} catch (error) {
+			reportWindow?.close();
+			toast.error(
+				error instanceof Error ? error.message : "Failed to open report document",
+			);
+		}
+	};
+
 	const reports = listData?.items ?? [];
 	const myProjectIds = new Set(
 		projectsData?.items?.map((project) => project.projectId) ?? [],
@@ -94,8 +112,14 @@ export function useReportsView() {
 	});
 	const filteredReports = filterReportsByType(tabFilteredReports, typeFilter);
 	const progressReportSequences = getProgressReportSequences(reports);
-	const directorColumns = createDirectorReportColumns(Boolean(isRET));
-	const facultyColumns = createFacultyReportColumns(progressReportSequences);
+	const directorColumns = createDirectorReportColumns(
+		Boolean(isRET),
+		handleViewReport,
+	);
+	const facultyColumns = createFacultyReportColumns(
+		progressReportSequences,
+		handleViewReport,
+	);
 
 	return {
 		user,

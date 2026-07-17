@@ -11,6 +11,7 @@ const reports: ReportItem[] = [
 	{
 		reportId: "r-2",
 		projectId: "p-1",
+		milestoneId: "m-2",
 		project: "Project One",
 		leader: "Leader One",
 		reportType: "Progress",
@@ -25,6 +26,7 @@ const reports: ReportItem[] = [
 	{
 		reportId: "r-1",
 		projectId: "p-1",
+		milestoneId: "m-1",
 		project: "Project One",
 		leader: "Leader One",
 		reportType: "Progress",
@@ -39,6 +41,7 @@ const reports: ReportItem[] = [
 	{
 		reportId: "r-3",
 		projectId: "p-2",
+		milestoneId: "m-3",
 		project: "Project Two",
 		leader: "Leader Two",
 		reportType: "Terminal",

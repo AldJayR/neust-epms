@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { db } from "@/db/client.js";
+import { supabase } from "@/lib/supabase.js";
 import {
 	setMockUser,
 	MOCK_USERS,
@@ -176,5 +177,32 @@ describe("POST /reports", () => {
 		expect(await res.json()).toMatchObject({
 			error: { code: "NOT_MEMBER" },
 		});
+	});
+});
+
+describe("GET /reports/:id/url", () => {
+	it("returns a signed URL for an authorized report", async () => {
+		setMockUser(MOCK_USERS.director);
+		const reportId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+		vi.mocked(db.select).mockReturnValue(
+			mockSelectChain([
+				{
+					reportId,
+					storagePath: "reports/project/report.pdf",
+				},
+			]) as never,
+		);
+
+		const res = await app.request(`/reports/${reportId}/url`);
+
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({
+			url: "https://test.supabase.co/signed-url",
+		});
+		const bucket = vi.mocked(supabase.storage.from).mock.results.at(-1)?.value;
+		expect(bucket.createSignedUrl).toHaveBeenCalledWith(
+			"reports/project/report.pdf",
+			3600,
+		);
 	});
 });

@@ -9,9 +9,12 @@ import {
 	ReportListSchema,
 	ReportSchema,
 	ReportStatsSchema,
+	SignedUrlSchema,
+	ParamId,
 } from "./reports.schema.js";
 import {
 	createReport,
+	getReportSignedUrl,
 	getReportStats,
 	listReports,
 	uploadReportDocument,
@@ -57,6 +60,38 @@ const statsRoute = createRoute({
 app.openapi(statsRoute, async (c) => {
 	const user = c.get("user");
 	return c.json(await getReportStats(user), 200);
+});
+
+const getUrlRoute = createRoute({
+	method: "get",
+	path: "/reports/{id}/url",
+	tags: ["Reports"],
+	summary: "Get a signed URL for viewing a report PDF",
+	security: [{ Bearer: [] }],
+	request: { params: ParamId },
+	responses: {
+		200: {
+			content: { "application/json": { schema: SignedUrlSchema } },
+			description: "Signed URL",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Report not found or no file uploaded",
+		},
+		500: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Failed to generate signed URL",
+		},
+	},
+});
+
+app.openapi(getUrlRoute, async (c) => {
+	const result = await getReportSignedUrl(
+		c.get("user"),
+		c.req.valid("param").id,
+		getClientIp(c),
+	);
+	return c.json(result, 200);
 });
 
 const createReportRoute = createRoute({

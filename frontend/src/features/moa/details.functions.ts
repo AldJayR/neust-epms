@@ -84,6 +84,22 @@ export const getMoaLinkedProjectsFn = createServerFn({ method: "GET" })
 		return (await response.json()) as MoaLinkedProject[];
 	});
 
+export const getMoaSignedUrlFn = createServerFn({ method: "GET" })
+	.validator(z.object({ moaId: z.uuid() }))
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director", "RET Chair");
+		const token = await getValidAccessToken();
+		const response = await fetch(`${API_BASE}/moas/${data.moaId}/url`, {
+			headers: { Authorization: `Bearer ${token}` },
+		});
+		if (!response.ok) {
+			throw new Error(
+				await getErrorMessage(response, "Failed to open MOA document"),
+			);
+		}
+		return (await response.json()) as { url: string };
+	});
+
 export const updateMoaFn = createServerFn({ method: "POST" })
 	.validator(updateMoaSchema)
 	.handler(async ({ data }) => {

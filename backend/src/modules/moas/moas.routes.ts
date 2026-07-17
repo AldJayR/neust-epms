@@ -9,11 +9,13 @@ import {
 	MoaListSchema,
 	MoaPaginationQuery,
 	MoaSchema,
+	SignedUrlSchema,
 	UpdateMoaSchema,
 } from "./moas.schema.js";
 import {
 	getLinkedProjects,
 	getMoaById,
+	getMoaSignedUrl,
 	listMoas,
 	restoreMoa,
 	updateMoa,
@@ -84,6 +86,38 @@ app.openapi(getRoute, async (c) => {
 	const user = c.get("user");
 	const { id } = c.req.valid("param");
 	const result = await getMoaById(id, user);
+	return c.json(result, 200);
+});
+
+const getUrlRoute = createRoute({
+	method: "get",
+	path: "/moas/{id}/url",
+	tags: ["MOAs"],
+	summary: "Get a signed URL for viewing an MOA PDF",
+	security: [{ Bearer: [] }],
+	request: { params: ParamId },
+	responses: {
+		200: {
+			content: { "application/json": { schema: SignedUrlSchema } },
+			description: "Signed URL",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "MOA not found or no file uploaded",
+		},
+		500: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Failed to generate signed URL",
+		},
+	},
+});
+
+app.openapi(getUrlRoute, async (c) => {
+	const result = await getMoaSignedUrl(
+		c.req.valid("param").id,
+		c.get("user"),
+		getClientIp(c),
+	);
 	return c.json(result, 200);
 });
 

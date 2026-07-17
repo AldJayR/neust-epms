@@ -154,6 +154,51 @@ export async function getReportStats(user: AuthUser) {
 	};
 }
 
+export async function getReportSignedUrl(
+	user: AuthUser,
+	reportId: string,
+	ipAddress: string,
+) {
+	const [report] = await db
+		.select({
+			reportId: projectReports.reportId,
+			storagePath: projectReports.storagePath,
+		})
+		.from(projectReports)
+		.innerJoin(projects, eq(projectReports.projectId, projects.projectId))
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+		.where(
+			and(
+				eq(projectReports.reportId, reportId),
+				isNull(projectReports.archivedAt),
+				isNull(projects.archivedAt),
+				...buildProposalScope(user),
+			),
+		)
+		.limit(1);
+
+	if (!report) throw new ApiError(404, "NOT_FOUND", "Report not found");
+	if (!report.storagePath) {
+		throw new ApiError(404, "NO_FILE", "No file uploaded for this report");
+	}
+
+	const { data, error } = await supabase.storage
+		.from("documents")
+		.createSignedUrl(report.storagePath, 3600);
+	if (error || !data) {
+		throw new ApiError(500, "URL_FAILED", "Failed to generate signed URL");
+	}
+
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Accessed signed URL for project report ${reportId}`,
+		tableAffected: "project_reports",
+		ipAddress,
+	});
+
+	return { url: data.signedUrl };
+}
+
 export async function createReport(
 	user: AuthUser,
 	body: CreateReportBody,

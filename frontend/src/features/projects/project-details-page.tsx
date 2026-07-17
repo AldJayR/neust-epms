@@ -110,7 +110,8 @@ export function ProjectDetailsPage({
 		? getStatusDescription(data.status)
 		: undefined;
 	const showActivateButton = isDirector && data.status === "Approved";
-	const showCloseButton = isDirector && data.status === "Ongoing";
+	const showCloseButton =
+		isDirector && ["Ongoing", "Pending Closure"].includes(data.status);
 
 	return (
 		<div className="flex flex-col gap-6">

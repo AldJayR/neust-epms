@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { ExternalLink, FolderOpen, Pencil } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
 import {
@@ -31,6 +32,7 @@ import {
 	type MoaLinkedProject,
 	moaDetailsQueryOptions,
 	moaLinkedProjectsQueryOptions,
+	getMoaSignedUrlFn,
 } from "./functions";
 import { MoaDetailsSkeleton } from "./moa-details-skeleton";
 
@@ -41,6 +43,23 @@ interface MoaDetailsPageProps {
 
 export function MoaDetailsPage({ moaId, currentUser }: MoaDetailsPageProps) {
 	const [editOpen, setEditOpen] = useState(false);
+
+	const handleViewPdf = async () => {
+		const pdfWindow = window.open("about:blank", "_blank");
+		try {
+			const { url } = await getMoaSignedUrlFn({ data: { moaId } });
+			if (pdfWindow) {
+				pdfWindow.location.href = url;
+			} else {
+				window.open(url, "_blank", "noopener,noreferrer");
+			}
+		} catch (error) {
+			pdfWindow?.close();
+			toast.error(
+				error instanceof Error ? error.message : "Failed to open MOA document",
+			);
+		}
+	};
 
 	const { data: moa, isLoading: moaLoading } = useQuery(
 		moaDetailsQueryOptions(moaId),
@@ -155,15 +174,15 @@ export function MoaDetailsPage({ moaId, currentUser }: MoaDetailsPageProps) {
 										<span className="text-xs text-muted-foreground">
 											Document
 										</span>
-										<a
-											href={moa.storagePath}
-											target="_blank"
-											rel="noopener noreferrer"
-											className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-primary hover:underline"
+										<Button
+											type="button"
+											variant="link"
+											className="h-auto justify-start gap-1.5 p-0 text-sm font-medium text-brand-primary hover:underline"
+											onClick={() => void handleViewPdf()}
 										>
 											<ExternalLink className="size-3.5" />
 											View PDF
-										</a>
+										</Button>
 									</div>
 								</>
 							)}

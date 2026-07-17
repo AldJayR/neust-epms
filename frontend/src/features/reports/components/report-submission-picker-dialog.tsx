@@ -85,7 +85,10 @@ export function ReportSubmissionPickerDialog({
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4 py-2">
-						<Select value={projectId} onValueChange={handleProjectChange}>
+						<Select
+							value={projectId}
+							onValueChange={(value) => handleProjectChange(value ?? "")}
+						>
 							<SelectTrigger>
 								<span
 									className={projectId ? undefined : "text-muted-foreground"}
@@ -103,7 +106,7 @@ export function ReportSubmissionPickerDialog({
 						</Select>
 						<Select
 							value={milestoneId}
-							onValueChange={setMilestoneId}
+							onValueChange={(value) => setMilestoneId(value ?? "")}
 							disabled={!projectId}
 						>
 							<SelectTrigger>

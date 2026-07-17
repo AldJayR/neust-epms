@@ -26,6 +26,18 @@ export interface ProjectReportingScheduleResponse {
 	overdue: { id: string; date: string; reportType: string }[];
 }
 
+export function canSubmitMilestone(
+	milestones: ScheduledDueDate[],
+	index: number,
+) {
+	const milestone = milestones[index];
+	return Boolean(
+		milestone &&
+		!milestone.isCompleted &&
+		milestones.slice(0, index).every((previous) => previous.isCompleted),
+	);
+}
+
 const getProjectReportingScheduleFn = createServerFn({ method: "GET" })
 	.validator(z.uuid())
 	.handler(async ({ data: projectId }) => {

@@ -1,4 +1,11 @@
-import { index, pgTable, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+	index,
+	pgTable,
+	timestamp,
+	unique,
+	uuid,
+	varchar,
+} from "drizzle-orm/pg-core";
 import { projects } from "./projects.js";
 
 export const projectReportingMilestones = pgTable(
@@ -18,11 +25,11 @@ export const projectReportingMilestones = pgTable(
 			.defaultNow(),
 	},
 	(table) => ({
-		projectIdx: index("project_reporting_milestones_project_id_idx").on(table.projectId),
-		projectTypeDueUnique: unique("project_reporting_milestones_project_type_due_unique").on(
+		projectIdx: index("project_reporting_milestones_project_id_idx").on(
 			table.projectId,
-			table.reportType,
-			table.dueAt,
 		),
+		projectTypeDueUnique: unique(
+			"project_reporting_milestones_project_type_due_unique",
+		).on(table.projectId, table.reportType, table.dueAt),
 	}),
 );

@@ -58,6 +58,22 @@ const getReportStatsFn = createServerFn({ method: "GET" })
 		};
 	});
 
+export const getReportSignedUrlFn = createServerFn({ method: "GET" })
+	.validator(z.uuid())
+	.handler(async ({ data: reportId }) => {
+		await authorizeSessionUser("Director", "RET Chair", "Faculty");
+		const token = await getValidAccessToken();
+		const response = await fetch(`${API_BASE}/reports/${reportId}/url`, {
+			headers: { Authorization: `Bearer ${token}` },
+		});
+		if (!response.ok) {
+			throw new Error(
+				await getErrorMessage(response, "Failed to open report document"),
+			);
+		}
+		return (await response.json()) as { url: string };
+	});
+
 export const emailReportFn = createServerFn({ method: "POST" })
 	.validator(
 		z.object({

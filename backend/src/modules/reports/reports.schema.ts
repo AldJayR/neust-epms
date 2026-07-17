@@ -34,6 +34,10 @@ export const ReportStatsSchema = z
 	.object({ total: z.number(), progress: z.number(), terminal: z.number() })
 	.openapi("ReportStats");
 
+export const SignedUrlSchema = z
+	.object({ url: z.string().url() })
+	.openapi("ReportSignedUrl");
+
 export const ParamId = z.object({
 	id: z
 		.string()

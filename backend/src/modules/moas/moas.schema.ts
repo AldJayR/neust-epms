@@ -39,6 +39,10 @@ export const MoaLinkedProjectSchema = z
 	})
 	.openapi("MoaLinkedProject");
 
+export const SignedUrlSchema = z
+	.object({ url: z.string().url() })
+	.openapi("MoaSignedUrl");
+
 export const MoaListSchema = z
 	.object({ items: z.array(MoaSchema), total: z.number() })
 	.openapi("MoaList");

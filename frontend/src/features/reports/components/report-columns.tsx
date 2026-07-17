@@ -14,6 +14,8 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { formatAcademicRank, toStableDate } from "@/lib/utils";
 import type { ReportItem } from "@/types/report";
 
+type ViewReportHandler = (reportId: string) => Promise<void>;
+
 function formatDate(dateStr: string) {
 	try {
 		return toStableDate(dateStr).toLocaleDateString("en-US", {
@@ -27,7 +29,9 @@ function formatDate(dateStr: string) {
 	}
 }
 
-function createReportActionsColumn(): DataTableColumnDef<ReportItem> {
+function createReportActionsColumn(
+	onViewReport: ViewReportHandler,
+): DataTableColumnDef<ReportItem> {
 	return createActionsColumn({
 		cell: ({ row }) => (
 			<div className="flex justify-end pr-2">
@@ -41,15 +45,7 @@ function createReportActionsColumn(): DataTableColumnDef<ReportItem> {
 					<DropdownMenuContent align="end" className="w-40">
 						<DropdownMenuItem
 							disabled={!row.original.storagePath}
-							render={
-								// biome-ignore lint/a11y/useAnchorContent: DropdownMenuItem provides the link content.
-								<a
-									href={row.original.storagePath ?? "#"}
-									target="_blank"
-									rel="noopener noreferrer"
-									aria-label="View report"
-								/>
-							}
+							onClick={() => void onViewReport(row.original.reportId)}
 						>
 							View Report
 						</DropdownMenuItem>
@@ -62,6 +58,7 @@ function createReportActionsColumn(): DataTableColumnDef<ReportItem> {
 
 export function createDirectorReportColumns(
 	isRET: boolean,
+	onViewReport: ViewReportHandler,
 ): DataTableColumnDef<ReportItem>[] {
 	const columns: DataTableColumnDef<ReportItem>[] = [
 		{
@@ -166,7 +163,7 @@ export function createDirectorReportColumns(
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => formatDate(row.original.submitted),
 		},
-		createReportActionsColumn(),
+		createReportActionsColumn(onViewReport),
 	);
 
 	return columns;
@@ -174,6 +171,7 @@ export function createDirectorReportColumns(
 
 export function createFacultyReportColumns(
 	progressReportSequences: ReadonlyMap<string, number>,
+	onViewReport: ViewReportHandler,
 ): DataTableColumnDef<ReportItem>[] {
 	return [
 		{
@@ -240,6 +238,6 @@ export function createFacultyReportColumns(
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
 			cell: ({ row }) => formatDate(row.original.submitted),
 		},
-		createReportActionsColumn(),
+		createReportActionsColumn(onViewReport),
 	];
 }

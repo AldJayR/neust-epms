@@ -636,11 +636,14 @@ export async function closeProject(
 		);
 	}
 
-	if (project.projectStatus !== PROJECT_STATUS.ONGOING) {
+	if (
+		project.projectStatus !== PROJECT_STATUS.ONGOING &&
+		project.projectStatus !== PROJECT_STATUS.PENDING_CLOSURE
+	) {
 		throw new ApiError(
 			400,
 			"INVALID_STATE",
-			"Only ongoing projects can be closed",
+			"Only ongoing or pending closure projects can be closed",
 		);
 	}
 
