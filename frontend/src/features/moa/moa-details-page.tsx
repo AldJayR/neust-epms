@@ -29,10 +29,10 @@ import { isDirector } from "@/lib/permissions";
 import { toStableDate } from "@/lib/utils";
 import { EditMoaModal } from "./components/edit-moa-modal";
 import {
+	getMoaSignedUrlFn,
 	type MoaLinkedProject,
 	moaDetailsQueryOptions,
 	moaLinkedProjectsQueryOptions,
-	getMoaSignedUrlFn,
 } from "./functions";
 import { MoaDetailsSkeleton } from "./moa-details-skeleton";
 

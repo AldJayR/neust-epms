@@ -78,6 +78,12 @@ export const ROLE_NAMES = {
 	FACULTY: "Faculty",
 } as const;
 
+export const OPERATIONAL_ROLES = [
+	ROLE_NAMES.DIRECTOR,
+	ROLE_NAMES.RET_CHAIR,
+	ROLE_NAMES.FACULTY,
+] as const;
+
 export type RoleName = (typeof ROLE_NAMES)[keyof typeof ROLE_NAMES];
 
 // ── Proposal status values ──

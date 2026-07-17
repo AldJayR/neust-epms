@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { API_BASE } from "@/config/api";
 import { getErrorMessage } from "@/lib/api/client";
+import { OPERATIONAL_ROLES } from "@/lib/permissions";
 import {
 	authorizeSessionUser,
 	getValidAccessToken,
@@ -12,12 +13,7 @@ import type { DerivedStateResponse } from "@/types/derived-state";
 const getProposalDerivedStateFn = createServerFn({ method: "GET" })
 	.validator(z.uuid())
 	.handler(async ({ data: proposalId }) => {
-		await authorizeSessionUser(
-			"Faculty",
-			"RET Chair",
-			"Director",
-			"Super Admin",
-		);
+		await authorizeSessionUser(...OPERATIONAL_ROLES);
 		const token = await getValidAccessToken();
 
 		const response = await fetch(

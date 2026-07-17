@@ -125,7 +125,7 @@ export const activateProjectFn = createServerFn({ method: "POST" })
 				},
 				body: JSON.stringify({
 					moaId: data.moaId,
-				milestones: data.milestones,
+					milestones: data.milestones,
 				}),
 			},
 		);

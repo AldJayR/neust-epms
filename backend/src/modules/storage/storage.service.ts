@@ -2,13 +2,14 @@ import { randomUUID } from "node:crypto";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { proposalDocuments } from "@/db/schema/proposal-documents.js";
+import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { ApiError } from "@/lib/errors.js";
 import { isProposalInScope } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
-import type { AuthUser } from "@/lib/types.js";
+import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import {
 	getAvatarExtension,
 	sanitizeFilename,
@@ -186,6 +187,33 @@ export async function ensureUploadProposalDocumentAccess(
 			403,
 			"FORBIDDEN",
 			"You do not have permission to upload documents for this proposal",
+		);
+	}
+
+	if (
+		user.roleName === ROLE_NAMES.DIRECTOR ||
+		user.roleName === ROLE_NAMES.SUPER_ADMIN
+	) {
+		return;
+	}
+
+	const [member] = await db
+		.select({ memberId: proposalMembers.memberId })
+		.from(proposalMembers)
+		.where(
+			and(
+				eq(proposalMembers.proposalId, proposalId),
+				eq(proposalMembers.userId, user.userId),
+				isNull(proposalMembers.archivedAt),
+			),
+		)
+		.limit(1);
+
+	if (!member) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You must be an active proposal member to upload documents",
 		);
 	}
 }

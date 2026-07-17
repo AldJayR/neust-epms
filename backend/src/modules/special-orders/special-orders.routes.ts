@@ -2,7 +2,9 @@ import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { getClientIp } from "@/lib/client-ip.js";
 import { ApiError } from "@/lib/errors.js";
 import { ErrorSchema } from "@/lib/schemas.js";
+import { OPERATIONAL_ROLES } from "@/lib/types.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
+import { requireRole } from "@/middleware/rbac.js";
 import { isPdfFile } from "@/services/file.service.js";
 import {
 	PaginationQuery,
@@ -23,6 +25,8 @@ const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
 app.use("/special-orders/*", authMiddleware);
 app.use("/special-orders", authMiddleware);
+app.use("/special-orders", requireRole(...OPERATIONAL_ROLES));
+app.use("/special-orders/*", requireRole(...OPERATIONAL_ROLES));
 
 const listRoute = createRoute({
 	method: "get",

@@ -17,6 +17,14 @@ beforeEach(() => {
 });
 
 describe("GET /moas", () => {
+	it("should reject Super Admin from MOA access", async () => {
+		setMockUser(MOCK_USERS.superAdmin);
+
+		const res = await app.request("/moas");
+
+		expect(res.status).toBe(403);
+	});
+
 	it("should return a list of MOAs", async () => {
 		vi.mocked(db.select).mockReturnValue(
 			mockSelectChain([createMockMoa()]) as never,

@@ -4,6 +4,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 import { users } from "./users.js";
@@ -16,6 +17,7 @@ export const notifications = pgTable(
 			.notNull()
 			.references(() => users.userId),
 		type: text("type").notNull(),
+		dedupeKey: text("dedupe_key"),
 		title: text("title").notNull(),
 		message: text("message").notNull(),
 		isRead: boolean("is_read").notNull().default(false),
@@ -26,5 +28,8 @@ export const notifications = pgTable(
 	},
 	(table) => ({
 		recipientIdx: index("notifications_recipient_id_idx").on(table.recipientId),
+		dedupeKeyUnique: uniqueIndex("notifications_dedupe_key_unique").on(
+			table.dedupeKey,
+		),
 	}),
 );

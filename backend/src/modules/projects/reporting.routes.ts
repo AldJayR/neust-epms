@@ -1,6 +1,8 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { ErrorSchema } from "@/lib/schemas.js";
+import { OPERATIONAL_ROLES } from "@/lib/types.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
+import { requireRole } from "@/middleware/rbac.js";
 
 import {
 	ParamId,
@@ -16,6 +18,8 @@ const app = new OpenAPIHono<AuthEnv>();
 
 app.use("/projects/:id/readiness", authMiddleware);
 app.use("/projects/:id/reporting-schedule", authMiddleware);
+app.use("/projects/:id/readiness", requireRole(...OPERATIONAL_ROLES));
+app.use("/projects/:id/reporting-schedule", requireRole(...OPERATIONAL_ROLES));
 
 // ── GET /projects/:id/readiness ──
 const projectReadinessRoute = createRoute({

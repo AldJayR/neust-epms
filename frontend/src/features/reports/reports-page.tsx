@@ -11,8 +11,8 @@ import {
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ReportsFilterTabs } from "./components/reports-filter-tabs";
 import { ReportSubmissionPickerDialog } from "./components/report-submission-picker-dialog";
+import { ReportsFilterTabs } from "./components/reports-filter-tabs";
 import { useReportsView } from "./hooks/use-reports-view";
 
 export function ReportsPage() {
@@ -23,15 +23,15 @@ export function ReportsPage() {
 		<div className="flex flex-col gap-8">
 			<PageHeader
 				title={<h1 className="text-2xl font-semibold text-heading">Reports</h1>}
-					actions={
-						<div className="flex items-center gap-3">
-							{(view.isFaculty || view.isRET) && (
-								<Button onClick={() => setIsSubmissionPickerOpen(true)}>
-									<FilePlus className="size-4" />
-									Submit Report
-								</Button>
-							)}
-							<Button
+				actions={
+					<div className="flex items-center gap-3">
+						{(view.isFaculty || view.isRET) && (
+							<Button onClick={() => setIsSubmissionPickerOpen(true)}>
+								<FilePlus className="size-4" />
+								Submit Report
+							</Button>
+						)}
+						<Button
 							variant="outline"
 							className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-lg gap-2"
 						>
@@ -112,7 +112,6 @@ export function ReportsPage() {
 				onOpenChange={setIsSubmissionPickerOpen}
 				projects={view.projects}
 			/>
-
 		</div>
 	);
 }

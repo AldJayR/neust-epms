@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { getClientIp } from "@/lib/client-ip.js";
 import { ErrorSchema } from "@/lib/schemas.js";
-import { ROLE_NAMES } from "@/lib/types.js";
+import { OPERATIONAL_ROLES, ROLE_NAMES } from "@/lib/types.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import { requireRole } from "@/middleware/rbac.js";
 
@@ -25,10 +25,10 @@ const app = new OpenAPIHono<AuthEnv>();
 
 app.use("/projects", authMiddleware);
 app.use("/projects/*", authMiddleware);
-app.use(
-	"/projects/:id/restore",
-	requireRole(ROLE_NAMES.DIRECTOR, ROLE_NAMES.SUPER_ADMIN),
-);
+app.use("/projects", requireRole(...OPERATIONAL_ROLES));
+app.use("/projects/:id", requireRole(...OPERATIONAL_ROLES));
+app.use("/projects/:id/derived-state", requireRole(...OPERATIONAL_ROLES));
+app.use("/projects/:id/restore", requireRole(ROLE_NAMES.DIRECTOR));
 app.use("/projects/:id/hold", requireRole(ROLE_NAMES.SUPER_ADMIN));
 
 // ── GET /projects ──

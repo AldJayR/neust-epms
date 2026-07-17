@@ -16,6 +16,44 @@ app.use("*", authMiddleware);
 app.route("/", directorApp);
 installApiErrorHandler(app);
 
+describe("MOA access", () => {
+	beforeEach(() => {
+		setMockUser(MOCK_USERS.superAdmin);
+	});
+
+	it("should reject Super Admin from the MOA repository", async () => {
+		const res = await app.request("/director/moas?page=1&limit=10");
+
+		expect(res.status).toBe(403);
+	});
+
+	it("should reject Super Admin from the Director dashboard", async () => {
+		const res = await app.request("/director/dashboard");
+
+		expect(res.status).toBe(403);
+	});
+
+	it("should reject Super Admin from the project hub", async () => {
+		const res = await app.request("/director/hub/projects?page=1&limit=10");
+
+		expect(res.status).toBe(403);
+	});
+
+	it("should reject Super Admin from the faculty directory", async () => {
+		const res = await app.request("/director/faculty?page=1&limit=10");
+
+		expect(res.status).toBe(403);
+	});
+
+	it("should reject Super Admin from the faculty email report", async () => {
+		const res = await app.request("/director/email-report", {
+			method: "POST",
+		});
+
+		expect(res.status).toBe(403);
+	});
+});
+
 describe("GET /director/hub/projects", () => {
 	beforeEach(() => {
 		setMockUser(MOCK_USERS.director);

@@ -60,7 +60,10 @@ export function SubmitReportModal({
 
 	const handleSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
-		if ((!isClosure && !progressFile) || (isClosure && (!terminalFile || !finalFile))) {
+		if (
+			(!isClosure && !progressFile) ||
+			(isClosure && (!terminalFile || !finalFile))
+		) {
 			toast.error(
 				isClosure
 					? "Please upload both the Terminal and Final Accomplishment reports."
@@ -108,7 +111,9 @@ export function SubmitReportModal({
 			onOpenChange(false);
 			resetForm();
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : "Failed to submit report");
+			toast.error(
+				error instanceof Error ? error.message : "Failed to submit report",
+			);
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -168,7 +173,11 @@ export function SubmitReportModal({
 					)}
 
 					<DialogFooter className="border-t border-border pt-3">
-						<Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+						<Button
+							type="button"
+							variant="ghost"
+							onClick={() => onOpenChange(false)}
+						>
 							Cancel
 						</Button>
 						<BrandButton type="submit" disabled={isSubmitting}>
@@ -210,7 +219,9 @@ function ReportFileField({
 									browse
 								</FileUploadTrigger>
 							</p>
-							<p className="text-xs text-muted-foreground">PDF only (max 10MB)</p>
+							<p className="text-xs text-muted-foreground">
+								PDF only (max 10MB)
+							</p>
 						</div>
 					</FileUploadDropzone>
 				)}

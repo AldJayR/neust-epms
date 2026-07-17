@@ -95,7 +95,9 @@ export function useReportsView() {
 		} catch (error) {
 			reportWindow?.close();
 			toast.error(
-				error instanceof Error ? error.message : "Failed to open report document",
+				error instanceof Error
+					? error.message
+					: "Failed to open report document",
 			);
 		}
 	};

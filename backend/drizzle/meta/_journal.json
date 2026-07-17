@@ -15,6 +15,13 @@
 			"when": 1784127866570,
 			"tag": "0001_third_meggan",
 			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1784261717264,
+			"tag": "0002_lucky_lockjaw",
+			"breakpoints": true
 		}
 	]
 }

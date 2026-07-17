@@ -9,6 +9,7 @@ import { proposals } from "@/db/schema/proposals.js";
 import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
+import { withCronLock } from "@/lib/cron-lock.js";
 import { escapeHtml } from "@/lib/html.js";
 import { createNotification } from "@/lib/notification.helpers.js";
 
@@ -52,146 +53,154 @@ async function getSystemExecutorId(): Promise<string | null> {
 }
 
 export function startReportOverdueCron(): void {
-	cron.schedule("0 2 * * *", async () => {
-		console.log(
-			`[CRON] Report overdue check started at ${new Date().toISOString()}`,
-		);
-
-		try {
-			const now = new Date();
-			const systemUserId = await getSystemExecutorId();
-
-			// Load the complete overdue work set in one query instead of resolving
-			// the schedule, project, proposal, and leader once per reporting date.
-			const overdueDates = await db
-				.select({
-					reportingDateId: projectReportingMilestones.milestoneId,
-					reportingDate: projectReportingMilestones.dueAt,
-					reportType: projectReportingMilestones.reportType,
-					projectId: projects.projectId,
-					projectStatus: projects.projectStatus,
-					projectArchivedAt: projects.archivedAt,
-					proposalId: proposals.proposalId,
-					proposalTitle: proposals.title,
-					proposalLocale: proposals.projectLocale,
-					proposalCampusId: proposals.campusId,
-					proposalDepartmentId: proposals.departmentId,
-					leaderId: proposalMembers.userId,
-				})
-				.from(projectReportingMilestones)
-				.innerJoin(
-					projects,
-					eq(projectReportingMilestones.projectId, projects.projectId),
-				)
-				.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-				.leftJoin(
-					proposalMembers,
-					and(
-						eq(proposalMembers.proposalId, proposals.proposalId),
-						eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE),
-						isNull(proposalMembers.archivedAt),
-					),
-				)
-				.where(
-					and(
-						lt(projectReportingMilestones.dueAt, now),
-						isNull(projectReportingMilestones.completedAt),
-					),
-				);
-
-			if (overdueDates.length === 0) {
-				console.log("[CRON] No overdue reports found.");
-				return;
-			}
-
-			// This list is small and fixed by institutional staffing. Resolving it
-			// once avoids another database query for every overdue report.
-			const retChairs = await db
-				.select({
-					userId: users.userId,
-					campusId: users.campusId,
-					departmentId: users.departmentId,
-					isMainCampus: campuses.isMainCampus,
-				})
-				.from(users)
-				.innerJoin(roles, eq(users.roleId, roles.roleId))
-				.innerJoin(campuses, eq(users.campusId, campuses.campusId))
-				.where(and(eq(roles.roleName, "RET Chair"), eq(users.isActive, true)));
-
-			console.log(
-				`[CRON] Found ${overdueDates.length} overdue reporting date(s).`,
-			);
-
-			let notifiedCount = 0;
-
-			for (const row of overdueDates) {
-				const dateStr = new Date(row.reportingDate).toLocaleDateString();
-
-				// Skip closed/archived projects
-				if (row.projectStatus === "Closed" || row.projectArchivedAt) continue;
-
-				if (row.projectStatus !== "Overdue") {
-					await db
-						.update(projects)
-						.set({
-							projectStatus: "Overdue",
-							updatedAt: new Date(),
-						})
-						.where(eq(projects.projectId, row.projectId));
-
-					if (systemUserId) {
-						await insertAuditLog({
-							userId: systemUserId,
-							action: `Flagged project ${row.projectId} status as Overdue due to missed report deadline (${dateStr})`,
-							tableAffected: "projects",
-							ipAddress: "127.0.0.1",
-						});
-					}
-				}
-
-				const retChair = retChairs.find(
-					(chair) =>
-						chair.campusId === row.proposalCampusId &&
-						(!chair.isMainCampus ||
-							chair.departmentId === row.proposalDepartmentId),
-				);
-
-				// Notify Project Leader
-				if (row.leaderId) {
-					await createNotification({
-						recipientId: row.leaderId,
-						type: "report_overdue",
-						title: "Report Overdue",
-						message: `Your ${row.reportType} report for "${row.proposalTitle}" was due on ${dateStr}. Please submit immediately.`,
-						sendEmail: true,
-						emailSubject: `Overdue Report: ${row.proposalTitle}`,
-						emailHtml: `<p>Your ${escapeHtml(row.reportType)} report for "<strong>${escapeHtml(row.proposalTitle)}</strong>" was due on <strong>${escapeHtml(dateStr)}</strong>. Please submit immediately.</p>`,
-					});
-					notifiedCount++;
-				}
-
-				// Notify RET Chair
-				if (retChair) {
-					await createNotification({
-						recipientId: retChair.userId,
-						type: "report_overdue",
-						title: "Report Overdue",
-						message: `A ${row.reportType} report for "${row.proposalTitle}" (${row.proposalLocale}) was due on ${dateStr} and has not been submitted.`,
-						sendEmail: true,
-						emailSubject: `Overdue Report: ${row.proposalTitle}`,
-						emailHtml: `<p>A ${escapeHtml(row.reportType)} report for "<strong>${escapeHtml(row.proposalTitle)}</strong>" (${escapeHtml(row.proposalLocale)}) was due on <strong>${escapeHtml(dateStr)}</strong> and has not been submitted.</p>`,
-					});
-					notifiedCount++;
-				}
-			}
-
-			console.log(
-				`[CRON] Report overdue check complete. Sent ${notifiedCount} notification(s).`,
-			);
-		} catch (err) {
-			console.error("[CRON] Report overdue check failed:", err);
-		}
+	cron.schedule("0 2 * * *", () => {
+		void withCronLock("report-overdue", runReportOverdue).catch((error) => {
+			console.error("[CRON] Report overdue lock failed:", error);
+		});
 	});
 
 	console.log("[CRON] Report overdue cron job scheduled (daily at 02:00).");
+}
+
+async function runReportOverdue(): Promise<void> {
+	console.log(
+		`[CRON] Report overdue check started at ${new Date().toISOString()}`,
+	);
+
+	try {
+		const now = new Date();
+		const systemUserId = await getSystemExecutorId();
+
+		// Load the complete overdue work set in one query instead of resolving
+		// the schedule, project, proposal, and leader once per reporting date.
+		const overdueDates = await db
+			.select({
+				reportingDateId: projectReportingMilestones.milestoneId,
+				reportingDate: projectReportingMilestones.dueAt,
+				reportType: projectReportingMilestones.reportType,
+				projectId: projects.projectId,
+				projectStatus: projects.projectStatus,
+				projectArchivedAt: projects.archivedAt,
+				proposalId: proposals.proposalId,
+				proposalTitle: proposals.title,
+				proposalLocale: proposals.projectLocale,
+				proposalCampusId: proposals.campusId,
+				proposalDepartmentId: proposals.departmentId,
+				leaderId: proposalMembers.userId,
+			})
+			.from(projectReportingMilestones)
+			.innerJoin(
+				projects,
+				eq(projectReportingMilestones.projectId, projects.projectId),
+			)
+			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+			.leftJoin(
+				proposalMembers,
+				and(
+					eq(proposalMembers.proposalId, proposals.proposalId),
+					eq(proposalMembers.projectRole, PROJECT_LEADER_ROLE),
+					isNull(proposalMembers.archivedAt),
+				),
+			)
+			.where(
+				and(
+					lt(projectReportingMilestones.dueAt, now),
+					isNull(projectReportingMilestones.completedAt),
+				),
+			);
+
+		if (overdueDates.length === 0) {
+			console.log("[CRON] No overdue reports found.");
+			return;
+		}
+
+		// This list is small and fixed by institutional staffing. Resolving it
+		// once avoids another database query for every overdue report.
+		const retChairs = await db
+			.select({
+				userId: users.userId,
+				campusId: users.campusId,
+				departmentId: users.departmentId,
+				isMainCampus: campuses.isMainCampus,
+			})
+			.from(users)
+			.innerJoin(roles, eq(users.roleId, roles.roleId))
+			.innerJoin(campuses, eq(users.campusId, campuses.campusId))
+			.where(and(eq(roles.roleName, "RET Chair"), eq(users.isActive, true)));
+
+		console.log(
+			`[CRON] Found ${overdueDates.length} overdue reporting date(s).`,
+		);
+
+		let notifiedCount = 0;
+
+		for (const row of overdueDates) {
+			const dateStr = new Date(row.reportingDate).toLocaleDateString();
+
+			// Skip closed/archived projects
+			if (row.projectStatus === "Closed" || row.projectArchivedAt) continue;
+
+			if (row.projectStatus !== "Overdue") {
+				await db
+					.update(projects)
+					.set({
+						projectStatus: "Overdue",
+						updatedAt: new Date(),
+					})
+					.where(eq(projects.projectId, row.projectId));
+
+				if (systemUserId) {
+					await insertAuditLog({
+						userId: systemUserId,
+						action: `Flagged project ${row.projectId} status as Overdue due to missed report deadline (${dateStr})`,
+						tableAffected: "projects",
+						ipAddress: "127.0.0.1",
+					});
+				}
+			}
+
+			const retChair = retChairs.find(
+				(chair) =>
+					chair.campusId === row.proposalCampusId &&
+					(!chair.isMainCampus ||
+						chair.departmentId === row.proposalDepartmentId),
+			);
+
+			// Notify Project Leader
+			if (row.leaderId) {
+				const created = await createNotification({
+					recipientId: row.leaderId,
+					type: "report_overdue",
+					dedupeKey: `report-overdue:${row.reportingDateId}:${row.leaderId}`,
+					title: "Report Overdue",
+					message: `Your ${row.reportType} report for "${row.proposalTitle}" was due on ${dateStr}. Please submit immediately.`,
+					sendEmail: true,
+					emailSubject: `Overdue Report: ${row.proposalTitle}`,
+					emailHtml: `<p>Your ${escapeHtml(row.reportType)} report for "<strong>${escapeHtml(row.proposalTitle)}</strong>" was due on <strong>${escapeHtml(dateStr)}</strong>. Please submit immediately.</p>`,
+				});
+				if (created) notifiedCount++;
+			}
+
+			// Notify RET Chair
+			if (retChair) {
+				const created = await createNotification({
+					recipientId: retChair.userId,
+					type: "report_overdue",
+					dedupeKey: `report-overdue:${row.reportingDateId}:${retChair.userId}`,
+					title: "Report Overdue",
+					message: `A ${row.reportType} report for "${row.proposalTitle}" (${row.proposalLocale}) was due on ${dateStr} and has not been submitted.`,
+					sendEmail: true,
+					emailSubject: `Overdue Report: ${row.proposalTitle}`,
+					emailHtml: `<p>A ${escapeHtml(row.reportType)} report for "<strong>${escapeHtml(row.proposalTitle)}</strong>" (${escapeHtml(row.proposalLocale)}) was due on <strong>${escapeHtml(dateStr)}</strong> and has not been submitted.</p>`,
+				});
+				if (created) notifiedCount++;
+			}
+		}
+
+		console.log(
+			`[CRON] Report overdue check complete. Sent ${notifiedCount} notification(s).`,
+		);
+	} catch (err) {
+		console.error("[CRON] Report overdue check failed:", err);
+	}
 }

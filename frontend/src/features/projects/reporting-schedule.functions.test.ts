@@ -3,13 +3,13 @@ import type { ScheduledDueDate } from "./reporting-schedule.functions";
 import { canSubmitMilestone } from "./reporting-schedule.functions";
 
 const milestone = (isCompleted: boolean): ScheduledDueDate => ({
-	 id: crypto.randomUUID(),
-	 date: "2026-01-01T00:00:00.000Z",
-	 isCompleted,
-	 completedAt: isCompleted ? "2026-01-02T00:00:00.000Z" : null,
-	 reportType: "Progress",
-	 reportId: null,
-	 storagePath: null,
+	id: crypto.randomUUID(),
+	date: "2026-01-01T00:00:00.000Z",
+	isCompleted,
+	completedAt: isCompleted ? "2026-01-02T00:00:00.000Z" : null,
+	reportType: "Progress",
+	reportId: null,
+	storagePath: null,
 });
 
 describe("canSubmitMilestone", () => {

@@ -1,6 +1,7 @@
 export { auditLogs } from "./audit-logs.js";
 export { beneficiarySectors } from "./beneficiary-sectors.js";
 export { campuses } from "./campuses.js";
+export { cronLocks } from "./cron-locks.js";
 export { departments } from "./departments.js";
 export { moas } from "./moas.js";
 export { notifications } from "./notifications.js";

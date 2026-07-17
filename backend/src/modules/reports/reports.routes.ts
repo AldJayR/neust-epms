@@ -1,16 +1,18 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { getClientIp } from "@/lib/client-ip.js";
 import { ErrorSchema } from "@/lib/schemas.js";
+import { OPERATIONAL_ROLES } from "@/lib/types.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
+import { requireRole } from "@/middleware/rbac.js";
 import { isPdfFile } from "@/services/file.service.js";
 import {
 	CreateReportSchema,
 	PaginationQuery,
+	ParamId,
 	ReportListSchema,
 	ReportSchema,
 	ReportStatsSchema,
 	SignedUrlSchema,
-	ParamId,
 } from "./reports.schema.js";
 import {
 	createReport,
@@ -23,6 +25,8 @@ import {
 const app = new OpenAPIHono<AuthEnv>();
 app.use("/reports/*", authMiddleware);
 app.use("/reports", authMiddleware);
+app.use("/reports", requireRole(...OPERATIONAL_ROLES));
+app.use("/reports/*", requireRole(...OPERATIONAL_ROLES));
 
 const listRoute = createRoute({
 	method: "get",

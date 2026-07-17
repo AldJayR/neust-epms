@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { API_BASE } from "@/config/api";
 import { getErrorMessage } from "@/lib/api/client";
+import { OPERATIONAL_ROLES } from "@/lib/permissions";
 import {
 	authorizeSessionUser,
 	getValidAccessToken,
@@ -33,20 +34,15 @@ export function canSubmitMilestone(
 	const milestone = milestones[index];
 	return Boolean(
 		milestone &&
-		!milestone.isCompleted &&
-		milestones.slice(0, index).every((previous) => previous.isCompleted),
+			!milestone.isCompleted &&
+			milestones.slice(0, index).every((previous) => previous.isCompleted),
 	);
 }
 
 const getProjectReportingScheduleFn = createServerFn({ method: "GET" })
 	.validator(z.uuid())
 	.handler(async ({ data: projectId }) => {
-		await authorizeSessionUser(
-			"Faculty",
-			"RET Chair",
-			"Director",
-			"Super Admin",
-		);
+		await authorizeSessionUser(...OPERATIONAL_ROLES);
 		const token = await getValidAccessToken();
 
 		const response = await fetch(

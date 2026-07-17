@@ -10,6 +10,7 @@ import { specialOrders } from "@/db/schema/special-orders.js";
 import { systemSettings } from "@/db/schema/system-settings.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
+import { withCronLock } from "@/lib/cron-lock.js";
 import { PROJECT_STATUS, ROLE_NAMES } from "@/lib/types.js";
 
 const RETENTION_SETTING_KEY = "project_retention_years";
@@ -167,17 +168,25 @@ export async function archiveExpiredProjects(
 }
 
 export function startPrivacyRetentionCron(): void {
-	cron.schedule("0 3 * * 0", async () => {
-		try {
-			const result = await archiveExpiredProjects();
-			console.log(
-				`[CRON] Privacy retention archived ${result.archived} of ${result.scanned} expired project(s).`,
-			);
-		} catch (error) {
-			console.error("[CRON] Privacy retention failed:", error);
-		}
+	cron.schedule("0 3 * * 0", () => {
+		void withCronLock("privacy-retention", runPrivacyRetention).catch(
+			(error) => {
+				console.error("[CRON] Privacy retention lock failed:", error);
+			},
+		);
 	});
 	console.log(
 		"[CRON] Privacy retention job scheduled (weekly on Sunday at 03:00).",
 	);
+}
+
+async function runPrivacyRetention(): Promise<void> {
+	try {
+		const result = await archiveExpiredProjects();
+		console.log(
+			`[CRON] Privacy retention archived ${result.archived} of ${result.scanned} expired project(s).`,
+		);
+	} catch (error) {
+		console.error("[CRON] Privacy retention failed:", error);
+	}
 }

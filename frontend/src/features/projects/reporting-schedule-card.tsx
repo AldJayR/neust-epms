@@ -16,9 +16,9 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { SubmitReportModal } from "@/features/reports/components/submit-report-modal";
 import { useProjectReportingSchedule } from "@/hooks/use-project-reporting-schedule";
 import { toStableDate } from "@/lib/utils";
-import { SubmitReportModal } from "@/features/reports/components/submit-report-modal";
 import {
 	canSubmitMilestone,
 	type ScheduledDueDate,
@@ -37,7 +37,8 @@ export function ReportingScheduleCard({
 }: ReportingScheduleCardProps) {
 	const { data, isLoading, error } = useProjectReportingSchedule(projectId);
 	const [now] = useState(() => new Date());
-	const [selectedMilestone, setSelectedMilestone] = useState<ScheduledDueDate | null>(null);
+	const [selectedMilestone, setSelectedMilestone] =
+		useState<ScheduledDueDate | null>(null);
 
 	if (isLoading) {
 		return (

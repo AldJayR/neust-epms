@@ -7,9 +7,12 @@ import { requestId } from "hono/request-id";
 import { secureHeaders } from "hono/secure-headers";
 import { rateLimiter } from "hono-rate-limiter";
 import { db } from "./db/client.js";
+import { env } from "./env.js";
 import { getClientIp } from "./lib/client-ip.js";
 import { installApiErrorHandler } from "./lib/errors.js";
+import { OPERATIONAL_ROLES } from "./lib/types.js";
 import { type AuthEnv, authMiddleware } from "./middleware/auth.js";
+import { requireRole } from "./middleware/rbac.js";
 import actionCenterRoutes from "./modules/action-center/index.js";
 import adminRoutes from "./modules/admin/index.js";
 import auditRoutes from "./modules/audit/index.js";
@@ -48,7 +51,7 @@ app.use("*", requestId());
 app.use(
 	"*",
 	cors({
-		origin: ["http://localhost:3001", "http://localhost:5173"],
+		origin: env.CORS_ORIGINS,
 		credentials: true,
 	}),
 );
@@ -236,6 +239,8 @@ app.get("/api/v1/swagger", swaggerUI({ url: "/api/v1/openapi.json" }));
 // authMiddleware multiple times per proposal request).
 app.use("/api/v1/proposals", authMiddleware);
 app.use("/api/v1/proposals/*", authMiddleware);
+app.use("/api/v1/proposals", requireRole(...OPERATIONAL_ROLES));
+app.use("/api/v1/proposals/*", requireRole(...OPERATIONAL_ROLES));
 
 app.route("/api/v1", authRoutes);
 app.route("/api/v1", actionCenterRoutes);

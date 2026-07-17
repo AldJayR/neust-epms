@@ -187,8 +187,7 @@ export function ActivateProjectWizard({
 						Activate Project
 					</DialogTitle>
 					<DialogDescription className="text-sm text-muted-foreground">
-						Step {step} of 2:{" "}
-						{step === 1 ? "Link MOA" : "Reporting Milestones"}
+						Step {step} of 2: {step === 1 ? "Link MOA" : "Reporting Milestones"}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -317,9 +316,9 @@ export function ActivateProjectWizard({
 											className="flex items-center gap-2 rounded-lg border border-border p-3"
 										>
 											<span className="flex-1 text-sm font-medium">
-											{entry.reportType === "Progress"
-												? "Progress Report"
-												: "Project Closure (Terminal + Final Accomplishment)"}
+												{entry.reportType === "Progress"
+													? "Progress Report"
+													: "Project Closure (Terminal + Final Accomplishment)"}
 											</span>
 											<Popover>
 												<PopoverTrigger

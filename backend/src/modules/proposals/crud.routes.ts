@@ -55,10 +55,7 @@ import {
 
 const app = new OpenAPIHono<AuthEnv>();
 
-app.use(
-	"/proposals/:id/restore",
-	requireRole(ROLE_NAMES.DIRECTOR, ROLE_NAMES.SUPER_ADMIN),
-);
+app.use("/proposals/:id/restore", requireRole(ROLE_NAMES.DIRECTOR));
 
 // ── GET /proposals ──
 const listRoute = createRoute({

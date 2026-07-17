@@ -218,11 +218,38 @@ describe("POST /proposals/:proposalId/documents/upload", () => {
 		expect(body.error.code).toBe("FORBIDDEN");
 	});
 
+	it("should reject an in-scope user who is not a proposal member", async () => {
+		const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
+		vi.mocked(db.select)
+			.mockReturnValueOnce(mockSelectChain([proposal]) as never)
+			.mockReturnValueOnce(mockSelectChain([]) as never);
+
+		const formData = new FormData();
+		formData.set(
+			"file",
+			new File([PDF_BYTES], "proposal.pdf", { type: "application/pdf" }),
+		);
+
+		const res = await app.request(
+			`/proposals/${PROPOSAL_ID}/documents/upload`,
+			{
+				method: "POST",
+				body: formData,
+			},
+		);
+
+		expect(res.status).toBe(403);
+		const body = await res.json();
+		expect(body.error.code).toBe("FORBIDDEN");
+	});
+
 	it("should include random uuid segment in generated storage path", async () => {
 		const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
 		vi.mocked(db.select)
 			.mockReturnValueOnce(mockSelectChain([proposal]) as never)
-			.mockReturnValueOnce(mockSelectChain([{ maxVer: 0 }]) as never);
+			.mockReturnValueOnce(
+				mockSelectChain([{ memberId: "member-1" }]) as never,
+			);
 
 		const inserted = {
 			documentId: DOC_ID,

@@ -27,6 +27,8 @@ import { vi } from "vitest";
 vi.mock("../src/env.js", () => ({
 	env: {
 		PORT: "3000",
+		NODE_ENV: "test",
+		CORS_ORIGINS: ["http://localhost:3001", "http://localhost:5173"],
 		DATABASE_URL: "postgresql://test:test@localhost:5432/neust_epms_test",
 		SUPABASE_URL: "https://test.supabase.co",
 		SUPABASE_ANON_KEY: "test-anon-key",

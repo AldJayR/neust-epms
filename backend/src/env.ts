@@ -1,5 +1,6 @@
 import { z } from "@hono/zod-openapi";
 import "dotenv/config";
+import { parseCorsOrigins } from "./lib/cors.js";
 
 const envSchema = z.object({
 	DATABASE_URL: z.string().url(),
@@ -14,6 +15,7 @@ const envSchema = z.object({
 	RESEND_FROM: z.string().optional(),
 	SUPABASE_USER_ID: z.string().uuid().optional(),
 	ADMIN_EMAIL: z.string().email().optional(),
+	CORS_ORIGINS: z.string().optional(),
 	// Only trust x-forwarded-for / x-real-ip when behind a trusted reverse proxy
 	TRUST_PROXY: z
 		.string()
@@ -33,4 +35,13 @@ if (!parsed.success) {
 	process.exit(1);
 }
 
-export const env = parsed.data;
+const corsOrigins = (() => {
+	try {
+		return parseCorsOrigins(parsed.data.CORS_ORIGINS, parsed.data.NODE_ENV);
+	} catch (error) {
+		console.error("❌ Invalid CORS configuration:", error);
+		process.exit(1);
+	}
+})();
+
+export const env = { ...parsed.data, CORS_ORIGINS: corsOrigins };

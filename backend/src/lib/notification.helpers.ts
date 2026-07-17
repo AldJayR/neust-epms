@@ -21,6 +21,7 @@ export interface CreateNotificationOpts {
 	type: NotificationType;
 	title: string;
 	message: string;
+	dedupeKey?: string;
 	sendEmail?: boolean;
 	emailSubject?: string;
 	emailHtml?: string;
@@ -32,24 +33,32 @@ export interface CreateNotificationOpts {
  */
 export async function createNotification(
 	opts: CreateNotificationOpts,
-): Promise<void> {
+): Promise<boolean> {
 	const {
 		recipientId,
 		type,
 		title,
 		message,
+		dedupeKey,
 		sendEmail = false,
 		emailSubject,
 		emailHtml,
 	} = opts;
 
-	await db.insert(notifications).values({
-		recipientId,
-		type,
-		title,
-		message,
-		isRead: false,
-	});
+	const [inserted] = await db
+		.insert(notifications)
+		.values({
+			recipientId,
+			type,
+			dedupeKey,
+			title,
+			message,
+			isRead: false,
+		})
+		.onConflictDoNothing({ target: notifications.dedupeKey })
+		.returning({ notificationId: notifications.notificationId });
+
+	if (!inserted) return false;
 
 	if (sendEmail && env.RESEND_API_KEY && env.RESEND_FROM) {
 		const [user] = await db
@@ -73,6 +82,8 @@ export async function createNotification(
 			}
 		}
 	}
+
+	return true;
 }
 
 /**

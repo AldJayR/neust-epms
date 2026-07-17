@@ -40,11 +40,19 @@ export async function searchEntities(
 ): Promise<{ results: SearchResultItem[] }> {
 	const { q, type, limit } = query;
 	const tsQuery = buildTsQuery(q);
+	if (
+		user.roleName === ROLE_NAMES.SUPER_ADMIN &&
+		type !== "all" &&
+		type !== "users"
+	) {
+		throw new ApiError(403, "FORBIDDEN", "Super Admin can only search users");
+	}
 
 	const canSearchMoas =
 		user.roleName === ROLE_NAMES.RET_CHAIR ||
 		user.roleName === ROLE_NAMES.DIRECTOR;
 	const canSearchUsers = user.roleName === ROLE_NAMES.SUPER_ADMIN;
+	const canSearchOperational = user.roleName !== ROLE_NAMES.SUPER_ADMIN;
 
 	const rank = (vector: SQL) =>
 		sql`ts_rank(${vector}, to_tsquery('simple', ${tsQuery})) desc`;
@@ -53,7 +61,7 @@ export async function searchEntities(
 
 	const wants = (t: SearchKind) => type === "all" || type === t;
 
-	if (wants("proposals")) {
+	if (wants("proposals") && canSearchOperational) {
 		queries.push(
 			db
 				.select({
@@ -75,7 +83,7 @@ export async function searchEntities(
 		);
 	}
 
-	if (wants("projects")) {
+	if (wants("projects") && canSearchOperational) {
 		queries.push(
 			db
 				.select({
@@ -99,7 +107,7 @@ export async function searchEntities(
 		);
 	}
 
-	if (wants("reports")) {
+	if (wants("reports") && canSearchOperational) {
 		queries.push(
 			db
 				.select({

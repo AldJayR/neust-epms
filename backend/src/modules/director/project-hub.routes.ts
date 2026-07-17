@@ -8,14 +8,7 @@ import { getHubProjects } from "./director.service.js";
 const app = new OpenAPIHono<AuthEnv>();
 
 app.use("/director/*", authMiddleware);
-app.use(
-	"/director/*",
-	requireRole(
-		ROLE_NAMES.SUPER_ADMIN,
-		ROLE_NAMES.DIRECTOR,
-		ROLE_NAMES.RET_CHAIR,
-	),
-);
+app.use("/director/*", requireRole(ROLE_NAMES.DIRECTOR, ROLE_NAMES.RET_CHAIR));
 
 const projectHubRoute = createRoute({
 	method: "get",

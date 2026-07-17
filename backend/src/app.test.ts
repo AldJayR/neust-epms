@@ -11,6 +11,27 @@ vi.unmock("./middleware/auth.js");
 import app from "./app.js";
 
 describe("App shell", () => {
+	describe("CORS", () => {
+		it("allows configured origins with credentials", async () => {
+			const res = await app.request("/api/v1/health", {
+				headers: { Origin: "http://localhost:5173" },
+			});
+
+			expect(res.headers.get("access-control-allow-origin")).toBe(
+				"http://localhost:5173",
+			);
+			expect(res.headers.get("access-control-allow-credentials")).toBe("true");
+		});
+
+		it("does not allow unconfigured origins", async () => {
+			const res = await app.request("/api/v1/health", {
+				headers: { Origin: "https://attacker.example.com" },
+			});
+
+			expect(res.headers.get("access-control-allow-origin")).toBeNull();
+		});
+	});
+
 	describe("GET /api/v1/health", () => {
 		it("should return 200 with status ok", async () => {
 			const res = await app.request("/api/v1/health");

@@ -6,6 +6,12 @@ const ROLES = {
 	RET_CHAIR: "RET Chair" as RoleName,
 } as const;
 
+export const OPERATIONAL_ROLES = [
+	ROLES.DIRECTOR,
+	ROLES.RET_CHAIR,
+	"Faculty" as RoleName,
+] as const;
+
 function hasRole(
 	user: { roleName?: string } | null | undefined,
 	...roles: RoleName[]

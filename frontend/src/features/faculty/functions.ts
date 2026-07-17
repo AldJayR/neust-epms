@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { API_BASE } from "@/config/api";
 import { getErrorMessage } from "@/lib/api/client";
+import { OPERATIONAL_ROLES } from "@/lib/permissions";
 import {
 	authorizeSessionUser,
 	getValidAccessToken,
@@ -148,12 +149,7 @@ export interface FacultyProjectListResponse {
 const getFacultyProposalsFn = createServerFn({ method: "GET" })
 	.validator(facultyProposalsParamsSchema)
 	.handler(async ({ data }) => {
-		await authorizeSessionUser(
-			"Faculty",
-			"RET Chair",
-			"Director",
-			"Super Admin",
-		);
+		await authorizeSessionUser(...OPERATIONAL_ROLES);
 		const accessToken = await getValidAccessToken();
 
 		const url = new URL(`${API_BASE}/proposals`);
@@ -184,12 +180,7 @@ const getFacultyProposalsFn = createServerFn({ method: "GET" })
 const getFacultyProjectsFn = createServerFn({ method: "GET" })
 	.validator(facultyProjectsParamsSchema)
 	.handler(async ({ data }) => {
-		await authorizeSessionUser(
-			"Faculty",
-			"RET Chair",
-			"Director",
-			"Super Admin",
-		);
+		await authorizeSessionUser(...OPERATIONAL_ROLES);
 		const accessToken = await getValidAccessToken();
 
 		const url = new URL(`${API_BASE}/projects`);
