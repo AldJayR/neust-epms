@@ -73,11 +73,11 @@ Add these App Settings:
 
 ```text
 SCM_DO_BUILD_DURING_DEPLOYMENT=true
-CUSTOM_BUILD_COMMAND=corepack pnpm install --frozen-lockfile && corepack pnpm build
 ```
 
-`CUSTOM_BUILD_COMMAND` makes Azure use the exact `pnpm@11.13.1` declared in
-`package.json` instead of relying on App Service's default npm build.
+Azure runs `npm install` and `npm run build` after receiving the backend source.
+This avoids deploying pnpm's linked `node_modules` tree, which Azure can
+repackage without transitive runtime dependencies.
 
 Only add this setting after confirming that the target database uses this
 repository's Drizzle migration journal:
