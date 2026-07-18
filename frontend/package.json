@@ -7,7 +7,7 @@
   },
   "packageManager": "pnpm@11.13.1",
   "scripts": {
-    "dev": "dotenv -e .env.local -- node --import ./instrument.server.mjs ./node_modules/vite/bin/vite.js dev --port 3000",
+    "dev": "dotenv -e .env.local -- vite dev --port 3000",
     "build": "vite build && node -e \"const fs = require('node:fs'); fs.mkdirSync('.output/server', { recursive: true }); fs.copyFileSync('instrument.server.mjs', '.output/server/instrument.server.mjs')\"",
     "preview": "vite preview",
     "deploy": "pnpm build && wrangler deploy",

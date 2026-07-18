@@ -94,10 +94,12 @@ export function useProposalWizard({
 	});
 
 	const { data: sdgsData } = useQuery(sdgsQueryOptions());
-	const invalidateProposalData = () => {
-		queryClient.invalidateQueries({ queryKey: ["proposals"] });
-		queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-		queryClient.invalidateQueries({ queryKey: ["ret"] });
+	const invalidateProposalData = async () => {
+		await Promise.all([
+			queryClient.invalidateQueries({ queryKey: ["faculty"] }),
+			queryClient.invalidateQueries({ queryKey: ["ret"] }),
+			queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+		]);
 	};
 	const updateProposalMutation = useMutation({
 		mutationFn: updateProposalFn,
@@ -214,8 +216,6 @@ export function useProposalWizard({
 			onOpenChange(false);
 			form.reset();
 			setState({ step: 1, file: null });
-			queryClient.invalidateQueries({ queryKey: ["ret", "dashboard"] });
-			queryClient.invalidateQueries({ queryKey: ["dashboard", "proposals"] });
 			setTimeout(
 				() => setState({ uploadPhase: "idle", uploadProgress: 0 }),
 				1000,

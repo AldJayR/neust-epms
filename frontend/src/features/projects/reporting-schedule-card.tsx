@@ -8,6 +8,7 @@ import {
 	Loader2,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -17,6 +18,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { SubmitReportModal } from "@/features/reports/components/submit-report-modal";
+import { getReportSignedUrlFn } from "@/features/reports/functions";
 import { useProjectReportingSchedule } from "@/hooks/use-project-reporting-schedule";
 import { toStableDate } from "@/lib/utils";
 import {
@@ -39,6 +41,25 @@ export function ReportingScheduleCard({
 	const [now] = useState(() => new Date());
 	const [selectedMilestone, setSelectedMilestone] =
 		useState<ScheduledDueDate | null>(null);
+
+	const handleDownload = async (reportId: string) => {
+		const reportWindow = window.open("about:blank", "_blank");
+		try {
+			const { url } = await getReportSignedUrlFn({ data: reportId });
+			if (reportWindow) {
+				reportWindow.location.href = url;
+			} else {
+				window.open(url, "_blank", "noopener,noreferrer");
+			}
+		} catch (error) {
+			reportWindow?.close();
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Failed to open report document",
+			);
+		}
+	};
 
 	if (isLoading) {
 		return (
@@ -92,6 +113,7 @@ export function ReportingScheduleCard({
 					{milestones.map((item, idx) => {
 						const dateObj = toStableDate(item.date);
 						const isOverdue = !item.isCompleted && dateObj < now;
+						const reportId = item.reportId;
 						return (
 							<div key={item.id} className="relative">
 								<div className="absolute -left-[35px] top-0.5 flex size-[18px] items-center justify-center rounded-full bg-background border-2 border-background">
@@ -131,21 +153,13 @@ export function ReportingScheduleCard({
 									</div>
 
 									<div className="flex items-center gap-2">
-										{item.isCompleted && item.storagePath ? (
+										{item.isCompleted && reportId ? (
 											<Button
 												size="xs"
 												variant="outline"
 												className="gap-1"
-												render={
-													// biome-ignore lint/a11y/useAnchorContent: Button provides the link content.
-													<a
-														href={item.storagePath}
-														target="_blank"
-														rel="noopener noreferrer"
-														aria-label="Download completed report"
-														className="text-foreground no-underline hover:underline"
-													/>
-												}
+												onClick={() => void handleDownload(reportId)}
+												aria-label="Download completed report"
 											>
 												<Download className="size-3" />
 												Download

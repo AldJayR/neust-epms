@@ -1,9 +1,17 @@
-import { format } from "date-fns";
 import { FileText } from "lucide-react";
 import { PageCard } from "@/components/custom/page-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { toStableDate } from "@/lib/utils";
+
+const activityTimestampFormatter = new Intl.DateTimeFormat("en-US", {
+	timeZone: "Asia/Manila",
+	month: "short",
+	day: "2-digit",
+	year: "numeric",
+	hour: "2-digit",
+	minute: "2-digit",
+	hour12: true,
+});
 
 export interface Activity {
 	id: string | number;
@@ -51,7 +59,9 @@ export function ActivityHistoryCard({ history }: { history: Activity[] }) {
 										</Badge>
 									</div>
 									<span className="text-xs text-muted-foreground">
-										{format(toStableDate(item.date), "MMM dd, yyyy · hh:mm a")}
+										{activityTimestampFormatter
+											.format(new Date(item.date))
+											.replace(/, (\d{2}:\d{2} [AP]M)$/, " · $1")}
 									</span>
 								</div>
 								<p className="text-[13px] text-muted-foreground">
