@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as ForgotPasswordIndexRouteImport } from './routes/forgot-password.index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
@@ -46,11 +45,6 @@ const LoginRoute = LoginRouteImport.update({
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -160,7 +154,6 @@ const AuthenticatedAdminActivityLogIndexRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
-  '/about': typeof AboutRoute
   '/forgot-password': typeof ForgotPasswordRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRouteWithChildren
@@ -183,7 +176,6 @@ export interface FileRoutesByFullPath {
   '/projects/$projectId/': typeof AuthenticatedProjectsProjectIdIndexRoute
 }
 export interface FileRoutesByTo {
-  '/about': typeof AboutRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRouteWithChildren
   '/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -208,7 +200,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/about': typeof AboutRoute
   '/forgot-password': typeof ForgotPasswordRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRouteWithChildren
@@ -235,7 +226,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/about'
     | '/forgot-password'
     | '/login'
     | '/register'
@@ -258,7 +248,6 @@ export interface FileRouteTypes {
     | '/projects/$projectId/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/about'
     | '/login'
     | '/register'
     | '/admin'
@@ -282,7 +271,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
-    | '/about'
     | '/forgot-password'
     | '/login'
     | '/register'
@@ -308,7 +296,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  AboutRoute: typeof AboutRoute
   ForgotPasswordRoute: typeof ForgotPasswordRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRouteWithChildren
@@ -335,13 +322,6 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -559,7 +539,6 @@ const RegisterRouteWithChildren = RegisterRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  AboutRoute: AboutRoute,
   ForgotPasswordRoute: ForgotPasswordRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRouteWithChildren,
