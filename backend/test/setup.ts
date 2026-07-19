@@ -82,9 +82,13 @@ const mockSupabase = {
 			}),
 		},
 	},
-	storage: {
+		storage: {
 		from: vi.fn(() => ({
 			upload: vi.fn().mockResolvedValue({ error: null }),
+			download: vi.fn().mockResolvedValue({
+				data: new Blob(["%PDF-1.4\n"], { type: "application/pdf" }),
+				error: null,
+			}),
 			createSignedUrl: vi.fn().mockResolvedValue({
 				data: { signedUrl: "https://test.supabase.co/signed-url" },
 				error: null,

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db/client.js";
+import { proposalComments } from "@/db/schema/proposal-comments.js";
 import { proposalDocuments } from "@/db/schema/proposal-documents.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposals } from "@/db/schema/proposals.js";
@@ -10,6 +11,7 @@ import { ApiError } from "@/lib/errors.js";
 import { isProposalInScope } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
+import { createAnnotatedProposalPdf } from "@/modules/proposals/proposal-annotation-pdf.service.js";
 import {
 	getAvatarExtension,
 	sanitizeFilename,
@@ -38,6 +40,7 @@ async function getProposal(proposalId: string) {
 	const [proposal] = await db
 		.select({
 			proposalId: proposals.proposalId,
+			title: proposals.title,
 			departmentId: proposals.departmentId,
 			campusId: proposals.campusId,
 		})
@@ -267,6 +270,95 @@ export async function getDocumentSignedUrl(
 	});
 
 	return { url: data.signedUrl };
+}
+
+export async function getAnnotatedProposalDocument(
+	user: AuthUser,
+	proposalId: string,
+	documentId: string,
+	ipAddress: string,
+) {
+	const proposal = await getProposal(proposalId);
+	if (!canAccessProposalDocuments(user, proposal)) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You do not have access to documents for this proposal",
+		);
+	}
+
+	const [document] = await db
+		.select({
+			documentId: proposalDocuments.documentId,
+			storagePath: proposalDocuments.storagePath,
+			versionNum: proposalDocuments.versionNum,
+		})
+		.from(proposalDocuments)
+		.where(
+			and(
+				eq(proposalDocuments.documentId, documentId),
+				eq(proposalDocuments.proposalId, proposalId),
+			),
+		)
+		.limit(1);
+
+	if (!document) {
+		throw new ApiError(404, "NOT_FOUND", "Document not found");
+	}
+
+	const [{ data: source, error: downloadError }, commentRows] = await Promise.all([
+		supabase.storage.from("documents").download(document.storagePath),
+		db
+			.select({
+				content: proposalComments.content,
+				annotationJson: proposalComments.annotationJson,
+				createdAt: proposalComments.createdAt,
+				firstName: users.firstName,
+				lastName: users.lastName,
+			})
+			.from(proposalComments)
+			.innerJoin(users, eq(proposalComments.userId, users.userId))
+			.where(eq(proposalComments.documentId, documentId))
+			.orderBy(proposalComments.createdAt),
+	]);
+
+	if (downloadError || !source) {
+		throw new ApiError(500, "DOWNLOAD_FAILED", "Failed to download source PDF");
+	}
+
+	let bytes: Uint8Array;
+	try {
+		bytes = await createAnnotatedProposalPdf(
+			new Uint8Array(await source.arrayBuffer()),
+			commentRows.map((comment) => ({
+				content: comment.content,
+				authorName: `${comment.firstName} ${comment.lastName}`.trim(),
+				createdAt: comment.createdAt.toISOString(),
+				annotationJson: comment.annotationJson,
+			})),
+		);
+	} catch (error) {
+		console.error("[proposal-annotation] Failed to generate PDF", error);
+		throw new ApiError(
+			500,
+			"ANNOTATION_FAILED",
+			"Failed to generate annotated PDF",
+		);
+	}
+
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Downloaded annotated document ${documentId} (proposal ${proposalId})`,
+		tableAffected: "proposal_documents",
+		ipAddress,
+	});
+
+	return {
+		bytes,
+		fileName: sanitizeFilename(
+			`${proposal.title}_annotated_v${document.versionNum}.pdf`,
+		),
+	};
 }
 
 function getManagedAvatarPath(avatarUrl: string | null): string | null {

@@ -117,6 +117,47 @@ describe("GET /proposals/:proposalId/documents/:documentId/url", () => {
 	});
 });
 
+describe("GET /proposals/:proposalId/documents/:documentId/annotated", () => {
+	it("returns an annotated PDF download for an accessible document", async () => {
+		const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
+		const document = {
+			documentId: DOC_ID,
+			proposalId: PROPOSAL_ID,
+			storagePath: "proposals/test/v1.pdf",
+			versionNum: 1,
+		};
+		vi.mocked(db.select)
+			.mockReturnValueOnce(mockSelectChain([proposal]) as never)
+			.mockReturnValueOnce(mockSelectChain([document]) as never)
+			.mockReturnValueOnce(mockSelectChain([]) as never);
+
+		const res = await app.request(
+			`/proposals/${PROPOSAL_ID}/documents/${DOC_ID}/annotated`,
+		);
+
+		expect(res.status).toBe(200);
+		expect(res.headers.get("content-type")).toContain("application/pdf");
+		expect(res.headers.get("content-disposition")).toContain("attachment");
+	});
+
+	it("rejects annotated downloads outside the user's proposal scope", async () => {
+		const proposal = createMockProposal({
+			proposalId: PROPOSAL_ID,
+			departmentId: 99,
+			campusId: 99,
+		});
+		vi.mocked(db.select).mockReturnValueOnce(
+			mockSelectChain([proposal]) as never,
+		);
+
+		const res = await app.request(
+			`/proposals/${PROPOSAL_ID}/documents/${DOC_ID}/annotated`,
+		);
+
+		expect(res.status).toBe(403);
+	});
+});
+
 describe("POST /proposals/:proposalId/documents/upload", () => {
 	it("should reject empty files", async () => {
 		const proposal = createMockProposal({ proposalId: PROPOSAL_ID });

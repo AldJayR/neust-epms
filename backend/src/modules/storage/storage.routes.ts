@@ -15,6 +15,7 @@ import {
 } from "./storage.schema.js";
 import {
 	ensureUploadProposalDocumentAccess,
+	getAnnotatedProposalDocument,
 	getDocumentSignedUrl,
 	listProposalDocuments,
 	uploadProposalDocument,
@@ -179,6 +180,50 @@ app.openapi(uploadRoute, async (c) => {
 		ipAddress,
 	);
 	return c.json(document, 201);
+});
+
+const annotatedDownloadRoute = createRoute({
+	method: "get",
+	path: "/proposals/{proposalId}/documents/{documentId}/annotated",
+	tags: ["Storage"],
+	summary: "Download a proposal document with review annotations",
+	security: [{ Bearer: [] }],
+	request: { params: DocumentParam },
+	responses: {
+		200: { description: "Annotated PDF document" },
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Forbidden",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Document not found",
+		},
+		500: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Failed to generate annotated document",
+		},
+	},
+});
+
+app.openapi(annotatedDownloadRoute, async (c) => {
+	const user = c.get("user");
+	const { proposalId, documentId } = c.req.valid("param");
+	const result = await getAnnotatedProposalDocument(
+		user,
+		proposalId,
+		documentId,
+		getClientIp(c),
+	);
+
+	return new Response(result.bytes, {
+		status: 200,
+		headers: {
+			"Content-Type": "application/pdf",
+			"Content-Disposition": `attachment; filename="${result.fileName}"`,
+			"Cache-Control": "no-store",
+		},
+	});
 });
 
 const getUrlRoute = createRoute({

@@ -14,7 +14,7 @@ import { ProposalReviewDocumentPane } from "./components/proposal-review-documen
 import { ProposalReviewHeader } from "./components/proposal-review-header";
 import { ProposalReviewSidebar } from "./components/proposal-review-sidebar";
 import { ProposalReviewSkeleton } from "./components/proposal-review-skeleton";
-import { reviewProposalFn } from "./functions";
+import { downloadAnnotatedProposalFn, reviewProposalFn } from "./functions";
 import {
 	canReviewProposal,
 	getDefaultReviewComment,
@@ -76,6 +76,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		null,
 	);
 	const [isTheaterMode, setIsTheaterMode] = useState(false);
+	const [isDownloading, setIsDownloading] = useState(false);
 	const pdfViewerRef = useRef<PdfViewerRef>(null);
 
 	const endorsement = data?.history.find(
@@ -90,6 +91,35 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	const userRole = user?.roleName ?? "";
 	const isRET = userRole === "RET Chair";
 	const isDirector = userRole === "Director";
+
+	const handleDownloadAnnotated = async () => {
+		if (!currentDoc?.id) return;
+
+		setIsDownloading(true);
+		try {
+			const result = await downloadAnnotatedProposalFn({
+				data: { proposalId, documentId: currentDoc.id },
+			});
+			const binary = atob(result.base64);
+			const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+			const blob = new Blob([bytes], { type: "application/pdf" });
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.href = url;
+			link.download = result.fileName;
+			link.click();
+			setTimeout(() => URL.revokeObjectURL(url), 1000);
+			toast.success("Annotated proposal downloaded.");
+		} catch (downloadError) {
+			toast.error(
+				downloadError instanceof Error
+					? downloadError.message
+					: "Failed to download annotated proposal.",
+			);
+		} finally {
+			setIsDownloading(false);
+		}
+	};
 
 	const { data: comments = [] } = useQuery({
 		queryKey: ["proposal-comments", currentDoc?.id],
@@ -219,6 +249,8 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 					title={data.title}
 					status={data.status}
 					currentDocument={currentDoc}
+					isDownloading={isDownloading}
+					onDownloadAnnotated={handleDownloadAnnotated}
 				/>
 
 				<div className="bg-card border border-border rounded-xl p-6 shadow-sm">
