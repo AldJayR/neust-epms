@@ -11,13 +11,6 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import type { AuthUser } from "@/lib/auth";
 import type { FormValues } from "./proposal-form";
 
@@ -25,12 +18,17 @@ interface ProposalStepInfoProps {
 	form: UseFormReturn<FormValues>;
 	user: AuthUser;
 	sdgsData?: Array<{ sdgId: number; sdgName: string }>;
+	extensionServicesData?: Array<{
+		extensionServiceId: number;
+		serviceName: string;
+	}>;
 }
 
 export function ProposalStepInfo({
 	form,
 	user,
 	sdgsData,
+	extensionServicesData,
 }: ProposalStepInfoProps) {
 	const watchedSdgIds =
 		useWatch({
@@ -42,6 +40,12 @@ export function ProposalStepInfo({
 		useWatch({
 			control: form.control,
 			name: "beneficiarySectors",
+		}) || [];
+
+	const watchedExtensionServiceIds =
+		useWatch({
+			control: form.control,
+			name: "extensionServiceIds",
 		}) || [];
 
 	const [sectorInput, setSectorInput] = React.useState("");
@@ -62,6 +66,7 @@ export function ProposalStepInfo({
 	};
 
 	const watchedSdgIdSet = new Set(watchedSdgIds);
+	const watchedExtensionServiceIdSet = new Set(watchedExtensionServiceIds);
 
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -104,27 +109,44 @@ export function ProposalStepInfo({
 				</Field>
 			</div>
 
-			<div>
+			<div className="md:col-span-2">
 				<Field>
-					<FieldLabel>Extension Category</FieldLabel>
+					<FieldLabel>Extension Services Offered</FieldLabel>
 					<FieldContent>
-						<Select
-							onValueChange={(val) => {
-								if (val != null) form.setValue("extensionCategory", val);
-							}}
-							value={form.watch("extensionCategory")}
-						>
-							<SelectTrigger>
-								<SelectValue placeholder="Select category" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="Category A">Category A</SelectItem>
-								<SelectItem value="Category B">Category B</SelectItem>
-								<SelectItem value="Category C">Category C</SelectItem>
-							</SelectContent>
-						</Select>
+						<div className="grid grid-cols-1 gap-2 rounded-md border p-3 sm:grid-cols-3">
+							{extensionServicesData?.map((service) => (
+								<div
+									key={service.extensionServiceId}
+									className="flex items-center gap-2 rounded p-1 hover:bg-muted/50"
+								>
+									<Checkbox
+										id={`extension-service-${service.extensionServiceId}`}
+										checked={watchedExtensionServiceIdSet.has(
+											service.extensionServiceId,
+										)}
+										onCheckedChange={(checked) => {
+											const current = form.getValues("extensionServiceIds");
+											form.setValue(
+												"extensionServiceIds",
+												checked
+													? [...current, service.extensionServiceId]
+													: current.filter(
+															(id) => id !== service.extensionServiceId,
+														),
+											);
+										}}
+									/>
+									<label
+										htmlFor={`extension-service-${service.extensionServiceId}`}
+										className="cursor-pointer select-none text-sm font-normal"
+									>
+										{service.serviceName}
+									</label>
+								</div>
+							))}
+						</div>
 					</FieldContent>
-					<FieldError errors={[form.formState.errors.extensionCategory]} />
+					<FieldError errors={[form.formState.errors.extensionServiceIds]} />
 				</Field>
 			</div>
 

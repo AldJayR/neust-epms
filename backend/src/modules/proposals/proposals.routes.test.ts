@@ -18,6 +18,7 @@ import baseApp from "./index.js";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { authMiddleware } from "@/middleware/auth.js";
 import { installApiErrorHandler } from "@/lib/errors.js";
+import { createProposalInTransaction } from "./proposals.service.js";
 
 const app = new OpenAPIHono();
 app.use("*", authMiddleware);
@@ -37,7 +38,8 @@ describe("GET /proposals", () => {
 			.mockReturnValueOnce(mockSelectChain([]) as never) // leaderSubquery
 			.mockReturnValueOnce(mockSelectChain([]) as never) // userMemberSubquery
 			.mockReturnValueOnce(mockSelectChain([mockProposal]) as never) // items
-			.mockReturnValueOnce(mockSelectChain([{ value: 1 }]) as never); // count
+			.mockReturnValueOnce(mockSelectChain([{ value: 1 }]) as never) // count
+			.mockReturnValueOnce(mockSelectChain([]) as never); // extension services
 
 		const res = await app.request("/proposals");
 		expect(res.status).toBe(200);
@@ -104,7 +106,7 @@ describe("POST /proposals", () => {
 				title: "Test Proposal",
 				bannerProgram: "Test Program",
 				projectLocale: "Test City",
-				extensionCategory: "Training",
+				extensionServiceIds: [1],
 			}),
 		});
 
@@ -121,7 +123,7 @@ describe("POST /proposals", () => {
 				title: "Test Proposal",
 				bannerProgram: "Test Program",
 				projectLocale: "Test City",
-				extensionCategory: "Training",
+				extensionServiceIds: [1],
 				budgetPartner: "not-a-number",
 				budgetNeust: "25000.00",
 			}),
@@ -140,13 +142,54 @@ describe("POST /proposals", () => {
 				title: "Test Proposal",
 				bannerProgram: "Test Program",
 				projectLocale: "Test City",
-				extensionCategory: "Training",
+				extensionServiceIds: [1],
 				budgetPartner: -1,
 				budgetNeust: 25000,
 			}),
 		});
 
 		expect(res.status).toBe(400);
+	});
+
+	it("stores every selected extension service on a proposal", async () => {
+		const proposal = createMockProposal();
+		const serviceInsert = mockMutationChain([]);
+		const insert = vi
+			.fn()
+			.mockReturnValueOnce(mockMutationChain([proposal]))
+			.mockReturnValueOnce(mockMutationChain([]))
+			.mockReturnValueOnce(serviceInsert)
+			.mockReturnValueOnce(mockMutationChain([]));
+		const tx = {
+			insert,
+			select: vi.fn(() =>
+				mockSelectChain([
+					{ extensionServiceId: 1 },
+					{ extensionServiceId: 3 },
+				]),
+			),
+		} as never;
+
+		await createProposalInTransaction(
+			tx,
+			{
+				campusId: 1,
+				departmentId: 1,
+				title: "Test Proposal",
+				bannerProgram: "Test Program",
+				projectLocale: "Test City",
+				extensionServiceIds: [1, 3],
+				sectorIds: [1],
+			},
+			MOCK_USERS.faculty,
+		);
+
+		expect(insert).toHaveBeenCalledTimes(4);
+		expect(serviceInsert.values).toHaveBeenCalledWith([
+			{ proposalId: proposal.proposalId, extensionServiceId: 1 },
+			{ proposalId: proposal.proposalId, extensionServiceId: 3 },
+		],
+		);
 	});
 });
 

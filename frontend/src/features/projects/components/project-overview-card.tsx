@@ -30,6 +30,7 @@ interface ProjectOverviewCardProps {
 		duration: string;
 		moaLinked: string;
 		sdgs?: string;
+		extensionServices: string[];
 		budget: {
 			total: number;
 			neust: number;
@@ -96,6 +97,9 @@ export function ProjectOverviewCard({
 				<DetailsRow label="Department / Unit">{metadata.department}</DetailsRow>
 				<DetailsRow label="Duration">{metadata.duration}</DetailsRow>
 				<DetailsRow label="SDGs">{metadata.sdgs ?? "None"}</DetailsRow>
+				<DetailsRow label="Extension Services Offered">
+					{metadata.extensionServices.join(", ") || "None"}
+				</DetailsRow>
 				{![
 					"Draft",
 					"Pending Review",

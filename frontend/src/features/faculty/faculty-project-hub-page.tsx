@@ -57,7 +57,7 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 		currentPage: 1,
 	});
 	const { activeTab, searchQuery, currentPage } = viewState;
-	const [selectedCategory, setSelectedCategory] = useState<string>("all");
+	const [selectedService, setSelectedService] = useState<string>("all");
 	const [selectedStatus, setSelectedStatus] = useState<string>("all");
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [sorting, setSorting] = useState<SortingState>([]);
@@ -91,7 +91,7 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 				id: p.proposalId,
 				proposalId: p.proposalId,
 				title: p.title || "Untitled Project",
-				category: p.extensionCategory || "Extension Program",
+				services: p.extensionServices.map((service) => service.serviceName),
 				date: p.createdAt,
 				status: p.projectStatus,
 				isLeader,
@@ -110,7 +110,7 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 				id: p.proposalId,
 				proposalId: p.proposalId,
 				title: p.title || "Untitled Proposal",
-				category: p.extensionCategory || "Extension Program",
+				services: p.extensionServices.map((service) => service.serviceName),
 				date: p.createdAt,
 				status: p.status,
 				isLeader,
@@ -158,12 +158,12 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 		const matchesSearch = item.title
 			.toLowerCase()
 			.includes(deferredSearchQuery.toLowerCase());
-		const matchesCategory =
-			selectedCategory === "all" || item.category === selectedCategory;
+		const matchesService =
+			selectedService === "all" || item.services.includes(selectedService);
 		const matchesStatus =
 			selectedStatus === "all" || item.status === selectedStatus;
 
-		return matchesSearch && matchesCategory && matchesStatus;
+		return matchesSearch && matchesService && matchesStatus;
 	});
 
 	const totalItems = filteredItems.length;
@@ -181,10 +181,10 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 		startTransition(() => dispatchView({ type: "tab", value: tab }));
 	};
 
-	const categories = (() => {
+	const services = (() => {
 		const set = new Set<string>();
 		for (const item of allItems) {
-			if (item.category) set.add(item.category);
+			for (const service of item.services) set.add(service);
 		}
 		return Array.from(set);
 	})();
@@ -224,16 +224,16 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 			},
 		},
 		{
-			id: "category",
-			accessorKey: "category",
+			id: "services",
+			accessorKey: "services",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Category" />
+				<DataTableColumnHeader column={column} title="Extension Services" />
 			),
 			headerClassName: "w-[20%] font-medium text-muted-foreground",
 			cellClassName: "text-foreground text-left",
 			cell: ({ row }) => (
 				<span className="inline-flex bg-background border border-border rounded-lg px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-					{row.original.category}
+					{row.original.services.join(", ") || "None"}
 				</span>
 			),
 		},
@@ -309,12 +309,15 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 				filters={
 					<>
 						<DataTableFilter
-							value={selectedCategory}
-							onValueChange={setSelectedCategory}
-							placeholder="All Categories"
+							value={selectedService}
+							onValueChange={setSelectedService}
+							placeholder="All Extension Services"
 							options={[
-								{ value: "all", label: "All Categories" },
-								...categories.map((c) => ({ value: c, label: c })),
+								{ value: "all", label: "All Extension Services" },
+								...services.map((service) => ({
+									value: service,
+									label: service,
+								})),
 							]}
 						/>
 						<DataTableFilter
@@ -330,7 +333,7 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 				}
 				activeFilters={{
 					search: searchQuery,
-					category: selectedCategory === "all" ? undefined : selectedCategory,
+					service: selectedService === "all" ? undefined : selectedService,
 					status: selectedStatus === "all" ? undefined : selectedStatus,
 				}}
 				emptyMessage="No projects found matching the criteria."

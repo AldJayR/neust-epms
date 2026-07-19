@@ -5,7 +5,9 @@ export const formSchema = z
 		title: z.string().min(1, "Project title is required"),
 		bannerProgram: z.string().min(1, "Banner program is required"),
 		projectLocale: z.string().min(1, "Project locale is required"),
-		extensionCategory: z.string().min(1, "Extension category is required"),
+		extensionServiceIds: z
+			.array(z.number())
+			.min(1, "Select at least one extension service"),
 		campusId: z.string().min(1, "Campus is required"),
 		departmentId: z.string().min(1, "Department is required"),
 		sdgIds: z.array(z.number()).min(1, "Select at least one SDG"),

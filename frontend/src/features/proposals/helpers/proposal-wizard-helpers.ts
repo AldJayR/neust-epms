@@ -6,7 +6,7 @@ export function getFieldsToValidate(step: number): (keyof FormValues)[] {
 			"title",
 			"bannerProgram",
 			"projectLocale",
-			"extensionCategory",
+			"extensionServiceIds",
 			"campusId",
 			"departmentId",
 			"sdgIds",

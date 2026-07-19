@@ -33,9 +33,6 @@ export const proposals = pgTable(
 		title: varchar("title", { length: 500 }).notNull(),
 		bannerProgram: varchar("banner_program", { length: 255 }).notNull(),
 		projectLocale: varchar("project_locale", { length: 255 }).notNull(),
-		extensionCategory: varchar("extension_category", {
-			length: 100,
-		}).notNull(),
 		budgetPartner: numeric("budget_partner", {
 			precision: 14,
 			scale: 2,

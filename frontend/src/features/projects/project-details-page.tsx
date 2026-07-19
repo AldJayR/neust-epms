@@ -89,7 +89,9 @@ export function ProjectDetailsPage({
 				title: editProposalData.title,
 				bannerProgram: editProposalData.bannerProgram,
 				projectLocale: editProposalData.projectLocale,
-				extensionCategory: editProposalData.extensionCategory,
+				extensionServiceIds: editProposalData.extensionServices.map(
+					(service) => service.extensionServiceId,
+				),
 				campusId: editProposalData.campusId.toString(),
 				departmentId: editProposalData.departmentId?.toString() ?? "",
 				sdgIds: [] as number[],

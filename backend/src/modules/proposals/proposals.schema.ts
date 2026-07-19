@@ -18,7 +18,12 @@ export const ProposalSchema = z
 		title: z.string(),
 		bannerProgram: z.string(),
 		projectLocale: z.string(),
-		extensionCategory: z.string(),
+		extensionServices: z.array(
+			z.object({
+				extensionServiceId: z.number(),
+				serviceName: z.string(),
+			}),
+		),
 		budgetPartner: z.string().nullable(),
 		budgetNeust: z.string().nullable(),
 		status: z.string(),
@@ -55,7 +60,12 @@ export const CreateProposalSchema = z
 		title: z.string().min(1),
 		bannerProgram: z.string().min(1),
 		projectLocale: z.string().min(1),
-		extensionCategory: z.string().min(1),
+		extensionServiceIds: z
+			.array(z.number().int().positive())
+			.min(1)
+			.refine((ids) => new Set(ids).size === ids.length, {
+				message: "Extension services must not be duplicated",
+			}),
 		budgetPartner: z.coerce.number().nonnegative().finite().optional(),
 		budgetNeust: z.coerce.number().nonnegative().finite().optional(),
 		targetStartDate: z.string().datetime().optional(),
@@ -80,7 +90,13 @@ export const UpdateProposalSchema = z
 		title: z.string().min(1).optional(),
 		bannerProgram: z.string().min(1).optional(),
 		projectLocale: z.string().min(1).optional(),
-		extensionCategory: z.string().min(1).optional(),
+		extensionServiceIds: z
+			.array(z.number().int().positive())
+			.min(1)
+			.refine((ids) => new Set(ids).size === ids.length, {
+				message: "Extension services must not be duplicated",
+			})
+			.optional(),
 		budgetPartner: z.coerce.number().nonnegative().finite().optional(),
 		budgetNeust: z.coerce.number().nonnegative().finite().optional(),
 		sectorNames: z.array(z.string().min(1)).optional(),

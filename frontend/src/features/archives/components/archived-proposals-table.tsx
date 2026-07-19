@@ -47,19 +47,22 @@ export function ArchivedProposalsTable({
 			cell: ({ row }) => row.original.title,
 		},
 		{
-			id: "extensionCategory",
-			accessorKey: "extensionCategory",
+			id: "extensionServices",
+			accessorKey: "extensionServices",
 			header: ({ column }) => (
 				<DataTableColumnHeader
 					column={column}
-					title="Category"
+					title="Extension Services"
 					className="justify-center"
 				/>
 			),
 			headerClassName:
 				"w-[180px] px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
-			cell: ({ row }) => row.original.extensionCategory,
+			cell: ({ row }) =>
+				row.original.extensionServices
+					.map((service) => service.serviceName)
+					.join(", ") || "None",
 		},
 		{
 			id: "archivedAt",

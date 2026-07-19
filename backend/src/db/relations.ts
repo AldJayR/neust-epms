@@ -3,6 +3,7 @@ import { auditLogs } from "./schema/audit-logs.js";
 import { beneficiarySectors } from "./schema/beneficiary-sectors.js";
 import { campuses } from "./schema/campuses.js";
 import { departments } from "./schema/departments.js";
+import { extensionServices } from "./schema/extension-services.js";
 import { moas } from "./schema/moas.js";
 import { partners } from "./schema/partners.js";
 import { projectReportingMilestones } from "./schema/project-reporting-milestones.js";
@@ -12,6 +13,7 @@ import { proposalBeneficiaries } from "./schema/proposal-beneficiaries.js";
 import { proposalComments } from "./schema/proposal-comments.js";
 import { proposalDepartments } from "./schema/proposal-departments.js";
 import { proposalDocuments } from "./schema/proposal-documents.js";
+import { proposalExtensionServices } from "./schema/proposal-extension-services.js";
 import { proposalMembers } from "./schema/proposal-members.js";
 import { proposalReviews } from "./schema/proposal-reviews.js";
 import { proposalSdgs } from "./schema/proposal-sdgs.js";
@@ -73,11 +75,35 @@ export const proposalsRelations = relations(proposals, ({ one, many }) => ({
 	reviews: many(proposalReviews),
 	beneficiaries: many(proposalBeneficiaries),
 	sdgs: many(proposalSdgs),
+	extensionServices: many(proposalExtensionServices),
 	project: one(projects, {
 		fields: [proposals.proposalId],
 		references: [projects.proposalId],
 	}),
 }));
+
+// ── Extension Services ──
+export const extensionServicesRelations = relations(
+	extensionServices,
+	({ many }) => ({
+		proposalExtensionServices: many(proposalExtensionServices),
+	}),
+);
+
+// ── Proposal Extension Services (Junction) ──
+export const proposalExtensionServicesRelations = relations(
+	proposalExtensionServices,
+	({ one }) => ({
+		proposal: one(proposals, {
+			fields: [proposalExtensionServices.proposalId],
+			references: [proposals.proposalId],
+		}),
+		extensionService: one(extensionServices, {
+			fields: [proposalExtensionServices.extensionServiceId],
+			references: [extensionServices.extensionServiceId],
+		}),
+	}),
+);
 
 // ── Proposal Departments (Junction) ──
 export const proposalDepartmentsRelations = relations(

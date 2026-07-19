@@ -8,7 +8,12 @@ export const ProjectSchema = z
 		proposalId: z.string().uuid(),
 		moaId: z.string().uuid().nullable(),
 		title: z.string().optional(),
-		extensionCategory: z.string().optional(),
+		extensionServices: z.array(
+			z.object({
+				extensionServiceId: z.number(),
+				serviceName: z.string(),
+			}),
+		),
 		targetStartDate: z.string().nullable(),
 		targetEndDate: z.string().nullable(),
 		actualEndDate: z.string().nullable(),
@@ -86,6 +91,7 @@ export const ProjectDetailsSchema = z.object({
 		duration: z.string(),
 		moaLinked: z.string(),
 		sdgs: z.string().optional(),
+		extensionServices: z.array(z.string()),
 		budget: z.object({
 			total: z.number(),
 			neust: z.number(),

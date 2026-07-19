@@ -1,10 +1,12 @@
-import { and, eq, ilike, isNull, or, sql } from "drizzle-orm";
+import { and, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { beneficiarySectors } from "@/db/schema/beneficiary-sectors.js";
+import { extensionServices } from "@/db/schema/extension-services.js";
 import { projects } from "@/db/schema/projects.js";
 import { proposalBeneficiaries } from "@/db/schema/proposal-beneficiaries.js";
 import { proposalDepartments } from "@/db/schema/proposal-departments.js";
 import { proposalDocuments } from "@/db/schema/proposal-documents.js";
+import { proposalExtensionServices } from "@/db/schema/proposal-extension-services.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposalSdgs } from "@/db/schema/proposal-sdgs.js";
@@ -59,7 +61,7 @@ export async function createProposalInTransaction(
 		title: string;
 		bannerProgram: string;
 		projectLocale: string;
-		extensionCategory: string;
+		extensionServiceIds: number[];
 		budgetPartner?: number | undefined;
 		budgetNeust?: number | undefined;
 		targetStartDate?: string | undefined;
@@ -72,6 +74,21 @@ export async function createProposalInTransaction(
 	},
 	user: AuthUser,
 ) {
+	const extensionServiceRows = await tx
+		.select({ extensionServiceId: extensionServices.extensionServiceId })
+		.from(extensionServices)
+		.where(
+			inArray(extensionServices.extensionServiceId, body.extensionServiceIds),
+		);
+
+	if (extensionServiceRows.length !== body.extensionServiceIds.length) {
+		throw new ApiError(
+			400,
+			"INVALID_EXTENSION_SERVICES",
+			"One or more selected extension services are invalid.",
+		);
+	}
+
 	const [proposal] = await tx
 		.insert(proposals)
 		.values({
@@ -80,7 +97,6 @@ export async function createProposalInTransaction(
 			title: body.title,
 			bannerProgram: body.bannerProgram,
 			projectLocale: body.projectLocale,
-			extensionCategory: body.extensionCategory,
 			budgetPartner: (body.budgetPartner ?? 0).toFixed(2),
 			budgetNeust: (body.budgetNeust ?? 0).toFixed(2),
 			targetStartDate: body.targetStartDate
@@ -120,6 +136,13 @@ export async function createProposalInTransaction(
 			})),
 		);
 	}
+
+	await tx.insert(proposalExtensionServices).values(
+		body.extensionServiceIds.map((extensionServiceId) => ({
+			proposalId: proposal.proposalId,
+			extensionServiceId,
+		})),
+	);
 
 	let sectorIdsToInsert = body.sectorIds || [];
 
@@ -188,7 +211,7 @@ export async function updateProposalWithSectors(
 		title?: string | undefined;
 		bannerProgram?: string | undefined;
 		projectLocale?: string | undefined;
-		extensionCategory?: string | undefined;
+		extensionServiceIds?: number[] | undefined;
 		budgetPartner?: number | undefined;
 		budgetNeust?: number | undefined;
 		sectorNames?: string[] | undefined;
@@ -217,6 +240,23 @@ export async function updateProposalWithSectors(
 		);
 	}
 
+	if (body.extensionServiceIds !== undefined) {
+		const serviceRows = await db
+			.select({ extensionServiceId: extensionServices.extensionServiceId })
+			.from(extensionServices)
+			.where(
+				inArray(extensionServices.extensionServiceId, body.extensionServiceIds),
+			);
+
+		if (serviceRows.length !== body.extensionServiceIds.length) {
+			throw new ApiError(
+				400,
+				"INVALID_EXTENSION_SERVICES",
+				"One or more selected extension services are invalid.",
+			);
+		}
+	}
+
 	const updateValues = {
 		...(body.title !== undefined ? { title: body.title } : {}),
 		...(body.bannerProgram !== undefined
@@ -224,9 +264,6 @@ export async function updateProposalWithSectors(
 			: {}),
 		...(body.projectLocale !== undefined
 			? { projectLocale: body.projectLocale }
-			: {}),
-		...(body.extensionCategory !== undefined
-			? { extensionCategory: body.extensionCategory }
 			: {}),
 		...(body.budgetPartner !== undefined
 			? { budgetPartner: body.budgetPartner.toFixed(2) }
@@ -324,55 +361,168 @@ export async function updateProposalWithSectors(
 		}
 	}
 
+	if (body.extensionServiceIds !== undefined) {
+		const desiredServiceIds = new Set(body.extensionServiceIds);
+		const existingLinks = await db
+			.select({
+				extensionServiceId: proposalExtensionServices.extensionServiceId,
+				archivedAt: proposalExtensionServices.archivedAt,
+			})
+			.from(proposalExtensionServices)
+			.where(eq(proposalExtensionServices.proposalId, id));
+
+		for (const link of existingLinks) {
+			const shouldBeActive = desiredServiceIds.has(link.extensionServiceId);
+			if (shouldBeActive !== !link.archivedAt) {
+				await db
+					.update(proposalExtensionServices)
+					.set({ archivedAt: shouldBeActive ? null : new Date() })
+					.where(
+						and(
+							eq(proposalExtensionServices.proposalId, id),
+							eq(
+								proposalExtensionServices.extensionServiceId,
+								link.extensionServiceId,
+							),
+						),
+					);
+			}
+		}
+
+		const existingServiceIds = new Set(
+			existingLinks.map((link) => link.extensionServiceId),
+		);
+		const newServiceIds = body.extensionServiceIds.filter(
+			(extensionServiceId) => !existingServiceIds.has(extensionServiceId),
+		);
+		if (newServiceIds.length > 0) {
+			await db.insert(proposalExtensionServices).values(
+				newServiceIds.map((extensionServiceId) => ({
+					proposalId: id,
+					extensionServiceId,
+				})),
+			);
+		}
+	}
+
 	return updated;
+}
+
+export async function getProposalExtensionServices(proposalId: string) {
+	const servicesByProposal = await getProposalExtensionServicesByProposalIds([
+		proposalId,
+	]);
+	return servicesByProposal.get(proposalId) ?? [];
+}
+
+export async function getProposalExtensionServicesByProposalIds(
+	proposalIds: string[],
+) {
+	const servicesByProposal = new Map<
+		string,
+		Array<{ extensionServiceId: number; serviceName: string }>
+	>();
+
+	if (proposalIds.length === 0) return servicesByProposal;
+
+	const rows = await db
+		.select({
+			proposalId: proposalExtensionServices.proposalId,
+			extensionServiceId: extensionServices.extensionServiceId,
+			serviceName: extensionServices.serviceName,
+		})
+		.from(proposalExtensionServices)
+		.innerJoin(
+			extensionServices,
+			eq(
+				proposalExtensionServices.extensionServiceId,
+				extensionServices.extensionServiceId,
+			),
+		)
+		.where(
+			and(
+				inArray(proposalExtensionServices.proposalId, proposalIds),
+				isNull(proposalExtensionServices.archivedAt),
+			),
+		)
+		.orderBy(extensionServices.extensionServiceId);
+
+	for (const row of rows) {
+		const services = servicesByProposal.get(row.proposalId) ?? [];
+		services.push({
+			extensionServiceId: row.extensionServiceId,
+			serviceName: row.serviceName,
+		});
+		servicesByProposal.set(row.proposalId, services);
+	}
+
+	return servicesByProposal;
 }
 
 // ── Submit flow ──
 
 export async function validateCompleteness(proposalId: string): Promise<void> {
-	const [docs, members, sectors, sdgAlignments, [proposalDetails]] =
-		await Promise.all([
-			db
-				.select({ documentId: proposalDocuments.documentId })
-				.from(proposalDocuments)
-				.where(eq(proposalDocuments.proposalId, proposalId))
-				.limit(1),
-			db
-				.select({
-					memberId: proposalMembers.memberId,
-					projectRole: proposalMembers.projectRole,
-				})
-				.from(proposalMembers)
-				.where(
-					and(
-						eq(proposalMembers.proposalId, proposalId),
-						isNull(proposalMembers.archivedAt),
-					),
+	const [
+		docs,
+		members,
+		sectors,
+		sdgAlignments,
+		extensionServiceAlignments,
+		[proposalDetails],
+	] = await Promise.all([
+		db
+			.select({ documentId: proposalDocuments.documentId })
+			.from(proposalDocuments)
+			.where(eq(proposalDocuments.proposalId, proposalId))
+			.limit(1),
+		db
+			.select({
+				memberId: proposalMembers.memberId,
+				projectRole: proposalMembers.projectRole,
+			})
+			.from(proposalMembers)
+			.where(
+				and(
+					eq(proposalMembers.proposalId, proposalId),
+					isNull(proposalMembers.archivedAt),
 				),
-			db
-				.select({ sectorId: proposalBeneficiaries.sectorId })
-				.from(proposalBeneficiaries)
-				.where(
-					and(
-						eq(proposalBeneficiaries.proposalId, proposalId),
-						isNull(proposalBeneficiaries.archivedAt),
-					),
-				)
-				.limit(1),
-			db
-				.select({ sdgId: proposalSdgs.sdgId })
-				.from(proposalSdgs)
-				.where(eq(proposalSdgs.proposalId, proposalId))
-				.limit(1),
-			db
-				.select({
-					targetStartDate: proposals.targetStartDate,
-					targetEndDate: proposals.targetEndDate,
-				})
-				.from(proposals)
-				.where(eq(proposals.proposalId, proposalId))
-				.limit(1),
-		]);
+			),
+		db
+			.select({ sectorId: proposalBeneficiaries.sectorId })
+			.from(proposalBeneficiaries)
+			.where(
+				and(
+					eq(proposalBeneficiaries.proposalId, proposalId),
+					isNull(proposalBeneficiaries.archivedAt),
+				),
+			)
+			.limit(1),
+		db
+			.select({ sdgId: proposalSdgs.sdgId })
+			.from(proposalSdgs)
+			.where(eq(proposalSdgs.proposalId, proposalId))
+			.limit(1),
+		db
+			.select({
+				extensionServiceId: proposalExtensionServices.extensionServiceId,
+			})
+			.from(proposalExtensionServices)
+			.where(
+				and(
+					eq(proposalExtensionServices.proposalId, proposalId),
+					isNull(proposalExtensionServices.archivedAt),
+				),
+			)
+			.limit(1),
+		db
+			.select({
+				targetStartDate: proposals.targetStartDate,
+				targetEndDate: proposals.targetEndDate,
+			})
+			.from(proposals)
+			.where(eq(proposals.proposalId, proposalId))
+			.limit(1),
+	]);
 
 	if (docs.length === 0) {
 		throw new ApiError(
@@ -410,6 +560,14 @@ export async function validateCompleteness(proposalId: string): Promise<void> {
 			400,
 			"INCOMPLETE_PROPOSAL",
 			"At least one Sustainable Development Goal (SDG) alignment must be specified.",
+		);
+	}
+
+	if (extensionServiceAlignments.length === 0) {
+		throw new ApiError(
+			400,
+			"INCOMPLETE_PROPOSAL",
+			"At least one extension service offered to beneficiaries must be specified.",
 		);
 	}
 	if (!proposalDetails?.targetStartDate || !proposalDetails?.targetEndDate) {

@@ -8,6 +8,7 @@ import {
 	authorizeSessionUser,
 	getValidAccessToken,
 } from "@/lib/session.server";
+import type { ProposalExtensionService } from "@/types/proposal";
 import type {
 	FacultyContributorAvatar,
 	FacultyInvolvement,
@@ -104,7 +105,7 @@ export interface FacultyProposalItem {
 	title: string;
 	bannerProgram: string;
 	projectLocale: string;
-	extensionCategory: string;
+	extensionServices: ProposalExtensionService[];
 	budgetPartner: string | null;
 	budgetNeust: string | null;
 	status: string;
@@ -128,7 +129,7 @@ export interface FacultyProjectItem {
 	proposalId: string;
 	moaId: string | null;
 	title?: string;
-	extensionCategory?: string;
+	extensionServices: ProposalExtensionService[];
 	targetStartDate?: string | null;
 	targetEndDate?: string | null;
 	actualEndDate?: string | null;

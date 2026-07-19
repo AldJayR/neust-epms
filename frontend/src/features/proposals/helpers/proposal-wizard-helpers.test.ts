@@ -13,7 +13,7 @@ describe("proposal wizard helpers", () => {
 			"title",
 			"bannerProgram",
 			"projectLocale",
-			"extensionCategory",
+			"extensionServiceIds",
 			"campusId",
 			"departmentId",
 			"sdgIds",

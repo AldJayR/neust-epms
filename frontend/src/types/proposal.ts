@@ -5,7 +5,7 @@ export interface ProposalItem {
 	title: string;
 	bannerProgram: string;
 	projectLocale: string;
-	extensionCategory: string;
+	extensionServices: ProposalExtensionService[];
 	budgetPartner: string | null;
 	budgetNeust: string | null;
 	status: string;
@@ -28,10 +28,15 @@ export interface ProposalFull {
 	title: string;
 	bannerProgram: string;
 	projectLocale: string;
-	extensionCategory: string;
+	extensionServices: ProposalExtensionService[];
 	budgetPartner: string | null;
 	budgetNeust: string | null;
 	status: string;
 	targetStartDate: string | null;
 	targetEndDate: string | null;
+}
+
+export interface ProposalExtensionService {
+	extensionServiceId: number;
+	serviceName: string;
 }

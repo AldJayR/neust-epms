@@ -7,6 +7,7 @@ import {
 	authorizeSessionUser,
 	getValidAccessToken,
 } from "@/lib/session.server";
+import type { ProposalExtensionService } from "@/types/proposal";
 
 const ARCHIVE_QUERY_STALE_TIME_MS = 1000 * 60; // 1 minute stale time for archives
 
@@ -18,7 +19,7 @@ const archiveParamsSchema = z.object({
 export interface ArchivedProposal {
 	proposalId: string;
 	title: string;
-	extensionCategory: string;
+	extensionServices: ProposalExtensionService[];
 	archivedAt: string | null;
 }
 

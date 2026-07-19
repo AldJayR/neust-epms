@@ -39,6 +39,7 @@ import {
 	REPORT_TYPE,
 	ROLE_NAMES,
 } from "@/lib/types.js";
+import { getProposalExtensionServicesByProposalIds } from "@/modules/proposals/proposals.service.js";
 
 // ── CRUD ──
 
@@ -80,7 +81,6 @@ export async function listProjects(
 				proposalId: projects.proposalId,
 				moaId: projects.moaId,
 				title: proposals.title,
-				extensionCategory: proposals.extensionCategory,
 				targetStartDate: proposals.targetStartDate,
 				targetEndDate: proposals.targetEndDate,
 				actualEndDate: projects.actualEndDate,
@@ -137,10 +137,20 @@ export async function listProjects(
 		updatedAt: r.updatedAt.toISOString(),
 		archivedAt: r.archivedAt?.toISOString() ?? null,
 	}));
+	const extensionServicesByProposal =
+		await getProposalExtensionServicesByProposalIds(
+			rows.map((row) => row.proposalId),
+		);
 
 	const total = Number(totalResult?.value ?? 0);
 
-	return { items, total };
+	return {
+		items: items.map((item) => ({
+			...item,
+			extensionServices: extensionServicesByProposal.get(item.proposalId) ?? [],
+		})),
+		total,
+	};
 }
 
 export async function getProjectDerivedState(id: string, user: AuthUser) {
@@ -282,84 +292,94 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 		}
 	}
 
-	const [memberRows, documentRows, reviewRows, sdgRows, specialOrderRows] =
-		await Promise.all([
-			db
-				.select({
-					userId: users.userId,
-					firstName: users.firstName,
-					lastName: users.lastName,
-					role: proposalMembers.projectRole,
-					memberId: proposalMembers.memberId,
-					avatarUrl: users.avatarUrl,
-				})
-				.from(proposalMembers)
-				.innerJoin(users, eq(proposalMembers.userId, users.userId))
-				.where(
-					and(
-						eq(proposalMembers.proposalId, row.proposalId),
-						isNull(proposalMembers.archivedAt),
-					),
+	const [
+		memberRows,
+		documentRows,
+		reviewRows,
+		sdgRows,
+		extensionServiceRows,
+		specialOrderRows,
+	] = await Promise.all([
+		db
+			.select({
+				userId: users.userId,
+				firstName: users.firstName,
+				lastName: users.lastName,
+				role: proposalMembers.projectRole,
+				memberId: proposalMembers.memberId,
+				avatarUrl: users.avatarUrl,
+			})
+			.from(proposalMembers)
+			.innerJoin(users, eq(proposalMembers.userId, users.userId))
+			.where(
+				and(
+					eq(proposalMembers.proposalId, row.proposalId),
+					isNull(proposalMembers.archivedAt),
 				),
+			),
 
-			db
-				.select({
-					documentId: proposalDocuments.documentId,
-					versionNum: proposalDocuments.versionNum,
-					storagePath: proposalDocuments.storagePath,
-					uploadedAt: proposalDocuments.uploadedAt,
-				})
-				.from(proposalDocuments)
-				.where(eq(proposalDocuments.proposalId, row.proposalId))
-				.orderBy(desc(proposalDocuments.versionNum)),
+		db
+			.select({
+				documentId: proposalDocuments.documentId,
+				versionNum: proposalDocuments.versionNum,
+				storagePath: proposalDocuments.storagePath,
+				uploadedAt: proposalDocuments.uploadedAt,
+			})
+			.from(proposalDocuments)
+			.where(eq(proposalDocuments.proposalId, row.proposalId))
+			.orderBy(desc(proposalDocuments.versionNum)),
 
-			db
-				.select({
-					reviewId: proposalReviews.reviewId,
-					decision: proposalReviews.decision,
-					comments: proposalReviews.comments,
-					reviewedAt: proposalReviews.reviewedAt,
-					reviewerFirstName: users.firstName,
-					reviewerLastName: users.lastName,
-				})
-				.from(proposalReviews)
-				.innerJoin(users, eq(proposalReviews.reviewerId, users.userId))
-				.where(eq(proposalReviews.proposalId, row.proposalId))
-				.orderBy(desc(proposalReviews.reviewedAt)),
+		db
+			.select({
+				reviewId: proposalReviews.reviewId,
+				decision: proposalReviews.decision,
+				comments: proposalReviews.comments,
+				reviewedAt: proposalReviews.reviewedAt,
+				reviewerFirstName: users.firstName,
+				reviewerLastName: users.lastName,
+			})
+			.from(proposalReviews)
+			.innerJoin(users, eq(proposalReviews.reviewerId, users.userId))
+			.where(eq(proposalReviews.proposalId, row.proposalId))
+			.orderBy(desc(proposalReviews.reviewedAt)),
 
-			db
-				.select({
-					sdgNumber: sdgs.sdgNumber,
-					sdgTitle: sdgs.sdgTitle,
-				})
-				.from(proposalSdgs)
-				.innerJoin(sdgs, eq(proposalSdgs.sdgId, sdgs.sdgId))
-				.where(eq(proposalSdgs.proposalId, row.proposalId))
-				.orderBy(sdgs.sdgNumber),
+		db
+			.select({
+				sdgNumber: sdgs.sdgNumber,
+				sdgTitle: sdgs.sdgTitle,
+			})
+			.from(proposalSdgs)
+			.innerJoin(sdgs, eq(proposalSdgs.sdgId, sdgs.sdgId))
+			.where(eq(proposalSdgs.proposalId, row.proposalId))
+			.orderBy(sdgs.sdgNumber),
 
-			db
-				.select({
-					memberId: specialOrders.memberId,
-					specialOrderId: specialOrders.specialOrderId,
-					soNumber: specialOrders.soNumber,
-					storagePath: specialOrders.storagePath,
-					dateIssued: specialOrders.dateIssued,
-					status: specialOrders.status,
-				})
-				.from(specialOrders)
-				.innerJoin(
-					proposalMembers,
-					eq(specialOrders.memberId, proposalMembers.memberId),
-				)
-				.where(
-					and(
-						eq(proposalMembers.proposalId, row.proposalId),
-						isNull(proposalMembers.archivedAt),
-						isNull(specialOrders.archivedAt),
-					),
-				)
-				.orderBy(desc(specialOrders.createdAt)),
-		]);
+		getProposalExtensionServicesByProposalIds([row.proposalId]).then(
+			(servicesByProposal) => servicesByProposal.get(row.proposalId) ?? [],
+		),
+
+		db
+			.select({
+				memberId: specialOrders.memberId,
+				specialOrderId: specialOrders.specialOrderId,
+				soNumber: specialOrders.soNumber,
+				storagePath: specialOrders.storagePath,
+				dateIssued: specialOrders.dateIssued,
+				status: specialOrders.status,
+			})
+			.from(specialOrders)
+			.innerJoin(
+				proposalMembers,
+				eq(specialOrders.memberId, proposalMembers.memberId),
+			)
+			.where(
+				and(
+					eq(proposalMembers.proposalId, row.proposalId),
+					isNull(proposalMembers.archivedAt),
+					isNull(specialOrders.archivedAt),
+				),
+			)
+			.orderBy(desc(specialOrders.createdAt)),
+	]);
 
 	const months = [
 		"Jan",
@@ -493,6 +513,9 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 			duration,
 			moaLinked: row.moaPartner || "None",
 			sdgs: sdgRows.map((s) => `SDG ${s.sdgNumber}`).join(", ") || undefined,
+			extensionServices: extensionServiceRows.map(
+				(service) => service.serviceName,
+			),
 			budget: {
 				total: budgetNeust + budgetPartner,
 				neust: budgetNeust,

@@ -36,7 +36,7 @@ const createProposalSchema = z.object({
 	title: z.string().min(1),
 	bannerProgram: z.string().min(1),
 	projectLocale: z.string().min(1),
-	extensionCategory: z.string().min(1),
+	extensionServiceIds: z.array(z.number()).min(1),
 	budgetPartner: z.number().optional(),
 	budgetNeust: z.number().optional(),
 	targetStartDate: z.string().optional(),
@@ -81,7 +81,7 @@ export interface CreateProposalInput {
 	title: string;
 	bannerProgram: string;
 	projectLocale: string;
-	extensionCategory: string;
+	extensionServiceIds: number[];
 	budgetPartner?: number;
 	budgetNeust?: number;
 	targetStartDate?: string;
@@ -99,6 +99,11 @@ export interface CreateProposalInput {
 export interface SDG {
 	sdgId: number;
 	sdgName: string;
+}
+
+export interface ExtensionService {
+	extensionServiceId: number;
+	serviceName: string;
 }
 
 // ── Server Functions ──────────────────────────────────────
@@ -240,6 +245,19 @@ const getSDGsFn = createServerFn({ method: "GET" }).handler(async () => {
 	return (await response.json()) as SDG[];
 });
 
+const getExtensionServicesFn = createServerFn({ method: "GET" }).handler(
+	async () => {
+		const accessToken = await getValidAccessToken();
+
+		const response = await fetch(
+			`${API_BASE}/proposals/metadata/extension-services`,
+			{ headers: { Authorization: `Bearer ${accessToken}` } },
+		);
+		if (!response.ok) throw new Error("Failed to fetch extension services");
+		return (await response.json()) as ExtensionService[];
+	},
+);
+
 // ── Query Options ─────────────────────────────────────────
 
 export function retDashboardStatsQueryOptions() {
@@ -264,6 +282,14 @@ export function sdgsQueryOptions() {
 		queryKey: ["metadata", "sdgs"],
 		queryFn: () => getSDGsFn(),
 		staleTime: 1000 * 60 * 60, // 1 hour
+	});
+}
+
+export function extensionServicesQueryOptions() {
+	return queryOptions({
+		queryKey: ["metadata", "extension-services"],
+		queryFn: () => getExtensionServicesFn(),
+		staleTime: 1000 * 60 * 60,
 	});
 }
 
@@ -295,7 +321,7 @@ const updateProposalSchema = z.object({
 	title: z.string().min(1),
 	bannerProgram: z.string().min(1),
 	projectLocale: z.string().min(1),
-	extensionCategory: z.string().min(1),
+	extensionServiceIds: z.array(z.number()).min(1),
 	budgetPartner: z.number().optional(),
 	budgetNeust: z.number().optional(),
 	sectorNames: z.array(z.string()).optional(),
@@ -342,7 +368,7 @@ export const updateProposalFn = createServerFn({ method: "POST" })
 				title: data.title,
 				bannerProgram: data.bannerProgram,
 				projectLocale: data.projectLocale,
-				extensionCategory: data.extensionCategory,
+				extensionServiceIds: data.extensionServiceIds,
 				budgetPartner: data.budgetPartner,
 				budgetNeust: data.budgetNeust,
 				sectorNames: data.sectorNames,

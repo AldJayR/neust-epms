@@ -72,6 +72,7 @@ export interface ProjectDetailsResponse {
 		duration: string;
 		moaLinked: string;
 		sdgs?: string;
+		extensionServices: string[];
 		budget: { total: number; neust: number; partner: number };
 	};
 	members: ProjectMember[];

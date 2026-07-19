@@ -11,6 +11,7 @@ import {
 	sql,
 } from "drizzle-orm";
 import { db } from "@/db/client.js";
+import { extensionServices } from "@/db/schema/extension-services.js";
 import { projects } from "@/db/schema/projects.js";
 import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposals } from "@/db/schema/proposals.js";
@@ -49,6 +50,8 @@ import {
 import {
 	checkDuplicateTitle,
 	createProposalInTransaction,
+	getProposalExtensionServices,
+	getProposalExtensionServicesByProposalIds,
 	getUserMemberSubquery,
 	updateProposalWithSectors,
 } from "./proposals.service.js";
@@ -107,7 +110,6 @@ app.openapi(listRoute, async (c) => {
 				title: proposals.title,
 				bannerProgram: proposals.bannerProgram,
 				projectLocale: proposals.projectLocale,
-				extensionCategory: proposals.extensionCategory,
 				budgetPartner: proposals.budgetPartner,
 				budgetNeust: proposals.budgetNeust,
 				status: sql<string>`COALESCE(${projects.projectStatus}, ${proposals.status})`,
@@ -154,8 +156,22 @@ app.openapi(listRoute, async (c) => {
 	}));
 
 	const total = Number(totalResult?.value ?? 0);
+	const extensionServicesByProposal =
+		await getProposalExtensionServicesByProposalIds(
+			rows.map((row) => row.proposalId),
+		);
 
-	return c.json({ items, total }, 200);
+	return c.json(
+		{
+			items: items.map((item) => ({
+				...item,
+				extensionServices:
+					extensionServicesByProposal.get(item.proposalId) ?? [],
+			})),
+			total,
+		},
+		200,
+	);
 });
 
 // ── GET /proposals/ret/dashboard-stats ──
@@ -257,7 +273,6 @@ app.openapi(getRoute, async (c) => {
 			title: proposals.title,
 			bannerProgram: proposals.bannerProgram,
 			projectLocale: proposals.projectLocale,
-			extensionCategory: proposals.extensionCategory,
 			budgetPartner: proposals.budgetPartner,
 			budgetNeust: proposals.budgetNeust,
 			status: proposals.status,
@@ -276,10 +291,12 @@ app.openapi(getRoute, async (c) => {
 	if (!row) {
 		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
 	}
+	const selectedExtensionServices = await getProposalExtensionServices(id);
 
 	return c.json(
 		{
 			...row,
+			extensionServices: selectedExtensionServices,
 			createdAt: row.createdAt.toISOString(),
 			updatedAt: row.updatedAt.toISOString(),
 			archivedAt: row.archivedAt?.toISOString() ?? null,
@@ -434,6 +451,9 @@ app.openapi(createProposalRoute, async (c) => {
 	const created = await db.transaction(async (tx) => {
 		return createProposalInTransaction(tx, body, user);
 	});
+	const selectedExtensionServices = await getProposalExtensionServices(
+		created.proposalId,
+	);
 
 	await insertAuditLog({
 		userId: user.userId,
@@ -461,6 +481,7 @@ app.openapi(createProposalRoute, async (c) => {
 	return c.json(
 		{
 			...created,
+			extensionServices: selectedExtensionServices,
 			createdAt: created.createdAt.toISOString(),
 			updatedAt: created.updatedAt.toISOString(),
 			archivedAt: created.archivedAt?.toISOString() ?? null,
@@ -520,6 +541,7 @@ app.openapi(updateRoute, async (c) => {
 	}
 
 	const updated = await updateProposalWithSectors(id, body, existing, user);
+	const selectedExtensionServices = await getProposalExtensionServices(id);
 
 	const diff = captureAuditDiff(
 		existing as unknown as Record<string, unknown>,
@@ -545,6 +567,7 @@ app.openapi(updateRoute, async (c) => {
 	return c.json(
 		{
 			...updated,
+			extensionServices: selectedExtensionServices,
 			createdAt: updated.createdAt.toISOString(),
 			updatedAt: updated.updatedAt.toISOString(),
 			archivedAt: updated.archivedAt?.toISOString() ?? null,
@@ -574,6 +597,31 @@ app.openapi(listSdgsRoute, async (c) => {
 		})
 		.from(sdgs)
 		.orderBy(sdgs.sdgId);
+
+	return c.json(rows, 200);
+});
+
+// ── GET /proposals/metadata/extension-services ──
+const listExtensionServicesRoute = createRoute({
+	method: "get",
+	path: "/proposals/metadata/extension-services",
+	tags: ["Proposals"],
+	summary: "List extension services offered to beneficiaries",
+	responses: {
+		200: {
+			description: "Extension service list",
+		},
+	},
+});
+
+app.openapi(listExtensionServicesRoute, async (c) => {
+	const rows = await db
+		.select({
+			extensionServiceId: extensionServices.extensionServiceId,
+			serviceName: extensionServices.serviceName,
+		})
+		.from(extensionServices)
+		.orderBy(extensionServices.extensionServiceId);
 
 	return c.json(rows, 200);
 });

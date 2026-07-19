@@ -12,6 +12,7 @@ import {
 } from "../helpers/proposal-wizard-helpers";
 import {
 	createProposalFn,
+	extensionServicesQueryOptions,
 	sdgsQueryOptions,
 	submitProposalFn,
 	updateProposalFn,
@@ -65,7 +66,7 @@ export function useProposalWizard({
 		title: "",
 		bannerProgram: "",
 		projectLocale: "",
-		extensionCategory: "",
+		extensionServiceIds: [],
 		campusId: user.campusId?.toString() ?? "",
 		departmentId: user.departmentId?.toString() ?? "",
 		sdgIds: [],
@@ -94,6 +95,9 @@ export function useProposalWizard({
 	});
 
 	const { data: sdgsData } = useQuery(sdgsQueryOptions());
+	const { data: extensionServicesData } = useQuery(
+		extensionServicesQueryOptions(),
+	);
 	const invalidateProposalData = async () => {
 		await Promise.all([
 			queryClient.invalidateQueries({ queryKey: ["faculty"] }),
@@ -146,7 +150,7 @@ export function useProposalWizard({
 						title: values.title,
 						bannerProgram: values.bannerProgram,
 						projectLocale: values.projectLocale,
-						extensionCategory: values.extensionCategory,
+						extensionServiceIds: values.extensionServiceIds,
 						budgetPartner: values.budgetPartner,
 						budgetNeust: values.budgetNeust,
 						sectorNames: values.beneficiarySectors,
@@ -160,7 +164,7 @@ export function useProposalWizard({
 						title: values.title,
 						bannerProgram: values.bannerProgram,
 						projectLocale: values.projectLocale,
-						extensionCategory: values.extensionCategory,
+						extensionServiceIds: values.extensionServiceIds,
 						budgetPartner: values.budgetPartner,
 						budgetNeust: values.budgetNeust,
 						targetStartDate: new Date(values.targetStartDate).toISOString(),
@@ -246,6 +250,7 @@ export function useProposalWizard({
 		...state,
 		form,
 		sdgsData,
+		extensionServicesData,
 		isEditing,
 		isBusy:
 			createProposalMutation.isPending ||
