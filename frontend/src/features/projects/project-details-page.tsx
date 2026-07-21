@@ -17,6 +17,7 @@ import { ProjectDetailsSkeleton } from "./components/project-details-skeleton";
 import { ProjectOverviewCard } from "./components/project-overview-card";
 import { closeProjectFn, projectDetailsQueryOptions } from "./functions";
 import {
+	canSubmitProjectReports,
 	canReadProject,
 	isProjectLeader,
 } from "./helpers/project-details-helpers";
@@ -81,6 +82,7 @@ export function ProjectDetailsPage({
 		data.members,
 	);
 	const projectLeader = isProjectLeader(currentUserId, data.members);
+	const canSubmitReports = canSubmitProjectReports(currentUserId, data.members);
 	const isEditable =
 		projectLeader && ["Draft", "Returned"].includes(data.status);
 
@@ -190,9 +192,7 @@ export function ProjectDetailsPage({
 					].includes(data.status) && (
 						<ReportingScheduleCard
 							projectId={proposalId}
-							canSubmitReports={["Faculty", "RET Chair"].includes(
-								currentUserRole,
-							)}
+							canSubmitReports={canSubmitReports}
 						/>
 					)}
 					<ActivityHistoryCard history={data.history} />

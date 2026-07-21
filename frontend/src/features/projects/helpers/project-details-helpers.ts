@@ -10,6 +10,13 @@ export function isProjectLeader(
 	);
 }
 
+export function canSubmitProjectReports(
+	currentUserId: string,
+	members: ProjectMember[],
+): boolean {
+	return isProjectLeader(currentUserId, members);
+}
+
 export function canManageSpecialOrders(
 	currentUserId: string,
 	currentUserRole: string,

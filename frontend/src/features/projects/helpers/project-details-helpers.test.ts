@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ProjectMember } from "@/types/project";
 import {
+	canSubmitProjectReports,
 	canManageSpecialOrders,
 	canReadProject,
 	canUploadSpecialOrder,
@@ -43,5 +44,11 @@ describe("project details permission helpers", () => {
 		expect(
 			canUploadSpecialOrder("Approved", "member", "Faculty", members),
 		).toBe(false);
+	});
+
+	it("allows report submission only for the project leader", () => {
+		expect(canSubmitProjectReports("leader", members)).toBe(true);
+		expect(canSubmitProjectReports("member", members)).toBe(false);
+		expect(canSubmitProjectReports("director", members)).toBe(false);
 	});
 });
