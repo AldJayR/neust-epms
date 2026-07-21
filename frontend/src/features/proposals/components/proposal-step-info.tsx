@@ -3,6 +3,7 @@ import * as React from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { useWatch } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Field,
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import type { AuthUser } from "@/lib/auth";
+import { appendBeneficiarySector } from "../helpers/proposal-wizard-helpers";
 import type { FormValues } from "./proposal-form";
 
 interface ProposalStepInfoProps {
@@ -51,11 +53,11 @@ export function ProposalStepInfo({
 	const [sectorInput, setSectorInput] = React.useState("");
 
 	const addSector = () => {
-		const trimmed = sectorInput.trim();
-		if (trimmed && !watchedSectors.includes(trimmed)) {
-			form.setValue("beneficiarySectors", [...watchedSectors, trimmed]);
-			setSectorInput("");
-		}
+		form.setValue(
+			"beneficiarySectors",
+			appendBeneficiarySector(watchedSectors, sectorInput),
+		);
+		setSectorInput("");
 	};
 
 	const removeSector = (sector: string) => {
@@ -227,25 +229,34 @@ export function ProposalStepInfo({
 							</button>
 						</Badge>
 					))}
-					<Input
-						placeholder={
-							watchedSectors.length === 0
-								? "Type a sector and press Enter"
-								: "Add more..."
-						}
-						value={sectorInput}
-						onChange={(e) => setSectorInput(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter") {
-								e.preventDefault();
-								addSector();
+					<div className="flex min-w-[180px] flex-1 items-center gap-2">
+						<Input
+							placeholder={
+								watchedSectors.length === 0 ? "Type a sector" : "Add more..."
 							}
-						}}
-						className="flex-1 min-w-[180px] border-0 shadow-none focus-visible:ring-0 h-auto p-0"
-					/>
+							value={sectorInput}
+							onChange={(e) => setSectorInput(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									addSector();
+								}
+							}}
+							className="min-w-0 flex-1 border-0 p-0 shadow-none focus-visible:ring-0"
+						/>
+						<Button
+							type="button"
+							size="xs"
+							onClick={addSector}
+							disabled={!sectorInput.trim()}
+						>
+							Add
+						</Button>
+					</div>
 				</div>
 				<p className="text-xs text-muted-foreground">
-					e.g. Farmers, Youth, Senior Citizens, Women, Children
+					Type a sector, then select Add. e.g. Farmers, Youth, Senior Citizens,
+					Women, Children
 				</p>
 				<FieldError errors={[form.formState.errors.beneficiarySectors]} />
 			</div>

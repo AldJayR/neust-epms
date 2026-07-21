@@ -1,5 +1,13 @@
 import type { FormValues } from "../components/proposal-form";
 
+export function appendBeneficiarySector(
+	sectors: string[],
+	sectorInput: string,
+): string[] {
+	const sector = sectorInput.trim();
+	return sector && !sectors.includes(sector) ? [...sectors, sector] : sectors;
+}
+
 export function getFieldsToValidate(step: number): (keyof FormValues)[] {
 	if (step === 2) {
 		return [

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	appendBeneficiarySector,
 	canSubmitEditingProposal,
 	getFieldsToValidate,
 	getProposalWizardStepTitle,
@@ -7,6 +8,16 @@ import {
 } from "./proposal-wizard-helpers";
 
 describe("proposal wizard helpers", () => {
+	it("commits a typed beneficiary sector without requiring Enter", () => {
+		expect(appendBeneficiarySector([], "  Farmers  ")).toEqual(["Farmers"]);
+		expect(appendBeneficiarySector(["Farmers"], "Farmers")).toEqual([
+			"Farmers",
+		]);
+		expect(appendBeneficiarySector(["Farmers"], "   ")).toEqual([
+			"Farmers",
+		]);
+	});
+
 	it("keeps the existing step validation fields and labels", () => {
 		expect(getFieldsToValidate(1)).toEqual([]);
 		expect(getFieldsToValidate(2)).toEqual([
