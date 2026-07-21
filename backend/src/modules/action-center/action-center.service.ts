@@ -28,6 +28,14 @@ import { getLeaderSubquery } from "@/lib/leader-subquery.js";
 
 // ── Unified queries ──
 
+export function buildReportObligationScope(userId: string) {
+	return and(
+		eq(proposalMembers.userId, userId),
+		eq(proposalMembers.projectRole, "Project Leader"),
+		isNull(proposalMembers.archivedAt),
+	)!;
+}
+
 async function getPendingProposals(opts: {
 	statusFilter: SQL;
 	scopeClause?: SQL;
@@ -152,7 +160,7 @@ async function getProjectsByStatus(opts: {
 async function getUpcomingReports(opts: {
 	now: Date;
 	scopeClause?: SQL;
-	memberUserId?: string;
+	leaderUserId: string;
 }) {
 	const leaderSubquery = getLeaderSubquery();
 	const query = db
@@ -175,6 +183,13 @@ async function getUpcomingReports(opts: {
 		.leftJoin(
 			leaderSubquery,
 			eq(proposals.proposalId, leaderSubquery.proposalId),
+		)
+		.innerJoin(
+			proposalMembers,
+			and(
+				eq(proposals.proposalId, proposalMembers.proposalId),
+				buildReportObligationScope(opts.leaderUserId),
+			),
 		);
 
 	const conditions: SQL[] = [
@@ -183,17 +198,6 @@ async function getUpcomingReports(opts: {
 		isNull(projects.archivedAt),
 	];
 	if (opts.scopeClause) conditions.push(opts.scopeClause);
-	if (opts.memberUserId) {
-		query.innerJoin(
-			proposalMembers,
-			and(
-				eq(proposals.proposalId, proposalMembers.proposalId),
-				eq(proposalMembers.userId, opts.memberUserId),
-				isNull(proposalMembers.archivedAt),
-			),
-		);
-	}
-
 	return query.where(and(...conditions));
 }
 
@@ -317,7 +321,6 @@ function buildReportItem(
 		createdAt: Date;
 	},
 	now: Date,
-	roleName: string,
 ): ActionItem {
 	const sevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 	const thirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -329,9 +332,8 @@ function buildReportItem(
 				? ("soon" as const)
 				: ("routine" as const);
 
-	const isFaculty = roleName === ROLE_NAMES.FACULTY;
 	const derivedState =
-		isFaculty && urgency === "routine"
+		urgency === "routine"
 			? ("WATCH" as const)
 			: urgency === "urgent"
 				? ("ACT" as const)
@@ -341,14 +343,10 @@ function buildReportItem(
 		id: rep.proposalId,
 		dateId: rep.dateId,
 		type: "report",
-		title: isFaculty
-			? `Report deadline for ${rep.title}`
-			: `Report Obligation for ${rep.title}`,
+		title: `Report deadline for ${rep.title}`,
 		status: "Upcoming",
-		actionRequired: isFaculty
-			? `Submit progress report by ${rep.reportingDate.toLocaleDateString()}`
-			: `Submit report by ${rep.reportingDate.toLocaleDateString()}`,
-		owner: isFaculty ? "You" : "Project Leader",
+		actionRequired: `Submit progress report by ${rep.reportingDate.toLocaleDateString()}`,
+		owner: "You",
 		derivedState,
 		createdAt: rep.createdAt.toISOString(),
 		urgency,
@@ -396,7 +394,7 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 				projectStatus: PROJECT_STATUS.OVERDUE,
 				...scopeProps,
 			}),
-			getUpcomingReports({ now, ...scopeProps }),
+			getUpcomingReports({ now, ...scopeProps, leaderUserId: user.userId }),
 		]);
 
 		pendingReviews = pending.length;
@@ -431,7 +429,7 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 		}
 
 		for (const r of reports) {
-			const item = buildReportItem(r, now, user.roleName);
+			const item = buildReportItem(r, now);
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 	} else if (user.roleName === ROLE_NAMES.DIRECTOR) {
@@ -451,7 +449,7 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			getProjectsByStatus({
 				projectStatus: PROJECT_STATUS.OVERDUE,
 			}),
-			getUpcomingReports({ now }),
+			getUpcomingReports({ now, leaderUserId: user.userId }),
 		]);
 
 		pendingReviews = pending.length;
@@ -504,7 +502,7 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 		}
 
 		for (const r of reports) {
-			const item = buildReportItem(r, now, user.roleName);
+			const item = buildReportItem(r, now);
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 	} else if (user.roleName === ROLE_NAMES.FACULTY) {
@@ -518,7 +516,7 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			}),
 			getUpcomingReports({
 				now,
-				memberUserId: user.userId,
+				leaderUserId: user.userId,
 			}),
 		]);
 
@@ -545,7 +543,7 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 		}
 
 		for (const r of reports) {
-			const item = buildReportItem(r, now, user.roleName);
+			const item = buildReportItem(r, now);
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 	} else if (user.roleName === ROLE_NAMES.SUPER_ADMIN) {
