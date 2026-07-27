@@ -12,6 +12,8 @@ const client = postgres(env.DATABASE_URL, {
 	connect_timeout: env.DB_CONNECTION_TIMEOUT_MS / 1000,
 });
 
+export const pool = client;
+
 export const db = drizzle(client, {
 	schema: { ...schema, ...relations },
 });

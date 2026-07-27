@@ -25,13 +25,13 @@ import { type AuditLogSchema, AuditValueSchema } from "./audit.schema.js";
 
 type AuditLog = z.infer<typeof AuditLogSchema>;
 
-export async function getAuditStats(): Promise<{
+export async function getAuditStats(now = new Date()): Promise<{
 	totalActionsToday: number;
 	uniqueUsersActive: number;
 	accountChanges: number;
 	failedLogins: number;
 }> {
-	const today = new Date();
+	const today = new Date(now);
 	today.setHours(0, 0, 0, 0);
 
 	const [totalActionsResult, accountChangesResult, failedLoginsResult] =
