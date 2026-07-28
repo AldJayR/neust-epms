@@ -71,12 +71,15 @@ export async function createNotification(
 			try {
 				const { Resend } = await import("resend");
 				const resend = new Resend(env.RESEND_API_KEY);
-				await resend.emails.send({
+				const { error } = await resend.emails.send({
 					from: env.RESEND_FROM,
 					to: user.email,
 					subject: emailSubject ?? title,
 					html: emailHtml ?? `<p>${escapeHtml(message)}</p>`,
 				});
+				if (error) {
+					console.error("[notification] Failed to send email:", error);
+				}
 			} catch (e) {
 				console.error("[notification] Failed to send email:", e);
 			}

@@ -161,12 +161,13 @@ async function sendExpirationEmails(
 			expiredMoas.map(async (moa, i) => {
 				// Throttle: ~2 req/s to respect Resend rate limits
 				if (i > 0) await new Promise((r) => setTimeout(r, 500));
-				return resend.emails.send({
+				const { error } = await resend.emails.send({
 					from: env.RESEND_FROM ?? "noreply@neust.edu.ph",
 					to: env.ADMIN_EMAIL ?? "admin@neust.edu.ph",
 					subject: `MOA Expired: ${moa.partnerName}`,
 					text: `The MOA with ${moa.partnerName} (ID: ${moa.moaId}) expired on ${moa.validUntil.toISOString()}.`,
 				});
+				if (error) throw error;
 			}),
 		);
 

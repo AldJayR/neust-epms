@@ -991,10 +991,11 @@ export async function sendEmailReport(
 	const { Resend } = await import("resend");
 	const resend = new Resend(env.RESEND_API_KEY);
 
-	await resend.emails.send({
+	const { error } = await resend.emails.send({
 		from: env.RESEND_FROM ?? "noreply@neust.edu.ph",
 		to: user.email,
 		subject: `Faculty Directory Report - A.Y. 2024-2025`,
 		html: htmlReport,
 	});
+	if (error) throw new Error(`Resend email failed: ${error.message}`);
 }
