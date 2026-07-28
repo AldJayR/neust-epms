@@ -12,17 +12,13 @@ import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposalSdgs } from "@/db/schema/proposal-sdgs.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { ApiError } from "@/lib/errors.js";
-import {
-	type AuthUser,
-	PROPOSAL_STATUS,
-	REVIEW_DECISION,
-	REVIEW_STAGE,
-	ROLE_NAMES,
-} from "@/lib/types.js";
+import { type AuthUser, PROPOSAL_STATUS, ROLE_NAMES } from "@/lib/types.js";
 import {
 	isProjectLeader,
 	PROJECT_LEADER_ROLE,
 } from "@/services/auth-user.service.js";
+import { validateProposalCompleteness } from "./proposal-completeness.js";
+import { resolveReviewPolicy } from "./proposal-review-policy.js";
 
 // ── Shared helpers ──
 
@@ -524,69 +520,15 @@ export async function validateCompleteness(proposalId: string): Promise<void> {
 			.limit(1),
 	]);
 
-	if (docs.length === 0) {
-		throw new ApiError(
-			400,
-			"INCOMPLETE_PROPOSAL",
-			"At least one proposal PDF document must be uploaded.",
-		);
-	}
-
-	if (members.length === 0) {
-		throw new ApiError(
-			400,
-			"INCOMPLETE_PROPOSAL",
-			"At least one team member must be assigned.",
-		);
-	}
-	if (!members.some((m) => m.projectRole === "Project Leader")) {
-		throw new ApiError(
-			400,
-			"INCOMPLETE_PROPOSAL",
-			"At least one team member must have the Project Leader role.",
-		);
-	}
-
-	if (sectors.length === 0) {
-		throw new ApiError(
-			400,
-			"INCOMPLETE_PROPOSAL",
-			"At least one target beneficiary sector must be specified.",
-		);
-	}
-
-	if (sdgAlignments.length === 0) {
-		throw new ApiError(
-			400,
-			"INCOMPLETE_PROPOSAL",
-			"At least one Sustainable Development Goal (SDG) alignment must be specified.",
-		);
-	}
-
-	if (extensionServiceAlignments.length === 0) {
-		throw new ApiError(
-			400,
-			"INCOMPLETE_PROPOSAL",
-			"At least one extension service offered to beneficiaries must be specified.",
-		);
-	}
-	if (!proposalDetails?.targetStartDate || !proposalDetails?.targetEndDate) {
-		throw new ApiError(
-			400,
-			"INCOMPLETE_PROPOSAL",
-			"Target start and end dates are required.",
-		);
-	}
-	if (
-		new Date(proposalDetails.targetStartDate) >
-		new Date(proposalDetails.targetEndDate)
-	) {
-		throw new ApiError(
-			400,
-			"INCOMPLETE_PROPOSAL",
-			"Target end date must be on or after target start date.",
-		);
-	}
+	validateProposalCompleteness({
+		documentCount: docs.length,
+		members,
+		beneficiarySectorCount: sectors.length,
+		sdgAlignmentCount: sdgAlignments.length,
+		extensionServiceCount: extensionServiceAlignments.length,
+		targetStartDate: proposalDetails?.targetStartDate,
+		targetEndDate: proposalDetails?.targetEndDate,
+	});
 }
 
 // ── Review state machine ──
@@ -643,9 +585,6 @@ export async function processReview(
 		}
 	}
 
-	let reviewStage: string;
-	let newStatus: string;
-
 	const [bypassRow] = await db
 		.select({ bypassedRetChair: proposals.bypassedRetChair })
 		.from(proposals)
@@ -654,88 +593,20 @@ export async function processReview(
 		)
 		.limit(1);
 
-	if (
-		user.roleName === ROLE_NAMES.RET_CHAIR &&
-		existing.status === PROPOSAL_STATUS.PENDING_REVIEW
-	) {
-		if (bypassRow?.bypassedRetChair) {
-			throw new ApiError(
-				403,
-				"FORBIDDEN",
-				"RET Chair review is bypassed for this proposal",
-			);
-		}
-		reviewStage = REVIEW_STAGE.ENDORSEMENT;
-		if (body.decision === REVIEW_DECISION.ENDORSED) {
-			newStatus = PROPOSAL_STATUS.ENDORSED;
-		} else if (body.decision === REVIEW_DECISION.RETURNED) {
-			newStatus = PROPOSAL_STATUS.RETURNED;
-		} else if (body.decision === REVIEW_DECISION.REJECTED) {
-			newStatus = PROPOSAL_STATUS.REJECTED;
-		} else {
-			throw new ApiError(
-				400,
-				"INVALID_DECISION",
-				"RET Chair can only Endorse, Return, or Reject at this stage",
-			);
-		}
-	} else if (
-		user.roleName === ROLE_NAMES.DIRECTOR &&
-		existing.status === PROPOSAL_STATUS.ENDORSED
-	) {
-		reviewStage = REVIEW_STAGE.APPROVAL;
-		if (body.decision === REVIEW_DECISION.APPROVED) {
-			newStatus = PROPOSAL_STATUS.APPROVED;
-		} else if (body.decision === REVIEW_DECISION.RETURNED) {
-			newStatus = PROPOSAL_STATUS.RETURNED;
-		} else if (body.decision === REVIEW_DECISION.REJECTED) {
-			newStatus = PROPOSAL_STATUS.REJECTED;
-		} else {
-			throw new ApiError(
-				400,
-				"INVALID_DECISION",
-				"Director can only Approve, Return, or Reject at this stage",
-			);
-		}
-	} else if (
-		user.roleName === ROLE_NAMES.DIRECTOR &&
-		existing.status === PROPOSAL_STATUS.PENDING_REVIEW &&
-		bypassRow?.bypassedRetChair
-	) {
-		reviewStage = REVIEW_STAGE.APPROVAL;
-		if (body.decision === REVIEW_DECISION.APPROVED) {
-			newStatus = PROPOSAL_STATUS.APPROVED;
-		} else if (body.decision === REVIEW_DECISION.RETURNED) {
-			newStatus = PROPOSAL_STATUS.RETURNED;
-		} else if (body.decision === REVIEW_DECISION.REJECTED) {
-			newStatus = PROPOSAL_STATUS.REJECTED;
-		} else {
-			throw new ApiError(
-				400,
-				"INVALID_DECISION",
-				"Director can only Approve, Return, or Reject at this stage",
-			);
-		}
-	} else {
-		throw new ApiError(
-			400,
-			"INVALID_STATE",
-			"Cannot review proposal in its current state with your role",
-		);
-	}
-
-	const revisionIncrement = newStatus === PROPOSAL_STATUS.RETURNED ? 1 : 0;
-
-	const isDirectorReturningEndorsed =
-		user.roleName === ROLE_NAMES.DIRECTOR &&
-		existing.status === PROPOSAL_STATUS.ENDORSED &&
-		newStatus === PROPOSAL_STATUS.RETURNED;
+	const reviewPolicy = resolveReviewPolicy(
+		{
+			roleName: user.roleName,
+			status: existing.status,
+			bypassedRetChair: Boolean(bypassRow?.bypassedRetChair),
+		},
+		body.decision,
+	);
 
 	await db.transaction(async (tx) => {
 		await tx.insert(proposalReviews).values({
 			proposalId: proposalId,
 			reviewerId: user.userId,
-			reviewStage,
+			reviewStage: reviewPolicy.reviewStage,
 			decision: body.decision,
 			comments: body.comments ?? null,
 		});
@@ -743,10 +614,12 @@ export async function processReview(
 		const [updated] = await tx
 			.update(proposals)
 			.set({
-				status: newStatus,
-				revisionNum: existing.revisionNum + revisionIncrement,
+				status: reviewPolicy.newStatus,
+				revisionNum: existing.revisionNum + reviewPolicy.revisionIncrement,
 				updatedAt: new Date(),
-				...(isDirectorReturningEndorsed ? { bypassedRetChair: true } : {}),
+				...(reviewPolicy.isDirectorReturningEndorsed
+					? { bypassedRetChair: true }
+					: {}),
 			})
 			.where(
 				and(
@@ -764,7 +637,7 @@ export async function processReview(
 			);
 		}
 
-		if (newStatus === PROPOSAL_STATUS.APPROVED) {
+		if (reviewPolicy.newStatus === PROPOSAL_STATUS.APPROVED) {
 			const [existingProject] = await tx
 				.select({ projectId: projects.projectId })
 				.from(projects)

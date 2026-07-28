@@ -85,6 +85,7 @@ const mockSupabase = {
 		storage: {
 		from: vi.fn(() => ({
 			upload: vi.fn().mockResolvedValue({ error: null }),
+			remove: vi.fn().mockResolvedValue({ error: null }),
 			download: vi.fn().mockResolvedValue({
 				data: new Blob(["%PDF-1.4\n"], { type: "application/pdf" }),
 				error: null,
@@ -93,6 +94,9 @@ const mockSupabase = {
 				data: { signedUrl: "https://test.supabase.co/signed-url" },
 				error: null,
 			}),
+			getPublicUrl: vi.fn((path: string) => ({
+				data: { publicUrl: `https://test.supabase.co/storage/v1/object/public/avatars/${path}` },
+			})),
 		})),
 	},
 };

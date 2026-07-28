@@ -10,29 +10,9 @@ import { ApiError } from "@/lib/errors.js";
 import { buildProposalScope } from "@/lib/scope-helpers.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import type { SearchKind, SearchResultItem } from "./search.schema.js";
+import { buildTsQuery } from "./search-query.js";
 
-/**
- * Builds a safe prefix tsquery string from raw user input.
- * - Strips tsquery special characters to avoid syntax errors / injection.
- * - Uses the `simple` config (no stemming) so acronyms like EPMS/MOA survive.
- * - Appends `:*` to each token for substring-like prefix matching.
- */
-export function buildTsQuery(raw: string): string {
-	const tokens = raw
-		.toLowerCase()
-		.split(/[^a-z0-9]+/)
-		.map((t) => t.trim())
-		.filter(Boolean)
-		.slice(0, 10);
-	if (tokens.length === 0) {
-		throw new ApiError(
-			400,
-			"BAD_REQUEST",
-			"Search term contains no searchable tokens",
-		);
-	}
-	return tokens.map((t) => `${t}:*`).join(" & ");
-}
+export { buildTsQuery } from "./search-query.js";
 
 export async function searchEntities(
 	user: AuthUser,

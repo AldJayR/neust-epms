@@ -40,6 +40,7 @@ import {
 	ROLE_NAMES,
 } from "@/lib/types.js";
 import { getProposalExtensionServicesByProposalIds } from "@/modules/proposals/proposals.service.js";
+import { validateProjectTransition } from "./project-policies.js";
 
 // ── CRUD ──
 
@@ -534,29 +535,14 @@ export async function validateTransition(
 	project: { projectId: string; projectStatus: string; moaId: string | null },
 	targetStatus: string,
 ) {
-	// SYS-REQ-04.1: Require active MOA to transition to "Ongoing"
+	validateProjectTransition(project, targetStatus);
+
 	if (targetStatus === PROJECT_STATUS.ONGOING) {
-		if (project.projectStatus !== PROJECT_STATUS.APPROVED) {
-			throw new ApiError(
-				400,
-				"INVALID_TRANSITION",
-				"Only Approved projects can transition to Ongoing",
-			);
-		}
-
-		if (!project.moaId) {
-			throw new ApiError(
-				400,
-				"MOA_REQUIRED",
-				"An active MOA must be linked before transitioning to Ongoing (SYS-REQ-04.1)",
-			);
-		}
-
 		// Verify linked MOA is not expired
 		const [moa] = await db
 			.select({ moaId: moas.moaId, validUntil: moas.validUntil })
 			.from(moas)
-			.where(eq(moas.moaId, project.moaId))
+			.where(eq(moas.moaId, project.moaId as string))
 			.limit(1);
 
 		if (!moa || moa.validUntil < new Date()) {
@@ -564,16 +550,6 @@ export async function validateTransition(
 				400,
 				"MOA_EXPIRED",
 				"The linked MOA is expired. Link a valid MOA first.",
-			);
-		}
-	}
-
-	if (targetStatus === PROJECT_STATUS.COMPLETED) {
-		if (project.projectStatus !== PROJECT_STATUS.ONGOING) {
-			throw new ApiError(
-				400,
-				"INVALID_TRANSITION",
-				"Only Ongoing projects can be marked as Completed",
 			);
 		}
 	}
