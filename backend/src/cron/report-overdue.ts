@@ -62,7 +62,7 @@ export function startReportOverdueCron(): void {
 	console.log("[CRON] Report overdue cron job scheduled (daily at 02:00).");
 }
 
-async function runReportOverdue(): Promise<void> {
+export async function runReportOverdue(): Promise<void> {
 	console.log(
 		`[CRON] Report overdue check started at ${new Date().toISOString()}`,
 	);

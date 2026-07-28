@@ -16,6 +16,7 @@
 		"db:seed": "tsx src/db/seed.ts",
 		"test": "vitest run",
 		"test:unit": "vitest run --config vitest.unit.config.ts",
+		"test:boundary": "vitest run --config vitest.boundary.config.ts",
 		"test:integration": "tsx test/integration/run.ts",
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage"

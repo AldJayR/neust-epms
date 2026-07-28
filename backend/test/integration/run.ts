@@ -1,12 +1,15 @@
-import "dotenv/config";
 import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
+import dotenv from "dotenv";
 import postgres from "postgres";
 
 const backendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+
+// Integration tests use their disposable local environment automatically.
+dotenv.config({ path: path.join(backendRoot, ".env.test") });
 
 async function main(): Promise<void> {
 	const databaseUrl = process.env.INTEGRATION_DATABASE_URL;

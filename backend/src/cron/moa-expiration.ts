@@ -48,7 +48,7 @@ export function startMoaExpirationCron(): void {
 	console.log("[CRON] MOA expiration cron job scheduled (daily at 01:00).");
 }
 
-async function runMoaExpiration(): Promise<void> {
+export async function runMoaExpiration(): Promise<void> {
 	console.log(
 		`[CRON] MOA expiration check started at ${new Date().toISOString()}`,
 	);
