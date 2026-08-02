@@ -1,6 +1,7 @@
 import * as pdfjsLib from "pdfjs-dist";
 import { useEffect, useReducer } from "react";
 import { stateReducer } from "@/lib/state-reducer";
+import { createPdfDocumentOptions } from "../pdfjs-resources";
 
 interface DocState {
 	pdfDoc: pdfjsLib.PDFDocumentProxy | null;
@@ -32,15 +33,7 @@ export function usePdfDocument(url: string) {
 			try {
 				dispatch({ loadingDoc: true, error: null });
 
-				loadingTask = pdfjsLib.getDocument({
-					url,
-					cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
-					cMapPacked: true,
-					standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`,
-					disableAutoFetch: true,
-					disableRange: false,
-					disableStream: false,
-				});
+				loadingTask = pdfjsLib.getDocument(createPdfDocumentOptions(url));
 
 				const doc = await loadingTask.promise;
 				if (isDestroyed) {
