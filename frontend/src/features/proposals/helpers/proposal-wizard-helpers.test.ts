@@ -38,10 +38,11 @@ describe("proposal wizard helpers", () => {
 		expect(getProposalWizardStepTitle(5)).toBe("Attachments");
 	});
 
-	it("requires a document only for new submissions", () => {
+	it("requires a document when no persisted document exists", () => {
 		expect(requiresProposalDocument(true, false)).toBe(true);
 		expect(requiresProposalDocument(false, false)).toBe(false);
-		expect(requiresProposalDocument(true, true)).toBe(false);
+		expect(requiresProposalDocument(true, true, false)).toBe(true);
+		expect(requiresProposalDocument(true, true, true)).toBe(false);
 	});
 
 	it("only allows editing submissions from draft or returned status", () => {

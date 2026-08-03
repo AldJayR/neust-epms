@@ -42,6 +42,19 @@ export const ProposalSchema = z
 	})
 	.openapi("Proposal");
 
+export const ProposalDetailSchema = ProposalSchema.extend({
+	sdgIds: z.array(z.number().int().positive()),
+	beneficiarySectors: z.array(z.string()),
+	hasProposalDocument: z.boolean(),
+	members: z.array(
+		z.object({
+			userId: z.string().uuid(),
+			projectRole: z.string(),
+			name: z.string(),
+		}),
+	),
+}).openapi("ProposalDetail");
+
 export const ProposalListSchema = z
 	.object({ items: z.array(ProposalSchema), total: z.number() })
 	.openapi("ProposalList");
@@ -101,6 +114,37 @@ export const UpdateProposalSchema = z
 		budgetPartner: z.coerce.number().nonnegative().finite().optional(),
 		budgetNeust: z.coerce.number().nonnegative().finite().optional(),
 		sectorNames: z.array(z.string().min(1)).optional(),
+		sdgIds: z
+			.array(z.number().int().positive())
+			.refine((ids) => new Set(ids).size === ids.length, {
+				message: "SDGs must not be duplicated",
+			})
+			.optional(),
+		members: z
+			.array(
+				z.object({
+					userId: z.string().uuid(),
+					projectRole: z.string().trim().min(1).max(100),
+				}),
+			)
+			.min(1)
+			.refine(
+				(members) =>
+					new Set(members.map((member) => member.userId)).size ===
+					members.length,
+				{
+					message: "Team members must not be duplicated",
+				},
+			)
+			.refine(
+				(members) =>
+					members.filter((member) => member.projectRole === "Project Leader")
+						.length === 1,
+				{
+					message: "A proposal must have exactly one Project Leader",
+				},
+			)
+			.optional(),
 	})
 	.openapi("UpdateProposal");
 

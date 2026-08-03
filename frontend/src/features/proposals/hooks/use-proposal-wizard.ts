@@ -27,6 +27,7 @@ interface UseProposalWizardOptions {
 	initialData?: Partial<FormValues>;
 	editingProposalId?: string;
 	currentStatus?: string;
+	hasExistingProposalDocument?: boolean;
 }
 
 interface WizardState {
@@ -42,6 +43,7 @@ export function useProposalWizard({
 	initialData,
 	editingProposalId,
 	currentStatus,
+	hasExistingProposalDocument,
 }: UseProposalWizardOptions) {
 	const isEditing = Boolean(editingProposalId);
 	const [state, setState] = React.useReducer(
@@ -133,7 +135,21 @@ export function useProposalWizard({
 	};
 
 	const handleSave = async (shouldSubmit: boolean) => {
-		if (requiresProposalDocument(shouldSubmit, isEditing) && !state.file) {
+		if (shouldSubmit && isEditing && !canSubmitEditingProposal(currentStatus)) {
+			toast.error(
+				"Only Draft or Returned proposals can be submitted for review",
+			);
+			return;
+		}
+
+		if (
+			requiresProposalDocument(
+				shouldSubmit,
+				isEditing,
+				hasExistingProposalDocument,
+			) &&
+			!state.file
+		) {
 			toast.error("Please upload the Project Proposal PDF");
 			return;
 		}
@@ -156,6 +172,11 @@ export function useProposalWizard({
 						budgetPartner: values.budgetPartner,
 						budgetNeust: values.budgetNeust,
 						sectorNames: values.beneficiarySectors,
+						sdgIds: values.sdgIds,
+						members: values.members.map((member) => ({
+							userId: member.userId,
+							projectRole: member.projectRole,
+						})),
 					},
 				});
 			} else {
@@ -203,10 +224,7 @@ export function useProposalWizard({
 				if (timer) clearInterval(timer);
 			}
 
-			if (
-				shouldSubmit &&
-				(!isEditing || canSubmitEditingProposal(currentStatus))
-			) {
+			if (shouldSubmit) {
 				const targetId = editingProposalId ?? proposalId;
 				await submitProposalMutation.mutateAsync({
 					data: { proposalId: targetId },
@@ -255,6 +273,7 @@ export function useProposalWizard({
 		extensionServicesData,
 		bannerProgramsData,
 		isEditing,
+		hasExistingProposalDocument,
 		isBusy:
 			createProposalMutation.isPending ||
 			updateProposalMutation.isPending ||

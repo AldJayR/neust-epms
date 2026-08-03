@@ -325,6 +325,15 @@ const updateProposalSchema = z.object({
 	budgetPartner: z.number().optional(),
 	budgetNeust: z.number().optional(),
 	sectorNames: z.array(z.string()).optional(),
+	sdgIds: z.array(z.number()).optional(),
+	members: z
+		.array(
+			z.object({
+				userId: z.string().uuid(),
+				projectRole: z.string().min(1).max(100),
+			}),
+		)
+		.min(1),
 });
 
 export const submitProposalFn = createServerFn({ method: "POST" })
@@ -372,6 +381,8 @@ export const updateProposalFn = createServerFn({ method: "POST" })
 				budgetPartner: data.budgetPartner,
 				budgetNeust: data.budgetNeust,
 				sectorNames: data.sectorNames,
+				sdgIds: data.sdgIds,
+				members: data.members,
 			}),
 		});
 

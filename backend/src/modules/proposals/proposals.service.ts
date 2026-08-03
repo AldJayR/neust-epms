@@ -1,5 +1,6 @@
 import {
 	and,
+	asc,
 	eq,
 	ilike,
 	inArray,
@@ -20,6 +21,8 @@ import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposalSdgs } from "@/db/schema/proposal-sdgs.js";
 import { proposals } from "@/db/schema/proposals.js";
+import { sdgs } from "@/db/schema/sdgs.js";
+import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { ApiError } from "@/lib/errors.js";
@@ -59,6 +62,205 @@ export async function checkDuplicateTitle(title: string): Promise<boolean> {
 		.where(ilike(proposals.title, title))
 		.limit(1);
 	return !!duplicate;
+}
+
+type ProposalTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+type ProposalMemberInput = {
+	userId: string;
+	projectRole: string;
+};
+
+async function synchronizeProposalSdgs(
+	tx: ProposalTransaction,
+	proposalId: string,
+	sdgIds: number[],
+) {
+	const uniqueSdgIds = [...new Set(sdgIds)];
+	if (uniqueSdgIds.length > 0) {
+		const validSdgs = await tx
+			.select({ sdgId: sdgs.sdgId })
+			.from(sdgs)
+			.where(inArray(sdgs.sdgId, uniqueSdgIds));
+
+		if (validSdgs.length !== uniqueSdgIds.length) {
+			throw new ApiError(
+				400,
+				"INVALID_SDGS",
+				"One or more selected SDGs are invalid.",
+			);
+		}
+	}
+
+	await tx.delete(proposalSdgs).where(eq(proposalSdgs.proposalId, proposalId));
+
+	if (uniqueSdgIds.length > 0) {
+		await tx
+			.insert(proposalSdgs)
+			.values(uniqueSdgIds.map((sdgId) => ({ proposalId, sdgId })));
+	}
+}
+
+async function synchronizeProposalMembers(
+	tx: ProposalTransaction,
+	proposalId: string,
+	members: ProposalMemberInput[],
+	currentUserId: string,
+) {
+	const normalizedMembers = members.map((member) => ({
+		userId: member.userId,
+		projectRole: member.projectRole.trim(),
+	}));
+	const userIds = normalizedMembers.map((member) => member.userId);
+
+	if (userIds.length === 0) {
+		throw new ApiError(
+			400,
+			"INVALID_MEMBERS",
+			"A proposal must have at least one team member.",
+		);
+	}
+
+	if (new Set(userIds).size !== userIds.length) {
+		throw new ApiError(
+			400,
+			"DUPLICATE_MEMBERS",
+			"Team members must not be duplicated.",
+		);
+	}
+
+	const leaderCount = normalizedMembers.filter(
+		(member) => member.projectRole === PROJECT_LEADER_ROLE,
+	).length;
+	if (leaderCount !== 1) {
+		throw new ApiError(
+			400,
+			"INVALID_PROJECT_LEADER",
+			"A proposal must have exactly one Project Leader.",
+		);
+	}
+
+	const currentUserMember = normalizedMembers.find(
+		(member) => member.userId === currentUserId,
+	);
+	if (
+		!currentUserMember ||
+		currentUserMember.projectRole !== PROJECT_LEADER_ROLE
+	) {
+		throw new ApiError(
+			400,
+			"PROJECT_LEADER_REQUIRED",
+			"The current project leader must remain the Project Leader.",
+		);
+	}
+
+	const validUsers = await tx
+		.select({ userId: users.userId })
+		.from(users)
+		.where(
+			and(
+				inArray(users.userId, userIds),
+				eq(users.isActive, true),
+				isNull(users.archivedAt),
+			),
+		);
+
+	if (validUsers.length !== userIds.length) {
+		throw new ApiError(
+			400,
+			"INVALID_MEMBERS",
+			"One or more selected team members are unavailable.",
+		);
+	}
+
+	const existingMembers = await tx
+		.select({
+			memberId: proposalMembers.memberId,
+			userId: proposalMembers.userId,
+		})
+		.from(proposalMembers)
+		.where(eq(proposalMembers.proposalId, proposalId));
+	const existingByUserId = new Map(
+		existingMembers.map((member) => [member.userId, member]),
+	);
+
+	await tx
+		.update(proposalMembers)
+		.set({ archivedAt: new Date() })
+		.where(
+			and(
+				eq(proposalMembers.proposalId, proposalId),
+				isNull(proposalMembers.archivedAt),
+				notInArray(proposalMembers.userId, userIds),
+			),
+		);
+
+	for (const member of normalizedMembers) {
+		const existingMember = existingByUserId.get(member.userId);
+		if (existingMember) {
+			await tx
+				.update(proposalMembers)
+				.set({ projectRole: member.projectRole, archivedAt: null })
+				.where(eq(proposalMembers.memberId, existingMember.memberId));
+		} else {
+			await tx.insert(proposalMembers).values({
+				proposalId,
+				userId: member.userId,
+				projectRole: member.projectRole,
+			});
+		}
+	}
+}
+
+export async function getProposalEditData(proposalId: string) {
+	const [sdgRows, sectorRows, documentRows, memberRows] = await Promise.all([
+		db
+			.select({ sdgId: proposalSdgs.sdgId })
+			.from(proposalSdgs)
+			.where(eq(proposalSdgs.proposalId, proposalId))
+			.orderBy(asc(proposalSdgs.sdgId)),
+		db
+			.select({ sectorName: beneficiarySectors.sectorName })
+			.from(proposalBeneficiaries)
+			.innerJoin(
+				beneficiarySectors,
+				eq(proposalBeneficiaries.sectorId, beneficiarySectors.sectorId),
+			)
+			.where(
+				and(
+					eq(proposalBeneficiaries.proposalId, proposalId),
+					isNull(proposalBeneficiaries.archivedAt),
+				),
+			)
+			.orderBy(asc(beneficiarySectors.sectorName)),
+		db
+			.select({ documentId: proposalDocuments.documentId })
+			.from(proposalDocuments)
+			.where(eq(proposalDocuments.proposalId, proposalId))
+			.limit(1),
+		db
+			.select({
+				userId: proposalMembers.userId,
+				projectRole: proposalMembers.projectRole,
+				name: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
+			})
+			.from(proposalMembers)
+			.innerJoin(users, eq(proposalMembers.userId, users.userId))
+			.where(
+				and(
+					eq(proposalMembers.proposalId, proposalId),
+					isNull(proposalMembers.archivedAt),
+				),
+			)
+			.orderBy(asc(users.firstName), asc(users.lastName)),
+	]);
+
+	return {
+		sdgIds: sdgRows.map((row) => row.sdgId),
+		beneficiarySectors: sectorRows.map((row) => row.sectorName),
+		hasProposalDocument: documentRows.length > 0,
+		members: memberRows,
+	};
 }
 
 export async function createProposalInTransaction(
@@ -251,6 +453,8 @@ export async function updateProposalWithSectors(
 		budgetPartner?: number | undefined;
 		budgetNeust?: number | undefined;
 		sectorNames?: string[] | undefined;
+		sdgIds?: number[] | undefined;
+		members?: ProposalMemberInput[] | undefined;
 	},
 	user: AuthUser,
 	ipAddress = "127.0.0.1",
@@ -304,6 +508,14 @@ export async function updateProposalWithSectors(
 					"One or more selected extension services are invalid.",
 				);
 			}
+		}
+
+		if (body.sdgIds !== undefined) {
+			await synchronizeProposalSdgs(tx, id, body.sdgIds);
+		}
+
+		if (body.members !== undefined) {
+			await synchronizeProposalMembers(tx, id, body.members, user.userId);
 		}
 
 		const selectedBannerProgram =

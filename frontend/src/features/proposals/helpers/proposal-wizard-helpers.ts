@@ -39,8 +39,9 @@ export function getProposalWizardStepTitle(step: number): string {
 export function requiresProposalDocument(
 	shouldSubmit: boolean,
 	isEditing: boolean,
+	hasExistingDocument = false,
 ): boolean {
-	return shouldSubmit && !isEditing;
+	return shouldSubmit && (!isEditing || !hasExistingDocument);
 }
 
 export function canSubmitEditingProposal(currentStatus?: string): boolean {

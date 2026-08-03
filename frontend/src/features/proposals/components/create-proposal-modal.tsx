@@ -17,6 +17,7 @@ interface CreateProposalModalProps {
 	initialData?: Partial<FormValues>;
 	editingProposalId?: string;
 	currentStatus?: string;
+	hasExistingProposalDocument?: boolean;
 }
 
 export function CreateProposalModal({
@@ -26,6 +27,7 @@ export function CreateProposalModal({
 	initialData,
 	editingProposalId,
 	currentStatus,
+	hasExistingProposalDocument,
 }: CreateProposalModalProps) {
 	const wizard = useProposalWizard({
 		open,
@@ -34,6 +36,7 @@ export function CreateProposalModal({
 		initialData,
 		editingProposalId,
 		currentStatus,
+		hasExistingProposalDocument,
 	});
 
 	return (
@@ -75,6 +78,9 @@ export function CreateProposalModal({
 									uploadPhase={wizard.uploadPhase}
 									uploadProgress={wizard.uploadProgress}
 									isEditing={wizard.isEditing}
+									hasExistingDocument={
+										wizard.hasExistingProposalDocument === true
+									}
 								/>
 							)}
 						</div>

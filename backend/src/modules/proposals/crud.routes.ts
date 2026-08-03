@@ -40,6 +40,7 @@ import {
 	CreateProposalSchema,
 	DerivedStateSchema,
 	ParamId,
+	ProposalDetailSchema,
 	ProposalListSchema,
 	ProposalPaginationQuery,
 	ProposalSchema,
@@ -49,6 +50,7 @@ import {
 import {
 	checkDuplicateTitle,
 	createProposalInTransaction,
+	getProposalEditData,
 	getProposalExtensionServices,
 	getProposalExtensionServicesByProposalIds,
 	getUserMemberSubquery,
@@ -231,7 +233,7 @@ const getRoute = createRoute({
 	request: { params: ParamId },
 	responses: {
 		200: {
-			content: { "application/json": { schema: ProposalSchema } },
+			content: { "application/json": { schema: ProposalDetailSchema } },
 			description: "Proposal detail",
 		},
 		404: {
@@ -277,12 +279,19 @@ app.openapi(getRoute, async (c) => {
 	if (!row) {
 		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
 	}
-	const selectedExtensionServices = await getProposalExtensionServices(id);
+	const [selectedExtensionServices, editData] = await Promise.all([
+		getProposalExtensionServices(id),
+		getProposalEditData(id),
+	]);
 
 	return c.json(
 		{
 			...row,
 			extensionServices: selectedExtensionServices,
+			sdgIds: editData.sdgIds,
+			beneficiarySectors: editData.beneficiarySectors,
+			hasProposalDocument: editData.hasProposalDocument,
+			members: editData.members,
 			createdAt: row.createdAt.toISOString(),
 			updatedAt: row.updatedAt.toISOString(),
 			archivedAt: row.archivedAt?.toISOString() ?? null,

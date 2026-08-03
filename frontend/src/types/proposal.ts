@@ -36,6 +36,16 @@ export interface ProposalFull {
 	status: string;
 	targetStartDate: string | null;
 	targetEndDate: string | null;
+	sdgIds: number[];
+	beneficiarySectors: string[];
+	hasProposalDocument: boolean;
+	members: ProposalEditMember[];
+}
+
+export interface ProposalEditMember {
+	userId: string;
+	projectRole: string;
+	name: string;
 }
 
 export interface ProposalExtensionService {

@@ -19,6 +19,7 @@ interface ProposalStepDocumentsProps {
 	uploadPhase: "idle" | "creating" | "uploading" | "done";
 	uploadProgress: number;
 	isEditing?: boolean;
+	hasExistingDocument?: boolean;
 }
 
 export function ProposalStepDocuments({
@@ -27,10 +28,11 @@ export function ProposalStepDocuments({
 	uploadPhase,
 	uploadProgress,
 	isEditing,
+	hasExistingDocument,
 }: ProposalStepDocumentsProps) {
 	return (
 		<div className="space-y-6">
-			{isEditing && !file && (
+			{isEditing && hasExistingDocument && !file && (
 				<p className="text-sm text-muted-foreground text-center">
 					Upload a new proposal PDF only if you need to replace the current
 					document. Otherwise, just proceed to save your changes.
@@ -75,7 +77,10 @@ export function ProposalStepDocuments({
 								</p>
 								<p className="text-xs text-muted-foreground mt-1">
 									Project Proposal PDF (Max 50MB)
-									{isEditing && " — Optional"}
+									{isEditing &&
+										(hasExistingDocument
+											? " — Optional replacement"
+											: " — Required to submit")}
 								</p>
 							</div>
 							<FileUploadTrigger

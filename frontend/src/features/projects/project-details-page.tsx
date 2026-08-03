@@ -96,16 +96,13 @@ export function ProjectDetailsPage({
 				),
 				campusId: editProposalData.campusId.toString(),
 				departmentId: editProposalData.departmentId?.toString() ?? "",
-				sdgIds: [] as number[],
+				sdgIds: editProposalData.sdgIds,
+				beneficiarySectors: editProposalData.beneficiarySectors,
 				targetStartDate: editProposalData.targetStartDate ?? "",
 				targetEndDate: editProposalData.targetEndDate ?? "",
 				budgetPartner: Number(editProposalData.budgetPartner ?? 0),
 				budgetNeust: Number(editProposalData.budgetNeust ?? 0),
-				members: data.members.map((member) => ({
-					userId: member.userId,
-					projectRole: member.role,
-					name: member.name,
-				})),
+				members: editProposalData.members,
 			}
 		: undefined;
 
@@ -219,6 +216,7 @@ export function ProjectDetailsPage({
 				initialData={editInitialData}
 				editingProposalId={proposalId}
 				currentStatus={data.status}
+				hasExistingProposalDocument={editProposalData?.hasProposalDocument}
 			/>
 
 			<ActivateProjectWizard
