@@ -16,7 +16,8 @@ export const ProposalSchema = z
 		campusId: z.number(),
 		departmentId: z.number().nullable(),
 		title: z.string(),
-		bannerProgram: z.string(),
+		bannerProgramId: z.number().int().positive().nullable(),
+		bannerProgram: z.string().nullable(),
 		projectLocale: z.string(),
 		extensionServices: z.array(
 			z.object({
@@ -58,7 +59,7 @@ export const CreateProposalSchema = z
 		campusId: z.number().int().positive(),
 		departmentId: z.number().int().positive(),
 		title: z.string().min(1),
-		bannerProgram: z.string().min(1),
+		bannerProgramId: z.number().int().positive(),
 		projectLocale: z.string().min(1),
 		extensionServiceIds: z
 			.array(z.number().int().positive())
@@ -88,7 +89,7 @@ export const CreateProposalSchema = z
 export const UpdateProposalSchema = z
 	.object({
 		title: z.string().min(1).optional(),
-		bannerProgram: z.string().min(1).optional(),
+		bannerProgramId: z.number().int().positive().optional(),
 		projectLocale: z.string().min(1).optional(),
 		extensionServiceIds: z
 			.array(z.number().int().positive())

@@ -1,4 +1,5 @@
 export { auditLogs } from "./audit-logs.js";
+export { bannerPrograms } from "./banner-programs.js";
 export { beneficiarySectors } from "./beneficiary-sectors.js";
 export { campuses } from "./campuses.js";
 export { cronLocks } from "./cron-locks.js";

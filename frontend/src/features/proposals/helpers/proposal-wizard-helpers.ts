@@ -12,7 +12,7 @@ export function getFieldsToValidate(step: number): (keyof FormValues)[] {
 	if (step === 2) {
 		return [
 			"title",
-			"bannerProgram",
+			"bannerProgramId",
 			"projectLocale",
 			"extensionServiceIds",
 			"campusId",

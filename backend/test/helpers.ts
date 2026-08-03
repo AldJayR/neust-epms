@@ -96,9 +96,14 @@ export function createMockProposal(overrides: Record<string, unknown> = {}) {
 	return {
 		proposalId: "eeeeeeee-5555-4555-8555-eeeeeeeeeeee",
 		campusId: 1,
-		departmentId: 1,
-		title: "Community Health Extension Program",
-		bannerProgram: "Health and Wellness",
+	departmentId: 1,
+	title: "Community Health Extension Program",
+	bannerProgramId: 1,
+	bannerProgram: "Health and Wellness",
+	programName: "Health and Wellness",
+	programCampusId: 1,
+	programDepartmentId: 1,
+	isMainCampus: true,
 		projectLocale: "San Isidro, Nueva Ecija",
 		extensionServices: [
 			{ extensionServiceId: 1, serviceName: "Capacity-Building" },

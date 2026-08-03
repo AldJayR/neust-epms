@@ -21,7 +21,7 @@ const pdfjsResourceDirectories = [
 const pdfjsCopyTargets = pdfjsResourceDirectories.map((directory) => ({
 	src: normalizePath(path.resolve(pdfjsDistPath, directory, "*")),
 	dest: `pdfjs/${directory}`,
-	rename: { stripBase: true },
+	rename: { stripBase: true as const },
 }));
 
 const config = defineConfig({

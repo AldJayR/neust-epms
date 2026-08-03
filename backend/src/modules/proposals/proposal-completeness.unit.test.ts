@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { validateProposalCompleteness } from "./proposal-completeness.js";
 
 const complete = {
+	bannerProgramId: 1,
 	documentCount: 1,
 	members: [{ projectRole: "Project Leader" }],
 	beneficiarySectorCount: 1,

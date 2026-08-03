@@ -11,7 +11,7 @@ describe("module request schemas", () => {
 			campusId: 1,
 			departmentId: 2,
 			title: "Community Health",
-			bannerProgram: "Health",
+			bannerProgramId: 1,
 			projectLocale: "San Isidro",
 			extensionServiceIds: [],
 		});
@@ -24,7 +24,7 @@ describe("module request schemas", () => {
 			campusId: 1,
 			departmentId: 2,
 			title: "Community Health",
-			bannerProgram: "Health",
+			bannerProgramId: 1,
 			projectLocale: "San Isidro",
 			extensionServiceIds: [1, 1],
 		});

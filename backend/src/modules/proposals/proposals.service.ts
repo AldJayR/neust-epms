@@ -17,6 +17,7 @@ import {
 	isProjectLeader,
 	PROJECT_LEADER_ROLE,
 } from "@/services/auth-user.service.js";
+import { validateBannerProgramForProposal } from "../banner-programs/banner-programs.service.js";
 import { validateProposalCompleteness } from "./proposal-completeness.js";
 import { resolveReviewPolicy } from "./proposal-review-policy.js";
 
@@ -55,7 +56,7 @@ export async function createProposalInTransaction(
 		campusId: number;
 		departmentId: number;
 		title: string;
-		bannerProgram: string;
+		bannerProgramId: number;
 		projectLocale: string;
 		extensionServiceIds: number[];
 		budgetPartner?: number | undefined;
@@ -70,6 +71,12 @@ export async function createProposalInTransaction(
 	},
 	user: AuthUser,
 ) {
+	const selectedBannerProgram = await validateBannerProgramForProposal(
+		tx,
+		body.bannerProgramId,
+		body.campusId,
+		body.departmentId,
+	);
 	const extensionServiceRows = await tx
 		.select({ extensionServiceId: extensionServices.extensionServiceId })
 		.from(extensionServices)
@@ -91,7 +98,8 @@ export async function createProposalInTransaction(
 			campusId: body.campusId,
 			departmentId: body.departmentId,
 			title: body.title,
-			bannerProgram: body.bannerProgram,
+			bannerProgramId: selectedBannerProgram.bannerProgramId,
+			bannerProgram: selectedBannerProgram.programName,
 			projectLocale: body.projectLocale,
 			budgetPartner: (body.budgetPartner ?? 0).toFixed(2),
 			budgetNeust: (body.budgetNeust ?? 0).toFixed(2),
@@ -205,14 +213,14 @@ export async function updateProposalWithSectors(
 	id: string,
 	body: {
 		title?: string | undefined;
-		bannerProgram?: string | undefined;
+		bannerProgramId?: number | undefined;
 		projectLocale?: string | undefined;
 		extensionServiceIds?: number[] | undefined;
 		budgetPartner?: number | undefined;
 		budgetNeust?: number | undefined;
 		sectorNames?: string[] | undefined;
 	},
-	existing: { status: string },
+	existing: { status: string; campusId: number; departmentId: number },
 	user: AuthUser,
 ) {
 	if (
@@ -253,10 +261,23 @@ export async function updateProposalWithSectors(
 		}
 	}
 
+	const selectedBannerProgram =
+		body.bannerProgramId === undefined
+			? null
+			: await validateBannerProgramForProposal(
+					db,
+					body.bannerProgramId,
+					existing.campusId,
+					existing.departmentId,
+				);
+
 	const updateValues = {
 		...(body.title !== undefined ? { title: body.title } : {}),
-		...(body.bannerProgram !== undefined
-			? { bannerProgram: body.bannerProgram }
+		...(selectedBannerProgram
+			? {
+					bannerProgramId: selectedBannerProgram.bannerProgramId,
+					bannerProgram: selectedBannerProgram.programName,
+				}
 			: {}),
 		...(body.projectLocale !== undefined
 			? { projectLocale: body.projectLocale }
@@ -514,6 +535,7 @@ export async function validateCompleteness(proposalId: string): Promise<void> {
 			.select({
 				targetStartDate: proposals.targetStartDate,
 				targetEndDate: proposals.targetEndDate,
+				bannerProgramId: proposals.bannerProgramId,
 			})
 			.from(proposals)
 			.where(eq(proposals.proposalId, proposalId))
@@ -528,6 +550,7 @@ export async function validateCompleteness(proposalId: string): Promise<void> {
 		extensionServiceCount: extensionServiceAlignments.length,
 		targetStartDate: proposalDetails?.targetStartDate,
 		targetEndDate: proposalDetails?.targetEndDate,
+		bannerProgramId: proposalDetails?.bannerProgramId,
 	});
 }
 

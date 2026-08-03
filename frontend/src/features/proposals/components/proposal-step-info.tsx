@@ -12,6 +12,13 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import type { AuthUser } from "@/lib/auth";
 import { appendBeneficiarySector } from "../helpers/proposal-wizard-helpers";
 import type { FormValues } from "./proposal-form";
@@ -24,6 +31,10 @@ interface ProposalStepInfoProps {
 		extensionServiceId: number;
 		serviceName: string;
 	}>;
+	bannerProgramsData?: Array<{
+		bannerProgramId: number;
+		programName: string;
+	}>;
 }
 
 export function ProposalStepInfo({
@@ -31,6 +42,7 @@ export function ProposalStepInfo({
 	user,
 	sdgsData,
 	extensionServicesData,
+	bannerProgramsData,
 }: ProposalStepInfoProps) {
 	const watchedSdgIds =
 		useWatch({
@@ -89,12 +101,50 @@ export function ProposalStepInfo({
 				<Field>
 					<FieldLabel>Banner Program</FieldLabel>
 					<FieldContent>
-						<Input
-							placeholder="e.g. Community Outreach"
-							{...form.register("bannerProgram")}
-						/>
+						<Select
+							value={
+								form.watch("bannerProgramId") > 0
+									? String(form.watch("bannerProgramId"))
+									: ""
+							}
+							onValueChange={(value) =>
+								form.setValue("bannerProgramId", Number(value), {
+									shouldDirty: true,
+									shouldValidate: true,
+								})
+							}
+							disabled={!bannerProgramsData || bannerProgramsData.length === 0}
+						>
+							<SelectTrigger>
+								<SelectValue
+									placeholder={
+										!bannerProgramsData
+											? "Loading programs..."
+											: bannerProgramsData.length === 0
+												? "No programs configured"
+												: "Select a banner program"
+									}
+								/>
+							</SelectTrigger>
+							<SelectContent>
+								{bannerProgramsData?.map((program) => (
+									<SelectItem
+										key={program.bannerProgramId}
+										value={String(program.bannerProgramId)}
+									>
+										{program.programName}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						{bannerProgramsData?.length === 0 && (
+							<p className="text-xs text-muted-foreground">
+								A RET Chair must configure a banner program before proposals can
+								be submitted.
+							</p>
+						)}
 					</FieldContent>
-					<FieldError errors={[form.formState.errors.bannerProgram]} />
+					<FieldError errors={[form.formState.errors.bannerProgramId]} />
 				</Field>
 			</div>
 

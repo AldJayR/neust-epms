@@ -17,8 +17,8 @@ import { ProjectDetailsSkeleton } from "./components/project-details-skeleton";
 import { ProjectOverviewCard } from "./components/project-overview-card";
 import { closeProjectFn, projectDetailsQueryOptions } from "./functions";
 import {
-	canSubmitProjectReports,
 	canReadProject,
+	canSubmitProjectReports,
 	isProjectLeader,
 } from "./helpers/project-details-helpers";
 import { ProjectReadinessCard } from "./project-readiness-card";
@@ -89,7 +89,7 @@ export function ProjectDetailsPage({
 	const editInitialData = editProposalData
 		? {
 				title: editProposalData.title,
-				bannerProgram: editProposalData.bannerProgram,
+				bannerProgramId: editProposalData.bannerProgramId ?? 0,
 				projectLocale: editProposalData.projectLocale,
 				extensionServiceIds: editProposalData.extensionServices.map(
 					(service) => service.extensionServiceId,

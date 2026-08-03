@@ -3,7 +3,7 @@ import * as z from "zod";
 export const formSchema = z
 	.object({
 		title: z.string().min(1, "Project title is required"),
-		bannerProgram: z.string().min(1, "Banner program is required"),
+		bannerProgramId: z.number().int().positive("Select a banner program"),
 		projectLocale: z.string().min(1, "Project locale is required"),
 		extensionServiceIds: z
 			.array(z.number())

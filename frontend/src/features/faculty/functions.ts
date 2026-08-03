@@ -103,7 +103,8 @@ export interface FacultyProposalItem {
 	campusId: number;
 	departmentId: number | null;
 	title: string;
-	bannerProgram: string;
+	bannerProgramId: number | null;
+	bannerProgram: string | null;
 	projectLocale: string;
 	extensionServices: ProposalExtensionService[];
 	budgetPartner: string | null;

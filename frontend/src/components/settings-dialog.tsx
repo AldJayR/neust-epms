@@ -1,4 +1,12 @@
-import { Camera, Laptop, Moon, Settings2, Sun, UserRound } from "lucide-react";
+import {
+	Camera,
+	Laptop,
+	ListTree,
+	Moon,
+	Settings2,
+	Sun,
+	UserRound,
+} from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { useTheme } from "@/components/theme-provider";
@@ -21,8 +29,10 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { changePasswordFn, updateProfileFn } from "@/features/auth";
+import { BannerProgramsSettings } from "@/features/banner-programs";
 import { uploadAvatarFn } from "@/features/settings/functions";
 import type { AuthUser } from "@/lib/auth";
+import { isRETChair } from "@/lib/permissions";
 
 interface SettingsDialogProps {
 	open: boolean;
@@ -73,6 +83,7 @@ export function SettingsDialog({
 	onUserUpdated,
 }: SettingsDialogProps) {
 	const { theme, setTheme } = useTheme();
+	const canManageBannerPrograms = isRETChair(user);
 	const [profile, setProfile] = React.useState<ProfileState | null>(
 		user ? getProfileState(user) : null,
 	);
@@ -195,11 +206,22 @@ export function SettingsDialog({
 					defaultValue="general"
 					className="min-h-0 flex-1 sm:grid sm:grid-cols-[150px_minmax(0,1fr)] sm:items-start sm:gap-5 sm:p-5"
 				>
-					<TabsList className="grid h-auto w-full shrink-0 grid-cols-2 gap-1 !rounded-none !border-0 !bg-transparent !p-0 sm:flex sm:w-[150px] sm:flex-col sm:items-stretch sm:self-start sm:!rounded-none sm:!border-0 sm:!bg-transparent sm:!p-0">
+					<TabsList
+						className={`grid h-auto w-full shrink-0 gap-1 !rounded-none !border-0 !bg-transparent !p-0 ${canManageBannerPrograms ? "grid-cols-2 sm:grid-cols-1" : "grid-cols-2"} sm:flex sm:w-[150px] sm:flex-col sm:items-stretch sm:self-start sm:!rounded-none sm:!border-0 sm:!bg-transparent sm:!p-0`}
+					>
 						<TabsTrigger value="general" className="justify-start gap-2">
 							<Settings2 className="size-4" />
 							General
 						</TabsTrigger>
+						{canManageBannerPrograms && (
+							<TabsTrigger
+								value="banner-programs"
+								className="justify-start gap-2"
+							>
+								<ListTree className="size-4" />
+								Banner Programs
+							</TabsTrigger>
+						)}
 						<TabsTrigger value="account" className="justify-start gap-2">
 							<UserRound className="size-4" />
 							Account
@@ -232,6 +254,15 @@ export function SettingsDialog({
 							</div>
 						</div>
 					</TabsContent>
+
+					{canManageBannerPrograms && (
+						<TabsContent
+							value="banner-programs"
+							className="min-h-0 min-w-0 flex-1 overflow-y-auto p-5 sm:h-full sm:p-1"
+						>
+							<BannerProgramsSettings open={open} />
+						</TabsContent>
+					)}
 
 					<TabsContent
 						value="account"

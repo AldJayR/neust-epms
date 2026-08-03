@@ -34,7 +34,7 @@ const createProposalSchema = z.object({
 	campusId: z.number(),
 	departmentId: z.number(),
 	title: z.string().min(1),
-	bannerProgram: z.string().min(1),
+	bannerProgramId: z.number().int().positive(),
 	projectLocale: z.string().min(1),
 	extensionServiceIds: z.array(z.number()).min(1),
 	budgetPartner: z.number().optional(),
@@ -79,7 +79,7 @@ export interface CreateProposalInput {
 	campusId: number;
 	departmentId: number;
 	title: string;
-	bannerProgram: string;
+	bannerProgramId: number;
 	projectLocale: string;
 	extensionServiceIds: number[];
 	budgetPartner?: number;
@@ -319,7 +319,7 @@ export const getProposalByIdFn = createServerFn({ method: "GET" })
 const updateProposalSchema = z.object({
 	proposalId: z.string(),
 	title: z.string().min(1),
-	bannerProgram: z.string().min(1),
+	bannerProgramId: z.number().int().positive(),
 	projectLocale: z.string().min(1),
 	extensionServiceIds: z.array(z.number()).min(1),
 	budgetPartner: z.number().optional(),
@@ -366,7 +366,7 @@ export const updateProposalFn = createServerFn({ method: "POST" })
 			},
 			body: JSON.stringify({
 				title: data.title,
-				bannerProgram: data.bannerProgram,
+				bannerProgramId: data.bannerProgramId,
 				projectLocale: data.projectLocale,
 				extensionServiceIds: data.extensionServiceIds,
 				budgetPartner: data.budgetPartner,

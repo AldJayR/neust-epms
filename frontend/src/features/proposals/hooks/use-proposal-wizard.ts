@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { bannerProgramsQueryOptions } from "@/features/banner-programs";
 import type { AuthUser } from "@/lib/auth";
 import { type FormValues, formSchema } from "../components/proposal-form";
 import {
@@ -64,7 +65,7 @@ export function useProposalWizard({
 	const queryClient = useQueryClient();
 	const defaultValues: FormValues = {
 		title: "",
-		bannerProgram: "",
+		bannerProgramId: 0,
 		projectLocale: "",
 		extensionServiceIds: [],
 		campusId: user.campusId?.toString() ?? "",
@@ -98,6 +99,7 @@ export function useProposalWizard({
 	const { data: extensionServicesData } = useQuery(
 		extensionServicesQueryOptions(),
 	);
+	const { data: bannerProgramsData } = useQuery(bannerProgramsQueryOptions());
 	const invalidateProposalData = async () => {
 		await Promise.all([
 			queryClient.invalidateQueries({ queryKey: ["faculty"] }),
@@ -148,7 +150,7 @@ export function useProposalWizard({
 					data: {
 						proposalId: editingProposalId,
 						title: values.title,
-						bannerProgram: values.bannerProgram,
+						bannerProgramId: values.bannerProgramId,
 						projectLocale: values.projectLocale,
 						extensionServiceIds: values.extensionServiceIds,
 						budgetPartner: values.budgetPartner,
@@ -162,7 +164,7 @@ export function useProposalWizard({
 						campusId: Number(values.campusId),
 						departmentId: Number(values.departmentId),
 						title: values.title,
-						bannerProgram: values.bannerProgram,
+						bannerProgramId: values.bannerProgramId,
 						projectLocale: values.projectLocale,
 						extensionServiceIds: values.extensionServiceIds,
 						budgetPartner: values.budgetPartner,
@@ -251,6 +253,7 @@ export function useProposalWizard({
 		form,
 		sdgsData,
 		extensionServicesData,
+		bannerProgramsData,
 		isEditing,
 		isBusy:
 			createProposalMutation.isPending ||

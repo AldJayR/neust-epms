@@ -13,16 +13,14 @@ describe("proposal wizard helpers", () => {
 		expect(appendBeneficiarySector(["Farmers"], "Farmers")).toEqual([
 			"Farmers",
 		]);
-		expect(appendBeneficiarySector(["Farmers"], "   ")).toEqual([
-			"Farmers",
-		]);
+		expect(appendBeneficiarySector(["Farmers"], "   ")).toEqual(["Farmers"]);
 	});
 
 	it("keeps the existing step validation fields and labels", () => {
 		expect(getFieldsToValidate(1)).toEqual([]);
 		expect(getFieldsToValidate(2)).toEqual([
 			"title",
-			"bannerProgram",
+			"bannerProgramId",
 			"projectLocale",
 			"extensionServiceIds",
 			"campusId",

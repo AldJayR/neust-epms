@@ -58,6 +58,7 @@ export function CreateProposalModal({
 									user={user}
 									sdgsData={wizard.sdgsData}
 									extensionServicesData={wizard.extensionServicesData}
+									bannerProgramsData={wizard.bannerProgramsData}
 								/>
 							)}
 

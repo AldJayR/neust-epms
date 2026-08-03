@@ -1,6 +1,7 @@
 import { ApiError } from "@/lib/errors.js";
 
 export interface ProposalCompletenessFacts {
+	bannerProgramId: number | null | undefined;
 	documentCount: number;
 	members: readonly { projectRole: string }[];
 	beneficiarySectorCount: number;
@@ -53,6 +54,10 @@ export function validateProposalCompleteness(
 
 	if (new Date(facts.targetStartDate) > new Date(facts.targetEndDate)) {
 		throw incomplete("Target end date must be on or after target start date.");
+	}
+
+	if (!facts.bannerProgramId) {
+		throw incomplete("A banner program must be selected.");
 	}
 }
 

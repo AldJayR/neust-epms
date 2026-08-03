@@ -10,7 +10,7 @@ describe("proposal extension services schema", () => {
 			campusId: 1,
 			departmentId: 1,
 			title: "Community Health Extension Program",
-			bannerProgram: "Health and Wellness",
+			bannerProgramId: 1,
 			projectLocale: "San Isidro, Nueva Ecija",
 			extensionServiceIds: [1, 3],
 		});
@@ -23,7 +23,7 @@ describe("proposal extension services schema", () => {
 			campusId: 1,
 			departmentId: 1,
 			title: "Community Health Extension Program",
-			bannerProgram: "Health and Wellness",
+			bannerProgramId: 1,
 			projectLocale: "San Isidro, Nueva Ecija",
 			extensionServiceIds: [],
 		});

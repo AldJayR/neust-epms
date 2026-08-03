@@ -104,7 +104,7 @@ describe("POST /proposals", () => {
 				campusId: 1,
 				departmentId: 1,
 				title: "Test Proposal",
-				bannerProgram: "Test Program",
+				bannerProgramId: 1,
 				projectLocale: "Test City",
 				extensionServiceIds: [1],
 			}),
@@ -121,7 +121,7 @@ describe("POST /proposals", () => {
 				campusId: 1,
 				departmentId: 1,
 				title: "Test Proposal",
-				bannerProgram: "Test Program",
+				bannerProgramId: 1,
 				projectLocale: "Test City",
 				extensionServiceIds: [1],
 				budgetPartner: "not-a-number",
@@ -140,7 +140,7 @@ describe("POST /proposals", () => {
 				campusId: 1,
 				departmentId: 1,
 				title: "Test Proposal",
-				bannerProgram: "Test Program",
+				bannerProgramId: 1,
 				projectLocale: "Test City",
 				extensionServiceIds: [1],
 				budgetPartner: -1,
@@ -160,14 +160,26 @@ describe("POST /proposals", () => {
 			.mockReturnValueOnce(mockMutationChain([]))
 			.mockReturnValueOnce(serviceInsert)
 			.mockReturnValueOnce(mockMutationChain([]));
+		let selectCallCount = 0;
 		const tx = {
 			insert,
-			select: vi.fn(() =>
-				mockSelectChain([
-					{ extensionServiceId: 1 },
-					{ extensionServiceId: 3 },
-				]),
-			),
+			select: vi.fn(() => {
+				selectCallCount++;
+				return selectCallCount === 1
+					? mockSelectChain([
+							{
+								bannerProgramId: 1,
+								programName: "Test Program",
+								programCampusId: 1,
+								programDepartmentId: 1,
+								isMainCampus: true,
+							},
+						])
+					: mockSelectChain([
+							{ extensionServiceId: 1 },
+							{ extensionServiceId: 3 },
+						]);
+			}),
 		} as never;
 
 		await createProposalInTransaction(
@@ -176,7 +188,7 @@ describe("POST /proposals", () => {
 				campusId: 1,
 				departmentId: 1,
 				title: "Test Proposal",
-				bannerProgram: "Test Program",
+				bannerProgramId: 1,
 				projectLocale: "Test City",
 				extensionServiceIds: [1, 3],
 				sectorIds: [1],

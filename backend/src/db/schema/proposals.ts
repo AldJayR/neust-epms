@@ -10,6 +10,7 @@ import {
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
+import { bannerPrograms } from "./banner-programs.js";
 import { campuses } from "./campuses.js";
 import { departments } from "./departments.js";
 
@@ -31,7 +32,10 @@ export const proposals = pgTable(
 			.notNull()
 			.references(() => departments.departmentId),
 		title: varchar("title", { length: 500 }).notNull(),
-		bannerProgram: varchar("banner_program", { length: 255 }).notNull(),
+		bannerProgramId: integer("banner_program_id").references(
+			() => bannerPrograms.bannerProgramId,
+		),
+		bannerProgram: varchar("banner_program", { length: 255 }),
 		projectLocale: varchar("project_locale", { length: 255 }).notNull(),
 		budgetPartner: numeric("budget_partner", {
 			precision: 14,
@@ -59,6 +63,9 @@ export const proposals = pgTable(
 	(table) => ({
 		campusIdx: index("proposals_campus_id_idx").on(table.campusId),
 		departmentIdx: index("proposals_department_id_idx").on(table.departmentId),
+		bannerProgramIdx: index("proposals_banner_program_id_idx").on(
+			table.bannerProgramId,
+		),
 		statusIdx: index("proposals_status_idx").on(table.status),
 		targetDatesCheck: check(
 			"proposals_target_dates_check",
