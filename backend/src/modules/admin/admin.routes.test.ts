@@ -17,10 +17,9 @@ beforeEach(() => {
 
 describe("GET /admin/stats", () => {
 	it("should return administrator dashboard statistics", async () => {
-		vi.mocked(db.select)
-			.mockReturnValueOnce(mockSelectChain([{ value: 12 }]) as never)
-			.mockReturnValueOnce(mockSelectChain([{ value: 3 }]) as never)
-			.mockReturnValueOnce(mockSelectChain([{ value: 3 }]) as never);
+		vi.mocked(db.select).mockReturnValueOnce(
+			mockSelectChain([{ totalAccounts: 12, pendingApproval: 3 }]) as never,
+		);
 
 		const res = await app.request("/admin/stats");
 

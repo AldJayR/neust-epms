@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
 	index,
 	pgTable,
@@ -28,6 +29,12 @@ export const projectReportingMilestones = pgTable(
 		projectIdx: index("project_reporting_milestones_project_id_idx").on(
 			table.projectId,
 		),
+		dueIdx: index("project_reporting_milestones_incomplete_due_idx")
+			.on(table.dueAt, table.projectId)
+			.where(sql`${table.completedAt} IS NULL`),
+		milestoneProjectUnique: unique(
+			"project_reporting_milestones_id_project_unique",
+		).on(table.milestoneId, table.projectId),
 		projectTypeDueUnique: unique(
 			"project_reporting_milestones_project_type_due_unique",
 		).on(table.projectId, table.reportType, table.dueAt),

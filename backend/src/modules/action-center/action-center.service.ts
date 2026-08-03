@@ -1,6 +1,18 @@
 import type { z } from "@hono/zod-openapi";
 import type { SQL } from "drizzle-orm";
-import { and, eq, gte, inArray, isNull, or } from "drizzle-orm";
+import {
+	and,
+	asc,
+	count,
+	countDistinct,
+	desc,
+	eq,
+	gte,
+	inArray,
+	isNull,
+	lte,
+	or,
+} from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { projectReportingMilestones } from "@/db/schema/project-reporting-milestones.js";
 import { projects } from "@/db/schema/projects.js";
@@ -23,6 +35,9 @@ import {
 import type { ActionItemSchema } from "./action-center.schema.js";
 
 type ActionItem = z.infer<typeof ActionItemSchema>;
+
+const ACTION_ITEM_LIMIT = 25;
+const UPCOMING_REPORT_HORIZON_MS = 30 * 24 * 60 * 60 * 1000;
 
 import { getLeaderSubquery } from "@/lib/leader-subquery.js";
 
@@ -71,7 +86,32 @@ async function getPendingProposals(opts: {
 		);
 	}
 
-	return query.where(and(...conditions));
+	const countLeaderSubquery = getLeaderSubquery();
+	const countQuery = db
+		.select({ value: countDistinct(proposals.proposalId) })
+		.from(proposals)
+		.leftJoin(
+			countLeaderSubquery,
+			eq(proposals.proposalId, countLeaderSubquery.proposalId),
+		);
+	if (opts.joinWithMember) {
+		countQuery.innerJoin(
+			proposalMembers,
+			and(
+				eq(proposals.proposalId, proposalMembers.proposalId),
+				isNull(proposalMembers.archivedAt),
+			),
+		);
+	}
+
+	const [rows, [total]] = await Promise.all([
+		query
+			.where(and(...conditions))
+			.orderBy(desc(proposals.createdAt))
+			.limit(ACTION_ITEM_LIMIT),
+		countQuery.where(and(...conditions)),
+	]);
+	return { rows, total: Number(total?.value ?? 0) };
 }
 
 async function getReturnedProposals(opts: {
@@ -112,7 +152,33 @@ async function getReturnedProposals(opts: {
 		);
 	}
 
-	return query.where(and(...conditions));
+	const countLeaderSubquery = getLeaderSubquery();
+	const countQuery = db
+		.select({ value: countDistinct(proposals.proposalId) })
+		.from(proposals)
+		.leftJoin(
+			countLeaderSubquery,
+			eq(proposals.proposalId, countLeaderSubquery.proposalId),
+		);
+	if (opts.memberUserId) {
+		countQuery.innerJoin(
+			proposalMembers,
+			and(
+				eq(proposals.proposalId, proposalMembers.proposalId),
+				eq(proposalMembers.userId, opts.memberUserId),
+				isNull(proposalMembers.archivedAt),
+			),
+		);
+	}
+
+	const [rows, [total]] = await Promise.all([
+		query
+			.where(and(...conditions))
+			.orderBy(desc(proposals.createdAt))
+			.limit(ACTION_ITEM_LIMIT),
+		countQuery.where(and(...conditions)),
+	]);
+	return { rows, total: Number(total?.value ?? 0) };
 }
 
 async function getProjectsByStatus(opts: {
@@ -154,7 +220,34 @@ async function getProjectsByStatus(opts: {
 		);
 	}
 
-	return query.where(and(...conditions));
+	const countLeaderSubquery = getLeaderSubquery();
+	const countQuery = db
+		.select({ value: countDistinct(projects.projectId) })
+		.from(projects)
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+		.leftJoin(
+			countLeaderSubquery,
+			eq(proposals.proposalId, countLeaderSubquery.proposalId),
+		);
+	if (opts.memberUserId) {
+		countQuery.innerJoin(
+			proposalMembers,
+			and(
+				eq(proposals.proposalId, proposalMembers.proposalId),
+				eq(proposalMembers.userId, opts.memberUserId),
+				isNull(proposalMembers.archivedAt),
+			),
+		);
+	}
+
+	const [rows, [total]] = await Promise.all([
+		query
+			.where(and(...conditions))
+			.orderBy(desc(projects.createdAt))
+			.limit(ACTION_ITEM_LIMIT),
+		countQuery.where(and(...conditions)),
+	]);
+	return { rows, total: Number(total?.value ?? 0) };
 }
 
 async function getUpcomingReports(opts: {
@@ -195,10 +288,37 @@ async function getUpcomingReports(opts: {
 	const conditions: SQL[] = [
 		isNull(projectReportingMilestones.completedAt),
 		gte(projectReportingMilestones.dueAt, opts.now),
+		lte(
+			projectReportingMilestones.dueAt,
+			new Date(opts.now.getTime() + UPCOMING_REPORT_HORIZON_MS),
+		),
 		isNull(projects.archivedAt),
 	];
 	if (opts.scopeClause) conditions.push(opts.scopeClause);
-	return query.where(and(...conditions));
+	const countQuery = db
+		.select({ value: countDistinct(projectReportingMilestones.milestoneId) })
+		.from(projectReportingMilestones)
+		.innerJoin(
+			projects,
+			eq(projectReportingMilestones.projectId, projects.projectId),
+		)
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+		.innerJoin(
+			proposalMembers,
+			and(
+				eq(proposals.proposalId, proposalMembers.proposalId),
+				buildReportObligationScope(opts.leaderUserId),
+			),
+		);
+
+	const [rows, [total]] = await Promise.all([
+		query
+			.where(and(...conditions))
+			.orderBy(asc(projectReportingMilestones.dueAt))
+			.limit(ACTION_ITEM_LIMIT),
+		countQuery.where(and(...conditions)),
+	]);
+	return { rows, total: Number(total?.value ?? 0) };
 }
 
 async function batchFetchScheduleExists(
@@ -214,15 +334,21 @@ async function batchFetchScheduleExists(
 }
 
 async function getPendingRegistrations() {
-	return db
-		.select({
-			userId: users.userId,
-			firstName: users.firstName,
-			lastName: users.lastName,
-			createdAt: users.createdAt,
-		})
-		.from(users)
-		.where(eq(users.isActive, false));
+	const [rows, [total]] = await Promise.all([
+		db
+			.select({
+				userId: users.userId,
+				firstName: users.firstName,
+				lastName: users.lastName,
+				createdAt: users.createdAt,
+			})
+			.from(users)
+			.where(eq(users.isActive, false))
+			.orderBy(asc(users.createdAt))
+			.limit(ACTION_ITEM_LIMIT),
+		db.select({ value: count() }).from(users).where(eq(users.isActive, false)),
+	]);
+	return { rows, total: Number(total?.value ?? 0) };
 }
 
 // ── Item builders ──
@@ -379,25 +505,30 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 		const scope = buildProposalScopeClause(user);
 		const scopeProps = scope !== undefined ? { scopeClause: scope } : {};
 
-		const [pending, returned, overdue, reports] = await Promise.all([
-			getPendingProposals({
-				statusFilter: and(
-					eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
-					eq(proposals.bypassedRetChair, false),
-				)!,
-				...scopeProps,
-			}),
-			getReturnedProposals({
-				...scopeProps,
-			}),
-			getProjectsByStatus({
-				projectStatus: PROJECT_STATUS.OVERDUE,
-				...scopeProps,
-			}),
-			getUpcomingReports({ now, ...scopeProps, leaderUserId: user.userId }),
-		]);
+		const [pendingResult, returnedResult, overdueResult, reportsResult] =
+			await Promise.all([
+				getPendingProposals({
+					statusFilter: and(
+						eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
+						eq(proposals.bypassedRetChair, false),
+					)!,
+					...scopeProps,
+				}),
+				getReturnedProposals({
+					...scopeProps,
+				}),
+				getProjectsByStatus({
+					projectStatus: PROJECT_STATUS.OVERDUE,
+					...scopeProps,
+				}),
+				getUpcomingReports({ now, ...scopeProps, leaderUserId: user.userId }),
+			]);
+		const pending = pendingResult.rows;
+		const returned = returnedResult.rows;
+		const overdue = overdueResult.rows;
+		const reports = reportsResult.rows;
 
-		pendingReviews = pending.length;
+		pendingReviews = pendingResult.total;
 		for (const p of pending) {
 			const item = buildProposalItem(p, user, "soon", {
 				isRtChair: true,
@@ -406,13 +537,13 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 
-		returnedProposals = returned.length;
+		returnedProposals = returnedResult.total;
 		for (const p of returned) {
 			const item = buildProposalItem(p, user, "routine", { isRtChair: true });
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 
-		overdueReports = overdue.length;
+		overdueReports = overdueResult.total;
 		const schedMap = await batchFetchScheduleExists(
 			overdue.map((p) => p.projectId),
 		);
@@ -433,26 +564,31 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 	} else if (user.roleName === ROLE_NAMES.DIRECTOR) {
-		const [pending, approved, overdue, reports] = await Promise.all([
-			getPendingProposals({
-				statusFilter: or(
-					eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
-					and(
-						eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
-						eq(proposals.bypassedRetChair, true),
-					),
-				)!,
-			}),
-			getProjectsByStatus({
-				projectStatus: PROJECT_STATUS.APPROVED,
-			}),
-			getProjectsByStatus({
-				projectStatus: PROJECT_STATUS.OVERDUE,
-			}),
-			getUpcomingReports({ now, leaderUserId: user.userId }),
-		]);
+		const [pendingResult, approvedResult, overdueResult, reportsResult] =
+			await Promise.all([
+				getPendingProposals({
+					statusFilter: or(
+						eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
+						and(
+							eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
+							eq(proposals.bypassedRetChair, true),
+						),
+					)!,
+				}),
+				getProjectsByStatus({
+					projectStatus: PROJECT_STATUS.APPROVED,
+				}),
+				getProjectsByStatus({
+					projectStatus: PROJECT_STATUS.OVERDUE,
+				}),
+				getUpcomingReports({ now, leaderUserId: user.userId }),
+			]);
+		const pending = pendingResult.rows;
+		const approved = approvedResult.rows;
+		const overdue = overdueResult.rows;
+		const reports = reportsResult.rows;
 
-		pendingReviews = pending.length;
+		pendingReviews = pendingResult.total;
 		for (const p of pending) {
 			const item = buildProposalItem(p, user, "soon", {
 				isDirector: true,
@@ -461,8 +597,8 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 
-		projectsNeedingActivation = approved.length;
-		overdueReports = overdue.length;
+		projectsNeedingActivation = approvedResult.total;
+		overdueReports = overdueResult.total;
 
 		const [approvedSchedMap, overdueSchedMap] = await Promise.all([
 			batchFetchScheduleExists(approved.map((p) => p.projectId)),
@@ -506,7 +642,7 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 	} else if (user.roleName === ROLE_NAMES.FACULTY) {
-		const [returned, overdue, reports] = await Promise.all([
+		const [returnedResult, overdueResult, reportsResult] = await Promise.all([
 			getReturnedProposals({
 				memberUserId: user.userId,
 			}),
@@ -519,14 +655,17 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 				leaderUserId: user.userId,
 			}),
 		]);
+		const returned = returnedResult.rows;
+		const overdue = overdueResult.rows;
+		const reports = reportsResult.rows;
 
-		returnedProposals = returned.length;
+		returnedProposals = returnedResult.total;
 		for (const p of returned) {
 			const item = buildProposalItem(p, user, "urgent");
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 
-		overdueReports = overdue.length;
+		overdueReports = overdueResult.total;
 		const schedMap = await batchFetchScheduleExists(
 			overdue.map((p) => p.projectId),
 		);
@@ -547,7 +686,7 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 	} else if (user.roleName === ROLE_NAMES.SUPER_ADMIN) {
-		const pendingUsers = await getPendingRegistrations();
+		const { rows: pendingUsers } = await getPendingRegistrations();
 		for (const u of pendingUsers) {
 			actItems.push({
 				id: u.userId,

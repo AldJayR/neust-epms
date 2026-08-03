@@ -66,6 +66,12 @@ export const proposals = pgTable(
 		bannerProgramIdx: index("proposals_banner_program_id_idx").on(
 			table.bannerProgramId,
 		),
+		activeDepartmentCreatedIdx: index("proposals_active_department_created_idx")
+			.on(table.departmentId, table.createdAt)
+			.where(sql`${table.archivedAt} IS NULL`),
+		activeCampusCreatedIdx: index("proposals_active_campus_created_idx")
+			.on(table.campusId, table.createdAt)
+			.where(sql`${table.archivedAt} IS NULL`),
 		statusIdx: index("proposals_status_idx").on(table.status),
 		targetDatesCheck: check(
 			"proposals_target_dates_check",

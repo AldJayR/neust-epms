@@ -1,4 +1,4 @@
-import { and, eq, isNull, lt } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt } from "drizzle-orm";
 import cron from "node-cron";
 import { db } from "@/db/client.js";
 import { campuses } from "@/db/schema/campuses.js";
@@ -80,7 +80,6 @@ export async function runReportOverdue(): Promise<void> {
 				reportType: projectReportingMilestones.reportType,
 				projectId: projects.projectId,
 				projectStatus: projects.projectStatus,
-				projectArchivedAt: projects.archivedAt,
 				proposalId: proposals.proposalId,
 				proposalTitle: proposals.title,
 				proposalLocale: proposals.projectLocale,
@@ -106,6 +105,8 @@ export async function runReportOverdue(): Promise<void> {
 				and(
 					lt(projectReportingMilestones.dueAt, now),
 					isNull(projectReportingMilestones.completedAt),
+					isNull(projects.archivedAt),
+					inArray(projects.projectStatus, ["Ongoing", "Overdue"]),
 				),
 			);
 
@@ -137,19 +138,24 @@ export async function runReportOverdue(): Promise<void> {
 		for (const row of overdueDates) {
 			const dateStr = new Date(row.reportingDate).toLocaleDateString();
 
-			// Skip closed/archived projects
-			if (row.projectStatus === "Closed" || row.projectArchivedAt) continue;
-
 			if (row.projectStatus !== "Overdue") {
-				await db
+				const [updated] = await db
 					.update(projects)
 					.set({
 						projectStatus: "Overdue",
 						updatedAt: new Date(),
 					})
-					.where(eq(projects.projectId, row.projectId));
+					.where(
+						and(
+							eq(projects.projectId, row.projectId),
+							eq(projects.projectStatus, row.projectStatus),
+							isNull(projects.archivedAt),
+						),
+					)
+					.returning({ projectId: projects.projectId });
+				if (!updated) continue;
 
-				if (systemUserId) {
+				if (updated && systemUserId) {
 					await insertAuditLog({
 						userId: systemUserId,
 						action: `Flagged project ${row.projectId} status as Overdue due to missed report deadline (${dateStr})`,

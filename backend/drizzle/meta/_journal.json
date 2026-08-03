@@ -36,6 +36,13 @@
       "when": 1785740821539,
       "tag": "0004_daily_sister_grimm",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785750998518,
+      "tag": "0005_overconfident_scarlet_spider",
+      "breakpoints": true
     }
   ]
 }

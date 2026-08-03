@@ -4,6 +4,7 @@ import {
 	pgTable,
 	timestamp,
 	unique,
+	uniqueIndex,
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
@@ -36,5 +37,10 @@ export const proposalMembers = pgTable(
 			table.proposalId,
 			table.userId,
 		),
+		activeLeaderUnique: uniqueIndex("pm_one_active_project_leader_unique")
+			.on(table.proposalId)
+			.where(
+				sql`${table.archivedAt} IS NULL AND ${table.projectRole} = 'Project Leader'`,
+			),
 	}),
 );

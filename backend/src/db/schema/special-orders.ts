@@ -1,4 +1,12 @@
-import { index, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import {
+	index,
+	pgTable,
+	timestamp,
+	uniqueIndex,
+	uuid,
+	varchar,
+} from "drizzle-orm/pg-core";
 import { proposalMembers } from "./proposal-members.js";
 import { users } from "./users.js";
 
@@ -30,5 +38,8 @@ export const specialOrders = pgTable(
 	},
 	(table) => ({
 		memberIdx: index("so_member_id_idx").on(table.memberId),
+		activeMemberUnique: uniqueIndex("special_orders_one_active_per_member")
+			.on(table.memberId)
+			.where(sql`${table.archivedAt} IS NULL`),
 	}),
 );

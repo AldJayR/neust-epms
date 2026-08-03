@@ -534,15 +534,17 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 export async function validateTransition(
 	project: { projectId: string; projectStatus: string; moaId: string | null },
 	targetStatus: string,
+	executor: Pick<typeof db, "select"> = db,
 ) {
 	validateProjectTransition(project, targetStatus);
 
 	if (targetStatus === PROJECT_STATUS.ONGOING) {
 		// Verify linked MOA is not expired
-		const [moa] = await db
+		const [moa] = await executor
 			.select({ moaId: moas.moaId, validUntil: moas.validUntil })
 			.from(moas)
 			.where(eq(moas.moaId, project.moaId as string))
+			.for("update")
 			.limit(1);
 
 		if (!moa || moa.validUntil < new Date()) {
@@ -561,34 +563,52 @@ export async function transitionProjectStatus(
 	user: AuthUser,
 	ipAddress: string,
 ) {
-	const [project] = await db
-		.select({
-			projectId: projects.projectId,
-			projectStatus: projects.projectStatus,
-			moaId: projects.moaId,
-			archivedAt: projects.archivedAt,
-		})
-		.from(projects)
-		.where(and(eq(projects.projectId, projectId), isNull(projects.archivedAt)))
-		.limit(1);
+	return db.transaction(async (tx) => {
+		const [project] = await tx
+			.select({
+				projectId: projects.projectId,
+				projectStatus: projects.projectStatus,
+				moaId: projects.moaId,
+				archivedAt: projects.archivedAt,
+			})
+			.from(projects)
+			.where(
+				and(eq(projects.projectId, projectId), isNull(projects.archivedAt)),
+			)
+			.for("update")
+			.limit(1);
 
-	if (!project) {
-		throw new ApiError(404, "NOT_FOUND", "Project not found");
-	}
+		if (!project) {
+			throw new ApiError(404, "NOT_FOUND", "Project not found");
+		}
 
-	await validateTransition(project, targetStatus);
+		await validateTransition(project, targetStatus, tx);
 
-	const diff = captureAuditDiff(
-		{ projectStatus: project.projectStatus },
-		{ projectStatus: targetStatus },
-		["projectStatus"],
-	);
+		const diff = captureAuditDiff(
+			{ projectStatus: project.projectStatus },
+			{ projectStatus: targetStatus },
+			["projectStatus"],
+		);
 
-	await db.transaction(async (tx) => {
-		await tx
+		const [updated] = await tx
 			.update(projects)
 			.set({ projectStatus: targetStatus, updatedAt: new Date() })
-			.where(eq(projects.projectId, projectId));
+			.where(
+				and(
+					eq(projects.projectId, projectId),
+					eq(projects.projectStatus, project.projectStatus),
+					isNull(projects.archivedAt),
+				),
+			)
+			.returning({ projectId: projects.projectId });
+
+		if (!updated) {
+			throw new ApiError(
+				409,
+				"UPDATE_CONFLICT",
+				"Project changed before the transition could be applied",
+			);
+		}
 
 		await insertAuditLog(
 			{
@@ -601,6 +621,8 @@ export async function transitionProjectStatus(
 			},
 			tx,
 		);
+
+		return updated;
 	});
 }
 
@@ -609,93 +631,110 @@ export async function closeProject(
 	user: AuthUser,
 	ipAddress: string,
 ) {
-	const [project] = await db
-		.select({
-			projectId: projects.projectId,
-			projectStatus: projects.projectStatus,
-			proposalId: projects.proposalId,
-			archivedAt: projects.archivedAt,
-		})
-		.from(projects)
-		.where(and(eq(projects.projectId, projectId), isNull(projects.archivedAt)))
-		.limit(1);
+	return db.transaction(async (tx) => {
+		const [project] = await tx
+			.select({
+				projectId: projects.projectId,
+				projectStatus: projects.projectStatus,
+				proposalId: projects.proposalId,
+				archivedAt: projects.archivedAt,
+			})
+			.from(projects)
+			.where(
+				and(eq(projects.projectId, projectId), isNull(projects.archivedAt)),
+			)
+			.for("update")
+			.limit(1);
 
-	if (!project) {
-		throw new ApiError(404, "NOT_FOUND", "Project not found");
-	}
+		if (!project) {
+			throw new ApiError(404, "NOT_FOUND", "Project not found");
+		}
 
-	if (
-		project.projectStatus === PROJECT_STATUS.CLOSED ||
-		project.projectStatus === PROJECT_STATUS.COMPLETED
-	) {
-		throw new ApiError(
-			400,
-			"ALREADY_CLOSED",
-			"Project is already closed or completed",
+		if (
+			project.projectStatus === PROJECT_STATUS.CLOSED ||
+			project.projectStatus === PROJECT_STATUS.COMPLETED
+		) {
+			throw new ApiError(
+				400,
+				"ALREADY_CLOSED",
+				"Project is already closed or completed",
+			);
+		}
+
+		if (
+			project.projectStatus !== PROJECT_STATUS.ONGOING &&
+			project.projectStatus !== PROJECT_STATUS.PENDING_CLOSURE
+		) {
+			throw new ApiError(
+				400,
+				"INVALID_STATE",
+				"Only ongoing or pending closure projects can be closed",
+			);
+		}
+
+		const reports = await tx
+			.select({ reportType: projectReports.reportType })
+			.from(projectReports)
+			.where(
+				and(
+					eq(projectReports.projectId, projectId),
+					isNull(projectReports.archivedAt),
+					isNotNull(projectReports.storagePath),
+				),
+			);
+
+		const hasFinalAccomplishment = reports.some(
+			(r) => r.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT,
 		);
-	}
-
-	if (
-		project.projectStatus !== PROJECT_STATUS.ONGOING &&
-		project.projectStatus !== PROJECT_STATUS.PENDING_CLOSURE
-	) {
-		throw new ApiError(
-			400,
-			"INVALID_STATE",
-			"Only ongoing or pending closure projects can be closed",
-		);
-	}
-
-	// Verify both required reports exist
-	const reports = await db
-		.select({ reportType: projectReports.reportType })
-		.from(projectReports)
-		.where(
-			and(
-				eq(projectReports.projectId, projectId),
-				isNull(projectReports.archivedAt),
-				isNotNull(projectReports.storagePath),
-			),
+		const hasTerminal = reports.some(
+			(r) => r.reportType === REPORT_TYPE.TERMINAL,
 		);
 
-	const hasFinalAccomplishment = reports.some(
-		(r) => r.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT,
-	);
-	const hasTerminal = reports.some(
-		(r) => r.reportType === REPORT_TYPE.TERMINAL,
-	);
+		if (!hasFinalAccomplishment) {
+			throw new ApiError(
+				400,
+				"MISSING_FINAL_ACCOMPLISHMENT_REPORT",
+				"A Final Accomplishment report must be submitted before closing",
+			);
+		}
 
-	if (!hasFinalAccomplishment) {
-		throw new ApiError(
-			400,
-			"MISSING_FINAL_ACCOMPLISHMENT_REPORT",
-			"A Final Accomplishment report must be submitted before closing",
+		if (!hasTerminal) {
+			throw new ApiError(
+				400,
+				"MISSING_TERMINAL_REPORT",
+				"A Terminal report must be submitted before closing",
+			);
+		}
+
+		const diff = captureAuditDiff(
+			{ projectStatus: project.projectStatus },
+			{ projectStatus: PROJECT_STATUS.CLOSED },
+			["projectStatus"],
 		);
-	}
 
-	if (!hasTerminal) {
-		throw new ApiError(
-			400,
-			"MISSING_TERMINAL_REPORT",
-			"A Terminal report must be submitted before closing",
-		);
-	}
-
-	const diff = captureAuditDiff(
-		{ projectStatus: project.projectStatus },
-		{ projectStatus: PROJECT_STATUS.CLOSED },
-		["projectStatus"],
-	);
-
-	await db.transaction(async (tx) => {
-		await tx
+		const [updated] = await tx
 			.update(projects)
 			.set({
 				projectStatus: PROJECT_STATUS.CLOSED,
 				actualEndDate: new Date(),
 				updatedAt: new Date(),
 			})
-			.where(eq(projects.projectId, projectId));
+			.where(
+				and(
+					eq(projects.projectId, projectId),
+					eq(projects.projectStatus, project.projectStatus),
+					isNull(projects.archivedAt),
+				),
+			)
+			.returning({ projectId: projects.projectId });
+
+		if (!updated) {
+			throw new ApiError(
+				409,
+				"UPDATE_CONFLICT",
+				"Project changed before it could be closed",
+			);
+		}
 
 		await insertAuditLog(
 			{
@@ -708,6 +747,8 @@ export async function closeProject(
 			},
 			tx,
 		);
+
+		return updated;
 	});
 }
 
@@ -717,24 +758,35 @@ export async function setProjectHold(
 	user: AuthUser,
 	ipAddress: string,
 ) {
-	const [existing] = await db
-		.select({ projectId: projects.projectId, onHold: projects.onHold })
-		.from(projects)
-		.where(and(eq(projects.projectId, projectId), isNull(projects.archivedAt)))
-		.limit(1);
-
-	if (!existing) {
-		throw new ApiError(404, "NOT_FOUND", "Project not found");
-	}
-
-	if (existing.onHold === onHold) return existing;
-
-	const diff = captureAuditDiff(existing, { ...existing, onHold }, ["onHold"]);
 	return db.transaction(async (tx) => {
+		const [existing] = await tx
+			.select({ projectId: projects.projectId, onHold: projects.onHold })
+			.from(projects)
+			.where(
+				and(eq(projects.projectId, projectId), isNull(projects.archivedAt)),
+			)
+			.for("update")
+			.limit(1);
+
+		if (!existing) {
+			throw new ApiError(404, "NOT_FOUND", "Project not found");
+		}
+
+		if (existing.onHold === onHold) return existing;
+
+		const diff = captureAuditDiff(existing, { ...existing, onHold }, [
+			"onHold",
+		]);
 		const [updated] = await tx
 			.update(projects)
 			.set({ onHold, updatedAt: new Date() })
-			.where(eq(projects.projectId, projectId))
+			.where(
+				and(
+					eq(projects.projectId, projectId),
+					eq(projects.onHold, existing.onHold),
+					isNull(projects.archivedAt),
+				),
+			)
 			.returning({ projectId: projects.projectId, onHold: projects.onHold });
 
 		if (!updated) {
@@ -768,129 +820,140 @@ export async function activateProject(
 	user: AuthUser,
 	ipAddress: string,
 ) {
-	let project:
-		| {
-				projectId: string;
-				projectStatus: string;
-				archivedAt: Date | null;
-		  }
-		| undefined;
-
-	const [existingProject] = await db
-		.select({
-			projectId: projects.projectId,
-			projectStatus: projects.projectStatus,
-			archivedAt: projects.archivedAt,
-		})
-		.from(projects)
-		.where(
-			and(
-				or(eq(projects.projectId, id), eq(projects.proposalId, id)),
-				isNull(projects.archivedAt),
-			),
-		)
-		.limit(1);
-
-	project = existingProject;
-
-	if (!project) {
-		const [proposal] = await db
-			.select({ status: proposals.status })
-			.from(proposals)
-			.where(eq(proposals.proposalId, id))
-			.limit(1);
-
-		if (proposal && proposal.status === PROPOSAL_STATUS.APPROVED) {
-			const [newProject] = await db
-				.insert(projects)
-				.values({
-					proposalId: id,
-					projectStatus: "Approved",
-				})
-				.returning({
-					projectId: projects.projectId,
-					projectStatus: projects.projectStatus,
-					archivedAt: projects.archivedAt,
-				});
-			project = newProject;
-		}
-	}
-
-	if (!project) {
-		throw new ApiError(404, "NOT_FOUND", "Project not found");
-	}
-
-	if (project.projectStatus !== PROJECT_STATUS.APPROVED) {
-		throw new ApiError(
-			400,
-			"INVALID_TRANSITION",
-			"Only Approved projects can be activated",
-		);
-	}
-
-	const members = await db
-		.select({ memberId: proposalMembers.memberId })
-		.from(proposalMembers)
-		.innerJoin(proposals, eq(proposalMembers.proposalId, proposals.proposalId))
-		.innerJoin(projects, eq(projects.proposalId, proposals.proposalId))
-		.where(
-			and(
-				eq(projects.projectId, project.projectId),
-				isNull(proposalMembers.archivedAt),
-			),
-		);
-	if (members.length > 0) {
-		const uploadedOrders = await db
-			.select({ memberId: specialOrders.memberId })
-			.from(specialOrders)
+	return db.transaction(async (tx) => {
+		let project = await tx
+			.select({
+				projectId: projects.projectId,
+				proposalId: projects.proposalId,
+				projectStatus: projects.projectStatus,
+				archivedAt: projects.archivedAt,
+			})
+			.from(projects)
 			.where(
 				and(
-					inArray(
-						specialOrders.memberId,
-						members.map((member) => member.memberId),
-					),
-					isNull(specialOrders.archivedAt),
-					isNotNull(specialOrders.storagePath),
+					or(eq(projects.projectId, id), eq(projects.proposalId, id)),
+					isNull(projects.archivedAt),
 				),
-			);
-		if (uploadedOrders.length !== members.length) {
+			)
+			.for("update")
+			.limit(1)
+			.then((rows) => rows[0]);
+
+		if (!project) {
+			const [proposal] = await tx
+				.select({ status: proposals.status })
+				.from(proposals)
+				.where(eq(proposals.proposalId, id))
+				.for("update")
+				.limit(1);
+
+			if (proposal?.status === PROPOSAL_STATUS.APPROVED) {
+				await tx
+					.insert(projects)
+					.values({ proposalId: id, projectStatus: PROJECT_STATUS.APPROVED })
+					.onConflictDoNothing();
+				project = await tx
+					.select({
+						projectId: projects.projectId,
+						proposalId: projects.proposalId,
+						projectStatus: projects.projectStatus,
+						archivedAt: projects.archivedAt,
+					})
+					.from(projects)
+					.where(and(eq(projects.proposalId, id), isNull(projects.archivedAt)))
+					.for("update")
+					.limit(1)
+					.then((rows) => rows[0]);
+			}
+		}
+
+		if (!project) {
+			throw new ApiError(404, "NOT_FOUND", "Project not found");
+		}
+
+		if (project.projectStatus !== PROJECT_STATUS.APPROVED) {
 			throw new ApiError(
 				400,
-				"INCOMPLETE_SPECIAL_ORDERS",
-				"Special Orders must be uploaded for every project member before activation",
+				"INVALID_TRANSITION",
+				"Only Approved projects can be activated",
 			);
 		}
-	}
 
-	// Validate MOA exists and is not expired
-	const [moa] = await db
-		.select({ moaId: moas.moaId, validUntil: moas.validUntil })
-		.from(moas)
-		.where(eq(moas.moaId, body.moaId))
-		.limit(1);
+		const members = await tx
+			.select({ memberId: proposalMembers.memberId })
+			.from(proposalMembers)
+			.where(
+				and(
+					eq(proposalMembers.proposalId, project.proposalId),
+					isNull(proposalMembers.archivedAt),
+				),
+			);
+		if (members.length > 0) {
+			const uploadedOrders = await tx
+				.select({ memberId: specialOrders.memberId })
+				.from(specialOrders)
+				.where(
+					and(
+						inArray(
+							specialOrders.memberId,
+							members.map((member) => member.memberId),
+						),
+						isNull(specialOrders.archivedAt),
+						isNotNull(specialOrders.storagePath),
+					),
+				);
+			const uploadedMemberIds = new Set(
+				uploadedOrders.map((order) => order.memberId),
+			);
+			if (members.some((member) => !uploadedMemberIds.has(member.memberId))) {
+				throw new ApiError(
+					400,
+					"INCOMPLETE_SPECIAL_ORDERS",
+					"Special Orders must be uploaded for every project member before activation",
+				);
+			}
+		}
 
-	if (!moa) {
-		throw new ApiError(404, "NOT_FOUND", "MOA not found");
-	}
+		const [moa] = await tx
+			.select({ moaId: moas.moaId, validUntil: moas.validUntil })
+			.from(moas)
+			.where(eq(moas.moaId, body.moaId))
+			.limit(1);
 
-	if (moa.validUntil < new Date()) {
-		throw new ApiError(400, "MOA_EXPIRED", "The selected MOA is expired");
-	}
+		if (!moa) {
+			throw new ApiError(404, "NOT_FOUND", "MOA not found");
+		}
+		if (moa.validUntil < new Date()) {
+			throw new ApiError(400, "MOA_EXPIRED", "The selected MOA is expired");
+		}
 
-	await db.transaction(async (tx) => {
-		// Link MOA and transition to Ongoing
-		await tx
+		const [updated] = await tx
 			.update(projects)
 			.set({
 				moaId: body.moaId,
 				projectStatus: PROJECT_STATUS.ONGOING,
 				updatedAt: new Date(),
 			})
-			.where(eq(projects.projectId, project!.projectId));
+			.where(
+				and(
+					eq(projects.projectId, project.projectId),
+					eq(projects.projectStatus, PROJECT_STATUS.APPROVED),
+					isNull(projects.archivedAt),
+				),
+			)
+			.returning({ projectId: projects.projectId });
+
+		if (!updated) {
+			throw new ApiError(
+				409,
+				"UPDATE_CONFLICT",
+				"Project was activated by another request",
+			);
+		}
 
 		await tx.insert(projectReportingMilestones).values(
 			body.milestones.map((milestone) => ({
-				projectId: project!.projectId,
+				projectId: project.projectId,
 				reportType: milestone.reportType,
 				dueAt: new Date(milestone.dueAt),
 			})),
@@ -899,12 +962,14 @@ export async function activateProject(
 		await insertAuditLog(
 			{
 				userId: user.userId,
-				action: `Activated project ${project!.projectId} with MOA ${body.moaId}`,
+				action: `Activated project ${project.projectId} with MOA ${body.moaId}`,
 				tableAffected: "projects",
 				ipAddress,
 			},
 			tx,
 		);
+
+		return updated;
 	});
 }
 

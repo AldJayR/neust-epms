@@ -100,8 +100,11 @@ export async function archiveExpiredProjects(
 				.where(
 					and(
 						eq(projects.projectId, candidate.projectId),
+						eq(projects.projectStatus, PROJECT_STATUS.CLOSED),
 						isNull(projects.archivedAt),
 						eq(projects.onHold, false),
+						isNotNull(projects.actualEndDate),
+						lt(projects.actualEndDate, boundary),
 					),
 				)
 				.returning({ projectId: projects.projectId });

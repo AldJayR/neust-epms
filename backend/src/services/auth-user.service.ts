@@ -9,8 +9,9 @@ export const PROJECT_LEADER_ROLE = "Project Leader";
 export async function isProjectLeader(
 	proposalId: string,
 	userId: string,
+	executor: Pick<typeof db, "select"> = db,
 ): Promise<boolean> {
-	const [member] = await db
+	const [member] = await executor
 		.select({ memberId: proposalMembers.memberId })
 		.from(proposalMembers)
 		.where(

@@ -218,11 +218,25 @@ export async function uploadSpecialOrder(
 		record = result.record;
 		isNew = result.isNew;
 	} catch (error: unknown) {
-		const err = error as { code?: string; cause?: { code?: string } };
+		const err = error as {
+			code?: string;
+			constraint?: string;
+			cause?: { code?: string; constraint?: string };
+		};
 		try {
 			await supabase.storage.from("documents").remove([storagePath]);
 		} catch {}
 		if (err.code === "23505" || err.cause?.code === "23505") {
+			if (
+				err.constraint === "special_orders_one_active_per_member" ||
+				err.cause?.constraint === "special_orders_one_active_per_member"
+			) {
+				throw new ApiError(
+					409,
+					"DUPLICATE_MEMBER_SPECIAL_ORDER",
+					"An active special order already exists for this member",
+				);
+			}
 			throw new ApiError(
 				409,
 				"DUPLICATE_SO_NUMBER",

@@ -50,10 +50,9 @@ describe("GET /reports", () => {
 
 describe("GET /reports/stats", () => {
 	it("should return report counts", async () => {
-		vi.mocked(db.select)
-			.mockReturnValueOnce(mockSelectChain([{ value: 4 }]) as never)
-			.mockReturnValueOnce(mockSelectChain([{ value: 4 }]) as never)
-			.mockReturnValueOnce(mockSelectChain([{ value: 4 }]) as never);
+		vi.mocked(db.select).mockReturnValueOnce(
+			mockSelectChain([{ total: 4, progress: 4, terminal: 4 }]) as never,
+		);
 
 		const res = await app.request("/reports/stats");
 

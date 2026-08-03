@@ -1,10 +1,11 @@
 import { sql } from "drizzle-orm";
 import {
+	foreignKey,
 	index,
 	pgTable,
 	text,
 	timestamp,
-	unique,
+	uniqueIndex,
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
@@ -38,15 +39,29 @@ export const projectReports = pgTable(
 	},
 	(table) => ({
 		projectIdx: index("project_reports_project_id_idx").on(table.projectId),
-		milestoneTypeUnique: unique("project_reports_milestone_type_unique").on(
-			table.milestoneId,
-			table.reportType,
-		),
+		milestoneTypeUnique: uniqueIndex(
+			"project_reports_active_milestone_type_unique",
+		)
+			.on(table.milestoneId, table.reportType)
+			.where(sql`${table.archivedAt} IS NULL`),
 		submittedByIdIdx: index("project_reports_submitted_by_id_idx").on(
 			table.submittedById,
 		),
 		activeProjectIdx: index("project_reports_active_project_idx")
 			.on(table.projectId)
 			.where(sql`${table.archivedAt} IS NULL`),
+		activeProjectSubmittedIdx: index(
+			"project_reports_active_project_submitted_idx",
+		)
+			.on(table.projectId, table.submittedAt)
+			.where(sql`${table.archivedAt} IS NULL`),
+		milestoneProjectFk: foreignKey({
+			columns: [table.milestoneId, table.projectId],
+			foreignColumns: [
+				projectReportingMilestones.milestoneId,
+				projectReportingMilestones.projectId,
+			],
+			name: "project_reports_milestone_project_fk",
+		}),
 	}),
 );

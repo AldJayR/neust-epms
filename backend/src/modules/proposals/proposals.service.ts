@@ -1,4 +1,13 @@
-import { and, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
+import {
+	and,
+	eq,
+	ilike,
+	inArray,
+	isNull,
+	notInArray,
+	or,
+	sql,
+} from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { beneficiarySectors } from "@/db/schema/beneficiary-sectors.js";
 import { extensionServices } from "@/db/schema/extension-services.js";
@@ -11,6 +20,8 @@ import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposalSdgs } from "@/db/schema/proposal-sdgs.js";
 import { proposals } from "@/db/schema/proposals.js";
+import { insertAuditLog } from "@/lib/audit.js";
+import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { ApiError } from "@/lib/errors.js";
 import { type AuthUser, PROPOSAL_STATUS, ROLE_NAMES } from "@/lib/types.js";
 import {
@@ -70,6 +81,7 @@ export async function createProposalInTransaction(
 		members?: { userId: string; projectRole: string }[] | undefined;
 	},
 	user: AuthUser,
+	ipAddress = "127.0.0.1",
 ) {
 	const selectedBannerProgram = await validateBannerProgramForProposal(
 		tx,
@@ -128,6 +140,16 @@ export async function createProposalInTransaction(
 			userId: user.userId,
 			projectRole: PROJECT_LEADER_ROLE,
 		});
+	}
+	if (
+		memberValues.filter((member) => member.projectRole === PROJECT_LEADER_ROLE)
+			.length > 1
+	) {
+		throw new ApiError(
+			400,
+			"MULTIPLE_PROJECT_LEADERS",
+			"A proposal can have only one Project Leader",
+		);
 	}
 
 	await tx.insert(proposalMembers).values(memberValues);
@@ -206,6 +228,16 @@ export async function createProposalInTransaction(
 		);
 	}
 
+	await insertAuditLog(
+		{
+			userId: user.userId,
+			action: `Created proposal ${proposal.proposalId}`,
+			tableAffected: "proposals",
+			ipAddress,
+		},
+		tx,
+	);
+
 	return proposal;
 }
 
@@ -220,209 +252,237 @@ export async function updateProposalWithSectors(
 		budgetNeust?: number | undefined;
 		sectorNames?: string[] | undefined;
 	},
-	existing: { status: string; campusId: number; departmentId: number },
 	user: AuthUser,
+	ipAddress = "127.0.0.1",
 ) {
-	if (
-		existing.status !== PROPOSAL_STATUS.DRAFT &&
-		existing.status !== PROPOSAL_STATUS.RETURNED &&
-		existing.status !== PROPOSAL_STATUS.PENDING_REVIEW &&
-		existing.status !== PROPOSAL_STATUS.ENDORSED
-	) {
-		throw new ApiError(
-			400,
-			"INVALID_STATUS",
-			"Only Draft, Returned, Pending Review, or Endorsed proposals can be updated",
-		);
-	}
+	return db.transaction(async (tx) => {
+		const [existing] = await tx
+			.select()
+			.from(proposals)
+			.where(and(eq(proposals.proposalId, id), isNull(proposals.archivedAt)))
+			.for("update")
+			.limit(1);
 
-	if (!(await isProjectLeader(id, user.userId))) {
-		throw new ApiError(
-			403,
-			"NOT_LEADER",
-			"Only the project leader can update a proposal",
-		);
-	}
+		if (!existing) {
+			throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+		}
 
-	if (body.extensionServiceIds !== undefined) {
-		const serviceRows = await db
-			.select({ extensionServiceId: extensionServices.extensionServiceId })
-			.from(extensionServices)
-			.where(
-				inArray(extensionServices.extensionServiceId, body.extensionServiceIds),
-			);
-
-		if (serviceRows.length !== body.extensionServiceIds.length) {
+		if (
+			existing.status !== PROPOSAL_STATUS.DRAFT &&
+			existing.status !== PROPOSAL_STATUS.RETURNED
+		) {
 			throw new ApiError(
 				400,
-				"INVALID_EXTENSION_SERVICES",
-				"One or more selected extension services are invalid.",
+				"INVALID_STATUS",
+				"Only Draft or Returned proposals can be updated",
 			);
 		}
-	}
 
-	const selectedBannerProgram =
-		body.bannerProgramId === undefined
-			? null
-			: await validateBannerProgramForProposal(
-					db,
-					body.bannerProgramId,
-					existing.campusId,
-					existing.departmentId,
+		if (!(await isProjectLeader(id, user.userId, tx))) {
+			throw new ApiError(
+				403,
+				"NOT_LEADER",
+				"Only the project leader can update a proposal",
+			);
+		}
+
+		if (body.extensionServiceIds !== undefined) {
+			const serviceRows = await tx
+				.select({ extensionServiceId: extensionServices.extensionServiceId })
+				.from(extensionServices)
+				.where(
+					inArray(
+						extensionServices.extensionServiceId,
+						body.extensionServiceIds,
+					),
 				);
 
-	const updateValues = {
-		...(body.title !== undefined ? { title: body.title } : {}),
-		...(selectedBannerProgram
-			? {
-					bannerProgramId: selectedBannerProgram.bannerProgramId,
-					bannerProgram: selectedBannerProgram.programName,
-				}
-			: {}),
-		...(body.projectLocale !== undefined
-			? { projectLocale: body.projectLocale }
-			: {}),
-		...(body.budgetPartner !== undefined
-			? { budgetPartner: body.budgetPartner.toFixed(2) }
-			: {}),
-		...(body.budgetNeust !== undefined
-			? { budgetNeust: body.budgetNeust.toFixed(2) }
-			: {}),
-		updatedAt: new Date(),
-	};
-
-	const [updated] = await db
-		.update(proposals)
-		.set(updateValues)
-		.where(
-			and(
-				eq(proposals.proposalId, id),
-				or(
-					eq(proposals.status, PROPOSAL_STATUS.DRAFT),
-					eq(proposals.status, PROPOSAL_STATUS.RETURNED),
-					eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
-					eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
-				),
-			),
-		)
-		.returning();
-
-	if (!updated) {
-		throw new ApiError(500, "UPDATE_FAILED", "Failed to update proposal");
-	}
-
-	if (body.sectorNames && body.sectorNames.length > 0) {
-		const sectorIds: number[] = [];
-		for (const name of body.sectorNames) {
-			const trimmed = name.trim();
-			if (!trimmed) continue;
-
-			const [existingSector] = await db
-				.select({ sectorId: beneficiarySectors.sectorId })
-				.from(beneficiarySectors)
-				.where(eq(beneficiarySectors.sectorName, trimmed))
-				.limit(1);
-
-			if (existingSector) {
-				sectorIds.push(existingSector.sectorId);
-			} else {
-				const [created] = await db
-					.insert(beneficiarySectors)
-					.values({ sectorName: trimmed })
-					.returning({ sectorId: beneficiarySectors.sectorId });
-				if (created) {
-					sectorIds.push(created.sectorId);
-				}
+			if (serviceRows.length !== body.extensionServiceIds.length) {
+				throw new ApiError(
+					400,
+					"INVALID_EXTENSION_SERVICES",
+					"One or more selected extension services are invalid.",
+				);
 			}
 		}
 
-		if (sectorIds.length > 0) {
-			const desiredSectorIds = new Set(sectorIds);
-			const existingLinks = await db
-				.select({
-					sectorId: proposalBeneficiaries.sectorId,
-					archivedAt: proposalBeneficiaries.archivedAt,
-				})
-				.from(proposalBeneficiaries)
-				.where(eq(proposalBeneficiaries.proposalId, id));
+		const selectedBannerProgram =
+			body.bannerProgramId === undefined
+				? null
+				: await validateBannerProgramForProposal(
+						tx,
+						body.bannerProgramId,
+						existing.campusId,
+						existing.departmentId,
+					);
 
-			for (const link of existingLinks) {
-				const shouldBeActive = desiredSectorIds.has(link.sectorId);
-				if (shouldBeActive !== !link.archivedAt) {
-					await db
-						.update(proposalBeneficiaries)
-						.set({ archivedAt: shouldBeActive ? null : new Date() })
-						.where(
-							and(
-								eq(proposalBeneficiaries.proposalId, id),
-								eq(proposalBeneficiaries.sectorId, link.sectorId),
-							),
+		const updateValues = {
+			...(body.title !== undefined ? { title: body.title } : {}),
+			...(selectedBannerProgram
+				? {
+						bannerProgramId: selectedBannerProgram.bannerProgramId,
+						bannerProgram: selectedBannerProgram.programName,
+					}
+				: {}),
+			...(body.projectLocale !== undefined
+				? { projectLocale: body.projectLocale }
+				: {}),
+			...(body.budgetPartner !== undefined
+				? { budgetPartner: body.budgetPartner.toFixed(2) }
+				: {}),
+			...(body.budgetNeust !== undefined
+				? { budgetNeust: body.budgetNeust.toFixed(2) }
+				: {}),
+			updatedAt: new Date(),
+		};
+
+		const [updated] = await tx
+			.update(proposals)
+			.set(updateValues)
+			.where(
+				and(
+					eq(proposals.proposalId, id),
+					or(
+						eq(proposals.status, PROPOSAL_STATUS.DRAFT),
+						eq(proposals.status, PROPOSAL_STATUS.RETURNED),
+					),
+				),
+			)
+			.returning();
+
+		if (!updated) {
+			throw new ApiError(
+				409,
+				"UPDATE_CONFLICT",
+				"Proposal changed before it could be updated",
+			);
+		}
+
+		if (body.sectorNames && body.sectorNames.length > 0) {
+			const sectorNames = [
+				...new Set(body.sectorNames.map((name) => name.trim()).filter(Boolean)),
+			];
+			if (sectorNames.length > 0) {
+				await tx
+					.insert(beneficiarySectors)
+					.values(sectorNames.map((sectorName) => ({ sectorName })))
+					.onConflictDoNothing();
+
+				const sectors = await tx
+					.select({
+						sectorId: beneficiarySectors.sectorId,
+						sectorName: beneficiarySectors.sectorName,
+					})
+					.from(beneficiarySectors)
+					.where(inArray(beneficiarySectors.sectorName, sectorNames));
+				const sectorIds = sectors.map((sector) => sector.sectorId);
+
+				await tx
+					.update(proposalBeneficiaries)
+					.set({ archivedAt: new Date() })
+					.where(
+						and(
+							eq(proposalBeneficiaries.proposalId, id),
+							isNull(proposalBeneficiaries.archivedAt),
+							notInArray(proposalBeneficiaries.sectorId, sectorIds),
+						),
+					);
+
+				await tx
+					.update(proposalBeneficiaries)
+					.set({ archivedAt: null })
+					.where(
+						and(
+							eq(proposalBeneficiaries.proposalId, id),
+							inArray(proposalBeneficiaries.sectorId, sectorIds),
+						),
+					);
+
+				const existingLinks = await tx
+					.select({ sectorId: proposalBeneficiaries.sectorId })
+					.from(proposalBeneficiaries)
+					.where(eq(proposalBeneficiaries.proposalId, id));
+				const existingIds = new Set(existingLinks.map((link) => link.sectorId));
+				const newSectorIds = sectorIds.filter(
+					(sectorId) => !existingIds.has(sectorId),
+				);
+				if (newSectorIds.length > 0) {
+					await tx
+						.insert(proposalBeneficiaries)
+						.values(
+							newSectorIds.map((sectorId) => ({ proposalId: id, sectorId })),
 						);
 				}
 			}
+		}
 
-			const existingSectorIds = new Set(
-				existingLinks.map((link) => link.sectorId),
+		if (body.extensionServiceIds !== undefined) {
+			const serviceIds = [...new Set(body.extensionServiceIds)];
+			await tx
+				.update(proposalExtensionServices)
+				.set({ archivedAt: new Date() })
+				.where(
+					and(
+						eq(proposalExtensionServices.proposalId, id),
+						isNull(proposalExtensionServices.archivedAt),
+						notInArray(
+							proposalExtensionServices.extensionServiceId,
+							serviceIds,
+						),
+					),
+				);
+
+			await tx
+				.update(proposalExtensionServices)
+				.set({ archivedAt: null })
+				.where(
+					and(
+						eq(proposalExtensionServices.proposalId, id),
+						inArray(proposalExtensionServices.extensionServiceId, serviceIds),
+					),
+				);
+
+			const existingLinks = await tx
+				.select({
+					extensionServiceId: proposalExtensionServices.extensionServiceId,
+				})
+				.from(proposalExtensionServices)
+				.where(eq(proposalExtensionServices.proposalId, id));
+			const existingIds = new Set(
+				existingLinks.map((link) => link.extensionServiceId),
 			);
-			const newSectorIds = sectorIds.filter(
-				(sectorId) => !existingSectorIds.has(sectorId),
+			const newServiceIds = serviceIds.filter(
+				(serviceId) => !existingIds.has(serviceId),
 			);
-			if (newSectorIds.length > 0) {
-				await db.insert(proposalBeneficiaries).values(
-					newSectorIds.map((sectorId) => ({
+			if (newServiceIds.length > 0) {
+				await tx.insert(proposalExtensionServices).values(
+					newServiceIds.map((extensionServiceId) => ({
 						proposalId: id,
-						sectorId,
+						extensionServiceId,
 					})),
 				);
 			}
 		}
-	}
 
-	if (body.extensionServiceIds !== undefined) {
-		const desiredServiceIds = new Set(body.extensionServiceIds);
-		const existingLinks = await db
-			.select({
-				extensionServiceId: proposalExtensionServices.extensionServiceId,
-				archivedAt: proposalExtensionServices.archivedAt,
-			})
-			.from(proposalExtensionServices)
-			.where(eq(proposalExtensionServices.proposalId, id));
-
-		for (const link of existingLinks) {
-			const shouldBeActive = desiredServiceIds.has(link.extensionServiceId);
-			if (shouldBeActive !== !link.archivedAt) {
-				await db
-					.update(proposalExtensionServices)
-					.set({ archivedAt: shouldBeActive ? null : new Date() })
-					.where(
-						and(
-							eq(proposalExtensionServices.proposalId, id),
-							eq(
-								proposalExtensionServices.extensionServiceId,
-								link.extensionServiceId,
-							),
-						),
-					);
-			}
-		}
-
-		const existingServiceIds = new Set(
-			existingLinks.map((link) => link.extensionServiceId),
+		const diff = captureAuditDiff(
+			existing as unknown as Record<string, unknown>,
+			updated as unknown as Record<string, unknown>,
+			["title", "budgetNeust", "budgetPartner", "updatedAt"],
 		);
-		const newServiceIds = body.extensionServiceIds.filter(
-			(extensionServiceId) => !existingServiceIds.has(extensionServiceId),
+		await insertAuditLog(
+			{
+				userId: user.userId,
+				action: `Updated proposal ${id}`,
+				tableAffected: "proposals",
+				oldValue: diff.oldValue,
+				newValue: diff.newValue,
+				ipAddress,
+			},
+			tx,
 		);
-		if (newServiceIds.length > 0) {
-			await db.insert(proposalExtensionServices).values(
-				newServiceIds.map((extensionServiceId) => ({
-					proposalId: id,
-					extensionServiceId,
-				})),
-			);
-		}
-	}
 
-	return updated;
+		return updated;
+	});
 }
 
 export async function getProposalExtensionServices(proposalId: string) {

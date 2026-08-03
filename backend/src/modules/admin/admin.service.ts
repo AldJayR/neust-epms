@@ -1,5 +1,5 @@
 import type { z } from "@hono/zod-openapi";
-import { and, count, eq, ilike, inArray, or, type SQL } from "drizzle-orm";
+import { and, count, eq, ilike, inArray, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { campuses } from "@/db/schema/campuses.js";
 import { departments } from "@/db/schema/departments.js";
@@ -29,21 +29,17 @@ type ProvisionDirectorBody = z.infer<typeof ProvisionDirectorSchema>;
 type UpdateUserBody = z.infer<typeof UpdateUserSchema>;
 
 export async function getAdminStats() {
-	const allUsersCount = await db.select({ value: count() }).from(users);
-	const deactivatedCount = await db
-		.select({ value: count() })
-		.from(users)
-		.where(eq(users.isActive, false));
-
-	const [pendingResult] = await db
-		.select({ value: count() })
-		.from(users)
-		.where(eq(users.isActive, false));
+	const [stats] = await db
+		.select({
+			totalAccounts: sql<number>`count(*)::int`,
+			pendingApproval: sql<number>`count(*) filter (where ${users.isActive} = false)::int`,
+		})
+		.from(users);
 
 	return {
-		totalAccounts: Number(allUsersCount[0]?.value ?? 0),
-		pendingApproval: Number(pendingResult?.value ?? 0),
-		deactivated: Number(deactivatedCount[0]?.value ?? 0),
+		totalAccounts: Number(stats?.totalAccounts ?? 0),
+		pendingApproval: Number(stats?.pendingApproval ?? 0),
+		deactivated: Number(stats?.pendingApproval ?? 0),
 	};
 }
 
@@ -69,33 +65,32 @@ export async function listUsers(query: AdminUsersQuery) {
 
 	const finalWhere = and(searchClause, activeClause);
 
-	const totalResult = await db
-		.select({ value: count() })
-		.from(users)
-		.where(finalWhere);
-	const rows = await db
-		.select({
-			userId: users.userId,
-			firstName: users.firstName,
-			middleName: users.middleName,
-			lastName: users.lastName,
-			nameSuffix: users.nameSuffix,
-			academicRank: users.academicRank,
-			email: users.email,
-			roleName: roles.roleName,
-			campusName: campuses.campusName,
-			departmentName: departments.departmentName,
-			isActive: users.isActive,
-			avatarUrl: users.avatarUrl,
-			hasCompletedOnboarding: users.hasCompletedOnboarding,
-		})
-		.from(users)
-		.innerJoin(roles, eq(users.roleId, roles.roleId))
-		.innerJoin(campuses, eq(users.campusId, campuses.campusId))
-		.leftJoin(departments, eq(users.departmentId, departments.departmentId))
-		.where(finalWhere)
-		.limit(pageSize)
-		.offset(offset);
+	const [totalResult, rows] = await Promise.all([
+		db.select({ value: count() }).from(users).where(finalWhere),
+		db
+			.select({
+				userId: users.userId,
+				firstName: users.firstName,
+				middleName: users.middleName,
+				lastName: users.lastName,
+				nameSuffix: users.nameSuffix,
+				academicRank: users.academicRank,
+				email: users.email,
+				roleName: roles.roleName,
+				campusName: campuses.campusName,
+				departmentName: departments.departmentName,
+				isActive: users.isActive,
+				avatarUrl: users.avatarUrl,
+				hasCompletedOnboarding: users.hasCompletedOnboarding,
+			})
+			.from(users)
+			.innerJoin(roles, eq(users.roleId, roles.roleId))
+			.innerJoin(campuses, eq(users.campusId, campuses.campusId))
+			.leftJoin(departments, eq(users.departmentId, departments.departmentId))
+			.where(finalWhere)
+			.limit(pageSize)
+			.offset(offset),
+	]);
 
 	return {
 		users: rows,

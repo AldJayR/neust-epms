@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
 	boolean,
 	index,
@@ -28,6 +29,13 @@ export const notifications = pgTable(
 	},
 	(table) => ({
 		recipientIdx: index("notifications_recipient_id_idx").on(table.recipientId),
+		recipientCreatedIdx: index("notifications_recipient_created_idx").on(
+			table.recipientId,
+			table.createdAt,
+		),
+		unreadRecipientIdx: index("notifications_unread_recipient_idx")
+			.on(table.recipientId)
+			.where(sql`${table.isRead} = false`),
 		dedupeKeyUnique: uniqueIndex("notifications_dedupe_key_unique").on(
 			table.dedupeKey,
 		),

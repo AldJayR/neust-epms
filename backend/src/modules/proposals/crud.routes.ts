@@ -18,7 +18,6 @@ import { proposals } from "@/db/schema/proposals.js";
 import { sdgs } from "@/db/schema/sdgs.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
-import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { getClientIp } from "@/lib/client-ip.js";
 import { deriveProposalState } from "@/lib/derived-states.js";
 import { ApiError } from "@/lib/errors.js";
@@ -203,35 +202,20 @@ app.openapi(retStatsRoute, async (c) => {
 
 	const whereConditions: SQL[] = [...buildProposalScope(user)];
 
-	const [pending, approved, denied] = await Promise.all([
-		db
-			.select({ value: count() })
-			.from(proposals)
-			.where(
-				and(
-					...whereConditions,
-					eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
-				),
-			),
-		db
-			.select({ value: count() })
-			.from(proposals)
-			.where(
-				and(...whereConditions, eq(proposals.status, PROPOSAL_STATUS.APPROVED)),
-			),
-		db
-			.select({ value: count() })
-			.from(proposals)
-			.where(
-				and(...whereConditions, eq(proposals.status, PROPOSAL_STATUS.REJECTED)),
-			),
-	]);
+	const [stats] = await db
+		.select({
+			pendingReview: sql<number>`count(*) filter (where ${proposals.status} = ${PROPOSAL_STATUS.PENDING_REVIEW})::int`,
+			approvedProjects: sql<number>`count(*) filter (where ${proposals.status} = ${PROPOSAL_STATUS.APPROVED})::int`,
+			deniedProjects: sql<number>`count(*) filter (where ${proposals.status} = ${PROPOSAL_STATUS.REJECTED})::int`,
+		})
+		.from(proposals)
+		.where(and(...whereConditions));
 
 	return c.json(
 		{
-			pendingReview: Number(pending[0]?.value ?? 0),
-			approvedProjects: Number(approved[0]?.value ?? 0),
-			deniedProjects: Number(denied[0]?.value ?? 0),
+			pendingReview: Number(stats?.pendingReview ?? 0),
+			approvedProjects: Number(stats?.approvedProjects ?? 0),
+			deniedProjects: Number(stats?.deniedProjects ?? 0),
 		},
 		200,
 	);
@@ -451,18 +435,11 @@ app.openapi(createProposalRoute, async (c) => {
 	}
 
 	const created = await db.transaction(async (tx) => {
-		return createProposalInTransaction(tx, body, user);
+		return createProposalInTransaction(tx, body, user, getClientIp(c));
 	});
 	const selectedExtensionServices = await getProposalExtensionServices(
 		created.proposalId,
 	);
-
-	await insertAuditLog({
-		userId: user.userId,
-		action: `Created and submitted proposal ${created.proposalId}`,
-		tableAffected: "proposals",
-		ipAddress: getClientIp(c),
-	});
 
 	const leaderMember = (body.members ?? []).find(
 		(m) => m.projectRole === PROJECT_LEADER_ROLE,
@@ -473,6 +450,7 @@ app.openapi(createProposalRoute, async (c) => {
 		type: "proposal",
 		title: "Submission Received",
 		message: `Your proposal "${created.title}" has been received and is pending review.`,
+		dedupeKey: `proposal-created:${created.proposalId}:${leaderId}`,
 	}).catch((err) => {
 		console.error(
 			"[notification] Failed to send submission acknowledgment:",
@@ -497,8 +475,7 @@ const updateRoute = createRoute({
 	method: "patch",
 	path: "/proposals/{id}",
 	tags: ["Proposals"],
-	summary:
-		"Update a proposal (Draft, Returned, Pending Review, or Endorsed; project leader only)",
+	summary: "Update a proposal (Draft or Returned; project leader only)",
 	security: [{ Bearer: [] }],
 	request: {
 		params: ParamId,
@@ -532,39 +509,13 @@ app.openapi(updateRoute, async (c) => {
 	const { id } = c.req.valid("param");
 	const body = c.req.valid("json");
 
-	const [existing] = await db
-		.select()
-		.from(proposals)
-		.where(and(eq(proposals.proposalId, id), isNull(proposals.archivedAt)))
-		.limit(1);
-
-	if (!existing) {
-		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
-	}
-
-	const updated = await updateProposalWithSectors(id, body, existing, user);
-	const selectedExtensionServices = await getProposalExtensionServices(id);
-
-	const diff = captureAuditDiff(
-		existing as unknown as Record<string, unknown>,
-		updated as unknown as Record<string, unknown>,
-		[
-			"title",
-			"budgetNeust",
-			"budgetPartner",
-			"targetStartDate",
-			"targetEndDate",
-		],
+	const updated = await updateProposalWithSectors(
+		id,
+		body,
+		user,
+		getClientIp(c),
 	);
-
-	await insertAuditLog({
-		userId: user.userId,
-		action: `Updated proposal ${id}`,
-		tableAffected: "proposals",
-		oldValue: diff.oldValue,
-		newValue: diff.newValue,
-		ipAddress: getClientIp(c),
-	});
+	const selectedExtensionServices = await getProposalExtensionServices(id);
 
 	return c.json(
 		{
