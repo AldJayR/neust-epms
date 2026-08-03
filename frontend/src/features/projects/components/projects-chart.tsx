@@ -1,74 +1,75 @@
-import React, { Suspense } from "react";
-
-const ResponsiveContainer = React.lazy(() =>
-	import("recharts").then((m) => ({ default: m.ResponsiveContainer })),
-);
-const BarChart = React.lazy(() =>
-	import("recharts").then((m) => ({ default: m.BarChart })),
-);
-const CartesianGrid = React.lazy(() =>
-	import("recharts").then((m) => ({ default: m.CartesianGrid })),
-);
-const XAxis = React.lazy(() =>
-	import("recharts").then((m) => ({ default: m.XAxis })),
-);
-const YAxis = React.lazy(() =>
-	import("recharts").then((m) => ({ default: m.YAxis })),
-);
-const Tooltip = React.lazy(() =>
-	import("recharts").then((m) => ({ default: m.Tooltip })),
-);
-const Bar = React.lazy(() =>
-	import("recharts").then((m) => ({ default: m.Bar })),
-);
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import {
+	type ChartConfig,
+	ChartContainer,
+	ChartTooltip,
+	ChartTooltipContent,
+} from "@/components/ui/chart";
 
 interface ProjectsChartProps {
 	chartData: { label: string; value: number }[];
 }
 
+const chartConfig = {
+	value: {
+		label: "Approved projects",
+		color: "var(--chart-1)",
+	},
+} satisfies ChartConfig;
+
 export default function ProjectsChart({ chartData }: ProjectsChartProps) {
 	return (
-		<Suspense
-			fallback={<div className="h-full w-full bg-card animate-pulse rounded" />}
+		<ChartContainer
+			config={chartConfig}
+			className="h-full min-h-[240px] w-full"
 		>
-			<ResponsiveContainer width="100%" height="100%" key="projects-chart">
-				<BarChart
-					data={chartData}
-					margin={{ top: 0, right: 0, left: -30, bottom: 0 }}
-				>
-					<CartesianGrid vertical={false} stroke="var(--border)" />
-					<XAxis
-						dataKey="label"
-						axisLine={false}
-						tickLine={false}
-						tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
-						dy={10}
-					/>
-					<YAxis
-						axisLine={false}
-						tickLine={false}
-						tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
-					/>
-					<Tooltip
-						cursor={{ fill: "transparent" }}
-						contentStyle={{
-							backgroundColor: "var(--popover)",
-							color: "var(--popover-foreground)",
-							borderRadius: "8px",
-							border: "1px solid var(--border)",
-							boxShadow: "0 8px 24px var(--shadow-card)",
-						}}
-						labelStyle={{ color: "var(--popover-foreground)" }}
-						itemStyle={{ color: "var(--popover-foreground)" }}
-					/>
-					<Bar
-						dataKey="value"
-						fill="var(--brand-primary)"
-						radius={[4, 4, 0, 0]}
-						barSize={50}
-					/>
-				</BarChart>
-			</ResponsiveContainer>
-		</Suspense>
+			<AreaChart
+				accessibilityLayer
+				data={chartData}
+				margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
+			>
+				<defs>
+					<linearGradient id="approvalFill" x1="0" y1="0" x2="0" y2="1">
+						<stop
+							offset="5%"
+							stopColor="var(--color-value)"
+							stopOpacity={0.35}
+						/>
+						<stop
+							offset="95%"
+							stopColor="var(--color-value)"
+							stopOpacity={0.03}
+						/>
+					</linearGradient>
+				</defs>
+				<CartesianGrid vertical={false} />
+				<XAxis
+					dataKey="label"
+					axisLine={false}
+					tickLine={false}
+					tickMargin={8}
+					minTickGap={24}
+				/>
+				<YAxis
+					allowDecimals={false}
+					axisLine={false}
+					tickLine={false}
+					tickMargin={8}
+				/>
+				<ChartTooltip
+					cursor={false}
+					content={<ChartTooltipContent indicator="line" />}
+				/>
+				<Area
+					type="monotone"
+					dataKey="value"
+					stroke="var(--color-value)"
+					strokeWidth={2}
+					fill="url(#approvalFill)"
+					fillOpacity={1}
+					activeDot={{ r: 4 }}
+				/>
+			</AreaChart>
+		</ChartContainer>
 	);
 }

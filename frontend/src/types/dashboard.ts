@@ -8,9 +8,9 @@ export interface DirectorDashboardMetric {
 }
 
 export interface DirectorChartPoint {
-	label: string;
-	department: string;
-	departmentCode: string;
+	month: string;
+	campusId: number;
+	campusName: string;
 	value: number;
 }
 
@@ -27,6 +27,7 @@ export interface DirectorMoa {
 
 export interface DirectorDashboardResponse {
 	metrics: DirectorDashboardMetric;
+	chartMonths: string[];
 	chartData: DirectorChartPoint[];
 	recentActivities: DirectorActivity[];
 	expiringMoas: DirectorMoa[];

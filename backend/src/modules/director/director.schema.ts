@@ -65,9 +65,9 @@ export const DashboardMetricSchema = z.object({
 });
 
 export const ChartPointSchema = z.object({
-	label: z.string(),
-	department: z.string(),
-	departmentCode: z.string(),
+	month: z.string(),
+	campusId: z.number(),
+	campusName: z.string(),
 	value: z.number(),
 });
 
@@ -84,6 +84,7 @@ export const MoaSchema = z.object({
 
 export const DirectorDashboardSchema = z.object({
 	metrics: DashboardMetricSchema,
+	chartMonths: z.array(z.string()),
 	chartData: z.array(ChartPointSchema),
 	recentActivities: z.array(ActivitySchema),
 	expiringMoas: z.array(MoaSchema),

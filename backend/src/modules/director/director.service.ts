@@ -4,9 +4,11 @@ import {
 	desc,
 	eq,
 	exists,
+	gte,
 	ilike,
 	inArray,
 	isNull,
+	lt,
 	ne,
 	or,
 	type SQL,
@@ -86,6 +88,22 @@ function activityTitle(action: string, tableAffected: string): string {
 export async function getDashboardStats(user: AuthUser) {
 	const now = new Date();
 	const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+	const chartStart = new Date(
+		Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11, 1),
+	);
+	const chartEnd = new Date(
+		Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
+	);
+	const chartMonths = Array.from({ length: 12 }, (_, index) => {
+		const month = new Date(
+			Date.UTC(
+				chartStart.getUTCFullYear(),
+				chartStart.getUTCMonth() + index,
+				1,
+			),
+		);
+		return month.toISOString().slice(0, 7);
+	});
 
 	const projectMetricsConditions = [isNull(projects.archivedAt)];
 	const underEvalConditions = [
@@ -108,7 +126,14 @@ export async function getDashboardStats(user: AuthUser) {
 		}
 	}
 
-	const chartConditions = [isNull(proposals.archivedAt)];
+	const chartMonth = sql<string>`to_char(
+		date_trunc('month', ${projects.createdAt} AT TIME ZONE 'UTC'),
+		'YYYY-MM'
+	)`;
+	const chartConditions = [
+		gte(projects.createdAt, chartStart),
+		lt(projects.createdAt, chartEnd),
+	];
 	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
 		if (user.isMainCampus && user.departmentId !== null) {
 			chartConditions.push(eq(proposals.departmentId, user.departmentId));
@@ -155,23 +180,16 @@ export async function getDashboardStats(user: AuthUser) {
 			.where(and(...underEvalConditions)),
 		db
 			.select({
-				label: campuses.campusName,
-				department: departments.departmentName,
-				departmentCode: departments.departmentCode,
+				month: chartMonth,
+				campusId: campuses.campusId,
+				campusName: campuses.campusName,
 				value: count(),
 			})
-			.from(proposals)
+			.from(projects)
+			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
 			.innerJoin(campuses, eq(proposals.campusId, campuses.campusId))
-			.innerJoin(
-				departments,
-				eq(proposals.departmentId, departments.departmentId),
-			)
 			.where(and(...chartConditions))
-			.groupBy(
-				campuses.campusName,
-				departments.departmentName,
-				departments.departmentCode,
-			),
+			.groupBy(chartMonth, campuses.campusId, campuses.campusName),
 		db
 			.select({
 				action: auditLogs.action,
@@ -207,14 +225,19 @@ export async function getDashboardStats(user: AuthUser) {
 			overdueProjects: Number(projectMetrics[0]?.overdue ?? 0),
 			pendingClosureProjects: Number(projectMetrics[0]?.pendingClosure ?? 0),
 		},
+		chartMonths,
 		chartData: chartRows
 			.map((row) => ({
-				label: row.label,
-				department: row.department,
-				departmentCode: row.departmentCode,
+				month: row.month,
+				campusId: row.campusId,
+				campusName: row.campusName,
 				value: Number(row.value ?? 0),
 			}))
-			.sort((a, b) => b.value - a.value),
+			.sort(
+				(a, b) =>
+					a.month.localeCompare(b.month) ||
+					a.campusName.localeCompare(b.campusName),
+			),
 		recentActivities: recentLogRows.map((row) => ({
 			title: activityTitle(row.action, row.tableAffected),
 			description: row.action,

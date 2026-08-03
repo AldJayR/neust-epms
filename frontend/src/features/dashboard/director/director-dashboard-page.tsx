@@ -129,7 +129,9 @@ function ExpiringMoasCard({
 }
 
 function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
-	const [selectedCampus, setSelectedCampus] = React.useState("Sumacab Campus");
+	const [selectedCampus, setSelectedCampus] = React.useState<number | "all">(
+		"all",
+	);
 
 	const { data: dashboard } = useQuery(directorDashboardQueryOptions());
 	const { data: campuses = [] } = useQuery({
@@ -144,6 +146,7 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 		completed: 0,
 	};
 	const allChartData = dashboard?.chartData ?? [];
+	const chartMonths = dashboard?.chartMonths ?? [];
 	const activities = dashboard?.recentActivities ?? [];
 	const moas = dashboard?.expiringMoas ?? [];
 
@@ -180,6 +183,7 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 					>
 						<ProjectsChartCard
 							chartData={allChartData}
+							chartMonths={chartMonths}
 							campuses={campuses}
 							selectedCampus={selectedCampus}
 							onCampusChange={setSelectedCampus}
