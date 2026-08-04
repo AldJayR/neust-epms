@@ -43,6 +43,28 @@ const facultyDirectoryRoute = createRoute({
 				.string()
 				.optional()
 				.openapi({ param: { name: "status", in: "query" } }),
+			departmentId: z.coerce
+				.number()
+				.int()
+				.positive()
+				.optional()
+				.openapi({ param: { name: "departmentId", in: "query" } }),
+			load: z
+				.enum(["all", "none", "active"])
+				.default("all")
+				.openapi({ param: { name: "load", in: "query" } }),
+			sort: z
+				.enum(["load-desc", "load-asc", "name"])
+				.default("load-desc")
+				.openapi({ param: { name: "sort", in: "query" } }),
+			trendMonths: z.coerce
+				.number()
+				.int()
+				.refine((value) => value === 6 || value === 12 || value === 24, {
+					message: "Trend range must be 6, 12, or 24 months",
+				})
+				.default(12)
+				.openapi({ param: { name: "trendMonths", in: "query" } }),
 		}),
 	},
 	responses: {

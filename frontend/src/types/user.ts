@@ -36,6 +36,8 @@ export interface FacultyInvolvement {
 export interface FacultyDirectoryResponse {
 	items: FacultyInvolvement[];
 	total: number;
+	trendMonths: string[];
+	involvementTrend: FacultyInvolvementTrend[];
 	metrics: {
 		totalActiveExtension: number;
 		averageProjectsPerFaculty: number;
@@ -44,7 +46,17 @@ export interface FacultyDirectoryResponse {
 			contributors: number;
 			contributorAvatars: FacultyContributorAvatar[];
 		};
+		facultyWithNoActiveProjects: number;
+		facultyWithActiveProjects: number;
+		averageActiveProjectsPerFaculty: number;
+		highestCurrentLoad: number;
 	};
+}
+
+export interface FacultyInvolvementTrend {
+	month: string;
+	leadInvolvements: number;
+	collaboratorInvolvements: number;
 }
 
 export interface FacultyContributorAvatar {

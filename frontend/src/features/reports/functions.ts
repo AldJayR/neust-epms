@@ -79,6 +79,7 @@ export const emailReportFn = createServerFn({ method: "POST" })
 		z.object({
 			search: z.string().optional(),
 			college: z.string().optional(),
+			departmentId: z.number().int().positive().optional(),
 			status: z.string().optional(),
 		}),
 	)

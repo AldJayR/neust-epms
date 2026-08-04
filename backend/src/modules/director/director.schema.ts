@@ -131,9 +131,17 @@ export const FacultyContributorAvatarSchema = z.object({
 	avatarUrl: z.string().nullable(),
 });
 
+export const FacultyInvolvementTrendSchema = z.object({
+	month: z.string(),
+	leadInvolvements: z.number(),
+	collaboratorInvolvements: z.number(),
+});
+
 export const FacultyDirectorySchema = z.object({
 	items: z.array(FacultyInvolvementSchema),
 	total: z.number(),
+	trendMonths: z.array(z.string()),
+	involvementTrend: z.array(FacultyInvolvementTrendSchema),
 	metrics: z.object({
 		totalActiveExtension: z.number(),
 		averageProjectsPerFaculty: z.number(),
@@ -142,6 +150,10 @@ export const FacultyDirectorySchema = z.object({
 			contributors: z.number(),
 			contributorAvatars: z.array(FacultyContributorAvatarSchema),
 		}),
+		facultyWithNoActiveProjects: z.number(),
+		facultyWithActiveProjects: z.number(),
+		averageActiveProjectsPerFaculty: z.number(),
+		highestCurrentLoad: z.number(),
 	}),
 });
 

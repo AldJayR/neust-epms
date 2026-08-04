@@ -61,7 +61,7 @@ const columns = [
 	["Department", "department"],
 	["Lead Projects", "metric"],
 	["Collaborator Projects", "metric"],
-	["Total Involvement", "metric"],
+	["Active Project Load", "metric"],
 ] as const;
 
 export function createFacultyDirectoryPdf({
@@ -80,7 +80,7 @@ export function createFacultyDirectoryPdf({
 			<Page size="A4" orientation="landscape" style={facultyPdfStyles.page}>
 				<Text style={facultyPdfStyles.title}>Faculty Directory Report</Text>
 				<Text style={facultyPdfStyles.subtitle}>
-					Academic Year 2024-2025 | Generated on {generatedOn}
+					Current active project workload | Generated on {generatedOn}
 				</Text>
 				<View style={facultyPdfStyles.table}>
 					<View style={facultyPdfStyles.headerRow}>
@@ -116,12 +116,12 @@ export function createFacultyDirectoryPdf({
 								{faculty.departmentCode ?? faculty.college ?? ""}
 							</Text>
 							{[
-								faculty.leadProjects,
-								faculty.collaboratorProjects,
-								faculty.totalInvolvement,
-							].map((value, metricIndex) => (
+								["lead", faculty.leadProjects],
+								["collaborator", faculty.collaboratorProjects],
+								["active-load", faculty.totalInvolvement],
+							].map(([key, value]) => (
 								<Text
-									key={`${faculty.userId}-${metricIndex}`}
+									key={`${faculty.userId}-${key}`}
 									style={[facultyPdfStyles.cell, facultyPdfStyles.metric]}
 								>
 									{value}

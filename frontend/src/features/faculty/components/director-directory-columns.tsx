@@ -100,7 +100,7 @@ export function getFacultyDirectoryColumns(
 			id: "totalInvolvement",
 			accessorKey: "totalInvolvement",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Total Involvement" />
+				<DataTableColumnHeader column={column} title="Active Project Load" />
 			),
 			headerClassName:
 				"w-[150px] px-4 py-2 text-right text-sm font-medium text-muted-foreground",

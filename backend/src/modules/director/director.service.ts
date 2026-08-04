@@ -1,5 +1,6 @@
 import {
 	and,
+	asc,
 	count,
 	desc,
 	eq,
@@ -261,49 +262,144 @@ export async function getDashboardStats(user: AuthUser) {
 	};
 }
 
-// ── 2. getFacultyDirectory ──
-export async function getFacultyDirectory(
-	query: {
-		page: number;
-		limit: number;
-		search?: string | undefined;
-		college?: string | undefined;
-		status?: string | undefined;
-	},
-	user: AuthUser,
-) {
-	const { page, limit, search, college, status } = query;
-	const offset = (page - 1) * limit;
+// ── Faculty directory helpers ──
+const FACULTY_DIRECTORY_ROLES = [
+	ROLE_NAMES.FACULTY,
+	ROLE_NAMES.RET_CHAIR,
+] as const;
 
-	const whereConditions: (SQL | undefined)[] = [
-		inArray(roles.roleName, [ROLE_NAMES.FACULTY, ROLE_NAMES.RET_CHAIR]),
+const ACTIVE_EXTENSION_PROJECT_STATUSES = [
+	PROJECT_STATUS.APPROVED,
+	PROJECT_STATUS.ONGOING,
+	PROJECT_STATUS.OVERDUE,
+	PROJECT_STATUS.PENDING_CLOSURE,
+] as const;
+
+type FacultyLoadFilter = "all" | "none" | "active";
+type FacultyDirectorySort = "load-desc" | "load-asc" | "name";
+type FacultyTrendMonths = 6 | 12 | 24;
+
+type FacultyDirectoryQuery = {
+	page: number;
+	limit: number;
+	search?: string | undefined;
+	college?: string | undefined;
+	departmentId?: number | undefined;
+	status?: string | undefined;
+	load?: FacultyLoadFilter | undefined;
+	sort?: FacultyDirectorySort | undefined;
+	trendMonths?: FacultyTrendMonths | undefined;
+};
+
+function getFacultyScopeConditions(user: AuthUser): SQL[] {
+	const conditions: SQL[] = [
+		inArray(roles.roleName, FACULTY_DIRECTORY_ROLES),
+		isNull(users.archivedAt),
 	];
-
-	if (status === "pending") {
-		whereConditions.push(eq(users.isActive, false));
-	} else {
-		whereConditions.push(eq(users.isActive, true));
-	}
 
 	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
 		if (user.isMainCampus && user.departmentId !== null) {
-			whereConditions.push(eq(users.departmentId, user.departmentId));
+			conditions.push(eq(users.departmentId, user.departmentId));
 		} else {
-			whereConditions.push(eq(users.campusId, user.campusId));
+			conditions.push(eq(users.campusId, user.campusId));
 		}
 	}
 
-	if (search) {
-		whereConditions.push(
-			or(
-				ilike(users.firstName, `${search}%`),
-				ilike(users.lastName, `${search}%`),
-			),
-		);
+	return conditions;
+}
+
+function getActiveProjectConditions(): SQL[] {
+	return [
+		isNull(projects.archivedAt),
+		isNull(proposals.archivedAt),
+		inArray(projects.projectStatus, ACTIVE_EXTENSION_PROJECT_STATUSES),
+		isNull(proposalMembers.archivedAt),
+	];
+}
+
+function getActiveInvolvementSubquery() {
+	return db
+		.select({
+			userId: proposalMembers.userId,
+			leadProjects:
+				sql<number>`count(*) filter (where ${proposalMembers.projectRole} = 'Project Leader')`.as(
+					"lead_projects",
+				),
+			collaboratorProjects:
+				sql<number>`count(*) filter (where ${proposalMembers.projectRole} != 'Project Leader')`.as(
+					"collaborator_projects",
+				),
+			totalInvolvement: count().as("total_involvement"),
+		})
+		.from(proposalMembers)
+		.innerJoin(proposals, eq(proposalMembers.proposalId, proposals.proposalId))
+		.innerJoin(projects, eq(proposals.proposalId, projects.proposalId))
+		.where(and(...getActiveProjectConditions()))
+		.groupBy(proposalMembers.userId)
+		.as("active_faculty_involvement");
+}
+
+function applyFacultyDirectoryFilters(
+	conditions: SQL[],
+	query: FacultyDirectoryQuery,
+) {
+	if (query.status === "pending") {
+		conditions.push(eq(users.isActive, false));
+	} else {
+		conditions.push(eq(users.isActive, true));
 	}
 
-	if (college) {
-		whereConditions.push(eq(departments.departmentName, college));
+	if (query.search) {
+		const searchCondition = or(
+			ilike(users.firstName, `${query.search}%`),
+			ilike(users.lastName, `${query.search}%`),
+		);
+		if (searchCondition) conditions.push(searchCondition);
+	}
+
+	if (query.departmentId !== undefined) {
+		conditions.push(eq(users.departmentId, query.departmentId));
+	} else if (query.college) {
+		conditions.push(eq(departments.departmentName, query.college));
+	}
+}
+
+function getTrendMonthRange(monthCount: FacultyTrendMonths, now = new Date()) {
+	const start = new Date(
+		Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - monthCount + 1, 1),
+	);
+	const end = new Date(
+		Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
+	);
+	const months = Array.from({ length: monthCount }, (_, index) => {
+		const month = new Date(
+			Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + index, 1),
+		);
+		return month.toISOString().slice(0, 7);
+	});
+
+	return { start, end, months };
+}
+
+// ── 2. getFacultyDirectory ──
+export async function getFacultyDirectory(
+	query: FacultyDirectoryQuery,
+	user: AuthUser,
+) {
+	const { page, limit } = query;
+	const offset = (page - 1) * limit;
+	const activeInvolvement = getActiveInvolvementSubquery();
+	const whereConditions = getFacultyScopeConditions(user);
+	applyFacultyDirectoryFilters(whereConditions, query);
+
+	if (query.load === "none") {
+		whereConditions.push(
+			sql`coalesce(${activeInvolvement.totalInvolvement}, 0) = 0`,
+		);
+	} else if (query.load === "active") {
+		whereConditions.push(
+			sql`coalesce(${activeInvolvement.totalInvolvement}, 0) > 0`,
+		);
 	}
 
 	const facultyQuery = db
@@ -317,75 +413,92 @@ export async function getFacultyDirectory(
 			campusName: campuses.campusName,
 			isMainCampus: campuses.isMainCampus,
 			isActive: users.isActive,
+			leadProjects: sql<number>`coalesce(${activeInvolvement.leadProjects}, 0)`,
+			collaboratorProjects: sql<number>`coalesce(${activeInvolvement.collaboratorProjects}, 0)`,
+			totalInvolvement: sql<number>`coalesce(${activeInvolvement.totalInvolvement}, 0)`,
 		})
 		.from(users)
 		.innerJoin(roles, eq(users.roleId, roles.roleId))
 		.leftJoin(departments, eq(users.departmentId, departments.departmentId))
 		.leftJoin(campuses, eq(users.campusId, campuses.campusId))
-		.where(and(...whereConditions))
-		.orderBy(users.lastName);
+		.leftJoin(activeInvolvement, eq(users.userId, activeInvolvement.userId))
+		.where(and(...whereConditions));
+	const orderedFacultyQuery =
+		query.sort === "name"
+			? facultyQuery.orderBy(asc(users.lastName), asc(users.firstName))
+			: query.sort === "load-asc"
+				? facultyQuery.orderBy(
+						asc(sql`coalesce(${activeInvolvement.totalInvolvement}, 0)`),
+						asc(users.lastName),
+					)
+				: facultyQuery.orderBy(
+						desc(sql`coalesce(${activeInvolvement.totalInvolvement}, 0)`),
+						asc(users.lastName),
+					);
 
-	const rows = await facultyQuery.limit(limit).offset(offset);
+	const rows = await orderedFacultyQuery.limit(limit).offset(offset);
 	const totalResult = await db
 		.select({ value: count() })
 		.from(users)
 		.innerJoin(roles, eq(users.roleId, roles.roleId))
+		.leftJoin(departments, eq(users.departmentId, departments.departmentId))
+		.leftJoin(activeInvolvement, eq(users.userId, activeInvolvement.userId))
 		.where(and(...whereConditions));
 
-	const userIds = rows.map((r) => r.userId);
-
-	const totalFacultyConditions = [
-		eq(users.isActive, true),
-		inArray(roles.roleName, [ROLE_NAMES.FACULTY, ROLE_NAMES.RET_CHAIR]),
-	];
-	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		if (user.isMainCampus && user.departmentId !== null) {
-			totalFacultyConditions.push(eq(users.departmentId, user.departmentId));
-		} else {
-			totalFacultyConditions.push(eq(users.campusId, user.campusId));
-		}
+	const totalFacultyConditions = getFacultyScopeConditions(user);
+	totalFacultyConditions.push(eq(users.isActive, true));
+	if (query.departmentId !== undefined) {
+		totalFacultyConditions.push(eq(users.departmentId, query.departmentId));
+	} else if (query.college) {
+		totalFacultyConditions.push(eq(departments.departmentName, query.college));
 	}
 
-	const mostActiveCollegeConditions = [
-		eq(users.isActive, true),
-		inArray(roles.roleName, [ROLE_NAMES.FACULTY, ROLE_NAMES.RET_CHAIR]),
-	];
-	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		if (user.isMainCampus && user.departmentId !== null) {
-			mostActiveCollegeConditions.push(
-				eq(users.departmentId, user.departmentId),
-			);
-		} else {
-			mostActiveCollegeConditions.push(eq(users.campusId, user.campusId));
-		}
-	}
+	const mostActiveCollegeConditions = getFacultyScopeConditions(user);
+	mostActiveCollegeConditions.push(eq(users.isActive, true));
 
-	const [totalFaculty, totalProjects, mostActiveCollege] = await Promise.all([
-		db
-			.select({ value: count() })
-			.from(users)
-			.innerJoin(roles, eq(users.roleId, roles.roleId))
-			.where(and(...totalFacultyConditions)),
-		db
-			.select({ value: count() })
-			.from(projects)
-			.where(isNull(projects.archivedAt)),
-		db
-			.select({
-				name: departments.departmentName,
-				contributors: count(),
-			})
-			.from(users)
-			.innerJoin(roles, eq(users.roleId, roles.roleId))
-			.innerJoin(departments, eq(users.departmentId, departments.departmentId))
-			.where(and(...mostActiveCollegeConditions))
-			.groupBy(departments.departmentName)
-			.orderBy(desc(count()))
-			.limit(1),
-	]);
+	const metricsInvolvement = getActiveInvolvementSubquery();
+	const [totalFaculty, involvementMetrics, mostActiveCollege] =
+		await Promise.all([
+			db
+				.select({ value: count() })
+				.from(users)
+				.innerJoin(roles, eq(users.roleId, roles.roleId))
+				.leftJoin(departments, eq(users.departmentId, departments.departmentId))
+				.where(and(...totalFacultyConditions)),
+			db
+				.select({
+					facultyWithNoActiveProjects: sql<number>`count(*) filter (where coalesce(${metricsInvolvement.totalInvolvement}, 0) = 0)`,
+					facultyWithActiveProjects: sql<number>`count(*) filter (where coalesce(${metricsInvolvement.totalInvolvement}, 0) > 0)`,
+					averageActiveProjects: sql<number>`coalesce(avg(coalesce(${metricsInvolvement.totalInvolvement}, 0)), 0)`,
+					highestCurrentLoad: sql<number>`coalesce(max(coalesce(${metricsInvolvement.totalInvolvement}, 0)), 0)`,
+				})
+				.from(users)
+				.innerJoin(roles, eq(users.roleId, roles.roleId))
+				.leftJoin(departments, eq(users.departmentId, departments.departmentId))
+				.leftJoin(
+					metricsInvolvement,
+					eq(users.userId, metricsInvolvement.userId),
+				)
+				.where(and(...totalFacultyConditions)),
+			db
+				.select({
+					name: departments.departmentName,
+					contributors: count(),
+				})
+				.from(users)
+				.innerJoin(roles, eq(users.roleId, roles.roleId))
+				.innerJoin(
+					departments,
+					eq(users.departmentId, departments.departmentId),
+				)
+				.where(and(...mostActiveCollegeConditions))
+				.groupBy(departments.departmentName)
+				.orderBy(desc(count()))
+				.limit(1),
+		]);
 
 	const totalFacultyRow = totalFaculty[0];
-	const totalProjectsRow = totalProjects[0];
+	const involvementMetricsRow = involvementMetrics[0];
 	const mostActiveCollegeRow = mostActiveCollege[0];
 	const contributorAvatarRows = mostActiveCollegeRow?.name
 		? await db
@@ -416,70 +529,9 @@ export async function getFacultyDirectory(
 		contributorAvatars: contributorAvatarRows,
 	};
 
-	if (userIds.length === 0) {
-		return {
-			items: [],
-			total: Number(totalResult[0]?.value ?? 0),
-			metrics: {
-				totalActiveExtension: Number(totalFacultyRow?.value ?? 0),
-				averageProjectsPerFaculty: 0,
-				mostActiveCollege: mostActiveCollegeMetric,
-			},
-		};
-	}
-
-	const [leadCounts, collabCounts] = await Promise.all([
-		db
-			.select({
-				userId: proposalMembers.userId,
-				value: count(),
-			})
-			.from(projects)
-			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-			.innerJoin(
-				proposalMembers,
-				eq(proposals.proposalId, proposalMembers.proposalId),
-			)
-			.where(
-				and(
-					inArray(proposalMembers.userId, userIds),
-					isNull(projects.archivedAt),
-					isNull(proposalMembers.archivedAt),
-					eq(proposalMembers.projectRole, "Project Leader"),
-				),
-			)
-			.groupBy(proposalMembers.userId),
-		db
-			.select({
-				userId: proposalMembers.userId,
-				value: count(),
-			})
-			.from(proposalMembers)
-			.innerJoin(
-				proposals,
-				eq(proposalMembers.proposalId, proposals.proposalId),
-			)
-			.where(
-				and(
-					inArray(proposalMembers.userId, userIds),
-					sql`${proposalMembers.projectRole} != 'Project Leader'`,
-					isNull(proposals.archivedAt),
-					isNull(proposalMembers.archivedAt),
-				),
-			)
-			.groupBy(proposalMembers.userId),
-	]);
-
-	const leadMap = new Map(
-		leadCounts.map((r) => [r.userId, Number(r.value ?? 0)]),
-	);
-	const collabMap = new Map(
-		collabCounts.map((r) => [r.userId, Number(r.value ?? 0)]),
-	);
-
 	const items = rows.map((row) => {
-		const leadProjects = leadMap.get(row.userId) ?? 0;
-		const collaboratorProjects = collabMap.get(row.userId) ?? 0;
+		const leadProjects = Number(row.leadProjects ?? 0);
+		const collaboratorProjects = Number(row.collaboratorProjects ?? 0);
 		return {
 			...row,
 			leadProjects,
@@ -488,19 +540,73 @@ export async function getFacultyDirectory(
 		};
 	});
 
+	const trendRange = getTrendMonthRange(query.trendMonths ?? 12);
+	const trendMonth = sql<string>`to_char(
+		date_trunc('month', ${projects.createdAt} AT TIME ZONE 'UTC'),
+		'YYYY-MM'
+	)`;
+	const trendConditions = [
+		...getFacultyScopeConditions(user),
+		eq(users.isActive, true),
+		...getActiveProjectConditions(),
+		gte(projects.createdAt, trendRange.start),
+		lt(projects.createdAt, trendRange.end),
+	];
+	if (query.departmentId !== undefined) {
+		trendConditions.push(eq(users.departmentId, query.departmentId));
+	} else if (query.college) {
+		trendConditions.push(eq(departments.departmentName, query.college));
+	}
+
+	const trendRows = await db
+		.select({
+			month: trendMonth,
+			leadInvolvements: sql<number>`count(*) filter (where ${proposalMembers.projectRole} = 'Project Leader')`,
+			collaboratorInvolvements: sql<number>`count(*) filter (where ${proposalMembers.projectRole} != 'Project Leader')`,
+		})
+		.from(projects)
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+		.innerJoin(
+			proposalMembers,
+			eq(proposals.proposalId, proposalMembers.proposalId),
+		)
+		.innerJoin(users, eq(proposalMembers.userId, users.userId))
+		.innerJoin(roles, eq(users.roleId, roles.roleId))
+		.leftJoin(departments, eq(users.departmentId, departments.departmentId))
+		.where(and(...trendConditions))
+		.groupBy(trendMonth);
+	const trendByMonth = new Map(trendRows.map((row) => [row.month, row]));
+
 	return {
 		items,
 		total: Number(totalResult[0]?.value ?? 0),
+		trendMonths: trendRange.months,
+		involvementTrend: trendRange.months.map((month) => {
+			const row = trendByMonth.get(month);
+			return {
+				month,
+				leadInvolvements: Number(row?.leadInvolvements ?? 0),
+				collaboratorInvolvements: Number(row?.collaboratorInvolvements ?? 0),
+			};
+		}),
 		metrics: {
 			totalActiveExtension: Number(totalFacultyRow?.value ?? 0),
 			averageProjectsPerFaculty: Number(
-				totalFacultyRow?.value
-					? (
-							Number(totalProjectsRow?.value) / Number(totalFacultyRow?.value)
-						).toFixed(1)
-					: 0,
+				Number(involvementMetricsRow?.averageActiveProjects ?? 0).toFixed(1),
 			),
 			mostActiveCollege: mostActiveCollegeMetric,
+			facultyWithNoActiveProjects: Number(
+				involvementMetricsRow?.facultyWithNoActiveProjects ?? 0,
+			),
+			facultyWithActiveProjects: Number(
+				involvementMetricsRow?.facultyWithActiveProjects ?? 0,
+			),
+			averageActiveProjectsPerFaculty: Number(
+				involvementMetricsRow?.averageActiveProjects ?? 0,
+			),
+			highestCurrentLoad: Number(
+				involvementMetricsRow?.highestCurrentLoad ?? 0,
+			),
 		},
 	};
 }
@@ -526,8 +632,7 @@ export async function getFacultyInvolvementCounts(
 			.where(
 				and(
 					inArray(proposalMembers.userId, userIds),
-					isNull(projects.archivedAt),
-					isNull(proposalMembers.archivedAt),
+					...getActiveProjectConditions(),
 					eq(proposalMembers.projectRole, "Project Leader"),
 				),
 			)
@@ -537,17 +642,17 @@ export async function getFacultyInvolvementCounts(
 				userId: proposalMembers.userId,
 				value: count(),
 			})
-			.from(proposalMembers)
+			.from(projects)
+			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
 			.innerJoin(
-				proposals,
-				eq(proposalMembers.proposalId, proposals.proposalId),
+				proposalMembers,
+				eq(proposals.proposalId, proposalMembers.proposalId),
 			)
 			.where(
 				and(
 					inArray(proposalMembers.userId, userIds),
 					sql`${proposalMembers.projectRole} != 'Project Leader'`,
-					isNull(proposals.archivedAt),
-					isNull(proposalMembers.archivedAt),
+					...getActiveProjectConditions(),
 				),
 			)
 			.groupBy(proposalMembers.userId),
@@ -871,28 +976,21 @@ export async function sendEmailReport(
 	body: {
 		search?: string | undefined;
 		college?: string | undefined;
+		departmentId?: number | undefined;
 		status?: string | undefined;
 	},
 	user: AuthUser,
 ): Promise<void> {
-	const { search, college, status } = body;
+	const { search, college, departmentId, status } = body;
 
 	const whereConditions: (SQL | undefined)[] = [
-		inArray(roles.roleName, [ROLE_NAMES.FACULTY, ROLE_NAMES.RET_CHAIR]),
+		...getFacultyScopeConditions(user),
 	];
 
 	if (status === "pending") {
 		whereConditions.push(eq(users.isActive, false));
 	} else {
 		whereConditions.push(eq(users.isActive, true));
-	}
-
-	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		if (user.isMainCampus && user.departmentId !== null) {
-			whereConditions.push(eq(users.departmentId, user.departmentId));
-		} else {
-			whereConditions.push(eq(users.campusId, user.campusId));
-		}
 	}
 
 	if (search) {
@@ -904,7 +1002,9 @@ export async function sendEmailReport(
 		);
 	}
 
-	if (college) {
+	if (departmentId !== undefined) {
+		whereConditions.push(eq(users.departmentId, departmentId));
+	} else if (college) {
 		whereConditions.push(eq(departments.departmentName, college));
 	}
 
@@ -978,7 +1078,7 @@ export async function sendEmailReport(
 								<th style="padding: 10px; border: 1px solid #ddd;">Department</th>
 								<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Lead</th>
 								<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Collab</th>
-								<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Total</th>
+								<th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Active Load</th>
 							</tr>
 						</thead>
 						<tbody>

@@ -14,6 +14,7 @@ interface UseFacultyDirectoryExportOptions {
 	items: FacultyInvolvement[];
 	search?: string;
 	college?: string;
+	departmentId?: number;
 }
 
 const csvHeaders = [
@@ -23,7 +24,7 @@ const csvHeaders = [
 	"Department",
 	"Lead Projects",
 	"Collaborator Projects",
-	"Total Involvement",
+	"Active Project Load",
 ];
 
 const pdfRendererPromise = import("@react-pdf/renderer");
@@ -44,6 +45,7 @@ export function useFacultyDirectoryExport({
 	items,
 	search,
 	college,
+	departmentId,
 }: UseFacultyDirectoryExportOptions) {
 	const sendEmailReport = useServerFn(emailReportFn);
 
@@ -108,6 +110,7 @@ export function useFacultyDirectoryExport({
 				data: {
 					search: search || undefined,
 					college: college || undefined,
+					departmentId,
 				},
 			});
 			if (response.success) {

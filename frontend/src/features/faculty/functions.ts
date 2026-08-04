@@ -9,10 +9,7 @@ import {
 	getValidAccessToken,
 } from "@/lib/session.server";
 import type { ProposalExtensionService } from "@/types/proposal";
-import type {
-	FacultyContributorAvatar,
-	FacultyInvolvement,
-} from "@/types/user";
+import type { FacultyDirectoryResponse } from "@/types/user";
 
 const STALE_TIME = 1000 * 60 * 5;
 
@@ -21,7 +18,11 @@ const directoryParamsSchema = z.object({
 	limit: z.number(),
 	search: z.string().optional(),
 	college: z.string().optional(),
+	departmentId: z.number().optional(),
 	status: z.string().optional(),
+	load: z.enum(["all", "none", "active"]).optional(),
+	sort: z.enum(["load-desc", "load-asc", "name"]).optional(),
+	trendMonths: z.union([z.literal(6), z.literal(12), z.literal(24)]).optional(),
 });
 
 const getFacultyDirectoryFn = createServerFn({ method: "GET" })
@@ -35,7 +36,13 @@ const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 		});
 		if (data.search) query.append("search", data.search);
 		if (data.college) query.append("college", data.college);
+		if (data.departmentId !== undefined)
+			query.append("departmentId", String(data.departmentId));
 		if (data.status) query.append("status", data.status);
+		if (data.load) query.append("load", data.load);
+		if (data.sort) query.append("sort", data.sort);
+		if (data.trendMonths !== undefined)
+			query.append("trendMonths", String(data.trendMonths));
 		const response = await fetch(`${API_BASE}/director/faculty?${query}`, {
 			headers: { Authorization: `Bearer ${token}` },
 		});
@@ -44,19 +51,7 @@ const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 				await getErrorMessage(response, "Failed to fetch faculty directory"),
 			);
 		}
-		return (await response.json()) as {
-			items: FacultyInvolvement[];
-			total: number;
-			metrics: {
-				totalActiveExtension: number;
-				averageProjectsPerFaculty: number;
-				mostActiveCollege: {
-					name: string;
-					contributors: number;
-					contributorAvatars: FacultyContributorAvatar[];
-				};
-			};
-		};
+		return (await response.json()) as FacultyDirectoryResponse;
 	});
 
 export function facultyDirectoryQueryOptions(
