@@ -435,3 +435,37 @@ export const updateUserFn = createServerFn({ method: "POST" })
 
 		return (await response.json()) as { success: boolean; userId: string };
 	});
+
+// ── Generate Password Reset Link ─────────────────────────
+
+export interface GenerateResetLinkResponse {
+	token: string;
+	expiresAt: string;
+}
+
+export const generateResetLinkFn = createServerFn({ method: "POST" })
+	.validator(z.object({ userId: z.string() }))
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("Super Admin");
+		const token = await getValidAccessToken();
+
+		const response = await fetch(
+			`${API_BASE}/admin/users/${data.userId}/reset-password-link`,
+			{
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			},
+		);
+
+		if (!response.ok) {
+			const message = await getErrorMessage(
+				response,
+				"Failed to generate reset link",
+			);
+			throw new Error(message);
+		}
+
+		return (await response.json()) as GenerateResetLinkResponse;
+	});

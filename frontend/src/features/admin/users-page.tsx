@@ -33,6 +33,7 @@ import {
 	bulkUpdateUserStatusFn,
 	type UserResponse,
 } from "./functions";
+import { GenerateResetLinkDialog } from "./generate-reset-link-dialog";
 import { ViewUserDialog } from "./view-user-dialog";
 
 interface UsersPageProps {
@@ -59,6 +60,7 @@ export function UsersPage({
 
 	const [viewingUser, setViewingUser] = useState<UserResponse | null>(null);
 	const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
+	const [resetLinkUser, setResetLinkUser] = useState<UserResponse | null>(null);
 	const [deactivatingUser, setDeactivatingUser] = useState<UserResponse | null>(
 		null,
 	);
@@ -214,6 +216,12 @@ export function UsersPage({
 								<DropdownMenuItem onClick={() => setEditingUser(user)}>
 									Edit User
 								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => setResetLinkUser(user)}
+									disabled={!user.isActive}
+								>
+									Generate Reset Link
+								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem
 									className={
@@ -357,6 +365,16 @@ export function UsersPage({
 					isOpen={!!editingUser}
 					onOpenChange={(open) => {
 						if (!open) setEditingUser(null);
+					}}
+				/>
+			)}
+			{resetLinkUser && (
+				<GenerateResetLinkDialog
+					key={resetLinkUser.userId}
+					user={resetLinkUser}
+					isOpen={!!resetLinkUser}
+					onOpenChange={(open) => {
+						if (!open) setResetLinkUser(null);
 					}}
 				/>
 			)}

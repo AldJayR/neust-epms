@@ -5,7 +5,9 @@ import {
 	MOCK_USERS,
 	mockSelectChain,
 	mockMutationChain,
+	mockTransaction,
 } from "../../../test/helpers.js";
+import { isPasswordCompromised } from "@/lib/password-check.js";
 import app from "./auth.routes.js";
 import { installApiErrorHandler } from "@/lib/errors.js";
 
@@ -130,5 +132,129 @@ describe("POST /auth/register", () => {
 		expect(res.status).toBe(400);
 		const body = await res.json();
 		expect(body.error.code).toBe("USER_EXISTS");
+	});
+});
+
+function mockTokenRow(overrides: Record<string, unknown> = {}) {
+	return {
+		id: "token-id",
+		userId: MOCK_USERS.faculty.userId,
+		tokenHash: "hash",
+		expiresAt: new Date(Date.now() + 60_000),
+		usedAt: null,
+		...overrides,
+	};
+}
+
+const validTokenBody = {
+	token: "valid-token",
+	newPassword: "NewPassword123",
+};
+
+describe("POST /auth/reset-password", () => {
+	it("should reset the password and revoke sessions with a valid token", async () => {
+		const { createClient } = await import("@supabase/supabase-js");
+		const mockSupabase = createClient("", "");
+		vi.mocked(mockSupabase.auth.admin.updateUserById).mockResolvedValueOnce({
+			data: { user: { id: MOCK_USERS.faculty.userId } as never },
+			error: null,
+		});
+		vi.mocked(mockSupabase.auth.admin.signOut).mockResolvedValueOnce({
+			error: null,
+		} as never);
+
+		vi.mocked(db.select).mockReturnValue(
+			mockSelectChain([mockTokenRow()]) as never,
+		);
+		vi.mocked(db.transaction).mockImplementation(mockTransaction({}) as never);
+
+		const res = await app.request("/auth/reset-password", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(validTokenBody),
+		});
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body).toEqual({ success: true });
+		expect(mockSupabase.auth.admin.updateUserById).toHaveBeenCalledWith(
+			MOCK_USERS.faculty.userId,
+			{ password: validTokenBody.newPassword },
+		);
+		expect(mockSupabase.auth.admin.signOut).toHaveBeenCalledWith(
+			MOCK_USERS.faculty.userId,
+		);
+	});
+
+	it("should reject an unknown or already-used token", async () => {
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
+
+		const res = await app.request("/auth/reset-password", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(validTokenBody),
+		});
+
+		expect(res.status).toBe(400);
+		expect((await res.json()).error.code).toBe("INVALID_RESET_TOKEN");
+	});
+
+	it("should reject an expired token", async () => {
+		vi.mocked(db.select).mockReturnValue(
+			mockSelectChain([
+				mockTokenRow({ expiresAt: new Date(Date.now() - 60_000) }),
+			]) as never,
+		);
+
+		const res = await app.request("/auth/reset-password", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(validTokenBody),
+		});
+
+		expect(res.status).toBe(400);
+		expect((await res.json()).error.code).toBe("RESET_TOKEN_EXPIRED");
+	});
+
+	it("should reject a compromised password without calling Supabase", async () => {
+		const { createClient } = await import("@supabase/supabase-js");
+		const mockSupabase = createClient("", "");
+		vi.mocked(isPasswordCompromised).mockResolvedValueOnce(true);
+
+		vi.mocked(db.select).mockReturnValue(
+			mockSelectChain([mockTokenRow()]) as never,
+		);
+
+		const res = await app.request("/auth/reset-password", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(validTokenBody),
+		});
+
+		expect(res.status).toBe(400);
+		expect((await res.json()).error.code).toBe("COMPROMISED_PASSWORD");
+		expect(mockSupabase.auth.admin.updateUserById).not.toHaveBeenCalled();
+	});
+
+	it("should reject when the target user has no auth identity", async () => {
+		const { createClient } = await import("@supabase/supabase-js");
+		const mockSupabase = createClient("", "");
+		vi.mocked(mockSupabase.auth.admin.updateUserById).mockResolvedValueOnce({
+			data: { user: null },
+			error: { message: "User not found" } as never,
+		});
+
+		vi.mocked(db.select).mockReturnValue(
+			mockSelectChain([mockTokenRow()]) as never,
+		);
+
+		const res = await app.request("/auth/reset-password", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(validTokenBody),
+		});
+
+		expect(res.status).toBe(400);
+		expect((await res.json()).error.code).toBe("PASSWORD_UPDATE_FAILED");
 	});
 });

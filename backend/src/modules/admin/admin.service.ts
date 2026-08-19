@@ -3,6 +3,7 @@ import { and, count, eq, ilike, inArray, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { campuses } from "@/db/schema/campuses.js";
 import { departments } from "@/db/schema/departments.js";
+import { passwordResetTokens } from "@/db/schema/password-reset-tokens.js";
 import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
@@ -10,6 +11,10 @@ import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { invalidateAuthUserCache } from "@/lib/cache.js";
 import { ApiError } from "@/lib/errors.js";
 import { createNotification } from "@/lib/notification.helpers.js";
+import {
+	createResetToken,
+	RESET_TOKEN_TTL_MS,
+} from "@/lib/reset-token.js";
 import { supabase } from "@/lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import type {
@@ -451,4 +456,65 @@ export async function updateUser(
 	invalidateAuthUserCache([id]);
 
 	return { success: true, userId: id };
+}
+
+export async function generateResetLink(
+	authUser: AuthUser,
+	id: string,
+	ipAddress: string,
+): Promise<{ token: string; expiresAt: string }> {
+	const [existing] = await db
+		.select({
+			userId: users.userId,
+			email: users.email,
+			isActive: users.isActive,
+		})
+		.from(users)
+		.where(eq(users.userId, id))
+		.limit(1);
+
+	if (!existing) {
+		throw new ApiError(404, "NOT_FOUND", "User not found");
+	}
+
+	if (!existing.isActive) {
+		throw new ApiError(
+			400,
+			"INVALID_STATE",
+			"Cannot generate a reset link for an inactive user",
+		);
+	}
+
+	const { token, tokenHash } = createResetToken();
+	const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+
+	await db.transaction(async (tx) => {
+		await tx
+			.update(passwordResetTokens)
+			.set({ usedAt: new Date() })
+			.where(
+				and(
+					eq(passwordResetTokens.userId, id),
+					sql`${passwordResetTokens.usedAt} IS NULL`,
+				),
+			);
+
+		await tx.insert(passwordResetTokens).values({
+			userId: id,
+			tokenHash,
+			expiresAt,
+		});
+
+		await insertAuditLog(
+			{
+				userId: authUser.userId,
+				action: `Generated password reset link for ${existing.email}`,
+				tableAffected: "password_reset_tokens",
+				ipAddress,
+			},
+			tx,
+		);
+	});
+
+	return { token, expiresAt: expiresAt.toISOString() };
 }

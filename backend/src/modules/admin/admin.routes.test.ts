@@ -4,6 +4,7 @@ import {
 	MOCK_USERS,
 	mockMutationChain,
 	mockSelectChain,
+	mockTransaction,
 	setMockUser,
 } from "../../../test/helpers.js";
 import app from "./admin.routes.js";
@@ -168,5 +169,73 @@ describe("PATCH /admin/users/:id", () => {
 		);
 
 		expect(res.status).toBe(404);
+	});
+});
+
+describe("POST /admin/users/:id/reset-password-link", () => {
+	it("should generate a reset password link for an active user", async () => {
+		const targetUser = {
+			userId: MOCK_USERS.faculty.userId,
+			email: MOCK_USERS.faculty.email,
+			isActive: true,
+		};
+		vi.mocked(db.select).mockReturnValue(
+			mockSelectChain([targetUser]) as never,
+		);
+		vi.mocked(db.transaction).mockImplementation(mockTransaction({}) as never);
+
+		const res = await app.request(
+			`/admin/users/${MOCK_USERS.faculty.userId}/reset-password-link`,
+			{ method: "POST" },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(typeof body.token).toBe("string");
+		expect(body.token.length).toBeGreaterThan(20);
+		expect(new Date(body.expiresAt).getTime()).toBeGreaterThan(Date.now());
+	});
+
+	it("should return 404 when the user does not exist", async () => {
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
+
+		const res = await app.request(
+			"/admin/users/aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa/reset-password-link",
+			{ method: "POST" },
+		);
+
+		expect(res.status).toBe(404);
+		expect((await res.json()).error.code).toBe("NOT_FOUND");
+	});
+
+	it("should return 400 when the user is inactive", async () => {
+		const inactiveUser = {
+			userId: MOCK_USERS.faculty.userId,
+			email: MOCK_USERS.faculty.email,
+			isActive: false,
+		};
+		vi.mocked(db.select).mockReturnValue(
+			mockSelectChain([inactiveUser]) as never,
+		);
+
+		const res = await app.request(
+			`/admin/users/${MOCK_USERS.faculty.userId}/reset-password-link`,
+			{ method: "POST" },
+		);
+
+		expect(res.status).toBe(400);
+		expect((await res.json()).error.code).toBe("INVALID_STATE");
+	});
+
+	it("should reject non-Super Admin users", async () => {
+		setMockUser(MOCK_USERS.director);
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
+
+		const res = await app.request(
+			`/admin/users/${MOCK_USERS.faculty.userId}/reset-password-link`,
+			{ method: "POST" },
+		);
+
+		expect(res.status).toBe(403);
 	});
 });

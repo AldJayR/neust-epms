@@ -9,37 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as RegisterRouteImport } from './routes/register'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
-import { Route as ForgotPasswordIndexRouteImport } from './routes/forgot-password.index'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as RegisterAccountRouteImport } from './routes/register.account'
-import { Route as ForgotPasswordResetRouteImport } from './routes/forgot-password.reset'
-import { Route as ForgotPasswordOtpRouteImport } from './routes/forgot-password.otp'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports/index'
-import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects/index'
-import { Route as AuthenticatedMoasIndexRouteImport } from './routes/_authenticated/moas/index'
-import { Route as AuthenticatedFacultyIndexRouteImport } from './routes/_authenticated/faculty/index'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as ForgotPasswordIndexRouteImport } from './routes/forgot-password.index'
+import { Route as ForgotPasswordOtpRouteImport } from './routes/forgot-password.otp'
+import { Route as ForgotPasswordResetRouteImport } from './routes/forgot-password.reset'
+import { Route as RegisterAccountRouteImport } from './routes/register.account'
 import { Route as AuthenticatedArchivesIndexRouteImport } from './routes/_authenticated/archives/index'
+import { Route as AuthenticatedFacultyIndexRouteImport } from './routes/_authenticated/faculty/index'
+import { Route as AuthenticatedMoasIndexRouteImport } from './routes/_authenticated/moas/index'
+import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects/index'
 import { Route as AuthenticatedProposalsProposalIdRouteImport } from './routes/_authenticated/proposals/$proposalId'
-import { Route as AuthenticatedProjectsProjectIdIndexRouteImport } from './routes/_authenticated/projects/$projectId/index'
-import { Route as AuthenticatedMoasMoaIdIndexRouteImport } from './routes/_authenticated/moas/$moaId/index'
-import { Route as AuthenticatedAdminUsersIndexRouteImport } from './routes/_authenticated/admin/users/index'
-import { Route as AuthenticatedAdminSettingsIndexRouteImport } from './routes/_authenticated/admin/settings/index'
+import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports/index'
 import { Route as AuthenticatedAdminActivityLogIndexRouteImport } from './routes/_authenticated/admin/activity-log/index'
+import { Route as AuthenticatedAdminSettingsIndexRouteImport } from './routes/_authenticated/admin/settings/index'
+import { Route as AuthenticatedAdminUsersIndexRouteImport } from './routes/_authenticated/admin/users/index'
+import { Route as AuthenticatedMoasMoaIdIndexRouteImport } from './routes/_authenticated/moas/$moaId/index'
+import { Route as AuthenticatedProjectsProjectIdIndexRouteImport } from './routes/_authenticated/projects/$projectId/index'
 
-const RegisterRoute = RegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -47,38 +42,24 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRoute = AuthenticatedRouteImport.update({
-  id: '/_authenticated',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ForgotPasswordIndexRoute = ForgotPasswordIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ForgotPasswordRoute,
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const RegisterAccountRoute = RegisterAccountRouteImport.update({
-  id: '/account',
-  path: '/account',
-  getParentRoute: () => RegisterRoute,
-} as any)
-const ForgotPasswordResetRoute = ForgotPasswordResetRouteImport.update({
-  id: '/reset',
-  path: '/reset',
-  getParentRoute: () => ForgotPasswordRoute,
-} as any)
-const ForgotPasswordOtpRoute = ForgotPasswordOtpRouteImport.update({
-  id: '/otp',
-  path: '/otp',
-  getParentRoute: () => ForgotPasswordRoute,
-} as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -86,16 +67,41 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedReportsIndexRoute =
-  AuthenticatedReportsIndexRouteImport.update({
-    id: '/reports/',
-    path: '/reports/',
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const ForgotPasswordIndexRoute = ForgotPasswordIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ForgotPasswordRoute,
+} as any)
+const ForgotPasswordOtpRoute = ForgotPasswordOtpRouteImport.update({
+  id: '/otp',
+  path: '/otp',
+  getParentRoute: () => ForgotPasswordRoute,
+} as any)
+const ForgotPasswordResetRoute = ForgotPasswordResetRouteImport.update({
+  id: '/reset',
+  path: '/reset',
+  getParentRoute: () => ForgotPasswordRoute,
+} as any)
+const RegisterAccountRoute = RegisterAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => RegisterRoute,
+} as any)
+const AuthenticatedArchivesIndexRoute =
+  AuthenticatedArchivesIndexRouteImport.update({
+    id: '/archives/',
+    path: '/archives/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedProjectsIndexRoute =
-  AuthenticatedProjectsIndexRouteImport.update({
-    id: '/projects/',
-    path: '/projects/',
+const AuthenticatedFacultyIndexRoute =
+  AuthenticatedFacultyIndexRouteImport.update({
+    id: '/faculty/',
+    path: '/faculty/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedMoasIndexRoute = AuthenticatedMoasIndexRouteImport.update({
@@ -103,16 +109,10 @@ const AuthenticatedMoasIndexRoute = AuthenticatedMoasIndexRouteImport.update({
   path: '/moas/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedFacultyIndexRoute =
-  AuthenticatedFacultyIndexRouteImport.update({
-    id: '/faculty/',
-    path: '/faculty/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedArchivesIndexRoute =
-  AuthenticatedArchivesIndexRouteImport.update({
-    id: '/archives/',
-    path: '/archives/',
+const AuthenticatedProjectsIndexRoute =
+  AuthenticatedProjectsIndexRouteImport.update({
+    id: '/projects/',
+    path: '/projects/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedProposalsProposalIdRoute =
@@ -121,22 +121,16 @@ const AuthenticatedProposalsProposalIdRoute =
     path: '/proposals/$proposalId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedProjectsProjectIdIndexRoute =
-  AuthenticatedProjectsProjectIdIndexRouteImport.update({
-    id: '/projects/$projectId/',
-    path: '/projects/$projectId/',
+const AuthenticatedReportsIndexRoute =
+  AuthenticatedReportsIndexRouteImport.update({
+    id: '/reports/',
+    path: '/reports/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedMoasMoaIdIndexRoute =
-  AuthenticatedMoasMoaIdIndexRouteImport.update({
-    id: '/moas/$moaId/',
-    path: '/moas/$moaId/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedAdminUsersIndexRoute =
-  AuthenticatedAdminUsersIndexRouteImport.update({
-    id: '/users/',
-    path: '/users/',
+const AuthenticatedAdminActivityLogIndexRoute =
+  AuthenticatedAdminActivityLogIndexRouteImport.update({
+    id: '/activity-log/',
+    path: '/activity-log/',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminSettingsIndexRoute =
@@ -145,11 +139,23 @@ const AuthenticatedAdminSettingsIndexRoute =
     path: '/settings/',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedAdminActivityLogIndexRoute =
-  AuthenticatedAdminActivityLogIndexRouteImport.update({
-    id: '/activity-log/',
-    path: '/activity-log/',
+const AuthenticatedAdminUsersIndexRoute =
+  AuthenticatedAdminUsersIndexRouteImport.update({
+    id: '/users/',
+    path: '/users/',
     getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedMoasMoaIdIndexRoute =
+  AuthenticatedMoasMoaIdIndexRouteImport.update({
+    id: '/moas/$moaId/',
+    path: '/moas/$moaId/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProjectsProjectIdIndexRoute =
+  AuthenticatedProjectsProjectIdIndexRouteImport.update({
+    id: '/projects/$projectId/',
+    path: '/projects/$projectId/',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -157,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/forgot-password/otp': typeof ForgotPasswordOtpRoute
@@ -178,6 +185,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/forgot-password/otp': typeof ForgotPasswordOtpRoute
@@ -203,6 +211,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/forgot-password/otp': typeof ForgotPasswordOtpRoute
@@ -229,6 +238,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/admin'
     | '/dashboard'
     | '/forgot-password/otp'
@@ -250,6 +260,7 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/admin'
     | '/dashboard'
     | '/forgot-password/otp'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/forgot-password/otp'
@@ -299,22 +311,16 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRouteWithChildren
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/register': {
-      id: '/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -324,53 +330,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/forgot-password/': {
-      id: '/forgot-password/'
-      path: '/'
-      fullPath: '/forgot-password/'
-      preLoaderRoute: typeof ForgotPasswordIndexRouteImport
-      parentRoute: typeof ForgotPasswordRoute
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
       id: '/_authenticated/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/register/account': {
-      id: '/register/account'
-      path: '/account'
-      fullPath: '/register/account'
-      preLoaderRoute: typeof RegisterAccountRouteImport
-      parentRoute: typeof RegisterRoute
-    }
-    '/forgot-password/reset': {
-      id: '/forgot-password/reset'
-      path: '/reset'
-      fullPath: '/forgot-password/reset'
-      preLoaderRoute: typeof ForgotPasswordResetRouteImport
-      parentRoute: typeof ForgotPasswordRoute
-    }
-    '/forgot-password/otp': {
-      id: '/forgot-password/otp'
-      path: '/otp'
-      fullPath: '/forgot-password/otp'
-      preLoaderRoute: typeof ForgotPasswordOtpRouteImport
-      parentRoute: typeof ForgotPasswordRoute
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin': {
@@ -380,25 +365,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/reports/': {
-      id: '/_authenticated/reports/'
-      path: '/reports'
-      fullPath: '/reports/'
-      preLoaderRoute: typeof AuthenticatedReportsIndexRouteImport
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/projects/': {
-      id: '/_authenticated/projects/'
-      path: '/projects'
-      fullPath: '/projects/'
-      preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/forgot-password/': {
+      id: '/forgot-password/'
+      path: '/'
+      fullPath: '/forgot-password/'
+      preLoaderRoute: typeof ForgotPasswordIndexRouteImport
+      parentRoute: typeof ForgotPasswordRoute
     }
-    '/_authenticated/moas/': {
-      id: '/_authenticated/moas/'
-      path: '/moas'
-      fullPath: '/moas/'
-      preLoaderRoute: typeof AuthenticatedMoasIndexRouteImport
+    '/forgot-password/otp': {
+      id: '/forgot-password/otp'
+      path: '/otp'
+      fullPath: '/forgot-password/otp'
+      preLoaderRoute: typeof ForgotPasswordOtpRouteImport
+      parentRoute: typeof ForgotPasswordRoute
+    }
+    '/forgot-password/reset': {
+      id: '/forgot-password/reset'
+      path: '/reset'
+      fullPath: '/forgot-password/reset'
+      preLoaderRoute: typeof ForgotPasswordResetRouteImport
+      parentRoute: typeof ForgotPasswordRoute
+    }
+    '/register/account': {
+      id: '/register/account'
+      path: '/account'
+      fullPath: '/register/account'
+      preLoaderRoute: typeof RegisterAccountRouteImport
+      parentRoute: typeof RegisterRoute
+    }
+    '/_authenticated/archives/': {
+      id: '/_authenticated/archives/'
+      path: '/archives'
+      fullPath: '/archives/'
+      preLoaderRoute: typeof AuthenticatedArchivesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/faculty/': {
@@ -408,11 +414,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFacultyIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/archives/': {
-      id: '/_authenticated/archives/'
-      path: '/archives'
-      fullPath: '/archives/'
-      preLoaderRoute: typeof AuthenticatedArchivesIndexRouteImport
+    '/_authenticated/moas/': {
+      id: '/_authenticated/moas/'
+      path: '/moas'
+      fullPath: '/moas/'
+      preLoaderRoute: typeof AuthenticatedMoasIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects/': {
+      id: '/_authenticated/projects/'
+      path: '/projects'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/proposals/$proposalId': {
@@ -422,25 +435,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProposalsProposalIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/projects/$projectId/': {
-      id: '/_authenticated/projects/$projectId/'
-      path: '/projects/$projectId'
-      fullPath: '/projects/$projectId/'
-      preLoaderRoute: typeof AuthenticatedProjectsProjectIdIndexRouteImport
+    '/_authenticated/reports/': {
+      id: '/_authenticated/reports/'
+      path: '/reports'
+      fullPath: '/reports/'
+      preLoaderRoute: typeof AuthenticatedReportsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/moas/$moaId/': {
-      id: '/_authenticated/moas/$moaId/'
-      path: '/moas/$moaId'
-      fullPath: '/moas/$moaId/'
-      preLoaderRoute: typeof AuthenticatedMoasMoaIdIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/admin/users/': {
-      id: '/_authenticated/admin/users/'
-      path: '/users'
-      fullPath: '/admin/users/'
-      preLoaderRoute: typeof AuthenticatedAdminUsersIndexRouteImport
+    '/_authenticated/admin/activity-log/': {
+      id: '/_authenticated/admin/activity-log/'
+      path: '/activity-log'
+      fullPath: '/admin/activity-log/'
+      preLoaderRoute: typeof AuthenticatedAdminActivityLogIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/settings/': {
@@ -450,12 +456,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/admin/activity-log/': {
-      id: '/_authenticated/admin/activity-log/'
-      path: '/activity-log'
-      fullPath: '/admin/activity-log/'
-      preLoaderRoute: typeof AuthenticatedAdminActivityLogIndexRouteImport
+    '/_authenticated/admin/users/': {
+      id: '/_authenticated/admin/users/'
+      path: '/users'
+      fullPath: '/admin/users/'
+      preLoaderRoute: typeof AuthenticatedAdminUsersIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/moas/$moaId/': {
+      id: '/_authenticated/moas/$moaId/'
+      path: '/moas/$moaId'
+      fullPath: '/moas/$moaId/'
+      preLoaderRoute: typeof AuthenticatedMoasMoaIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects/$projectId/': {
+      id: '/_authenticated/projects/$projectId/'
+      path: '/projects/$projectId'
+      fullPath: '/projects/$projectId/'
+      preLoaderRoute: typeof AuthenticatedProjectsProjectIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
   }
 }
@@ -542,6 +562,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRouteWithChildren,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

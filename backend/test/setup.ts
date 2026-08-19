@@ -70,6 +70,11 @@ const mockSupabase = {
 				error: null,
 			}),
 			deleteUser: vi.fn().mockResolvedValue({ error: null }),
+			updateUserById: vi.fn().mockResolvedValue({
+				data: { user: { id: "test-user-id" } as any },
+				error: null,
+			}),
+			signOut: vi.fn().mockResolvedValue({ error: null }),
 			getUserById: vi.fn(async (id: string) => {
 				const email =
 					id === "bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb"

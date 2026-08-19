@@ -101,3 +101,14 @@ export const LookupListResponseSchema = z.array(
 		name: z.string(),
 	}),
 );
+
+export const ResetPasswordBodySchema = z
+	.object({
+		token: z.string().min(1),
+		newPassword: z.string().min(8),
+	})
+	.openapi("ResetPasswordBody");
+
+export const ResetPasswordResponseSchema = z
+	.object({ success: z.boolean() })
+	.openapi("ResetPasswordResponse");

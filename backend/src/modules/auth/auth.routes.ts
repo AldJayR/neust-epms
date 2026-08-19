@@ -13,6 +13,8 @@ import {
 	LogoutResponseSchema,
 	OnboardingCompleteResponseSchema,
 	RegisterUserBodySchema,
+	ResetPasswordBodySchema,
+	ResetPasswordResponseSchema,
 	UpdateProfileBodySchema,
 	UserResponseSchema,
 	UserSearchQuerySchema,
@@ -27,6 +29,7 @@ import {
 	login,
 	logout,
 	registerUser,
+	resetPasswordWithToken,
 	searchUsers,
 	updateOwnProfile,
 } from "./auth.service.js";
@@ -69,6 +72,54 @@ app.openapi(checkPasswordRoute, async (c) => {
 	const { password } = c.req.valid("json");
 	const compromised = await checkPassword(password);
 	return c.json({ compromised }, 200);
+});
+
+// ── POST /auth/reset-password (Public, token-based) ──
+const resetPasswordRoute = createRoute({
+	method: "post",
+	path: "/auth/reset-password",
+	tags: ["Auth"],
+	summary: "Reset a password using an admin-generated reset link",
+	request: {
+		body: {
+			content: { "application/json": { schema: ResetPasswordBodySchema } },
+			required: true,
+		},
+	},
+	responses: {
+		200: {
+			content: {
+				"application/json": { schema: ResetPasswordResponseSchema },
+			},
+			description: "Password reset successfully",
+		},
+		400: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid, expired, or already-used token, or unsafe password",
+		},
+		503: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Password safety check is unavailable",
+		},
+	},
+});
+
+const resetPasswordLimiter = rateLimiter({
+	windowMs: 15 * 60 * 1000,
+	limit: 20,
+	standardHeaders: "draft-6",
+	keyGenerator: (c) => getClientIp(c),
+});
+app.use("/auth/reset-password", resetPasswordLimiter);
+
+app.openapi(resetPasswordRoute, async (c) => {
+	const { token, newPassword } = c.req.valid("json");
+	const result = await resetPasswordWithToken(
+		token,
+		newPassword,
+		getClientIp(c),
+	);
+	return c.json(result, 200);
 });
 
 // ── GET /auth/me ──

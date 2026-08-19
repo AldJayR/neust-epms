@@ -16,6 +16,7 @@ import {
 	ProvisionDirectorSchema,
 	RejectUserResponseSchema,
 	RejectUserSchema,
+	ResetPasswordLinkResponseSchema,
 	RolesResponseSchema,
 	UpdateUserResponseSchema,
 	UpdateUserSchema,
@@ -24,6 +25,7 @@ import {
 import {
 	bulkApproveUsers,
 	bulkUpdateUserStatus,
+	generateResetLink,
 	getAdminStats,
 	listRoles,
 	listUsers,
@@ -259,6 +261,41 @@ app.openapi(updateSpecificUserRoute, async (c) => {
 	const { id } = c.req.valid("param");
 	const body = c.req.valid("json");
 	const result = await updateUser(authUser, id, body, getClientIp(c));
+	return c.json(result, 200);
+});
+
+// ── POST /admin/users/{id}/reset-password-link ──
+const generateResetLinkRoute = createRoute({
+	method: "post",
+	path: "/admin/users/{id}/reset-password-link",
+	tags: ["Admin"],
+	summary: "Generate a password reset link for a user (Super Admin only)",
+	security: [{ Bearer: [] }],
+	request: {
+		params: AdminParamId,
+	},
+	responses: {
+		200: {
+			content: {
+				"application/json": { schema: ResetPasswordLinkResponseSchema },
+			},
+			description: "Password reset link generated successfully",
+		},
+		400: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "User is inactive",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "User not found",
+		},
+	},
+});
+
+app.openapi(generateResetLinkRoute, async (c) => {
+	const authUser = c.get("user");
+	const { id } = c.req.valid("param");
+	const result = await generateResetLink(authUser, id, getClientIp(c));
 	return c.json(result, 200);
 });
 

@@ -480,6 +480,31 @@ export const setNewPasswordFn = createServerFn({ method: "POST" })
 		return { error: false as const };
 	});
 
+export const resetPasswordWithTokenFn = createServerFn({ method: "POST" })
+	.validator(
+		z.object({ token: z.string().min(1), password: z.string().min(8) }),
+	)
+	.handler(async ({ data }) => {
+		const response = await fetch(`${API_BASE}/auth/reset-password`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				token: data.token,
+				newPassword: data.password,
+			}),
+		});
+
+		if (!response.ok) {
+			const message = await getErrorMessage(
+				response,
+				"Unable to reset your password",
+			);
+			return { error: true as const, message };
+		}
+
+		return { error: false as const };
+	});
+
 // ── Complete Onboarding ──
 export const completeOnboardingFn = createServerFn({ method: "POST" })
 	.validator(z.void())

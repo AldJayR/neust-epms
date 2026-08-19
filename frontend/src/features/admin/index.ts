@@ -8,6 +8,7 @@ export type {
 	AuditLog,
 	AuditLogListResponse,
 	AuditStats,
+	GenerateResetLinkResponse,
 	ProvisionDirectorInput,
 	RoleResponse,
 	UpdateUserInput,
@@ -21,11 +22,13 @@ export {
 	auditStatsQueryOptions,
 	bulkApproveUsersFn,
 	bulkUpdateUserStatusFn,
+	generateResetLinkFn,
 	getAdminUsersFn,
 	getRolesFn,
 	provisionDirectorFn,
 	updateUserFn,
 } from "./functions";
+export { GenerateResetLinkDialog } from "./generate-reset-link-dialog";
 export {
 	getSettingsFn,
 	settingsQueryOptions,

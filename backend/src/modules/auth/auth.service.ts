@@ -1,14 +1,16 @@
 import type { z } from "@hono/zod-openapi";
-import { and, eq, ilike, or } from "drizzle-orm";
+import { and, eq, ilike, isNull, or } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { campuses } from "@/db/schema/campuses.js";
 import { departments } from "@/db/schema/departments.js";
+import { passwordResetTokens } from "@/db/schema/password-reset-tokens.js";
 import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { authUserCache, cacheEnabled } from "@/lib/cache.js";
 import { ApiError } from "@/lib/errors.js";
 import { isPasswordCompromised } from "@/lib/password-check.js";
+import { hashResetToken } from "@/lib/reset-token.js";
 import { supabase } from "@/lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import type {
@@ -114,6 +116,84 @@ async function getUserProfileById(userId: string) {
 
 export async function checkPassword(password: string): Promise<boolean> {
 	return isPasswordCompromised(password);
+}
+
+export async function resetPasswordWithToken(
+	token: string,
+	newPassword: string,
+	ipAddress: string,
+): Promise<{ success: true }> {
+	const [existing] = await db
+		.select({
+			tokenId: passwordResetTokens.id,
+			userId: passwordResetTokens.userId,
+			expiresAt: passwordResetTokens.expiresAt,
+		})
+		.from(passwordResetTokens)
+		.where(
+			and(
+				eq(passwordResetTokens.tokenHash, hashResetToken(token)),
+				isNull(passwordResetTokens.usedAt),
+			),
+		)
+		.limit(1);
+
+	if (!existing) {
+		throw new ApiError(
+			400,
+			"INVALID_RESET_TOKEN",
+			"This reset link is invalid or has already been used.",
+		);
+	}
+
+	if (existing.expiresAt.getTime() < Date.now()) {
+		throw new ApiError(
+			400,
+			"RESET_TOKEN_EXPIRED",
+			"This reset link has expired. Ask an administrator for a new one.",
+		);
+	}
+
+	const compromised = await isPasswordCompromised(newPassword);
+	if (compromised) {
+		throw new ApiError(
+			400,
+			"COMPROMISED_PASSWORD",
+			"Choose a password that has not appeared in a known data breach.",
+		);
+	}
+
+	const { error: updateError } = await supabase.auth.admin.updateUserById(
+		existing.userId,
+		{ password: newPassword },
+	);
+	if (updateError) {
+		throw new ApiError(400, "PASSWORD_UPDATE_FAILED", updateError.message);
+	}
+
+	// Best-effort session revocation; failing it must not block the reset.
+	await supabase.auth.admin
+		.signOut(existing.userId)
+		.catch(() => undefined);
+
+	await db.transaction(async (tx) => {
+		await tx
+			.update(passwordResetTokens)
+			.set({ usedAt: new Date() })
+			.where(eq(passwordResetTokens.id, existing.tokenId));
+
+		await insertAuditLog(
+			{
+				userId: existing.userId,
+				action: "Password reset via admin-generated link",
+				tableAffected: "users",
+				ipAddress,
+			},
+			tx,
+		);
+	});
+
+	return { success: true };
 }
 
 export async function registerUser(body: RegisterUserBody, ipAddress: string) {

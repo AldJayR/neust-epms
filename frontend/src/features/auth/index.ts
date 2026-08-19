@@ -8,6 +8,7 @@ export {
 	getDepartmentsFn,
 	loginFn,
 	logoutFn,
+	resetPasswordWithTokenFn,
 	searchUsersFn,
 	sendResetCodeFn,
 	setNewPasswordFn,
