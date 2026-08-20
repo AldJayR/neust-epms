@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
-import { Check, Copy, Loader2, RefreshCw } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Check, Copy, KeyRound, Loader2, RefreshCw } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
@@ -33,39 +33,31 @@ export function GenerateResetLinkDialog({
 	isOpen,
 	onOpenChange,
 }: GenerateResetLinkDialogProps) {
-	const [resetUrl, setResetUrl] = useState<string | null>(null);
-	const [expiresAt, setExpiresAt] = useState<string | null>(null);
 	const [copied, setCopied] = useState(false);
-	const generatedForOpen = useRef(false);
 
-	const generateMutation = useMutation({
+	const { mutate, data, isPending, isError, error, reset } = useMutation({
 		mutationFn: () => generateResetLinkFn({ data: { userId: user.userId } }),
-		onSuccess: (data) => {
-			setResetUrl(
-				`${window.location.origin}/reset-password?token=${data.token}`,
-			);
-			setExpiresAt(data.expiresAt);
-			setCopied(false);
-		},
-		onError: (error: Error) => {
-			toast.error(error.message);
+		onError: (err: Error) => {
+			toast.error(err.message);
 		},
 	});
 
-	useEffect(() => {
-		if (isOpen && !generatedForOpen.current) {
-			generatedForOpen.current = true;
-			generateMutation.mutate();
-		}
-	}, [isOpen, generateMutation]);
+	const resetUrl = data
+		? `${typeof window !== "undefined" ? window.location.origin : ""}/reset-password?token=${data.token}`
+		: null;
+	const expiresAt = data?.expiresAt ?? null;
 
 	function handleClose(open: boolean) {
-		if (!open && !generateMutation.isPending) {
-			setResetUrl(null);
-			setExpiresAt(null);
+		if (!open) {
+			reset();
 			setCopied(false);
 			onOpenChange(false);
 		}
+	}
+
+	function handleGenerate() {
+		setCopied(false);
+		mutate();
 	}
 
 	async function handleCopy() {
@@ -97,21 +89,18 @@ export function GenerateResetLinkDialog({
 						a direct message or call.
 					</p>
 
-					{generateMutation.isPending ? (
+					{isPending ? (
 						<div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
 							<Loader2 className="size-4 animate-spin" />
 							Generating link...
 						</div>
-					) : generateMutation.isError ? (
+					) : isError ? (
 						<div className="flex flex-col items-start gap-3 py-2">
 							<p className="text-sm text-destructive">
-								{generateMutation.error?.message ??
+								{error?.message ??
 									"Unable to generate the link. Please try again."}
 							</p>
-							<Button
-								variant="outline"
-								onClick={() => generateMutation.mutate()}
-							>
+							<Button variant="outline" onClick={handleGenerate}>
 								<RefreshCw className="mr-2 size-4" />
 								Try again
 							</Button>
@@ -155,21 +144,20 @@ export function GenerateResetLinkDialog({
 					<Button
 						variant="outline"
 						onClick={() => handleClose(false)}
-						disabled={generateMutation.isPending}
+						disabled={isPending}
 						className="border-border text-foreground hover:bg-muted"
 					>
-						Close
+						{resetUrl ? "Done" : "Cancel"}
 					</Button>
-					<BrandButton
-						disabled={generateMutation.isPending}
-						onClick={() => generateMutation.mutate()}
-					>
-						{generateMutation.isPending ? (
+					<BrandButton disabled={isPending} onClick={handleGenerate}>
+						{isPending ? (
 							<Loader2 className="size-4 animate-spin mr-1.5" />
-						) : (
+						) : resetUrl ? (
 							<RefreshCw className="size-4 mr-1.5" />
+						) : (
+							<KeyRound className="size-4 mr-1.5" />
 						)}
-						Regenerate
+						{resetUrl ? "Regenerate" : "Generate link"}
 					</BrandButton>
 				</DialogFooter>
 			</DialogContent>
