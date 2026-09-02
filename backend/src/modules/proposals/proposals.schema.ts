@@ -48,9 +48,12 @@ export const ProposalDetailSchema = ProposalSchema.extend({
 	hasProposalDocument: z.boolean(),
 	members: z.array(
 		z.object({
+			memberId: z.string().uuid().optional(),
 			userId: z.string().uuid(),
 			projectRole: z.string(),
 			name: z.string(),
+			soNumber: z.string().nullable().optional(),
+			hasSpecialOrder: z.boolean().optional(),
 		}),
 	),
 }).openapi("ProposalDetail");

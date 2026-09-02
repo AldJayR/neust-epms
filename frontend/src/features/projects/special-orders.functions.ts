@@ -37,7 +37,9 @@ const uploadSchema = z.object({
 	file: z
 		.instanceof(File, { message: "A PDF file is required" })
 		.refine(
-			(file) => file.type === "application/pdf",
+			(file) =>
+				file.type === "application/pdf" ||
+				file.name.toLowerCase().endsWith(".pdf"),
 			"Only PDF files are allowed",
 		),
 });

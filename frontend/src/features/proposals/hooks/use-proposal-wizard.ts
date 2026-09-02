@@ -252,29 +252,22 @@ export function useProposalWizard({
 			}
 
 			// Upload member Special Orders if provided
-			try {
-				const targetProposalId = editingProposalId ?? proposalId;
-				const proposalDetails = await getProposalByIdFn({
-					data: { proposalId: targetProposalId },
-				});
-				for (const member of values.members) {
-					const soFile = state.soFiles[member.userId];
-					const proposalMember = proposalDetails.members.find(
-						(m) => m.userId === member.userId,
-					);
-					if (soFile && proposalMember?.memberId && member.soNumber) {
-						const soFormData = new FormData();
-						soFormData.append("memberId", proposalMember.memberId);
-						soFormData.append("soNumber", member.soNumber);
-						soFormData.append("file", soFile);
-						await uploadSpecialOrderFn({ data: soFormData });
-					}
-				}
-			} catch (soErr) {
-				console.error(
-					"[proposal-wizard] Failed to upload member special orders:",
-					soErr,
+			const targetProposalId = editingProposalId ?? proposalId;
+			const proposalDetails = await getProposalByIdFn({
+				data: { proposalId: targetProposalId },
+			});
+			for (const member of values.members) {
+				const soFile = state.soFiles[member.userId];
+				const proposalMember = proposalDetails.members.find(
+					(m) => m.userId === member.userId,
 				);
+				if (soFile && proposalMember?.memberId && member.soNumber) {
+					const soFormData = new FormData();
+					soFormData.append("memberId", proposalMember.memberId);
+					soFormData.append("soNumber", member.soNumber);
+					soFormData.append("file", soFile);
+					await uploadSpecialOrderFn({ data: soFormData });
+				}
 			}
 
 			if (shouldSubmit) {

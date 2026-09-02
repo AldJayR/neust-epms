@@ -22,6 +22,7 @@ import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposalSdgs } from "@/db/schema/proposal-sdgs.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { sdgs } from "@/db/schema/sdgs.js";
+import { specialOrders } from "@/db/schema/special-orders.js";
 import { users } from "@/db/schema/users.js";
 import { randomUUID } from "node:crypto";
 import { insertAuditLog } from "@/lib/audit.js";
@@ -255,12 +256,22 @@ export async function getProposalEditData(proposalId: string) {
 			.limit(1),
 		db
 			.select({
+				memberId: proposalMembers.memberId,
 				userId: proposalMembers.userId,
 				projectRole: proposalMembers.projectRole,
 				name: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
+				soNumber: specialOrders.soNumber,
+				hasSpecialOrder: sql<boolean>`case when ${specialOrders.specialOrderId} is not null then true else false end`,
 			})
 			.from(proposalMembers)
 			.innerJoin(users, eq(proposalMembers.userId, users.userId))
+			.leftJoin(
+				specialOrders,
+				and(
+					eq(proposalMembers.memberId, specialOrders.memberId),
+					isNull(specialOrders.archivedAt),
+				),
+			)
 			.where(
 				and(
 					eq(proposalMembers.proposalId, proposalId),

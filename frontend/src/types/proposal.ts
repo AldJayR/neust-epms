@@ -47,7 +47,8 @@ export interface ProposalEditMember {
 	userId: string;
 	projectRole: string;
 	name: string;
-	soNumber?: string;
+	soNumber?: string | null;
+	hasSpecialOrder?: boolean;
 }
 
 export interface ProposalExtensionService {

@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { insertAuditLog } from "@/lib/audit.js";
+import { ApiError } from "@/lib/errors.js";
 import { getClientIp } from "@/lib/client-ip.js";
 import { createNotification } from "@/lib/notification.helpers.js";
 import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
@@ -153,13 +154,7 @@ app.openapi(institutionalApprovalRoute, async (c) => {
 	const file = body.file;
 
 	if (!(file instanceof File)) {
-		return c.json(
-			{
-				code: "MISSING_FILE",
-				message: "No PDF file uploaded",
-			},
-			400,
-		);
+		throw new ApiError(400, "MISSING_FILE", "No PDF file uploaded");
 	}
 
 	const result = await recordInstitutionalApproval(
