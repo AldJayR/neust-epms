@@ -37,6 +37,7 @@ export function ProposalReviewHeader({
 	currentDocument,
 	isDownloading,
 	onDownloadAnnotated,
+	isDirector,
 }: ProposalReviewHeaderProps) {
 	return (
 		<>

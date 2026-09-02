@@ -10,6 +10,7 @@ import {
 	canSubmitEditingProposal,
 	getFieldsToValidate,
 	requiresProposalDocument,
+} from "../helpers/proposal-wizard-helpers";
 import { uploadSpecialOrderFn } from "@/features/projects/special-orders.functions";
 import {
 	createProposalFn,
@@ -86,6 +87,7 @@ export function useProposalWizard({
 				userId: user.userId,
 				projectRole: "Project Leader",
 				name: `${user.firstName} ${user.lastName}`,
+				soNumber: "",
 			},
 		],
 	};
@@ -105,34 +107,43 @@ export function useProposalWizard({
 		extensionServicesQueryOptions(),
 	);
 	const { data: bannerProgramsData } = useQuery(bannerProgramsQueryOptions());
-	const invalidateProposalData = async () => {
-		await Promise.all([
-			queryClient.invalidateQueries({ queryKey: ["faculty"] }),
-			queryClient.invalidateQueries({ queryKey: ["ret"] }),
-			queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
-		]);
-	};
-	const updateProposalMutation = useMutation({
-		mutationFn: updateProposalFn,
-		onSuccess: invalidateProposalData,
-	});
-	const submitProposalMutation = useMutation({
-		mutationFn: submitProposalFn,
-		onSuccess: invalidateProposalData,
-	});
+
 	const createProposalMutation = useMutation({
 		mutationFn: createProposalFn,
-		onSuccess: invalidateProposalData,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["proposals"] });
+			queryClient.invalidateQueries({ queryKey: ["ret"] });
+		},
 	});
+
+	const updateProposalMutation = useMutation({
+		mutationFn: updateProposalFn,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["proposals"] });
+			queryClient.invalidateQueries({ queryKey: ["ret"] });
+		},
+	});
+
+	const submitProposalMutation = useMutation({
+		mutationFn: submitProposalFn,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["proposals"] });
+			queryClient.invalidateQueries({ queryKey: ["ret"] });
+		},
+	});
+
 	const uploadDocumentMutation = useMutation({
 		mutationFn: uploadProposalDocumentFn,
-		onSuccess: invalidateProposalData,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["proposals"] });
+			queryClient.invalidateQueries({ queryKey: ["ret"] });
+		},
 	});
 
 	const handleOpenChange = (isOpen: boolean) => {
 		if (!isOpen) {
 			form.reset();
-			setState({ step: 1, file: null });
+			setState({ step: 1, file: null, soFiles: {} });
 		}
 		onOpenChange(isOpen);
 	};
@@ -157,6 +168,8 @@ export function useProposalWizard({
 			return;
 		}
 
+		const values = form.getValues();
+
 		if (shouldSubmit) {
 			const missingSo = values.members.some(
 				(m) => !m.soNumber?.trim() || (!isEditing && !state.soFiles[m.userId]),
@@ -170,7 +183,6 @@ export function useProposalWizard({
 		}
 
 		let timer: ReturnType<typeof setInterval> | null = null;
-		const values = form.getValues();
 
 		try {
 			setState({ uploadPhase: "creating", uploadProgress: 0 });

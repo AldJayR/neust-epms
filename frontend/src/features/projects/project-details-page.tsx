@@ -102,7 +102,10 @@ export function ProjectDetailsPage({
 				targetEndDate: editProposalData.targetEndDate ?? "",
 				budgetPartner: Number(editProposalData.budgetPartner ?? 0),
 				budgetNeust: Number(editProposalData.budgetNeust ?? 0),
-				members: editProposalData.members,
+				members: (editProposalData.members ?? []).map((m) => ({
+					...m,
+					soNumber: m.soNumber ?? "",
+				})),
 			}
 		: undefined;
 

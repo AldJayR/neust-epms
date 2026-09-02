@@ -20,7 +20,7 @@ import { recordInstitutionalApprovalFn } from "../functions";
 interface InstitutionalApprovalDialogProps {
 	proposalId: string;
 	proposalTitle: string;
-	trigger?: React.ReactNode;
+	trigger?: React.ReactElement;
 	open?: boolean;
 	onOpenChange?: (open: boolean) => void;
 }

@@ -11,13 +11,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
 import type { ProjectMember } from "@/types/project";
-import {
-	canManageSpecialOrders,
-	canUploadSpecialOrder,
-} from "../helpers/project-details-helpers";
+import { canManageSpecialOrders } from "../helpers/project-details-helpers";
 import { useProjectSpecialOrders } from "../hooks/use-project-special-orders";
 
 interface ProjectOverviewCardProps {
@@ -50,18 +45,9 @@ export function ProjectOverviewCard({
 	currentUserId,
 	currentUserRole,
 	proposalId,
-	status,
+	status: _status,
 }: ProjectOverviewCardProps) {
-	const {
-		uploadingMemberId,
-		soNumbers,
-		files,
-		uploadErrors,
-		setSoNumber,
-		setFile,
-		handleUpload,
-		handleViewSO,
-	} = useProjectSpecialOrders(proposalId);
+	const { uploadErrors, handleViewSO } = useProjectSpecialOrders(proposalId);
 
 	const isAllowedToManageSO = canManageSpecialOrders(
 		currentUserId,

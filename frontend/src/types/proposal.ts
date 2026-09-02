@@ -43,9 +43,11 @@ export interface ProposalFull {
 }
 
 export interface ProposalEditMember {
+	memberId?: string;
 	userId: string;
 	projectRole: string;
 	name: string;
+	soNumber?: string;
 }
 
 export interface ProposalExtensionService {
