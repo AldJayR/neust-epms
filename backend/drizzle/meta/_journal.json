@@ -43,6 +43,13 @@
       "when": 1785750998518,
       "tag": "0005_overconfident_scarlet_spider",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788359514005,
+      "tag": "0006_damp_living_tribunal",
+      "breakpoints": true
     }
   ]
 }

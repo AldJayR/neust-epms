@@ -68,7 +68,12 @@ export function CreateProposalModal({
 							{wizard.step === 3 && <ProposalStepDetails form={wizard.form} />}
 
 							{wizard.step === 4 && (
-								<ProposalStepMembers form={wizard.form} user={user} />
+								<ProposalStepMembers
+									form={wizard.form}
+									user={user}
+									soFiles={wizard.soFiles}
+									onSetSoFile={wizard.setMemberSoFile}
+								/>
 							)}
 
 							{wizard.step === 5 && (

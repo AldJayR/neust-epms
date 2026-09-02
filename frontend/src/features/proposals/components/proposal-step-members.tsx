@@ -13,9 +13,16 @@ import type { FormValues } from "./proposal-form";
 interface ProposalStepMembersProps {
 	form: UseFormReturn<FormValues>;
 	user: AuthUser;
+	soFiles?: Record<string, File | null>;
+	onSetSoFile?: (userId: string, file: File | null) => void;
 }
 
-export function ProposalStepMembers({ form, user }: ProposalStepMembersProps) {
+export function ProposalStepMembers({
+	form,
+	user,
+	soFiles = {},
+	onSetSoFile,
+}: ProposalStepMembersProps) {
 	const [userSearch, setUserSearch] = React.useState("");
 	const deferredSearch = React.useDeferredValue(userSearch);
 
@@ -94,51 +101,69 @@ export function ProposalStepMembers({ form, user }: ProposalStepMembersProps) {
 			<div className="space-y-2">
 				<FieldLabel>Team Members & Roles</FieldLabel>
 				<div className="border rounded-md divide-y max-h-[280px] overflow-y-auto">
-					{memberFields.map((field, index) => (
-						<div
-							key={field.id}
-							className="p-3 flex items-center justify-between gap-4"
-						>
-							<div className="flex-1 flex items-center justify-between gap-4">
-								<span className="text-sm font-medium text-slate-900 truncate dark:text-foreground">
-									{field.name}
-								</span>
-								<div className="flex items-center gap-2">
-									{field.userId === user.userId ? (
-										<span className="text-xs text-muted-foreground bg-slate-100 px-2 py-0.5 rounded dark:bg-muted">
-											{watchedMembers?.[index]?.projectRole ??
-												field.projectRole}
-										</span>
-									) : (
+					{memberFields.map((field, index) => {
+						const selectedFile = soFiles[field.userId];
+						return (
+							<div
+								key={field.id}
+								className="p-3.5 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+							>
+								<div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+									<div className="min-w-[140px]">
+										<p className="text-sm font-medium text-slate-900 truncate dark:text-foreground">
+											{field.name}
+										</p>
+									</div>
+									<div className="flex flex-wrap items-center gap-2">
+										{field.userId === user.userId ? (
+											<span className="text-xs text-muted-foreground bg-slate-100 px-2 py-1 rounded dark:bg-muted font-medium">
+												{watchedMembers?.[index]?.projectRole ??
+													field.projectRole}
+											</span>
+										) : (
+											<Input
+												{...form.register(
+													`members.${index}.projectRole` as const,
+												)}
+												placeholder="Role (e.g. Co-Leader)"
+												className="h-8 w-[130px] text-xs"
+											/>
+										)}
 										<Input
 											{...form.register(
-												`members.${index}.projectRole` as const,
+												`members.${index}.soNumber` as const,
 											)}
-											placeholder="Role (e.g. Co-Leader)"
+											placeholder="SO # (e.g. SO-2024-001)"
 											className="h-8 w-[140px] text-xs"
 										/>
-									)}
-									<Input
-										{...form.register(
-											`members.${index}.soNumber` as const,
-										)}
-										placeholder="SO # (Optional)"
-										className="h-8 w-[120px] text-xs"
-									/>
+										<div className="flex items-center gap-1.5">
+											<Input
+												type="file"
+												accept=".pdf,application/pdf"
+												className="h-8 w-[170px] text-xs file:h-5 file:text-[10px]"
+												onChange={(e) =>
+													onSetSoFile?.(
+														field.userId,
+														e.target.files?.[0] ?? null,
+													)
+												}
+											/>
+										</div>
+									</div>
 								</div>
+								{field.userId !== user.userId && (
+									<Button
+										variant="ghost"
+										size="icon"
+										className="text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0 dark:text-red-300 dark:hover:text-red-200 dark:hover:bg-red-950/30 self-end sm:self-center"
+										onClick={() => removeMember(index)}
+									>
+										<Trash2 className="size-4" />
+									</Button>
+								)}
 							</div>
-							{field.userId !== user.userId && (
-								<Button
-									variant="ghost"
-									size="icon"
-									className="text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0 dark:text-red-300 dark:hover:text-red-200 dark:hover:bg-red-950/30"
-									onClick={() => removeMember(index)}
-								>
-									<Trash2 className="size-4" />
-								</Button>
-							)}
-						</div>
-					))}
+						);
+					})}
 				</div>
 				<FieldError errors={[form.formState.errors.members]} />
 			</div>

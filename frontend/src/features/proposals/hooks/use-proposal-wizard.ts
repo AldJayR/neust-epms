@@ -10,10 +10,11 @@ import {
 	canSubmitEditingProposal,
 	getFieldsToValidate,
 	requiresProposalDocument,
-} from "../helpers/proposal-wizard-helpers";
+import { uploadSpecialOrderFn } from "@/features/projects/special-orders.functions";
 import {
 	createProposalFn,
 	extensionServicesQueryOptions,
+	getProposalByIdFn,
 	sdgsQueryOptions,
 	submitProposalFn,
 	updateProposalFn,
@@ -33,6 +34,7 @@ interface UseProposalWizardOptions {
 interface WizardState {
 	step: number;
 	file: File | null;
+	soFiles: Record<string, File | null>;
 	uploadProgress: number;
 	uploadPhase: "idle" | "creating" | "uploading" | "done";
 }
@@ -59,6 +61,7 @@ export function useProposalWizard({
 		{
 			step: 1,
 			file: null,
+			soFiles: {},
 			uploadProgress: 0,
 			uploadPhase: "idle" as const,
 		},
@@ -154,6 +157,18 @@ export function useProposalWizard({
 			return;
 		}
 
+		if (shouldSubmit) {
+			const missingSo = values.members.some(
+				(m) => !m.soNumber?.trim() || (!isEditing && !state.soFiles[m.userId]),
+			);
+			if (missingSo) {
+				toast.error(
+					"Please provide a Special Order number and upload the SO PDF for all team members before submitting.",
+				);
+				return;
+			}
+		}
+
 		let timer: ReturnType<typeof setInterval> | null = null;
 		const values = form.getValues();
 
@@ -224,6 +239,32 @@ export function useProposalWizard({
 				if (timer) clearInterval(timer);
 			}
 
+			// Upload member Special Orders if provided
+			try {
+				const targetProposalId = editingProposalId ?? proposalId;
+				const proposalDetails = await getProposalByIdFn({
+					data: { proposalId: targetProposalId },
+				});
+				for (const member of values.members) {
+					const soFile = state.soFiles[member.userId];
+					const proposalMember = proposalDetails.members.find(
+						(m) => m.userId === member.userId,
+					);
+					if (soFile && proposalMember?.memberId && member.soNumber) {
+						const soFormData = new FormData();
+						soFormData.append("memberId", proposalMember.memberId);
+						soFormData.append("soNumber", member.soNumber);
+						soFormData.append("file", soFile);
+						await uploadSpecialOrderFn({ data: soFormData });
+					}
+				}
+			} catch (soErr) {
+				console.error(
+					"[proposal-wizard] Failed to upload member special orders:",
+					soErr,
+				);
+			}
+
 			if (shouldSubmit) {
 				const targetId = editingProposalId ?? proposalId;
 				await submitProposalMutation.mutateAsync({
@@ -239,7 +280,7 @@ export function useProposalWizard({
 			);
 			onOpenChange(false);
 			form.reset();
-			setState({ step: 1, file: null });
+			setState({ step: 1, file: null, soFiles: {} });
 			setTimeout(
 				() => setState({ uploadPhase: "idle", uploadProgress: 0 }),
 				1000,
@@ -285,5 +326,9 @@ export function useProposalWizard({
 		nextStep,
 		previousStep: () => setState((previous) => ({ step: previous.step - 1 })),
 		setFile: (file: File | null) => setState({ file }),
+		setMemberSoFile: (userId: string, file: File | null) =>
+			setState((prev) => ({
+				soFiles: { ...prev.soFiles, [userId]: file },
+			})),
 	};
 }
