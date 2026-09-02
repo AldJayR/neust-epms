@@ -223,54 +223,13 @@ export function ProjectOverviewCard({
 														View
 													</Button>
 												</div>
-											) : canUploadSpecialOrder(
-													status,
-													currentUserId,
-													currentUserRole,
-													members,
-												) ? (
-												<div className="flex items-center gap-2.5">
-													<Input
-														type="text"
-														placeholder="e.g. SO-2024-001"
-														className="h-7 w-[110px] text-xs"
-														value={soNumbers[member.userId] ?? ""}
-														onChange={(event) =>
-															setSoNumber(member.userId, event.target.value)
-														}
-													/>
-													<Input
-														type="file"
-														accept=".pdf"
-														className="h-7 w-[180px] text-xs file:h-5 file:text-[10px]"
-														onChange={(event) =>
-															setFile(
-																member.userId,
-																event.target.files?.[0] ?? null,
-															)
-														}
-													/>
-													<Button
-														size="sm"
-														className="h-7 text-xs"
-														disabled={
-															!soNumbers[member.userId] ||
-															!files[member.userId] ||
-															uploadingMemberId === member.userId
-														}
-														onClick={() => handleUpload(member)}
-													>
-														{uploadingMemberId === member.userId ? (
-															<Spinner className="size-3" />
-														) : (
-															"Upload"
-														)}
-													</Button>
-												</div>
 											) : (
-												<span className="text-xs text-muted-foreground">
-													No SO
-												</span>
+												<Badge
+													variant="outline"
+													className="text-muted-foreground text-[10px] px-1.5"
+												>
+													No SO Attached
+												</Badge>
 											))}
 									</div>
 									{uploadErrors[member.userId] && (

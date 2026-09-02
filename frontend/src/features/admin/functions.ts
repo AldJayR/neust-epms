@@ -243,6 +243,33 @@ export const bulkApproveUsersFn = createServerFn({ method: "POST" })
 		};
 	});
 
+// ── Reject User Registration ─────────────────────────────
+
+export const rejectUserFn = createServerFn({ method: "POST" })
+	.validator(z.object({ userId: z.string() }))
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("Super Admin");
+		const token = await getValidAccessToken();
+
+		const response = await fetch(`${API_BASE}/admin/users/${data.userId}/reject`, {
+			method: "PATCH",
+			headers: {
+				Authorization: `Bearer ${token}`,
+				"Content-Type": "application/json",
+			},
+		});
+
+		if (!response.ok) {
+			const message = await getErrorMessage(
+				response,
+				"Failed to reject user registration",
+			);
+			throw new Error(message);
+		}
+
+		return (await response.json()) as { message: string };
+	});
+
 // ── Audit Logs ───────────────────────────────────────────
 
 export type JsonValue =

@@ -8,6 +8,7 @@ import {
 	ilike,
 	isNotNull,
 	isNull,
+	lt,
 	or,
 	type SQL,
 	sql,
@@ -520,42 +521,95 @@ export async function uploadReportDocument(
 				.from(projects)
 				.where(eq(projects.projectId, report.projectId))
 				.limit(1);
-			if (
+			const isClosureCompleted =
 				milestone?.reportType === "Project Closure" &&
 				hasFinalAccomplishment &&
-				hasTerminal &&
-				projectStatusRow?.projectStatus === PROJECT_STATUS.ONGOING
-			) {
-				const diff = captureAuditDiff(
-					{ projectStatus: projectStatusRow.projectStatus },
-					{ projectStatus: PROJECT_STATUS.PENDING_CLOSURE },
-					["projectStatus"],
-				);
-				const [transitioned] = await tx
-					.update(projects)
-					.set({
-						projectStatus: PROJECT_STATUS.PENDING_CLOSURE,
-						updatedAt: new Date(),
-					})
+				hasTerminal;
+
+			if (isClosureCompleted) {
+				if (
+					projectStatusRow?.projectStatus === PROJECT_STATUS.ONGOING ||
+					projectStatusRow?.projectStatus === PROJECT_STATUS.OVERDUE
+				) {
+					const diff = captureAuditDiff(
+						{ projectStatus: projectStatusRow.projectStatus },
+						{ projectStatus: PROJECT_STATUS.PENDING_CLOSURE },
+						["projectStatus"],
+					);
+					const [transitioned] = await tx
+						.update(projects)
+						.set({
+							projectStatus: PROJECT_STATUS.PENDING_CLOSURE,
+							updatedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(projects.projectId, report.projectId),
+								or(
+									eq(projects.projectStatus, PROJECT_STATUS.ONGOING),
+									eq(projects.projectStatus, PROJECT_STATUS.OVERDUE),
+								),
+							),
+						)
+						.returning({ projectId: projects.projectId });
+					if (transitioned) {
+						await insertAuditLog(
+							{
+								userId: user.userId,
+								action: `Transitioned project ${report.projectId} to Pending Closure (all closure reports submitted)`,
+								tableAffected: "projects",
+								oldValue: diff.oldValue,
+								newValue: diff.newValue,
+								ipAddress,
+							},
+							tx,
+						);
+					}
+				}
+			} else if (projectStatusRow?.projectStatus === PROJECT_STATUS.OVERDUE) {
+				const remainingOverdueMilestones = await tx
+					.select({ milestoneId: projectReportingMilestones.milestoneId })
+					.from(projectReportingMilestones)
 					.where(
 						and(
-							eq(projects.projectId, report.projectId),
-							eq(projects.projectStatus, PROJECT_STATUS.ONGOING),
+							eq(projectReportingMilestones.projectId, report.projectId),
+							lt(projectReportingMilestones.dueAt, new Date()),
+							isNull(projectReportingMilestones.completedAt),
 						),
-					)
-					.returning({ projectId: projects.projectId });
-				if (transitioned) {
-					await insertAuditLog(
-						{
-							userId: user.userId,
-							action: `Transitioned project ${report.projectId} to Pending Closure (all closure reports submitted)`,
-							tableAffected: "projects",
-							oldValue: diff.oldValue,
-							newValue: diff.newValue,
-							ipAddress,
-						},
-						tx,
 					);
+
+				if (remainingOverdueMilestones.length === 0) {
+					const diff = captureAuditDiff(
+						{ projectStatus: PROJECT_STATUS.OVERDUE },
+						{ projectStatus: PROJECT_STATUS.ONGOING },
+						["projectStatus"],
+					);
+					const [cleared] = await tx
+						.update(projects)
+						.set({
+							projectStatus: PROJECT_STATUS.ONGOING,
+							updatedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(projects.projectId, report.projectId),
+								eq(projects.projectStatus, PROJECT_STATUS.OVERDUE),
+							),
+						)
+						.returning({ projectId: projects.projectId });
+					if (cleared) {
+						await insertAuditLog(
+							{
+								userId: user.userId,
+								action: `Cleared overdue status for project ${report.projectId} (all overdue reports completed)`,
+								tableAffected: "projects",
+								oldValue: diff.oldValue,
+								newValue: diff.newValue,
+								ipAddress,
+							},
+							tx,
+						);
+					}
 				}
 			}
 			await insertAuditLog(

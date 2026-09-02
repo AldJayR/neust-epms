@@ -50,6 +50,16 @@ export const proposals = pgTable(
 			.default("Pending Review"),
 		bypassedRetChair: boolean("bypassed_ret_chair").notNull().default(false),
 		revisionNum: integer("revision_num").notNull().default(0),
+		institutionalApprovalDocPath: varchar(
+			"institutional_approval_doc_path",
+			{ length: 500 },
+		),
+		institutionalApprovalHash: varchar("institutional_approval_hash", {
+			length: 64,
+		}),
+		institutionalApprovedAt: timestamp("institutional_approved_at", {
+			withTimezone: true,
+		}),
 		targetStartDate: timestamp("target_start_date", { withTimezone: true }),
 		targetEndDate: timestamp("target_end_date", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true })

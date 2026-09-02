@@ -44,6 +44,34 @@ describe("deriveProposalState", () => {
 
 		expect(result).toMatchObject({ state: "WATCH", nextTransition: "No further action" });
 	});
+
+	it("directs Director to upload institutional approval scan when proposal is Approved", () => {
+		const result = deriveProposalState(
+			{ status: PROPOSAL_STATUS.APPROVED, bypassedRetChair: false },
+			user,
+			{ isDirector: true },
+		);
+
+		expect(result).toMatchObject({
+			state: "ACT",
+			owner: "You",
+			nextTransition: "Upload institutional approval scan",
+		});
+	});
+
+	it("indicates activation readiness when proposal is Institutionally Approved", () => {
+		const result = deriveProposalState(
+			{ status: PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED, bypassedRetChair: false },
+			user,
+			{ isDirector: true },
+		);
+
+		expect(result).toMatchObject({
+			state: "WATCH",
+			owner: "System",
+			nextTransition: "Project activation",
+		});
+	});
 });
 
 describe("deriveProjectState", () => {

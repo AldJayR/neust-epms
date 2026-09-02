@@ -23,9 +23,15 @@ export const STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 		nextStep: "No action required — waiting for Director/Admin decision.",
 	},
 	Approved: {
-		label: "Approved — Activation Required",
+		label: "Approved by Director — Awaiting Institutional Scan",
 		explanation:
-			"This proposal has been approved. However, the project is not yet authorized for implementation. Additional requirements must be completed before the project can begin.",
+			"This proposal has been approved by the Director. Final institutional sign-off and document scan upload are pending.",
+		nextStep: "Wait for Director to upload signed institutional approval scan.",
+	},
+	"Institutionally Approved": {
+		label: "Institutionally Approved — Activation Ready",
+		explanation:
+			"This proposal has received final institutional sign-off and is ready for project activation.",
 		nextStep: "Wait for Director/Admin to complete activation requirements.",
 	},
 	Returned: {

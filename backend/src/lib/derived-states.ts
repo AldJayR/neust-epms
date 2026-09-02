@@ -108,10 +108,30 @@ export function deriveProposalState(
 	}
 
 	if (status === PROPOSAL_STATUS.APPROVED) {
+		if (options?.isDirector) {
+			return {
+				state: "ACT",
+				owner: "You",
+				reason:
+					"Proposal approved. Upload signed institutional approval scan to complete institutional sign-off.",
+				nextTransition: "Upload institutional approval scan",
+			};
+		}
+		return {
+			state: "WAIT",
+			owner: "Director/Admin",
+			reason:
+				"Proposal approved by Director — awaiting signed institutional scan upload.",
+			nextTransition: "Institutional approval scan",
+		};
+	}
+
+	if (status === PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED) {
 		return {
 			state: "WATCH",
 			owner: "System",
-			reason: "Proposal approved — a project will be created automatically.",
+			reason:
+				"Proposal institutionally approved — ready for project activation.",
 			nextTransition: "Project activation",
 		};
 	}

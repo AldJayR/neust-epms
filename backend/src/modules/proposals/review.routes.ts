@@ -9,7 +9,11 @@ import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
 import { PROPOSAL_STATUS } from "@/lib/types.js";
 import type { AuthEnv } from "@/middleware/auth.js";
 import { ParamId, ReviewProposalSchema } from "./proposals.schema.js";
-import { getLeaderUserId, processReview } from "./proposals.service.js";
+import {
+	getLeaderUserId,
+	processReview,
+	recordInstitutionalApproval,
+} from "./proposals.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 
@@ -103,6 +107,69 @@ app.openapi(reviewRoute, async (c) => {
 	}
 
 	return c.json({ message: `Proposal ${body.decision.toLowerCase()}` }, 200);
+});
+
+// ── POST /proposals/:id/institutional-approval ──
+const institutionalApprovalRoute = createRoute({
+	method: "post",
+	path: "/proposals/{id}/institutional-approval",
+	tags: ["Proposals"],
+	summary: "Upload signed institutional approval scan (Director only)",
+	description:
+		"DFD Process 6.4: Records the Director's uploaded scan of the institutionally signed proposal, finalizing the proposal as institutionally approved.",
+	security: [{ Bearer: [] }],
+	request: {
+		params: ParamId,
+	},
+	responses: {
+		200: {
+			content: { "application/json": { schema: MessageSchema } },
+			description: "Institutional approval recorded",
+		},
+		400: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid proposal state or missing file",
+		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Only Director can record institutional approval",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Proposal not found",
+		},
+		422: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid file type",
+		},
+	},
+});
+
+app.openapi(institutionalApprovalRoute, async (c) => {
+	const user = c.get("user");
+	const { id } = c.req.valid("param");
+
+	const body = await c.req.parseBody();
+	const file = body.file;
+
+	if (!(file instanceof File)) {
+		return c.json(
+			{
+				code: "MISSING_FILE",
+				message: "No PDF file uploaded",
+			},
+			400,
+		);
+	}
+
+	const result = await recordInstitutionalApproval(
+		user,
+		id,
+		file,
+		getClientIp(c),
+	);
+
+	return c.json({ message: result.message }, 200);
 });
 
 export default app;

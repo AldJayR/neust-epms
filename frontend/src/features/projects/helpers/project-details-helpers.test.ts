@@ -31,16 +31,16 @@ describe("project details permission helpers", () => {
 		expect(canManageSpecialOrders("other", "Faculty", members)).toBe(false);
 	});
 
-	it("allows upload only for approved projects and leaders or directors", () => {
+	it("disallows special order upload in project details (collected during proposal stage)", () => {
 		expect(
 			canUploadSpecialOrder("Pending Review", "leader", "Faculty", members),
 		).toBe(false);
 		expect(
 			canUploadSpecialOrder("Approved", "leader", "Faculty", members),
-		).toBe(true);
+		).toBe(false);
 		expect(
 			canUploadSpecialOrder("Approved", "other", "Director", members),
-		).toBe(true);
+		).toBe(false);
 		expect(
 			canUploadSpecialOrder("Approved", "member", "Faculty", members),
 		).toBe(false);

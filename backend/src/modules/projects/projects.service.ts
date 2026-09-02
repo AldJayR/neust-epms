@@ -29,6 +29,7 @@ import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { deriveProjectState } from "@/lib/derived-states.js";
 import { ApiError } from "@/lib/errors.js";
 import { getLeaderSubquery } from "@/lib/leader-subquery.js";
+import { createNotification } from "@/lib/notification.helpers.js";
 import { buildProposalScope } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
 import {
@@ -748,6 +749,36 @@ export async function closeProject(
 			tx,
 		);
 
+		const [proposal] = await tx
+			.select({ title: proposals.title })
+			.from(proposals)
+			.where(eq(proposals.proposalId, project.proposalId))
+			.limit(1);
+
+		const [leader] = await tx
+			.select({ userId: proposalMembers.userId })
+			.from(proposalMembers)
+			.where(
+				and(
+					eq(proposalMembers.proposalId, project.proposalId),
+					eq(proposalMembers.projectRole, "Project Leader"),
+					isNull(proposalMembers.archivedAt),
+				),
+			)
+			.limit(1);
+
+		if (leader) {
+			await createNotification({
+				recipientId: leader.userId,
+				type: "project",
+				title: "Project Closure Approved",
+				message: `Project closure for "${proposal?.title ?? "Untitled"}" has been approved by the Director. The project is officially closed.`,
+				sendEmail: true,
+			}).catch((err) => {
+				console.error("[notification] Failed to notify leader on closure:", err);
+			});
+		}
+
 		return updated;
 	});
 }
@@ -847,7 +878,10 @@ export async function activateProject(
 				.for("update")
 				.limit(1);
 
-			if (proposal?.status === PROPOSAL_STATUS.APPROVED) {
+			if (
+				proposal?.status === PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED ||
+				proposal?.status === PROPOSAL_STATUS.APPROVED
+			) {
 				await tx
 					.insert(projects)
 					.values({ proposalId: id, projectStatus: PROJECT_STATUS.APPROVED })
@@ -869,6 +903,28 @@ export async function activateProject(
 
 		if (!project) {
 			throw new ApiError(404, "NOT_FOUND", "Project not found");
+		}
+
+		const [proposal] = await tx
+			.select({
+				proposalId: proposals.proposalId,
+				title: proposals.title,
+				status: proposals.status,
+			})
+			.from(proposals)
+			.where(eq(proposals.proposalId, project.proposalId))
+			.limit(1);
+
+		if (
+			proposal &&
+			proposal.status !== PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED &&
+			proposal.status !== PROPOSAL_STATUS.APPROVED
+		) {
+			throw new ApiError(
+				400,
+				"INVALID_STATE",
+				"Proposal must be institutionally approved before project activation",
+			);
 		}
 
 		if (project.projectStatus !== PROJECT_STATUS.APPROVED) {
@@ -968,6 +1024,30 @@ export async function activateProject(
 			},
 			tx,
 		);
+
+		const [leader] = await tx
+			.select({ userId: proposalMembers.userId })
+			.from(proposalMembers)
+			.where(
+				and(
+					eq(proposalMembers.proposalId, project.proposalId),
+					eq(proposalMembers.projectRole, "Project Leader"),
+					isNull(proposalMembers.archivedAt),
+				),
+			)
+			.limit(1);
+
+		if (leader) {
+			await createNotification({
+				recipientId: leader.userId,
+				type: "project",
+				title: "Project Activated",
+				message: `Your project "${proposal?.title ?? "Untitled"}" has been officially activated and is now ongoing.`,
+				sendEmail: true,
+			}).catch((err) => {
+				console.error("[notification] Failed to notify leader on activation:", err);
+			});
+		}
 
 		return updated;
 	});

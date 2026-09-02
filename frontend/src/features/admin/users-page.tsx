@@ -31,6 +31,7 @@ import {
 	adminStatsQueryOptions,
 	adminUsersQueryOptions,
 	bulkUpdateUserStatusFn,
+	rejectUserFn,
 	type UserResponse,
 } from "./functions";
 import { GenerateResetLinkDialog } from "./generate-reset-link-dialog";
@@ -84,6 +85,17 @@ export function UsersPage({
 			toast.success(
 				`Successfully ${variables.isActive ? "activated" : "deactivated"} ${data.updatedCount} user(s)`,
 			);
+			queryClient.invalidateQueries({ queryKey: ["admin"] });
+		},
+		onError: (error: Error) => {
+			toast.error(error.message);
+		},
+	});
+
+	const rejectUserMutation = useMutation({
+		mutationFn: (userId: string) => rejectUserFn({ data: { userId } }),
+		onSuccess: () => {
+			toast.success("User registration rejected successfully");
 			queryClient.invalidateQueries({ queryKey: ["admin"] });
 		},
 		onError: (error: Error) => {
@@ -241,6 +253,15 @@ export function UsersPage({
 								>
 									{user.isActive ? "Deactivate" : "Activate"}
 								</DropdownMenuItem>
+								{!user.isActive && (
+									<DropdownMenuItem
+										className="text-destructive"
+										onClick={() => rejectUserMutation.mutate(user.userId)}
+										disabled={rejectUserMutation.isPending}
+									>
+										Reject Registration
+									</DropdownMenuItem>
+								)}
 							</DropdownMenuContent>
 						</DropdownMenu>
 					</div>

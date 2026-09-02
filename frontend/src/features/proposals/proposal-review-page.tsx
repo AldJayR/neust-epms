@@ -251,6 +251,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 					currentDocument={currentDoc}
 					isDownloading={isDownloading}
 					onDownloadAnnotated={handleDownloadAnnotated}
+					isDirector={isDirector}
 				/>
 
 				<div className="bg-card border border-border rounded-xl p-6 shadow-sm">

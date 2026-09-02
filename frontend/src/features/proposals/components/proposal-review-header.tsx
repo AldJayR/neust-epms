@@ -17,6 +17,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "@/components/ui/status-badge";
 
+import { FileUp } from "lucide-react";
+import { InstitutionalApprovalDialog } from "./institutional-approval-dialog";
+
 interface ProposalReviewHeaderProps {
 	proposalId: string;
 	title: string;
@@ -24,6 +27,7 @@ interface ProposalReviewHeaderProps {
 	currentDocument?: { id: string; url: string };
 	isDownloading: boolean;
 	onDownloadAnnotated: () => Promise<void>;
+	isDirector?: boolean;
 }
 
 export function ProposalReviewHeader({
@@ -74,50 +78,64 @@ export function ProposalReviewHeader({
 					</h1>
 					<StatusBadge status={status} variant="outline" />
 				</div>
-				{currentDocument && (
-					<div className="flex items-center">
-						<BrandButton
-							type="button"
-							className="h-9 rounded-r-none border-r border-primary-foreground/25 px-4 text-sm font-medium"
-							disabled={isDownloading}
-							onClick={() => void onDownloadAnnotated()}
-						>
-							{isDownloading ? (
-								<Loader2 className="size-4 animate-spin" />
-							) : (
-								<Download className="size-4" />
-							)}
-							{isDownloading ? "Preparing..." : "Download Annotated Copy"}
-						</BrandButton>
-						<DropdownMenu>
-							<DropdownMenuTrigger
-								render={
-									<BrandButton
-										type="button"
-										className="h-9 rounded-l-none px-2"
-										aria-label="More download options"
-									/>
-								}
+				<div className="flex flex-wrap items-center gap-2">
+					{isDirector && status === "Approved" && (
+						<InstitutionalApprovalDialog
+							proposalId={proposalId}
+							proposalTitle={title}
+							trigger={
+								<BrandButton type="button" className="h-9 gap-2 text-sm">
+									<FileUp className="size-4" />
+									Record Institutional Approval
+								</BrandButton>
+							}
+						/>
+					)}
+					{currentDocument && (
+						<div className="flex items-center">
+							<BrandButton
+								type="button"
+								className="h-9 rounded-r-none border-r border-primary-foreground/25 px-4 text-sm font-medium"
+								disabled={isDownloading}
+								onClick={() => void onDownloadAnnotated()}
 							>
-								<ChevronDown className="size-4" />
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								<DropdownMenuItem
-									onClick={() =>
-										window.open(
-											currentDocument.url,
-											"_blank",
-											"noopener,noreferrer",
-										)
-								}
-								>
+								{isDownloading ? (
+									<Loader2 className="size-4 animate-spin" />
+								) : (
 									<Download className="size-4" />
-									Download Original PDF
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
-				)}
+								)}
+								{isDownloading ? "Preparing..." : "Download Annotated Copy"}
+							</BrandButton>
+							<DropdownMenu>
+								<DropdownMenuTrigger
+									render={
+										<BrandButton
+											type="button"
+											className="h-9 rounded-l-none px-2"
+											aria-label="More download options"
+										/>
+									}
+								>
+									<ChevronDown className="size-4" />
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem
+										onClick={() =>
+											window.open(
+												currentDocument.url,
+												"_blank",
+												"noopener,noreferrer",
+											)
+										}
+									>
+										<Download className="size-4" />
+										Download Original PDF
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</div>
+					)}
+				</div>
 			</div>
 		</>
 	);

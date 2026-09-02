@@ -23,14 +23,29 @@ import { proposalSdgs } from "@/db/schema/proposal-sdgs.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { sdgs } from "@/db/schema/sdgs.js";
 import { users } from "@/db/schema/users.js";
+import { randomUUID } from "node:crypto";
 import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { ApiError } from "@/lib/errors.js";
-import { type AuthUser, PROPOSAL_STATUS, ROLE_NAMES } from "@/lib/types.js";
+import { createNotification } from "@/lib/notification.helpers.js";
+import { supabase } from "@/lib/supabase.js";
+import {
+	type AuthUser,
+	PROJECT_STATUS,
+	PROPOSAL_STATUS,
+	ROLE_NAMES,
+} from "@/lib/types.js";
 import {
 	isProjectLeader,
 	PROJECT_LEADER_ROLE,
 } from "@/services/auth-user.service.js";
+import {
+	hashFileSha256,
+} from "@/services/file-integrity.service.js";
+import {
+	isPdfFile,
+	sanitizeFilename,
+} from "@/services/file.service.js";
 import { validateBannerProgramForProposal } from "../banner-programs/banner-programs.service.js";
 import { validateProposalCompleteness } from "./proposal-completeness.js";
 import { resolveReviewPolicy } from "./proposal-review-policy.js";
@@ -966,4 +981,149 @@ export async function getLeaderUserId(
 		)
 		.limit(1);
 	return leader?.userId;
+}
+
+export async function recordInstitutionalApproval(
+	user: AuthUser,
+	proposalId: string,
+	file: File,
+	ipAddress: string,
+) {
+	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"Only the Director can record institutional approval",
+		);
+	}
+
+	const [proposal] = await db
+		.select({
+			proposalId: proposals.proposalId,
+			title: proposals.title,
+			status: proposals.status,
+		})
+		.from(proposals)
+		.where(
+			and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
+		)
+		.limit(1);
+
+	if (!proposal) {
+		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+	}
+
+	if (proposal.status !== PROPOSAL_STATUS.APPROVED) {
+		throw new ApiError(
+			400,
+			"INVALID_STATE",
+			"Proposal must be in Approved status before recording institutional approval",
+		);
+	}
+
+	if (!isPdfFile(file)) {
+		throw new ApiError(
+			422,
+			"INVALID_FILE_TYPE",
+			"The uploaded file must be a valid PDF document",
+		);
+	}
+
+	const sanitizedFilename = sanitizeFilename(file.name);
+	const storagePath = `proposals/${proposalId}/institutional_approval_${Date.now()}_${randomUUID()}_${sanitizedFilename}`;
+	const contentHash = await hashFileSha256(file);
+
+	const { error: uploadError } = await supabase.storage
+		.from("documents")
+		.upload(storagePath, file, {
+			contentType: file.type,
+			upsert: false,
+		});
+
+	if (uploadError) {
+		throw new ApiError(
+			400,
+			"UPLOAD_FAILED",
+			`Supabase storage upload failed: ${uploadError.message}`,
+		);
+	}
+
+	await db.transaction(async (tx) => {
+		const [updated] = await tx
+			.update(proposals)
+			.set({
+				status: PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED,
+				institutionalApprovalDocPath: storagePath,
+				institutionalApprovalHash: contentHash,
+				institutionalApprovedAt: new Date(),
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(proposals.proposalId, proposalId),
+					eq(proposals.status, PROPOSAL_STATUS.APPROVED),
+				),
+			)
+			.returning();
+
+		if (!updated) {
+			throw new ApiError(
+				400,
+				"INVALID_STATE",
+				"Proposal state changed since last read",
+			);
+		}
+
+		const [existingProject] = await tx
+			.select({ projectId: projects.projectId })
+			.from(projects)
+			.where(eq(projects.proposalId, proposalId))
+			.limit(1);
+
+		if (!existingProject) {
+			await tx.insert(projects).values({
+				proposalId: proposalId,
+				projectStatus: PROJECT_STATUS.APPROVED,
+			});
+		}
+
+		await insertAuditLog(
+			{
+				userId: user.userId,
+				action: `Recorded institutional approval for proposal ${proposalId}`,
+				tableAffected: "proposals",
+				oldValue: { status: PROPOSAL_STATUS.APPROVED },
+				newValue: {
+					status: PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED,
+					storagePath,
+					contentHash,
+				},
+				ipAddress,
+			},
+			tx,
+		);
+	});
+
+	const leaderUserId = await getLeaderUserId(proposalId);
+	if (leaderUserId) {
+		await createNotification({
+			recipientId: leaderUserId,
+			type: "proposal",
+			title: "Institutional Approval Recorded",
+			message: `Your proposal "${proposal.title}" has received final institutional approval and is now ready for project activation.`,
+			sendEmail: true,
+		}).catch((err) => {
+			console.error(
+				"[notification] Failed to create institutional approval notification:",
+				err,
+			);
+		});
+	}
+
+	return {
+		message: "Institutional approval recorded successfully",
+		proposalId,
+		status: PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED,
+		storagePath,
+	};
 }

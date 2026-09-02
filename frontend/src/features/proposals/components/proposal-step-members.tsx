@@ -115,9 +115,16 @@ export function ProposalStepMembers({ form, user }: ProposalStepMembersProps) {
 												`members.${index}.projectRole` as const,
 											)}
 											placeholder="Role (e.g. Co-Leader)"
-											className="h-8 w-[180px] text-xs"
+											className="h-8 w-[140px] text-xs"
 										/>
 									)}
+									<Input
+										{...form.register(
+											`members.${index}.soNumber` as const,
+										)}
+										placeholder="SO # (Optional)"
+										className="h-8 w-[120px] text-xs"
+									/>
 								</div>
 							</div>
 							{field.userId !== user.userId && (

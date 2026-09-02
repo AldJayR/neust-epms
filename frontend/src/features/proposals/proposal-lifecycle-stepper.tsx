@@ -24,6 +24,7 @@ const LIFECYCLE_STEPS = [
 	{ status: "Pending Review", label: "Review" },
 	{ status: "Endorsed", label: "Endorsed" },
 	{ status: "Approved", label: "Approved" },
+	{ status: "Institutionally Approved", label: "Institutional Sign-Off" },
 ] as const;
 
 export function ProposalLifecycleStepper({

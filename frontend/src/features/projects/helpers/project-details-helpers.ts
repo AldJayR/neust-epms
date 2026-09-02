@@ -30,15 +30,13 @@ export function canManageSpecialOrders(
 }
 
 export function canUploadSpecialOrder(
-	status: string,
-	currentUserId: string,
-	currentUserRole: string,
-	members: ProjectMember[],
+	_status: string,
+	_currentUserId: string,
+	_currentUserRole: string,
+	_members: ProjectMember[],
 ): boolean {
-	if (status !== "Approved") return false;
-	return (
-		currentUserRole === "Director" || isProjectLeader(currentUserId, members)
-	);
+	// DFD Process 4.1 & 7.1: Special orders are collected at proposal submission time, not in project details
+	return false;
 }
 
 export function canReadProject(

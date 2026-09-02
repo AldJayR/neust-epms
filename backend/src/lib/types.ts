@@ -92,6 +92,7 @@ export const PROPOSAL_STATUS = {
 	PENDING_REVIEW: "Pending Review",
 	ENDORSED: "Endorsed",
 	APPROVED: "Approved",
+	INSTITUTIONALLY_APPROVED: "Institutionally Approved",
 	RETURNED: "Returned",
 	REJECTED: "Rejected",
 } as const;
