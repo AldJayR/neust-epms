@@ -170,18 +170,6 @@ export function useProposalWizard({
 
 		const values = form.getValues();
 
-		if (shouldSubmit) {
-			const missingSo = values.members.some(
-				(m) => !m.soNumber?.trim() || (!isEditing && !state.soFiles[m.userId]),
-			);
-			if (missingSo) {
-				toast.error(
-					"Please provide a Special Order number and upload the SO PDF for all team members before submitting.",
-				);
-				return;
-			}
-		}
-
 		let timer: ReturnType<typeof setInterval> | null = null;
 
 		try {
@@ -261,10 +249,14 @@ export function useProposalWizard({
 				const proposalMember = proposalDetails.members.find(
 					(m) => m.userId === member.userId,
 				);
-				if (soFile && proposalMember?.memberId && member.soNumber) {
+				if (soFile && proposalMember?.memberId) {
 					const soFormData = new FormData();
 					soFormData.append("memberId", proposalMember.memberId);
-					soFormData.append("soNumber", member.soNumber);
+					soFormData.append(
+						"soNumber",
+						member.soNumber?.trim() ||
+							`SO-PENDING-${proposalMember.memberId.slice(0, 8).toUpperCase()}`,
+					);
 					soFormData.append("file", soFile);
 					await uploadSpecialOrderFn({ data: soFormData });
 				}

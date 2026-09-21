@@ -121,15 +121,16 @@ app.openapi(uploadRoute, async (c) => {
 	if (typeof memberId !== "string" || !memberId) {
 		throw new ApiError(400, "INVALID_MEMBER_ID", "memberId is required");
 	}
-	if (typeof soNumber !== "string" || !soNumber) {
-		throw new ApiError(400, "INVALID_SO_NUMBER", "soNumber is required");
-	}
+	const effectiveSoNumber =
+		typeof soNumber === "string" && soNumber.trim()
+			? soNumber.trim()
+			: `SO-PENDING-${memberId.slice(0, 8).toUpperCase()}`;
 
 	const { record, isNew } = await uploadSpecialOrder(
 		user,
 		file,
 		memberId,
-		soNumber,
+		effectiveSoNumber,
 		getClientIp(c),
 	);
 	return c.json(record, isNew ? 201 : 200);

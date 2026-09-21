@@ -33,7 +33,7 @@ export const getAccessTokenForUploadFn = createServerFn({ method: "GET" })
 
 const uploadSchema = z.object({
 	memberId: z.uuid("Invalid member ID"),
-	soNumber: z.string().min(1, "SO number is required"),
+	soNumber: z.string().optional(),
 	file: z
 		.instanceof(File, { message: "A PDF file is required" })
 		.refine(
@@ -46,9 +46,19 @@ const uploadSchema = z.object({
 
 export const uploadSpecialOrderFn = createServerFn({ method: "POST" })
 	.validator((data: FormData) => {
+		const memberId = data.get("memberId");
+		const rawSoNumber = data.get("soNumber");
+		const soNumber =
+			typeof rawSoNumber === "string" && rawSoNumber.trim()
+				? rawSoNumber.trim()
+				: typeof memberId === "string"
+					? `SO-PENDING-${memberId.slice(0, 8).toUpperCase()}`
+					: "SO-PENDING";
+		data.set("soNumber", soNumber);
+
 		const result = uploadSchema.safeParse({
-			memberId: data.get("memberId"),
-			soNumber: data.get("soNumber"),
+			memberId,
+			soNumber,
 			file: data.get("file"),
 		});
 		if (!result.success)

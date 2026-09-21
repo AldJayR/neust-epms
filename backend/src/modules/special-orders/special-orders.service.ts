@@ -159,11 +159,18 @@ export async function uploadSpecialOrder(
 			let nextRecord: typeof specialOrders.$inferSelect;
 			let nextIsNew = false;
 			if (existing) {
+				const nextSoNumber =
+					soNumber.startsWith("SO-PENDING-") &&
+					existing.soNumber &&
+					!existing.soNumber.startsWith("SO-PENDING-")
+						? existing.soNumber
+						: soNumber;
+
 				const [updated] = await tx
 					.update(specialOrders)
 					.set({
 						storagePath,
-						soNumber,
+						soNumber: nextSoNumber,
 						contentHash,
 						uploadedBy: user.userId,
 						sourceIp: ipAddress,

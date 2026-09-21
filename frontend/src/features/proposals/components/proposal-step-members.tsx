@@ -134,7 +134,7 @@ export function ProposalStepMembers({
 											{...form.register(
 												`members.${index}.soNumber` as const,
 											)}
-											placeholder="SO # (e.g. SO-2024-001)"
+											placeholder="SO # (Optional)"
 											className="h-8 w-[140px] text-xs"
 										/>
 										{selectedFile ? (
