@@ -117,6 +117,12 @@ export function ProposalStepInfo({
 						>
 							<SelectTrigger>
 								<SelectValue
+									renderValue={(value) => {
+										const program = bannerProgramsData?.find(
+											(p) => String(p.bannerProgramId) === String(value),
+										);
+										return program?.programName ?? null;
+									}}
 									placeholder={
 										!bannerProgramsData
 											? "Loading programs..."

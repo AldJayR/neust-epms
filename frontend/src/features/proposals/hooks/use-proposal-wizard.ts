@@ -113,6 +113,7 @@ export function useProposalWizard({
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["ret"] });
+			queryClient.invalidateQueries({ queryKey: ["faculty"] });
 		},
 	});
 
@@ -121,6 +122,7 @@ export function useProposalWizard({
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["ret"] });
+			queryClient.invalidateQueries({ queryKey: ["faculty"] });
 		},
 	});
 
@@ -129,6 +131,7 @@ export function useProposalWizard({
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["ret"] });
+			queryClient.invalidateQueries({ queryKey: ["faculty"] });
 		},
 	});
 
@@ -137,6 +140,7 @@ export function useProposalWizard({
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["ret"] });
+			queryClient.invalidateQueries({ queryKey: ["faculty"] });
 		},
 	});
 
