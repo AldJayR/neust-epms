@@ -45,6 +45,7 @@ jobs:
             const pkg = JSON.parse(require('fs').readFileSync('backend/package.json', 'utf8'));
             delete pkg.packageManager;
             delete pkg.devDependencies;
+            pkg.scripts = { start: pkg.scripts.start };
             require('fs').writeFileSync('deploy-staging/package.json', JSON.stringify(pkg, null, 2));
           "
 
