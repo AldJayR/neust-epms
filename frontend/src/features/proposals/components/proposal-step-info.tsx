@@ -82,6 +82,10 @@ export function ProposalStepInfo({
 	const watchedSdgIdSet = new Set(watchedSdgIds);
 	const watchedExtensionServiceIdSet = new Set(watchedExtensionServiceIds);
 
+	const bannerProgramLabels = Object.fromEntries(
+		(bannerProgramsData ?? []).map((p) => [String(p.bannerProgramId), p.programName]),
+	) as Record<string, string>;
+
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 			<div className="md:col-span-2">
@@ -117,12 +121,6 @@ export function ProposalStepInfo({
 						>
 							<SelectTrigger>
 								<SelectValue
-									renderValue={(value) => {
-										const program = bannerProgramsData?.find(
-											(p) => String(p.bannerProgramId) === String(value),
-										);
-										return program?.programName ?? null;
-									}}
 									placeholder={
 										!bannerProgramsData
 											? "Loading programs..."
@@ -130,7 +128,17 @@ export function ProposalStepInfo({
 												? "No programs configured"
 												: "Select a banner program"
 									}
-								/>
+								>
+									{(value) =>
+										value
+											? (bannerProgramLabels[value] ?? value)
+											: (!bannerProgramsData
+												? "Loading programs..."
+												: bannerProgramsData.length === 0
+													? "No programs configured"
+													: "Select a banner program")
+									}
+								</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								{bannerProgramsData?.map((program) => (
