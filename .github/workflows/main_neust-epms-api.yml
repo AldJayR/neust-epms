@@ -41,7 +41,12 @@ jobs:
         run: |
           mkdir -p deploy-staging
           cp -r backend/dist deploy-staging/dist
-          cp backend/package.json deploy-staging/package.json
+          node -e "
+            const pkg = JSON.parse(require('fs').readFileSync('backend/package.json', 'utf8'));
+            delete pkg.packageManager;
+            delete pkg.devDependencies;
+            require('fs').writeFileSync('deploy-staging/package.json', JSON.stringify(pkg, null, 2));
+          "
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
