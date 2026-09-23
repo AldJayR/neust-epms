@@ -57,7 +57,7 @@ const closeProjectRoute = createRoute({
 	tags: ["Projects"],
 	summary: "Explicitly close a project (Director only)",
 	description:
-		"Requires both a Final Accomplishment report and a Terminal report to be submitted.",
+		"Requires the Accomplishment and Terminal Report with evaluation forms to be submitted.",
 	security: [{ Bearer: [] }],
 	request: { params: ParamId },
 	responses: {

@@ -25,7 +25,11 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toStableDate } from "@/lib/utils";
-import { submitReportFn, uploadReportDocumentFn } from "../functions";
+import {
+	submitReportFn,
+	uploadReportAttachmentFn,
+	uploadReportDocumentFn,
+} from "../functions";
 
 interface SubmitReportModalProps {
 	open: boolean;
@@ -46,27 +50,29 @@ export function SubmitReportModal({
 	const queryClient = useQueryClient();
 	const [remarks, setRemarks] = useState("");
 	const [progressFile, setProgressFile] = useState<File | null>(null);
-	const [terminalFile, setTerminalFile] = useState<File | null>(null);
-	const [finalFile, setFinalFile] = useState<File | null>(null);
+	const [closureReportFile, setClosureReportFile] = useState<File | null>(null);
+	const [evalFormsFile, setEvalFormsFile] = useState<File | null>(null);
+	const [attendanceFile, setAttendanceFile] = useState<File | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const isClosure = milestone.reportType === "Project Closure";
 
 	const resetForm = () => {
 		setRemarks("");
 		setProgressFile(null);
-		setTerminalFile(null);
-		setFinalFile(null);
+		setClosureReportFile(null);
+		setEvalFormsFile(null);
+		setAttendanceFile(null);
 	};
 
 	const handleSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
 		if (
 			(!isClosure && !progressFile) ||
-			(isClosure && (!terminalFile || !finalFile))
+			(isClosure && (!closureReportFile || !evalFormsFile))
 		) {
 			toast.error(
 				isClosure
-					? "Please upload both the Terminal and Final Accomplishment reports."
+					? "Please upload the Accomplishment and Terminal Report and the required Evaluation Forms."
 					: "Please upload the required PDF document.",
 			);
 			return;
@@ -74,30 +80,44 @@ export function SubmitReportModal({
 
 		setIsSubmitting(true);
 		try {
-			const submitDocument = async (
-				reportType: "Progress" | "Terminal" | "Final Accomplishment",
-				document: File,
-			) => {
+			if (isClosure) {
 				const report = await submitReportFn({
 					data: {
 						milestoneId: milestone.id,
-						reportType,
+						reportType: "Accomplishment and Terminal Report",
 						remarks: remarks || undefined,
 					},
 				});
 				const formData = new FormData();
 				formData.set("reportId", report.reportId);
-				formData.set("file", document);
+				formData.set("file", closureReportFile!);
 				await uploadReportDocumentFn({ data: formData });
-			};
 
-			if (isClosure) {
-				await Promise.all([
-					submitDocument("Terminal", terminalFile!),
-					submitDocument("Final Accomplishment", finalFile!),
-				]);
+				const evalFormData = new FormData();
+				evalFormData.set("reportId", report.reportId);
+				evalFormData.set("file", evalFormsFile!);
+				evalFormData.set("attachmentType", "Evaluation Forms");
+				await uploadReportAttachmentFn({ data: evalFormData });
+
+				if (attendanceFile) {
+					const attFormData = new FormData();
+					attFormData.set("reportId", report.reportId);
+					attFormData.set("file", attendanceFile);
+					attFormData.set("attachmentType", "Attendance Records");
+					await uploadReportAttachmentFn({ data: attFormData });
+				}
 			} else {
-				await submitDocument("Progress", progressFile!);
+				const report = await submitReportFn({
+					data: {
+						milestoneId: milestone.id,
+						reportType: "Progress",
+						remarks: remarks || undefined,
+					},
+				});
+				const formData = new FormData();
+				formData.set("reportId", report.reportId);
+				formData.set("file", progressFile!);
+				await uploadReportDocumentFn({ data: formData });
 			}
 
 			await Promise.all([
@@ -154,14 +174,19 @@ export function SubmitReportModal({
 					{isClosure ? (
 						<div className="space-y-4">
 							<ReportFileField
-								label="Terminal Report Document"
-								file={terminalFile}
-								onFileChange={setTerminalFile}
+								label="Accomplishment and Terminal Report (Primary Document) *"
+								file={closureReportFile}
+								onFileChange={setClosureReportFile}
 							/>
 							<ReportFileField
-								label="Final Accomplishment Report Document"
-								file={finalFile}
-								onFileChange={setFinalFile}
+								label="Evaluation Forms (Required Attachment) *"
+								file={evalFormsFile}
+								onFileChange={setEvalFormsFile}
+							/>
+							<ReportFileField
+								label="Attendance Records (Optional Attachment)"
+								file={attendanceFile}
+								onFileChange={setAttendanceFile}
 							/>
 						</div>
 					) : (

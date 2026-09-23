@@ -11,6 +11,7 @@ export { partners } from "./partners.js";
 export { passwordResetTokens } from "./password-reset-tokens.js";
 export { projectReportingMilestones } from "./project-reporting-milestones.js";
 export { projectReports } from "./project-reports.js";
+export { reportAttachments } from "./report-attachments.js";
 export { projects } from "./projects.js";
 export { proposalBeneficiaries } from "./proposal-beneficiaries.js";
 export type { AnnotationData } from "./proposal-comments.js";

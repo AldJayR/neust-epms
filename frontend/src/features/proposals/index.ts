@@ -19,7 +19,11 @@ export { ProposalWizardFooter } from "./components/proposal-wizard-footer";
 export { ProposalWizardHeader } from "./components/proposal-wizard-header";
 export type { DerivedStateResponse } from "./derived-states.functions";
 export { proposalDerivedStateQueryOptions } from "./derived-states.functions";
-export { reviewProposalFn } from "./functions";
+export {
+	recordChairEndorsementFn,
+	recordInstitutionalApprovalFn,
+	reviewProposalFn,
+} from "./functions";
 export { ProposalLifecycleStepper } from "./proposal-lifecycle-stepper";
 export { ProposalReviewPage } from "./proposal-review-page";
 export type {

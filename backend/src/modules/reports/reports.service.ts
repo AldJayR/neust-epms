@@ -17,6 +17,7 @@ import { db } from "@/db/client.js";
 import { departments } from "@/db/schema/departments.js";
 import { projectReportingMilestones } from "@/db/schema/project-reporting-milestones.js";
 import { projectReports } from "@/db/schema/project-reports.js";
+import { reportAttachments } from "@/db/schema/report-attachments.js";
 import { projects } from "@/db/schema/projects.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposals } from "@/db/schema/proposals.js";
@@ -31,8 +32,14 @@ import {
 } from "@/lib/notification.helpers.js";
 import { buildProposalScope } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
-import { type AuthUser, PROJECT_STATUS, REPORT_TYPE } from "@/lib/types.js";
-import { sanitizeFilename } from "@/services/file.service.js";
+import {
+	type AuthUser,
+	ATTACHMENT_TYPE,
+	MILESTONE_TYPE,
+	PROJECT_STATUS,
+	REPORT_TYPE,
+} from "@/lib/types.js";
+import { isPdfFile, sanitizeFilename } from "@/services/file.service.js";
 import { hashFileSha256 } from "@/services/file-integrity.service.js";
 import type { CreateReportSchema, PaginationQuery } from "./reports.schema.js";
 
@@ -247,10 +254,13 @@ export async function createReport(
 			"Only project members can submit reports for this project",
 		);
 	const isValidReportType =
-		(milestone.reportType === REPORT_TYPE.PROGRESS &&
-			body.reportType === REPORT_TYPE.PROGRESS) ||
+		((milestone.reportType === REPORT_TYPE.PROGRESS ||
+			milestone.reportType === REPORT_TYPE.PROGRESS_REPORT) &&
+			(body.reportType === REPORT_TYPE.PROGRESS ||
+				body.reportType === REPORT_TYPE.PROGRESS_REPORT)) ||
 		(milestone.reportType === "Project Closure" &&
-			(body.reportType === REPORT_TYPE.TERMINAL ||
+			(body.reportType === REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL ||
+				body.reportType === REPORT_TYPE.TERMINAL ||
 				body.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT));
 	if (!isValidReportType) {
 		throw new ApiError(
@@ -492,17 +502,25 @@ export async function uploadReportDocument(
 				.from(projectReportingMilestones)
 				.where(eq(projectReportingMilestones.milestoneId, report.milestoneId))
 				.limit(1);
+			const hasUnifiedClosure = milestoneReports.some(
+				(item) =>
+					item.reportType === REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL,
+			);
 			const hasFinalAccomplishment = milestoneReports.some(
 				(item) => item.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT,
 			);
 			const hasTerminal = milestoneReports.some(
 				(item) => item.reportType === REPORT_TYPE.TERMINAL,
 			);
+			const isClosureCompleted =
+				(milestone?.reportType === "Project Closure" ||
+					milestone?.reportType === MILESTONE_TYPE.CLOSURE) &&
+				(hasUnifiedClosure || (hasFinalAccomplishment && hasTerminal));
 			const milestoneComplete =
 				milestone?.reportType === REPORT_TYPE.PROGRESS ||
-				(milestone?.reportType === "Project Closure" &&
-					hasFinalAccomplishment &&
-					hasTerminal);
+				milestone?.reportType === REPORT_TYPE.PROGRESS_REPORT ||
+				milestone?.reportType === MILESTONE_TYPE.PROGRESS ||
+				isClosureCompleted;
 			if (milestoneComplete) {
 				await tx
 					.update(projectReportingMilestones)
@@ -521,10 +539,6 @@ export async function uploadReportDocument(
 				.from(projects)
 				.where(eq(projects.projectId, report.projectId))
 				.limit(1);
-			const isClosureCompleted =
-				milestone?.reportType === "Project Closure" &&
-				hasFinalAccomplishment &&
-				hasTerminal;
 
 			if (isClosureCompleted) {
 				if (
@@ -673,4 +687,192 @@ export async function uploadReportDocument(
 		}
 		throw error;
 	}
+}
+
+export async function uploadReportAttachment(
+	user: AuthUser,
+	reportId: string,
+	file: File,
+	attachmentType: string,
+	ipAddress: string,
+) {
+	const [report] = await db
+		.select({
+			reportId: projectReports.reportId,
+			projectId: projectReports.projectId,
+			reportType: projectReports.reportType,
+			submittedById: projectReports.submittedById,
+		})
+		.from(projectReports)
+		.where(
+			and(
+				eq(projectReports.reportId, reportId),
+				isNull(projectReports.archivedAt),
+			),
+		)
+		.limit(1);
+
+	if (!report) {
+		throw new ApiError(404, "NOT_FOUND", "Report not found");
+	}
+
+	const [membership] = await db
+		.select({ memberId: proposalMembers.memberId })
+		.from(proposalMembers)
+		.innerJoin(projects, eq(projects.proposalId, proposalMembers.proposalId))
+		.where(
+			and(
+				eq(projects.projectId, report.projectId),
+				eq(proposalMembers.userId, user.userId),
+				isNull(proposalMembers.archivedAt),
+			),
+		)
+		.limit(1);
+
+	if (!membership) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"Only project members can upload report attachments",
+		);
+	}
+
+	if (!isPdfFile(file)) {
+		throw new ApiError(
+			422,
+			"INVALID_FILE_TYPE",
+			"Attachment must be a valid PDF document",
+		);
+	}
+
+	const allowedTypes: string[] = [
+		ATTACHMENT_TYPE.EVALUATION_FORMS,
+		ATTACHMENT_TYPE.ATTENDANCE_RECORDS,
+		ATTACHMENT_TYPE.MEANS_OF_VERIFICATION,
+	];
+	if (!allowedTypes.includes(attachmentType)) {
+		throw new ApiError(
+			400,
+			"INVALID_ATTACHMENT_TYPE",
+			`Attachment type must be one of: ${allowedTypes.join(", ")}`,
+		);
+	}
+
+	const sanitizedFilename = sanitizeFilename(file.name);
+	const storagePath = `reports/${reportId}/attachment_${attachmentType.toLowerCase().replace(/\s+/g, "_")}_${Date.now()}_${randomUUID()}_${sanitizedFilename}`;
+	const contentHash = await hashFileSha256(file);
+
+	const { error: uploadError } = await supabase.storage
+		.from("documents")
+		.upload(storagePath, file, {
+			contentType: file.type,
+			upsert: false,
+		});
+
+	if (uploadError) {
+		throw new ApiError(
+			400,
+			"UPLOAD_FAILED",
+			`Supabase upload failed: ${uploadError.message}`,
+		);
+	}
+
+	const [attachment] = await db
+		.insert(reportAttachments)
+		.values({
+			reportId,
+			attachmentType,
+			storagePath,
+			contentHash,
+			uploadedBy: user.userId,
+			sourceIp: ipAddress,
+		})
+		.returning();
+
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Uploaded ${attachmentType} attachment for report ${reportId}`,
+		tableAffected: "report_attachments",
+		recordId: attachment.attachmentId,
+		ipAddress,
+	});
+
+	return {
+		attachmentId: attachment.attachmentId,
+		reportId: attachment.reportId,
+		attachmentType: attachment.attachmentType,
+		storagePath: attachment.storagePath,
+		uploadedAt: attachment.uploadedAt.toISOString(),
+	};
+}
+
+export async function listReportAttachments(reportId: string) {
+	const rows = await db
+		.select({
+			attachmentId: reportAttachments.attachmentId,
+			reportId: reportAttachments.reportId,
+			attachmentType: reportAttachments.attachmentType,
+			storagePath: reportAttachments.storagePath,
+			uploadedAt: reportAttachments.uploadedAt,
+		})
+		.from(reportAttachments)
+		.where(
+			and(
+				eq(reportAttachments.reportId, reportId),
+				isNull(reportAttachments.archivedAt),
+			),
+		);
+
+	return rows.map((r) => ({
+		...r,
+		uploadedAt: r.uploadedAt.toISOString(),
+	}));
+}
+
+export async function getReportAttachmentSignedUrl(
+	user: AuthUser,
+	attachmentId: string,
+	ipAddress: string,
+) {
+	const [att] = await db
+		.select({
+			attachmentId: reportAttachments.attachmentId,
+			storagePath: reportAttachments.storagePath,
+			reportId: reportAttachments.reportId,
+			projectId: projectReports.projectId,
+		})
+		.from(reportAttachments)
+		.innerJoin(
+			projectReports,
+			eq(reportAttachments.reportId, projectReports.reportId),
+		)
+		.where(
+			and(
+				eq(reportAttachments.attachmentId, attachmentId),
+				isNull(reportAttachments.archivedAt),
+			),
+		)
+		.limit(1);
+
+	if (!att || !att.storagePath) {
+		throw new ApiError(404, "NOT_FOUND", "Attachment not found");
+	}
+
+	const { data, error } = await supabase.storage
+		.from("documents")
+		.createSignedUrl(att.storagePath, 3600);
+
+	if (error || !data?.signedUrl) {
+		throw new ApiError(500, "STORAGE_ERROR", "Failed to generate signed URL");
+	}
+
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Accessed signed URL for attachment ${attachmentId}`,
+		tableAffected: "report_attachments",
+		recordId: attachmentId,
+		ipAddress,
+	});
+
+	return { url: data.signedUrl };
 }

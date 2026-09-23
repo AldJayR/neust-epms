@@ -8,6 +8,7 @@ import { moas } from "./schema/moas.js";
 import { partners } from "./schema/partners.js";
 import { projectReportingMilestones } from "./schema/project-reporting-milestones.js";
 import { projectReports } from "./schema/project-reports.js";
+import { reportAttachments } from "./schema/report-attachments.js";
 import { projects } from "./schema/projects.js";
 import { proposalBeneficiaries } from "./schema/proposal-beneficiaries.js";
 import { proposalComments } from "./schema/proposal-comments.js";
@@ -255,20 +256,39 @@ export const projectsRelations = relations(projects, ({ many, one }) => ({
 }));
 
 // ── Project Reports ──
-export const projectReportsRelations = relations(projectReports, ({ one }) => ({
-	project: one(projects, {
-		fields: [projectReports.projectId],
-		references: [projects.projectId],
+export const projectReportsRelations = relations(
+	projectReports,
+	({ one, many }) => ({
+		project: one(projects, {
+			fields: [projectReports.projectId],
+			references: [projects.projectId],
+		}),
+		submitter: one(users, {
+			fields: [projectReports.submittedById],
+			references: [users.userId],
+		}),
+		milestone: one(projectReportingMilestones, {
+			fields: [projectReports.milestoneId],
+			references: [projectReportingMilestones.milestoneId],
+		}),
+		attachments: many(reportAttachments),
 	}),
-	submitter: one(users, {
-		fields: [projectReports.submittedById],
-		references: [users.userId],
+);
+
+// ── Report Attachments ──
+export const reportAttachmentsRelations = relations(
+	reportAttachments,
+	({ one }) => ({
+		report: one(projectReports, {
+			fields: [reportAttachments.reportId],
+			references: [projectReports.reportId],
+		}),
+		uploader: one(users, {
+			fields: [reportAttachments.uploadedBy],
+			references: [users.userId],
+		}),
 	}),
-	milestone: one(projectReportingMilestones, {
-		fields: [projectReports.milestoneId],
-		references: [projectReportingMilestones.milestoneId],
-	}),
-}));
+);
 
 // ── Project Reporting Milestones ──
 export const projectReportingMilestonesRelations = relations(

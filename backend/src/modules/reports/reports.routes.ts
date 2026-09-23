@@ -16,9 +16,12 @@ import {
 } from "./reports.schema.js";
 import {
 	createReport,
+	getReportAttachmentSignedUrl,
 	getReportSignedUrl,
 	getReportStats,
+	listReportAttachments,
 	listReports,
+	uploadReportAttachment,
 	uploadReportDocument,
 } from "./reports.service.js";
 
@@ -166,6 +169,74 @@ app.post("/reports/:id/document", async (c) => {
 	return c.json(
 		await uploadReportDocument(user, c.req.param("id"), file, getClientIp(c)),
 		201,
+	);
+});
+
+app.post("/reports/:id/attachments", async (c) => {
+	const user = c.get("user");
+	const contentLength = Number(c.req.header("content-length") ?? 0);
+	if (contentLength > MAX_UPLOAD_BYTES) {
+		return c.json(
+			{ error: { code: "FILE_TOO_LARGE", message: "File exceeds 10MB limit" } },
+			413,
+		);
+	}
+	const formData = await c.req.formData();
+	const file = formData.get("file");
+	const attachmentType = formData.get("attachmentType");
+
+	if (!(file instanceof File)) throw new Error("A PDF file is required");
+	if (typeof attachmentType !== "string" || !attachmentType) {
+		return c.json(
+			{
+				error: {
+					code: "INVALID_ATTACHMENT_TYPE",
+					message: "attachmentType is required",
+				},
+			},
+			400,
+		);
+	}
+	if (file.size <= 0 || !(await isPdfFile(file))) {
+		return c.json(
+			{
+				error: {
+					code: "INVALID_FILE",
+					message: "A non-empty PDF file is required",
+				},
+			},
+			422,
+		);
+	}
+	if (file.size > MAX_UPLOAD_BYTES) {
+		return c.json(
+			{ error: { code: "FILE_TOO_LARGE", message: "File exceeds 10MB limit" } },
+			413,
+		);
+	}
+	return c.json(
+		await uploadReportAttachment(
+			user,
+			c.req.param("id"),
+			file,
+			attachmentType,
+			getClientIp(c),
+		),
+		201,
+	);
+});
+
+app.get("/reports/:id/attachments", async (c) => {
+	const reportId = c.req.param("id");
+	return c.json(await listReportAttachments(reportId), 200);
+});
+
+app.get("/reports/attachments/:attachmentId/url", async (c) => {
+	const user = c.get("user");
+	const attachmentId = c.req.param("attachmentId");
+	return c.json(
+		await getReportAttachmentSignedUrl(user, attachmentId, getClientIp(c)),
+		200,
 	);
 });
 

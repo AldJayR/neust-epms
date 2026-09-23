@@ -25,10 +25,30 @@ export const ReportListSchema = z
 export const CreateReportSchema = z
 	.object({
 		milestoneId: z.string().uuid(),
-		reportType: z.enum(["Progress", "Terminal", "Final Accomplishment"]),
+		reportType: z.enum([
+			"Progress",
+			"Progress Report",
+			"Terminal",
+			"Final Accomplishment",
+			"Accomplishment and Terminal Report",
+		]),
 		remarks: z.string().optional(),
 	})
 	.openapi("CreateReport");
+
+export const ReportAttachmentSchema = z
+	.object({
+		attachmentId: z.string(),
+		reportId: z.string(),
+		attachmentType: z.string(),
+		storagePath: z.string(),
+		uploadedAt: z.string(),
+	})
+	.openapi("ReportAttachment");
+
+export const ReportAttachmentListSchema = z
+	.array(ReportAttachmentSchema)
+	.openapi("ReportAttachmentList");
 
 export const ReportStatsSchema = z
 	.object({ total: z.number(), progress: z.number(), terminal: z.number() })

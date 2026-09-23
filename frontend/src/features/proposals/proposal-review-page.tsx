@@ -14,7 +14,11 @@ import { ProposalReviewDocumentPane } from "./components/proposal-review-documen
 import { ProposalReviewHeader } from "./components/proposal-review-header";
 import { ProposalReviewSidebar } from "./components/proposal-review-sidebar";
 import { ProposalReviewSkeleton } from "./components/proposal-review-skeleton";
-import { downloadAnnotatedProposalFn, reviewProposalFn } from "./functions";
+import {
+	downloadAnnotatedProposalFn,
+	recordChairEndorsementFn,
+	reviewProposalFn,
+} from "./functions";
 import {
 	canReviewProposal,
 	getDefaultReviewComment,
@@ -69,6 +73,28 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		},
 		onError: (reviewError: Error) => {
 			toast.error(reviewError.message || "Failed to process proposal review.");
+		},
+	});
+
+	const endorseMutation = useMutation({
+		mutationFn: (input: { file: File; comments?: string }) => {
+			const formData = new FormData();
+			formData.append("proposalId", proposalId);
+			formData.append("file", input.file);
+			if (input.comments) {
+				formData.append("comments", input.comments);
+			}
+			return recordChairEndorsementFn({ data: formData });
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+			queryClient.invalidateQueries({ queryKey: ["proposals"] });
+			queryClient.invalidateQueries({ queryKey: ["ret"] });
+			queryClient.invalidateQueries({ queryKey: ["projects"] });
+			toast.success("Proposal has been endorsed successfully.");
+		},
+		onError: (endorseError: Error) => {
+			toast.error(endorseError.message || "Failed to endorse proposal.");
 		},
 	});
 
@@ -219,6 +245,13 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		});
 	};
 
+	const handleEndorse = async (file: File, commentsText?: string) => {
+		await endorseMutation.mutateAsync({
+			file,
+			comments: commentsText,
+		});
+	};
+
 	const contextValue = data
 		? {
 				data,
@@ -229,7 +262,8 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 				handleDeny,
 				handleReject,
 				handleApprove,
-				isPending: reviewMutation.isPending,
+				handleEndorse,
+				isPending: reviewMutation.isPending || endorseMutation.isPending,
 				isRET,
 				bypassedRetChair: data.bypassedRetChair,
 			}

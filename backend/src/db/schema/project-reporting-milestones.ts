@@ -16,7 +16,9 @@ export const projectReportingMilestones = pgTable(
 		projectId: uuid("project_id")
 			.notNull()
 			.references(() => projects.projectId),
-		reportType: varchar("report_type", { length: 100 }).notNull(),
+		title: varchar("title", { length: 255 }),
+		milestoneType: varchar("milestone_type", { length: 50 }),
+		reportType: varchar("report_type", { length: 100 }),
 		dueAt: timestamp("due_at", {
 			withTimezone: true,
 		}).notNull(),

@@ -1,14 +1,3 @@
-Now we can create user stories properly because we have already gone through:
-
-**Use Cases → Empathy Maps → Personas → Journey Maps → Pain Points → User Stories**
-
-The mistake would be to mechanically convert every use-case step into:
-
-> As a user, I want to upload a file so that the file is uploaded.
-
-That produces feature-centered stories.
-
-Instead, the stories should come from the **goals and pain points we identified**, while the existing use cases act as constraints and evidence about the intended workflow. 
 
 # User Stories: Faculty / Project Leader
 
@@ -131,8 +120,6 @@ That final story is directly supported by the bypass logic in UC-4 and UC-6.
 **US-F23 — Know who is responsible for each requirement**
 
 > As a Faculty Project Leader, I want to see who is responsible for each incomplete activation requirement so that I know whether I need to act or wait.
-
-This is one of the strongest story groups because it directly addresses the dangerous confusion between **approved** and **ongoing**.
 
 ---
 
@@ -277,10 +264,6 @@ This should be the foundation of the RET Chair experience.
 **US-D01 — See work awaiting office action**
 
 > As a Director/Admin, I want to see all items currently awaiting action from the Extension Services office so that important work is not overlooked.
-
-**US-D02 — Prioritize urgent work**
-
-> As a Director/Admin, I want urgent, overdue, blocked, and time-sensitive items to be clearly prioritized so that I can address the highest-risk issues first.
 
 **US-D03 — Search across extension projects**
 
@@ -448,10 +431,3 @@ Some of the most important stories should not belong to only one persona.
 
 ---
 
-The important result is that these user stories do **not** map one-to-one with the nine use cases.
-
-That is a good sign.
-
-The use cases describe **system behavior**. The user stories reveal **human needs**. For example, UC-7 says the system detects an overdue report; the user stories reveal that faculty need warnings *before* it becomes overdue. UC-4 says the user submits documents; the stories reveal that the user needs guidance *before* submission. UC-3 says the system displays metrics; the stories reveal that RET Chairs and Director/Admin users first need to know *what requires action*. 
-
-The next useful step is to **prioritize these stories into MVP, Should Have, Could Have, and Later**. We currently have more than enough stories to overbuild the system, so prioritization is where the Design Thinking work starts protecting your scope.

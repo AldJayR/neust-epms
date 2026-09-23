@@ -12,6 +12,10 @@ export interface ProposalItem {
 	status: string;
 	bypassedRetChair: boolean;
 	revisionNum: number;
+	endorsementDocPath?: string | null;
+	endorsedAt?: string | null;
+	institutionalApprovalDocPath?: string | null;
+	institutionalApprovedAt?: string | null;
 	targetStartDate?: string | null;
 	targetEndDate?: string | null;
 	createdAt: string;
@@ -34,6 +38,10 @@ export interface ProposalFull {
 	budgetPartner: string | null;
 	budgetNeust: string | null;
 	status: string;
+	endorsementDocPath?: string | null;
+	endorsedAt?: string | null;
+	institutionalApprovalDocPath?: string | null;
+	institutionalApprovedAt?: string | null;
 	targetStartDate: string | null;
 	targetEndDate: string | null;
 	sdgIds: number[];

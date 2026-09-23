@@ -5,7 +5,11 @@ export {
 } from "./comments.functions";
 export type { DerivedStateResponse } from "./derived-states.functions";
 export { proposalDerivedStateQueryOptions } from "./derived-states.functions";
-export { reviewProposalFn } from "./functions";
+export {
+	recordChairEndorsementFn,
+	recordInstitutionalApprovalFn,
+	reviewProposalFn,
+} from "./functions";
 export type {
 	CreateProposalInput,
 	ProposalFull,

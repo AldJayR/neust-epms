@@ -1,6 +1,4 @@
-Yes. At this point, we should identify pain points **across the entire journey**, not merely per use case. The goal is to find where users experience **uncertainty, delay, unnecessary effort, cognitive load, loss of visibility, or unclear responsibility**.
 
-These are still **hypothesized pain points** until validated through interviews and usability testing. The use cases tell us where friction *may* occur; users will tell us whether it actually does. 
 
 # Core pain points across the extension-project journey
 
@@ -606,23 +604,3 @@ If those documents require verification or acceptance, automatic closure could c
 This must be validated against the actual Extension Services workflow.
 
 ---
-
-# The pain points cluster into six deeper problems
-
-The individual issues are symptoms. Underneath them, I see six systemic pain clusters:
-
-**Uncertainty** — What do I need? Where is it? What happens next?
-
-**Visibility** — Who has it? How long has it been there? What changed?
-
-**Ownership** — Who is responsible for the next action?
-
-**Continuity** — Why does one project feel fragmented across proposals, MOAs, projects, and reports?
-
-**Cognitive load** — What needs my attention among all these projects?
-
-**Prevention** — Why does the system tell me only after something has expired or become overdue?
-
-These six clusters are much more useful for the Design Thinking process than a list of 17 disconnected feature complaints.
-
-The next step in **Define** should be to turn these into precise **problem statements and “How Might We” questions**. That will let us distinguish genuine user problems from premature feature ideas.

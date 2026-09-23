@@ -12,7 +12,7 @@ export function canReviewProposal({
 	hasEndorsement: boolean;
 }): boolean {
 	if (role === "RET Chair") {
-		return status === "Pending Review" && !bypassedRetChair && !hasEndorsement;
+		return status === "Pending Review" && !hasEndorsement;
 	}
 
 	return (

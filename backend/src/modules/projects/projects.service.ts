@@ -15,6 +15,7 @@ import { moas } from "@/db/schema/moas.js";
 import { partners } from "@/db/schema/partners.js";
 import { projectReportingMilestones } from "@/db/schema/project-reporting-milestones.js";
 import { projectReports } from "@/db/schema/project-reports.js";
+import { reportAttachments } from "@/db/schema/report-attachments.js";
 import { projects } from "@/db/schema/projects.js";
 import { proposalDocuments } from "@/db/schema/proposal-documents.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
@@ -33,6 +34,7 @@ import { createNotification } from "@/lib/notification.helpers.js";
 import { buildProposalScope } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
 import {
+	ATTACHMENT_TYPE,
 	type AuthUser,
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
@@ -242,6 +244,10 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 			targetStartDate: proposals.targetStartDate,
 			targetEndDate: proposals.targetEndDate,
 			moaPartner: partners.partnerName,
+			endorsementDocPath: proposals.endorsementDocPath,
+			endorsedAt: proposals.endorsedAt,
+			institutionalApprovalDocPath: proposals.institutionalApprovalDocPath,
+			institutionalApprovedAt: proposals.institutionalApprovedAt,
 		})
 		.from(proposals)
 		.innerJoin(
@@ -500,12 +506,34 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 		}),
 	);
 
+	let endorsementDocUrl: string | null = null;
+	if (row.endorsementDocPath) {
+		const { data: signedUrlData } = await supabase.storage
+			.from("documents")
+			.createSignedUrl(row.endorsementDocPath, 3600);
+		endorsementDocUrl = signedUrlData?.signedUrl ?? null;
+	}
+
+	let institutionalApprovalDocUrl: string | null = null;
+	if (row.institutionalApprovalDocPath) {
+		const { data: signedUrlData } = await supabase.storage
+			.from("documents")
+			.createSignedUrl(row.institutionalApprovalDocPath, 3600);
+		institutionalApprovalDocUrl = signedUrlData?.signedUrl ?? null;
+	}
+
 	return {
 		id: row.proposalId,
 		title: row.title,
 		status: row.projectStatus ?? row.status,
 		version: `v${row.revisionNum}`,
 		bypassedRetChair: row.bypassedRetChair,
+		endorsementDocPath: row.endorsementDocPath,
+		endorsementDocUrl,
+		endorsedAt: row.endorsedAt?.toISOString() ?? null,
+		institutionalApprovalDocPath: row.institutionalApprovalDocPath,
+		institutionalApprovalDocUrl,
+		institutionalApprovedAt: row.institutionalApprovedAt?.toISOString() ?? null,
 		metadata: {
 			leader: {
 				name: `${row.leaderFirstName ?? "N/A"} ${row.leaderLastName ?? "N/A"}`.trim(),
@@ -674,7 +702,10 @@ export async function closeProject(
 		}
 
 		const reports = await tx
-			.select({ reportType: projectReports.reportType })
+			.select({
+				reportId: projectReports.reportId,
+				reportType: projectReports.reportType,
+			})
 			.from(projectReports)
 			.where(
 				and(
@@ -684,27 +715,44 @@ export async function closeProject(
 				),
 			);
 
-		const hasFinalAccomplishment = reports.some(
-			(r) => r.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT,
+		const closureReport = reports.find(
+			(r) => r.reportType === REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL,
 		);
-		const hasTerminal = reports.some(
-			(r) => r.reportType === REPORT_TYPE.TERMINAL,
-		);
+		const legacyClosure =
+			reports.some((r) => r.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT) &&
+			reports.some((t) => t.reportType === REPORT_TYPE.TERMINAL);
 
-		if (!hasFinalAccomplishment) {
+		if (!closureReport && !legacyClosure) {
 			throw new ApiError(
 				400,
-				"MISSING_FINAL_ACCOMPLISHMENT_REPORT",
-				"A Final Accomplishment report must be submitted before closing",
+				"MISSING_CLOSURE_REPORT",
+				"An Accomplishment and Terminal Report must be submitted before closing",
 			);
 		}
 
-		if (!hasTerminal) {
-			throw new ApiError(
-				400,
-				"MISSING_TERMINAL_REPORT",
-				"A Terminal report must be submitted before closing",
-			);
+		if (closureReport) {
+			const [hasEval] = await tx
+				.select({ attachmentId: reportAttachments.attachmentId })
+				.from(reportAttachments)
+				.where(
+					and(
+						eq(reportAttachments.reportId, closureReport.reportId),
+						eq(
+							reportAttachments.attachmentType,
+							ATTACHMENT_TYPE.EVALUATION_FORMS,
+						),
+						isNull(reportAttachments.archivedAt),
+					),
+				)
+				.limit(1);
+
+			if (!hasEval) {
+				throw new ApiError(
+					400,
+					"MISSING_EVALUATION_FORMS",
+					"Evaluation Forms attachment is required for the Accomplishment and Terminal Report before closing",
+				);
+			}
 		}
 
 		const diff = captureAuditDiff(

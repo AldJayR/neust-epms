@@ -13,6 +13,7 @@ export interface ProposalReviewContextValue {
 	handleDeny: (comments?: string) => Promise<void> | void;
 	handleReject: (comments?: string) => Promise<void> | void;
 	handleApprove: (comments?: string) => Promise<void> | void;
+	handleEndorse?: (file: File, comments?: string) => Promise<void> | void;
 	isPending: boolean;
 	isRET: boolean;
 	bypassedRetChair: boolean;

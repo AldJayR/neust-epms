@@ -13,6 +13,7 @@ import { ParamId, ReviewProposalSchema } from "./proposals.schema.js";
 import {
 	getLeaderUserId,
 	processReview,
+	recordChairEndorsement,
 	recordInstitutionalApproval,
 } from "./proposals.service.js";
 
@@ -161,6 +162,66 @@ app.openapi(institutionalApprovalRoute, async (c) => {
 		user,
 		id,
 		file,
+		getClientIp(c),
+	);
+
+	return c.json({ message: result.message }, 200);
+});
+
+// ── POST /proposals/:id/endorsement ──
+const chairEndorsementRoute = createRoute({
+	method: "post",
+	path: "/proposals/{id}/endorsement",
+	tags: ["Proposals"],
+	summary: "Upload signed Dean/Campus Director endorsement scan (RET Chair only)",
+	description:
+		"DFD Process 4.2 & BR-10: Records the RET Chair's uploaded scan of the College Dean or Campus Director signed endorsement form, endorsing the proposal.",
+	security: [{ Bearer: [] }],
+	request: {
+		params: ParamId,
+	},
+	responses: {
+		200: {
+			content: { "application/json": { schema: MessageSchema } },
+			description: "Proposal endorsed with scan",
+		},
+		400: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid proposal state or missing file",
+		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Only RET Chair can record chair endorsement",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Proposal not found",
+		},
+		422: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid file type",
+		},
+	},
+});
+
+app.openapi(chairEndorsementRoute, async (c) => {
+	const user = c.get("user");
+	const { id } = c.req.valid("param");
+
+	const body = await c.req.parseBody();
+	const file = body.file;
+	const comments =
+		typeof body.comments === "string" ? body.comments : undefined;
+
+	if (!(file instanceof File)) {
+		throw new ApiError(400, "MISSING_FILE", "No PDF file uploaded");
+	}
+
+	const result = await recordChairEndorsement(
+		user,
+		id,
+		file,
+		comments,
 		getClientIp(c),
 	);
 

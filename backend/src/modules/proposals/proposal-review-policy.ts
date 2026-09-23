@@ -77,10 +77,7 @@ export function resolveReviewPolicy(
 		reviewStage,
 		newStatus,
 		revisionIncrement: newStatus === PROPOSAL_STATUS.RETURNED ? 1 : 0,
-		isDirectorReturningEndorsed:
-			input.roleName === ROLE_NAMES.DIRECTOR &&
-			input.status === PROPOSAL_STATUS.ENDORSED &&
-			newStatus === PROPOSAL_STATUS.RETURNED,
+		isDirectorReturningEndorsed: false,
 	};
 }
 

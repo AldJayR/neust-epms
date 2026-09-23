@@ -65,6 +65,12 @@ export interface ProjectDetailsResponse {
 	status: string;
 	version: string;
 	bypassedRetChair: boolean;
+	endorsementDocPath?: string | null;
+	endorsementDocUrl?: string | null;
+	endorsedAt?: string | null;
+	institutionalApprovalDocPath?: string | null;
+	institutionalApprovalDocUrl?: string | null;
+	institutionalApprovedAt?: string | null;
 	metadata: {
 		leader: { name: string; avatarUrl?: string };
 		departmentCode: string;

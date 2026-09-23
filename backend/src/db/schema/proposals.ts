@@ -50,6 +50,9 @@ export const proposals = pgTable(
 			.default("Pending Review"),
 		bypassedRetChair: boolean("bypassed_ret_chair").notNull().default(false),
 		revisionNum: integer("revision_num").notNull().default(0),
+		endorsementDocPath: varchar("endorsement_doc_path", { length: 500 }),
+		endorsementDocHash: varchar("endorsement_doc_hash", { length: 64 }),
+		endorsedAt: timestamp("endorsed_at", { withTimezone: true }),
 		institutionalApprovalDocPath: varchar(
 			"institutional_approval_doc_path",
 			{ length: 500 },

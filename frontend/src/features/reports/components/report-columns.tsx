@@ -187,7 +187,7 @@ export function createFacultyReportColumns(
 					const sequence = progressReportSequences.get(item.reportId) ?? 1;
 					return `Progress Report #${sequence}`;
 				}
-				return "Terminal Report";
+				return "Accomplishment and Terminal Report";
 			},
 		},
 		{

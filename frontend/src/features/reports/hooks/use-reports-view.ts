@@ -140,7 +140,9 @@ export function useReportsView() {
 			(report) => report.reportType === "Progress",
 		).length,
 		terminalCount: tabFilteredReports.filter(
-			(report) => report.reportType === "Terminal",
+			(report) =>
+				report.reportType === "Terminal" ||
+				report.reportType === "Accomplishment and Terminal Report",
 		).length,
 		paginatedReports: paginateReports(filteredReports, page, limit),
 		filteredReports,

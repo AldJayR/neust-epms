@@ -77,6 +77,43 @@ export const recordInstitutionalApprovalFn = createServerFn({ method: "POST" })
 		return (await response.json()) as { message: string };
 	});
 
+export const recordChairEndorsementFn = createServerFn({ method: "POST" })
+	.validator((data: FormData) => {
+		const proposalId = data.get("proposalId");
+		const file = data.get("file");
+		if (!proposalId || typeof proposalId !== "string") {
+			throw new Error("Proposal ID is required");
+		}
+		if (!(file instanceof File) || file.type !== "application/pdf") {
+			throw new Error("A valid PDF file is required");
+		}
+		return data;
+	})
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("RET Chair");
+		const token = await getValidAccessToken();
+		const proposalId = data.get("proposalId") as string;
+		const response = await fetch(
+			`${API_BASE}/proposals/${proposalId}/endorsement`,
+			{
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+				body: data,
+			},
+		);
+		if (!response.ok) {
+			throw new Error(
+				await getErrorMessage(
+					response,
+					"Failed to record chair endorsement",
+				),
+			);
+		}
+		return (await response.json()) as { message: string };
+	});
+
 export const downloadAnnotatedProposalFn = createServerFn({ method: "GET" })
 	.validator(
 		z.object({

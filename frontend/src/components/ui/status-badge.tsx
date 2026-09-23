@@ -119,6 +119,11 @@ const STATUS_MAP: Record<string, StatusConfig> = {
 		icon: CheckCircle2,
 		iconClassName: "text-warning",
 	},
+	"Accomplishment and Terminal Report": {
+		label: "Accomplishment & Terminal",
+		icon: CheckCircle2,
+		iconClassName: "text-warning",
+	},
 	"Final Accomplishment": {
 		label: "Final Accomplishment",
 		icon: CheckCircle2,

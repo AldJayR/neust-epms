@@ -26,9 +26,15 @@ export function filterReportsByType(
 	reports: ReportItem[],
 	typeFilter: "All" | "Progress" | "Terminal",
 ): ReportItem[] {
-	return typeFilter === "All"
-		? reports
-		: reports.filter((report) => report.reportType === typeFilter);
+	if (typeFilter === "All") return reports;
+	if (typeFilter === "Terminal") {
+		return reports.filter(
+			(report) =>
+				report.reportType === "Terminal" ||
+				report.reportType === "Accomplishment and Terminal Report",
+		);
+	}
+	return reports.filter((report) => report.reportType === typeFilter);
 }
 
 export function getProgressReportSequences(

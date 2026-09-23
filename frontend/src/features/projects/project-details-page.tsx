@@ -235,7 +235,7 @@ export function ProjectDetailsPage({
 					await closeMutation.mutateAsync({ data: { projectId: proposalId } });
 				}}
 				title="Close Project"
-				description={`This will permanently close the project "${data.title}". It requires both a Final Accomplishment report and a Terminal report to be submitted. This action cannot be undone.`}
+				description={`This will permanently close the project "${data.title}". It requires an approved Accomplishment and Terminal Report with evaluation forms to be submitted. This action cannot be undone.`}
 				confirmLabel="Close Project"
 				confirmVariant="destructive"
 				requireTyping="CLOSE"

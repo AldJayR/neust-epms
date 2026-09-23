@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileText } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/custom/confirm-dialog";
 import { LoadingButton } from "@/components/custom/loading-button";
@@ -12,6 +12,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { toStableDate } from "@/lib/utils";
@@ -44,6 +45,7 @@ export function ProposalDetailsTab() {
 		handleDeny,
 		handleReject,
 		handleApprove,
+		handleEndorse,
 		isPending,
 		isRET,
 		bypassedRetChair,
@@ -51,6 +53,7 @@ export function ProposalDetailsTab() {
 
 	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 	const [commentsText, setCommentsText] = useState("");
+	const [endorsementFile, setEndorsementFile] = useState<File | null>(null);
 	const [isReturnOpen, setIsReturnOpen] = useState(false);
 	const [returnReason, setReturnReason] = useState("");
 	const [isRejectOpen, setIsRejectOpen] = useState(false);
@@ -118,6 +121,32 @@ export function ProposalDetailsTab() {
 									{formatReviewDate(endorsement.date)}
 								</span>
 							</div>
+							{data.endorsementDocUrl && (
+								<div className="pl-7 pt-1">
+									<a
+										href={data.endorsementDocUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline"
+									>
+										<FileText className="size-3.5" />
+										View Signed Dean/Director Endorsement (PDF)
+									</a>
+								</div>
+							)}
+							{data.institutionalApprovalDocUrl && (
+								<div className="pl-7 pt-1">
+									<a
+										href={data.institutionalApprovalDocUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline"
+									>
+										<FileText className="size-3.5" />
+										View Institutional Approval Document (PDF)
+									</a>
+								</div>
+							)}
 						</div>
 
 						{endorsement.comment && (
@@ -238,40 +267,83 @@ export function ProposalDetailsTab() {
 				</>
 			)}
 
-			<Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-				<DialogContent className="sm:max-w-[425px] rounded-xl p-6 bg-background gap-4">
+			<Dialog
+				open={isConfirmOpen}
+				onOpenChange={(open) => {
+					setIsConfirmOpen(open);
+					if (!open) {
+						setEndorsementFile(null);
+						setCommentsText("");
+					}
+				}}
+			>
+				<DialogContent className="sm:max-w-[480px] rounded-xl p-6 bg-background gap-4">
 					<DialogHeader className="pb-2">
 						<DialogTitle className="text-base font-semibold text-heading">
 							Endorse Proposal
 						</DialogTitle>
 						<DialogDescription className="text-sm text-muted-foreground font-light">
-							Please enter any final comments or remarks before endorsing this
-							proposal (optional).
+							Please attach the signed College Dean / Campus Director endorsement scan (PDF). Comments are optional.
 						</DialogDescription>
 					</DialogHeader>
 
 					<div className="space-y-4">
-						<Textarea
-							placeholder="Write final comments/remarks here (optional)..."
-							value={commentsText}
-							onChange={(e) => setCommentsText(e.target.value)}
-							className="w-full min-h-[100px] border border-border rounded-lg p-3 text-sm focus-visible:ring-1 focus-visible:ring-brand-primary"
-						/>
+						<div className="space-y-1.5">
+							<label className="text-sm font-medium text-foreground">
+								Signed Endorsement Document (PDF) <span className="text-red-500">*</span>
+							</label>
+							<Input
+								type="file"
+								accept="application/pdf"
+								onChange={(e) => {
+									const selectedFile = e.target.files?.[0] ?? null;
+									setEndorsementFile(selectedFile);
+								}}
+								className="cursor-pointer"
+							/>
+							<p className="text-xs text-muted-foreground">
+								Upload the scanned physical endorsement signed by the College Dean or Campus Director.
+							</p>
+						</div>
+
+						<div className="space-y-1.5">
+							<label className="text-sm font-medium text-foreground">
+								Remarks (Optional)
+							</label>
+							<Textarea
+								placeholder="Write final comments/remarks here (optional)..."
+								value={commentsText}
+								onChange={(e) => setCommentsText(e.target.value)}
+								className="w-full min-h-[90px] border border-border rounded-lg p-3 text-sm focus-visible:ring-1 focus-visible:ring-brand-primary"
+							/>
+						</div>
 					</div>
 
 					<DialogFooter className="flex gap-3 mt-4">
 						<Button
 							variant="outline"
 							className="flex-1 border border-border rounded-lg text-gray-500 font-medium h-9 text-sm shadow-sm cursor-pointer dark:text-muted-foreground"
-							onClick={() => setIsConfirmOpen(false)}
+							onClick={() => {
+								setIsConfirmOpen(false);
+								setEndorsementFile(null);
+								setCommentsText("");
+							}}
 						>
 							Cancel
 						</Button>
 						<LoadingButton
 							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg"
+							disabled={!endorsementFile}
 							onClick={async () => {
-								await handleApprove(commentsText);
+								if (!endorsementFile) return;
+								if (handleEndorse) {
+									await handleEndorse(endorsementFile, commentsText);
+								} else {
+									await handleApprove(commentsText);
+								}
 								setIsConfirmOpen(false);
+								setEndorsementFile(null);
+								setCommentsText("");
 							}}
 							loading={isPending}
 						>

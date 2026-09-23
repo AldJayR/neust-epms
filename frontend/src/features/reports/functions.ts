@@ -106,7 +106,12 @@ export const submitReportFn = createServerFn({ method: "POST" })
 	.validator(
 		z.object({
 			milestoneId: z.uuid(),
-			reportType: z.enum(["Progress", "Terminal", "Final Accomplishment"]),
+			reportType: z.enum([
+				"Progress",
+				"Terminal",
+				"Final Accomplishment",
+				"Accomplishment and Terminal Report",
+			]),
 			remarks: z.string().optional(),
 		}),
 	)
@@ -155,6 +160,49 @@ export const uploadReportDocumentFn = createServerFn({ method: "POST" })
 			);
 		}
 		return (await response.json()) as { reportId: string; storagePath: string };
+	});
+
+export const uploadReportAttachmentFn = createServerFn({ method: "POST" })
+	.validator((data: FormData) => {
+		const reportId = data.get("reportId");
+		const file = data.get("file");
+		const attachmentType = data.get("attachmentType");
+		if (
+			typeof reportId !== "string" ||
+			!reportId ||
+			!(file instanceof File) ||
+			typeof attachmentType !== "string"
+		) {
+			throw new Error("A report ID, file, and attachment type are required");
+		}
+		if (file.type !== "application/pdf")
+			throw new Error("Only PDF documents are allowed");
+		return data;
+	})
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("Faculty", "RET Chair", "Director");
+		const token = await getValidAccessToken();
+		const reportId = data.get("reportId") as string;
+		const response = await fetch(
+			`${API_BASE}/reports/${reportId}/attachments`,
+			{
+				method: "POST",
+				headers: { Authorization: `Bearer ${token}` },
+				body: data,
+			},
+		);
+		if (!response.ok) {
+			throw new Error(
+				await getErrorMessage(
+					response,
+					"Failed to upload report attachment",
+				),
+			);
+		}
+		return (await response.json()) as {
+			attachmentId: string;
+			storagePath: string;
+		};
 	});
 
 export function reportsQueryOptions() {

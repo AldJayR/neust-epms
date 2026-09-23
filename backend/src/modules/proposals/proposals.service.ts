@@ -28,7 +28,10 @@ import { randomUUID } from "node:crypto";
 import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { ApiError } from "@/lib/errors.js";
-import { createNotification } from "@/lib/notification.helpers.js";
+import {
+	createNotification,
+	getUserIdsByRole,
+} from "@/lib/notification.helpers.js";
 import { supabase } from "@/lib/supabase.js";
 import {
 	type AuthUser,
@@ -938,9 +941,6 @@ export async function processReview(
 				status: reviewPolicy.newStatus,
 				revisionNum: existing.revisionNum + reviewPolicy.revisionIncrement,
 				updatedAt: new Date(),
-				...(reviewPolicy.isDirectorReturningEndorsed
-					? { bypassedRetChair: true }
-					: {}),
 			})
 			.where(
 				and(
@@ -992,6 +992,175 @@ export async function getLeaderUserId(
 		)
 		.limit(1);
 	return leader?.userId;
+}
+
+export async function recordChairEndorsement(
+	user: AuthUser,
+	proposalId: string,
+	file: File,
+	comments: string | undefined,
+	ipAddress: string,
+) {
+	if (user.roleName !== ROLE_NAMES.RET_CHAIR) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"Only the RET Chair can record chair endorsement",
+		);
+	}
+
+	const [proposal] = await db
+		.select({
+			proposalId: proposals.proposalId,
+			title: proposals.title,
+			status: proposals.status,
+			campusId: proposals.campusId,
+			departmentId: proposals.departmentId,
+		})
+		.from(proposals)
+		.where(
+			and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
+		)
+		.limit(1);
+
+	if (!proposal) {
+		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+	}
+
+	if (user.isMainCampus && user.departmentId !== null) {
+		if (proposal.departmentId !== user.departmentId) {
+			throw new ApiError(
+				403,
+				"FORBIDDEN",
+				"You can only endorse proposals from your department",
+			);
+		}
+	} else {
+		if (proposal.campusId !== user.campusId) {
+			throw new ApiError(
+				403,
+				"FORBIDDEN",
+				"You can only endorse proposals from your campus",
+			);
+		}
+	}
+
+	if (proposal.status !== PROPOSAL_STATUS.PENDING_REVIEW) {
+		throw new ApiError(
+			400,
+			"INVALID_STATE",
+			"Proposal must be in Pending Review status before recording endorsement",
+		);
+	}
+
+	if (!isPdfFile(file)) {
+		throw new ApiError(
+			422,
+			"INVALID_FILE_TYPE",
+			"The uploaded endorsement form scan must be a valid PDF document",
+		);
+	}
+
+	const sanitizedFilename = sanitizeFilename(file.name);
+	const storagePath = `proposals/${proposalId}/endorsement_${Date.now()}_${randomUUID()}_${sanitizedFilename}`;
+	const contentHash = await hashFileSha256(file);
+
+	const { error: uploadError } = await supabase.storage
+		.from("documents")
+		.upload(storagePath, file, {
+			contentType: file.type,
+			upsert: false,
+		});
+
+	if (uploadError) {
+		throw new ApiError(
+			400,
+			"UPLOAD_FAILED",
+			`Supabase storage upload failed: ${uploadError.message}`,
+		);
+	}
+
+	await db.transaction(async (tx) => {
+		await tx.insert(proposalReviews).values({
+			proposalId,
+			reviewerId: user.userId,
+			reviewStage: "Endorsement",
+			decision: "Endorsed",
+			comments:
+				comments?.trim() ||
+				"Endorsed with verified Dean/Campus Director endorsement scan.",
+		});
+
+		const [updated] = await tx
+			.update(proposals)
+			.set({
+				status: PROPOSAL_STATUS.ENDORSED,
+				endorsementDocPath: storagePath,
+				endorsementDocHash: contentHash,
+				endorsedAt: new Date(),
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(proposals.proposalId, proposalId),
+					eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
+				),
+			)
+			.returning();
+
+		if (!updated) {
+			throw new ApiError(
+				400,
+				"INVALID_STATE",
+				"Proposal state changed since last read",
+			);
+		}
+	});
+
+	await insertAuditLog({
+		userId: user.userId,
+		action: `Recorded Dean/Director signed endorsement scan for proposal ${proposalId}`,
+		tableAffected: "proposals",
+		recordId: proposalId,
+		newValue: {
+			status: PROPOSAL_STATUS.ENDORSED,
+			endorsementDocPath: storagePath,
+			endorsementDocHash: contentHash,
+		},
+		ipAddress,
+	});
+
+	const leaderUserId = await getLeaderUserId(proposalId);
+	if (leaderUserId && leaderUserId !== user.userId) {
+		await createNotification({
+			recipientId: leaderUserId,
+			type: "proposal",
+			title: "Proposal Endorsed",
+			message: `Your proposal "${proposal.title}" has been endorsed by the RET Chair with the Dean/Director endorsement scan and forwarded for executive approval.`,
+			sendEmail: true,
+		}).catch((err) => {
+			console.error(
+				"[notification] Failed to create endorsement notification:",
+				err,
+			);
+		});
+	}
+
+	const directorIds = await getUserIdsByRole(ROLE_NAMES.DIRECTOR).catch(() => []);
+	for (const directorId of directorIds) {
+		await createNotification({
+			recipientId: directorId,
+			type: "proposal",
+			title: "Proposal Awaiting Approval",
+			message: `Proposal "${proposal.title}" has been endorsed with the College Dean / Campus Director scan and is ready for Director review.`,
+			sendEmail: true,
+		}).catch(() => {});
+	}
+
+	return {
+		message: "Proposal endorsed successfully with Dean/Director scan",
+		endorsementDocPath: storagePath,
+	};
 }
 
 export async function recordInstitutionalApproval(

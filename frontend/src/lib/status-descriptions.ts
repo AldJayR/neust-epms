@@ -118,6 +118,12 @@ export const STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 		explanation: "A terminal report marking the completion of the project.",
 		nextStep: "N/A",
 	},
+	"Accomplishment and Terminal Report": {
+		label: "Accomplishment and Terminal Report",
+		explanation:
+			"A unified accomplishment and terminal report documenting project outcomes, impacts, and completion.",
+		nextStep: "N/A",
+	},
 	"Final Accomplishment": {
 		label: "Final Accomplishment",
 		explanation:

@@ -4,6 +4,7 @@ import {
 	integer,
 	pgTable,
 	serial,
+	text,
 	timestamp,
 	uniqueIndex,
 	varchar,
@@ -15,13 +16,16 @@ export const bannerPrograms = pgTable(
 	"banner_programs",
 	{
 		bannerProgramId: serial("banner_program_id").primaryKey(),
+		programCode: varchar("program_code", { length: 50 }),
+		unitScope: varchar("unit_scope", { length: 50 }),
+		programName: varchar("program_name", { length: 255 }).notNull(),
+		description: text("description"),
 		campusId: integer("campus_id")
 			.notNull()
 			.references(() => campuses.campusId),
 		departmentId: integer("department_id").references(
 			() => departments.departmentId,
 		),
-		programName: varchar("program_name", { length: 255 }).notNull(),
 		isActive: boolean("is_active").notNull().default(true),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
@@ -36,5 +40,8 @@ export const bannerPrograms = pgTable(
 			sql`coalesce(${table.departmentId}, 0)`,
 			sql`lower(${table.programName})`,
 		),
+		unitScopeNameIdx: uniqueIndex("banner_programs_unit_scope_name_idx")
+			.on(table.unitScope, sql`lower(${table.programName})`)
+			.where(sql`${table.unitScope} IS NOT NULL`),
 	}),
 );

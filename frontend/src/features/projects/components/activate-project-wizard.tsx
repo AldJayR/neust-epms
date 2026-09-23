@@ -318,7 +318,7 @@ export function ActivateProjectWizard({
 											<span className="flex-1 text-sm font-medium">
 												{entry.reportType === "Progress"
 													? "Progress Report"
-													: "Project Closure (Terminal + Final Accomplishment)"}
+													: "Project Closure (Accomplishment and Terminal Report)"}
 											</span>
 											<Popover>
 												<PopoverTrigger

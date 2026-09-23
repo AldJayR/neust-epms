@@ -5,6 +5,7 @@ import type { campuses } from "@/db/schema/campuses.js";
 import type { departments } from "@/db/schema/departments.js";
 import type { moas } from "@/db/schema/moas.js";
 import type { projectReports } from "@/db/schema/project-reports.js";
+import type { reportAttachments } from "@/db/schema/report-attachments.js";
 import type { projects } from "@/db/schema/projects.js";
 import type { proposalBeneficiaries } from "@/db/schema/proposal-beneficiaries.js";
 import type { proposalComments } from "@/db/schema/proposal-comments.js";
@@ -41,6 +42,7 @@ export type ProposalSdg = InferSelectModel<typeof proposalSdgs>;
 export type Moa = InferSelectModel<typeof moas>;
 export type Project = InferSelectModel<typeof projects>;
 export type ProjectReport = InferSelectModel<typeof projectReports>;
+export type ReportAttachment = InferSelectModel<typeof reportAttachments>;
 export type AuditLog = InferSelectModel<typeof auditLogs>;
 export type SystemSetting = InferSelectModel<typeof systemSettings>;
 
@@ -67,6 +69,7 @@ export type NewProposalSdg = InferInsertModel<typeof proposalSdgs>;
 export type NewMoa = InferInsertModel<typeof moas>;
 export type NewProject = InferInsertModel<typeof projects>;
 export type NewProjectReport = InferInsertModel<typeof projectReports>;
+export type NewReportAttachment = InferInsertModel<typeof reportAttachments>;
 export type NewAuditLog = InferInsertModel<typeof auditLogs>;
 export type NewSystemSetting = InferInsertModel<typeof systemSettings>;
 
@@ -133,14 +136,35 @@ export const PROJECT_STATUS = {
 export type ProjectStatus =
 	(typeof PROJECT_STATUS)[keyof typeof PROJECT_STATUS];
 
+// ── Milestone type values ──
+export const MILESTONE_TYPE = {
+	PROGRESS: "Progress",
+	CLOSURE: "Closure",
+} as const;
+
+export type MilestoneType =
+	(typeof MILESTONE_TYPE)[keyof typeof MILESTONE_TYPE];
+
 // ── Project report type values ──
 export const REPORT_TYPE = {
 	PROGRESS: "Progress",
+	PROGRESS_REPORT: "Progress Report",
 	FINAL_ACCOMPLISHMENT: "Final Accomplishment",
 	TERMINAL: "Terminal",
+	ACCOMPLISHMENT_AND_TERMINAL: "Accomplishment and Terminal Report",
 } as const;
 
 export type ReportType = (typeof REPORT_TYPE)[keyof typeof REPORT_TYPE];
+
+// ── Report attachment type values (BR-15) ──
+export const ATTACHMENT_TYPE = {
+	EVALUATION_FORMS: "Evaluation Forms",
+	ATTENDANCE_RECORDS: "Attendance Records",
+	MEANS_OF_VERIFICATION: "Means of Verification",
+} as const;
+
+export type AttachmentType =
+	(typeof ATTACHMENT_TYPE)[keyof typeof ATTACHMENT_TYPE];
 
 // ── Auth context: attached to every authenticated request ──
 export interface AuthUser {

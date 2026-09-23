@@ -266,6 +266,10 @@ app.openapi(getRoute, async (c) => {
 			status: proposals.status,
 			bypassedRetChair: proposals.bypassedRetChair,
 			revisionNum: proposals.revisionNum,
+			endorsementDocPath: proposals.endorsementDocPath,
+			endorsedAt: proposals.endorsedAt,
+			institutionalApprovalDocPath: proposals.institutionalApprovalDocPath,
+			institutionalApprovedAt: proposals.institutionalApprovedAt,
 			targetStartDate: proposals.targetStartDate,
 			targetEndDate: proposals.targetEndDate,
 			createdAt: proposals.createdAt,
@@ -297,6 +301,9 @@ app.openapi(getRoute, async (c) => {
 			archivedAt: row.archivedAt?.toISOString() ?? null,
 			targetStartDate: row.targetStartDate?.toISOString() ?? null,
 			targetEndDate: row.targetEndDate?.toISOString() ?? null,
+			endorsedAt: row.endorsedAt?.toISOString() ?? null,
+			institutionalApprovedAt:
+				row.institutionalApprovedAt?.toISOString() ?? null,
 		},
 		200,
 	);
