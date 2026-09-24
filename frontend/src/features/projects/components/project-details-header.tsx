@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Eye, Info, Pencil, Play } from "lucide-react";
+import { Eye, FileUp, Info, Pencil, Play } from "lucide-react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { PageHeader } from "@/components/custom/page-header";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { InstitutionalApprovalDialog } from "@/features/proposals/components/institutional-approval-dialog";
 
 interface ProjectDetailsHeaderProps {
 	proposalId: string;
@@ -23,6 +24,7 @@ interface ProjectDetailsHeaderProps {
 	showCloseButton: boolean;
 	activateReady: boolean;
 	statusDescription?: { explanation: string; nextStep: string } | null;
+	isDirector?: boolean;
 	onEdit: () => void;
 	onActivate: () => void;
 	onClose: () => void;
@@ -38,6 +40,7 @@ export function ProjectDetailsHeader({
 	showCloseButton,
 	activateReady,
 	statusDescription,
+	isDirector,
 	onEdit,
 	onActivate,
 	onClose,
@@ -71,6 +74,23 @@ export function ProjectDetailsHeader({
 				}
 				actions={
 					<>
+						{isDirector && status === "Approved" && (
+							<InstitutionalApprovalDialog
+								proposalId={proposalId}
+								proposalTitle={title}
+								trigger={
+									<BrandButton
+										type="button"
+										className="flex w-fit items-center gap-2 px-4 h-9 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
+									>
+										<FileUp className="size-4" />
+										<span className="text-sm font-medium">
+											Record Institutional Approval
+										</span>
+									</BrandButton>
+								}
+							/>
+						)}
 						{isAllowedToReadProposal ? (
 							<BrandButton
 								nativeButton={false}

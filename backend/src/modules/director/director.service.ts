@@ -964,8 +964,13 @@ export async function getHubProjects(
 		lastReportDate: r.lastReportDate
 			? new Date(r.lastReportDate).toISOString()
 			: null,
-		status: r.projectStatus || r.proposalStatus,
-		type: (r.projectStatus ? "Project" : "Proposal") as "Project" | "Proposal",
+		status:
+			r.projectStatus && r.projectStatus !== PROJECT_STATUS.APPROVED
+				? r.projectStatus
+				: r.proposalStatus,
+		type: (r.projectStatus && r.projectStatus !== PROJECT_STATUS.APPROVED
+			? "Project"
+			: "Proposal") as "Project" | "Proposal",
 	}));
 
 	return { items, total: Number(totalResult[0]?.value ?? 0) };

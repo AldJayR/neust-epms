@@ -2,6 +2,7 @@ import robotoLatinWghtUrl from "@fontsource-variable/roboto/files/roboto-latin-w
 import type { QueryClient } from "@tanstack/react-query";
 import {
 	createRootRouteWithContext,
+	type ErrorComponentProps,
 	HeadContent,
 	Link,
 	Scripts,
@@ -74,7 +75,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	shellComponent: RootDocument,
 });
 
-function RootError({ reset }: { error: Error; reset: () => void }) {
+function RootError({ reset }: ErrorComponentProps) {
 	const router = useRouter();
 
 	return (

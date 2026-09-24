@@ -27,8 +27,8 @@ describe("ROLE_NAMES", () => {
 });
 
 describe("PROPOSAL_STATUS", () => {
-	it("should define exactly 6 statuses", () => {
-		expect(Object.keys(PROPOSAL_STATUS)).toHaveLength(6);
+	it("should define exactly 7 statuses", () => {
+		expect(Object.keys(PROPOSAL_STATUS)).toHaveLength(7);
 	});
 
 	it("should follow the correct state machine order", () => {
@@ -37,6 +37,7 @@ describe("PROPOSAL_STATUS", () => {
 			"Pending Review",
 			"Endorsed",
 			"Approved",
+			"Institutionally Approved",
 			"Returned",
 			"Rejected",
 		];

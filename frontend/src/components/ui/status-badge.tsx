@@ -22,6 +22,11 @@ interface StatusConfig {
 }
 
 const STATUS_MAP: Record<string, StatusConfig> = {
+	"Institutionally Approved": {
+		label: "Institutionally Approved",
+		icon: CheckCircle2,
+		iconClassName: "text-success",
+	},
 	Approved: {
 		label: "Approved",
 		icon: CheckCircle2,

@@ -114,7 +114,10 @@ app.openapi(listRoute, async (c) => {
 				projectLocale: proposals.projectLocale,
 				budgetPartner: proposals.budgetPartner,
 				budgetNeust: proposals.budgetNeust,
-				status: sql<string>`COALESCE(${projects.projectStatus}, ${proposals.status})`,
+				status: sql<string>`CASE 
+					WHEN ${projects.projectStatus} IS NOT NULL AND ${projects.projectStatus} != 'Approved' THEN ${projects.projectStatus}
+					ELSE ${proposals.status}
+				END`,
 				bypassedRetChair: proposals.bypassedRetChair,
 				revisionNum: proposals.revisionNum,
 				targetStartDate: proposals.targetStartDate,
