@@ -113,7 +113,9 @@ export function ProjectDetailsPage({
 	const statusDescription = projectLeader
 		? getStatusDescription(data.status)
 		: undefined;
-	const showActivateButton = isDirector && data.status === "Approved";
+	const showActivateButton =
+		isDirector &&
+		(data.status === "Approved" || data.status === "Institutionally Approved");
 	const showCloseButton =
 		isDirector && ["Ongoing", "Pending Closure"].includes(data.status);
 
@@ -132,20 +134,25 @@ export function ProjectDetailsPage({
 				onEdit={() => dispatchEditing(true)}
 				onActivate={() => setShowActivateWizard(true)}
 				onClose={() => setShowCloseDialog(true)}
+				isDirector={isDirector}
 			/>
 
-			{data.status === "Approved" && readiness && (
-				<ProjectReadinessCard
-					isReady={readiness.isReady}
-					prerequisites={readiness.prerequisites}
-					blocker={readiness.blocker}
-				/>
-			)}
+			{(data.status === "Approved" ||
+				data.status === "Institutionally Approved") &&
+				readiness && (
+					<ProjectReadinessCard
+						isReady={readiness.isReady}
+						prerequisites={readiness.prerequisites}
+						blocker={readiness.blocker}
+					/>
+				)}
 
-			{data.status === "Approved" && projectLeader && (
-				<Alert>
-					<Info className="size-4 text-blue-500" />
-					<AlertTitle>Your proposal has been approved!</AlertTitle>
+			{(data.status === "Approved" ||
+				data.status === "Institutionally Approved") &&
+				projectLeader && (
+					<Alert>
+						<Info className="size-4 text-blue-500" />
+						<AlertTitle>Your proposal has been approved!</AlertTitle>
 					<AlertDescription className="space-y-2">
 						<p>
 							Great news — your project proposal has been approved. Here's what

@@ -179,10 +179,10 @@ export async function runReportOverdue(): Promise<void> {
 					type: "report_overdue",
 					dedupeKey: `report-overdue:${row.reportingDateId}:${row.leaderId}`,
 					title: "Report Overdue",
-					message: `Your ${row.reportType} report for "${row.proposalTitle}" was due on ${dateStr}. Please submit immediately.`,
+					message: `Your ${row.reportType ?? "Progress"} report for "${row.proposalTitle ?? "Untitled"}" was due on ${dateStr}. Please submit immediately.`,
 					sendEmail: true,
-					emailSubject: `Overdue Report: ${row.proposalTitle}`,
-					emailHtml: `<p>Your ${escapeHtml(row.reportType)} report for "<strong>${escapeHtml(row.proposalTitle)}</strong>" was due on <strong>${escapeHtml(dateStr)}</strong>. Please submit immediately.</p>`,
+					emailSubject: `Overdue Report: ${row.proposalTitle ?? "Untitled"}`,
+					emailHtml: `<p>Your ${escapeHtml(row.reportType ?? "Progress")} report for "<strong>${escapeHtml(row.proposalTitle ?? "Untitled")}</strong>" was due on <strong>${escapeHtml(dateStr)}</strong>. Please submit immediately.</p>`,
 				});
 				if (created) notifiedCount++;
 			}
@@ -194,10 +194,10 @@ export async function runReportOverdue(): Promise<void> {
 					type: "report_overdue",
 					dedupeKey: `report-overdue:${row.reportingDateId}:${retChair.userId}`,
 					title: "Report Overdue",
-					message: `A ${row.reportType} report for "${row.proposalTitle}" (${row.proposalLocale}) was due on ${dateStr} and has not been submitted.`,
+					message: `A ${row.reportType ?? "Progress"} report for "${row.proposalTitle ?? "Untitled"}" (${row.proposalLocale ?? "N/A"}) was due on ${dateStr} and has not been submitted.`,
 					sendEmail: true,
-					emailSubject: `Overdue Report: ${row.proposalTitle}`,
-					emailHtml: `<p>A ${escapeHtml(row.reportType)} report for "<strong>${escapeHtml(row.proposalTitle)}</strong>" (${escapeHtml(row.proposalLocale)}) was due on <strong>${escapeHtml(dateStr)}</strong> and has not been submitted.</p>`,
+					emailSubject: `Overdue Report: ${row.proposalTitle ?? "Untitled"}`,
+					emailHtml: `<p>A ${escapeHtml(row.reportType ?? "Progress")} report for "<strong>${escapeHtml(row.proposalTitle ?? "Untitled")}</strong>" (${escapeHtml(row.proposalLocale ?? "N/A")}) was due on <strong>${escapeHtml(dateStr)}</strong> and has not been submitted.</p>`,
 				});
 				if (created) notifiedCount++;
 			}

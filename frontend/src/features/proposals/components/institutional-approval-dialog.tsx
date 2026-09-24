@@ -55,9 +55,12 @@ export function InstitutionalApprovalDialog({
 				"Signed institutional approval scan recorded successfully.",
 			);
 			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+			queryClient.invalidateQueries({ queryKey: ["dashboard", "proposals", proposalId] });
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["projects"] });
 			queryClient.invalidateQueries({ queryKey: ["action-center"] });
+			queryClient.invalidateQueries({ queryKey: ["project-readiness", proposalId] });
+			queryClient.invalidateQueries({ queryKey: ["project-readiness"] });
 			setFile(null);
 			setOpen(false);
 		},

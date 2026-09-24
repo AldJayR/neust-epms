@@ -14,7 +14,11 @@ export function sanitizeFilename(fileName: string): string {
 }
 
 export async function isPdfFile(file: File): Promise<boolean> {
-	if (file.type !== "application/pdf" || file.size < 5) return false;
+	const isPdfMimeOrName =
+		file.type === "application/pdf" ||
+		file.type === "application/x-pdf" ||
+		file.name.toLowerCase().endsWith(".pdf");
+	if (!isPdfMimeOrName || file.size < 5) return false;
 
 	const header = new Uint8Array(await file.slice(0, 5).arrayBuffer());
 	return (
