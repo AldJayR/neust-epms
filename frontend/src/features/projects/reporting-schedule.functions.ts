@@ -9,8 +9,11 @@ import {
 	getValidAccessToken,
 } from "@/lib/session.server";
 
+import { addMonths } from "date-fns";
+
 export interface ScheduledDueDate {
 	id: string;
+	title?: string | null;
 	date: string;
 	isCompleted: boolean;
 	completedAt: string | null;
@@ -23,8 +26,37 @@ export interface ProjectReportingScheduleResponse {
 	schedule: {
 		milestones: ScheduledDueDate[];
 	};
-	upcoming: { id: string; date: string; reportType: string }[];
-	overdue: { id: string; date: string; reportType: string }[];
+	upcoming: { id: string; title?: string | null; date: string; reportType: string }[];
+	overdue: { id: string; title?: string | null; date: string; reportType: string }[];
+}
+
+export interface DueDateEntry {
+	id: string;
+	title: string;
+	reportType: "Progress" | "Terminal Report";
+	dueDate: Date | undefined;
+}
+
+export function generateMonthlyMilestones(
+	startDate: Date,
+	durationMonths: number,
+): DueDateEntry[] {
+	const months = Math.max(1, Math.min(60, durationMonths));
+	const entries: DueDateEntry[] = [];
+
+	for (let i = 1; i <= months; i++) {
+		const isLast = i === months;
+		entries.push({
+			id: crypto.randomUUID(),
+			title: isLast
+				? "Terminal Report (Accomplishment and Terminal Report)"
+				: `Month ${i} Progress Report`,
+			reportType: isLast ? "Terminal Report" : "Progress",
+			dueDate: addMonths(startDate, i),
+		});
+	}
+
+	return entries;
 }
 
 export function canSubmitMilestone(

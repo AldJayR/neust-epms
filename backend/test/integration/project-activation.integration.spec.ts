@@ -54,7 +54,7 @@ describe("project activation", () => {
 						dueAt: "2099-06-01T00:00:00.000Z",
 					},
 					{
-						reportType: "Project Closure",
+						reportType: "Terminal Report",
 						dueAt: "2099-12-01T00:00:00.000Z",
 					},
 				],
@@ -67,10 +67,15 @@ describe("project activation", () => {
 			.select({ projectStatus: projects.projectStatus, moaId: projects.moaId })
 			.from(projects)
 			.where(eq(projects.projectId, project.projectId));
-		const [milestoneCount] = await db
-			.select({ value: count() })
+		const savedMilestones = await db
+			.select({
+				title: projectReportingMilestones.title,
+				milestoneType: projectReportingMilestones.milestoneType,
+				reportType: projectReportingMilestones.reportType,
+			})
 			.from(projectReportingMilestones)
-			.where(eq(projectReportingMilestones.projectId, project.projectId));
+			.where(eq(projectReportingMilestones.projectId, project.projectId))
+			.orderBy(projectReportingMilestones.dueAt);
 		const [audit] = await db
 			.select({ action: auditLogs.action })
 			.from(auditLogs)
@@ -80,7 +85,18 @@ describe("project activation", () => {
 			projectStatus: PROJECT_STATUS.ONGOING,
 			moaId: moa.moaId,
 		});
-		expect(Number(milestoneCount?.value)).toBe(2);
+		expect(savedMilestones).toEqual([
+			{
+				title: "Month 1 Progress Report",
+				milestoneType: "Progress",
+				reportType: "Progress",
+			},
+			{
+				title: "Terminal Report",
+				milestoneType: "Closure",
+				reportType: "Terminal Report",
+			},
+		]);
 		expect(audit?.action).toContain("Activated project");
 	});
 

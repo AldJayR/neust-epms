@@ -101,6 +101,8 @@ export const ProjectDetailsSchema = z.object({
 	members: z.array(ProjectDetailsMemberSchema),
 	history: z.array(ProjectDetailsHistoryItemSchema),
 	attachments: z.array(ProjectDetailsAttachmentSchema),
+	targetStartDate: z.string().nullable().optional(),
+	targetEndDate: z.string().nullable().optional(),
 });
 
 export const ProjectReadinessSchema = z
@@ -124,6 +126,7 @@ export const ProjectReportingScheduleSchema = z
 			milestones: z.array(
 				z.object({
 					id: z.string(),
+					title: z.string().nullable().optional(),
 					date: z.string(),
 					isCompleted: z.boolean(),
 					completedAt: z.string().nullable(),
@@ -136,6 +139,7 @@ export const ProjectReportingScheduleSchema = z
 		upcoming: z.array(
 			z.object({
 				id: z.string(),
+				title: z.string().nullable().optional(),
 				date: z.string(),
 				reportType: z.string(),
 			}),
@@ -143,6 +147,7 @@ export const ProjectReportingScheduleSchema = z
 		overdue: z.array(
 			z.object({
 				id: z.string(),
+				title: z.string().nullable().optional(),
 				date: z.string(),
 				reportType: z.string(),
 			}),
@@ -199,7 +204,8 @@ export const ActivateSchema = z
 		milestones: z
 			.array(
 				z.object({
-					reportType: z.enum(["Progress", "Project Closure"]),
+					title: z.string().optional(),
+					reportType: z.enum(["Progress", "Terminal Report", "Project Closure"]),
 					dueAt: z.string().datetime(),
 				}),
 			)

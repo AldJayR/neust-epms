@@ -114,14 +114,14 @@ export function ReportSubmissionPickerDialog({
 									className={milestoneId ? undefined : "text-muted-foreground"}
 								>
 									{selectedMilestoneOption
-										? `${selectedMilestoneOption.reportType} Report - Due ${format(toStableDate(selectedMilestoneOption.date), "MMM d, yyyy")}`
+										? `${selectedMilestoneOption.title || `${selectedMilestoneOption.reportType} Report`} - Due ${format(toStableDate(selectedMilestoneOption.date), "MMM d, yyyy")}`
 										: "Select a reporting milestone"}
 								</span>
 							</SelectTrigger>
 							<SelectContent>
 								{milestones?.map((milestone) => (
 									<SelectItem key={milestone.id} value={milestone.id}>
-										{milestone.reportType} Report - Due{" "}
+										{milestone.title || `${milestone.reportType} Report`} - Due{" "}
 										{format(toStableDate(milestone.date), "MMM d, yyyy")}
 									</SelectItem>
 								))}

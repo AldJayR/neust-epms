@@ -572,6 +572,8 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 		members,
 		history,
 		attachments,
+		targetStartDate: row.targetStartDate?.toISOString() ?? null,
+		targetEndDate: row.targetEndDate?.toISOString() ?? null,
 	};
 }
 
@@ -836,8 +838,8 @@ export async function closeProject(
 			await createNotification({
 				recipientId: leader.userId,
 				type: "project",
-				title: "Project Closure Approved",
-				message: `Project closure for "${proposal?.title ?? "Untitled"}" has been approved by the Director. The project is officially closed.`,
+				title: "Terminal Report Approved",
+				message: `Terminal report for "${proposal?.title ?? "Untitled"}" has been approved by the Director. The project is officially closed.`,
 				sendEmail: true,
 			}).catch((err) => {
 				console.error("[notification] Failed to notify leader on closure:", err);
@@ -911,7 +913,7 @@ export async function activateProject(
 	id: string,
 	body: {
 		moaId: string;
-		milestones: Array<{ reportType: string; dueAt: string }>;
+		milestones: Array<{ title?: string | undefined; reportType: string; dueAt: string }>;
 	},
 	user: AuthUser,
 	ipAddress: string,
@@ -1073,8 +1075,15 @@ export async function activateProject(
 		}
 
 		await tx.insert(projectReportingMilestones).values(
-			body.milestones.map((milestone) => ({
+			body.milestones.map((milestone, idx) => ({
 				projectId: project.projectId,
+				title:
+					milestone.title ??
+					(milestone.reportType === "Progress"
+						? `Month ${idx + 1} Progress Report`
+						: "Terminal Report"),
+				milestoneType:
+					milestone.reportType === "Progress" ? "Progress" : "Closure",
 				reportType: milestone.reportType,
 				dueAt: new Date(milestone.dueAt),
 			})),
@@ -1298,6 +1307,7 @@ export async function getProjectReportingSchedule(id: string) {
 	const milestones = await db
 		.select({
 			id: projectReportingMilestones.milestoneId,
+			title: projectReportingMilestones.title,
 			date: projectReportingMilestones.dueAt,
 			reportType: projectReportingMilestones.reportType,
 			completedAt: projectReportingMilestones.completedAt,
@@ -1328,6 +1338,7 @@ export async function getProjectReportingSchedule(id: string) {
 			milestoneReports.length === 1 ? milestoneReports[0] : null;
 		return {
 			id: milestone.id,
+			title: milestone.title ?? null,
 			date: milestone.date.toISOString(),
 			isCompleted: Boolean(milestone.completedAt),
 			completedAt: milestone.completedAt?.toISOString() ?? null,
@@ -1342,6 +1353,7 @@ export async function getProjectReportingSchedule(id: string) {
 		.filter((d) => !d.isCompleted && new Date(d.date) >= now)
 		.map((d) => ({
 			id: d.id,
+			title: d.title ?? null,
 			date: d.date,
 			reportType: d.reportType,
 		}));
@@ -1350,6 +1362,7 @@ export async function getProjectReportingSchedule(id: string) {
 		.filter((d) => !d.isCompleted && new Date(d.date) < now)
 		.map((d) => ({
 			id: d.id,
+			title: d.title ?? null,
 			date: d.date,
 			reportType: d.reportType,
 		}));

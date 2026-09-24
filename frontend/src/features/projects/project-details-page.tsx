@@ -233,6 +233,8 @@ export function ProjectDetailsPage({
 				open={showActivateWizard}
 				onOpenChange={setShowActivateWizard}
 				projectId={proposalId}
+				targetStartDate={data.targetStartDate}
+				targetEndDate={data.targetEndDate}
 			/>
 
 			<ConfirmDialog

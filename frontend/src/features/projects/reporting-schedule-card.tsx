@@ -129,7 +129,7 @@ export function ReportingScheduleCard({
 								<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm">
 									<div className="space-y-0.5">
 										<p className="font-medium text-foreground">
-											{item.reportType} Report #{idx + 1}
+											{item.title || `${item.reportType} Report #${idx + 1}`}
 										</p>
 										<p className="text-xs text-muted-foreground">
 											Due: {format(dateObj, "MMM d, yyyy")}

@@ -97,8 +97,10 @@ describe("project status and reporting schedule", () => {
 
 		expect(schedule.overdue).toHaveLength(1);
 		expect(schedule.overdue[0]?.id).toBe(overdue.milestoneId);
+		expect(schedule.overdue[0]?.title).toBe("Month 1 Progress Report");
 		expect(schedule.upcoming).toHaveLength(1);
 		expect(schedule.upcoming[0]?.id).toBe(upcoming.milestoneId);
+		expect(schedule.upcoming[0]?.title).toBe("Month 1 Progress Report");
 		const [uploaded] = await db
 			.select({ storagePath: projectReports.storagePath })
 			.from(projectReports)

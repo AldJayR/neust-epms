@@ -617,5 +617,5 @@
 
 **Sub-processes:**
 * **6.1.1 — Process Activation Request** — Confirms that the target proposal has attained institutional approval in D2, accepts the Director's activation command, writes member special orders into D4, and structures core activation parameters.
-* **6.1.2 — Configure Reporting Schedule** — Translates the Director's reporting timeline into discrete calendar reporting milestones for project tracking.
+* **6.1.2 — Configure Reporting Schedule** — Translates the Director's reporting timeline into discrete calendar reporting milestones for project tracking, establishing monthly progress reporting milestones post-activation concluding with Terminal Report.
 * **6.1.3 — Create Active Project Record** — Combines activation parameters and reporting milestones with the validated partner MOA from D3 to create the active project record in D4, sets MOA linkage, dispatches active status notices to all stakeholders, and logs the activation transaction in D6.

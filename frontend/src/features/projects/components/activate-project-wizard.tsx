@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { differenceInMonths, format } from "date-fns";
 import {
 	CalendarIcon,
 	Check,
@@ -7,6 +7,7 @@ import {
 	ChevronRight,
 	Loader2,
 	Plus,
+	RotateCcw,
 	Trash2,
 } from "lucide-react";
 import * as React from "react";
@@ -40,17 +41,17 @@ import {
 import { getActiveMoasFn } from "@/features/moa/public";
 import { toStableDate } from "@/lib/utils";
 import { activateProjectFn } from "../functions";
+import {
+	type DueDateEntry,
+	generateMonthlyMilestones,
+} from "../reporting-schedule.functions";
 
 interface ActivateProjectWizardProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	projectId: string;
-}
-
-interface DueDateEntry {
-	id: string;
-	reportType: "Progress" | "Project Closure";
-	dueDate: Date | undefined;
+	targetStartDate?: string | null;
+	targetEndDate?: string | null;
 }
 
 function generateId() {
@@ -61,6 +62,8 @@ export function ActivateProjectWizard({
 	open,
 	onOpenChange,
 	projectId,
+	targetStartDate,
+	targetEndDate,
 }: ActivateProjectWizardProps) {
 	const [step, setStep] = React.useState(1);
 	const [selectedMoaId, setSelectedMoaId] = React.useState<string>("");
@@ -99,17 +102,37 @@ export function ActivateProjectWizard({
 		},
 	});
 
+	const calculatedDuration = React.useMemo(() => {
+		if (targetEndDate) {
+			const start = targetStartDate ? toStableDate(targetStartDate) : new Date();
+			const end = toStableDate(targetEndDate);
+			const diff = differenceInMonths(end, start);
+			if (diff > 0) return Math.min(diff, 60);
+		}
+		return 6;
+	}, [targetStartDate, targetEndDate]);
+
+	const [durationMonths, setDurationMonths] = React.useState<number>(calculatedDuration);
+
+	React.useEffect(() => {
+		setDurationMonths(calculatedDuration);
+	}, [calculatedDuration]);
+
 	function resetWizard() {
 		setStep(1);
 		setSelectedMoaId("");
 		setMoaSearch("");
 		setDueDates([]);
+		setDurationMonths(calculatedDuration);
 	}
 
 	function handleNext() {
 		if (step === 1 && !selectedMoaId) {
 			toast.error("Please select an MOA");
 			return;
+		}
+		if (step === 1 && dueDates.length === 0) {
+			setDueDates(generateMonthlyMilestones(new Date(), durationMonths));
 		}
 		if (step < 2) {
 			setStep((currentStep) => currentStep + 1);
@@ -124,15 +147,24 @@ export function ActivateProjectWizard({
 
 	function handleAddDueDate(reportType: DueDateEntry["reportType"]) {
 		if (
-			reportType === "Project Closure" &&
-			dueDates.some((entry) => entry.reportType === "Project Closure")
+			reportType === "Terminal Report" &&
+			dueDates.some((entry) => entry.reportType === "Terminal Report")
 		) {
-			toast.error("Only one Project Closure milestone can be added");
+			toast.error("Only one Terminal Report milestone can be added");
 			return;
 		}
+		const count = dueDates.filter((d) => d.reportType === "Progress").length;
 		setDueDates((currentDates) => [
 			...currentDates,
-			{ id: generateId(), reportType, dueDate: undefined },
+			{
+				id: generateId(),
+				title:
+					reportType === "Progress"
+						? `Month ${count + 1} Progress Report`
+						: "Terminal Report (Accomplishment and Terminal Report)",
+				reportType,
+				dueDate: undefined,
+			},
 		]);
 	}
 
@@ -166,6 +198,7 @@ export function ActivateProjectWizard({
 				projectId,
 				moaId: selectedMoaId,
 				milestones: validDueDates.map((d) => ({
+					title: d.title,
 					reportType: d.reportType,
 					dueAt: d.dueDate.toISOString(),
 				})),
@@ -262,38 +295,88 @@ export function ActivateProjectWizard({
 					)}
 
 					{step === 2 && (
-						<div className="space-y-6">
-							{/* Reporting milestones */}
+						<div className="space-y-5">
+							{/* Monthly schedule generator controls */}
+							<div className="rounded-lg border border-border bg-muted/40 p-3.5 space-y-3">
+								<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+									<div className="space-y-0.5">
+										<p className="text-sm font-medium">Monthly Progress Cadence</p>
+										<p className="text-xs text-muted-foreground">
+											Progress reports are due monthly after activation until closure.
+										</p>
+									</div>
+									<div className="flex items-center gap-2 shrink-0">
+										<div className="flex items-center gap-1.5">
+											<Label htmlFor="duration-months" className="text-xs text-muted-foreground whitespace-nowrap">
+												Duration:
+											</Label>
+											<input
+												id="duration-months"
+												type="number"
+												min={1}
+												max={36}
+												value={durationMonths}
+												onChange={(e) =>
+													setDurationMonths(
+														Math.max(1, Math.min(36, parseInt(e.target.value) || 1)),
+													)
+												}
+												className="h-8 w-14 rounded-md border border-input bg-background px-2 text-center text-xs"
+											/>
+											<span className="text-xs text-muted-foreground">mo</span>
+										</div>
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											className="h-8 text-xs gap-1.5"
+											onClick={() => {
+												setDueDates(generateMonthlyMilestones(new Date(), durationMonths));
+												toast.success(`Generated ${durationMonths}-month reporting schedule`);
+											}}
+										>
+											<RotateCcw className="size-3" />
+											Regenerate
+										</Button>
+									</div>
+								</div>
+							</div>
+
+							{/* Reporting milestones list */}
 							<div className="space-y-3">
 								<div className="flex items-center justify-between">
-									<Label>Report Milestones</Label>
+									<Label className="text-sm font-medium">
+										Scheduled Milestones ({dueDates.length})
+									</Label>
 									<Popover>
 										<PopoverTrigger
 											render={
 												<Button
 													variant="outline"
 													size="sm"
-													className="gap-1.5"
+													className="gap-1.5 h-8 text-xs"
 												/>
 											}
 										>
 											<Plus className="size-3.5" />
-											Add Report
+											Add Milestone
 										</PopoverTrigger>
-										<PopoverContent align="end" className="w-48 p-1">
+										<PopoverContent align="end" className="w-52 p-1">
 											<Button
 												variant="ghost"
-												className="w-full justify-start gap-2"
+												size="sm"
+												className="w-full justify-start gap-2 text-xs"
 												onClick={() => handleAddDueDate("Progress")}
 											>
-												Progress Report
+												Monthly Progress Report
 											</Button>
 											<Button
 												variant="ghost"
-												className="w-full justify-start gap-2"
-												onClick={() => handleAddDueDate("Project Closure")}
+												size="sm"
+												className="w-full justify-start gap-2 text-xs"
+												onClick={() => handleAddDueDate("Terminal Report")}
 											>
-												Project Closure
+												Terminal Report Milestone
 											</Button>
 										</PopoverContent>
 									</Popover>
@@ -303,7 +386,7 @@ export function ActivateProjectWizard({
 									<Empty className="py-6">
 										<EmptyContent>
 											<EmptyDescription className="text-sm text-muted-foreground">
-												No reports added yet. Click "Add Report" to begin.
+												No reports scheduled. Click "Regenerate" above or "Add Milestone" to begin.
 											</EmptyDescription>
 										</EmptyContent>
 									</Empty>
@@ -313,13 +396,16 @@ export function ActivateProjectWizard({
 									{dueDates.map((entry) => (
 										<div
 											key={entry.id}
-											className="flex items-center gap-2 rounded-lg border border-border p-3"
+											className="flex items-center gap-2 rounded-lg border border-border p-3 bg-card"
 										>
-											<span className="flex-1 text-sm font-medium">
-												{entry.reportType === "Progress"
-													? "Progress Report"
-													: "Project Closure (Accomplishment and Terminal Report)"}
-											</span>
+											<div className="flex-1 min-w-0 space-y-0.5">
+												<p className="text-sm font-medium truncate">{entry.title}</p>
+												<p className="text-xs text-muted-foreground">
+													{entry.reportType === "Progress"
+														? "Progress Report"
+														: "Accomplishment and Terminal Report"}
+												</p>
+											</div>
 											<Popover>
 												<PopoverTrigger
 													render={
@@ -327,7 +413,7 @@ export function ActivateProjectWizard({
 															variant="outline"
 															size="sm"
 															className={cn(
-																"w-[170px] justify-start text-left font-normal",
+																"w-[160px] justify-start text-left font-normal shrink-0",
 																!entry.dueDate && "text-muted-foreground",
 															)}
 														/>
@@ -352,7 +438,7 @@ export function ActivateProjectWizard({
 											<Button
 												variant="ghost"
 												size="icon"
-												className="size-8 text-muted-foreground hover:text-destructive"
+												className="size-8 text-muted-foreground hover:text-destructive shrink-0"
 												onClick={() => handleRemoveDueDate(entry.id)}
 											>
 												<Trash2 className="size-3.5" />

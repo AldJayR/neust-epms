@@ -41,8 +41,8 @@
 
 ### **3. Project Implementation & Reporting Rules**
 * **BR-12 (Project Activation Prerequisite):** A proposal may only mature into an active `project` record once it reaches `'Approved'` status with a valid institutional approval scan. If the project involves an external community partner, an active, verified partner MOA (`moa_id`) must be linked.
-* **BR-13 (Mandatory Reporting Milestones):** Every active project must have scheduled reporting milestones (`project_reporting_milestones`) established at activation.
-* **BR-14 (Consolidated Project Closure Submission):** When fulfilling a project closure milestone, the project leader must submit the unified **`Accomplishment and Terminal Report`** as the primary report file (`project_reports`).
+* **BR-13 (Mandatory Reporting Milestones):** Every active project must have scheduled reporting milestones (`project_reporting_milestones`) established at activation on a monthly cadence starting 1 month post-activation concluding with Terminal Report.
+* **BR-14 (Consolidated Terminal Report Submission):** When fulfilling a Terminal Report milestone, the project leader must submit the unified **`Accomplishment and Terminal Report`** as the primary report file (`project_reports`).
 * **BR-15 (Closure Supporting Documents):** The `Accomplishment and Terminal Report` must be accompanied by participant **`Evaluation Forms`** (mandatory) and **`Attendance Records`** (optional sign-in sheets), stored in `report_attachments`.
 * **BR-16 (Director Final Closure Approval):** Submission of closure reports transitions the project status to `'Pending Closure'`. The project is only marked `'Closed'` once the Extension Director signs off on the closure decision.
 

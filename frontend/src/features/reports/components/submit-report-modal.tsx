@@ -54,7 +54,12 @@ export function SubmitReportModal({
 	const [evalFormsFile, setEvalFormsFile] = useState<File | null>(null);
 	const [attendanceFile, setAttendanceFile] = useState<File | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const isClosure = milestone.reportType === "Project Closure";
+	const isClosure =
+		milestone.reportType === "Terminal Report" ||
+		milestone.reportType === "Project Closure";
+	const reportTypeName = milestone.reportType.endsWith("Report")
+		? milestone.reportType
+		: `${milestone.reportType} Report`;
 
 	const resetForm = () => {
 		setRemarks("");
@@ -127,7 +132,7 @@ export function SubmitReportModal({
 				queryClient.invalidateQueries({ queryKey: ["dashboard", "reports"] }),
 				queryClient.invalidateQueries({ queryKey: ["faculty", "projects"] }),
 			]);
-			toast.success(`${milestone.reportType} Report submitted successfully!`);
+			toast.success(`${reportTypeName} submitted successfully!`);
 			onOpenChange(false);
 			resetForm();
 		} catch (error) {
@@ -149,7 +154,7 @@ export function SubmitReportModal({
 		>
 			<DialogContent className="max-w-lg pb-4">
 				<DialogHeader>
-					<DialogTitle>Submit {milestone.reportType} Report</DialogTitle>
+					<DialogTitle>Submit {reportTypeName}</DialogTitle>
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4 py-2">

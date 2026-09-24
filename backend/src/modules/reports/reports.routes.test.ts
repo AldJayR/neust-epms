@@ -100,12 +100,14 @@ describe("POST /reports", () => {
 						milestoneId,
 						projectId: project.projectId,
 						reportType: "Progress",
+						dueAt: new Date("2026-02-01T00:00:00.000Z"),
 						projectStatus: "Ongoing",
 						proposalId: project.proposalId,
 					},
 				]) as never,
 			)
 			.mockReturnValueOnce(mockSelectChain([{ memberId: "member-1" }]) as never)
+			.mockReturnValueOnce(mockSelectChain([]) as never)
 			.mockReturnValueOnce(mockSelectChain([]) as never)
 			.mockReturnValueOnce(mockSelectChain([enriched]) as never);
 		vi.mocked(db.transaction).mockImplementation(
@@ -131,6 +133,43 @@ describe("POST /reports", () => {
 			project: "Test Project",
 			reportType: "Progress",
 		});
+	});
+
+	it("should reject report if previous milestone is incomplete", async () => {
+		const project = createMockProject();
+		const milestoneId = "22222222-2222-4222-8222-222222222222";
+		vi.mocked(db.select)
+			.mockReturnValueOnce(
+				mockSelectChain([
+					{
+						milestoneId,
+						projectId: project.projectId,
+						reportType: "Progress",
+						dueAt: new Date("2026-03-01T00:00:00.000Z"),
+						projectStatus: "Ongoing",
+						proposalId: project.proposalId,
+					},
+				]) as never,
+			)
+			.mockReturnValueOnce(mockSelectChain([{ memberId: "member-1" }]) as never)
+			.mockReturnValueOnce(
+				mockSelectChain([
+					{ milestoneId: "11111111-1111-4111-8111-111111111111" },
+				]) as never,
+			);
+
+		const res = await app.request("/reports", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				milestoneId,
+				reportType: "Progress",
+			}),
+		});
+
+		expect(res.status).toBe(400);
+		const body = await res.json();
+		expect(body.error.code).toBe("PREVIOUS_MILESTONES_INCOMPLETE");
 	});
 
 	it("should reject report for non-existent project", async () => {

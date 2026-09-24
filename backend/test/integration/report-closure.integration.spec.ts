@@ -84,7 +84,7 @@ describe("report and project closure integration", () => {
 		});
 		const closureMilestone = await seedMilestone(
 			project.projectId,
-			"Project Closure",
+			"Terminal Report",
 			new Date("2099-12-01T00:00:00.000Z"),
 		);
 

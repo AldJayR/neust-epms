@@ -84,4 +84,6 @@ export interface ProjectDetailsResponse {
 	members: ProjectMember[];
 	history: ProjectHistoryItem[];
 	attachments: ProjectAttachment[];
+	targetStartDate?: string | null;
+	targetEndDate?: string | null;
 }

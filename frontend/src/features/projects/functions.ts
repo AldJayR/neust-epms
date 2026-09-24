@@ -108,7 +108,11 @@ export const activateProjectFn = createServerFn({ method: "POST" })
 			projectId: z.uuid(),
 			moaId: z.uuid(),
 			milestones: z.array(
-				z.object({ reportType: z.string(), dueAt: z.string() }),
+				z.object({
+					title: z.string().optional(),
+					reportType: z.string(),
+					dueAt: z.string(),
+				}),
 			),
 		}),
 	)

@@ -184,7 +184,7 @@ describe("POST /projects/:id/close", () => {
 
 		expect(res.status).toBe(400);
 		const body = await res.json();
-		expect(body.error.code).toBe("MISSING_FINAL_ACCOMPLISHMENT_REPORT");
+		expect(body.error.code).toBe("MISSING_CLOSURE_REPORT");
 	});
 
 	it("should reject close when Terminal report is missing", async () => {
@@ -204,7 +204,7 @@ describe("POST /projects/:id/close", () => {
 
 		expect(res.status).toBe(400);
 		const body = await res.json();
-		expect(body.error.code).toBe("MISSING_TERMINAL_REPORT");
+		expect(body.error.code).toBe("MISSING_CLOSURE_REPORT");
 	});
 
 	it("should reject close when no reports exist", async () => {
@@ -223,7 +223,7 @@ describe("POST /projects/:id/close", () => {
 
 		expect(res.status).toBe(400);
 		const body = await res.json();
-		expect(body.error.code).toBe("MISSING_FINAL_ACCOMPLISHMENT_REPORT");
+		expect(body.error.code).toBe("MISSING_CLOSURE_REPORT");
 	});
 
 	it("should reject close when project is already closed", async () => {

@@ -210,6 +210,7 @@ export async function createReport(
 			milestoneId: projectReportingMilestones.milestoneId,
 			projectId: projectReportingMilestones.projectId,
 			reportType: projectReportingMilestones.reportType,
+			dueAt: projectReportingMilestones.dueAt,
 			projectStatus: projects.projectStatus,
 			proposalId: projects.proposalId,
 		})
@@ -258,7 +259,8 @@ export async function createReport(
 			milestone.reportType === REPORT_TYPE.PROGRESS_REPORT) &&
 			(body.reportType === REPORT_TYPE.PROGRESS ||
 				body.reportType === REPORT_TYPE.PROGRESS_REPORT)) ||
-		(milestone.reportType === "Project Closure" &&
+		((milestone.reportType === "Terminal Report" ||
+			milestone.reportType === "Project Closure") &&
 			(body.reportType === REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL ||
 				body.reportType === REPORT_TYPE.TERMINAL ||
 				body.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT));
@@ -267,6 +269,25 @@ export async function createReport(
 			400,
 			"REPORT_TYPE_MISMATCH",
 			"The report type does not match the selected milestone",
+		);
+	}
+
+	const [priorIncompleteMilestone] = await db
+		.select({ milestoneId: projectReportingMilestones.milestoneId })
+		.from(projectReportingMilestones)
+		.where(
+			and(
+				eq(projectReportingMilestones.projectId, milestone.projectId),
+				isNull(projectReportingMilestones.completedAt),
+				lt(projectReportingMilestones.dueAt, milestone.dueAt),
+			),
+		)
+		.limit(1);
+	if (priorIncompleteMilestone) {
+		throw new ApiError(
+			400,
+			"PREVIOUS_MILESTONES_INCOMPLETE",
+			"Previous progress reports must be submitted before this report",
 		);
 	}
 	const [existing] = await db
@@ -513,7 +534,8 @@ export async function uploadReportDocument(
 				(item) => item.reportType === REPORT_TYPE.TERMINAL,
 			);
 			const isClosureCompleted =
-				(milestone?.reportType === "Project Closure" ||
+				(milestone?.reportType === "Terminal Report" ||
+					milestone?.reportType === "Project Closure" ||
 					milestone?.reportType === MILESTONE_TYPE.CLOSURE) &&
 				(hasUnifiedClosure || (hasFinalAccomplishment && hasTerminal));
 			const milestoneComplete =

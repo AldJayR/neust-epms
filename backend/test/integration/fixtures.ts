@@ -208,10 +208,21 @@ export async function seedMilestone(
 	projectId: string,
 	reportType: string,
 	dueAt: Date,
+	title?: string,
 ) {
 	const [milestone] = await db
 		.insert(projectReportingMilestones)
-		.values({ projectId, reportType, dueAt })
+		.values({
+			projectId,
+			reportType,
+			milestoneType: reportType === "Progress" ? "Progress" : "Closure",
+			title:
+				title ??
+				(reportType === "Progress"
+					? "Month 1 Progress Report"
+					: "Terminal Report"),
+			dueAt,
+		})
 		.returning();
 	return milestone;
 }
