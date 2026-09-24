@@ -88,10 +88,7 @@ export async function listProjects(
 				targetStartDate: proposals.targetStartDate,
 				targetEndDate: proposals.targetEndDate,
 				actualEndDate: projects.actualEndDate,
-				projectStatus: sql<string>`CASE 
-					WHEN ${projects.projectStatus} != 'Approved' THEN ${projects.projectStatus}
-					ELSE ${proposals.status}
-				END`,
+				projectStatus: projects.projectStatus,
 				createdAt: projects.createdAt,
 				updatedAt: projects.updatedAt,
 				archivedAt: projects.archivedAt,
@@ -486,17 +483,6 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 		});
 	});
 
-	if (row.institutionalApprovedAt) {
-		history.push({
-			id: `institutional-approval-${row.proposalId}`,
-			version: `v${row.revisionNum}`,
-			status: PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED,
-			actorName: "Director",
-			date: row.institutionalApprovedAt.toISOString(),
-			comment: "Signed institutional approval scan recorded.",
-		});
-	}
-
 	history.sort(
 		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
 	);
@@ -539,10 +525,7 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 	return {
 		id: row.proposalId,
 		title: row.title,
-		status:
-			row.projectStatus && row.projectStatus !== PROJECT_STATUS.APPROVED
-				? row.projectStatus
-				: row.status,
+		status: row.projectStatus ?? row.status,
 		version: `v${row.revisionNum}`,
 		bypassedRetChair: row.bypassedRetChair,
 		endorsementDocPath: row.endorsementDocPath,
@@ -1183,7 +1166,6 @@ export async function getProjectReadiness(id: string) {
 	// Check Proposal Approved
 	const isProposalApproved =
 		proposal.status === PROPOSAL_STATUS.APPROVED ||
-		proposal.status === PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED ||
 		project.projectStatus !== "Approved";
 	const proposalApprovedDate = proposal.updatedAt.toLocaleDateString("en-US", {
 		month: "short",
@@ -1331,7 +1313,7 @@ export async function getProjectReportingSchedule(id: string) {
 			date: milestone.date.toISOString(),
 			isCompleted: Boolean(milestone.completedAt),
 			completedAt: milestone.completedAt?.toISOString() ?? null,
-			reportType: milestone.reportType ?? "Progress",
+			reportType: milestone.reportType,
 			reportId: singleReport?.reportId ?? null,
 			storagePath: singleReport?.storagePath ?? null,
 		};

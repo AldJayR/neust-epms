@@ -47,12 +47,7 @@ export const recordInstitutionalApprovalFn = createServerFn({ method: "POST" })
 		if (!proposalId || typeof proposalId !== "string") {
 			throw new Error("Proposal ID is required");
 		}
-		if (
-			!(file instanceof File) ||
-			(file.type !== "application/pdf" &&
-				file.type !== "application/x-pdf" &&
-				!file.name.toLowerCase().endsWith(".pdf"))
-		) {
+		if (!(file instanceof File) || file.type !== "application/pdf") {
 			throw new Error("A valid PDF file is required");
 		}
 		return data;
@@ -89,12 +84,7 @@ export const recordChairEndorsementFn = createServerFn({ method: "POST" })
 		if (!proposalId || typeof proposalId !== "string") {
 			throw new Error("Proposal ID is required");
 		}
-		if (
-			!(file instanceof File) ||
-			(file.type !== "application/pdf" &&
-				file.type !== "application/x-pdf" &&
-				!file.name.toLowerCase().endsWith(".pdf"))
-		) {
+		if (!(file instanceof File) || file.type !== "application/pdf") {
 			throw new Error("A valid PDF file is required");
 		}
 		return data;

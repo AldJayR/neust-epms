@@ -134,6 +134,19 @@ export function ProposalDetailsTab() {
 									</a>
 								</div>
 							)}
+							{data.institutionalApprovalDocUrl && (
+								<div className="pl-7 pt-1">
+									<a
+										href={data.institutionalApprovalDocUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline"
+									>
+										<FileText className="size-3.5" />
+										View Institutional Approval Document (PDF)
+									</a>
+								</div>
+							)}
 						</div>
 
 						{endorsement.comment && (
@@ -148,46 +161,6 @@ export function ProposalDetailsTab() {
 								</div>
 							</>
 						)}
-					</div>
-
-					<div className="px-5 py-2">
-						<Separator />
-					</div>
-				</>
-			)}
-
-			{data.institutionalApprovalDocUrl && (
-				<>
-					<div className="p-5 space-y-4">
-						<h2 className="text-sm font-medium text-black dark:text-foreground">
-							Institutional Approval
-						</h2>
-						<div className="rounded-lg border border-border p-3 space-y-1">
-							<div className="flex items-center gap-3">
-								<CheckCircle2 className="size-4 text-black dark:text-foreground" />
-								<span className="text-sm font-medium text-black dark:text-foreground">
-									Institutionally Approved by Director
-								</span>
-							</div>
-							{data.institutionalApprovedAt && (
-								<div className="pl-7">
-									<span className="text-xs text-muted-foreground font-light">
-										{formatReviewDate(data.institutionalApprovedAt)}
-									</span>
-								</div>
-							)}
-							<div className="pl-7 pt-1">
-								<a
-									href={data.institutionalApprovalDocUrl}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline"
-								>
-									<FileText className="size-3.5" />
-									View Institutional Approval Document (PDF)
-								</a>
-							</div>
-						</div>
 					</div>
 
 					<div className="px-5 py-2">

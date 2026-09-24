@@ -737,7 +737,7 @@ export async function uploadReportAttachment(
 		);
 	}
 
-	if (!(await isPdfFile(file))) {
+	if (!isPdfFile(file)) {
 		throw new ApiError(
 			422,
 			"INVALID_FILE_TYPE",
@@ -789,14 +789,11 @@ export async function uploadReportAttachment(
 		})
 		.returning();
 
-	if (!attachment) {
-		throw new ApiError(500, "UPLOAD_FAILED", "Failed to create attachment record");
-	}
-
 	await insertAuditLog({
 		userId: user.userId,
 		action: `Uploaded ${attachmentType} attachment for report ${reportId}`,
 		tableAffected: "report_attachments",
+		recordId: attachment.attachmentId,
 		ipAddress,
 	});
 
@@ -873,6 +870,7 @@ export async function getReportAttachmentSignedUrl(
 		userId: user.userId,
 		action: `Accessed signed URL for attachment ${attachmentId}`,
 		tableAffected: "report_attachments",
+		recordId: attachmentId,
 		ipAddress,
 	});
 

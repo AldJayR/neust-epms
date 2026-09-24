@@ -1053,7 +1053,7 @@ export async function recordChairEndorsement(
 		);
 	}
 
-	if (!(await isPdfFile(file))) {
+	if (!isPdfFile(file)) {
 		throw new ApiError(
 			422,
 			"INVALID_FILE_TYPE",
@@ -1121,6 +1121,7 @@ export async function recordChairEndorsement(
 		userId: user.userId,
 		action: `Recorded Dean/Director signed endorsement scan for proposal ${proposalId}`,
 		tableAffected: "proposals",
+		recordId: proposalId,
 		newValue: {
 			status: PROPOSAL_STATUS.ENDORSED,
 			endorsementDocPath: storagePath,
@@ -1200,7 +1201,7 @@ export async function recordInstitutionalApproval(
 		);
 	}
 
-	if (!(await isPdfFile(file))) {
+	if (!isPdfFile(file)) {
 		throw new ApiError(
 			422,
 			"INVALID_FILE_TYPE",
