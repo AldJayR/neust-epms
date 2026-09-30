@@ -170,48 +170,49 @@ export async function getProjectDerivedState(id: string, user: AuthUser) {
 
 	const leaderMembers = getLeaderSubquery();
 
-	const [[row], [milestone], [report]] = await Promise.all([
-		db
-			.select({
-				projectId: projects.projectId,
-				projectStatus: projects.projectStatus,
-				moaId: projects.moaId,
-				leaderId: leaderMembers.userId,
-			})
-			.from(projects)
-			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-			.leftJoin(
-				leaderMembers,
-				eq(projects.proposalId, leaderMembers.proposalId),
-			)
-			.where(
-				and(
-					eq(projects.projectId, id),
-					isNull(projects.archivedAt),
-					inArray(projects.proposalId, allowedProposals),
-				),
-			)
-			.limit(1),
+	const [row] = await db
+		.select({
+			projectId: projects.projectId,
+			projectStatus: projects.projectStatus,
+			moaId: projects.moaId,
+			leaderId: leaderMembers.userId,
+		})
+		.from(projects)
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+		.leftJoin(
+			leaderMembers,
+			eq(projects.proposalId, leaderMembers.proposalId),
+		)
+		.where(
+			and(
+				or(eq(projects.projectId, id), eq(projects.proposalId, id)),
+				isNull(projects.archivedAt),
+				inArray(projects.proposalId, allowedProposals),
+			),
+		)
+		.limit(1);
+
+	if (!row) {
+		throw new ApiError(404, "NOT_FOUND", "Project not found");
+	}
+
+	const [[milestone], [report]] = await Promise.all([
 		db
 			.select({ milestoneId: projectReportingMilestones.milestoneId })
 			.from(projectReportingMilestones)
-			.where(eq(projectReportingMilestones.projectId, id))
+			.where(eq(projectReportingMilestones.projectId, row.projectId))
 			.limit(1),
 		db
 			.select({ reportId: projectReports.reportId })
 			.from(projectReports)
 			.where(
 				and(
-					eq(projectReports.projectId, id),
+					eq(projectReports.projectId, row.projectId),
 					isNull(projectReports.archivedAt),
 				),
 			)
 			.limit(1),
 	]);
-
-	if (!row) {
-		throw new ApiError(404, "NOT_FOUND", "Project not found");
-	}
 
 	return deriveProjectState(
 		{
@@ -621,7 +622,13 @@ export async function transitionProjectStatus(
 			})
 			.from(projects)
 			.where(
-				and(eq(projects.projectId, projectId), isNull(projects.archivedAt)),
+				and(
+					or(
+						eq(projects.projectId, projectId),
+						eq(projects.proposalId, projectId),
+					),
+					isNull(projects.archivedAt),
+				),
 			)
 			.for("update")
 			.limit(1);
@@ -643,7 +650,7 @@ export async function transitionProjectStatus(
 			.set({ projectStatus: targetStatus, updatedAt: new Date() })
 			.where(
 				and(
-					eq(projects.projectId, projectId),
+					eq(projects.projectId, project.projectId),
 					eq(projects.projectStatus, project.projectStatus),
 					isNull(projects.archivedAt),
 				),
@@ -689,7 +696,13 @@ export async function closeProject(
 			})
 			.from(projects)
 			.where(
-				and(eq(projects.projectId, projectId), isNull(projects.archivedAt)),
+				and(
+					or(
+						eq(projects.projectId, projectId),
+						eq(projects.proposalId, projectId),
+					),
+					isNull(projects.archivedAt),
+				),
 			)
 			.for("update")
 			.limit(1);
@@ -728,7 +741,7 @@ export async function closeProject(
 			.from(projectReports)
 			.where(
 				and(
-					eq(projectReports.projectId, projectId),
+					eq(projectReports.projectId, project.projectId),
 					isNull(projectReports.archivedAt),
 					isNotNull(projectReports.storagePath),
 				),
@@ -789,7 +802,7 @@ export async function closeProject(
 			})
 			.where(
 				and(
-					eq(projects.projectId, projectId),
+					eq(projects.projectId, project.projectId),
 					eq(projects.projectStatus, project.projectStatus),
 					isNull(projects.archivedAt),
 				),
@@ -807,7 +820,7 @@ export async function closeProject(
 		await insertAuditLog(
 			{
 				userId: user.userId,
-				action: `Closed project ${projectId}`,
+				action: `Closed project ${project.projectId}`,
 				tableAffected: "projects",
 				oldValue: diff.oldValue,
 				newValue: diff.newValue,
@@ -861,7 +874,13 @@ export async function setProjectHold(
 			.select({ projectId: projects.projectId, onHold: projects.onHold })
 			.from(projects)
 			.where(
-				and(eq(projects.projectId, projectId), isNull(projects.archivedAt)),
+				and(
+					or(
+						eq(projects.projectId, projectId),
+						eq(projects.proposalId, projectId),
+					),
+					isNull(projects.archivedAt),
+				),
 			)
 			.for("update")
 			.limit(1);
@@ -880,7 +899,7 @@ export async function setProjectHold(
 			.set({ onHold, updatedAt: new Date() })
 			.where(
 				and(
-					eq(projects.projectId, projectId),
+					eq(projects.projectId, existing.projectId),
 					eq(projects.onHold, existing.onHold),
 					isNull(projects.archivedAt),
 				),
