@@ -84,8 +84,13 @@ export default function ProjectsChartCard({
 					onValueChange={handleCampusChange}
 					modal={false}
 				>
-					<SelectTrigger className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-muted-foreground shadow-sm sm:w-[200px]">
-						<SelectValue placeholder="Select campus..." />
+					<SelectTrigger className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm shadow-sm sm:w-[200px]">
+						<SelectValue placeholder="Select campus...">
+							{(val) => {
+								if (val === "all" || !val) return "All Campuses";
+								return campuses.find((c) => String(c.id) === val)?.name ?? val;
+							}}
+						</SelectValue>
 					</SelectTrigger>
 					<SelectContent
 						side="bottom"
@@ -93,7 +98,7 @@ export default function ProjectsChartCard({
 						align="start"
 						alignItemWithTrigger={false}
 					>
-						<SelectItem value="all">All campuses</SelectItem>
+						<SelectItem value="all">All Campuses</SelectItem>
 						{campuses.map((campus) => (
 							<SelectItem key={campus.id} value={String(campus.id)}>
 								{campus.name}
