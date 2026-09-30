@@ -881,7 +881,12 @@ export async function getHubProjects(
 	}
 
 	if (college) {
-		whereConditions.push(eq(departments.departmentName, college));
+		whereConditions.push(
+			or(
+				eq(departments.departmentName, college),
+				eq(departments.departmentCode, college),
+			),
+		);
 	}
 
 	if (status) {
@@ -916,6 +921,8 @@ export async function getHubProjects(
 			leaderLastName: users.lastName,
 			leaderRank: users.academicRank,
 			college: departments.departmentName,
+			departmentCode: departments.departmentCode,
+			campusName: campuses.campusName,
 			dateSubmitted: proposals.createdAt,
 			proposalStatus: proposals.status,
 			projectStatus: projects.projectStatus,
@@ -928,6 +935,7 @@ export async function getHubProjects(
 		)
 		.innerJoin(users, eq(leaderMembersSubquery.userId, users.userId))
 		.leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
+		.leftJoin(campuses, eq(proposals.campusId, campuses.campusId))
 		.leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
 		.leftJoin(
 			latestReportsSubquery,
@@ -960,6 +968,8 @@ export async function getHubProjects(
 		leaderName: `${r.leaderFirstName} ${r.leaderLastName}`,
 		leaderRank: r.leaderRank,
 		college: r.college,
+		departmentCode: r.departmentCode ?? null,
+		campusName: r.campusName ?? null,
 		dateSubmitted: new Date(r.dateSubmitted).toISOString(),
 		lastReportDate: r.lastReportDate
 			? new Date(r.lastReportDate).toISOString()

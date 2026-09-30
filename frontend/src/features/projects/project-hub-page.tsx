@@ -91,14 +91,28 @@ export function ProjectHubPage({
 			},
 		},
 		{
-			id: "college",
-			accessorKey: "college",
+			id: "implementingUnit",
+			accessorFn: (row) => row.departmentCode ?? row.college ?? "",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="College" />
+				<DataTableColumnHeader column={column} title="Implementing Unit" />
 			),
 			headerClassName: "w-[15%] font-medium text-muted-foreground",
 			cellClassName: "text-foreground text-left",
-			cell: ({ row }) => row.original.college,
+			cell: ({ row }) => {
+				const project = row.original;
+				return (
+					<div className="flex flex-col text-left">
+						<span className="text-sm text-foreground">
+							{project.departmentCode ?? project.college ?? "—"}
+						</span>
+						{project.campusName && (
+							<span className="text-xs text-muted-foreground">
+								{project.campusName}
+							</span>
+						)}
+					</div>
+				);
+			},
 		},
 		{
 			id: "dateSubmitted",
@@ -149,9 +163,9 @@ export function ProjectHubPage({
 						onValueChange={(val: string | null) =>
 							onCollegeChange(val === "all" ? "" : (val ?? ""))
 						}
-						placeholder="All Colleges"
+						placeholder="All Implementing Units"
 						options={[
-							{ value: "all", label: "All Colleges" },
+							{ value: "all", label: "All Implementing Units" },
 							{ value: "CICT", label: "CICT" },
 							{ value: "COE", label: "Engineering" },
 							{ value: "CAS", label: "Arts & Sciences" },

@@ -31,6 +31,8 @@ export interface HubProject {
 	leaderName: string;
 	leaderRank: string | null;
 	college: string | null;
+	departmentCode?: string | null;
+	campusName?: string | null;
 	dateSubmitted: string;
 	lastReportDate?: string | null;
 	status: string;

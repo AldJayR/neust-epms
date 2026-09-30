@@ -81,6 +81,8 @@ describe("GET /director/hub/projects", () => {
 						leaderLastName: "User",
 						leaderRank: "Instructor",
 						college: "MIS",
+						departmentCode: "MIS",
+						campusName: "Main Campus",
 						dateSubmitted: mockProposal.createdAt,
 						proposalStatus: mockProposal.status,
 						projectStatus: null,
@@ -101,5 +103,7 @@ describe("GET /director/hub/projects", () => {
 		expect(body.items).toHaveLength(1);
 		expect(body.total).toBe(1);
 		expect(body.items[0].id).toBe(mockProposal.proposalId);
+		expect(body.items[0].departmentCode).toBe("MIS");
+		expect(body.items[0].campusName).toBe("Main Campus");
 	});
 });

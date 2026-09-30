@@ -8,6 +8,8 @@ export const HubProjectSchema = z
 		leaderName: z.string(),
 		leaderRank: z.string().nullable(),
 		college: z.string().nullable(),
+		departmentCode: z.string().nullable().optional(),
+		campusName: z.string().nullable().optional(),
 		dateSubmitted: z.string(),
 		lastReportDate: z.string().nullable().optional(),
 		status: z.string(),
