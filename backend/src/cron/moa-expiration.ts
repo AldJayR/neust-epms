@@ -1,4 +1,4 @@
-import { and, eq, gt, isNull, lte } from "drizzle-orm";
+import { and, eq, inArray, isNull, lte } from "drizzle-orm";
 import cron from "node-cron";
 import { db } from "@/db/client.js";
 import { moas } from "@/db/schema/moas.js";
@@ -10,6 +10,7 @@ import { env } from "@/env.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { withCronLock } from "@/lib/cron-lock.js";
 import { escapeHtml } from "@/lib/html.js";
+import { PROJECT_STATUS } from "@/lib/types.js";
 import {
 	createNotification,
 	getUserIdsByRole,
@@ -55,10 +56,9 @@ export async function runMoaExpiration(): Promise<void> {
 
 	try {
 		const now = new Date();
-		// Use a 48-hour window instead of 24h to tolerate brief downtime
-		const windowStart = new Date(now.getTime() - 48 * 60 * 60 * 1000);
 
-		// Find MOAs that expired within the window and are not archived
+		// Process every expired MOA so downtime longer than the usual polling
+		// interval cannot leave linked projects active indefinitely.
 		const expiredMoas = await db
 			.select({
 				moaId: moas.moaId,
@@ -67,13 +67,7 @@ export async function runMoaExpiration(): Promise<void> {
 			})
 			.from(moas)
 			.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
-			.where(
-				and(
-					lte(moas.validUntil, now),
-					gt(moas.validUntil, windowStart),
-					isNull(moas.archivedAt),
-				),
-			);
+			.where(and(lte(moas.validUntil, now), isNull(moas.archivedAt)));
 
 		if (expiredMoas.length === 0) {
 			console.log("[CRON] No expired MOAs found.");
@@ -107,13 +101,16 @@ export async function runMoaExpiration(): Promise<void> {
 			const affectedProjects = await db
 				.update(projects)
 				.set({
-					projectStatus: "Expired",
+					projectStatus: PROJECT_STATUS.EXPIRED,
 					updatedAt: new Date(),
 				})
 				.where(
 					and(
 						eq(projects.moaId, moa.moaId),
-						eq(projects.projectStatus, "Ongoing"),
+						inArray(projects.projectStatus, [
+							PROJECT_STATUS.ONGOING,
+							PROJECT_STATUS.OVERDUE,
+						]),
 						isNull(projects.archivedAt),
 					),
 				)

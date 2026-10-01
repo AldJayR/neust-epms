@@ -11,7 +11,7 @@ export const ReportSchema = z
 		avatarUrl: z.string().nullable().optional(),
 		department: z.string().nullable(),
 		reportType: z.string(),
-		submitted: z.string(),
+		submitted: z.string().nullable(),
 		storagePath: z.string().nullable(),
 		remarks: z.string().nullable(),
 		archivedAt: z.string().nullable(),

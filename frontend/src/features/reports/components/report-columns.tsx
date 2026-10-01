@@ -161,7 +161,10 @@ export function createDirectorReportColumns(
 			headerClassName:
 				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
-			cell: ({ row }) => formatDate(row.original.submitted),
+			cell: ({ row }) =>
+				row.original.submitted
+					? formatDate(row.original.submitted)
+					: "Unavailable",
 		},
 		createReportActionsColumn(onViewReport),
 	);
@@ -183,7 +186,10 @@ export function createFacultyReportColumns(
 			cellClassName: "px-4 py-3 font-medium text-foreground",
 			cell: ({ row }) => {
 				const item = row.original;
-				if (item.reportType === "Progress") {
+				if (
+					item.reportType === "Progress" ||
+					item.reportType === "Progress Report"
+				) {
 					const sequence = progressReportSequences.get(item.reportId) ?? 1;
 					return `Progress Report #${sequence}`;
 				}
@@ -236,7 +242,10 @@ export function createFacultyReportColumns(
 			headerClassName:
 				"px-4 py-2 text-center text-sm font-medium text-muted-foreground",
 			cellClassName: "px-4 py-3 text-center text-sm text-foreground",
-			cell: ({ row }) => formatDate(row.original.submitted),
+			cell: ({ row }) =>
+				row.original.submitted
+					? formatDate(row.original.submitted)
+					: "Unavailable",
 		},
 		createReportActionsColumn(onViewReport),
 	];

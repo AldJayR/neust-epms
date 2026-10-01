@@ -7,13 +7,16 @@ import {
 	countDistinct,
 	desc,
 	eq,
+	gt,
 	gte,
 	inArray,
 	isNull,
+	lt,
 	lte,
 	or,
 } from "drizzle-orm";
 import { db } from "@/db/client.js";
+import { moas } from "@/db/schema/moas.js";
 import { projectReportingMilestones } from "@/db/schema/project-reporting-milestones.js";
 import { projects } from "@/db/schema/projects.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
@@ -321,6 +324,71 @@ async function getUpcomingReports(opts: {
 	return { rows, total: Number(total?.value ?? 0) };
 }
 
+async function getOverdueReportCount(opts: {
+	now: Date;
+	scopeClause?: SQL;
+	leaderUserId?: string;
+}): Promise<number> {
+	const query = db
+		.select({ value: countDistinct(projectReportingMilestones.milestoneId) })
+		.from(projectReportingMilestones)
+		.innerJoin(
+			projects,
+			eq(projectReportingMilestones.projectId, projects.projectId),
+		)
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId));
+	const conditions: SQL[] = [
+		lt(projectReportingMilestones.dueAt, opts.now),
+		isNull(projectReportingMilestones.completedAt),
+		isNull(projects.archivedAt),
+		isNull(proposals.archivedAt),
+		inArray(projects.projectStatus, [
+			PROJECT_STATUS.ONGOING,
+			PROJECT_STATUS.OVERDUE,
+		]),
+	];
+	if (opts.scopeClause) conditions.push(opts.scopeClause);
+	if (opts.leaderUserId) {
+		query.innerJoin(
+			proposalMembers,
+			and(
+				eq(proposals.proposalId, proposalMembers.proposalId),
+				buildReportObligationScope(opts.leaderUserId),
+			),
+		);
+	}
+	const [row] = await query.where(and(...conditions));
+	return Number(row?.value ?? 0);
+}
+
+export function buildOverdueReportConditions(now: Date): SQL[] {
+	return [
+		lt(projectReportingMilestones.dueAt, now),
+		isNull(projectReportingMilestones.completedAt),
+		isNull(projects.archivedAt),
+		isNull(proposals.archivedAt),
+		inArray(projects.projectStatus, [
+			PROJECT_STATUS.ONGOING,
+			PROJECT_STATUS.OVERDUE,
+		]),
+	];
+}
+
+async function getExpiringMoaCount(now: Date): Promise<number> {
+	const expiryLimit = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+	const [row] = await db
+		.select({ value: count() })
+		.from(moas)
+		.where(
+			and(
+				isNull(moas.archivedAt),
+				gt(moas.validUntil, now),
+				lte(moas.validUntil, expiryLimit),
+			),
+		);
+	return Number(row?.value ?? 0);
+}
+
 async function batchFetchScheduleExists(
 	projectIds: string[],
 ): Promise<Map<string, boolean>> {
@@ -505,24 +573,30 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 		const scope = buildProposalScopeClause(user);
 		const scopeProps = scope !== undefined ? { scopeClause: scope } : {};
 
-		const [pendingResult, returnedResult, overdueResult, reportsResult] =
-			await Promise.all([
-				getPendingProposals({
-					statusFilter: and(
-						eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
-						eq(proposals.bypassedRetChair, false),
-					)!,
-					...scopeProps,
-				}),
-				getReturnedProposals({
-					...scopeProps,
-				}),
-				getProjectsByStatus({
-					projectStatus: PROJECT_STATUS.OVERDUE,
-					...scopeProps,
-				}),
-				getUpcomingReports({ now, ...scopeProps, leaderUserId: user.userId }),
-			]);
+		const [
+			pendingResult,
+			returnedResult,
+			overdueResult,
+			reportsResult,
+			overdueReportCount,
+		] = await Promise.all([
+			getPendingProposals({
+				statusFilter: and(
+					eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
+					eq(proposals.bypassedRetChair, false),
+				)!,
+				...scopeProps,
+			}),
+			getReturnedProposals({
+				...scopeProps,
+			}),
+			getProjectsByStatus({
+				projectStatus: PROJECT_STATUS.OVERDUE,
+				...scopeProps,
+			}),
+			getUpcomingReports({ now, ...scopeProps, leaderUserId: user.userId }),
+			getOverdueReportCount({ now, ...scopeProps }),
+		]);
 		const pending = pendingResult.rows;
 		const returned = returnedResult.rows;
 		const overdue = overdueResult.rows;
@@ -543,7 +617,7 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 
-		overdueReports = overdueResult.total;
+		overdueReports = overdueReportCount;
 		const schedMap = await batchFetchScheduleExists(
 			overdue.map((p) => p.projectId),
 		);
@@ -564,25 +638,31 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 	} else if (user.roleName === ROLE_NAMES.DIRECTOR) {
-		const [pendingResult, approvedResult, overdueResult, reportsResult] =
-			await Promise.all([
-				getPendingProposals({
-					statusFilter: or(
-						eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
-						and(
-							eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
-							eq(proposals.bypassedRetChair, true),
-						),
-					)!,
-				}),
-				getProjectsByStatus({
-					projectStatus: PROJECT_STATUS.APPROVED,
-				}),
-				getProjectsByStatus({
-					projectStatus: PROJECT_STATUS.OVERDUE,
-				}),
-				getUpcomingReports({ now, leaderUserId: user.userId }),
-			]);
+		const [
+			pendingResult,
+			approvedResult,
+			overdueResult,
+			reportsResult,
+			overdueReportCount,
+		] = await Promise.all([
+			getPendingProposals({
+				statusFilter: or(
+					eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
+					and(
+						eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
+						eq(proposals.bypassedRetChair, true),
+					),
+				)!,
+			}),
+			getProjectsByStatus({
+				projectStatus: PROJECT_STATUS.APPROVED,
+			}),
+			getProjectsByStatus({
+				projectStatus: PROJECT_STATUS.OVERDUE,
+			}),
+			getUpcomingReports({ now, leaderUserId: user.userId }),
+			getOverdueReportCount({ now }),
+		]);
 		const pending = pendingResult.rows;
 		const approved = approvedResult.rows;
 		const overdue = overdueResult.rows;
@@ -598,7 +678,7 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 		}
 
 		projectsNeedingActivation = approvedResult.total;
-		overdueReports = overdueResult.total;
+		overdueReports = overdueReportCount;
 
 		const [approvedSchedMap, overdueSchedMap] = await Promise.all([
 			batchFetchScheduleExists(approved.map((p) => p.projectId)),
@@ -642,7 +722,12 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 	} else if (user.roleName === ROLE_NAMES.FACULTY) {
-		const [returnedResult, overdueResult, reportsResult] = await Promise.all([
+		const [
+			returnedResult,
+			overdueResult,
+			reportsResult,
+			overdueReportCount,
+		] = await Promise.all([
 			getReturnedProposals({
 				memberUserId: user.userId,
 			}),
@@ -654,6 +739,7 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 				now,
 				leaderUserId: user.userId,
 			}),
+			getOverdueReportCount({ now, leaderUserId: user.userId }),
 		]);
 		const returned = returnedResult.rows;
 		const overdue = overdueResult.rows;
@@ -665,7 +751,7 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
 
-		overdueReports = overdueResult.total;
+		overdueReports = overdueReportCount;
 		const schedMap = await batchFetchScheduleExists(
 			overdue.map((p) => p.projectId),
 		);
@@ -702,6 +788,9 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 		}
 	}
 
+	const expiringMoas =
+		user.roleName === ROLE_NAMES.DIRECTOR ? await getExpiringMoaCount(now) : 0;
+
 	return {
 		actItems,
 		watchItems,
@@ -709,7 +798,7 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			pendingReviews,
 			returnedProposals,
 			overdueReports,
-			expiringMoas: 0,
+			expiringMoas,
 			projectsNeedingActivation,
 		},
 	};

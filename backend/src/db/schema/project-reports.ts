@@ -32,9 +32,10 @@ export const projectReports = pgTable(
 		uploadedBy: uuid("uploaded_by").references(() => users.userId),
 		sourceIp: varchar("source_ip", { length: 45 }),
 		remarks: text("remarks"),
-		submittedAt: timestamp("submitted_at", { withTimezone: true })
+		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
+		submittedAt: timestamp("submitted_at", { withTimezone: true }),
 		archivedAt: timestamp("archived_at", { withTimezone: true }),
 	},
 	(table) => ({
@@ -54,7 +55,9 @@ export const projectReports = pgTable(
 			"project_reports_active_project_submitted_idx",
 		)
 			.on(table.projectId, table.submittedAt)
-			.where(sql`${table.archivedAt} IS NULL`),
+			.where(
+				sql`${table.archivedAt} IS NULL AND ${table.submittedAt} IS NOT NULL`,
+			),
 		milestoneProjectFk: foreignKey({
 			columns: [table.milestoneId, table.projectId],
 			foreignColumns: [

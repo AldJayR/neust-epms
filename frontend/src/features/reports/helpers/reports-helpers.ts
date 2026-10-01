@@ -31,10 +31,15 @@ export function filterReportsByType(
 		return reports.filter(
 			(report) =>
 				report.reportType === "Terminal" ||
+				report.reportType === "Final Accomplishment" ||
 				report.reportType === "Accomplishment and Terminal Report",
 		);
 	}
-	return reports.filter((report) => report.reportType === typeFilter);
+	return reports.filter(
+		(report) =>
+			report.reportType === typeFilter ||
+			report.reportType === "Progress Report",
+	);
 }
 
 export function getProgressReportSequences(
@@ -42,7 +47,11 @@ export function getProgressReportSequences(
 ): Map<string, number> {
 	const progressByProject: Record<string, ReportItem[]> = {};
 	for (const report of reports) {
-		if (report.reportType !== "Progress") continue;
+		if (
+			report.reportType !== "Progress" &&
+			report.reportType !== "Progress Report"
+		)
+			continue;
 		if (!progressByProject[report.projectId]) {
 			progressByProject[report.projectId] = [];
 		}
@@ -51,10 +60,15 @@ export function getProgressReportSequences(
 
 	const sequenceMap = new Map<string, number>();
 	for (const projectReports of Object.values(progressByProject)) {
-		projectReports.sort(
-			(a, b) =>
-				new Date(a.submitted).getTime() - new Date(b.submitted).getTime(),
-		);
+		projectReports.sort((a, b) => {
+			const aSubmittedAt = a.submitted
+				? new Date(a.submitted).getTime()
+				: Number.POSITIVE_INFINITY;
+			const bSubmittedAt = b.submitted
+				? new Date(b.submitted).getTime()
+				: Number.POSITIVE_INFINITY;
+			return aSubmittedAt - bSubmittedAt;
+		});
 		projectReports.forEach((report, index) => {
 			sequenceMap.set(report.reportId, index + 1);
 		});

@@ -19,7 +19,7 @@ const metricCards = [
 	{ label: "Total Projects", key: "totalProjects" as const },
 	{ label: "Ongoing Projects", key: "ongoingProjects" as const },
 	{ label: "Under Evaluation", key: "underEvaluation" as const },
-	{ label: "Completed", key: "completed" as const },
+	{ label: "Closed / Completed", key: "completed" as const },
 ];
 
 function RecentActivitiesCard({

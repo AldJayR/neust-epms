@@ -62,10 +62,9 @@ describe("GET /reports/stats", () => {
 });
 
 describe("POST /reports", () => {
-	it("should create a report for an existing project", async () => {
+	it("should create a report for an overdue project and leave its submit time empty until upload", async () => {
 		const project = createMockProject();
 		const milestoneId = "11111111-1111-4111-8111-111111111111";
-		const submittedAt = new Date("2026-01-01T00:00:00.000Z");
 		const report = {
 			reportId: "aaa",
 			projectId: project.projectId,
@@ -74,7 +73,7 @@ describe("POST /reports", () => {
 			reportType: "Progress",
 			storagePath: null,
 			remarks: "Good progress",
-			submittedAt,
+			submittedAt: null,
 			archivedAt: null,
 		};
 		const enriched = {
@@ -88,7 +87,7 @@ describe("POST /reports", () => {
 			leaderAvatarUrl: null,
 			departmentName: "CS",
 			reportType: "Progress",
-			submittedAt,
+			submittedAt: null,
 			storagePath: null,
 			remarks: "Good progress",
 			archivedAt: null,
@@ -101,7 +100,7 @@ describe("POST /reports", () => {
 						projectId: project.projectId,
 						reportType: "Progress",
 						dueAt: new Date("2026-02-01T00:00:00.000Z"),
-						projectStatus: "Ongoing",
+						projectStatus: "Overdue",
 						proposalId: project.proposalId,
 					},
 				]) as never,
@@ -132,7 +131,75 @@ describe("POST /reports", () => {
 		expect(await res.json()).toMatchObject({
 			project: "Test Project",
 			reportType: "Progress",
+			submitted: null,
 		});
+	});
+
+	it("sets the submitted timestamp when the report document is uploaded", async () => {
+		const project = createMockProject();
+		const reportId = "33333333-3333-4333-8333-333333333333";
+		const currentReport = {
+			reportId,
+			submittedById: MOCK_USERS.faculty.userId,
+			storagePath: null,
+			projectStatus: "Ongoing",
+		};
+		const reportUpdate = mockMutationChain([
+			{ reportId, storagePath: "reports/project/report.pdf" },
+		]);
+		let savedValues: unknown;
+		reportUpdate.set = vi.fn((values: unknown) => {
+			savedValues = values;
+			return reportUpdate;
+		});
+		const milestoneUpdate = mockMutationChain([]);
+		const selectResults = [
+			[currentReport],
+			[{ reportType: "Progress" }],
+			[{ reportType: "Progress" }],
+			[{ projectStatus: "Ongoing" }],
+		];
+		const tx = {
+			select: vi.fn(() => mockSelectChain(selectResults.shift() ?? [])),
+			update: vi
+				.fn()
+				.mockReturnValueOnce(reportUpdate)
+				.mockReturnValueOnce(milestoneUpdate),
+		};
+		vi.mocked(db.select)
+			.mockReturnValueOnce(
+				mockSelectChain([
+					{
+						reportId,
+						projectId: project.projectId,
+						milestoneId: "44444444-4444-4444-8444-444444444444",
+						submittedById: MOCK_USERS.faculty.userId,
+						storagePath: null,
+						reportType: "Progress",
+						proposalTitle: "Test Project",
+					},
+				]) as never,
+			)
+			.mockReturnValueOnce(mockSelectChain([]) as never);
+		vi.mocked(db.transaction).mockImplementation(
+			((callback: (executor: typeof tx) => Promise<unknown>) =>
+				callback(tx)) as never,
+		);
+
+		const formData = new FormData();
+		formData.append(
+			"file",
+			new File(["%PDF-1.4"], "report.pdf", {
+				type: "application/pdf",
+			}),
+		);
+		const response = await app.request(`/reports/${reportId}/document`, {
+			method: "POST",
+			body: formData,
+		});
+
+		expect(response.status).toBe(201);
+		expect(savedValues).toMatchObject({ submittedAt: expect.any(Date) });
 	});
 
 	it("should reject report if previous milestone is incomplete", async () => {

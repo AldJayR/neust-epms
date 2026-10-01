@@ -5,6 +5,7 @@ import {
 	count,
 	desc,
 	eq,
+	inArray,
 	ilike,
 	isNotNull,
 	isNull,
@@ -41,6 +42,10 @@ import {
 } from "@/lib/types.js";
 import { isPdfFile, sanitizeFilename } from "@/services/file.service.js";
 import { hashFileSha256 } from "@/services/file-integrity.service.js";
+import {
+	PROGRESS_REPORT_TYPES,
+	TERMINAL_REPORT_TYPES,
+} from "./report-metrics.js";
 import type { CreateReportSchema, PaginationQuery } from "./reports.schema.js";
 
 type CreateReportBody = z.infer<typeof CreateReportSchema>;
@@ -57,7 +62,7 @@ function serializeReport(report: {
 	leaderAvatarUrl: string | null;
 	departmentName: string | null;
 	reportType: string;
-	submittedAt: Date;
+	submittedAt: Date | null;
 	storagePath: string | null;
 	remarks: string | null;
 	archivedAt: Date | null;
@@ -72,7 +77,7 @@ function serializeReport(report: {
 		avatarUrl: report.leaderAvatarUrl,
 		department: report.departmentName,
 		reportType: report.reportType,
-		submitted: report.submittedAt.toISOString(),
+		submitted: report.submittedAt?.toISOString() ?? null,
 		storagePath: report.storagePath,
 		remarks: report.remarks,
 		archivedAt: report.archivedAt?.toISOString() ?? null,
@@ -141,8 +146,8 @@ export async function getReportStats(user: AuthUser) {
 	const [stats] = await db
 		.select({
 			total: sql<number>`count(*)::int`,
-			progress: sql<number>`count(*) filter (where ${projectReports.reportType} = 'Progress')::int`,
-			terminal: sql<number>`count(*) filter (where ${projectReports.reportType} = 'Terminal')::int`,
+			progress: sql<number>`count(*) filter (where ${inArray(projectReports.reportType, PROGRESS_REPORT_TYPES)})::int`,
+			terminal: sql<number>`count(*) filter (where ${inArray(projectReports.reportType, TERMINAL_REPORT_TYPES)})::int`,
 		})
 		.from(projectReports)
 		.innerJoin(projects, eq(projectReports.projectId, projects.projectId))
@@ -230,11 +235,14 @@ export async function createReport(
 		.limit(1);
 	if (!milestone)
 		throw new ApiError(404, "NOT_FOUND", "Reporting milestone not found");
-	if (milestone.projectStatus !== PROJECT_STATUS.ONGOING) {
+	if (
+		milestone.projectStatus !== PROJECT_STATUS.ONGOING &&
+		milestone.projectStatus !== PROJECT_STATUS.OVERDUE
+	) {
 		throw new ApiError(
 			400,
 			"INVALID_STATE",
-			"Reports can only be submitted for ongoing projects",
+			"Reports can only be submitted for ongoing or overdue projects",
 		);
 	}
 	const [membership] = await db
@@ -316,7 +324,7 @@ export async function createReport(
 		if (existing) {
 			const [updated] = await tx
 				.update(projectReports)
-				.set({ remarks: body.remarks ?? null })
+				.set({ remarks: body.remarks ?? null, submittedAt: null })
 				.where(eq(projectReports.reportId, existing.reportId))
 				.returning();
 			if (!updated)
@@ -336,6 +344,7 @@ export async function createReport(
 					reportType: body.reportType,
 					remarks: body.remarks ?? null,
 					storagePath: null,
+					submittedAt: null,
 				})
 				.returning();
 			if (!report)
@@ -491,6 +500,7 @@ export async function uploadReportDocument(
 					contentHash,
 					uploadedBy: user.userId,
 					sourceIp: ipAddress,
+					submittedAt: new Date(),
 				})
 				.where(
 					and(

@@ -8,7 +8,7 @@ export interface ReportItem {
 	avatarUrl: string | null;
 	department: string | null;
 	reportType: string;
-	submitted: string;
+	submitted: string | null;
 	storagePath: string | null;
 	remarks: string | null;
 	archivedAt: string | null;

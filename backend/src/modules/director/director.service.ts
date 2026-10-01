@@ -8,6 +8,7 @@ import {
 	gte,
 	ilike,
 	inArray,
+	isNotNull,
 	isNull,
 	lt,
 	ne,
@@ -168,7 +169,7 @@ export async function getDashboardStats(user: AuthUser) {
 			.select({
 				total: sql<number>`count(*)`,
 				ongoing: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.ONGOING})`,
-				completed: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.COMPLETED})`,
+				completed: sql<number>`count(*) filter (where ${inArray(projects.projectStatus, [PROJECT_STATUS.COMPLETED, PROJECT_STATUS.CLOSED])})`,
 				overdue: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.OVERDUE})`,
 				pendingClosure: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.PENDING_CLOSURE})`,
 			})
@@ -909,7 +910,13 @@ export async function getHubProjects(
 			),
 		})
 		.from(projectReports)
-		.where(isNull(projectReports.archivedAt))
+		.where(
+			and(
+				isNull(projectReports.archivedAt),
+				isNotNull(projectReports.storagePath),
+				isNotNull(projectReports.submittedAt),
+			),
+		)
 		.groupBy(projectReports.projectId)
 		.as("latest_reports");
 

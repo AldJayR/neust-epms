@@ -14,7 +14,7 @@ const reports: ReportItem[] = [
 		milestoneId: "m-2",
 		project: "Project One",
 		leader: "Leader One",
-		reportType: "Progress",
+		reportType: "Progress Report",
 		submitted: "2026-02-01T00:00:00Z",
 		department: null,
 		avatarUrl: null,
@@ -44,8 +44,8 @@ const reports: ReportItem[] = [
 		milestoneId: "m-3",
 		project: "Project Two",
 		leader: "Leader Two",
-		reportType: "Terminal",
-		submitted: "2026-03-01T00:00:00Z",
+		reportType: "Final Accomplishment",
+		submitted: null,
 		department: null,
 		avatarUrl: null,
 		academicRank: null,
@@ -77,6 +77,7 @@ describe("reports helpers", () => {
 
 	it("filters types, sequences progress reports, and slices pages", () => {
 		expect(filterReportsByType(reports, "Terminal")).toHaveLength(1);
+		expect(filterReportsByType(reports, "Progress")).toHaveLength(2);
 		const sequences = getProgressReportSequences(reports);
 		expect(sequences.get("r-1")).toBe(1);
 		expect(sequences.get("r-2")).toBe(2);
