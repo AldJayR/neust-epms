@@ -29,12 +29,14 @@ import {
 interface ReportingScheduleCardProps {
 	projectId: string;
 	canSubmitReports: boolean;
+	allowAttachmentUpload?: boolean;
 	className?: string;
 }
 
 export function ReportingScheduleCard({
 	projectId,
 	canSubmitReports,
+	allowAttachmentUpload = false,
 	className,
 }: ReportingScheduleCardProps) {
 	const { data, isLoading, error } = useProjectReportingSchedule(projectId);
@@ -154,16 +156,33 @@ export function ReportingScheduleCard({
 
 									<div className="flex items-center gap-2">
 										{item.isCompleted && reportId ? (
-											<Button
-												size="xs"
-												variant="outline"
-												className="gap-1"
-												onClick={() => void handleDownload(reportId)}
-												aria-label="Download completed report"
-											>
-												<Download className="size-3" />
-												Download
-											</Button>
+											<div className="flex flex-wrap gap-2">
+												<Button
+													size="xs"
+													variant="outline"
+													className="gap-1"
+													onClick={() => void handleDownload(reportId)}
+													aria-label="Download completed report"
+												>
+													<Download className="size-3" />
+													Download
+												</Button>
+												{canSubmitReports &&
+													allowAttachmentUpload &&
+													[
+														"Terminal Report",
+														"Project Closure",
+														"Closure",
+													].includes(item.reportType) && (
+														<Button
+															size="xs"
+															variant="outline"
+															onClick={() => setSelectedMilestone(item)}
+														>
+															View submission
+														</Button>
+													)}
+											</div>
 										) : (
 											canSubmitReports &&
 											canSubmitMilestone(milestones, idx) && (

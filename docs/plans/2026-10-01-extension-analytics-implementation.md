@@ -1,16 +1,16 @@
-# Extension Analytics: Coverage, Faculty Participation, and Trainee Reach
+# Extension Analytics: Trainee Reach, Faculty Participation, and Coverage
 
-**Status:** Implementation plan for review; application changes have not started.
+**Status:** Implemented on `feat/extension-analytics`; tests and production-build verification are deferred at the user's request.
 **Date:** 2026-10-01
 **Goal:** Turn existing extension records and manually entered terminal-report trainee counts into reliable, role-scoped institutional reports.
 **Stack:** Hono/OpenAPI, Drizzle/PostgreSQL, React, TanStack Router/Query, existing UI components and charts.
 
 ## 1. Product direction and working decisions
 
-- Deliver three connected modules:
-  1. Program, SDG, and Beneficiary Coverage Explorer (Module 5).
-  2. Faculty Participation and Capacity View (Module 6).
-  3. Trainee Reach Reports (the initial scope of Module 7).
+- Deliver all three connected modules in value-first order:
+  1. Trainee Reach Reports (the initial scope of Module 7).
+  2. Faculty Participation (Module 6; actual capacity measurement is a later extension).
+  3. Program, SDG, and Beneficiary Coverage Explorer (Module 5).
 - Enter the number of trainees manually during unified Accomplishment and Terminal Report submission.
 - Official trainee totals include only projects whose closure has been approved by the Director (`Closed`).
 - Determine the department and campus through the report's project and proposal, rather than asking the submitter to select them.
@@ -18,6 +18,20 @@
 - Count each project once in official totals.
 - Preserve existing PDF evidence: primary terminal report and Evaluation Forms are required; Attendance Records remain optional.
 - Run development checks one command at a time on the user's slow machine. Use focused verification, then broaden only as needed.
+
+### Delivery priorities and user value
+
+| Priority | Module | Primary value | Primary users |
+| --- | --- | --- | --- |
+| 1 | Trainee Reach | Replace manual consolidation with approved department/campus trainee totals, traceable to terminal reports. | Director and RET Chair; Faculty supply results through guided submission. |
+| 2 | Faculty Participation | Support unit coordination with leadership/collaboration counts and contribution histories, extending the existing directory. | RET Chair and Director; Faculty see personal contributions. |
+| 3 | Coverage Explorer | Support planning with program/sector coverage, institutional comparisons, and additional SDG/service breakdowns. | Director and RET Chair. |
+
+- Deliver trustworthy totals, evidence/project drill-down, missing-data visibility, and filtered exports before spending effort on additional visualizations.
+- Implement Trainee Reach end to end: Faculty records results -> Director approves closure -> RET Chair/Director generates reports.
+- Reuse existing directory and reporting components for Faculty Participation. Do not create a competing faculty directory.
+- Coverage is descriptive until NEUST defines targets or community needs. Low activity must not automatically be labelled poor performance or an underserved sector.
+- After each module, validate representative role-based tasks before proceeding. These are staged releases within the selected three-module scope.
 
 ## 2. First-version boundaries
 
@@ -27,8 +41,8 @@
 - Reliable completion and retry of a terminal-report package.
 - Director closure review showing the entered count and evidence.
 - Campus/department trainee summaries and project drill-down.
-- Coverage breakdowns using existing banner programs, SDGs, beneficiary sectors, and extension-service classifications.
 - Faculty leadership/collaboration counts, current involvement, recorded participation, and project drill-down.
+- Coverage breakdowns using existing banner programs, beneficiary sectors, SDGs, and extension-service classifications.
 - Consistent filters, explicit metric definitions, missing-data indicators, and CSV export.
 
 ### Later extensions
@@ -67,7 +81,7 @@ The current terminal form creates a report draft, uploads its main PDF, then upl
 
 The first fix batch already separated report creation and submission timestamps and corrected several report/dashboard counts. Implementation must still inspect the current branch and schema before adding another migration.
 
-DFD alignment: extend Processes 7.2/7.3 and 8.2/8.3 in `docs/final-dfd.md`. Document trainee count as an additional structured input within the terminal-report bundle and update associated data definitions.
+Use the existing DFD as system context. Do not modify `docs/final-dfd.md` or other DFD documents as part of this implementation.
 
 ## 4. Shared metric definitions
 
@@ -121,7 +135,12 @@ Additional rules:
 - Enforce authorization in backend queries and exports. UI guards are additional navigation behavior.
 - Faculty membership restrictions must be explicit; broad campus/department scope helpers alone do not establish personal access.
 - RET Chair filter values must intersect with authorized scope; arbitrary campus/department IDs cannot expand access.
-- Add an Extension Analytics navigation entry with Coverage, Faculty Participation, and Trainee Reach views. Reuse the existing faculty directory for participation drill-down instead of building a second directory.
+- Extend the Dashboard sidebar item with a collapsible Analytics submenu. Keep the Dashboard link directly accessible and expand the submenu automatically when an analytics view is active.
+- Director and RET Chair: Dashboard -> Analytics opens Trainee Reach, Faculty Participation, and Coverage views, each with a bookmarkable route.
+- Director filters span the institution; RET Chair views clearly display and enforce their assigned unit scope.
+- Faculty: Dashboard -> Analytics opens the My Contributions page with personal leadership/collaboration history and approved reach of involved projects. Keep classification details within their project records, rather than offering institutional coverage or peer comparisons.
+- Trainee entry remains part of authorized terminal submission, not a separate analytics encoding page.
+- Reuse the existing faculty directory for participation drill-down instead of building a second directory.
 
 ## 7. Database and terminal-report workflow
 
@@ -203,15 +222,9 @@ Create a proposed `frontend/src/features/analytics/` feature with typed server f
 - Project table: title, campus, lead department, closure date, approved trainee count, report link.
 - Missing counts display Not recorded; explicit zero displays 0.
 - Scope/period filters and CSV export.
-
-### Coverage Explorer
-
-- Headline metrics separated into proposals, activated projects, and closed projects.
-- Tabs/breakdowns: Banner Programs, SDGs, Beneficiary Sectors, Extension Services.
-- Campus/department comparisons and project drill-down.
-- Optional planned-budget breakdown, labelled Planned Funding.
-- Official reach shown only where the underlying projects have recorded approved counts, with completeness indicators.
-- Overlapping categories visibly labelled; beneficiary-sector views remain intended coverage unless sector-level actual counts are added later.
+- Follow Summary -> unit breakdown -> contributing project -> terminal-report evidence. Every total has an explanation and drill-down path.
+- Show read-only campus/lead-department attribution in terminal submission, and show the count/evidence in Director closure review.
+- Successful complete submission says Awaiting Director closure approval; it is not yet an official institutional result.
 
 ### Faculty Participation
 
@@ -221,6 +234,29 @@ Create a proposed `frontend/src/features/analytics/` feature with typed server f
 - Move totals to backend aggregates rather than counting the first 100 rows in browser lists.
 - Do not label project counts as capacity hours, performance, or trainee counts personally delivered by each faculty member.
 - Do not present current account/membership data as a historical eligible-population snapshot.
+- Prioritize leadership versus collaboration, faculty with/without current involvement, unit participation, and project drill-down.
+- Personal trainee figures are labelled Reach of involved projects; do not sum those figures across faculty to obtain institutional totals.
+- Current involvement and period-based contribution history are separate sections with explicit date definitions.
+
+### Coverage Explorer
+
+- Headline metrics separated into proposals, activated projects, and closed projects.
+- Prioritize banner-program and beneficiary-sector project counts with campus/department comparisons and drill-down.
+- Offer SDG and extension-service groupings as additional breakdowns using the same layout.
+- Use a Group by selector instead of nested sets of navigation tabs.
+- Optional planned-budget breakdown, labelled Planned Funding; it follows the core count/drill-down/export deliverables.
+- Official reach shown only where the underlying projects have recorded approved counts, with completeness indicators and a closure-period basis.
+- Overlapping categories visibly labelled; beneficiary-sector views remain intended coverage unless sector-level actual counts are added later.
+- Unclassified/legacy records remain visible. Avoid gap or target-achievement claims until institutional targets are defined.
+
+### Shared frontend presentation
+
+- Use the existing PageHeader, MetricCard, PageCard, DataTablePage, and filter controls; retain the current token-based styling.
+- Write user-facing descriptions around required actions and outcomes. Keep implementation terms such as backend validation out of confirmations, help text, and status messages.
+- Structure each view as title/scope + export action, view navigation, filters, summary cards, detailed table, and a supporting comparison chart.
+- Persist filters and drill-down state in the URL, reset pagination on filter changes, and clear incompatible department selections when campus changes.
+- Export the full authorized filtered result, not only the visible page.
+- Director sees institutional analytics; RET Chair sees actionable unit summaries; Faculty sees guided reporting and personal contributions.
 
 All views need distinct loading, empty, error, and partial/missing-data states; keyboard-accessible controls; filter state in the URL; consistent number formatting; and an accessible table alternative to charts.
 
@@ -253,21 +289,9 @@ Acceptance:
 - Director historical entry/correction is audited and refreshes affected queries.
 - Export and drill-down match the active scope, filters, and headline totals.
 
-### Phase 3: Coverage Explorer
+### Phase 3: Faculty Participation
 
-**Dependencies:** Shared analytics foundation; reach panels depend on Phase 2.
-**Files:** Analytics coverage service/contracts/UI plus existing classifications and proposal junctions.
-
-Acceptance:
-- Classification counts use distinct projects and identify overlapping categories.
-- Proposals and implemented/closed projects are not mixed under a delivered-service label.
-- Missing/legacy classification is visible.
-- Beneficiary-sector tags do not imply actual trainees per sector.
-- Campus/department/program filters and drill-down remain consistent.
-
-### Phase 4: Faculty Participation
-
-**Dependencies:** Shared scope/filter/aggregate foundation.
+**Dependencies:** Shared scope/filter/aggregate foundation delivered in Phase 2.
 **Files:** Existing director/faculty-directory queries and frontend faculty pages plus analytics participation contracts.
 
 Acceptance:
@@ -277,14 +301,29 @@ Acceptance:
 - Current involvement excludes archived records and uses one agreed active-status definition.
 - Historical contribution cohorts include completed projects as appropriate without claiming historical population rates.
 - Personal faculty queries cannot expose another faculty user's private contribution details.
+- Unit summaries and personal contribution exports agree with the same underlying project drill-down.
+- Validate with a RET Chair organizing project involvement and a Faculty member reviewing personal contributions.
+
+### Phase 4: Coverage Explorer
+
+**Dependencies:** Shared analytics foundation; reach panels reuse Phase 2 and participation links reuse Phase 3.
+**Files:** Analytics coverage service/contracts/UI plus existing classifications and proposal junctions.
+
+Acceptance:
+- Classification counts use distinct projects and identify overlapping categories.
+- Proposals and implemented/closed projects are not mixed under a delivered-service label.
+- Missing/legacy classification is visible.
+- Beneficiary-sector tags do not imply actual trainees per sector.
+- Campus/department/program filters, exports, and drill-down remain consistent.
+- Director and RET Chair can identify portfolio distribution and inspect the projects behind a category without unsupported performance/gap claims.
 
 ### Phase 5: Integration and documentation
 
 - Reconcile navigation, legends, metric definitions, and CSV columns across modules.
-- Update `docs/final-dfd.md` and relevant report/use-case documentation.
+- Update relevant reporting and implementation documentation; leave all DFD documents unchanged.
 - Review actual query performance with representative data.
 - Document migration/deployment order and legacy missing-count handling.
-- Run a manual role-based walkthrough: submission -> attachment retry -> Director review -> closure -> official reach -> coverage -> faculty drill-down.
+- Run a manual role-based walkthrough: submission -> attachment retry -> Director review -> closure -> official reach -> faculty contributions -> coverage drill-down.
 
 ## 11. Verification approach
 
@@ -294,6 +333,8 @@ Use focused regression checks after implementation; no test-first workflow is re
 - Route tests: role gates, count validation, resumable package workflow, and correction authorization.
 - Real PostgreSQL integration checks: constraints, multi-join sums, legacy/unified precedence, transaction/concurrency behavior, and migrations.
 - Frontend helper/form checks: trainee validation, retry state, URL filters, number formatting, and missing-data display.
+- Task-based usability checks: Faculty resumes a failed upload; Director verifies a campus total against a project report; RET Chair finds missing counts and the next responsible actor; all exports match selected filters.
+- Check interpretation as well as task completion: approval state, missing versus zero, closure period, overlapping categories, and project-associated versus personally delivered reach.
 - API/frontend contract checks: nullable legacy count and package state.
 - Serial backend/frontend typechecks and focused tests; build checks at a suitable phase boundary.
 - Frontend Vitest currently has a Vite/Cloudflare startup failure (`depsOptimizer is required in dev mode`). Resolve or isolate the test configuration before treating frontend tests as a passing verification layer.

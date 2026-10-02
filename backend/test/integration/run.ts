@@ -54,7 +54,7 @@ async function runVitest(databaseUrl: string): Promise<number> {
 	const command = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 	const child = spawn(
 		command,
-		["exec", "vitest", "run", "--config", "vitest.integration.config.ts"],
+		["exec", "vitest", "run", "--config", "vitest.integration.config.ts", ...process.argv.slice(2)],
 		{
 			cwd: backendRoot,
 			env: {

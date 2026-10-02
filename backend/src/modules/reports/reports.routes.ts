@@ -6,17 +6,21 @@ import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import { requireRole } from "@/middleware/rbac.js";
 import { isPdfFile } from "@/services/file.service.js";
 import {
+	CorrectTraineeCountSchema,
 	CreateReportSchema,
 	PaginationQuery,
 	ParamId,
 	ReportListSchema,
+	ReportPackageSchema,
 	ReportSchema,
 	ReportStatsSchema,
 	SignedUrlSchema,
 } from "./reports.schema.js";
 import {
+	correctTraineeCount,
 	createReport,
 	getReportAttachmentSignedUrl,
+	getReportPackage,
 	getReportSignedUrl,
 	getReportStats,
 	listReportAttachments,
@@ -137,6 +141,63 @@ app.openapi(createReportRoute, async (c) => {
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
+app.openapi(
+	createRoute({
+		method: "get",
+		path: "/reports/package/{id}",
+		tags: ["Reports"],
+		security: [{ Bearer: [] }],
+		request: { params: ParamId },
+		responses: {
+			200: {
+				content: { "application/json": { schema: ReportPackageSchema } },
+				description: "Resumable report package status",
+			},
+		},
+	}),
+	async (c) =>
+		c.json(await getReportPackage(c.get("user"), c.req.valid("param").id), 200),
+);
+
+app.openapi(
+	createRoute({
+		method: "patch",
+		path: "/reports/{id}/trainee-count",
+		tags: ["Reports"],
+		security: [{ Bearer: [] }],
+		request: {
+			params: ParamId,
+			body: {
+				content: { "application/json": { schema: CorrectTraineeCountSchema } },
+				required: true,
+			},
+		},
+		responses: {
+			200: {
+				content: {
+					"application/json": {
+						schema: ReportPackageSchema.pick({
+							reportId: true,
+							traineeCount: true,
+						}),
+					},
+				},
+				description: "Audited correction",
+			},
+		},
+	}),
+	async (c) =>
+		c.json(
+			await correctTraineeCount(
+				c.get("user"),
+				c.req.valid("param").id,
+				c.req.valid("json"),
+				getClientIp(c),
+			),
+			200,
+		),
+);
+
 app.post("/reports/:id/document", async (c) => {
 	const user = c.get("user");
 	const contentLength = Number(c.req.header("content-length") ?? 0);
@@ -228,7 +289,7 @@ app.post("/reports/:id/attachments", async (c) => {
 
 app.get("/reports/:id/attachments", async (c) => {
 	const reportId = c.req.param("id");
-	return c.json(await listReportAttachments(reportId), 200);
+	return c.json(await listReportAttachments(reportId, c.get("user")), 200);
 });
 
 app.get("/reports/attachments/:attachmentId/url", async (c) => {

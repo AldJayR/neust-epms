@@ -1,7 +1,9 @@
 import { sql } from "drizzle-orm";
 import {
+	check,
 	foreignKey,
 	index,
+	integer,
 	pgTable,
 	text,
 	timestamp,
@@ -32,6 +34,10 @@ export const projectReports = pgTable(
 		uploadedBy: uuid("uploaded_by").references(() => users.userId),
 		sourceIp: varchar("source_ip", { length: 45 }),
 		remarks: text("remarks"),
+		traineeCount: integer("trainee_count"),
+		packageCompletedAt: timestamp("package_completed_at", {
+			withTimezone: true,
+		}),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -39,6 +45,10 @@ export const projectReports = pgTable(
 		archivedAt: timestamp("archived_at", { withTimezone: true }),
 	},
 	(table) => ({
+		traineeCountCheck: check(
+			"project_reports_trainee_count_check",
+			sql`${table.traineeCount} IS NULL OR ${table.traineeCount} >= 0`,
+		),
 		projectIdx: index("project_reports_project_id_idx").on(table.projectId),
 		milestoneTypeUnique: uniqueIndex(
 			"project_reports_active_milestone_type_unique",

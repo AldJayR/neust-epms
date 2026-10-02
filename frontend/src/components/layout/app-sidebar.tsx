@@ -23,6 +23,7 @@ type NavItem = {
 	title: string;
 	url: RoleSidebarItem["href"];
 	icon: RoleSidebarItem["icon"];
+	children?: NavItem[];
 };
 
 type NavGroup = {
@@ -66,6 +67,7 @@ const directorNav: NavGroup[] = [
 				title: "Dashboard",
 				url: "/dashboard",
 				icon: LayoutDashboard,
+				children: [{ title: "Analytics", url: "/analytics", icon: BarChart3 }],
 			},
 		],
 	},
@@ -114,6 +116,9 @@ const facultyNav: NavGroup[] = [
 				title: "Dashboard",
 				url: "/dashboard",
 				icon: LayoutDashboard,
+				children: [
+					{ title: "Analytics", url: "/contributions", icon: BarChart3 },
+				],
 			},
 		],
 	},
@@ -152,6 +157,7 @@ const retNav: NavGroup[] = [
 				title: "Dashboard",
 				url: "/dashboard",
 				icon: LayoutDashboard,
+				children: [{ title: "Analytics", url: "/analytics", icon: BarChart3 }],
 			},
 		],
 	},
@@ -228,6 +234,13 @@ export function AppSidebar({
 				item.url === "/dashboard"
 					? pathname === "/dashboard"
 					: pathname === item.url || pathname.startsWith(`${item.url ?? ""}/`),
+			children: item.children?.map((child) => ({
+				title: child.title,
+				href: child.url,
+				icon: child.icon,
+				active:
+					pathname === child.url || pathname.startsWith(`${child.url ?? ""}/`),
+			})),
 		})),
 	}));
 

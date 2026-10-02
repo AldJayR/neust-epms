@@ -15,13 +15,13 @@ import { moas } from "@/db/schema/moas.js";
 import { partners } from "@/db/schema/partners.js";
 import { projectReportingMilestones } from "@/db/schema/project-reporting-milestones.js";
 import { projectReports } from "@/db/schema/project-reports.js";
-import { reportAttachments } from "@/db/schema/report-attachments.js";
 import { projects } from "@/db/schema/projects.js";
 import { proposalDocuments } from "@/db/schema/proposal-documents.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposalSdgs } from "@/db/schema/proposal-sdgs.js";
 import { proposals } from "@/db/schema/proposals.js";
+import { reportAttachments } from "@/db/schema/report-attachments.js";
 import { sdgs } from "@/db/schema/sdgs.js";
 import { specialOrders } from "@/db/schema/special-orders.js";
 import { users } from "@/db/schema/users.js";
@@ -179,10 +179,7 @@ export async function getProjectDerivedState(id: string, user: AuthUser) {
 		})
 		.from(projects)
 		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-		.leftJoin(
-			leaderMembers,
-			eq(projects.proposalId, leaderMembers.proposalId),
-		)
+		.leftJoin(leaderMembers, eq(projects.proposalId, leaderMembers.proposalId))
 		.where(
 			and(
 				or(eq(projects.projectId, id), eq(projects.proposalId, id)),
@@ -737,6 +734,9 @@ export async function closeProject(
 			.select({
 				reportId: projectReports.reportId,
 				reportType: projectReports.reportType,
+				traineeCount: projectReports.traineeCount,
+				packageCompletedAt: projectReports.packageCompletedAt,
+				milestoneId: projectReports.milestoneId,
 			})
 			.from(projectReports)
 			.where(
@@ -750,9 +750,15 @@ export async function closeProject(
 		const closureReport = reports.find(
 			(r) => r.reportType === REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL,
 		);
-		const legacyClosure =
-			reports.some((r) => r.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT) &&
-			reports.some((t) => t.reportType === REPORT_TYPE.TERMINAL);
+		const legacyClosure = reports.some(
+			(terminal) =>
+				terminal.reportType === REPORT_TYPE.TERMINAL &&
+				reports.some(
+					(final) =>
+						final.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT &&
+						final.milestoneId === terminal.milestoneId,
+				),
+		);
 
 		if (!closureReport && !legacyClosure) {
 			throw new ApiError(
@@ -763,6 +769,12 @@ export async function closeProject(
 		}
 
 		if (closureReport) {
+			if (!closureReport.packageCompletedAt)
+				throw new ApiError(
+					400,
+					"INCOMPLETE_PACKAGE",
+					"Complete the terminal package and trainee count before closure",
+				);
 			const [hasEval] = await tx
 				.select({ attachmentId: reportAttachments.attachmentId })
 				.from(reportAttachments)
@@ -855,7 +867,10 @@ export async function closeProject(
 				message: `Terminal report for "${proposal?.title ?? "Untitled"}" has been approved by the Director. The project is officially closed.`,
 				sendEmail: true,
 			}).catch((err) => {
-				console.error("[notification] Failed to notify leader on closure:", err);
+				console.error(
+					"[notification] Failed to notify leader on closure:",
+					err,
+				);
 			});
 		}
 
@@ -932,7 +947,11 @@ export async function activateProject(
 	id: string,
 	body: {
 		moaId: string;
-		milestones: Array<{ title?: string | undefined; reportType: string; dueAt: string }>;
+		milestones: Array<{
+			title?: string | undefined;
+			reportType: string;
+			dueAt: string;
+		}>;
 	},
 	user: AuthUser,
 	ipAddress: string,
@@ -1138,7 +1157,10 @@ export async function activateProject(
 				message: `Your project "${proposal?.title ?? "Untitled"}" has been officially activated and is now ongoing.`,
 				sendEmail: true,
 			}).catch((err) => {
-				console.error("[notification] Failed to notify leader on activation:", err);
+				console.error(
+					"[notification] Failed to notify leader on activation:",
+					err,
+				);
 			});
 		}
 

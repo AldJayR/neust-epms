@@ -23,6 +23,10 @@ import {
 } from "./helpers/project-details-helpers";
 import { ProjectReadinessCard } from "./project-readiness-card";
 import { ReportingScheduleCard } from "./reporting-schedule-card";
+import {
+	TerminalResultsCard,
+	useTerminalResults,
+} from "./terminal-results-card";
 
 interface ProjectDetailsPageProps {
 	proposalId: string;
@@ -36,6 +40,7 @@ export function ProjectDetailsPage({
 	const { userId: currentUserId, roleName: currentUserRole } = currentUser;
 	const queryClient = useQueryClient();
 	const { data, isLoading } = useQuery(projectDetailsQueryOptions(proposalId));
+	const terminalResults = useTerminalResults(proposalId);
 
 	const [isEditing, dispatchEditing] = useReducer(
 		(_state: boolean, open: boolean) => open,
@@ -56,6 +61,11 @@ export function ProjectDetailsPage({
 		onSuccess: () => {
 			queryClient.invalidateQueries({
 				queryKey: ["dashboard", "proposals", proposalId],
+			});
+			queryClient.invalidateQueries({ queryKey: ["analytics"] });
+			queryClient.invalidateQueries({ queryKey: ["report-package"] });
+			queryClient.invalidateQueries({
+				queryKey: ["project-reporting-schedule"],
 			});
 			toast.success("Project closed successfully!");
 		},
@@ -153,30 +163,31 @@ export function ProjectDetailsPage({
 					<Alert>
 						<Info className="size-4 text-blue-500" />
 						<AlertTitle>Your proposal has been approved!</AlertTitle>
-					<AlertDescription className="space-y-2">
-						<p>
-							Great news — your project proposal has been approved. Here's what
-							to do next:
-						</p>
-						<ol className="list-decimal pl-5 space-y-1">
-							<li>
-								<strong>Print the proposal document</strong> and submit the
-								physical copy to the Extension Services Department Office for
-								their records.
-							</li>
-							<li>
-								<strong>Upload the Special Order</strong> for each project
-								member — you can do this by opening the Project Team section
-								below and uploading the corresponding SO for each team member.
-							</li>
-						</ol>
-						<p className="pt-1">
-							Once the Special Orders are in place, the project lead can request
-							the Director to activate the project so work can officially begin.
-						</p>
-					</AlertDescription>
-				</Alert>
-			)}
+						<AlertDescription className="space-y-2">
+							<p>
+								Great news — your project proposal has been approved. Here's
+								what to do next:
+							</p>
+							<ol className="list-decimal pl-5 space-y-1">
+								<li>
+									<strong>Print the proposal document</strong> and submit the
+									physical copy to the Extension Services Department Office for
+									their records.
+								</li>
+								<li>
+									<strong>Upload the Special Order</strong> for each project
+									member — you can do this by opening the Project Team section
+									below and uploading the corresponding SO for each team member.
+								</li>
+							</ol>
+							<p className="pt-1">
+								Once the Special Orders are in place, the project lead can
+								request the Director to activate the project so work can
+								officially begin.
+							</p>
+						</AlertDescription>
+					</Alert>
+				)}
 
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
 				<div
@@ -200,9 +211,19 @@ export function ProjectDetailsPage({
 						<ReportingScheduleCard
 							projectId={proposalId}
 							canSubmitReports={canSubmitReports}
+							allowAttachmentUpload={[
+								"Ongoing",
+								"Overdue",
+								"Pending Closure",
+							].includes(data.status)}
 						/>
 					)}
 					<ActivityHistoryCard history={data.history} />
+					{["Ongoing", "Overdue", "Pending Closure", "Closed"].includes(
+						data.status,
+					) && (
+						<TerminalResultsCard projectId={proposalId} status={data.status} />
+					)}
 				</div>
 
 				{isAllowedToReadProposal && (
@@ -244,7 +265,7 @@ export function ProjectDetailsPage({
 					await closeMutation.mutateAsync({ data: { projectId: proposalId } });
 				}}
 				title="Close Project"
-				description={`This will permanently close the project "${data.title}". It requires an approved Accomplishment and Terminal Report with evaluation forms to be submitted. This action cannot be undone.`}
+				description={`Close "${data.title}" with ${terminalResults.data?.traineeCount?.toLocaleString() ?? "no recorded"} trainees. ${terminalResults.data?.completed ? "The required report and evaluation forms are complete." : "Review the terminal report and evaluation forms before approving closure."} Recorded trainee counts will be included in official reports once you approve.`}
 				confirmLabel="Close Project"
 				confirmVariant="destructive"
 				requireTyping="CLOSE"

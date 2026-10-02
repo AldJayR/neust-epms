@@ -41,8 +41,13 @@ import {
 	SidebarGroupLabel,
 	SidebarHeader,
 	SidebarMenu,
+	SidebarMenuAction,
 	SidebarMenuButton,
 	SidebarMenuItem,
+	SidebarMenuSub,
+	SidebarMenuSubButton,
+	SidebarMenuSubItem,
+	useSidebar,
 } from "@/components/ui/sidebar";
 import { logoutFn } from "@/features/auth";
 import type { AuthUser } from "@/lib/auth";
@@ -53,6 +58,7 @@ export type RoleSidebarItem = {
 	icon: LucideIcon;
 	href?: LinkProps["to"];
 	active?: boolean;
+	children?: Omit<RoleSidebarItem, "children">[];
 };
 
 export type RoleSidebarGroup = {
@@ -70,6 +76,67 @@ export interface RoleSidebarProps extends ComponentProps<typeof Sidebar> {
 }
 
 const EMPTY_GROUPS: RoleSidebarGroup[] = [];
+
+function SidebarNavigationItem({ item }: { item: RoleSidebarItem }) {
+	const submenuId = React.useId();
+	const hasActiveChild = item.children?.some((child) => child.active) ?? false;
+	const [expanded, setExpanded] = React.useState(hasActiveChild);
+	const { state, setOpen, isMobile } = useSidebar();
+	React.useEffect(() => {
+		if (hasActiveChild) setExpanded(true);
+	}, [hasActiveChild]);
+	return (
+		<SidebarMenuItem>
+			<SidebarMenuButton
+				render={item.href ? <Link to={item.href} /> : undefined}
+				tooltip={item.title}
+				isActive={item.active || hasActiveChild}
+				className="hover:bg-muted active:bg-muted"
+				onClick={() => {
+					if (item.children?.length && state === "collapsed" && !isMobile) {
+						setOpen(true);
+						setExpanded(true);
+					}
+				}}
+			>
+				<item.icon className="size-4" />
+				<span className="text-foreground">{item.title}</span>
+			</SidebarMenuButton>
+			{Boolean(item.children?.length) && (
+				<>
+					<SidebarMenuAction
+						type="button"
+						aria-label={`${expanded ? "Collapse" : "Expand"} ${item.title} menu`}
+						aria-expanded={expanded}
+						aria-controls={submenuId}
+						onClick={() => setExpanded((previous) => !previous)}
+					>
+						<ChevronRight
+							className={`transition-transform ${expanded ? "rotate-90" : ""}`}
+						/>
+					</SidebarMenuAction>
+					<SidebarMenuSub
+						id={submenuId}
+						className={expanded ? undefined : "hidden"}
+					>
+						{item.children?.map((child) => (
+							<SidebarMenuSubItem key={child.title}>
+								<SidebarMenuSubButton
+									render={child.href ? <Link to={child.href} /> : undefined}
+									isActive={child.active}
+									aria-current={child.active ? "page" : undefined}
+								>
+									<child.icon />
+									<span>{child.title}</span>
+								</SidebarMenuSubButton>
+							</SidebarMenuSubItem>
+						))}
+					</SidebarMenuSub>
+				</>
+			)}
+		</SidebarMenuItem>
+	);
+}
 
 export function RoleSidebar({
 	headerRender,
@@ -152,17 +219,7 @@ export function RoleSidebar({
 						<SidebarGroupContent>
 							<SidebarMenu>
 								{group.items.map((item) => (
-									<SidebarMenuItem key={item.title}>
-										<SidebarMenuButton
-											render={item.href ? <Link to={item.href} /> : undefined}
-											tooltip={item.title}
-											isActive={item.active}
-											className="hover:bg-muted active:bg-muted"
-										>
-											<item.icon className="size-4" />
-											<span className="text-foreground">{item.title}</span>
-										</SidebarMenuButton>
-									</SidebarMenuItem>
+									<SidebarNavigationItem key={item.title} item={item} />
 								))}
 							</SidebarMenu>
 						</SidebarGroupContent>

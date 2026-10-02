@@ -1,7 +1,7 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Loader2, Upload } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Button } from "@/components/ui/button";
@@ -22,10 +22,12 @@ import {
 	FileUploadList,
 	FileUploadTrigger,
 } from "@/components/ui/file-upload";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toStableDate } from "@/lib/utils";
 import {
+	getReportPackageFn,
 	submitReportFn,
 	uploadReportAttachmentFn,
 	uploadReportDocumentFn,
@@ -54,9 +56,40 @@ export function SubmitReportModal({
 	const [evalFormsFile, setEvalFormsFile] = useState<File | null>(null);
 	const [attendanceFile, setAttendanceFile] = useState<File | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [traineeCount, setTraineeCount] = useState("");
+	const hydratedReport = useRef<string | null | undefined>(undefined);
+	const packageQuery = useQuery({
+		queryKey: ["report-package", milestone.id],
+		queryFn: () => getReportPackageFn({ data: milestone.id }),
+		enabled: open,
+		staleTime: 0,
+	});
+	useEffect(() => {
+		if (
+			packageQuery.data &&
+			hydratedReport.current !== packageQuery.data.reportId
+		) {
+			setTraineeCount(packageQuery.data.traineeCount?.toString() ?? "");
+			setRemarks(packageQuery.data.remarks ?? "");
+			hydratedReport.current = packageQuery.data.reportId;
+		}
+	}, [packageQuery.data]);
 	const isClosure =
 		milestone.reportType === "Terminal Report" ||
-		milestone.reportType === "Project Closure";
+		milestone.reportType === "Project Closure" ||
+		milestone.reportType === "Closure";
+	const unified =
+		packageQuery.data?.reportType === "Accomplishment and Terminal Report";
+	const legacyComplete = Boolean(
+		isClosure && packageQuery.data?.completed && !unified,
+	);
+	const documentUploaded = Boolean(
+		packageQuery.data?.documentUploaded &&
+			(!isClosure || unified || legacyComplete),
+	);
+	const evaluationUploaded = Boolean(
+		packageQuery.data?.evaluationUploaded && unified,
+	);
 	const reportTypeName = milestone.reportType.endsWith("Report")
 		? milestone.reportType
 		: `${milestone.reportType} Report`;
@@ -67,13 +100,18 @@ export function SubmitReportModal({
 		setClosureReportFile(null);
 		setEvalFormsFile(null);
 		setAttendanceFile(null);
+		setTraineeCount("");
+		hydratedReport.current = undefined;
 	};
 
 	const handleSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
 		if (
-			(!isClosure && !progressFile) ||
-			(isClosure && (!closureReportFile || !evalFormsFile))
+			!packageQuery.data?.completed &&
+			((!isClosure && !progressFile && !documentUploaded) ||
+				(isClosure &&
+					((!closureReportFile && !documentUploaded) ||
+						(!evalFormsFile && !evaluationUploaded))))
 		) {
 			toast.error(
 				isClosure
@@ -82,35 +120,83 @@ export function SubmitReportModal({
 			);
 			return;
 		}
+		if (
+			isClosure &&
+			!packageQuery.data?.completed &&
+			(!/^\d+$/.test(traineeCount) || Number(traineeCount) > 2147483647)
+		) {
+			toast.error(
+				"Enter a whole number of trainees, including 0 if no trainees were served.",
+			);
+			return;
+		}
 
 		setIsSubmitting(true);
 		try {
+			const current = await getReportPackageFn({ data: milestone.id });
+			if (current.completed) {
+				if (attendanceFile && !current.attendanceUploaded && current.reportId) {
+					const formData = new FormData();
+					formData.set("reportId", current.reportId);
+					formData.set("file", attendanceFile);
+					formData.set("attachmentType", "Attendance Records");
+					await uploadReportAttachmentFn({ data: formData });
+					await queryClient.invalidateQueries({
+						queryKey: ["report-package", milestone.id],
+					});
+				}
+				await queryClient.invalidateQueries({
+					queryKey: ["project-reporting-schedule", milestone.projectId],
+				});
+				toast.success("Your report is already submitted.");
+				onOpenChange(false);
+				return;
+			}
+			if (!current.canEdit && !current.completed)
+				throw new Error(
+					"You can't continue this submission. Contact the project leader for help.",
+				);
 			if (isClosure) {
 				const report = await submitReportFn({
 					data: {
 						milestoneId: milestone.id,
 						reportType: "Accomplishment and Terminal Report",
 						remarks: remarks || undefined,
+						traineeCount: Number(traineeCount),
 					},
 				});
-				const formData = new FormData();
-				formData.set("reportId", report.reportId);
-				formData.set("file", closureReportFile!);
-				await uploadReportDocumentFn({ data: formData });
+				const resuming = report.reportId === current.reportId;
+				if (!resuming || !current.documentUploaded) {
+					if (!closureReportFile)
+						throw new Error("Please choose your terminal report PDF.");
+					const formData = new FormData();
+					formData.set("reportId", report.reportId);
+					formData.set("file", closureReportFile);
+					await uploadReportDocumentFn({ data: formData });
+				}
 
-				const evalFormData = new FormData();
-				evalFormData.set("reportId", report.reportId);
-				evalFormData.set("file", evalFormsFile!);
-				evalFormData.set("attachmentType", "Evaluation Forms");
-				await uploadReportAttachmentFn({ data: evalFormData });
+				if (!resuming || !current.evaluationUploaded) {
+					if (!evalFormsFile)
+						throw new Error("Please choose your evaluation forms PDF.");
+					const evalFormData = new FormData();
+					evalFormData.set("reportId", report.reportId);
+					evalFormData.set("file", evalFormsFile);
+					evalFormData.set("attachmentType", "Evaluation Forms");
+					await uploadReportAttachmentFn({ data: evalFormData });
+				}
 
-				if (attendanceFile) {
+				if (attendanceFile && !current.attendanceUploaded) {
 					const attFormData = new FormData();
 					attFormData.set("reportId", report.reportId);
 					attFormData.set("file", attendanceFile);
 					attFormData.set("attachmentType", "Attendance Records");
 					await uploadReportAttachmentFn({ data: attFormData });
 				}
+				const finished = await getReportPackageFn({ data: milestone.id });
+				if (!finished.completed)
+					throw new Error(
+						"Your documents were saved, but the submission is not complete. Please review the remaining requirements.",
+					);
 			} else {
 				const report = await submitReportFn({
 					data: {
@@ -121,7 +207,9 @@ export function SubmitReportModal({
 				});
 				const formData = new FormData();
 				formData.set("reportId", report.reportId);
-				formData.set("file", progressFile!);
+				if (!progressFile)
+					throw new Error("Please choose your progress report PDF.");
+				formData.set("file", progressFile);
 				await uploadReportDocumentFn({ data: formData });
 			}
 
@@ -131,11 +219,31 @@ export function SubmitReportModal({
 				}),
 				queryClient.invalidateQueries({ queryKey: ["dashboard", "reports"] }),
 				queryClient.invalidateQueries({ queryKey: ["faculty", "projects"] }),
+				queryClient.invalidateQueries({
+					queryKey: ["report-package", milestone.id],
+				}),
+				queryClient.invalidateQueries({ queryKey: ["analytics"] }),
+				queryClient.invalidateQueries({ queryKey: ["action-center"] }),
 			]);
-			toast.success(`${reportTypeName} submitted successfully!`);
+			toast.success(
+				isClosure
+					? "Terminal report submitted. The Director can now review it and approve project closure."
+					: `${reportTypeName} submitted successfully!`,
+			);
 			onOpenChange(false);
 			resetForm();
 		} catch (error) {
+			const refreshed = await packageQuery.refetch();
+			if (
+				refreshed.data?.completed &&
+				attendanceFile &&
+				!refreshed.data.attendanceUploaded
+			) {
+				toast.info(
+					"Your terminal report is submitted, but attendance records weren't uploaded. You can try that upload again.",
+				);
+				return;
+			}
 			toast.error(
 				error instanceof Error ? error.message : "Failed to submit report",
 			);
@@ -148,16 +256,64 @@ export function SubmitReportModal({
 		<Dialog
 			open={open}
 			onOpenChange={(nextOpen) => {
+				if (isSubmitting) return;
 				if (!nextOpen) resetForm();
 				onOpenChange(nextOpen);
 			}}
 		>
-			<DialogContent className="max-w-lg pb-4">
+			<DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto pb-4">
 				<DialogHeader>
-					<DialogTitle>Submit {reportTypeName}</DialogTitle>
+					<DialogTitle>
+						{packageQuery.data?.completed
+							? reportTypeName
+							: `Submit ${reportTypeName}`}
+					</DialogTitle>
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4 py-2">
+					{packageQuery.data?.completed && (
+						<p className="rounded-md border p-3 text-sm">
+							{isClosure
+								? "The required submission is complete. You can add attendance records before the Director approves closure."
+								: "This progress report has already been submitted."}
+						</p>
+					)}
+					{packageQuery.isPending && (
+						<p role="status">Checking saved submission progress…</p>
+					)}
+					{packageQuery.error && (
+						<div role="alert">
+							<p>Submission progress could not be loaded.</p>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => void packageQuery.refetch()}
+							>
+								Retry
+							</Button>
+						</div>
+					)}
+					{isClosure && (
+						<div className="space-y-2">
+							<Label htmlFor="trainee-count">Number of trainees *</Label>
+							<Input
+								id="trainee-count"
+								required
+								type="number"
+								min={0}
+								max={2147483647}
+								step={1}
+								value={traineeCount}
+								disabled={isSubmitting || packageQuery.data?.completed}
+								onChange={(event) => setTraineeCount(event.target.value)}
+							/>
+							<p className="text-xs text-muted-foreground">
+								Count each person once within this project, even if they
+								attended multiple sessions. Enter 0 if no trainees were served.
+								Official totals follow Director closure approval.
+							</p>
+						</div>
+					)}
 					<div className="rounded-lg border border-border bg-muted/30 p-3 text-sm">
 						<p className="font-medium">Required reporting milestone</p>
 						<p className="mt-1 text-muted-foreground">
@@ -169,6 +325,7 @@ export function SubmitReportModal({
 						<Label htmlFor="remarks">Remarks (Optional)</Label>
 						<Textarea
 							id="remarks"
+							disabled={isSubmitting || packageQuery.data?.completed}
 							placeholder="Add comments or notes about the submission..."
 							value={remarks}
 							onChange={(event) => setRemarks(event.target.value)}
@@ -178,19 +335,34 @@ export function SubmitReportModal({
 
 					{isClosure ? (
 						<div className="space-y-4">
-							<ReportFileField
-								label="Accomplishment and Terminal Report (Primary Document) *"
-								file={closureReportFile}
-								onFileChange={setClosureReportFile}
-							/>
-							<ReportFileField
-								label="Evaluation Forms (Required Attachment) *"
-								file={evalFormsFile}
-								onFileChange={setEvalFormsFile}
-							/>
+							{documentUploaded ? (
+								<p className="text-sm">✓ Terminal document already uploaded</p>
+							) : (
+								<ReportFileField
+									label="Accomplishment and Terminal Report (Primary Document) *"
+									file={closureReportFile}
+									disabled={isSubmitting}
+									onFileChange={setClosureReportFile}
+								/>
+							)}
+							{legacyComplete ? (
+								<p className="text-sm">
+									Legacy terminal and final accomplishment reports are on file.
+								</p>
+							) : evaluationUploaded ? (
+								<p className="text-sm">✓ Evaluation Forms already uploaded</p>
+							) : (
+								<ReportFileField
+									label="Evaluation Forms (Required Attachment) *"
+									file={evalFormsFile}
+									disabled={isSubmitting}
+									onFileChange={setEvalFormsFile}
+								/>
+							)}
 							<ReportFileField
 								label="Attendance Records (Optional Attachment)"
 								file={attendanceFile}
+								disabled={isSubmitting || packageQuery.data?.attendanceUploaded}
 								onFileChange={setAttendanceFile}
 							/>
 						</div>
@@ -198,6 +370,7 @@ export function SubmitReportModal({
 						<ReportFileField
 							label="Progress Report Document"
 							file={progressFile}
+							disabled={isSubmitting}
 							onFileChange={setProgressFile}
 						/>
 					)}
@@ -205,14 +378,32 @@ export function SubmitReportModal({
 					<DialogFooter className="border-t border-border pt-3">
 						<Button
 							type="button"
+							disabled={isSubmitting}
 							variant="ghost"
 							onClick={() => onOpenChange(false)}
 						>
 							Cancel
 						</Button>
-						<BrandButton type="submit" disabled={isSubmitting}>
+						<BrandButton
+							type="submit"
+							disabled={
+								isSubmitting ||
+								packageQuery.isPending ||
+								Boolean(packageQuery.error) ||
+								(packageQuery.data?.canEdit === false &&
+									!packageQuery.data.completed)
+							}
+						>
 							{isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
-							{isSubmitting ? "Submitting..." : "Submit Report"}
+							{isSubmitting
+								? "Submitting..."
+								: packageQuery.data?.completed
+									? attendanceFile && !packageQuery.data.attendanceUploaded
+										? "Upload attendance records"
+										: "Done"
+									: packageQuery.data?.reportId
+										? "Resume Submission"
+										: "Submit Report"}
 						</BrandButton>
 					</DialogFooter>
 				</form>
@@ -225,18 +416,26 @@ function ReportFileField({
 	label,
 	file,
 	onFileChange,
+	disabled = false,
 }: {
 	label: string;
 	file: File | null;
 	onFileChange: (file: File | null) => void;
+	disabled?: boolean;
 }) {
+	const labelId = useId();
 	return (
 		<div className="flex flex-col gap-1.5">
-			<Label>{label}</Label>
+			<p id={labelId} className="text-sm font-medium">
+				{label}
+			</p>
 			<FileUpload
+				aria-labelledby={labelId}
+				disabled={disabled}
 				value={file ? [file] : []}
 				onValueChange={(files) => onFileChange(files[0] ?? null)}
 				maxFiles={1}
+				maxSize={10 * 1024 * 1024}
 				accept="application/pdf"
 			>
 				{!file && (

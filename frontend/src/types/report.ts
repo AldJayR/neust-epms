@@ -9,6 +9,8 @@ export interface ReportItem {
 	department: string | null;
 	reportType: string;
 	submitted: string | null;
+	traineeCount?: number | null;
+	packageCompletedAt?: string | null;
 	storagePath: string | null;
 	remarks: string | null;
 	archivedAt: string | null;

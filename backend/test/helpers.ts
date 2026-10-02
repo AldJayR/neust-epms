@@ -184,6 +184,7 @@ export function mockMutationChain(result: unknown[]) {
 	chain.values = returnChain;
 	chain.returning = returnChain;
 	chain.onConflictDoUpdate = returnChain;
+	chain.onConflictDoNothing = returnChain;
 	chain.set = returnChain;
 	chain.where = returnChain;
 	chain.then = (resolve: (v: unknown) => void) => resolve(result);

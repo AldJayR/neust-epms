@@ -16,11 +16,14 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedContributionsRouteImport } from './routes/_authenticated/contributions'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as ForgotPasswordIndexRouteImport } from './routes/forgot-password.index'
 import { Route as ForgotPasswordOtpRouteImport } from './routes/forgot-password.otp'
 import { Route as ForgotPasswordResetRouteImport } from './routes/forgot-password.reset'
 import { Route as RegisterAccountRouteImport } from './routes/register.account'
+import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authenticated/analytics/index'
+import { Route as AuthenticatedAnalyticsViewRouteImport } from './routes/_authenticated/analytics/$view'
 import { Route as AuthenticatedArchivesIndexRouteImport } from './routes/_authenticated/archives/index'
 import { Route as AuthenticatedFacultyIndexRouteImport } from './routes/_authenticated/faculty/index'
 import { Route as AuthenticatedMoasIndexRouteImport } from './routes/_authenticated/moas/index'
@@ -67,6 +70,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedContributionsRoute =
+  AuthenticatedContributionsRouteImport.update({
+    id: '/contributions',
+    path: '/contributions',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -92,6 +101,18 @@ const RegisterAccountRoute = RegisterAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => RegisterRoute,
 } as any)
+const AuthenticatedAnalyticsIndexRoute =
+  AuthenticatedAnalyticsIndexRouteImport.update({
+    id: '/analytics/',
+    path: '/analytics/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAnalyticsViewRoute =
+  AuthenticatedAnalyticsViewRouteImport.update({
+    id: '/analytics/$view',
+    path: '/analytics/$view',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedArchivesIndexRoute =
   AuthenticatedArchivesIndexRouteImport.update({
     id: '/archives/',
@@ -165,12 +186,15 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/contributions': typeof AuthenticatedContributionsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/forgot-password/otp': typeof ForgotPasswordOtpRoute
   '/forgot-password/reset': typeof ForgotPasswordResetRoute
   '/register/account': typeof RegisterAccountRoute
   '/forgot-password/': typeof ForgotPasswordIndexRoute
+  '/analytics/$view': typeof AuthenticatedAnalyticsViewRoute
   '/proposals/$proposalId': typeof AuthenticatedProposalsProposalIdRoute
+  '/analytics/': typeof AuthenticatedAnalyticsIndexRoute
   '/archives/': typeof AuthenticatedArchivesIndexRoute
   '/faculty/': typeof AuthenticatedFacultyIndexRoute
   '/moas/': typeof AuthenticatedMoasIndexRoute
@@ -187,13 +211,16 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/contributions': typeof AuthenticatedContributionsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/forgot-password/otp': typeof ForgotPasswordOtpRoute
   '/forgot-password/reset': typeof ForgotPasswordResetRoute
   '/register/account': typeof RegisterAccountRoute
   '/': typeof AuthenticatedIndexRoute
   '/forgot-password': typeof ForgotPasswordIndexRoute
+  '/analytics/$view': typeof AuthenticatedAnalyticsViewRoute
   '/proposals/$proposalId': typeof AuthenticatedProposalsProposalIdRoute
+  '/analytics': typeof AuthenticatedAnalyticsIndexRoute
   '/archives': typeof AuthenticatedArchivesIndexRoute
   '/faculty': typeof AuthenticatedFacultyIndexRoute
   '/moas': typeof AuthenticatedMoasIndexRoute
@@ -213,13 +240,16 @@ export interface FileRoutesById {
   '/register': typeof RegisterRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/contributions': typeof AuthenticatedContributionsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/forgot-password/otp': typeof ForgotPasswordOtpRoute
   '/forgot-password/reset': typeof ForgotPasswordResetRoute
   '/register/account': typeof RegisterAccountRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/forgot-password/': typeof ForgotPasswordIndexRoute
+  '/_authenticated/analytics/$view': typeof AuthenticatedAnalyticsViewRoute
   '/_authenticated/proposals/$proposalId': typeof AuthenticatedProposalsProposalIdRoute
+  '/_authenticated/analytics/': typeof AuthenticatedAnalyticsIndexRoute
   '/_authenticated/archives/': typeof AuthenticatedArchivesIndexRoute
   '/_authenticated/faculty/': typeof AuthenticatedFacultyIndexRoute
   '/_authenticated/moas/': typeof AuthenticatedMoasIndexRoute
@@ -240,12 +270,15 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/admin'
+    | '/contributions'
     | '/dashboard'
     | '/forgot-password/otp'
     | '/forgot-password/reset'
     | '/register/account'
     | '/forgot-password/'
+    | '/analytics/$view'
     | '/proposals/$proposalId'
+    | '/analytics/'
     | '/archives/'
     | '/faculty/'
     | '/moas/'
@@ -262,13 +295,16 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/admin'
+    | '/contributions'
     | '/dashboard'
     | '/forgot-password/otp'
     | '/forgot-password/reset'
     | '/register/account'
     | '/'
     | '/forgot-password'
+    | '/analytics/$view'
     | '/proposals/$proposalId'
+    | '/analytics'
     | '/archives'
     | '/faculty'
     | '/moas'
@@ -287,13 +323,16 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/_authenticated/admin'
+    | '/_authenticated/contributions'
     | '/_authenticated/dashboard'
     | '/forgot-password/otp'
     | '/forgot-password/reset'
     | '/register/account'
     | '/_authenticated/'
     | '/forgot-password/'
+    | '/_authenticated/analytics/$view'
     | '/_authenticated/proposals/$proposalId'
+    | '/_authenticated/analytics/'
     | '/_authenticated/archives/'
     | '/_authenticated/faculty/'
     | '/_authenticated/moas/'
@@ -365,6 +404,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/contributions': {
+      id: '/_authenticated/contributions'
+      path: '/contributions'
+      fullPath: '/contributions'
+      preLoaderRoute: typeof AuthenticatedContributionsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -399,6 +445,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/register/account'
       preLoaderRoute: typeof RegisterAccountRouteImport
       parentRoute: typeof RegisterRoute
+    }
+    '/_authenticated/analytics/': {
+      id: '/_authenticated/analytics/'
+      path: '/analytics'
+      fullPath: '/analytics/'
+      preLoaderRoute: typeof AuthenticatedAnalyticsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/analytics/$view': {
+      id: '/_authenticated/analytics/$view'
+      path: '/analytics/$view'
+      fullPath: '/analytics/$view'
+      preLoaderRoute: typeof AuthenticatedAnalyticsViewRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/archives/': {
       id: '/_authenticated/archives/'
@@ -498,9 +558,12 @@ const AuthenticatedAdminRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedContributionsRoute: typeof AuthenticatedContributionsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAnalyticsViewRoute: typeof AuthenticatedAnalyticsViewRoute
   AuthenticatedProposalsProposalIdRoute: typeof AuthenticatedProposalsProposalIdRoute
+  AuthenticatedAnalyticsIndexRoute: typeof AuthenticatedAnalyticsIndexRoute
   AuthenticatedArchivesIndexRoute: typeof AuthenticatedArchivesIndexRoute
   AuthenticatedFacultyIndexRoute: typeof AuthenticatedFacultyIndexRoute
   AuthenticatedMoasIndexRoute: typeof AuthenticatedMoasIndexRoute
@@ -512,9 +575,12 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedContributionsRoute: AuthenticatedContributionsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAnalyticsViewRoute: AuthenticatedAnalyticsViewRoute,
   AuthenticatedProposalsProposalIdRoute: AuthenticatedProposalsProposalIdRoute,
+  AuthenticatedAnalyticsIndexRoute: AuthenticatedAnalyticsIndexRoute,
   AuthenticatedArchivesIndexRoute: AuthenticatedArchivesIndexRoute,
   AuthenticatedFacultyIndexRoute: AuthenticatedFacultyIndexRoute,
   AuthenticatedMoasIndexRoute: AuthenticatedMoasIndexRoute,
@@ -569,11 +635,15 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
+
 import type { startInstance } from './start.ts'
+
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
+
     router: Awaited<ReturnType<typeof getRouter>>
+
     config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

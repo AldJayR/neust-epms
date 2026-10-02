@@ -113,7 +113,7 @@ describe("POST /reports", () => {
 			(callback) =>
 				callback({
 					insert: vi.fn(() => mockMutationChain([report])),
-					select: vi.fn(() => mockSelectChain([])),
+					select: vi.fn(() => mockSelectChain([{ status: "Overdue" }])),
 					update: vi.fn(() => mockMutationChain([])),
 				}) as never,
 		);
@@ -154,6 +154,7 @@ describe("POST /reports", () => {
 		});
 		const milestoneUpdate = mockMutationChain([]);
 		const selectResults = [
+			[{ id: project.projectId }],
 			[currentReport],
 			[{ reportType: "Progress" }],
 			[{ reportType: "Progress" }],

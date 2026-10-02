@@ -15,6 +15,7 @@ import { type AuthEnv, authMiddleware } from "./middleware/auth.js";
 import { requireRole } from "./middleware/rbac.js";
 import actionCenterRoutes from "./modules/action-center/index.js";
 import adminRoutes from "./modules/admin/index.js";
+import analyticsRoutes from "./modules/analytics/index.js";
 import auditRoutes from "./modules/audit/index.js";
 import authRoutes from "./modules/auth/index.js";
 import bannerProgramRoutes from "./modules/banner-programs/index.js";
@@ -249,6 +250,7 @@ app.use("/api/v1/banner-programs/*", requireRole(...OPERATIONAL_ROLES));
 
 app.route("/api/v1", authRoutes);
 app.route("/api/v1", actionCenterRoutes);
+app.route("/api/v1", analyticsRoutes);
 app.route("/api/v1", notificationRoutes);
 app.route("/api/v1", proposalRoutes);
 app.route("/api/v1", bannerProgramRoutes);

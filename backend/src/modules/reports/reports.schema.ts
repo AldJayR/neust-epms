@@ -12,6 +12,8 @@ export const ReportSchema = z
 		department: z.string().nullable(),
 		reportType: z.string(),
 		submitted: z.string().nullable(),
+		traineeCount: z.number().int().nonnegative().nullable(),
+		packageCompletedAt: z.string().nullable(),
 		storagePath: z.string().nullable(),
 		remarks: z.string().nullable(),
 		archivedAt: z.string().nullable(),
@@ -33,8 +35,50 @@ export const CreateReportSchema = z
 			"Accomplishment and Terminal Report",
 		]),
 		remarks: z.string().optional(),
+		traineeCount: z.number().int().min(0).max(2147483647).optional(),
+	})
+	.superRefine((value, context) => {
+		if (
+			value.reportType === "Accomplishment and Terminal Report" &&
+			value.traineeCount === undefined
+		) {
+			context.addIssue({
+				code: "custom",
+				path: ["traineeCount"],
+				message: "Number of trainees is required for terminal reports",
+			});
+		}
+		if (
+			["Progress", "Progress Report"].includes(value.reportType) &&
+			value.traineeCount !== undefined
+		) {
+			context.addIssue({
+				code: "custom",
+				path: ["traineeCount"],
+				message: "Trainee counts belong to terminal reports",
+			});
+		}
 	})
 	.openapi("CreateReport");
+
+export const ReportPackageSchema = z.object({
+	reportId: z.string().uuid().nullable(),
+	reportType: z.string().nullable(),
+	remarks: z.string().nullable(),
+	traineeCount: z.number().int().nullable(),
+	evaluationAttachmentId: z.string().uuid().nullable(),
+	attendanceAttachmentId: z.string().uuid().nullable(),
+	documentUploaded: z.boolean(),
+	evaluationUploaded: z.boolean(),
+	attendanceUploaded: z.boolean(),
+	completed: z.boolean(),
+	canEdit: z.boolean(),
+});
+
+export const CorrectTraineeCountSchema = z.object({
+	traineeCount: z.number().int().min(0).max(2147483647),
+	reason: z.string().trim().min(5).max(1000),
+});
 
 export const ReportAttachmentSchema = z
 	.object({

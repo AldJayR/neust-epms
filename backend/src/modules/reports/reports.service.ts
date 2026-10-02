@@ -5,8 +5,8 @@ import {
 	count,
 	desc,
 	eq,
-	inArray,
 	ilike,
+	inArray,
 	isNotNull,
 	isNull,
 	lt,
@@ -18,10 +18,10 @@ import { db } from "@/db/client.js";
 import { departments } from "@/db/schema/departments.js";
 import { projectReportingMilestones } from "@/db/schema/project-reporting-milestones.js";
 import { projectReports } from "@/db/schema/project-reports.js";
-import { reportAttachments } from "@/db/schema/report-attachments.js";
 import { projects } from "@/db/schema/projects.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposals } from "@/db/schema/proposals.js";
+import { reportAttachments } from "@/db/schema/report-attachments.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
@@ -34,11 +34,12 @@ import {
 import { buildProposalScope } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
 import {
-	type AuthUser,
 	ATTACHMENT_TYPE,
+	type AuthUser,
 	MILESTONE_TYPE,
 	PROJECT_STATUS,
 	REPORT_TYPE,
+	ROLE_NAMES,
 } from "@/lib/types.js";
 import { isPdfFile, sanitizeFilename } from "@/services/file.service.js";
 import { hashFileSha256 } from "@/services/file-integrity.service.js";
@@ -47,6 +48,10 @@ import {
 	TERMINAL_REPORT_TYPES,
 } from "./report-metrics.js";
 import type { CreateReportSchema, PaginationQuery } from "./reports.schema.js";
+import {
+	finalizeTerminalPackage,
+	notifyTerminalReady,
+} from "./terminal-package.js";
 
 type CreateReportBody = z.infer<typeof CreateReportSchema>;
 type Pagination = z.infer<typeof PaginationQuery>;
@@ -63,6 +68,8 @@ function serializeReport(report: {
 	departmentName: string | null;
 	reportType: string;
 	submittedAt: Date | null;
+	traineeCount?: number | null;
+	packageCompletedAt?: Date | null;
 	storagePath: string | null;
 	remarks: string | null;
 	archivedAt: Date | null;
@@ -78,6 +85,8 @@ function serializeReport(report: {
 		department: report.departmentName,
 		reportType: report.reportType,
 		submitted: report.submittedAt?.toISOString() ?? null,
+		traineeCount: report.traineeCount ?? null,
+		packageCompletedAt: report.packageCompletedAt?.toISOString() ?? null,
 		storagePath: report.storagePath,
 		remarks: report.remarks,
 		archivedAt: report.archivedAt?.toISOString() ?? null,
@@ -96,6 +105,8 @@ const reportSelection = {
 	departmentName: departments.departmentName,
 	reportType: projectReports.reportType,
 	submittedAt: projectReports.submittedAt,
+	traineeCount: projectReports.traineeCount,
+	packageCompletedAt: projectReports.packageCompletedAt,
 	storagePath: projectReports.storagePath,
 	remarks: projectReports.remarks,
 	archivedAt: projectReports.archivedAt,
@@ -169,6 +180,8 @@ export async function getReportSignedUrl(
 		.select({
 			reportId: projectReports.reportId,
 			storagePath: projectReports.storagePath,
+			submittedById: projectReports.submittedById,
+			packageCompletedAt: projectReports.packageCompletedAt,
 		})
 		.from(projectReports)
 		.innerJoin(projects, eq(projectReports.projectId, projects.projectId))
@@ -210,6 +223,10 @@ export async function createReport(
 	body: CreateReportBody,
 	ipAddress: string,
 ) {
+	const reportType =
+		body.reportType === REPORT_TYPE.PROGRESS_REPORT
+			? REPORT_TYPE.PROGRESS
+			: body.reportType;
 	const [milestone] = await db
 		.select({
 			milestoneId: projectReportingMilestones.milestoneId,
@@ -218,6 +235,7 @@ export async function createReport(
 			dueAt: projectReportingMilestones.dueAt,
 			projectStatus: projects.projectStatus,
 			proposalId: projects.proposalId,
+			completedAt: projectReportingMilestones.completedAt,
 		})
 		.from(projectReportingMilestones)
 		.innerJoin(
@@ -279,6 +297,12 @@ export async function createReport(
 			"The report type does not match the selected milestone",
 		);
 	}
+	if (reportType === REPORT_TYPE.PROGRESS && milestone.completedAt)
+		throw new ApiError(
+			409,
+			"ALREADY_SUBMITTED",
+			"This progress report has already been submitted",
+		);
 
 	const [priorIncompleteMilestone] = await db
 		.select({ milestoneId: projectReportingMilestones.milestoneId })
@@ -302,29 +326,94 @@ export async function createReport(
 		.select({
 			reportId: projectReports.reportId,
 			storagePath: projectReports.storagePath,
+			submittedById: projectReports.submittedById,
+			packageCompletedAt: projectReports.packageCompletedAt,
+			traineeCount: projectReports.traineeCount,
 		})
 		.from(projectReports)
 		.where(
 			and(
 				eq(projectReports.milestoneId, milestone.milestoneId),
-				eq(projectReports.reportType, body.reportType),
+				inArray(
+					projectReports.reportType,
+					reportType === REPORT_TYPE.PROGRESS
+						? [REPORT_TYPE.PROGRESS, REPORT_TYPE.PROGRESS_REPORT]
+						: [reportType],
+				),
 				isNull(projectReports.archivedAt),
 			),
 		)
 		.limit(1);
-	if (existing?.storagePath) {
+	if (existing && existing.submittedById !== user.userId) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"Only the draft owner can resume this report",
+		);
+	}
+	if (
+		existing?.packageCompletedAt ||
+		(existing?.storagePath &&
+			body.reportType !== REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL)
+	) {
 		throw new ApiError(
 			409,
 			"ALREADY_SUBMITTED",
 			"This reporting milestone is already submitted",
 		);
 	}
+	let packageFinalized = false;
 	const created = await db.transaction(async (tx) => {
+		const [parent] = await tx
+			.select({ status: projects.projectStatus })
+			.from(projects)
+			.where(
+				and(
+					eq(projects.projectId, milestone.projectId),
+					isNull(projects.archivedAt),
+				),
+			)
+			.for("update");
+		if (
+			!parent ||
+			![PROJECT_STATUS.ONGOING, PROJECT_STATUS.OVERDUE].includes(
+				parent.status as "Ongoing" | "Overdue",
+			)
+		)
+			throw new ApiError(
+				400,
+				"INVALID_STATE",
+				"This project is no longer accepting reports",
+			);
 		let saved: typeof projectReports.$inferSelect;
 		if (existing) {
+			const [current] = await tx
+				.select()
+				.from(projectReports)
+				.where(eq(projectReports.reportId, existing.reportId))
+				.for("update");
+			if (
+				!current ||
+				current.archivedAt ||
+				current.submittedById !== user.userId
+			)
+				throw new ApiError(403, "FORBIDDEN", "You can't edit this submission");
+			if (
+				current.packageCompletedAt ||
+				(current.storagePath &&
+					body.reportType !== REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL)
+			)
+				throw new ApiError(
+					409,
+					"ALREADY_SUBMITTED",
+					"This report has already been submitted",
+				);
 			const [updated] = await tx
 				.update(projectReports)
-				.set({ remarks: body.remarks ?? null, submittedAt: null })
+				.set({
+					remarks: body.remarks ?? null,
+					traineeCount: body.traineeCount ?? null,
+				})
 				.where(eq(projectReports.reportId, existing.reportId))
 				.returning();
 			if (!updated)
@@ -341,14 +430,20 @@ export async function createReport(
 					projectId: milestone.projectId,
 					milestoneId: milestone.milestoneId,
 					submittedById: user.userId,
-					reportType: body.reportType,
+					reportType,
 					remarks: body.remarks ?? null,
+					traineeCount: body.traineeCount ?? null,
 					storagePath: null,
 					submittedAt: null,
 				})
+				.onConflictDoNothing()
 				.returning();
 			if (!report)
-				throw new ApiError(500, "INSERT_FAILED", "Failed to create report");
+				throw new ApiError(
+					409,
+					"SUBMISSION_CONFLICT",
+					"A report was just created for this milestone. Reload to continue it.",
+				);
 			saved = report;
 		}
 
@@ -357,14 +452,29 @@ export async function createReport(
 				userId: user.userId,
 				action: `${existing ? "Updated" : "Created"} report draft ${saved.reportId}`,
 				tableAffected: "project_reports",
-				newValue: { reportType: body.reportType },
+				newValue: {
+					reportType: body.reportType,
+					traineeCount: body.traineeCount ?? null,
+				},
+				...(existing
+					? { oldValue: { traineeCount: existing.traineeCount } }
+					: {}),
 				ipAddress,
 			},
 			tx,
 		);
+		if (body.reportType === REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL) {
+			packageFinalized = await finalizeTerminalPackage(
+				tx,
+				saved.reportId,
+				user,
+				ipAddress,
+			);
+		}
 
 		return saved;
 	});
+	if (packageFinalized) await notifyTerminalReady(created.reportId);
 	const [enriched] = await db
 		.select(reportSelection)
 		.from(projectReports)
@@ -442,8 +552,14 @@ export async function uploadReportDocument(
 	}
 
 	let committed = false;
+	let packageFinalized = false;
 	try {
 		const updated = await db.transaction(async (tx) => {
+			await tx
+				.select({ id: projects.projectId })
+				.from(projects)
+				.where(eq(projects.projectId, report.projectId))
+				.for("update");
 			const [current] = await tx
 				.select({
 					reportId: projectReports.reportId,
@@ -481,6 +597,24 @@ export async function uploadReportDocument(
 					"ALREADY_SUBMITTED",
 					"This report document is already uploaded",
 				);
+			}
+			if (
+				[REPORT_TYPE.PROGRESS, REPORT_TYPE.PROGRESS_REPORT].includes(
+					report.reportType as "Progress" | "Progress Report",
+				)
+			) {
+				const [milestone] = await tx
+					.select({ completedAt: projectReportingMilestones.completedAt })
+					.from(projectReportingMilestones)
+					.where(
+						eq(projectReportingMilestones.milestoneId, report.milestoneId),
+					);
+				if (milestone?.completedAt)
+					throw new ApiError(
+						409,
+						"ALREADY_SUBMITTED",
+						"This progress report has already been submitted",
+					);
 			}
 			if (
 				current.projectStatus !== PROJECT_STATUS.ONGOING &&
@@ -533,10 +667,6 @@ export async function uploadReportDocument(
 				.from(projectReportingMilestones)
 				.where(eq(projectReportingMilestones.milestoneId, report.milestoneId))
 				.limit(1);
-			const hasUnifiedClosure = milestoneReports.some(
-				(item) =>
-					item.reportType === REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL,
-			);
 			const hasFinalAccomplishment = milestoneReports.some(
 				(item) => item.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT,
 			);
@@ -547,7 +677,8 @@ export async function uploadReportDocument(
 				(milestone?.reportType === "Terminal Report" ||
 					milestone?.reportType === "Project Closure" ||
 					milestone?.reportType === MILESTONE_TYPE.CLOSURE) &&
-				(hasUnifiedClosure || (hasFinalAccomplishment && hasTerminal));
+				hasFinalAccomplishment &&
+				hasTerminal;
 			const milestoneComplete =
 				milestone?.reportType === REPORT_TYPE.PROGRESS ||
 				milestone?.reportType === REPORT_TYPE.PROGRESS_REPORT ||
@@ -572,7 +703,14 @@ export async function uploadReportDocument(
 				.where(eq(projects.projectId, report.projectId))
 				.limit(1);
 
-			if (isClosureCompleted) {
+			if (report.reportType === REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL) {
+				packageFinalized = await finalizeTerminalPackage(
+					tx,
+					reportId,
+					user,
+					ipAddress,
+				);
+			} else if (isClosureCompleted) {
 				if (
 					projectStatusRow?.projectStatus === PROJECT_STATUS.ONGOING ||
 					projectStatusRow?.projectStatus === PROJECT_STATUS.OVERDUE
@@ -680,11 +818,18 @@ export async function uploadReportDocument(
 			return saved;
 		});
 		committed = true;
+		if (packageFinalized) await notifyTerminalReady(reportId);
 
-		const directorIds = await getUserIdsByRole("Director").catch((error) => {
-			console.error("[notification] Failed to load report directors:", error);
-			return [];
-		});
+		const directorIds =
+			report.reportType === REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL
+				? []
+				: await getUserIdsByRole("Director").catch((error) => {
+						console.error(
+							"[notification] Failed to load report directors:",
+							error,
+						);
+						return [];
+					});
 		const readableType =
 			report.reportType === REPORT_TYPE.PROGRESS
 				? "Progress Report"
@@ -734,12 +879,17 @@ export async function uploadReportAttachment(
 			projectId: projectReports.projectId,
 			reportType: projectReports.reportType,
 			submittedById: projectReports.submittedById,
+			projectStatus: projects.projectStatus,
 		})
 		.from(projectReports)
+		.innerJoin(projects, eq(projectReports.projectId, projects.projectId))
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
 		.where(
 			and(
 				eq(projectReports.reportId, reportId),
 				isNull(projectReports.archivedAt),
+				isNull(projects.archivedAt),
+				...buildProposalScope(user),
 			),
 		)
 		.limit(1);
@@ -766,6 +916,21 @@ export async function uploadReportAttachment(
 			403,
 			"FORBIDDEN",
 			"Only project members can upload report attachments",
+		);
+	}
+	if (
+		![
+			PROJECT_STATUS.ONGOING,
+			PROJECT_STATUS.OVERDUE,
+			PROJECT_STATUS.PENDING_CLOSURE,
+		].includes(
+			report.projectStatus as "Ongoing" | "Overdue" | "Pending Closure",
+		)
+	) {
+		throw new ApiError(
+			400,
+			"INVALID_STATE",
+			"Attachments cannot be changed after project closure",
 		);
 	}
 
@@ -809,28 +974,78 @@ export async function uploadReportAttachment(
 		);
 	}
 
-	const [attachment] = await db
-		.insert(reportAttachments)
-		.values({
-			reportId,
-			attachmentType,
-			storagePath,
-			contentHash,
-			uploadedBy: user.userId,
-			sourceIp: ipAddress,
-		})
-		.returning();
-
-	if (!attachment) {
-		throw new ApiError(500, "UPLOAD_FAILED", "Failed to create attachment record");
+	let completed = false;
+	let attachment: typeof reportAttachments.$inferSelect;
+	try {
+		attachment = await db.transaction(async (tx) => {
+			const [parent] = await tx
+				.select()
+				.from(projects)
+				.where(eq(projects.projectId, report.projectId))
+				.for("update");
+			if (
+				!parent ||
+				parent.archivedAt ||
+				![
+					PROJECT_STATUS.ONGOING,
+					PROJECT_STATUS.OVERDUE,
+					PROJECT_STATUS.PENDING_CLOSURE,
+				].includes(
+					parent.projectStatus as "Ongoing" | "Overdue" | "Pending Closure",
+				)
+			)
+				throw new ApiError(400, "INVALID_STATE", "Project is closed");
+			const [existing] = await tx
+				.select()
+				.from(reportAttachments)
+				.where(
+					and(
+						eq(reportAttachments.reportId, reportId),
+						eq(reportAttachments.attachmentType, attachmentType),
+						isNull(reportAttachments.archivedAt),
+					),
+				)
+				.limit(1);
+			if (existing && attachmentType !== ATTACHMENT_TYPE.MEANS_OF_VERIFICATION)
+				return existing;
+			const [saved] = await tx
+				.insert(reportAttachments)
+				.values({
+					reportId,
+					attachmentType,
+					storagePath,
+					contentHash,
+					uploadedBy: user.userId,
+					sourceIp: ipAddress,
+				})
+				.returning();
+			if (!saved)
+				throw new ApiError(500, "UPLOAD_FAILED", "Failed to save attachment");
+			await insertAuditLog(
+				{
+					userId: user.userId,
+					action: `Uploaded ${attachmentType} attachment for report ${reportId}`,
+					tableAffected: "report_attachments",
+					ipAddress,
+				},
+				tx,
+			);
+			completed = await finalizeTerminalPackage(tx, reportId, user, ipAddress);
+			return saved;
+		});
+	} catch (error) {
+		await supabase.storage
+			.from("documents")
+			.remove([storagePath])
+			.catch(() => undefined);
+		throw error;
 	}
-
-	await insertAuditLog({
-		userId: user.userId,
-		action: `Uploaded ${attachmentType} attachment for report ${reportId}`,
-		tableAffected: "report_attachments",
-		ipAddress,
-	});
+	if (attachment.storagePath !== storagePath)
+		await supabase.storage
+			.from("documents")
+			.remove([storagePath])
+			.catch(() => undefined);
+	if (completed) await notifyTerminalReady(reportId);
 
 	return {
 		attachmentId: attachment.attachmentId,
@@ -841,7 +1056,22 @@ export async function uploadReportAttachment(
 	};
 }
 
-export async function listReportAttachments(reportId: string) {
+export async function listReportAttachments(reportId: string, user: AuthUser) {
+	const [parent] = await db
+		.select({ id: projectReports.reportId })
+		.from(projectReports)
+		.innerJoin(projects, eq(projectReports.projectId, projects.projectId))
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+		.where(
+			and(
+				eq(projectReports.reportId, reportId),
+				isNull(projectReports.archivedAt),
+				isNull(projects.archivedAt),
+				...buildProposalScope(user),
+			),
+		)
+		.limit(1);
+	if (!parent) throw new ApiError(404, "NOT_FOUND", "Report not found");
 	const rows = await db
 		.select({
 			attachmentId: reportAttachments.attachmentId,
@@ -864,6 +1094,248 @@ export async function listReportAttachments(reportId: string) {
 	}));
 }
 
+export async function getReportPackage(user: AuthUser, milestoneId: string) {
+	const [milestone] = await db
+		.select({
+			projectId: projects.projectId,
+			projectStatus: projects.projectStatus,
+			completedAt: projectReportingMilestones.completedAt,
+			proposalId: projects.proposalId,
+		})
+		.from(projectReportingMilestones)
+		.innerJoin(
+			projects,
+			eq(projectReportingMilestones.projectId, projects.projectId),
+		)
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+		.where(
+			and(
+				eq(projectReportingMilestones.milestoneId, milestoneId),
+				isNull(projects.archivedAt),
+				...buildProposalScope(user),
+			),
+		)
+		.limit(1);
+	if (!milestone)
+		throw new ApiError(404, "NOT_FOUND", "Reporting milestone not found");
+	const [member] = await db
+		.select({ id: proposalMembers.memberId })
+		.from(proposalMembers)
+		.innerJoin(projects, eq(projects.proposalId, proposalMembers.proposalId))
+		.where(
+			and(
+				eq(projects.projectId, milestone.projectId),
+				eq(proposalMembers.userId, user.userId),
+				isNull(proposalMembers.archivedAt),
+			),
+		)
+		.limit(1);
+	if (user.roleName === ROLE_NAMES.FACULTY && !member)
+		throw new ApiError(403, "FORBIDDEN", "Project membership required");
+	const reports = await db
+		.select()
+		.from(projectReports)
+		.where(
+			and(
+				eq(projectReports.milestoneId, milestoneId),
+				isNull(projectReports.archivedAt),
+			),
+		)
+		.orderBy(
+			sql`CASE WHEN ${projectReports.reportType} = ${REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL} THEN 0 WHEN ${projectReports.reportType} = ${REPORT_TYPE.TERMINAL} THEN 1 ELSE 2 END`,
+			sql`${projectReports.submittedAt} DESC NULLS LAST`,
+			projectReports.reportId,
+		);
+	const report = reports[0];
+	const legacyComplete =
+		reports.some(
+			(item) => item.reportType === REPORT_TYPE.TERMINAL && item.storagePath,
+		) &&
+		reports.some(
+			(item) =>
+				item.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT &&
+				item.storagePath,
+		);
+	const attachments = report
+		? await db
+				.select({
+					id: reportAttachments.attachmentId,
+					type: reportAttachments.attachmentType,
+				})
+				.from(reportAttachments)
+				.where(
+					and(
+						eq(reportAttachments.reportId, report.reportId),
+						isNull(reportAttachments.archivedAt),
+					),
+				)
+		: [];
+	return {
+		reportId: report?.reportId ?? null,
+		reportType: report?.reportType ?? null,
+		remarks: report?.remarks ?? null,
+		traineeCount: report?.traineeCount ?? null,
+		evaluationAttachmentId:
+			attachments.find((a) => a.type === ATTACHMENT_TYPE.EVALUATION_FORMS)
+				?.id ?? null,
+		attendanceAttachmentId:
+			attachments.find((a) => a.type === ATTACHMENT_TYPE.ATTENDANCE_RECORDS)
+				?.id ?? null,
+		documentUploaded: Boolean(report?.storagePath),
+		evaluationUploaded: attachments.some(
+			(a) => a.type === ATTACHMENT_TYPE.EVALUATION_FORMS,
+		),
+		attendanceUploaded: attachments.some(
+			(a) => a.type === ATTACHMENT_TYPE.ATTENDANCE_RECORDS,
+		),
+		completed: Boolean(
+			report?.packageCompletedAt ||
+				(legacyComplete && milestone.completedAt) ||
+				(report &&
+					[REPORT_TYPE.PROGRESS, REPORT_TYPE.PROGRESS_REPORT].includes(
+						report.reportType as "Progress" | "Progress Report",
+					) &&
+					milestone.completedAt),
+		),
+		canEdit:
+			Boolean(member) &&
+			(!report ||
+				[REPORT_TYPE.TERMINAL, REPORT_TYPE.FINAL_ACCOMPLISHMENT].includes(
+					report.reportType as "Terminal" | "Final Accomplishment",
+				) ||
+				report.submittedById === user.userId) &&
+			[PROJECT_STATUS.ONGOING, PROJECT_STATUS.OVERDUE].includes(
+				milestone.projectStatus as "Ongoing" | "Overdue",
+			),
+	};
+}
+
+export async function correctTraineeCount(
+	user: AuthUser,
+	reportId: string,
+	body: { traineeCount: number; reason: string },
+	ipAddress: string,
+) {
+	if (user.roleName !== ROLE_NAMES.DIRECTOR)
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"Only the Director can correct approved results",
+		);
+	return db.transaction(async (tx) => {
+		const [report] = await tx
+			.select({ projectId: projectReports.projectId })
+			.from(projectReports)
+			.where(
+				and(
+					eq(projectReports.reportId, reportId),
+					isNull(projectReports.archivedAt),
+				),
+			)
+			.limit(1);
+		if (!report) throw new ApiError(404, "NOT_FOUND", "Report not found");
+		const [project] = await tx
+			.select()
+			.from(projects)
+			.where(
+				and(
+					eq(projects.projectId, report.projectId),
+					isNull(projects.archivedAt),
+				),
+			)
+			.for("update");
+		if (!project || project.projectStatus !== PROJECT_STATUS.CLOSED)
+			throw new ApiError(
+				400,
+				"INVALID_STATE",
+				"Historical corrections require approved project closure",
+			);
+		const [result] = await tx
+			.select()
+			.from(projectReports)
+			.where(
+				and(
+					eq(projectReports.projectId, project.projectId),
+					isNull(projectReports.archivedAt),
+					isNotNull(projectReports.storagePath),
+					inArray(projectReports.reportType, [
+						REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL,
+						REPORT_TYPE.TERMINAL,
+					]),
+				),
+			)
+			.orderBy(
+				sql`CASE WHEN ${projectReports.reportType} = ${REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL} THEN 0 ELSE 1 END`,
+				sql`${projectReports.submittedAt} DESC NULLS LAST`,
+				projectReports.reportId,
+			)
+			.limit(1);
+		if (!result || result.reportId !== reportId)
+			throw new ApiError(
+				400,
+				"INVALID_REPORT",
+				"Use the project's designated terminal report",
+			);
+		if (result.reportType === REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL) {
+			const [evaluation] = await tx
+				.select({ id: reportAttachments.attachmentId })
+				.from(reportAttachments)
+				.where(
+					and(
+						eq(reportAttachments.reportId, result.reportId),
+						eq(
+							reportAttachments.attachmentType,
+							ATTACHMENT_TYPE.EVALUATION_FORMS,
+						),
+						isNull(reportAttachments.archivedAt),
+					),
+				)
+				.limit(1);
+			if (!evaluation)
+				throw new ApiError(
+					400,
+					"MISSING_EVALUATION_FORMS",
+					"Upload the required evaluation forms before recording trainee results",
+				);
+		} else {
+			const [finalReport] = await tx
+				.select({ id: projectReports.reportId })
+				.from(projectReports)
+				.where(
+					and(
+						eq(projectReports.milestoneId, result.milestoneId),
+						eq(projectReports.reportType, REPORT_TYPE.FINAL_ACCOMPLISHMENT),
+						isNotNull(projectReports.storagePath),
+						isNull(projectReports.archivedAt),
+					),
+				)
+				.limit(1);
+			if (!finalReport)
+				throw new ApiError(
+					400,
+					"MISSING_CLOSURE_REPORT",
+					"The final accomplishment report is missing",
+				);
+		}
+		await tx
+			.update(projectReports)
+			.set({ traineeCount: body.traineeCount })
+			.where(eq(projectReports.reportId, reportId));
+		await insertAuditLog(
+			{
+				userId: user.userId,
+				action: `Corrected trainee count for report ${reportId}`,
+				tableAffected: "project_reports",
+				oldValue: { traineeCount: result.traineeCount },
+				newValue: { traineeCount: body.traineeCount, reason: body.reason },
+				ipAddress,
+			},
+			tx,
+		);
+		return { reportId, traineeCount: body.traineeCount };
+	});
+}
+
 export async function getReportAttachmentSignedUrl(
 	user: AuthUser,
 	attachmentId: string,
@@ -881,15 +1353,20 @@ export async function getReportAttachmentSignedUrl(
 			projectReports,
 			eq(reportAttachments.reportId, projectReports.reportId),
 		)
+		.innerJoin(projects, eq(projectReports.projectId, projects.projectId))
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
 		.where(
 			and(
 				eq(reportAttachments.attachmentId, attachmentId),
 				isNull(reportAttachments.archivedAt),
+				isNull(projectReports.archivedAt),
+				isNull(projects.archivedAt),
+				...buildProposalScope(user),
 			),
 		)
 		.limit(1);
 
-	if (!att || !att.storagePath) {
+	if (!att?.storagePath) {
 		throw new ApiError(404, "NOT_FOUND", "Attachment not found");
 	}
 

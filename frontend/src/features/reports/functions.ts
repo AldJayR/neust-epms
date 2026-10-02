@@ -11,6 +11,89 @@ import type { ReportItem, ReportsResponse } from "@/types/report";
 
 const STALE_TIME = 1000 * 60 * 5;
 
+const reportPackageSchema = z.object({
+	reportId: z.string().nullable(),
+	reportType: z.string().nullable(),
+	remarks: z.string().nullable(),
+	traineeCount: z.number().nullable(),
+	evaluationAttachmentId: z.string().nullable(),
+	attendanceAttachmentId: z.string().nullable(),
+	documentUploaded: z.boolean(),
+	evaluationUploaded: z.boolean(),
+	attendanceUploaded: z.boolean(),
+	completed: z.boolean(),
+	canEdit: z.boolean(),
+});
+export const getReportPackageFn = createServerFn({ method: "GET" })
+	.validator(z.string().uuid())
+	.handler(async ({ data: milestoneId }) => {
+		await authorizeSessionUser("Director", "RET Chair", "Faculty");
+		const token = await getValidAccessToken();
+		const response = await fetch(`${API_BASE}/reports/package/${milestoneId}`, {
+			headers: { Authorization: `Bearer ${token}` },
+		});
+		if (!response.ok)
+			throw new Error(
+				await getErrorMessage(
+					response,
+					"Cannot load report submission progress",
+				),
+			);
+		return reportPackageSchema.parse(await response.json());
+	});
+
+export const getReportAttachmentUrlFn = createServerFn({ method: "GET" })
+	.validator(z.string().uuid())
+	.handler(async ({ data: attachmentId }) => {
+		await authorizeSessionUser("Director", "RET Chair", "Faculty");
+		const token = await getValidAccessToken();
+		const response = await fetch(
+			`${API_BASE}/reports/attachments/${attachmentId}/url`,
+			{ headers: { Authorization: `Bearer ${token}` } },
+		);
+		if (!response.ok)
+			throw new Error(
+				await getErrorMessage(
+					response,
+					"We couldn't open this document. Please try again.",
+				),
+			);
+		return z.object({ url: z.string().url() }).parse(await response.json());
+	});
+export const correctTraineeCountFn = createServerFn({ method: "POST" })
+	.validator(
+		z.object({
+			reportId: z.string().uuid(),
+			traineeCount: z.number().int().min(0).max(2147483647),
+			reason: z.string().trim().min(5).max(1000),
+		}),
+	)
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director");
+		const token = await getValidAccessToken();
+		const response = await fetch(
+			`${API_BASE}/reports/${data.reportId}/trainee-count`,
+			{
+				method: "PATCH",
+				headers: {
+					Authorization: `Bearer ${token}`,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					traineeCount: data.traineeCount,
+					reason: data.reason,
+				}),
+			},
+		);
+		if (!response.ok)
+			throw new Error(
+				await getErrorMessage(response, "Could not correct trainee count"),
+			);
+		return z
+			.object({ reportId: z.string(), traineeCount: z.number() })
+			.parse(await response.json());
+	});
+
 const reportsListParamsSchema = z.object({
 	page: z.number(),
 	limit: z.number(),
@@ -113,6 +196,7 @@ export const submitReportFn = createServerFn({ method: "POST" })
 				"Accomplishment and Terminal Report",
 			]),
 			remarks: z.string().optional(),
+			traineeCount: z.number().int().min(0).max(2147483647).optional(),
 		}),
 	)
 	.handler(async ({ data }) => {
@@ -193,10 +277,7 @@ export const uploadReportAttachmentFn = createServerFn({ method: "POST" })
 		);
 		if (!response.ok) {
 			throw new Error(
-				await getErrorMessage(
-					response,
-					"Failed to upload report attachment",
-				),
+				await getErrorMessage(response, "Failed to upload report attachment"),
 			);
 		}
 		return (await response.json()) as {
