@@ -4,6 +4,8 @@ import { Loader2, Upload } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -12,6 +14,14 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import {
+	Field,
+	FieldDescription,
+	FieldError,
+	FieldGroup,
+	FieldLabel,
+	FieldTitle,
+} from "@/components/ui/field";
 import {
 	FileUpload,
 	FileUploadDropzone,
@@ -23,7 +33,6 @@ import {
 	FileUploadTrigger,
 } from "@/components/ui/file-upload";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toStableDate } from "@/lib/utils";
 import {
@@ -57,6 +66,11 @@ export function SubmitReportModal({
 	const [attendanceFile, setAttendanceFile] = useState<File | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [traineeCount, setTraineeCount] = useState("");
+	const formId = useId();
+	const countId = `${formId}-trainees`;
+	const remarksId = `${formId}-remarks`;
+	const [countError, setCountError] = useState<string | null>(null);
+	const [submissionError, setSubmissionError] = useState<string | null>(null);
 	const hydratedReport = useRef<string | null | undefined>(undefined);
 	const packageQuery = useQuery({
 		queryKey: ["report-package", milestone.id],
@@ -101,33 +115,38 @@ export function SubmitReportModal({
 		setEvalFormsFile(null);
 		setAttendanceFile(null);
 		setTraineeCount("");
+		setCountError(null);
+		setSubmissionError(null);
 		hydratedReport.current = undefined;
 	};
 
 	const handleSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
-		if (
+		setSubmissionError(null);
+		const missingDocuments =
 			!packageQuery.data?.completed &&
 			((!isClosure && !progressFile && !documentUploaded) ||
 				(isClosure &&
 					((!closureReportFile && !documentUploaded) ||
-						(!evalFormsFile && !evaluationUploaded))))
-		) {
-			toast.error(
+						(!evalFormsFile && !evaluationUploaded))));
+		const invalidCount =
+			isClosure &&
+			!packageQuery.data?.completed &&
+			(!/^\d+$/.test(traineeCount) || Number(traineeCount) > 2147483647);
+		setCountError(
+			invalidCount
+				? "Enter a whole number between 0 and 2,147,483,647. Enter 0 if no trainees were served."
+				: null,
+		);
+		if (missingDocuments) {
+			setSubmissionError(
 				isClosure
 					? "Please upload the Accomplishment and Terminal Report and the required Evaluation Forms."
 					: "Please upload the required PDF document.",
 			);
-			return;
 		}
-		if (
-			isClosure &&
-			!packageQuery.data?.completed &&
-			(!/^\d+$/.test(traineeCount) || Number(traineeCount) > 2147483647)
-		) {
-			toast.error(
-				"Enter a whole number of trainees, including 0 if no trainees were served.",
-			);
+		if (invalidCount || missingDocuments) {
+			if (invalidCount) document.getElementById(countId)?.focus();
 			return;
 		}
 
@@ -244,7 +263,7 @@ export function SubmitReportModal({
 				);
 				return;
 			}
-			toast.error(
+			setSubmissionError(
 				error instanceof Error ? error.message : "Failed to submit report",
 			);
 		} finally {
@@ -270,7 +289,7 @@ export function SubmitReportModal({
 					</DialogTitle>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-4 py-2">
+				<form noValidate onSubmit={handleSubmit} className="space-y-4 py-2">
 					{packageQuery.data?.completed && (
 						<p className="rounded-md border p-3 text-sm">
 							{isClosure
@@ -282,99 +301,128 @@ export function SubmitReportModal({
 						<p role="status">Checking saved submission progress…</p>
 					)}
 					{packageQuery.error && (
-						<div role="alert">
-							<p>Submission progress could not be loaded.</p>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => void packageQuery.refetch()}
-							>
-								Retry
-							</Button>
-						</div>
+						<Alert variant="destructive">
+							<AlertTitle>Saved progress couldn't be loaded</AlertTitle>
+							<AlertDescription className="space-y-3">
+								<p>Please try again before continuing.</p>
+								<Button
+									type="button"
+									variant="outline"
+									onClick={() => void packageQuery.refetch()}
+								>
+									Retry
+								</Button>
+							</AlertDescription>
+						</Alert>
 					)}
-					{isClosure && (
-						<div className="space-y-2">
-							<Label htmlFor="trainee-count">Number of trainees *</Label>
-							<Input
-								id="trainee-count"
-								required
-								type="number"
-								min={0}
-								max={2147483647}
-								step={1}
-								value={traineeCount}
-								disabled={isSubmitting || packageQuery.data?.completed}
-								onChange={(event) => setTraineeCount(event.target.value)}
-							/>
-							<p className="text-xs text-muted-foreground">
-								Count each person once within this project, even if they
-								attended multiple sessions. Enter 0 if no trainees were served.
-								Official totals follow Director closure approval.
+					{submissionError && (
+						<Alert variant="destructive">
+							<AlertTitle>Check your submission</AlertTitle>
+							<AlertDescription>{submissionError}</AlertDescription>
+						</Alert>
+					)}
+					<FieldGroup className="gap-4">
+						{isClosure && (
+							<Field data-invalid={Boolean(countError)}>
+								<FieldLabel className="text-foreground" htmlFor={countId}>
+									Number of trainees *
+								</FieldLabel>
+								<Input
+									id={countId}
+									aria-invalid={Boolean(countError)}
+									aria-describedby={`${countId}-help${countError ? ` ${countId}-error` : ""}`}
+									required
+									type="number"
+									min={0}
+									max={2147483647}
+									step={1}
+									value={traineeCount}
+									disabled={isSubmitting || packageQuery.data?.completed}
+									onChange={(event) => {
+										setTraineeCount(event.target.value);
+										setCountError(null);
+									}}
+								/>
+								<FieldDescription id={`${countId}-help`}>
+									Count each person once within this project, even if they
+									attended multiple sessions. Enter 0 if no trainees were
+									served. Official totals follow Director closure approval.
+								</FieldDescription>
+								<FieldError id={`${countId}-error`}>{countError}</FieldError>
+							</Field>
+						)}
+						<div className="rounded-lg border border-border bg-muted/30 p-3 text-sm">
+							<p className="font-medium">Required reporting milestone</p>
+							<p className="mt-1 text-muted-foreground">
+								Due {format(toStableDate(milestone.dueAt), "MMM d, yyyy")}
 							</p>
 						</div>
-					)}
-					<div className="rounded-lg border border-border bg-muted/30 p-3 text-sm">
-						<p className="font-medium">Required reporting milestone</p>
-						<p className="mt-1 text-muted-foreground">
-							Due {format(toStableDate(milestone.dueAt), "MMM d, yyyy")}
-						</p>
-					</div>
 
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="remarks">Remarks (Optional)</Label>
-						<Textarea
-							id="remarks"
-							disabled={isSubmitting || packageQuery.data?.completed}
-							placeholder="Add comments or notes about the submission..."
-							value={remarks}
-							onChange={(event) => setRemarks(event.target.value)}
-							rows={3}
-						/>
-					</div>
-
-					{isClosure ? (
-						<div className="space-y-4">
-							{documentUploaded ? (
-								<p className="text-sm">✓ Terminal document already uploaded</p>
-							) : (
-								<ReportFileField
-									label="Accomplishment and Terminal Report (Primary Document) *"
-									file={closureReportFile}
-									disabled={isSubmitting}
-									onFileChange={setClosureReportFile}
-								/>
-							)}
-							{legacyComplete ? (
-								<p className="text-sm">
-									Legacy terminal and final accomplishment reports are on file.
-								</p>
-							) : evaluationUploaded ? (
-								<p className="text-sm">✓ Evaluation Forms already uploaded</p>
-							) : (
-								<ReportFileField
-									label="Evaluation Forms (Required Attachment) *"
-									file={evalFormsFile}
-									disabled={isSubmitting}
-									onFileChange={setEvalFormsFile}
-								/>
-							)}
-							<ReportFileField
-								label="Attendance Records (Optional Attachment)"
-								file={attendanceFile}
-								disabled={isSubmitting || packageQuery.data?.attendanceUploaded}
-								onFileChange={setAttendanceFile}
+						<Field>
+							<FieldLabel className="text-foreground" htmlFor={remarksId}>
+								Remarks (Optional)
+							</FieldLabel>
+							<Textarea
+								id={remarksId}
+								disabled={isSubmitting || packageQuery.data?.completed}
+								placeholder="Add comments or notes about the submission..."
+								value={remarks}
+								onChange={(event) => setRemarks(event.target.value)}
+								rows={3}
 							/>
-						</div>
-					) : (
-						<ReportFileField
-							label="Progress Report Document"
-							file={progressFile}
-							disabled={isSubmitting}
-							onFileChange={setProgressFile}
-						/>
-					)}
+						</Field>
 
+						{isClosure ? (
+							<div className="space-y-4">
+								{documentUploaded ? (
+									<div className="flex items-center gap-2 text-sm">
+										<Badge variant="outline">Uploaded</Badge>
+										<span>Terminal report</span>
+									</div>
+								) : (
+									<ReportFileField
+										label="Accomplishment and Terminal Report (Primary Document) *"
+										file={closureReportFile}
+										disabled={isSubmitting}
+										onFileChange={setClosureReportFile}
+									/>
+								)}
+								{legacyComplete ? (
+									<p className="text-sm">
+										Legacy terminal and final accomplishment reports are on
+										file.
+									</p>
+								) : evaluationUploaded ? (
+									<div className="flex items-center gap-2 text-sm">
+										<Badge variant="outline">Uploaded</Badge>
+										<span>Evaluation forms</span>
+									</div>
+								) : (
+									<ReportFileField
+										label="Evaluation Forms (Required Attachment) *"
+										file={evalFormsFile}
+										disabled={isSubmitting}
+										onFileChange={setEvalFormsFile}
+									/>
+								)}
+								<ReportFileField
+									label="Attendance Records (Optional Attachment)"
+									file={attendanceFile}
+									disabled={
+										isSubmitting || packageQuery.data?.attendanceUploaded
+									}
+									onFileChange={setAttendanceFile}
+								/>
+							</div>
+						) : (
+							<ReportFileField
+								label="Progress Report Document"
+								file={progressFile}
+								disabled={isSubmitting}
+								onFileChange={setProgressFile}
+							/>
+						)}
+					</FieldGroup>
 					<DialogFooter className="border-t border-border pt-3">
 						<Button
 							type="button"
@@ -425,10 +473,10 @@ function ReportFileField({
 }) {
 	const labelId = useId();
 	return (
-		<div className="flex flex-col gap-1.5">
-			<p id={labelId} className="text-sm font-medium">
+		<Field className="gap-1.5" aria-labelledby={labelId}>
+			<FieldTitle id={labelId} className="text-foreground">
 				{label}
-			</p>
+			</FieldTitle>
 			<FileUpload
 				aria-labelledby={labelId}
 				disabled={disabled}
@@ -464,6 +512,6 @@ function ReportFileField({
 					)}
 				</FileUploadList>
 			</FileUpload>
-		</div>
+		</Field>
 	);
 }

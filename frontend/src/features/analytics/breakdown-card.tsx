@@ -1,4 +1,19 @@
 import { PageCard } from "@/components/custom/page-card";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle,
+} from "@/components/ui/empty";
+import {
+	Table,
+	TableBody,
+	TableCaption,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import type { AnalyticsView } from "./schema";
 
 type Breakdown = {
@@ -31,9 +46,15 @@ export function BreakdownCard({
 		<PageCard className="space-y-4 p-4">
 			<h2 className="font-semibold">{title}</h2>
 			{groups.length === 0 ? (
-				<p className="text-muted-foreground">
-					No records match this scope and period.
-				</p>
+				<Empty className="p-6">
+					<EmptyHeader>
+						<EmptyTitle>No results</EmptyTitle>
+						<EmptyDescription>
+							No records match this scope and period. Try another period or
+							reset your filters.
+						</EmptyDescription>
+					</EmptyHeader>
+				</Empty>
 			) : (
 				<>
 					<figure
@@ -73,55 +94,43 @@ export function BreakdownCard({
 							· Up to 10 categories shown. Full breakdown below.
 						</figcaption>
 					</figure>
-					<div className="overflow-x-auto">
-						<table className="w-full text-left text-sm">
-							<caption className="sr-only">{title}</caption>
-							<thead>
-								<tr>
-									<th scope="col" className="p-2">
-										Unit / category
-									</th>
-									<th scope="col" className="p-2">
-										Projects
-									</th>
+					<Table>
+						<TableCaption className="sr-only">{title}</TableCaption>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Unit / category</TableHead>
+								<TableHead>Projects</TableHead>
+								{view === "reach" && (
+									<>
+										<TableHead>Trainees</TableHead>
+										<TableHead>Missing counts</TableHead>
+									</>
+								)}
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{groups.map((group) => (
+								<TableRow key={group.key}>
+									<TableHead scope="row" className="font-normal">
+										<button
+											type="button"
+											className="text-primary underline"
+											onClick={() => onSelect(group.key)}
+										>
+											{group.label}
+										</button>
+									</TableHead>
+									<TableCell>{group.projects}</TableCell>
 									{view === "reach" && (
 										<>
-											<th scope="col" className="p-2">
-												Trainees
-											</th>
-											<th scope="col" className="p-2">
-												Missing counts
-											</th>
+											<TableCell>{group.trainees?.toLocaleString()}</TableCell>
+											<TableCell>{group.missing}</TableCell>
 										</>
 									)}
-								</tr>
-							</thead>
-							<tbody>
-								{groups.map((group) => (
-									<tr key={group.key} className="border-t">
-										<th scope="row" className="p-2 font-normal">
-											<button
-												type="button"
-												className="text-primary underline"
-												onClick={() => onSelect(group.key)}
-											>
-												{group.label}
-											</button>
-										</th>
-										<td className="p-2">{group.projects}</td>
-										{view === "reach" && (
-											<>
-												<td className="p-2">
-													{group.trainees?.toLocaleString()}
-												</td>
-												<td className="p-2">{group.missing}</td>
-											</>
-										)}
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
 				</>
 			)}
 		</PageCard>

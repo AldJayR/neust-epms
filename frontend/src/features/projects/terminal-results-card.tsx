@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { PageCard } from "@/components/custom/page-card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ReportDocumentButton } from "@/features/reports/components/report-document-button";
 import { getReportPackageFn } from "@/features/reports/functions";
 import { useProjectReportingSchedule } from "@/hooks/use-project-reporting-schedule";
@@ -29,17 +32,28 @@ export function TerminalResultsCard({
 	status: string;
 }) {
 	const result = useTerminalResults(projectId);
+	if (result.isLoading)
+		return (
+			<PageCard className="space-y-3 p-4">
+				<h2 className="font-semibold">Project Results</h2>
+				<Skeleton className="h-5 w-40" />
+				<Skeleton className="h-5 w-56" />
+			</PageCard>
+		);
 	if (!result.data && !result.error) return null;
 	return (
 		<PageCard className="space-y-2 p-4">
 			<h2 className="font-semibold">Project Results</h2>
 			{result.error ? (
-				<div role="alert">
-					<p>We couldn't load the project results. Please try again.</p>
-					<Button variant="outline" onClick={() => void result.refetch()}>
-						Retry
-					</Button>
-				</div>
+				<Alert variant="destructive">
+					<AlertTitle>Project results couldn't be loaded</AlertTitle>
+					<AlertDescription className="space-y-3">
+						<p>Please try again.</p>
+						<Button variant="outline" onClick={() => void result.refetch()}>
+							Retry
+						</Button>
+					</AlertDescription>
+				</Alert>
 			) : (
 				<>
 					<p>
@@ -48,13 +62,13 @@ export function TerminalResultsCard({
 							{result.data?.traineeCount?.toLocaleString() ?? "Not recorded"}
 						</strong>
 					</p>
-					<p className="text-sm text-muted-foreground">
+					<Badge variant="outline">
 						{status === "Closed"
-							? "Closure approved by the Director"
+							? "Closure approved"
 							: result.data?.completed
-								? "Ready for the Director's closure review"
-								: "Submission not yet complete"}
-					</p>
+								? "Awaiting closure review"
+								: "Submission incomplete"}
+					</Badge>
 					<ul className="text-sm">
 						<li>
 							Terminal report:{" "}

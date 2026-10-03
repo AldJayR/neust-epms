@@ -1,14 +1,34 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { AlertCircle, Info } from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 import { DataTablePage } from "@/components/custom/data-table-page";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { getCampusesFn, getDepartmentsFn } from "@/features/auth";
 import { ReportDocumentButton } from "@/features/reports/components/report-document-button";
 import type { AuthUser } from "@/lib/auth";
@@ -40,21 +60,32 @@ function FilterSelect({
 	options: { value: string; label: string }[];
 	onChange: (value: string) => void;
 }) {
+	const id = useId();
 	return (
-		<label className="flex min-w-40 flex-col gap-1 text-sm">
-			<span className="text-muted-foreground">{label}</span>
-			<select
-				className="h-9 rounded-md border border-input bg-background px-3"
+		<Field className="min-w-40 w-auto gap-1">
+			<FieldLabel htmlFor={id} className="text-muted-foreground">
+				{label}
+			</FieldLabel>
+			<Select
 				value={value}
-				onChange={(event) => onChange(event.target.value)}
+				onValueChange={(selected) => {
+					if (typeof selected === "string") onChange(selected);
+				}}
 			>
-				{options.map((option) => (
-					<option key={option.value} value={option.value}>
-						{option.label}
-					</option>
-				))}
-			</select>
-		</label>
+				<SelectTrigger id={id} className="w-full">
+					<SelectValue>
+						{options.find((option) => option.value === value)?.label ?? label}
+					</SelectValue>
+				</SelectTrigger>
+				<SelectContent alignItemWithTrigger={false}>
+					{options.map((option) => (
+						<SelectItem key={option.value} value={option.value}>
+							{option.label}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
+		</Field>
 	);
 }
 
@@ -138,7 +169,16 @@ export function AnalyticsPage({
 					{ accessorKey: "projects", header: "Active involvement" },
 				]
 			: [
-					{ accessorKey: "status", header: "Status" },
+					{
+						accessorKey: "status",
+						header: "Status",
+						cell: ({ row }: { row: { original: AnalyticsItem } }) =>
+							row.original.status ? (
+								<StatusBadge status={row.original.status} variant="outline" />
+							) : (
+								"—"
+							),
+					},
 					...(view === "participation"
 						? [
 								{
@@ -195,20 +235,23 @@ export function AnalyticsPage({
 	];
 	return (
 		<div className="flex flex-col gap-6">
-			<nav
-				aria-label="Breadcrumb"
-				className="flex items-center gap-2 text-sm text-muted-foreground"
-			>
-				<Link
-					to="/dashboard"
-					search={{ page: 1, pageSize: 10 }}
-					className="hover:text-foreground underline"
-				>
-					Dashboard
-				</Link>
-				<span aria-hidden="true">/</span>
-				<span aria-current="page">Analytics</span>
-			</nav>
+			<Breadcrumb>
+				<BreadcrumbList>
+					<BreadcrumbItem>
+						<BreadcrumbLink
+							render={
+								<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />
+							}
+						>
+							Dashboard
+						</BreadcrumbLink>
+					</BreadcrumbItem>
+					<BreadcrumbSeparator />
+					<BreadcrumbItem>
+						<BreadcrumbPage>Analytics</BreadcrumbPage>
+					</BreadcrumbItem>
+				</BreadcrumbList>
+			</Breadcrumb>
 			<PageHeader
 				title={
 					<div>
@@ -271,10 +314,10 @@ export function AnalyticsPage({
 			)}
 			<PageCard className="flex flex-wrap items-end gap-3 p-4">
 				{!showFaculty && (
-					<label htmlFor={yearInputId} className="flex flex-col gap-1 text-sm">
-						<span className="text-muted-foreground">
+					<Field className="w-auto gap-1">
+						<FieldLabel htmlFor={yearInputId} className="text-muted-foreground">
 							{view === "reach" ? "Closure year" : "Project creation year"}
-						</span>
+						</FieldLabel>
 						<Input
 							id={yearInputId}
 							className="w-28"
@@ -287,7 +330,7 @@ export function AnalyticsPage({
 								if (year >= 2000 && year <= 2200) change({ year });
 							}}
 						/>
-					</label>
+					</Field>
 				)}
 				{!personal && user.roleName === "Director" && (
 					<FilterSelect
@@ -373,24 +416,23 @@ export function AnalyticsPage({
 				{isFetching && !isPending ? " · Updating…" : ""}
 			</p>
 			{error && (
-				<PageCard className="p-4">
-					<div role="alert">
-						<p>We couldn't load these reports. Please try again.</p>
+				<Alert variant="destructive">
+					<AlertCircle />
+					<AlertTitle>Reports couldn't be loaded</AlertTitle>
+					<AlertDescription className="space-y-3">
+						<p>Please try again.</p>
 						<Button variant="outline" onClick={() => void refetch()}>
 							Retry
 						</Button>
-					</div>
-				</PageCard>
+					</AlertDescription>
+				</Alert>
 			)}
 			{!error && (
 				<>
 					<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 						{isPending
 							? [1, 2, 3, 4].map((key) => (
-									<div
-										key={key}
-										className="h-28 animate-pulse rounded-lg bg-muted"
-									/>
+									<Skeleton key={key} className="h-28 rounded-lg" />
 								))
 							: data?.metrics.map((metric) => (
 									<div key={metric.label}>
@@ -416,11 +458,15 @@ export function AnalyticsPage({
 						</p>
 					)}
 					{view === "reach" && Boolean(data?.undatedProjects) && (
-						<p className="rounded-md border p-3 text-sm">
-							{data?.undatedProjects} closed projects in this scope have no
-							recorded closure date. They aren't included in the selected year's
-							totals.
-						</p>
+						<Alert role="note">
+							<Info />
+							<AlertTitle>Some closure dates are missing</AlertTitle>
+							<AlertDescription>
+								{data?.undatedProjects} closed projects in this scope have no
+								recorded closure date. They aren't included in the selected
+								year's totals.
+							</AlertDescription>
+						</Alert>
 					)}
 					{view === "coverage" && (
 						<p className="rounded-md border p-3 text-sm">
