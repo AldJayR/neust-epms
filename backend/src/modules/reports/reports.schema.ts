@@ -75,11 +75,6 @@ export const ReportPackageSchema = z.object({
 	canEdit: z.boolean(),
 });
 
-export const CorrectTraineeCountSchema = z.object({
-	traineeCount: z.number().int().min(0).max(2147483647),
-	reason: z.string().trim().min(5).max(1000),
-});
-
 export const ReportAttachmentSchema = z
 	.object({
 		attachmentId: z.string(),

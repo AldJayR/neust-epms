@@ -33,6 +33,10 @@ import { env } from "@/env.js";
 import { escapeHtml } from "@/lib/html.js";
 import { getLeaderSubquery } from "@/lib/leader-subquery.js";
 import {
+	getActiveInvolvementSubquery,
+	getActiveProjectConditions,
+} from "@/lib/faculty-involvement.js";
+import {
 	type AuthUser,
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
@@ -269,13 +273,6 @@ const FACULTY_DIRECTORY_ROLES = [
 	ROLE_NAMES.RET_CHAIR,
 ] as const;
 
-const ACTIVE_EXTENSION_PROJECT_STATUSES = [
-	PROJECT_STATUS.APPROVED,
-	PROJECT_STATUS.ONGOING,
-	PROJECT_STATUS.OVERDUE,
-	PROJECT_STATUS.PENDING_CLOSURE,
-] as const;
-
 type FacultyLoadFilter = "all" | "none" | "active";
 type FacultyDirectorySort = "load-desc" | "load-asc" | "name";
 type FacultyTrendMonths = 6 | 12 | 24;
@@ -307,37 +304,6 @@ function getFacultyScopeConditions(user: AuthUser): SQL[] {
 	}
 
 	return conditions;
-}
-
-function getActiveProjectConditions(): SQL[] {
-	return [
-		isNull(projects.archivedAt),
-		isNull(proposals.archivedAt),
-		inArray(projects.projectStatus, ACTIVE_EXTENSION_PROJECT_STATUSES),
-		isNull(proposalMembers.archivedAt),
-	];
-}
-
-function getActiveInvolvementSubquery() {
-	return db
-		.select({
-			userId: proposalMembers.userId,
-			leadProjects:
-				sql<number>`count(*) filter (where ${proposalMembers.projectRole} = 'Project Leader')`.as(
-					"lead_projects",
-				),
-			collaboratorProjects:
-				sql<number>`count(*) filter (where ${proposalMembers.projectRole} != 'Project Leader')`.as(
-					"collaborator_projects",
-				),
-			totalInvolvement: count().as("total_involvement"),
-		})
-		.from(proposalMembers)
-		.innerJoin(proposals, eq(proposalMembers.proposalId, proposals.proposalId))
-		.innerJoin(projects, eq(proposals.proposalId, projects.proposalId))
-		.where(and(...getActiveProjectConditions()))
-		.groupBy(proposalMembers.userId)
-		.as("active_faculty_involvement");
 }
 
 function applyFacultyDirectoryFilters(

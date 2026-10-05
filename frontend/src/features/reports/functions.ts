@@ -60,40 +60,6 @@ export const getReportAttachmentUrlFn = createServerFn({ method: "GET" })
 			);
 		return z.object({ url: z.string().url() }).parse(await response.json());
 	});
-export const correctTraineeCountFn = createServerFn({ method: "POST" })
-	.validator(
-		z.object({
-			reportId: z.string().uuid(),
-			traineeCount: z.number().int().min(0).max(2147483647),
-			reason: z.string().trim().min(5).max(1000),
-		}),
-	)
-	.handler(async ({ data }) => {
-		await authorizeSessionUser("Director");
-		const token = await getValidAccessToken();
-		const response = await fetch(
-			`${API_BASE}/reports/${data.reportId}/trainee-count`,
-			{
-				method: "PATCH",
-				headers: {
-					Authorization: `Bearer ${token}`,
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					traineeCount: data.traineeCount,
-					reason: data.reason,
-				}),
-			},
-		);
-		if (!response.ok)
-			throw new Error(
-				await getErrorMessage(response, "Could not correct trainee count"),
-			);
-		return z
-			.object({ reportId: z.string(), traineeCount: z.number() })
-			.parse(await response.json());
-	});
-
 const reportsListParamsSchema = z.object({
 	page: z.number(),
 	limit: z.number(),

@@ -3,7 +3,6 @@ import { Link } from "@tanstack/react-router";
 import { AlertCircle, Info } from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
-import { DataTablePage } from "@/components/custom/data-table-page";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
@@ -17,7 +16,6 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,14 +26,13 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { getCampusesFn, getDepartmentsFn } from "@/features/auth";
-import { ReportDocumentButton } from "@/features/reports/components/report-document-button";
 import type { AuthUser } from "@/lib/auth";
 import { BreakdownCard } from "./breakdown-card";
+import { FacultyParticipationTable } from "./faculty-participation-table";
 import { analyticsQueryOptions, exportAnalyticsFn } from "./functions";
-import type { AnalyticsFilters, AnalyticsItem, AnalyticsView } from "./schema";
-import { TraineeCorrectionForm } from "./trainee-correction-form";
+import { ProjectAnalyticsTable } from "./project-analytics-table";
+import type { AnalyticsFilters, AnalyticsView } from "./schema";
 
 const titles = {
 	reach: "Trainee Reach",
@@ -111,7 +108,6 @@ export function AnalyticsPage({
 		queryFn: getDepartmentsFn,
 	});
 	const [exporting, setExporting] = useState(false);
-	const [correction, setCorrection] = useState<AnalyticsItem | null>(null);
 	const yearInputId = useId();
 	const showFaculty =
 		view === "participation" && !personal && !filters.facultyId;
@@ -135,104 +131,6 @@ export function AnalyticsPage({
 			setExporting(false);
 		}
 	};
-	const columns: DataTableColumnDef<AnalyticsItem>[] = [
-		{
-			accessorKey: "label",
-			header: showFaculty ? "Faculty" : "Project",
-			cell: ({ row }) =>
-				row.original.proposalId ? (
-					<Link
-						className="font-medium text-primary underline"
-						to="/projects/$projectId"
-						params={{ projectId: row.original.proposalId }}
-					>
-						{row.original.label}
-					</Link>
-				) : (
-					<button
-						type="button"
-						className="font-medium text-primary underline"
-						onClick={() =>
-							change({ facultyId: row.original.userId ?? undefined })
-						}
-					>
-						{row.original.label}
-					</button>
-				),
-		},
-		{ accessorKey: "campus", header: "Campus" },
-		{ accessorKey: "department", header: "Lead department / unit" },
-		...((showFaculty
-			? [
-					{ accessorKey: "lead", header: "Leading" },
-					{ accessorKey: "collaboration", header: "Collaborating" },
-					{ accessorKey: "projects", header: "Active involvement" },
-				]
-			: [
-					{
-						accessorKey: "status",
-						header: "Status",
-						cell: ({ row }: { row: { original: AnalyticsItem } }) =>
-							row.original.status ? (
-								<StatusBadge status={row.original.status} variant="outline" />
-							) : (
-								"—"
-							),
-					},
-					...(view === "participation"
-						? [
-								{
-									id: "contribution",
-									header: "Project role",
-									cell: ({ row }: { row: { original: AnalyticsItem } }) =>
-										row.original.lead ? "Project leader" : "Collaborator",
-								},
-							]
-						: []),
-					{
-						accessorKey: "closedAt",
-						header: "Closure date",
-						cell: ({ row }: { row: { original: AnalyticsItem } }) =>
-							row.original.closedAt
-								? new Date(row.original.closedAt).toLocaleDateString("en-PH", {
-										timeZone: "Asia/Manila",
-									})
-								: "—",
-					},
-					{
-						accessorKey: "traineeCount",
-						header: "Approved project reach",
-						cell: ({ row }: { row: { original: AnalyticsItem } }) =>
-							row.original.status !== "Closed"
-								? "Not yet approved"
-								: row.original.traineeCount === null
-									? "Not recorded"
-									: row.original.traineeCount.toLocaleString(),
-					},
-					{
-						id: "evidence",
-						header: "Evidence",
-						cell: ({ row }: { row: { original: AnalyticsItem } }) =>
-							row.original.reportId ? (
-								<div className="flex flex-wrap gap-2">
-									<ReportDocumentButton id={row.original.reportId} />
-									{user.roleName === "Director" &&
-										row.original.status === "Closed" && (
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={() => setCorrection(row.original)}
-											>
-												Update trainee count
-											</Button>
-										)}
-								</div>
-							) : (
-								"No terminal report"
-							),
-					},
-				]) as DataTableColumnDef<AnalyticsItem>[]),
-	];
 	return (
 		<div className="flex flex-col gap-6">
 			<Breadcrumb>
@@ -515,27 +413,32 @@ export function AnalyticsPage({
 							Back to all records
 						</Button>
 					)}
-					<DataTablePage
-						columns={columns}
-						data={data?.items ?? []}
-						total={data?.total ?? 0}
-						isLoading={isPending}
-						page={filters.page}
-						pageSize={filters.limit}
-						onPageChange={(page) => onFiltersChange({ page })}
-						ariaLabel={
-							showFaculty ? "Faculty participation" : "Contributing projects"
-						}
-						emptyMessage="No records match the selected filters."
-					/>
+					{showFaculty ? (
+						<FacultyParticipationTable
+							items={
+								data?.items.filter((item) => item.kind === "faculty") ?? []
+							}
+							total={data?.total ?? 0}
+							isLoading={isPending}
+							page={filters.page}
+							pageSize={filters.limit}
+							onPageChange={(page) => onFiltersChange({ page })}
+							onSelectFaculty={(facultyId) => change({ facultyId })}
+						/>
+					) : (
+						<ProjectAnalyticsTable
+							items={
+								data?.items.filter((item) => item.kind === "project") ?? []
+							}
+							total={data?.total ?? 0}
+							isLoading={isPending}
+							page={filters.page}
+							pageSize={filters.limit}
+							onPageChange={(page) => onFiltersChange({ page })}
+							showProjectRole={view === "participation"}
+						/>
+					)}
 				</>
-			)}
-			{correction && (
-				<TraineeCorrectionForm
-					key={correction.id}
-					result={correction}
-					onClose={() => setCorrection(null)}
-				/>
 			)}
 		</div>
 	);

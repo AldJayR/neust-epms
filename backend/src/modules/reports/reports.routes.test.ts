@@ -22,6 +22,21 @@ beforeEach(() => {
 });
 
 describe("GET /reports", () => {
+	it("does not expose post-closure trainee corrections", async () => {
+		setMockUser(MOCK_USERS.director);
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([]) as never);
+		const response = await app.request(
+			"/reports/11111111-1111-4111-8111-111111111111/trainee-count",
+			{
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ traineeCount: 10, reason: "Not needed" }),
+			},
+		);
+		expect(response.status).toBe(404);
+		expect(db.transaction).not.toHaveBeenCalled();
+	});
+
 	it("should return a list of reports", async () => {
 		const mock = {
 			reportId: "aaa",

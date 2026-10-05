@@ -1,9 +1,15 @@
-import { type SQL, sql } from "drizzle-orm";
+import { and, eq, type SQL, sql } from "drizzle-orm";
 import { db } from "@/db/client.js";
+import { proposals } from "@/db/schema/proposals.js";
 import { ApiError } from "@/lib/errors.js";
+import {
+	ACTIVE_EXTENSION_PROJECT_STATUSES,
+	getActiveInvolvementSubquery,
+} from "@/lib/faculty-involvement.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import {
 	type AnalyticsFilters,
+	AnalyticsItem,
 	AnalyticsResponse,
 	type AnalyticsView,
 } from "./analytics.schema.js";
@@ -61,7 +67,7 @@ function projectBase(
 			c.campus_name AS campus, d.department_name AS department,
 			p.project_id, COALESCE(p.project_status, pr.status) AS status, p.actual_end_date AS closed_at,
 			r.report_id, r.trainee_count,
-			(p.project_status IN ('Approved', 'Ongoing', 'Overdue', 'Pending Closure')) AS active
+			(p.project_status IN (${sql.join(ACTIVE_EXTENSION_PROJECT_STATUSES.map((status) => sql`${status}`), sql`, `)})) AS active
 		FROM proposals pr
 		JOIN campuses c ON c.campus_id = pr.campus_id JOIN departments d ON d.department_id = pr.department_id
 		LEFT JOIN projects p ON p.proposal_id = pr.proposal_id
@@ -82,16 +88,23 @@ const categorySources = {
 	service: sql`SELECT b.proposal_id, COALESCE(s.extension_service_id::text, 'unclassified') AS key, COALESCE(s.service_name, 'Unclassified') AS label FROM base b LEFT JOIN proposal_extension_services ps ON ps.proposal_id = b.proposal_id AND ps.archived_at IS NULL LEFT JOIN extension_services s ON s.extension_service_id = ps.extension_service_id`,
 };
 
-export async function getAnalytics(
+function isFacultyList(
 	user: AuthUser,
 	filters: AnalyticsFilters,
 	view: AnalyticsView,
-	executor: Pick<typeof db, "execute"> = db,
 ) {
-	const query = async <T>(statement: SQL): Promise<T[]> =>
-		(await executor.execute(statement)) as unknown as T[];
-	const base = projectBase(user, filters, view);
-	const categories = categorySources[filters.groupBy];
+	return (
+		view === "participation" &&
+		!filters.facultyId &&
+		user.roleName !== ROLE_NAMES.FACULTY
+	);
+}
+
+function selectedProjects(
+	user: AuthUser,
+	filters: AnalyticsFilters,
+	view: AnalyticsView,
+) {
 	const selection =
 		filters.category && view === "coverage"
 			? sql`AND EXISTS (SELECT 1 FROM categories cat WHERE cat.proposal_id = b.proposal_id AND cat.key = ${filters.category})`
@@ -100,9 +113,85 @@ export async function getAnalytics(
 		view === "reach" && filters.missing === "true"
 			? sql`AND b.trainee_count IS NULL`
 			: sql``;
-	const cte = sql`${base}, categories AS (${categories}), selected AS (SELECT b.* FROM base b WHERE true ${selection} ${missing})`;
+	return sql`${projectBase(user, filters, view)}, categories AS (${categorySources[filters.groupBy]}), selected AS (SELECT b.* FROM base b WHERE true ${selection} ${missing})`;
+}
+
+function involvementProjectScope(user: AuthUser, filters: AnalyticsFilters) {
+	const projectConditions: SQL[] = [];
+	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+		projectConditions.push(eq(proposals.campusId, user.campusId));
+		if (user.isMainCampus) {
+			projectConditions.push(sql`${proposals.departmentId} = ${user.departmentId}`);
+		}
+	}
+	if (filters.campusId)
+		projectConditions.push(eq(proposals.campusId, filters.campusId));
+	if (filters.departmentId)
+		projectConditions.push(eq(proposals.departmentId, filters.departmentId));
+	return and(...projectConditions);
+}
+
+function facultyRows(user: AuthUser, filters: AnalyticsFilters) {
+	const facultyConditions = [
+		sql`u.archived_at IS NULL AND u.is_active AND ro.role_name IN ('Faculty', 'RET Chair')`,
+	];
+	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+		facultyConditions.push(sql`u.campus_id = ${user.campusId}`);
+		if (user.isMainCampus)
+			facultyConditions.push(sql`u.department_id = ${user.departmentId}`);
+	}
+	if (filters.campusId)
+		facultyConditions.push(sql`u.campus_id = ${filters.campusId}`);
+	if (filters.departmentId)
+		facultyConditions.push(sql`u.department_id = ${filters.departmentId}`);
+	const involvement = getActiveInvolvementSubquery(
+		involvementProjectScope(user, filters),
+	);
+	return sql`WITH faculty AS (
+		SELECT u.user_id AS id, concat_ws(' ', u.first_name, u.last_name) AS label,
+			c.campus_name AS campus, d.department_name AS department,
+			coalesce(${involvement.totalInvolvement}, 0)::int AS projects,
+			coalesce(${involvement.leadProjects}, 0)::int AS lead,
+			coalesce(${involvement.collaboratorProjects}, 0)::int AS collaboration
+		FROM users u JOIN roles ro ON ro.role_id = u.role_id
+		LEFT JOIN campuses c ON c.campus_id = u.campus_id
+		LEFT JOIN departments d ON d.department_id = u.department_id
+		LEFT JOIN ${involvement} ON ${involvement.userId} = u.user_id
+		WHERE ${sql.join(facultyConditions, sql` AND `)}
+	)`;
+}
+
+/** Only detail rows: used by the page and by later CSV batches. */
+async function getAnalyticsItems(
+	user: AuthUser,
+	filters: AnalyticsFilters,
+	view: AnalyticsView,
+	executor: Pick<typeof db, "execute"> = db,
+) {
+	const statement = isFacultyList(user, filters, view)
+		? sql`${facultyRows(user, filters)} SELECT 'faculty' AS kind, id::text, label, campus, department, id::text AS "userId", projects, lead, collaboration FROM faculty ORDER BY projects DESC, label, id LIMIT ${filters.limit} OFFSET ${(filters.page - 1) * filters.limit}`
+		: sql`${selectedProjects(user, filters, view)} SELECT 'project' AS kind, b.proposal_id::text AS id, b.title AS label, b.campus, b.department, b.proposal_id::text AS "proposalId", b.report_id::text AS "reportId", b.status,
+			b.closed_at::text AS "closedAt", CASE WHEN b.status = 'Closed' THEN b.trainee_count ELSE NULL END AS "traineeCount",
+			${view === "participation" ? sql`CASE WHEN EXISTS (SELECT 1 FROM proposal_members m WHERE m.proposal_id = b.proposal_id AND m.archived_at IS NULL AND m.user_id = ${filters.facultyId ?? user.userId} AND m.project_role = 'Project Leader') THEN 'Project Leader' ELSE 'Collaborator' END` : sql`NULL::text`} AS "projectRole"
+			FROM selected b WHERE true ${view === "participation" ? sql`AND b.created_at >= ${`${filters.year}-01-01T00:00:00+08:00`}::timestamptz AND b.created_at < ${`${filters.year + 1}-01-01T00:00:00+08:00`}::timestamptz` : sql``}
+			ORDER BY b.created_at DESC, b.proposal_id LIMIT ${filters.limit} OFFSET ${(filters.page - 1) * filters.limit}`;
+	return AnalyticsItem.array().parse(await executor.execute(statement));
+}
+
+export async function getAnalytics(
+	user: AuthUser,
+	filters: AnalyticsFilters,
+	view: AnalyticsView,
+	executor: Pick<typeof db, "execute"> = db,
+) {
+	const query = async <T>(statement: SQL): Promise<T[]> =>
+		(await executor.execute(statement)) as unknown as T[];
+	const facultyList = isFacultyList(user, filters, view);
+	const cte = selectedProjects(user, filters, view);
 	const [counts] = await query<{
 		total: number;
+		participating: number;
+		average: string;
 		trainees: string;
 		recorded: number;
 		missing: number;
@@ -110,7 +199,7 @@ export async function getAnalytics(
 		active: number;
 		implemented: number;
 		closed: number;
-	}>(sql`${cte} SELECT count(*)::int AS total, COALESCE(sum(trainee_count) FILTER (WHERE status = 'Closed'), 0)::text AS trainees,
+	}>(facultyList ? sql`${facultyRows(user, filters)} SELECT count(*)::int AS total, count(*) FILTER (WHERE projects > 0)::int AS participating, COALESCE(avg(projects), 0)::text AS average FROM faculty` : sql`${cte} SELECT count(*)::int AS total, COALESCE(sum(trainee_count) FILTER (WHERE status = 'Closed'), 0)::text AS trainees,
 		count(*) FILTER (WHERE trainee_count IS NOT NULL AND status = 'Closed')::int AS recorded,
 		count(*) FILTER (WHERE trainee_count IS NULL AND status = 'Closed')::int AS missing,
 		count(*) FILTER (WHERE project_id IS NULL)::int AS proposals,
@@ -128,7 +217,6 @@ export async function getAnalytics(
 			COALESCE(sum(trainee_count) FILTER (WHERE status = 'Closed'), 0)::text AS trainees,
 			count(*) FILTER (WHERE trainee_count IS NOT NULL AND status = 'Closed')::int AS recorded, count(*) FILTER (WHERE trainee_count IS NULL AND status = 'Closed')::int AS missing
 			FROM selected GROUP BY key, label ORDER BY projects DESC, label`);
-	let items: unknown[];
 	let total = counts?.total ?? 0;
 	const metric = (
 		label: string,
@@ -181,41 +269,7 @@ export async function getAnalytics(
 						"Each project or proposal is counted once",
 					),
 				];
-	if (
-		view === "participation" &&
-		!filters.facultyId &&
-		user.roleName !== ROLE_NAMES.FACULTY
-	) {
-		const facultyScope =
-			user.roleName === ROLE_NAMES.RET_CHAIR
-				? user.isMainCampus
-					? sql`AND u.campus_id = ${user.campusId} AND u.department_id = ${user.departmentId}`
-					: sql`AND u.campus_id = ${user.campusId}`
-				: sql``;
-		const campusFilter = filters.campusId
-			? sql`AND u.campus_id = ${filters.campusId}`
-			: sql``;
-		const departmentFilter = filters.departmentId
-			? sql`AND u.department_id = ${filters.departmentId}`
-			: sql``;
-		const facultyCte = sql`${cte}, faculty AS (
-			SELECT u.user_id AS id, concat_ws(' ', u.first_name, u.last_name) AS label, c.campus_name AS campus, d.department_name AS department,
-				count(DISTINCT b.proposal_id) FILTER (WHERE b.active)::int AS projects,
-				count(DISTINCT b.proposal_id) FILTER (WHERE b.active AND m.project_role = 'Project Leader')::int AS lead,
-				count(DISTINCT b.proposal_id) FILTER (WHERE b.active AND m.project_role <> 'Project Leader')::int AS collaboration
-			FROM users u JOIN roles ro ON ro.role_id = u.role_id LEFT JOIN campuses c ON c.campus_id = u.campus_id LEFT JOIN departments d ON d.department_id = u.department_id
-			LEFT JOIN proposal_members m ON m.user_id = u.user_id AND m.archived_at IS NULL LEFT JOIN selected b ON b.proposal_id = m.proposal_id
-			WHERE u.archived_at IS NULL AND u.is_active AND ro.role_name IN ('Faculty', 'RET Chair') ${facultyScope} ${campusFilter} ${departmentFilter}
-			GROUP BY u.user_id, u.first_name, u.last_name, c.campus_name, d.department_name
-		)`;
-		const [summary] = await query<{
-			eligible: number;
-			participating: number;
-			average: string;
-		}>(
-			sql`${facultyCte} SELECT count(*)::int AS eligible, count(*) FILTER (WHERE projects > 0)::int AS participating, COALESCE(avg(projects), 0)::text AS average FROM faculty`,
-		);
-		total = summary?.eligible ?? 0;
+	if (facultyList) {
 		metrics = [
 			metric(
 				"Active faculty",
@@ -224,44 +278,45 @@ export async function getAnalytics(
 			),
 			metric(
 				"With active projects",
-				summary?.participating ?? 0,
+				counts?.participating ?? 0,
 				"Faculty currently leading or supporting a project",
 			),
 			metric(
 				"Participation (%)",
 				total
-					? Math.round(((summary?.participating ?? 0) / total) * 100)
+					? Math.round(((counts?.participating ?? 0) / total) * 100)
 					: null,
 				"Share of active faculty involved in active projects",
 			),
 			metric(
 				"Average involvement",
-				Number(Number(summary?.average ?? 0).toFixed(1)),
+				Number(Number(counts?.average ?? 0).toFixed(1)),
 				"Active projects per faculty member",
 			),
 		];
-		items = await query(
-			sql`${facultyCte} SELECT id::text, label, campus, department, NULL::uuid AS "proposalId", NULL::uuid AS "reportId", id::text AS "userId", NULL::text AS status, NULL::text AS "closedAt", NULL::int AS "traineeCount", projects, lead, collaboration FROM faculty ORDER BY projects DESC, label, id LIMIT ${filters.limit} OFFSET ${(filters.page - 1) * filters.limit}`,
-		);
 	} else {
 		const contribution =
 			view === "participation"
 				? sql`AND b.created_at >= ${`${filters.year}-01-01T00:00:00+08:00`}::timestamptz AND b.created_at < ${`${filters.year + 1}-01-01T00:00:00+08:00`}::timestamptz`
 				: sql``;
-		const [result] = await query<{ value: number }>(
-			sql`${cte} SELECT count(*)::int AS value FROM selected b WHERE true ${contribution}`,
-		);
-		total = result?.value ?? 0;
 		if (view === "participation") {
+			const [result] = await query<{ value: number }>(
+				sql`${cte} SELECT count(*)::int AS value FROM selected b WHERE true ${contribution}`,
+			);
+			total = result?.value ?? 0;
+			const involvement = getActiveInvolvementSubquery(
+				involvementProjectScope(user, filters),
+			);
 			const [contributions] = await query<{
 				lead: number;
 				collaboration: number;
 				trainees: string;
 			}>(sql`${cte} SELECT
-				count(DISTINCT b.proposal_id) FILTER (WHERE b.active AND m.project_role = 'Project Leader')::int AS lead,
-				count(DISTINCT b.proposal_id) FILTER (WHERE b.active AND m.project_role <> 'Project Leader')::int AS collaboration,
+				COALESCE(max(${involvement.leadProjects}), 0)::int AS lead,
+				COALESCE(max(${involvement.collaboratorProjects}), 0)::int AS collaboration,
 				COALESCE(sum(b.trainee_count) FILTER (WHERE b.status = 'Closed' AND b.created_at >= ${`${filters.year}-01-01T00:00:00+08:00`}::timestamptz AND b.created_at < ${`${filters.year + 1}-01-01T00:00:00+08:00`}::timestamptz), 0)::text AS trainees
-				FROM selected b JOIN proposal_members m ON m.proposal_id = b.proposal_id AND m.archived_at IS NULL AND m.user_id = ${filters.facultyId ?? user.userId}`);
+				FROM selected b JOIN proposal_members m ON m.proposal_id = b.proposal_id AND m.archived_at IS NULL AND m.user_id = ${filters.facultyId ?? user.userId}
+				LEFT JOIN ${involvement} ON ${involvement.userId} = m.user_id`);
 			metrics = [
 				metric(
 					"Currently leading",
@@ -285,12 +340,6 @@ export async function getAnalytics(
 				),
 			];
 		}
-		items =
-			await query(sql`${cte} SELECT b.proposal_id::text AS id, b.title AS label, b.campus, b.department, b.proposal_id::text AS "proposalId", b.report_id::text AS "reportId", NULL::text AS "userId", b.status,
-			b.closed_at::text AS "closedAt", CASE WHEN b.status = 'Closed' THEN b.trainee_count ELSE NULL END AS "traineeCount", 1 AS projects,
-			CASE WHEN EXISTS (SELECT 1 FROM proposal_members m WHERE m.proposal_id = b.proposal_id AND m.archived_at IS NULL AND m.user_id = ${filters.facultyId ?? user.userId} AND m.project_role = 'Project Leader') THEN 1 ELSE 0 END AS lead,
-			CASE WHEN EXISTS (SELECT 1 FROM proposal_members m WHERE m.proposal_id = b.proposal_id AND m.archived_at IS NULL AND m.user_id = ${filters.facultyId ?? user.userId} AND m.project_role <> 'Project Leader') THEN 1 ELSE 0 END AS collaboration
-			FROM selected b WHERE true ${contribution} ORDER BY b.created_at DESC, b.proposal_id LIMIT ${filters.limit} OFFSET ${(filters.page - 1) * filters.limit}`);
 	}
 	let undatedProjects = 0;
 	if (view === "reach") {
@@ -303,7 +352,7 @@ export async function getAnalytics(
 		undatedProjects,
 		metrics,
 		groups,
-		items,
+		items: await getAnalyticsItems(user, filters, view, executor),
 		total,
 		dateBasis:
 			view === "reach"
@@ -347,18 +396,15 @@ export async function exportAnalytics(
 				);
 			const items = [...first.items];
 			for (let page = 2; page <= Math.ceil(first.total / batchSize); page++) {
-				const next = await getAnalytics(
+				const next = await getAnalyticsItems(
 					user,
 					{ ...filters, page, limit: batchSize },
 					view,
 					tx,
 				);
-				items.push(...next.items);
+				items.push(...next);
 			}
-			const facultyList =
-				view === "participation" &&
-				!filters.facultyId &&
-				user.roleName !== ROLE_NAMES.FACULTY;
+			const facultyList = isFacultyList(user, filters, view);
 			const rows: unknown[][] = [
 				["Scope", first.scopeLabel],
 				["Date basis", first.dateBasis],
@@ -412,7 +458,7 @@ export async function exportAnalytics(
 			];
 			for (const item of items)
 				rows.push(
-					facultyList
+					item.kind === "faculty"
 						? [
 								item.label,
 								item.campus,
@@ -429,7 +475,7 @@ export async function exportAnalytics(
 								item.closedAt,
 								item.traineeCount,
 								...(view === "participation"
-									? [item.lead ? "Project leader" : "Collaborator"]
+									? [item.projectRole]
 									: []),
 							],
 				);

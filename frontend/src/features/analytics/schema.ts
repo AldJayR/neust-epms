@@ -18,21 +18,32 @@ export const analyticsSearchSchema = z.object({
 	page: z.coerce.number().int().min(1).max(100000).default(1),
 	limit: z.coerce.number().int().min(1).max(100).default(20),
 });
-export const analyticsItemSchema = z.object({
+const analyticsRowBaseSchema = z.object({
 	id: z.string(),
 	label: z.string(),
 	campus: z.string().nullable(),
 	department: z.string().nullable(),
-	proposalId: z.string().nullable(),
+});
+export const projectAnalyticsItemSchema = analyticsRowBaseSchema.extend({
+	kind: z.literal("project"),
+	proposalId: z.string(),
 	reportId: z.string().nullable(),
-	userId: z.string().nullable(),
-	status: z.string().nullable(),
+	status: z.string(),
 	closedAt: z.string().nullable(),
 	traineeCount: z.number().nullable(),
+	projectRole: z.enum(["Project Leader", "Collaborator"]).nullable(),
+});
+export const facultyAnalyticsItemSchema = analyticsRowBaseSchema.extend({
+	kind: z.literal("faculty"),
+	userId: z.string(),
 	projects: z.number(),
 	lead: z.number(),
 	collaboration: z.number(),
 });
+export const analyticsItemSchema = z.discriminatedUnion("kind", [
+	projectAnalyticsItemSchema,
+	facultyAnalyticsItemSchema,
+]);
 export const analyticsResponseSchema = z.object({
 	undatedProjects: z.number().int().nonnegative().default(0),
 	metrics: z.array(
@@ -60,3 +71,5 @@ export const analyticsResponseSchema = z.object({
 });
 export type AnalyticsFilters = z.infer<typeof analyticsSearchSchema>;
 export type AnalyticsItem = z.infer<typeof analyticsItemSchema>;
+export type ProjectAnalyticsItem = z.infer<typeof projectAnalyticsItemSchema>;
+export type FacultyAnalyticsItem = z.infer<typeof facultyAnalyticsItemSchema>;

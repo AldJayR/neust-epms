@@ -58,6 +58,7 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 				startDate: p.targetStartDate,
 				endDate: p.targetEndDate,
 				status: p.projectStatus,
+				createdAt: p.createdAt,
 				isLeader,
 				isProject: true,
 				isMember: p.isMember,
@@ -80,6 +81,7 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 					startDate: p.targetStartDate,
 					endDate: p.targetEndDate,
 					status: p.status,
+					createdAt: p.createdAt,
 					isLeader,
 					isProject: false,
 					isMember: p.isMember,
@@ -87,9 +89,9 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 			}),
 	];
 
-	const userItems = combinedItems.filter(
-		(item) => item.isMember || item.isLeader,
-	);
+	const userItems = combinedItems
+		.filter((item) => item.isMember || item.isLeader)
+		.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 
 	const myTotalSubmissions = userItems.length;
 	const ongoingProjects = userItems.filter(

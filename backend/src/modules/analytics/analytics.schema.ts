@@ -19,21 +19,32 @@ export const AnalyticsQuery = z.object({
 export const AnalyticsParams = z.object({
 	view: z.enum(["reach", "participation", "coverage"]),
 });
-export const AnalyticsItem = z.object({
+const AnalyticsRowBase = z.object({
 	id: z.string(),
 	label: z.string(),
 	campus: z.string().nullable(),
 	department: z.string().nullable(),
-	proposalId: z.string().nullable(),
+});
+export const ProjectAnalyticsItem = AnalyticsRowBase.extend({
+	kind: z.literal("project"),
+	proposalId: z.string(),
 	reportId: z.string().nullable(),
-	userId: z.string().nullable(),
-	status: z.string().nullable(),
+	status: z.string(),
 	closedAt: z.string().nullable(),
 	traineeCount: z.coerce.number().nullable(),
+	projectRole: z.enum(["Project Leader", "Collaborator"]).nullable(),
+});
+export const FacultyAnalyticsItem = AnalyticsRowBase.extend({
+	kind: z.literal("faculty"),
+	userId: z.string(),
 	projects: z.coerce.number(),
 	lead: z.coerce.number(),
 	collaboration: z.coerce.number(),
 });
+export const AnalyticsItem = z.discriminatedUnion("kind", [
+	ProjectAnalyticsItem,
+	FacultyAnalyticsItem,
+]);
 export const AnalyticsResponse = z.object({
 	undatedProjects: z.number().int().nonnegative(),
 	metrics: z.array(

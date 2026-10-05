@@ -6,7 +6,6 @@ import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import { requireRole } from "@/middleware/rbac.js";
 import { isPdfFile } from "@/services/file.service.js";
 import {
-	CorrectTraineeCountSchema,
 	CreateReportSchema,
 	PaginationQuery,
 	ParamId,
@@ -17,7 +16,6 @@ import {
 	SignedUrlSchema,
 } from "./reports.schema.js";
 import {
-	correctTraineeCount,
 	createReport,
 	getReportAttachmentSignedUrl,
 	getReportPackage,
@@ -157,45 +155,6 @@ app.openapi(
 	}),
 	async (c) =>
 		c.json(await getReportPackage(c.get("user"), c.req.valid("param").id), 200),
-);
-
-app.openapi(
-	createRoute({
-		method: "patch",
-		path: "/reports/{id}/trainee-count",
-		tags: ["Reports"],
-		security: [{ Bearer: [] }],
-		request: {
-			params: ParamId,
-			body: {
-				content: { "application/json": { schema: CorrectTraineeCountSchema } },
-				required: true,
-			},
-		},
-		responses: {
-			200: {
-				content: {
-					"application/json": {
-						schema: ReportPackageSchema.pick({
-							reportId: true,
-							traineeCount: true,
-						}),
-					},
-				},
-				description: "Audited correction",
-			},
-		},
-	}),
-	async (c) =>
-		c.json(
-			await correctTraineeCount(
-				c.get("user"),
-				c.req.valid("param").id,
-				c.req.valid("json"),
-				getClientIp(c),
-			),
-			200,
-		),
 );
 
 app.post("/reports/:id/document", async (c) => {

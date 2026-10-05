@@ -33,13 +33,13 @@ For a completed terminal milestone, **View submission** lets an authorized submi
 - A person can participate in multiple projects. Institutional totals are project-reported trainees, not deduplicated university-wide individuals.
 - Progress reports do not capture trainee counts.
 
-### Historical reports and corrections
+### Historical reports
 
 Legacy Terminal + Final Accomplishment submissions remain supported. Their documents must belong to the same reporting milestone.
 
 Migration 0009 leaves historical trainee counts unknown. Existing complete unified submissions are recognized from their required evidence. Incomplete, active unified submissions previously marked complete are restored to a resumable state.
 
-For a Closed project, the Director can choose **Update trainee count** from analytics, enter the count and a reason, and save the correction. The original count and reason remain in the activity history. The closure date is preserved. Only the designated terminal result is used: unified terminal report first, otherwise the legacy Terminal report.
+Analytics is read-only. Trainee counts are entered during terminal submission and become official when the Director approves closure. Closed reports cannot be edited through analytics. Historical missing counts remain Not recorded. Only one terminal result is counted per project: unified terminal report first, otherwise the legacy Terminal report.
 
 ## Reporting views
 
@@ -75,12 +75,12 @@ All operational views exclude archived records. A percentage without an eligible
 
 ## Implementation and rollout
 
-- Backend: `backend/src/modules/analytics/`, with parameterized queries and server-side role scope.
+- Backend: `backend/src/modules/analytics/`, with parameterized queries and server-side role scope. Faculty active-involvement calculations are shared with the existing directory.
 - Frontend: `frontend/src/features/analytics/`, using existing metric, table, and sidebar components.
 - Terminal submission: `frontend/src/features/reports/components/submit-report-modal.tsx`.
 - Package finalization: `backend/src/modules/reports/terminal-package.ts`.
 - Migration: `backend/drizzle/0009_dazzling_nightcrawler.sql` adds `trainee_count`, `package_completed_at`, and a non-negative-count constraint.
 
-Deploy the database migration before starting the updated API, then deploy the updated frontend. CSV exports use a consistent database snapshot, quote text safely, neutralize spreadsheet formulas, and require narrower filters above 10,000 records.
+Deploy the database migration before starting the updated API, then deploy the updated frontend. CSV exports use a consistent database snapshot, compute summaries once, fetch detail rows in batches, quote text safely, neutralize spreadsheet formulas, and require narrower filters above 10,000 records.
 
 DFD documents are intentionally unchanged. Test execution is deferred at the user's request; record typechecks, build results, and read-only database verification separately from test-suite results.

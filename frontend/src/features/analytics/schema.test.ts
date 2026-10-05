@@ -18,28 +18,39 @@ describe("analytics contracts", () => {
 			scopeLabel: "All units",
 			generatedAt: "2026-10-01",
 			items: [null, 0].map((traineeCount, index) => ({
+				kind: "project",
 				id: String(index),
 				label: "Project",
 				campus: "Campus",
 				department: "Department",
-				proposalId: null,
+				proposalId: String(index),
 				reportId: null,
-				userId: null,
 				status: "Closed",
 				closedAt: null,
 				traineeCount,
-				projects: 1,
-				lead: 0,
-				collaboration: 0,
+				projectRole: null,
 			})),
 		};
 		expect(
 			analyticsResponseSchema
 				.parse(response)
-				.items.map((item) => item.traineeCount),
+				.items.map((item) => item.kind === "project" ? item.traineeCount : undefined),
 		).toEqual([null, 0]);
 		expect(
 			analyticsResponseSchema.safeParse({ ...response, total: "2" }).success,
 		).toBe(false);
+	});
+
+	it("uses a separate faculty row without project-only fields", () => {
+		const response = analyticsResponseSchema.parse({
+			metrics: [], groups: [], total: 1,
+			dateBasis: "Current involvement", scopeLabel: "All units", generatedAt: "2026-10-05",
+			items: [{
+				kind: "faculty", id: "faculty-1", userId: "faculty-1", label: "Faculty",
+				campus: "Campus", department: "Department", projects: 2, lead: 1, collaboration: 1,
+			}],
+		});
+		expect(response.items[0]).toMatchObject({ kind: "faculty", projects: 2 });
+		expect(response.items[0]).not.toHaveProperty("traineeCount");
 	});
 });

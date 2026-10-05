@@ -10,7 +10,6 @@ import { getAnalytics } from "@/modules/analytics/analytics.service.js";
 import { AnalyticsQuery } from "@/modules/analytics/analytics.schema.js";
 import { finalizeTerminalPackage } from "@/modules/reports/terminal-package.js";
 import { closeProject } from "@/modules/projects/projects.service.js";
-import { correctTraineeCount } from "@/modules/reports/reports.service.js";
 import { ROLE_NAMES, REPORT_TYPE } from "@/lib/types.js";
 import { seedAuthUser, seedOrganization, seedProposal, seedProposalMember, seedProject, seedMilestone, seedReport } from "./fixtures.js";
 
@@ -36,17 +35,15 @@ describe("extension analytics integration", () => {
 		await closeProject(project.projectId, director, "127.0.0.1");
 		let results = await getAnalytics(director, filters, "reach");
 		expect(results.total).toBe(1); expect(results.items[0]?.traineeCount).toBe(0); expect(results.metrics[1]?.value).toBe(1);
-		await correctTraineeCount(director, report.reportId, { traineeCount: 80, reason: "Confirmed against attendance records" }, "127.0.0.1");
 		const goals = await db.insert(sdgs).values([{ sdgNumber: 3, sdgTitle: "Health" }, { sdgNumber: 4, sdgTitle: "Education" }]).returning();
 		await db.insert(proposalSdgs).values(goals.map((goal) => ({ proposalId: proposal.proposalId, sdgId: goal.sdgId })));
-		results = await getAnalytics(director, filters, "reach"); expect(results.metrics[0]?.value).toBe(80);
+		results = await getAnalytics(director, filters, "reach"); expect(results.metrics[0]?.value).toBe(0);
 		const coverage = await getAnalytics(director, { ...filters, groupBy: "sdg" }, "coverage");
 		expect(coverage.total).toBe(1); expect(coverage.groups).toHaveLength(2);
 		expect((await getAnalytics(outsider, filters, "reach")).total).toBe(0);
 		expect((await getAnalytics(chairB, { ...filters, departmentId: org.departmentA.departmentId }, "reach")).total).toBe(0);
 		const faculty = await getAnalytics(director, filters, "participation");
 		expect(faculty.items.find((item) => item.userId === leader.userId)?.projects).toBe(0);
-		await expect(correctTraineeCount(leader, report.reportId, { traineeCount: 99, reason: "Not authorized" }, "127.0.0.1")).rejects.toMatchObject({ code: "FORBIDDEN" });
 		const [saved] = await db.select().from(projects).where(eq(projects.projectId, project.projectId));
 		expect(saved.projectStatus).toBe("Closed");
 	});

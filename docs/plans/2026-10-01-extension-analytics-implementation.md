@@ -2,6 +2,7 @@
 
 **Status:** Implemented on `feat/extension-analytics`; tests and production-build verification are deferred at the user's request.
 **Date:** 2026-10-01
+**Scope update:** Post-closure trainee corrections were removed by `2026-10-05-extension-analytics-simplification.md`. Analytics is read-only; historical missing counts remain unknown.
 **Goal:** Turn existing extension records and manually entered terminal-report trainee counts into reliable, role-scoped institutional reports.
 **Stack:** Hono/OpenAPI, Drizzle/PostgreSQL, React, TanStack Router/Query, existing UI components and charts.
 
@@ -176,13 +177,12 @@ Additional rules:
 - Only approved Closed projects enter official trainee totals. Pending Closure counts may appear in a separately labelled review queue, never mixed into the official total.
 - Do not allow ordinary post-approval editing of official counts.
 
-### 7.4 Legacy compatibility and corrections
+### 7.4 Legacy compatibility
 
 - Preserve supported legacy Terminal + Final Accomplishment closure behavior through an explicitly tested compatibility path.
 - Existing pending/closed records with no trainee count remain visibly missing and are not assigned fabricated values.
-- Provide a Director-only, audited historical-count entry action against one designated terminal result per project. Legacy report pairs use Terminal as the count-bearing result; never sum both documents.
-- Backfill approval must reference an existing complete closure package. Preserve the original closure date.
-- Require a correction reason and retain old/new values for Director corrections to already-approved counts. Invalidate analytics after correction.
+- Use one designated terminal result per project. Legacy report pairs use Terminal as the count-bearing result; never sum both documents.
+- Preserve original closure dates and historical unknown counts. Closed reports are read-only.
 - Show legacy missing-count projects in completeness metrics even when their original closure was valid.
 
 ## 8. Shared analytics implementation
@@ -199,7 +199,7 @@ Proposed endpoints (final names to follow repository conventions):
 - `GET /analytics/faculty-participation/faculty`: paginated faculty involvement drill-down; reuse directory queries where feasible.
 - Export endpoints for the three views, using the same filters and authorized query definitions.
 
-Extend the reports/project APIs with an authorized package-status lookup for retries and a Director-only terminal-result correction action with a required reason. Existing create/upload/closure endpoints retain their domain responsibilities; analytics endpoints are read-only.
+Extend the reports/project APIs with an authorized package-status lookup for retries. Existing create/upload/closure endpoints retain their domain responsibilities; analytics endpoints are read-only.
 
 Query requirements:
 
@@ -286,7 +286,7 @@ Acceptance:
 - Department sums reconcile to campus totals and the institutional total under lead-unit attribution.
 - A multi-department/multi-SDG project contributes its trainee count once to institutional totals.
 - Missing counts lower completeness without being converted to zero.
-- Director historical entry/correction is audited and refreshes affected queries.
+- Analytics does not allow editing approved trainee counts.
 - Export and drill-down match the active scope, filters, and headline totals.
 
 ### Phase 3: Faculty Participation
@@ -330,7 +330,7 @@ Acceptance:
 Use focused regression checks after implementation; no test-first workflow is required.
 
 - Pure validation/metric tests: explicit zero, null, report aliases, overlapping classifications, date boundaries.
-- Route tests: role gates, count validation, resumable package workflow, and correction authorization.
+- Route tests: role gates, count validation, resumable package workflow, and absence of post-closure correction endpoints.
 - Real PostgreSQL integration checks: constraints, multi-join sums, legacy/unified precedence, transaction/concurrency behavior, and migrations.
 - Frontend helper/form checks: trainee validation, retry state, URL filters, number formatting, and missing-data display.
 - Task-based usability checks: Faculty resumes a failed upload; Director verifies a campus total against a project report; RET Chair finds missing counts and the next responsible actor; all exports match selected filters.
@@ -346,5 +346,5 @@ Use focused regression checks after implementation; no test-first workflow is re
 - Lead department/campus receive official project reach; collaborating units receive collaboration recognition rather than duplicated reach.
 - Official reach uses closure date, not activity date.
 - Calendar-year/Asia-Manila presets are proposed until an academic-year reporting calendar is specified.
-- New unified terminal counts are required; legacy missing counts remain visible and can be supplied through an audited Director action.
+- New unified terminal counts are required; legacy missing counts remain visible as unknown.
 - A formal capacity or outcome-measurement module is a later enhancement, after the first three reporting views are useful and trusted.
