@@ -14,11 +14,7 @@ import { ProposalReviewDocumentPane } from "./components/proposal-review-documen
 import { ProposalReviewHeader } from "./components/proposal-review-header";
 import { ProposalReviewSidebar } from "./components/proposal-review-sidebar";
 import { ProposalReviewSkeleton } from "./components/proposal-review-skeleton";
-import {
-	downloadAnnotatedProposalFn,
-	recordChairEndorsementFn,
-	reviewProposalFn,
-} from "./functions";
+import { downloadAnnotatedProposalFn, reviewProposalFn } from "./functions";
 import {
 	canReviewProposal,
 	getDefaultReviewComment,
@@ -56,6 +52,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 			comments?: string;
 		}) => reviewProposalFn({ data: input }),
 		onSuccess: (_result, variables) => {
+			queryClient.invalidateQueries({ queryKey: ["action-center"] });
 			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["ret"] });
@@ -76,28 +73,6 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		},
 	});
 
-	const endorseMutation = useMutation({
-		mutationFn: (input: { file: File; comments?: string }) => {
-			const formData = new FormData();
-			formData.append("proposalId", proposalId);
-			formData.append("file", input.file);
-			if (input.comments) {
-				formData.append("comments", input.comments);
-			}
-			return recordChairEndorsementFn({ data: formData });
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-			queryClient.invalidateQueries({ queryKey: ["proposals"] });
-			queryClient.invalidateQueries({ queryKey: ["ret"] });
-			queryClient.invalidateQueries({ queryKey: ["projects"] });
-			toast.success("Proposal has been endorsed successfully.");
-		},
-		onError: (endorseError: Error) => {
-			toast.error(endorseError.message || "Failed to endorse proposal.");
-		},
-	});
-
 	const [activeAttachmentId, setActiveAttachmentId] = useState<string | null>(
 		null,
 	);
@@ -109,7 +84,8 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		(historyItem) =>
 			historyItem.status === "Endorsed" || historyItem.status === "Approved",
 	);
-	const hasEndorsement = Boolean(endorsement);
+	const hasEndorsement =
+		data?.status !== "Pending Review" && Boolean(endorsement);
 	const currentDoc =
 		data?.attachments?.find(
 			(attachment) => attachment.id === activeAttachmentId,
@@ -127,7 +103,9 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 				data: { proposalId, documentId: currentDoc.id },
 			});
 			const binary = atob(result.base64);
-			const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+			const bytes = Uint8Array.from(binary, (character) =>
+				character.charCodeAt(0),
+			);
 			const blob = new Blob([bytes], { type: "application/pdf" });
 			const url = URL.createObjectURL(blob);
 			const link = document.createElement("a");
@@ -245,13 +223,6 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		});
 	};
 
-	const handleEndorse = async (file: File, commentsText?: string) => {
-		await endorseMutation.mutateAsync({
-			file,
-			comments: commentsText,
-		});
-	};
-
 	const contextValue = data
 		? {
 				data,
@@ -262,8 +233,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 				handleDeny,
 				handleReject,
 				handleApprove,
-				handleEndorse,
-				isPending: reviewMutation.isPending || endorseMutation.isPending,
+				isPending: reviewMutation.isPending,
 				isRET,
 				bypassedRetChair: data.bypassedRetChair,
 			}

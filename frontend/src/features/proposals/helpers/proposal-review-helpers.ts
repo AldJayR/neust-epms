@@ -3,8 +3,6 @@ export type ProposalReviewRole = "Director" | "RET Chair" | string;
 export function canReviewProposal({
 	role,
 	status,
-	bypassedRetChair,
-	hasEndorsement,
 }: {
 	role: ProposalReviewRole;
 	status: string | undefined;
@@ -12,20 +10,17 @@ export function canReviewProposal({
 	hasEndorsement: boolean;
 }): boolean {
 	if (role === "RET Chair") {
-		return status === "Pending Review" && !hasEndorsement;
+		return status === "Pending Review";
 	}
 
-	return (
-		role === "Director" &&
-		(status === "Endorsed" || (status === "Pending Review" && bypassedRetChair))
-	);
+	return role === "Director" && status === "Endorsed";
 }
 
 export function isProposalBypassedOrEndorsed(
-	bypassedRetChair: boolean,
+	_bypassedRetChair: boolean,
 	hasEndorsement: boolean,
 ): boolean {
-	return bypassedRetChair || hasEndorsement;
+	return hasEndorsement;
 }
 
 export function getReviewDecision(

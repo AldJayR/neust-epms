@@ -805,7 +805,11 @@ export async function getHubProjects(
 		isNull(proposals.archivedAt),
 		ne(proposals.status, PROPOSAL_STATUS.DRAFT),
 		or(
-			eq(proposals.bypassedRetChair, true),
+			// Keep already-progressed legacy projects visible without restoring bypass review.
+			inArray(proposals.status, [
+				PROPOSAL_STATUS.APPROVED,
+				PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED,
+			]),
 			exists(
 				db
 					.select()

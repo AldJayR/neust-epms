@@ -39,11 +39,27 @@ describe("proposal review helpers", () => {
 				bypassedRetChair: true,
 				hasEndorsement: false,
 			}),
+		).toBe(false);
+		expect(
+			canReviewProposal({
+				role: "RET Chair",
+				status: "Pending Review",
+				bypassedRetChair: true,
+				hasEndorsement: true,
+			}),
+		).toBe(true);
+		expect(
+			canReviewProposal({
+				role: "Director",
+				status: "Endorsed",
+				bypassedRetChair: true,
+				hasEndorsement: false,
+			}),
 		).toBe(true);
 	});
 
 	it("keeps the narrow RET invalid-action guard", () => {
-		expect(shouldBlockReviewAction("RET Chair", true, false)).toBe(true);
+		expect(shouldBlockReviewAction("RET Chair", true, false)).toBe(false);
 		expect(shouldBlockReviewAction("RET Chair", false, true)).toBe(true);
 		expect(shouldBlockReviewAction("Director", true, true)).toBe(false);
 	});

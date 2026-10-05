@@ -5,9 +5,12 @@ import { proposals } from "@/db/schema/proposals.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { ApiError } from "@/lib/errors.js";
 import { getClientIp } from "@/lib/client-ip.js";
-import { createNotification } from "@/lib/notification.helpers.js";
+import {
+	createNotification,
+	getUserIdsByRole,
+} from "@/lib/notification.helpers.js";
 import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
-import { PROPOSAL_STATUS } from "@/lib/types.js";
+import { PROPOSAL_STATUS, ROLE_NAMES } from "@/lib/types.js";
 import type { AuthEnv } from "@/middleware/auth.js";
 import { ParamId, ReviewProposalSchema } from "./proposals.schema.js";
 import {
@@ -26,7 +29,7 @@ const reviewRoute = createRoute({
 	tags: ["Proposals"],
 	summary: "Endorse or Approve a proposal (RET Chair / Director)",
 	description:
-		"EC-01: Prevents conflict of interest. EC-05: Stacked rejections preserved.",
+		"All proposals require direct RET Chair endorsement before Director approval. No endorsement document is required. Chairs may endorse their own submissions; other self-review decisions remain prohibited.",
 	security: [{ Bearer: [] }],
 	request: {
 		params: ParamId,
@@ -69,14 +72,13 @@ app.openapi(reviewRoute, async (c) => {
 	});
 
 	const leaderUserId = await getLeaderUserId(id);
+	const [existing] = await db
+		.select({ title: proposals.title })
+		.from(proposals)
+		.where(eq(proposals.proposalId, id))
+		.limit(1);
 
 	if (leaderUserId) {
-		const [existing] = await db
-			.select({ title: proposals.title })
-			.from(proposals)
-			.where(eq(proposals.proposalId, id))
-			.limit(1);
-
 		let title = "Proposal Update";
 		let message = `Your proposal "${existing?.title}" status has been updated to ${result.decision}.`;
 
@@ -106,6 +108,26 @@ app.openapi(reviewRoute, async (c) => {
 				err,
 			);
 		});
+	}
+
+	if (result.decision === PROPOSAL_STATUS.ENDORSED) {
+		try {
+			const directorIds = await getUserIdsByRole(ROLE_NAMES.DIRECTOR);
+			for (const directorId of directorIds) {
+				await createNotification({
+					recipientId: directorId,
+					type: "proposal",
+					title: "Proposal Awaiting Approval",
+					message: `Proposal "${existing?.title}" has been endorsed by the RET Chair and is ready for Director review.`,
+					sendEmail: true,
+				});
+			}
+		} catch (error) {
+			console.error(
+				"[notification] Failed to notify Directors of endorsement:",
+				error,
+			);
+		}
 	}
 
 	return c.json({ message: `Proposal ${body.decision.toLowerCase()}` }, 200);

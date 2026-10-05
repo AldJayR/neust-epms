@@ -19,6 +19,12 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { authMiddleware } from "@/middleware/auth.js";
 import { installApiErrorHandler } from "@/lib/errors.js";
 import { createProposalInTransaction } from "./proposals.service.js";
+import { createNotification, getUserIdsByRole } from "@/lib/notification.helpers.js";
+
+vi.mock("@/lib/notification.helpers.js", () => ({
+	createNotification: vi.fn().mockResolvedValue(undefined),
+	getUserIdsByRole: vi.fn().mockResolvedValue([]),
+}));
 
 const app = new OpenAPIHono();
 app.use("*", authMiddleware);
@@ -151,12 +157,13 @@ describe("POST /proposals", () => {
 		expect(res.status).toBe(400);
 	});
 
-	it("stores every selected extension service on a proposal", async () => {
+	it.each(["faculty", "retChair"] as const)("stores %s submissions without bypassing Chair endorsement", async (role) => {
 		const proposal = createMockProposal();
+		const proposalInsert = mockMutationChain([proposal]);
 		const serviceInsert = mockMutationChain([]);
 		const insert = vi
 			.fn()
-			.mockReturnValueOnce(mockMutationChain([proposal]))
+			.mockReturnValueOnce(proposalInsert)
 			.mockReturnValueOnce(mockMutationChain([]))
 			.mockReturnValueOnce(serviceInsert)
 			.mockReturnValueOnce(mockMutationChain([]));
@@ -193,10 +200,14 @@ describe("POST /proposals", () => {
 				extensionServiceIds: [1, 3],
 				sectorIds: [1],
 			},
-			MOCK_USERS.faculty,
+			MOCK_USERS[role],
 		);
 
 		expect(insert).toHaveBeenCalledTimes(4);
+		expect(proposalInsert.values).toHaveBeenCalledWith(expect.objectContaining({
+			bypassedRetChair: false,
+			status: "Draft",
+		}));
 		expect(serviceInsert.values).toHaveBeenCalledWith([
 			{ proposalId: proposal.proposalId, extensionServiceId: 1 },
 			{ proposalId: proposal.proposalId, extensionServiceId: 3 },
@@ -235,6 +246,31 @@ describe("POST /proposals/:id/submit", () => {
 });
 
 describe("POST /proposals/:id/review", () => {
+	it("allows a Chair to directly endorse their own submission without a document", async () => {
+		setMockUser(MOCK_USERS.retChair);
+		vi.mocked(getUserIdsByRole).mockResolvedValueOnce([MOCK_USERS.director.userId]);
+		const proposal = createMockProposal({
+			status: "Pending Review",
+			departmentId: MOCK_USERS.retChair.departmentId,
+			userId: MOCK_USERS.retChair.userId,
+			projectRole: "Project Leader",
+			bypassedRetChair: true,
+		});
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([proposal]) as never);
+		vi.mocked(db.transaction).mockImplementation(mockTransaction(proposal) as never);
+		const response = await app.request(`/proposals/${PROPOSAL_ID}/review`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ decision: "Endorsed" }),
+		});
+		expect(response.status).toBe(200);
+		expect(createNotification).toHaveBeenCalledWith(expect.objectContaining({
+			recipientId: MOCK_USERS.director.userId,
+			title: "Proposal Awaiting Approval",
+			sendEmail: true,
+		}));
+	});
+
 	it("should allow RET Chair to endorse a Submitted proposal", async () => {
 		setMockUser(MOCK_USERS.retChair);
 		const mock = createMockProposal({
@@ -321,7 +357,7 @@ describe("POST /proposals/:id/review", () => {
 		expect(body.error.code).toBe("INVALID_STATE");
 	});
 
-	it("should allow Director to approve a Submitted proposal when bypassedRetChair is true", async () => {
+	it("should reject Director approval of a pending proposal even with a legacy bypass flag", async () => {
 		setMockUser(MOCK_USERS.director);
 		const mock = createMockProposal({
 			status: "Pending Review",
@@ -347,10 +383,11 @@ describe("POST /proposals/:id/review", () => {
 			body: JSON.stringify({ decision: "Approved" }),
 		});
 
-		expect(res.status).toBe(200);
+		expect(res.status).toBe(400);
+		expect((await res.json()).error.code).toBe("INVALID_STATE");
 	});
 
-	it("should set bypassedRetChair when Director returns an Endorsed proposal", async () => {
+	it("should require fresh Chair endorsement when Director returns an Endorsed proposal", async () => {
 		setMockUser(MOCK_USERS.director);
 		const mock = createMockProposal({ status: "Endorsed" });
 		let selectCallCount = 0;
@@ -374,13 +411,13 @@ describe("POST /proposals/:id/review", () => {
 		});
 
 		expect(res.status).toBe(200);
-		// Verify the transaction set bypassedRetChair: true
+		// Returned proposals must go through Chair endorsement again.
 		const txUpdate = vi.mocked(db.transaction).mock.calls[0][0];
 		const txObj = {
 			insert: vi.fn(() => ({ values: vi.fn(() => ({})) })),
 			update: vi.fn(() => ({
 				set: vi.fn((vals: Record<string, unknown>) => {
-					expect(vals.bypassedRetChair).toBe(true);
+					expect(vals.bypassedRetChair).toBe(false);
 					return { where: vi.fn(() => ({ returning: vi.fn(() => [mock]) })) };
 				}),
 			})),

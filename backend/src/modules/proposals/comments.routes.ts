@@ -11,7 +11,6 @@ import { getClientIp } from "@/lib/client-ip.js";
 import { ApiError } from "@/lib/errors.js";
 import { ErrorSchema } from "@/lib/schemas.js";
 import { isProposalInScope } from "@/lib/scope-helpers.js";
-import { ROLE_NAMES } from "@/lib/types.js";
 import type { AuthEnv } from "@/middleware/auth.js";
 import {
 	CommentListSchema,
@@ -57,7 +56,6 @@ app.openapi(createCommentRoute, async (c) => {
 			proposalId: proposalDocuments.proposalId,
 			campusId: proposals.campusId,
 			departmentId: proposals.departmentId,
-			bypassedRetChair: proposals.bypassedRetChair,
 			archivedAt: proposals.archivedAt,
 		})
 		.from(proposalDocuments)
@@ -81,14 +79,6 @@ app.openapi(createCommentRoute, async (c) => {
 			403,
 			"FORBIDDEN",
 			"You do not have access to this document",
-		);
-	}
-
-	if (user.roleName === ROLE_NAMES.RET_CHAIR && document.bypassedRetChair) {
-		throw new ApiError(
-			403,
-			"FORBIDDEN",
-			"RET Chair review is bypassed for this proposal",
 		);
 	}
 
