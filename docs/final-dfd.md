@@ -85,10 +85,10 @@
 * **Audit Request** = Audit Log Request + Filter And Search Parameters
 * **MOA Agreement Documents** = Partner MOA Document + Validity Terms + Updated Validity Dates + Selected MOA
 * **MOA Verification Details** = MOA Status + Linked Project Records
-* **Chair Evaluation Package** = Evaluation Decisions + Review Comments + Signed Endorsement Form Scan
+* **Chair Evaluation Package** = Evaluation Decisions + Review Comments
 * **Approved Evaluation Package** = Director Evaluation Decision + Approved Proposal Scan
 * **Proposal Submissions** = Draft Proposal Documents + Special Order Documents + Revised Proposal Documents
-* **Proposal Review Documents** = Proposal Details + Signed Endorsement Form Scan
+* **Proposal Review Documents** = Proposal Details + Chair Endorsement Record
 * **Project Directives** = Activation Request + Selected MOA + Reporting Schedule + Project Implementation Updates + Closure Approval Decision
 * **Project Implementation Updates** = Progress Scope Changes + Task Completion Updates
 * **Report Submissions** = Progress Report Documents + Terminal Accomplishment Report + Evaluation Forms + Attendance Records *(where applicable)*
@@ -383,17 +383,15 @@
 
 * 4.1 → 4.2 — Retrieved Proposal Details
 * RET Chair → 4.2 — Evaluation Decisions
-* RET Chair → 4.2 — Signed Endorsement Form Scan
 * 4.2 → RET Chair — Proposal Details
 * 4.2 → Faculty — Proposal Status And Feedback
 * 4.2 → D2 — Endorsed Proposal Record
-* 4.2 → D2 — Signed Endorsement Form Scan
 * 4.2 → D2 — Updated Proposal Status
 * 4.2 → D2 — Proposal Feedback Record
 * 4.2 → D6 — Evaluation Event Logs
 
 * D2 → 4.3 — Endorsed Proposal Record
-* D2 → 4.3 — Signed Endorsement Form Scan
+* D2 → 4.3 — Chair Endorsement Record
 * Director → 4.3 — Evaluation Decisions
 * 4.3 → Director — Proposal Details
 * 4.3 → Faculty — Proposal Status And Feedback
@@ -410,8 +408,8 @@
 
 **Sub-processes:**
 * **4.1 — Retrieve Proposal Details** — Queries D2 for submitted proposals awaiting evaluation; extracts structural details and submission histories, routing all proposals uniformly into the Chair endorsement stage.
-* **4.2 — Process Chair Endorsement** — Evaluates the RET Chair's endorsement decision for all proposals (including the Chair's own submissions); requires the upload of a verified endorsement form scan signed by the College Dean or Campus Director; writes the endorsed record, uploaded scan, status, and feedback into D2, notifying the project leader and logging the event in D6.
-* **4.3 — Process Director Approval** — Presents endorsed proposals alongside the verified Dean/Director endorsement form scan to the Director for final executive review; records approval, return, or rejection decisions in D2, notifies the project leader, and logs the review in D6.
+* **4.2 — Process Chair Endorsement** — Evaluates the RET Chair's endorsement decision for all proposals (including the Chair's own submissions); endorsement is a direct action with optional review comments and requires no endorsement document upload; writes the endorsed record, status, and feedback into D2, notifying the project leader and logging the event in D6. Returned proposals must pass through Chair endorsement again after resubmission.
+* **4.3 — Process Director Approval** — Presents endorsed proposals and the recorded Chair endorsement decision to the Director for final executive review; records approval, return, or rejection decisions in D2, notifies the project leader, and logs the review in D6.
 * **4.4 — Record Institutional Approval** — Receives the final signed institutional approval scan from the Director, updates the proposal state to "institutionally approved" in D2, alerts the project leader, and logs the sign-off in D6.
 
 ---

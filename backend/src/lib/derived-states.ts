@@ -54,16 +54,7 @@ export function deriveProposalState(
 	}
 
 	if (status === PROPOSAL_STATUS.PENDING_REVIEW) {
-		if (proposal.bypassedRetChair && options?.isDirector) {
-			return {
-				state: "ACT",
-				owner: "You",
-				reason:
-					"This proposal previously cleared RET Chair review and has been resubmitted directly to your office.",
-				nextTransition: "Approve, return, or reject",
-			};
-		}
-		if (options?.isRtChair && !proposal.bypassedRetChair) {
+		if (options?.isRtChair) {
 			return {
 				state: "ACT",
 				owner: "You",
@@ -73,8 +64,8 @@ export function deriveProposalState(
 		}
 		return {
 			state: "WAIT",
-			owner: proposal.bypassedRetChair ? "Director/Admin" : "RET Chair",
-			reason: `Proposal pending ${proposal.bypassedRetChair ? "Director/Admin" : "RET Chair"} review.`,
+			owner: "RET Chair",
+			reason: "Proposal pending RET Chair review.",
 			nextTransition: "Review decision",
 		};
 	}

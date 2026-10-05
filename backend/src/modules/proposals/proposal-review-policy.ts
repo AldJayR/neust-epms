@@ -30,14 +30,6 @@ export function resolveReviewPolicy(
 		input.roleName === ROLE_NAMES.RET_CHAIR &&
 		input.status === PROPOSAL_STATUS.PENDING_REVIEW
 	) {
-		if (input.bypassedRetChair) {
-			throw new ApiError(
-				403,
-				"FORBIDDEN",
-				"RET Chair review is bypassed for this proposal",
-			);
-		}
-
 		reviewStage = REVIEW_STAGE.ENDORSEMENT;
 		if (decision === REVIEW_DECISION.ENDORSED) {
 			newStatus = PROPOSAL_STATUS.ENDORSED;
@@ -55,13 +47,6 @@ export function resolveReviewPolicy(
 	} else if (
 		input.roleName === ROLE_NAMES.DIRECTOR &&
 		input.status === PROPOSAL_STATUS.ENDORSED
-	) {
-		reviewStage = REVIEW_STAGE.APPROVAL;
-		newStatus = resolveDirectorDecision(decision);
-	} else if (
-		input.roleName === ROLE_NAMES.DIRECTOR &&
-		input.status === PROPOSAL_STATUS.PENDING_REVIEW &&
-		input.bypassedRetChair
 	) {
 		reviewStage = REVIEW_STAGE.APPROVAL;
 		newStatus = resolveDirectorDecision(decision);

@@ -23,7 +23,7 @@ const user: AuthUser = {
 };
 
 describe("deriveProposalState", () => {
-	it("makes a bypassed pending proposal actionable for the Director", () => {
+	it("routes legacy bypassed pending proposals to Chair endorsement", () => {
 		const result = deriveProposalState(
 			{
 				status: PROPOSAL_STATUS.PENDING_REVIEW,
@@ -33,7 +33,12 @@ describe("deriveProposalState", () => {
 			{ isDirector: true },
 		);
 
-		expect(result).toMatchObject({ state: "ACT", owner: "You" });
+		expect(result).toMatchObject({ state: "WAIT", owner: "RET Chair" });
+		expect(deriveProposalState(
+			{ status: PROPOSAL_STATUS.PENDING_REVIEW, bypassedRetChair: true },
+			user,
+			{ isRtChair: true },
+		)).toMatchObject({ state: "ACT", owner: "You" });
 	});
 
 	it("falls back safely for a rejected proposal", () => {

@@ -12,7 +12,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { toStableDate } from "@/lib/utils";
@@ -45,15 +44,12 @@ export function ProposalDetailsTab() {
 		handleDeny,
 		handleReject,
 		handleApprove,
-		handleEndorse,
 		isPending,
 		isRET,
-		bypassedRetChair,
 	} = useProposalReview();
 
 	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 	const [commentsText, setCommentsText] = useState("");
-	const [endorsementFile, setEndorsementFile] = useState<File | null>(null);
 	const [isReturnOpen, setIsReturnOpen] = useState(false);
 	const [returnReason, setReturnReason] = useState("");
 	const [isRejectOpen, setIsRejectOpen] = useState(false);
@@ -235,21 +231,21 @@ export function ProposalDetailsTab() {
 				</div>
 			</div>
 
-			{isReviewable && isRET && !bypassedRetChair && !endorsement && (
+			{isReviewable && isRET && (
 				<>
 					<div className="px-5 py-2">
 						<Separator />
 					</div>
 					<div className="px-5 pt-2">
 						<p className="text-xs text-muted-foreground font-light leading-relaxed">
-							Approving will forward this proposal to the Director/Admin for
-							final review.
+							Endorsing will forward this proposal to the Director for final
+							review.
 						</p>
 					</div>
 				</>
 			)}
 
-			{isReviewable && !(isRET && (bypassedRetChair || endorsement)) && (
+			{isReviewable && (
 				<>
 					<div className="p-5 flex gap-3">
 						<Button
@@ -299,7 +295,6 @@ export function ProposalDetailsTab() {
 				onOpenChange={(open) => {
 					setIsConfirmOpen(open);
 					if (!open) {
-						setEndorsementFile(null);
 						setCommentsText("");
 					}
 				}}
@@ -310,34 +305,21 @@ export function ProposalDetailsTab() {
 							Endorse Proposal
 						</DialogTitle>
 						<DialogDescription className="text-sm text-muted-foreground font-light">
-							Please attach the signed College Dean / Campus Director endorsement scan (PDF). Comments are optional.
+							Endorse this proposal and forward it to the Director for review.
+							Comments are optional.
 						</DialogDescription>
 					</DialogHeader>
 
 					<div className="space-y-4">
 						<div className="space-y-1.5">
-							<label className="text-sm font-medium text-foreground">
-								Signed Endorsement Document (PDF) <span className="text-red-500">*</span>
-							</label>
-							<Input
-								type="file"
-								accept="application/pdf"
-								onChange={(e) => {
-									const selectedFile = e.target.files?.[0] ?? null;
-									setEndorsementFile(selectedFile);
-								}}
-								className="cursor-pointer"
-							/>
-							<p className="text-xs text-muted-foreground">
-								Upload the scanned physical endorsement signed by the College Dean or Campus Director.
-							</p>
-						</div>
-
-						<div className="space-y-1.5">
-							<label className="text-sm font-medium text-foreground">
+							<label
+								htmlFor="endorsement-remarks"
+								className="text-sm font-medium text-foreground"
+							>
 								Remarks (Optional)
 							</label>
 							<Textarea
+								id="endorsement-remarks"
 								placeholder="Write final comments/remarks here (optional)..."
 								value={commentsText}
 								onChange={(e) => setCommentsText(e.target.value)}
@@ -352,7 +334,6 @@ export function ProposalDetailsTab() {
 							className="flex-1 border border-border rounded-lg text-gray-500 font-medium h-9 text-sm shadow-sm cursor-pointer dark:text-muted-foreground"
 							onClick={() => {
 								setIsConfirmOpen(false);
-								setEndorsementFile(null);
 								setCommentsText("");
 							}}
 						>
@@ -360,16 +341,10 @@ export function ProposalDetailsTab() {
 						</Button>
 						<LoadingButton
 							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg"
-							disabled={!endorsementFile}
+							disabled={isPending}
 							onClick={async () => {
-								if (!endorsementFile) return;
-								if (handleEndorse) {
-									await handleEndorse(endorsementFile, commentsText);
-								} else {
-									await handleApprove(commentsText);
-								}
+								await handleApprove(commentsText);
 								setIsConfirmOpen(false);
-								setEndorsementFile(null);
 								setCommentsText("");
 							}}
 							loading={isPending}

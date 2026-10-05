@@ -84,15 +84,15 @@ describe("deriveProposalState", () => {
 		expect(result.owner).toBe("Project Leader");
 	});
 
-	it("should return ACT state for Director when pending review and bypassed", () => {
+	it("should wait for Chair endorsement even with a legacy bypass flag", () => {
 		const proposal = {
 			status: "Pending Review" as const,
 			bypassedRetChair: true,
 			leaderId: "user-faculty-123",
 		};
 		const result = deriveProposalState(proposal, mockDirectorUser, { isDirector: true });
-		expect(result.state).toBe("ACT");
-		expect(result.owner).toBe("You");
+		expect(result.state).toBe("WAIT");
+		expect(result.owner).toBe("RET Chair");
 	});
 
 	it("should return ACT state for RT Chair when pending review and not bypassed", () => {
@@ -150,12 +150,13 @@ describe("deriveProposalState", () => {
 		expect(result.owner).toBe("You");
 	});
 
-	it("should return WATCH state when Approved or Rejected", () => {
+	it("should wait for institutional approval when Approved and watch when Rejected", () => {
 		const approvedResult = deriveProposalState(
 			{ status: "Approved" as const, bypassedRetChair: false },
 			mockFacultyUser,
 		);
-		expect(approvedResult.state).toBe("WATCH");
+		expect(approvedResult.state).toBe("WAIT");
+		expect(approvedResult.nextTransition).toBe("Institutional approval scan");
 
 		const rejectedResult = deriveProposalState(
 			{ status: "Rejected" as const, bypassedRetChair: false },

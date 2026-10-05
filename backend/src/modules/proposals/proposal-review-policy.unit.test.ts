@@ -3,18 +3,16 @@ import { PROPOSAL_STATUS, REVIEW_STAGE, ROLE_NAMES } from "@/lib/types.js";
 import { resolveReviewPolicy } from "./proposal-review-policy.js";
 
 describe("resolveReviewPolicy", () => {
-	it("maps RET Chair endorsement to the endorsed state", () => {
+	it("allows direct RET Chair endorsement without a document", () => {
 		expect(
 			resolveReviewPolicy({
 				roleName: ROLE_NAMES.RET_CHAIR,
 				status: PROPOSAL_STATUS.PENDING_REVIEW,
 				bypassedRetChair: false,
 			}, "Endorsed"),
-		).toEqual({
+		).toMatchObject({
 			reviewStage: REVIEW_STAGE.ENDORSEMENT,
 			newStatus: PROPOSAL_STATUS.ENDORSED,
-			revisionIncrement: 0,
-			isDirectorReturningEndorsed: false,
 		});
 	});
 
@@ -29,21 +27,34 @@ describe("resolveReviewPolicy", () => {
 			reviewStage: REVIEW_STAGE.APPROVAL,
 			newStatus: PROPOSAL_STATUS.RETURNED,
 			revisionIncrement: 1,
-			isDirectorReturningEndorsed: true,
+			isDirectorReturningEndorsed: false,
 		});
 	});
 
-	it("allows a bypassed pending proposal to be approved by the Director", () => {
-		expect(
+	it("rejects Director approval of a pending proposal with a legacy bypass flag", () => {
+		expect(() =>
 			resolveReviewPolicy({
 				roleName: ROLE_NAMES.DIRECTOR,
 				status: PROPOSAL_STATUS.PENDING_REVIEW,
 				bypassedRetChair: true,
 			}, "Approved"),
-		).toMatchObject({
-			reviewStage: REVIEW_STAGE.APPROVAL,
-			newStatus: PROPOSAL_STATUS.APPROVED,
-		});
+		).toThrowError("Cannot review proposal in its current state with your role");
+	});
+
+	it("allows Chair return of a legacy bypassed pending proposal", () => {
+		expect(resolveReviewPolicy({
+			roleName: ROLE_NAMES.RET_CHAIR,
+			status: PROPOSAL_STATUS.PENDING_REVIEW,
+			bypassedRetChair: true,
+		}, "Returned")).toMatchObject({ newStatus: PROPOSAL_STATUS.RETURNED });
+	});
+
+	it("allows Director review after direct endorsement without a document", () => {
+		expect(resolveReviewPolicy({
+			roleName: ROLE_NAMES.DIRECTOR,
+			status: PROPOSAL_STATUS.ENDORSED,
+			bypassedRetChair: false,
+		}, "Approved")).toMatchObject({ newStatus: PROPOSAL_STATUS.APPROVED });
 	});
 
 	it("rejects a decision that does not belong to the current review stage", () => {

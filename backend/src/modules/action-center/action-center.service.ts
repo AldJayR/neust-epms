@@ -13,7 +13,6 @@ import {
 	isNull,
 	lt,
 	lte,
-	or,
 } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { moas } from "@/db/schema/moas.js";
@@ -581,10 +580,7 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			overdueReportCount,
 		] = await Promise.all([
 			getPendingProposals({
-				statusFilter: and(
-					eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
-					eq(proposals.bypassedRetChair, false),
-				)!,
+				statusFilter: eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
 				...scopeProps,
 			}),
 			getReturnedProposals({
@@ -646,13 +642,7 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			overdueReportCount,
 		] = await Promise.all([
 			getPendingProposals({
-				statusFilter: or(
-					eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
-					and(
-						eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
-						eq(proposals.bypassedRetChair, true),
-					),
-				)!,
+				statusFilter: eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
 			}),
 			getProjectsByStatus({
 				projectStatus: PROJECT_STATUS.APPROVED,

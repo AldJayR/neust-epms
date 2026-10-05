@@ -37,6 +37,7 @@ import {
 	type AuthUser,
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
+	REVIEW_DECISION,
 	ROLE_NAMES,
 } from "@/lib/types.js";
 import {
@@ -350,7 +351,7 @@ export async function createProposalInTransaction(
 				? new Date(body.targetStartDate)
 				: null,
 			targetEndDate: body.targetEndDate ? new Date(body.targetEndDate) : null,
-			bypassedRetChair: user.roleName === ROLE_NAMES.RET_CHAIR,
+			bypassedRetChair: false,
 			status: PROPOSAL_STATUS.DRAFT,
 		})
 		.returning();
@@ -881,7 +882,11 @@ export async function processReview(
 		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
 	}
 
-	if (await isProjectLeader(proposalId, user.userId)) {
+	// Chairs may endorse their own submissions; the DFD uses a uniform Chair stage.
+	const isChairEndorsement =
+		user.roleName === ROLE_NAMES.RET_CHAIR &&
+		body.decision === REVIEW_DECISION.ENDORSED;
+	if (!isChairEndorsement && (await isProjectLeader(proposalId, user.userId))) {
 		throw new ApiError(
 			403,
 			"CONFLICT_OF_INTEREST",
@@ -909,19 +914,11 @@ export async function processReview(
 		}
 	}
 
-	const [bypassRow] = await db
-		.select({ bypassedRetChair: proposals.bypassedRetChair })
-		.from(proposals)
-		.where(
-			and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
-		)
-		.limit(1);
-
 	const reviewPolicy = resolveReviewPolicy(
 		{
 			roleName: user.roleName,
 			status: existing.status,
-			bypassedRetChair: Boolean(bypassRow?.bypassedRetChair),
+			bypassedRetChair: false,
 		},
 		body.decision,
 	);
@@ -939,7 +936,11 @@ export async function processReview(
 			.update(proposals)
 			.set({
 				status: reviewPolicy.newStatus,
+				bypassedRetChair: false,
 				revisionNum: existing.revisionNum + reviewPolicy.revisionIncrement,
+				...(reviewPolicy.newStatus === PROPOSAL_STATUS.ENDORSED
+					? { endorsedAt: new Date() }
+					: {}),
 				updatedAt: new Date(),
 			})
 			.where(
@@ -1095,6 +1096,7 @@ export async function recordChairEndorsement(
 			.update(proposals)
 			.set({
 				status: PROPOSAL_STATUS.ENDORSED,
+				bypassedRetChair: false,
 				endorsementDocPath: storagePath,
 				endorsementDocHash: contentHash,
 				endorsedAt: new Date(),
