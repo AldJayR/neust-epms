@@ -61,7 +61,7 @@ export function ActivityLogEntryDialog({
 					<dl className="divide-y divide-border rounded-lg border border-border text-sm">
 						{[
 							["Action", formatActivityAction(log.action)],
-							["Actor", log.actorName ?? "System"],
+							["Performed by", log.actorName ?? "System"],
 							["Role", log.actorRole ?? "Automated"],
 							[
 								"Date and time",

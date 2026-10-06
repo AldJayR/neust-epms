@@ -38,7 +38,7 @@ describe("resolveReviewPolicy", () => {
 				status: PROPOSAL_STATUS.PENDING_REVIEW,
 				bypassedRetChair: true,
 			}, "Approved"),
-		).toThrowError("Cannot review proposal in its current state with your role");
+		).toThrowError("Your role cannot review this proposal at its current stage.");
 	});
 
 	it("allows Chair return of a legacy bypassed pending proposal", () => {

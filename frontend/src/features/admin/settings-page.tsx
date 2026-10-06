@@ -33,7 +33,7 @@ export function SettingsPage() {
 				},
 			}),
 		onSuccess: () => {
-			toast.success("Setting saved");
+			toast.success("Archiving period saved.");
 			queryClient.invalidateQueries({ queryKey: ["settings"] });
 		},
 		onError: (err) => toast.error(err.message),
@@ -43,18 +43,20 @@ export function SettingsPage() {
 		<div className="flex flex-col gap-8">
 			<PageHeader
 				title={
-					<h1 className="text-2xl font-semibold text-heading">Settings</h1>
+					<h1 className="text-2xl font-semibold text-heading">
+						System settings
+					</h1>
 				}
 			/>
 
 			<PageCard className="p-6">
 				<h2 className="text-lg font-semibold text-heading mb-4">
-					Data Retention
+					Automatic archiving
 				</h2>
 				<div className="space-y-4">
 					<div className="flex flex-col gap-1.5">
 						<Label htmlFor="retention-years">
-							Project retention period (years)
+							Archive closed projects after (years)
 						</Label>
 						<Input
 							id="retention-years"
@@ -67,15 +69,15 @@ export function SettingsPage() {
 							className="w-32"
 						/>
 						<p className="text-xs text-muted-foreground">
-							Closed projects are archived after this period. Used by the
-							archival cron.
+							Closed projects are moved to Archives automatically after this
+							period.
 						</p>
 					</div>
 					<LoadingButton
 						onClick={() => saveMutation.mutate()}
 						loading={saveMutation.isPending}
 					>
-						Save
+						Save archiving period
 					</LoadingButton>
 				</div>
 			</PageCard>

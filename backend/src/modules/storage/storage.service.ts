@@ -127,10 +127,11 @@ export async function uploadProposalDocument(
 		});
 
 	if (uploadError) {
+		console.error("[upload] Proposal document upload failed:", uploadError);
 		throw new ApiError(
 			400,
 			"UPLOAD_FAILED",
-			`Supabase storage upload failed: ${uploadError.message}`,
+			"We couldn't upload the proposal PDF. Please try again.",
 		);
 	}
 

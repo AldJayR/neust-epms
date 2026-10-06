@@ -107,7 +107,7 @@ export function ReportingScheduleCard({
 					Reporting Schedule
 				</CardTitle>
 				<CardDescription className="text-xs">
-					Track required report milestones and submission statuses
+					Required reports, due dates, and submission status
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="pt-0">

@@ -1307,12 +1307,12 @@ export async function getProjectReadiness(id: string) {
 					: "No MOA assigned to project",
 		},
 		{
-			name: "Reporting Schedule Established",
+			name: "Report Due Dates",
 			complete: isScheduleEstablished,
 			owner: "Director/Admin",
 			details: isScheduleEstablished
-				? `Reporting schedule configured with ${reportingDatesCount} milestones`
-				: "No reporting schedule configured",
+				? `${reportingDatesCount} reports scheduled`
+				: "Report due dates not set",
 		},
 	];
 

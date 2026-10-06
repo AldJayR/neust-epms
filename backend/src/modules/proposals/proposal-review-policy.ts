@@ -54,7 +54,7 @@ export function resolveReviewPolicy(
 		throw new ApiError(
 			400,
 			"INVALID_STATE",
-			"Cannot review proposal in its current state with your role",
+			"Your role cannot review this proposal at its current stage.",
 		);
 	}
 

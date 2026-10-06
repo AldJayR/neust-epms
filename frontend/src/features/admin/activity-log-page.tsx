@@ -125,7 +125,7 @@ export function ActivityLogPage({
 			id: "actor",
 			accessorFn: (row) => row.actorName ?? "System",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Actor" />
+				<DataTableColumnHeader column={column} title="Performed by" />
 			),
 			headerClassName:
 				"w-[200px] font-medium text-muted-foreground text-sm py-2.5",

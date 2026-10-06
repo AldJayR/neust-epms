@@ -51,7 +51,7 @@ const adminNav: NavGroup[] = [
 		title: "System",
 		items: [
 			{
-				title: "Settings",
+				title: "System settings",
 				url: "/admin/settings",
 				icon: Settings,
 			},
@@ -80,7 +80,7 @@ const directorNav: NavGroup[] = [
 				icon: FolderKanban,
 			},
 			{
-				title: "Faculty",
+				title: "Faculty Directory",
 				url: "/faculty",
 				icon: Users,
 			},
@@ -117,7 +117,7 @@ const facultyNav: NavGroup[] = [
 				url: "/dashboard",
 				icon: LayoutDashboard,
 				children: [
-					{ title: "Analytics", url: "/contributions", icon: BarChart3 },
+					{ title: "My Contributions", url: "/contributions", icon: BarChart3 },
 				],
 			},
 		],

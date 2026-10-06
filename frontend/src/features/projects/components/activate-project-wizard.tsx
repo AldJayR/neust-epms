@@ -104,7 +104,9 @@ export function ActivateProjectWizard({
 
 	const calculatedDuration = React.useMemo(() => {
 		if (targetEndDate) {
-			const start = targetStartDate ? toStableDate(targetStartDate) : new Date();
+			const start = targetStartDate
+				? toStableDate(targetStartDate)
+				: new Date();
 			const end = toStableDate(targetEndDate);
 			const diff = differenceInMonths(end, start);
 			if (diff > 0) return Math.min(diff, 60);
@@ -112,7 +114,8 @@ export function ActivateProjectWizard({
 		return 6;
 	}, [targetStartDate, targetEndDate]);
 
-	const [durationMonths, setDurationMonths] = React.useState<number>(calculatedDuration);
+	const [durationMonths, setDurationMonths] =
+		React.useState<number>(calculatedDuration);
 
 	React.useEffect(() => {
 		setDurationMonths(calculatedDuration);
@@ -150,7 +153,7 @@ export function ActivateProjectWizard({
 			reportType === "Terminal Report" &&
 			dueDates.some((entry) => entry.reportType === "Terminal Report")
 		) {
-			toast.error("Only one Terminal Report milestone can be added");
+			toast.error("A terminal report is already scheduled.");
 			return;
 		}
 		const count = dueDates.filter((d) => d.reportType === "Progress").length;
@@ -181,7 +184,7 @@ export function ActivateProjectWizard({
 	function handleSubmit() {
 		if (!selectedMoaId) return;
 		if (dueDates.some((entry) => !entry.dueDate)) {
-			toast.error("Please select a due date for every milestone");
+			toast.error("Choose a due date for each report.");
 			return;
 		}
 
@@ -300,14 +303,20 @@ export function ActivateProjectWizard({
 							<div className="rounded-lg border border-border bg-muted/40 p-3.5 space-y-3">
 								<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 									<div className="space-y-0.5">
-										<p className="text-sm font-medium">Monthly Progress Cadence</p>
+										<p className="text-sm font-medium">
+											Monthly report due dates
+										</p>
 										<p className="text-xs text-muted-foreground">
-											Progress reports are due monthly after activation until closure.
+											Monthly due dates start from today and end with the
+											terminal report.
 										</p>
 									</div>
 									<div className="flex items-center gap-2 shrink-0">
 										<div className="flex items-center gap-1.5">
-											<Label htmlFor="duration-months" className="text-xs text-muted-foreground whitespace-nowrap">
+											<Label
+												htmlFor="duration-months"
+												className="text-xs text-muted-foreground whitespace-nowrap"
+											>
 												Duration:
 											</Label>
 											<input
@@ -318,12 +327,17 @@ export function ActivateProjectWizard({
 												value={durationMonths}
 												onChange={(e) =>
 													setDurationMonths(
-														Math.max(1, Math.min(36, parseInt(e.target.value) || 1)),
+														Math.max(
+															1,
+															Math.min(36, parseInt(e.target.value) || 1),
+														),
 													)
 												}
 												className="h-8 w-14 rounded-md border border-input bg-background px-2 text-center text-xs"
 											/>
-											<span className="text-xs text-muted-foreground">mo</span>
+											<span className="text-xs text-muted-foreground">
+												months
+											</span>
 										</div>
 										<Button
 											type="button"
@@ -331,12 +345,16 @@ export function ActivateProjectWizard({
 											size="sm"
 											className="h-8 text-xs gap-1.5"
 											onClick={() => {
-												setDueDates(generateMonthlyMilestones(new Date(), durationMonths));
-												toast.success(`Generated ${durationMonths}-month reporting schedule`);
+												setDueDates(
+													generateMonthlyMilestones(new Date(), durationMonths),
+												);
+												toast.success(
+													`Report due dates replaced for ${durationMonths} months.`,
+												);
 											}}
 										>
 											<RotateCcw className="size-3" />
-											Regenerate
+											Replace draft schedule
 										</Button>
 									</div>
 								</div>
@@ -346,7 +364,7 @@ export function ActivateProjectWizard({
 							<div className="space-y-3">
 								<div className="flex items-center justify-between">
 									<Label className="text-sm font-medium">
-										Scheduled Milestones ({dueDates.length})
+										Scheduled reports ({dueDates.length})
 									</Label>
 									<Popover>
 										<PopoverTrigger
@@ -359,7 +377,7 @@ export function ActivateProjectWizard({
 											}
 										>
 											<Plus className="size-3.5" />
-											Add Milestone
+											Add report
 										</PopoverTrigger>
 										<PopoverContent align="end" className="w-52 p-1">
 											<Button
@@ -376,7 +394,7 @@ export function ActivateProjectWizard({
 												className="w-full justify-start gap-2 text-xs"
 												onClick={() => handleAddDueDate("Terminal Report")}
 											>
-												Terminal Report Milestone
+												Terminal Report
 											</Button>
 										</PopoverContent>
 									</Popover>
@@ -386,7 +404,8 @@ export function ActivateProjectWizard({
 									<Empty className="py-6">
 										<EmptyContent>
 											<EmptyDescription className="text-sm text-muted-foreground">
-												No reports scheduled. Click "Regenerate" above or "Add Milestone" to begin.
+												No reports scheduled. Select "Add report" or "Replace
+												draft schedule".
 											</EmptyDescription>
 										</EmptyContent>
 									</Empty>
@@ -399,7 +418,9 @@ export function ActivateProjectWizard({
 											className="flex items-center gap-2 rounded-lg border border-border p-3 bg-card"
 										>
 											<div className="flex-1 min-w-0 space-y-0.5">
-												<p className="text-sm font-medium truncate">{entry.title}</p>
+												<p className="text-sm font-medium truncate">
+													{entry.title}
+												</p>
 												<p className="text-xs text-muted-foreground">
 													{entry.reportType === "Progress"
 														? "Progress Report"

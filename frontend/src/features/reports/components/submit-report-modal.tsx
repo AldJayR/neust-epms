@@ -381,7 +381,7 @@ export function SubmitReportModal({
 									</div>
 								) : (
 									<ReportFileField
-										label="Accomplishment and Terminal Report (Primary Document) *"
+										label="Accomplishment and Terminal Report *"
 										file={closureReportFile}
 										disabled={isSubmitting}
 										onFileChange={setClosureReportFile}
@@ -399,14 +399,14 @@ export function SubmitReportModal({
 									</div>
 								) : (
 									<ReportFileField
-										label="Evaluation Forms (Required Attachment) *"
+										label="Evaluation Forms *"
 										file={evalFormsFile}
 										disabled={isSubmitting}
 										onFileChange={setEvalFormsFile}
 									/>
 								)}
 								<ReportFileField
-									label="Attendance Records (Optional Attachment)"
+									label="Attendance Records (optional)"
 									file={attendanceFile}
 									disabled={
 										isSubmitting || packageQuery.data?.attendanceUploaded

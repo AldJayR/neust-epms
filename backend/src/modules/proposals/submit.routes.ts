@@ -95,7 +95,7 @@ app.openapi(submitRoute, async (c) => {
 		throw new ApiError(
 			400,
 			"INVALID_STATE",
-			"Proposal state changed since last read",
+			"Your submission wasn't saved because the proposal changed. Reload it and try again.",
 		);
 	}
 

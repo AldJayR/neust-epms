@@ -76,7 +76,7 @@ export function deriveProposalState(
 				state: "ACT",
 				owner: "You",
 				reason:
-					"RET Chair endorsed this proposal. Final approval decision needed.",
+					"The RET Chair has endorsed this proposal. Review it for approval.",
 				nextTransition: "Approve or return",
 			};
 		}
@@ -84,7 +84,7 @@ export function deriveProposalState(
 			state: "WAIT",
 			owner: "Director/Admin",
 			reason:
-				"Proposal endorsed by RET Chair — awaiting Director/Admin approval.",
+				"Endorsed by the RET Chair — awaiting Director/Admin approval.",
 			nextTransition: "Approval decision",
 		};
 	}
@@ -104,16 +104,16 @@ export function deriveProposalState(
 				state: "ACT",
 				owner: "You",
 				reason:
-					"Proposal approved. Upload signed institutional approval scan to complete institutional sign-off.",
-				nextTransition: "Upload institutional approval scan",
+					"Proposal approved. Upload the signed institutional approval document.",
+				nextTransition: "Upload signed approval document",
 			};
 		}
 		return {
 			state: "WAIT",
 			owner: "Director/Admin",
 			reason:
-				"Proposal approved by Director — awaiting signed institutional scan upload.",
-			nextTransition: "Institutional approval scan",
+				"Director approved — awaiting the signed institutional approval document.",
+			nextTransition: "Signed approval document",
 		};
 	}
 
@@ -122,7 +122,7 @@ export function deriveProposalState(
 			state: "WATCH",
 			owner: "System",
 			reason:
-				"Proposal institutionally approved — ready for project activation.",
+				"Institutional approval recorded — awaiting project activation.",
 			nextTransition: "Project activation",
 		};
 	}
@@ -182,7 +182,7 @@ export function deriveProjectState(
 		const blockers: string[] = [];
 		if (!project.moaId) blockers.push("Valid MOA not assigned");
 		if (!project.reportingSchedule)
-			blockers.push("Reporting schedule not established");
+			blockers.push("Report due dates not set");
 
 		if (blockers.length > 0) {
 			return {
@@ -195,7 +195,7 @@ export function deriveProjectState(
 		return {
 			state: "ACT",
 			owner: "Director/Admin",
-			reason: "All prerequisites complete. Ready for activation.",
+			reason: "Requirements complete. Ready for activation.",
 			nextTransition: "Activate project",
 		};
 	}
@@ -215,8 +215,8 @@ export function deriveProjectState(
 				state: "ACT",
 				owner: "You",
 				reason:
-					"Final reports submitted — awaiting Director/Admin review and closure.",
-				nextTransition: "Closure confirmation",
+					"Final reports submitted — awaiting the Director/Admin closure decision.",
+				nextTransition: "View closure status",
 			};
 		}
 		return {

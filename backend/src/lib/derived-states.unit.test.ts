@@ -60,7 +60,7 @@ describe("deriveProposalState", () => {
 		expect(result).toMatchObject({
 			state: "ACT",
 			owner: "You",
-			nextTransition: "Upload institutional approval scan",
+			nextTransition: "Upload signed approval document",
 		});
 	});
 
@@ -88,7 +88,7 @@ describe("deriveProjectState", () => {
 
 		expect(result).toMatchObject({ state: "WAIT", owner: "Director/Admin" });
 		expect(result.reason).toContain("Valid MOA not assigned");
-		expect(result.reason).toContain("Reporting schedule not established");
+		expect(result.reason).toContain("Report due dates not set");
 	});
 
 	it("assigns pending closure action to the project leader only", () => {

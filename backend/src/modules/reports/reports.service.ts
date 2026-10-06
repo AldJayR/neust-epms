@@ -544,10 +544,11 @@ export async function uploadReportDocument(
 		.from("documents")
 		.upload(storagePath, file, { contentType: file.type, upsert: false });
 	if (uploadError) {
+		console.error("[upload] Report document upload failed:", uploadError);
 		throw new ApiError(
 			400,
 			"UPLOAD_FAILED",
-			`Supabase storage upload failed: ${uploadError.message}`,
+			"We couldn't upload the report PDF. Please try again.",
 		);
 	}
 

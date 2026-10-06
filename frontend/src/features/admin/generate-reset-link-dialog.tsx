@@ -157,7 +157,7 @@ export function GenerateResetLinkDialog({
 						) : (
 							<KeyRound className="size-4 mr-1.5" />
 						)}
-						{resetUrl ? "Regenerate" : "Generate link"}
+						{resetUrl ? "Create new link" : "Create reset link"}
 					</BrandButton>
 				</DialogFooter>
 			</DialogContent>

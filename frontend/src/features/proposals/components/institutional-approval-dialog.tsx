@@ -51,22 +51,25 @@ export function InstitutionalApprovalDialog({
 			return recordInstitutionalApprovalFn({ data: formData });
 		},
 		onSuccess: () => {
-			toast.success(
-				"Signed institutional approval scan recorded successfully.",
-			);
+			toast.success("Signed institutional approval document saved.");
 			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-			queryClient.invalidateQueries({ queryKey: ["dashboard", "proposals", proposalId] });
+			queryClient.invalidateQueries({
+				queryKey: ["dashboard", "proposals", proposalId],
+			});
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["projects"] });
 			queryClient.invalidateQueries({ queryKey: ["action-center"] });
-			queryClient.invalidateQueries({ queryKey: ["project-readiness", proposalId] });
+			queryClient.invalidateQueries({
+				queryKey: ["project-readiness", proposalId],
+			});
 			queryClient.invalidateQueries({ queryKey: ["project-readiness"] });
 			setFile(null);
 			setOpen(false);
 		},
 		onError: (error: Error) => {
 			toast.error(
-				error.message || "Failed to upload institutional approval scan.",
+				error.message ||
+					"We couldn't upload the signed institutional approval document. Please try again.",
 			);
 		},
 	});
@@ -74,7 +77,7 @@ export function InstitutionalApprovalDialog({
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!file) {
-			toast.error("Please select a scanned PDF file of the signed proposal.");
+			toast.error("Choose a PDF scan of the signed institutional proposal.");
 			return;
 		}
 		mutation.mutate(file);
@@ -90,12 +93,12 @@ export function InstitutionalApprovalDialog({
 						Record Institutional Approval
 					</DialogTitle>
 					<DialogDescription>
-						Upload the physical signed and scanned copy of proposal{" "}
+						Upload a PDF scan of the institutionally signed proposal{" "}
 						<span className="font-semibold text-foreground">
 							"{proposalTitle}"
 						</span>{" "}
-						to finalize institutional approval and clear it for project
-						activation.
+						to record institutional approval. Activation is still required
+						before work begins.
 					</DialogDescription>
 				</DialogHeader>
 
@@ -103,10 +106,10 @@ export function InstitutionalApprovalDialog({
 					<div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-6 hover:bg-muted/40 transition-colors">
 						<UploadCloud className="size-10 text-muted-foreground mb-2" />
 						<p className="text-sm font-medium text-foreground mb-1">
-							{file ? file.name : "Select signed proposal scan (PDF)"}
+							{file ? file.name : "Choose signed approval document (PDF)"}
 						</p>
 						<p className="text-xs text-muted-foreground mb-3">
-							Maximum size 50MB. PDF format only.
+							PDF only, up to 50 MB.
 						</p>
 						<Input
 							id="institutional-approval-file"
@@ -133,7 +136,7 @@ export function InstitutionalApprovalDialog({
 									Uploading...
 								</>
 							) : (
-								"Upload & Approve"
+								"Record institutional approval"
 							)}
 						</BrandButton>
 					</DialogFooter>

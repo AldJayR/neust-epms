@@ -152,7 +152,7 @@ export function ArchivesPage({ user }: ArchivesPageProps) {
 				onOpenChange={restore.setConfirmOpen}
 				onConfirm={restore.handleConfirmRestore}
 				title={`Restore ${restore.itemToRestore?.type}`}
-				description={`Are you sure you want to restore the ${restore.itemToRestore?.type} "${restore.itemToRestore?.title}"? It will be returned to the active repository.`}
+				description={`Restore the ${restore.itemToRestore?.type} "${restore.itemToRestore?.title}" to its regular list?`}
 				confirmLabel="Restore"
 				confirmVariant="default"
 			/>

@@ -427,7 +427,8 @@ export const setNewPasswordFn = createServerFn({ method: "POST" })
 		if (!accessToken || !refreshToken) {
 			return {
 				error: true as const,
-				message: "Session expired or invalid. Please request a new code.",
+				message:
+					"We couldn't continue your password reset. Request a new code.",
 			};
 		}
 
@@ -446,9 +447,14 @@ export const setNewPasswordFn = createServerFn({ method: "POST" })
 		});
 
 		if (setSessionError) {
+			console.error(
+				"[auth] Password reset session could not be restored:",
+				setSessionError,
+			);
 			return {
 				error: true as const,
-				message: `Auth session error: ${setSessionError.message}`,
+				message:
+					"We couldn't continue your password reset. Request a new code.",
 			};
 		}
 

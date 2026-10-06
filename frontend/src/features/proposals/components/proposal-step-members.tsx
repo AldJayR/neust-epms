@@ -131,10 +131,9 @@ export function ProposalStepMembers({
 											/>
 										)}
 										<Input
-											{...form.register(
-												`members.${index}.soNumber` as const,
-											)}
-											placeholder="SO # (Optional)"
+											{...form.register(`members.${index}.soNumber` as const)}
+											placeholder="Order no. (optional)"
+											aria-label="Special Order number (optional)"
 											className="h-8 w-[140px] text-xs"
 										/>
 										{selectedFile ? (
@@ -163,7 +162,7 @@ export function ProposalStepMembers({
 										) : (
 											<label className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-dashed border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer text-xs font-medium transition-colors shrink-0">
 												<Upload className="size-3.5 text-muted-foreground" />
-												<span>Upload SO PDF</span>
+												<span>Upload Special Order PDF</span>
 												<input
 													type="file"
 													accept=".pdf,application/pdf"
@@ -182,7 +181,7 @@ export function ProposalStepMembers({
 															}
 															if (file.size > 50 * 1024 * 1024) {
 																toast.error(
-																	"File size must be under 50MB",
+																	"Choose a PDF no larger than 50 MB.",
 																);
 																return;
 															}
@@ -195,19 +194,19 @@ export function ProposalStepMembers({
 										)}
 									</div>
 								</div>
-							{field.userId !== user.userId && (
-								<Button
-									variant="ghost"
-									size="icon"
-									className="text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0 dark:text-red-300 dark:hover:text-red-200 dark:hover:bg-red-950/30 self-end sm:self-center"
-									onClick={() => removeMember(index)}
-								>
-									<Trash2 className="size-4" />
-								</Button>
-							)}
-						</div>
-					);
-				})}
+								{field.userId !== user.userId && (
+									<Button
+										variant="ghost"
+										size="icon"
+										className="text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0 dark:text-red-300 dark:hover:text-red-200 dark:hover:bg-red-950/30 self-end sm:self-center"
+										onClick={() => removeMember(index)}
+									>
+										<Trash2 className="size-4" />
+									</Button>
+								)}
+							</div>
+						);
+					})}
 				</div>
 				<FieldError errors={[form.formState.errors.members]} />
 			</div>

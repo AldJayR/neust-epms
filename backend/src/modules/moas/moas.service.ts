@@ -432,10 +432,11 @@ export async function uploadMoaDocument(
 		});
 
 	if (uploadError) {
+		console.error("[upload] MOA document upload failed:", uploadError);
 		throw new ApiError(
 			400,
 			"UPLOAD_FAILED",
-			`Supabase storage upload failed: ${uploadError.message}`,
+			"We couldn't upload the MOA PDF. Please try again.",
 		);
 	}
 

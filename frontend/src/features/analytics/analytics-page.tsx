@@ -37,12 +37,12 @@ import type { AnalyticsFilters, AnalyticsView } from "./schema";
 const titles = {
 	reach: "Trainee Reach",
 	participation: "Faculty Participation",
-	coverage: "Coverage Explorer",
+	coverage: "Project Coverage",
 };
 const groups = {
 	program: "Banner program",
 	sector: "Beneficiary sector",
-	sdg: "SDG",
+	sdg: "Sustainable Development Goal",
 	service: "Extension service",
 };
 
@@ -146,7 +146,9 @@ export function AnalyticsPage({
 					</BreadcrumbItem>
 					<BreadcrumbSeparator />
 					<BreadcrumbItem>
-						<BreadcrumbPage>Analytics</BreadcrumbPage>
+						<BreadcrumbPage>
+							{personal ? "My Contributions" : "Analytics"}
+						</BreadcrumbPage>
 					</BreadcrumbItem>
 				</BreadcrumbList>
 			</Breadcrumb>

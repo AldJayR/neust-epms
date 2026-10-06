@@ -33,10 +33,10 @@ export function ProjectReadinessCard({
 				<div className="flex items-center justify-between">
 					<div>
 						<CardTitle className="text-base font-semibold">
-							Project Activation Readiness
+							Activation checklist
 						</CardTitle>
 						<CardDescription className="text-xs">
-							Pre-implementation compliance and checklist
+							Requirements before the project can start
 						</CardDescription>
 					</div>
 					<Badge variant={isReady ? "default" : "secondary"}>
@@ -80,7 +80,9 @@ export function ProjectReadinessCard({
 								<div className="text-xs max-w-xs space-y-1">
 									<p className="font-semibold">{req.name}</p>
 									<p>{req.details}</p>
-									<p className="text-muted-foreground">Owner: {req.owner}</p>
+									<p className="text-muted-foreground">
+										Responsible role: {req.owner}
+									</p>
 								</div>
 							</TooltipContent>
 						</Tooltip>

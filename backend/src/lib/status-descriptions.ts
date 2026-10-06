@@ -13,27 +13,27 @@ export const PROPOSAL_STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 	"Pending Review": {
 		label: "Awaiting Review",
 		explanation:
-			"Your proposal has been submitted and is awaiting review by the appropriate reviewer.",
+			"Your proposal has been submitted and is awaiting RET Chair review.",
 		nextStep:
 			"No action required — you will be notified when a decision is made.",
 	},
 	Endorsed: {
 		label: "Endorsed — Awaiting Approval",
 		explanation:
-			"Your RET Chair has endorsed your proposal and forwarded it to the Extension Services office for final approval.",
-		nextStep: "No action required — waiting for Director/Admin decision.",
+			"The RET Chair has endorsed your proposal. The Director reviews it next.",
+		nextStep: "Awaiting the Director/Admin approval decision.",
 	},
 	Approved: {
-		label: "Approved by Director — Awaiting Institutional Scan",
+		label: "Director Approved — Approval Document Pending",
 		explanation:
-			"Your proposal has been approved by the Director. Final institutional sign-off and document scan upload are pending.",
-		nextStep: "Wait for Director to upload signed institutional approval scan.",
+			"The Director has approved your proposal. The signed institutional approval document still needs to be uploaded.",
+		nextStep: "The Director uploads the signed institutional approval document next.",
 	},
 	"Institutionally Approved": {
-		label: "Institutionally Approved — Activation Ready",
+		label: "Institutionally Approved — Awaiting Activation",
 		explanation:
-			"Your proposal has received final institutional sign-off and is ready for project activation.",
-		nextStep: "Wait for Director/Admin to complete activation requirements.",
+			"Institutional approval has been recorded. The Director must activate the project before work begins.",
+		nextStep: "Director/Admin completes the requirements before the project can start.",
 	},
 	Returned: {
 		label: "Revision Required",
@@ -53,8 +53,8 @@ export const PROJECT_STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 	Approved: {
 		label: "Approved — Awaiting Activation",
 		explanation:
-			"Your proposal is approved, but implementation cannot begin yet. Required: valid MOA, reporting schedule, and Special Orders.",
-		nextStep: "Wait for Director/Admin to complete activation.",
+			"Your proposal is approved, but work cannot begin yet. Required: valid MOA, report due dates, and Special Orders.",
+		nextStep: "Awaiting Director/Admin activation.",
 	},
 	Ongoing: {
 		label: "Active Project",
@@ -77,7 +77,7 @@ export const PROJECT_STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 		label: "Pending Closure",
 		explanation:
 			"Final reports have been submitted. The project is awaiting final review and closure.",
-		nextStep: "No action required — waiting for Director/Admin review.",
+		nextStep: "Awaiting the Director/Admin closure decision.",
 	},
 	Completed: {
 		label: "Completed",
@@ -87,7 +87,7 @@ export const PROJECT_STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 	Closed: {
 		label: "Closed",
 		explanation:
-			"Project has been officially closed. All institutional requirements satisfied.",
+			"The Director has approved project closure.",
 		nextStep: "No further action required.",
 	},
 };

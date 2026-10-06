@@ -134,10 +134,11 @@ export async function uploadSpecialOrder(
 		.upload(storagePath, file, { contentType: file.type, upsert: false });
 
 	if (uploadError) {
+		console.error("[upload] Special Order upload failed:", uploadError);
 		throw new ApiError(
 			400,
 			"UPLOAD_FAILED",
-			`Supabase storage upload failed: ${uploadError.message}`,
+			"We couldn't upload the Special Order PDF. Please try again.",
 		);
 	}
 

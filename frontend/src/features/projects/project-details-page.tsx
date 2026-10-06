@@ -175,15 +175,14 @@ export function ProjectDetailsPage({
 									their records.
 								</li>
 								<li>
-									<strong>Upload the Special Order</strong> for each project
-									member — you can do this by opening the Project Team section
-									below and uploading the corresponding SO for each team member.
+									<strong>Check the Special Orders</strong> in Project Team. A
+									Special Order PDF must be on file for every team member before
+									activation.
 								</li>
 							</ol>
 							<p className="pt-1">
-								Once the Special Orders are in place, the project lead can
-								request the Director to activate the project so work can
-								officially begin.
+								The Director must record the signed institutional approval
+								document and activate the project before work begins.
 							</p>
 						</AlertDescription>
 					</Alert>

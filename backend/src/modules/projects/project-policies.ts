@@ -16,7 +16,7 @@ export function validateProjectTransition(
 			throw new ApiError(
 				400,
 				"INVALID_TRANSITION",
-				"Only Approved projects can transition to Ongoing",
+				"The project must be approved before it can start.",
 			);
 		}
 
@@ -24,7 +24,7 @@ export function validateProjectTransition(
 			throw new ApiError(
 				400,
 				"MOA_REQUIRED",
-				"An active MOA must be linked before transitioning to Ongoing (SYS-REQ-04.1)",
+				"Link an active MOA before starting the project.",
 			);
 		}
 	}
@@ -36,7 +36,7 @@ export function validateProjectTransition(
 		throw new ApiError(
 			400,
 			"INVALID_TRANSITION",
-			"Only Ongoing projects can be marked as Completed",
+			"Only ongoing projects can be marked as completed.",
 		);
 	}
 }

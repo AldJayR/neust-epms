@@ -955,7 +955,7 @@ export async function processReview(
 			throw new ApiError(
 				400,
 				"INVALID_STATE",
-				"Proposal state changed since last read",
+				"Your decision wasn't saved because the proposal changed. Reload it and try again.",
 			);
 		}
 
@@ -1074,10 +1074,11 @@ export async function recordChairEndorsement(
 		});
 
 	if (uploadError) {
+		console.error("[upload] Endorsement document upload failed:", uploadError);
 		throw new ApiError(
 			400,
 			"UPLOAD_FAILED",
-			`Supabase storage upload failed: ${uploadError.message}`,
+			"We couldn't upload the endorsement PDF. Please try again.",
 		);
 	}
 
@@ -1114,7 +1115,7 @@ export async function recordChairEndorsement(
 			throw new ApiError(
 				400,
 				"INVALID_STATE",
-				"Proposal state changed since last read",
+				"Your endorsement wasn't saved because the proposal changed. Reload it and try again.",
 			);
 		}
 	});
@@ -1222,10 +1223,11 @@ export async function recordInstitutionalApproval(
 		});
 
 	if (uploadError) {
+		console.error("[upload] Institutional approval document upload failed:", uploadError);
 		throw new ApiError(
 			400,
 			"UPLOAD_FAILED",
-			`Supabase storage upload failed: ${uploadError.message}`,
+			"We couldn't upload the signed institutional approval document. Please try again.",
 		);
 	}
 
@@ -1251,7 +1253,7 @@ export async function recordInstitutionalApproval(
 			throw new ApiError(
 				400,
 				"INVALID_STATE",
-				"Proposal state changed since last read",
+				"The approval document wasn't saved because the proposal changed. Reload it and try again.",
 			);
 		}
 

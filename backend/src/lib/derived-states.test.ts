@@ -156,7 +156,7 @@ describe("deriveProposalState", () => {
 			mockFacultyUser,
 		);
 		expect(approvedResult.state).toBe("WAIT");
-		expect(approvedResult.nextTransition).toBe("Institutional approval scan");
+		expect(approvedResult.nextTransition).toBe("Signed approval document");
 
 		const rejectedResult = deriveProposalState(
 			{ status: "Rejected" as const, bypassedRetChair: false },
@@ -198,7 +198,7 @@ describe("deriveProjectState", () => {
 		expect(result.state).toBe("WAIT");
 		expect(result.owner).toBe("Director/Admin");
 		expect(result.reason).toContain("Valid MOA not assigned");
-		expect(result.reason).toContain("Reporting schedule not established");
+		expect(result.reason).toContain("Report due dates not set");
 	});
 
 	it("should return ACT state when Approved and all prerequisites met", () => {
