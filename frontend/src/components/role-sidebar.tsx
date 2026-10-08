@@ -52,7 +52,6 @@ import {
 import { logoutFn } from "@/features/auth";
 import type { AuthUser } from "@/lib/auth";
 import { clearAuthCache, setCachedUser } from "@/lib/auth-cache";
-import { isDirector, isRETChair } from "@/lib/permissions";
 
 export type RoleSidebarItem = {
 	title: string;
@@ -164,10 +163,6 @@ export function RoleSidebar({
 		? `${displayUser.firstName} ${displayUser.lastName}`
 		: fallbackFullName;
 	const roleLabel = displayUser ? displayUser.roleName : fallbackRole;
-	const settingsLabel =
-		isDirector(displayUser) || isRETChair(displayUser)
-			? "Account and program settings"
-			: "Personal settings";
 
 	const logout = useServerFn(logoutFn);
 	const router = useRouter();
@@ -320,7 +315,7 @@ export function RoleSidebar({
 								</DropdownMenuSub>
 								<DropdownMenuItem onClick={() => setSettingsOpen(true)}>
 									<Settings className="mr-2 size-4" />
-									{settingsLabel}
+									Settings
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem

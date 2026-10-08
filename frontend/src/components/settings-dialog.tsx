@@ -196,11 +196,7 @@ export function SettingsDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="flex h-[min(640px,calc(100vh-2rem))] w-[calc(100vw-2rem)] !max-w-[760px] flex-col gap-0 overflow-hidden p-0">
 				<DialogHeader className="shrink-0 border-b border-border px-6 py-5 pr-12">
-					<DialogTitle className="text-lg">
-						{canManageBannerPrograms
-							? "Account and program settings"
-							: "Personal settings"}
-					</DialogTitle>
+					<DialogTitle className="text-lg">Settings</DialogTitle>
 					<DialogDescription>
 						{canManageBannerPrograms
 							? "Manage your appearance, account, and banner programs."
