@@ -7,6 +7,7 @@ import {
 	authorizeSessionUser,
 	getValidAccessToken,
 } from "@/lib/session.server";
+import { pdfFileSchema } from "@/lib/upload-policy";
 import type { MoaItem } from "@/types/moa";
 
 const STALE_TIME = 1000 * 60 * 5;
@@ -75,12 +76,7 @@ const uploadMoaSchema = z.object({
 	partnerName: z.string().min(1, "Partner name is required"),
 	validFrom: z.string().min(1, "Signed from date is required"),
 	validUntil: z.string().min(1, "Expiration date is required"),
-	file: z
-		.instanceof(File, { message: "A PDF document is required" })
-		.refine(
-			(file) => file.type === "application/pdf",
-			"Only PDF files are allowed",
-		),
+	file: pdfFileSchema,
 });
 
 export const uploadMoaFn = createServerFn({ method: "POST" })
@@ -96,7 +92,7 @@ export const uploadMoaFn = createServerFn({ method: "POST" })
 		return data;
 	})
 	.handler(async ({ data }) => {
-		await authorizeSessionUser("Director", "RET Chair");
+		await authorizeSessionUser("Director");
 		const token = await getValidAccessToken();
 		const response = await fetch(`${API_BASE}/moas/upload`, {
 			method: "POST",

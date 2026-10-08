@@ -287,6 +287,7 @@ describe("POST /proposals/:proposalId/documents/upload", () => {
 	it("should include random uuid segment in generated storage path", async () => {
 		const proposal = createMockProposal({ proposalId: PROPOSAL_ID });
 		vi.mocked(db.select)
+			.mockReturnValue(mockSelectChain([proposal]) as never)
 			.mockReturnValueOnce(mockSelectChain([proposal]) as never)
 			.mockReturnValueOnce(
 				mockSelectChain([{ memberId: "member-1" }]) as never,
@@ -333,7 +334,7 @@ describe("POST /proposals/:proposalId/documents/upload", () => {
 		expect(typeof uploadPath).toBe("string");
 		expect(uploadPath as string).toMatch(
 			new RegExp(
-				`^proposals/${PROPOSAL_ID}/v1_\\d+_[0-9a-f-]{36}_[A-Za-z0-9._-]+\\.pdf$`,
+				`^proposals/${PROPOSAL_ID}/[0-9a-f-]{36}_[A-Za-z0-9._-]+\\.pdf$`,
 			),
 		);
 	});

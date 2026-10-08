@@ -126,6 +126,7 @@ app.openapi(listRoute, async (c) => {
 				updatedAt: proposals.updatedAt,
 				archivedAt: proposals.archivedAt,
 				leaderFirstName: users.firstName,
+				leaderId: leaderSubquery.userId,
 				leaderLastName: users.lastName,
 				leaderAcademicRank: users.academicRank,
 				isMember: sql<boolean>`COALESCE(${userMemberSubquery.isMember}, false)`,

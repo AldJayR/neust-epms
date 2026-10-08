@@ -68,7 +68,7 @@ describe("authMiddleware", () => {
 		const mockSupabase = createClient("", "");
 		vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
 			data: { user: null },
-			error: { message: "Invalid token" } as any,
+			error: { message: "Invalid token", status: 401 } as any,
 		});
 
 		const res = await app.request("/test", {

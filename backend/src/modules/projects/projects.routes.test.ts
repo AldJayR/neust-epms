@@ -53,7 +53,7 @@ describe("POST /projects/:id/transition", () => {
 
 		expect(res.status).toBe(400);
 		const body = await res.json();
-		expect(body.error.code).toBe("MOA_REQUIRED");
+		expect(body.error.code).toBe("DEPRECATED_TRANSITION");
 	});
 
 	it("should reject Completed if project is not Ongoing", async () => {
@@ -68,10 +68,10 @@ describe("POST /projects/:id/transition", () => {
 
 		expect(res.status).toBe(400);
 		const body = await res.json();
-		expect(body.error.code).toBe("INVALID_TRANSITION");
+		expect(body.error.code).toBe("DEPRECATED_TRANSITION");
 	});
 
-	it("should transition project status successfully and log changes", async () => {
+	it("rejects the deprecated transition even with a valid linked MOA", async () => {
 		const project = createMockProject({
 			projectStatus: "Approved",
 			moaId: "moa-123",
@@ -95,34 +95,28 @@ describe("POST /projects/:id/transition", () => {
 			body: JSON.stringify({ status: "Ongoing" }),
 		});
 
-		expect(res.status).toBe(200);
+		expect(res.status).toBe(400);
 		const body = await res.json();
-		expect(body.message).toContain("Ongoing");
-
-		expect(insertAuditLog).toHaveBeenCalledWith(
-			expect.objectContaining({
-				action: `Transitioned project ${project.projectId} to Ongoing`,
-				oldValue: { projectStatus: "Approved" },
-				newValue: { projectStatus: "Ongoing" },
-			}),
-			expect.anything(),
-		);
+		expect(body.error.code).toBe("DEPRECATED_TRANSITION");
+		expect(db.update).not.toHaveBeenCalled();
+		expect(insertAuditLog).not.toHaveBeenCalled();
 	});
 });
 
 describe("POST /projects/:id/close", () => {
-	it("should close a project when both required reports exist", async () => {
-		const project = createMockProject({ projectStatus: "Ongoing" });
+	it("should close a pending project with a complete unified package", async () => {
+		const project = createMockProject({ projectStatus: "Pending Closure" });
 		const reports = [
-			{ reportType: "Final Accomplishment" },
-			{ reportType: "Terminal" },
+			{ reportId: "report-1", reportType: "Accomplishment and Terminal Report", traineeCount: 10, packageCompletedAt: new Date() },
 		];
 
 		let callCount = 0;
 		vi.mocked(db.select).mockImplementation(() => {
 			callCount++;
 			if (callCount === 1) return mockSelectChain([project]) as never;
-			return mockSelectChain(reports) as never;
+			if (callCount === 2) return mockSelectChain(reports) as never;
+			if (callCount === 3) return mockSelectChain([{ attachmentId: "eval-1" }]) as never;
+			return mockSelectChain([]) as never;
 		});
 		vi.mocked(db.update).mockReturnValue(mockMutationChain([project]) as never);
 
@@ -137,7 +131,7 @@ describe("POST /projects/:id/close", () => {
 		expect(insertAuditLog).toHaveBeenCalledWith(
 			expect.objectContaining({
 				action: `Closed project ${project.projectId}`,
-				oldValue: { projectStatus: "Ongoing" },
+				oldValue: { projectStatus: "Pending Closure" },
 				newValue: { projectStatus: "Closed" },
 			}),
 			expect.anything(),
@@ -145,17 +139,18 @@ describe("POST /projects/:id/close", () => {
 	});
 
 	it("should close a project when referenced by proposalId", async () => {
-		const project = createMockProject({ projectStatus: "Ongoing" });
+		const project = createMockProject({ projectStatus: "Pending Closure" });
 		const reports = [
-			{ reportType: "Final Accomplishment" },
-			{ reportType: "Terminal" },
+			{ reportId: "report-1", reportType: "Accomplishment and Terminal Report", traineeCount: 10, packageCompletedAt: new Date() },
 		];
 
 		let callCount = 0;
 		vi.mocked(db.select).mockImplementation(() => {
 			callCount++;
 			if (callCount === 1) return mockSelectChain([project]) as never;
-			return mockSelectChain(reports) as never;
+			if (callCount === 2) return mockSelectChain(reports) as never;
+			if (callCount === 3) return mockSelectChain([{ attachmentId: "eval-1" }]) as never;
+			return mockSelectChain([]) as never;
 		});
 		vi.mocked(db.update).mockReturnValue(mockMutationChain([project]) as never);
 
@@ -171,15 +166,16 @@ describe("POST /projects/:id/close", () => {
 	it("should close a project that is pending closure", async () => {
 		const project = createMockProject({ projectStatus: "Pending Closure" });
 		const reports = [
-			{ reportType: "Final Accomplishment" },
-			{ reportType: "Terminal" },
+			{ reportId: "report-1", reportType: "Accomplishment and Terminal Report", traineeCount: 10, packageCompletedAt: new Date() },
 		];
 
 		let callCount = 0;
 		vi.mocked(db.select).mockImplementation(() => {
 			callCount++;
 			if (callCount === 1) return mockSelectChain([project]) as never;
-			return mockSelectChain(reports) as never;
+			if (callCount === 2) return mockSelectChain(reports) as never;
+			if (callCount === 3) return mockSelectChain([{ attachmentId: "eval-1" }]) as never;
+			return mockSelectChain([]) as never;
 		});
 		vi.mocked(db.update).mockReturnValue(mockMutationChain([project]) as never);
 
@@ -192,7 +188,7 @@ describe("POST /projects/:id/close", () => {
 	});
 
 	it("should reject close when Final Accomplishment report is missing", async () => {
-		const project = createMockProject({ projectStatus: "Ongoing" });
+		const project = createMockProject({ projectStatus: "Pending Closure" });
 		const reports = [{ reportType: "Terminal" }];
 
 		let callCount = 0;
@@ -212,7 +208,7 @@ describe("POST /projects/:id/close", () => {
 	});
 
 	it("should reject close when Terminal report is missing", async () => {
-		const project = createMockProject({ projectStatus: "Ongoing" });
+		const project = createMockProject({ projectStatus: "Pending Closure" });
 		const reports = [{ reportType: "Final Accomplishment" }];
 
 		let callCount = 0;
@@ -232,7 +228,7 @@ describe("POST /projects/:id/close", () => {
 	});
 
 	it("should reject close when no reports exist", async () => {
-		const project = createMockProject({ projectStatus: "Ongoing" });
+		const project = createMockProject({ projectStatus: "Pending Closure" });
 
 		let callCount = 0;
 		vi.mocked(db.select).mockImplementation(() => {

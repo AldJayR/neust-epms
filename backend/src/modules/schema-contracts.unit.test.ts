@@ -78,7 +78,8 @@ describe("backend schema contracts", () => {
 		expect(
 			CreateReportSchema.safeParse({
 				milestoneId: uuid,
-				reportType: "Terminal",
+				reportType: "Accomplishment and Terminal Report",
+				traineeCount: 0,
 			}).success,
 		).toBe(true);
 		expect(UpdateMoaSchema.safeParse({ validUntil: "2026-12-31T00:00:00.000Z" }).success).toBe(true);

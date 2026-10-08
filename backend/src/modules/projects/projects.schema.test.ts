@@ -14,6 +14,7 @@ describe("ActivateSchema", () => {
 					reportType: "Progress",
 					dueAt: "2026-09-30T00:00:00.000Z",
 				},
+				{ reportType: "Terminal Report", dueAt: "2026-10-30T00:00:00.000Z" },
 			],
 		});
 

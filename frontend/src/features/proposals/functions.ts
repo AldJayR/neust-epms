@@ -6,6 +6,7 @@ import {
 	authorizeSessionUser,
 	getValidAccessToken,
 } from "@/lib/session.server";
+import { pdfFileSchema } from "@/lib/upload-policy";
 
 export const reviewProposalFn = createServerFn({ method: "POST" })
 	.validator(
@@ -47,14 +48,8 @@ export const recordInstitutionalApprovalFn = createServerFn({ method: "POST" })
 		if (!proposalId || typeof proposalId !== "string") {
 			throw new Error("Proposal ID is required");
 		}
-		if (
-			!(file instanceof File) ||
-			(file.type !== "application/pdf" &&
-				file.type !== "application/x-pdf" &&
-				!file.name.toLowerCase().endsWith(".pdf"))
-		) {
-			throw new Error("A valid PDF file is required");
-		}
+		z.uuid().parse(proposalId);
+		pdfFileSchema.parse(file);
 		return data;
 	})
 	.handler(async ({ data }) => {
@@ -89,14 +84,8 @@ export const recordChairEndorsementFn = createServerFn({ method: "POST" })
 		if (!proposalId || typeof proposalId !== "string") {
 			throw new Error("Proposal ID is required");
 		}
-		if (
-			!(file instanceof File) ||
-			(file.type !== "application/pdf" &&
-				file.type !== "application/x-pdf" &&
-				!file.name.toLowerCase().endsWith(".pdf"))
-		) {
-			throw new Error("A valid PDF file is required");
-		}
+		z.uuid().parse(proposalId);
+		pdfFileSchema.parse(file);
 		return data;
 	})
 	.handler(async ({ data }) => {
@@ -115,10 +104,7 @@ export const recordChairEndorsementFn = createServerFn({ method: "POST" })
 		);
 		if (!response.ok) {
 			throw new Error(
-				await getErrorMessage(
-					response,
-					"Failed to record chair endorsement",
-				),
+				await getErrorMessage(response, "Failed to record chair endorsement"),
 			);
 		}
 		return (await response.json()) as { message: string };
@@ -152,7 +138,7 @@ export const downloadAnnotatedProposalFn = createServerFn({ method: "GET" })
 			contentDisposition?.match(/filename="([^"]+)"/)?.[1] ??
 			`proposal-${data.proposalId}-annotated.pdf`;
 
-	return {
+		return {
 			base64: bytesToBase64(new Uint8Array(await response.arrayBuffer())),
 			fileName,
 		};

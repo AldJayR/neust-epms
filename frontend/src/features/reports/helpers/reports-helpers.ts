@@ -5,18 +5,18 @@ export function filterReportsForView(
 	{
 		activeTab,
 		isRET,
-		userFullName,
+		userId,
 		myProjectIds,
 	}: {
 		activeTab: "my" | "college";
 		isRET: boolean;
-		userFullName: string;
+		userId: string;
 		myProjectIds: ReadonlySet<string>;
 	},
 ): ReportItem[] {
 	if (activeTab !== "my") return reports;
 	return reports.filter((report) => {
-		const isLeader = report.leader === userFullName;
+		const isLeader = Boolean(userId) && report.leaderId === userId;
 		if (isRET) return isLeader;
 		return isLeader || myProjectIds.has(report.projectId);
 	});

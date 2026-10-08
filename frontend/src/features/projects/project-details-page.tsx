@@ -8,7 +8,9 @@ import { CreateProposalModal } from "@/features/proposals";
 import { getProposalByIdFn } from "@/features/proposals/public";
 import { useProjectReadiness } from "@/hooks/use-project-readiness";
 import type { AuthUser } from "@/lib/auth";
+import { toDateOnly, toManilaDisplayDate } from "@/lib/dates";
 import { getStatusDescription } from "@/lib/status-descriptions";
+import { invalidateWorkflowQueries } from "@/lib/workflow-queries";
 import { ActivateProjectWizard } from "./components/activate-project-wizard";
 import { ActivityHistoryCard } from "./components/activity-history-card";
 import { AttachmentsCard } from "./components/attachments-card";
@@ -39,7 +41,9 @@ export function ProjectDetailsPage({
 }: ProjectDetailsPageProps) {
 	const { userId: currentUserId, roleName: currentUserRole } = currentUser;
 	const queryClient = useQueryClient();
-	const { data, isLoading } = useQuery(projectDetailsQueryOptions(proposalId));
+	const { data, isLoading, error } = useQuery(
+		projectDetailsQueryOptions(proposalId),
+	);
 	const terminalResults = useTerminalResults(proposalId);
 
 	const [isEditing, dispatchEditing] = useReducer(
@@ -58,15 +62,8 @@ export function ProjectDetailsPage({
 
 	const closeMutation = useMutation({
 		mutationFn: closeProjectFn,
-		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: ["dashboard", "proposals", proposalId],
-			});
-			queryClient.invalidateQueries({ queryKey: ["analytics"] });
-			queryClient.invalidateQueries({ queryKey: ["report-package"] });
-			queryClient.invalidateQueries({
-				queryKey: ["project-reporting-schedule"],
-			});
+		onSuccess: async () => {
+			await invalidateWorkflowQueries(queryClient);
 			toast.success("Project closed successfully!");
 		},
 		onError: (error: Error) => {
@@ -78,6 +75,12 @@ export function ProjectDetailsPage({
 		return <ProjectDetailsSkeleton />;
 	}
 
+	if (error)
+		return (
+			<div role="alert" className="p-6">
+				Unable to load project details. Please reload to try again.
+			</div>
+		);
 	if (!data) {
 		return (
 			<div className="flex h-[400px] items-center justify-center text-muted-foreground">
@@ -108,8 +111,12 @@ export function ProjectDetailsPage({
 				departmentId: editProposalData.departmentId?.toString() ?? "",
 				sdgIds: editProposalData.sdgIds,
 				beneficiarySectors: editProposalData.beneficiarySectors,
-				targetStartDate: editProposalData.targetStartDate ?? "",
-				targetEndDate: editProposalData.targetEndDate ?? "",
+				targetStartDate: editProposalData.targetStartDate
+					? toDateOnly(toManilaDisplayDate(editProposalData.targetStartDate))
+					: "",
+				targetEndDate: editProposalData.targetEndDate
+					? toDateOnly(toManilaDisplayDate(editProposalData.targetEndDate))
+					: "",
 				budgetPartner: Number(editProposalData.budgetPartner ?? 0),
 				budgetNeust: Number(editProposalData.budgetNeust ?? 0),
 				members: (editProposalData.members ?? []).map((m) => ({
@@ -124,10 +131,8 @@ export function ProjectDetailsPage({
 		? getStatusDescription(data.status)
 		: undefined;
 	const showActivateButton =
-		isDirector &&
-		(data.status === "Approved" || data.status === "Institutionally Approved");
-	const showCloseButton =
-		isDirector && ["Ongoing", "Pending Closure"].includes(data.status);
+		isDirector && data.status === "Institutionally Approved";
+	const showCloseButton = isDirector && data.status === "Pending Closure";
 
 	return (
 		<div className="flex flex-col gap-6">

@@ -9,6 +9,9 @@ type InputValidator<T> =
  */
 export function createServerFnMock() {
 	return {
+		handler<R>(handler: (context: { data: unknown }) => R) {
+			return async (input?: { data?: unknown }) => handler({ data: input?.data });
+		},
 		validator<T>(validator: InputValidator<T>) {
 			return {
 				handler<R>(handler: (context: { data: T }) => R) {

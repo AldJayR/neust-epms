@@ -331,12 +331,8 @@ export async function uploadMoaDocument(
 	ipAddress: string,
 	contentLength: number,
 ) {
-	if (!canManageMoas(user)) {
-		throw new ApiError(
-			403,
-			"FORBIDDEN",
-			"You must be the Director or RET Chair to manage MOAs",
-		);
+	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
+		throw new ApiError(403, "FORBIDDEN", "Only the Director can manage MOAs");
 	}
 
 	if (contentLength > MAX_UPLOAD_BYTES) {
@@ -632,12 +628,8 @@ export async function restoreMoa(
 	user: AuthUser,
 	ipAddress: string,
 ) {
-	if (!canManageMoas(user)) {
-		throw new ApiError(
-			403,
-			"FORBIDDEN",
-			"You must be the Director or RET Chair to restore MOAs",
-		);
+	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
+		throw new ApiError(403, "FORBIDDEN", "Only the Director can restore MOAs");
 	}
 
 	const [updated] = await db

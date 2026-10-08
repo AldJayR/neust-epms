@@ -2,9 +2,8 @@ import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { proposals } from "@/db/schema/proposals.js";
-import { insertAuditLog } from "@/lib/audit.js";
-import { ApiError } from "@/lib/errors.js";
 import { getClientIp } from "@/lib/client-ip.js";
+import { ApiError } from "@/lib/errors.js";
 import {
 	createNotification,
 	getUserIdsByRole,
@@ -59,24 +58,30 @@ app.openapi(reviewRoute, async (c) => {
 	const { id } = c.req.valid("param");
 	const body = c.req.valid("json");
 
-	const result = await processReview(user, id, {
-		decision: body.decision,
-		comments: body.comments,
-	});
+	const result = await processReview(
+		user,
+		id,
+		{
+			decision: body.decision,
+			comments: body.comments,
+		},
+		getClientIp(c),
+	);
 
-	await insertAuditLog({
-		userId: user.userId,
-		action: `Reviewed proposal ${id}: ${body.decision}`,
-		tableAffected: "proposal_reviews",
-		ipAddress: getClientIp(c),
+	const leaderUserId = await getLeaderUserId(id).catch((error) => {
+		console.error("[notification] Failed to resolve proposal leader:", error);
+		return undefined;
 	});
-
-	const leaderUserId = await getLeaderUserId(id);
-	const [existing] = await db
-		.select({ title: proposals.title })
-		.from(proposals)
-		.where(eq(proposals.proposalId, id))
-		.limit(1);
+	const [existing] = await Promise.resolve(
+		db
+			.select({ title: proposals.title })
+			.from(proposals)
+			.where(eq(proposals.proposalId, id))
+			.limit(1),
+	).catch((error) => {
+		console.error("[notification] Failed to resolve proposal title:", error);
+		return [];
+	});
 
 	if (leaderUserId) {
 		let title = "Proposal Update";
@@ -195,7 +200,8 @@ const chairEndorsementRoute = createRoute({
 	method: "post",
 	path: "/proposals/{id}/endorsement",
 	tags: ["Proposals"],
-	summary: "Upload signed Dean/Campus Director endorsement scan (RET Chair only)",
+	summary:
+		"Upload signed Dean/Campus Director endorsement scan (RET Chair only)",
 	description:
 		"DFD Process 4.2 & BR-10: Records the RET Chair's uploaded scan of the College Dean or Campus Director signed endorsement form, endorsing the proposal.",
 	security: [{ Bearer: [] }],

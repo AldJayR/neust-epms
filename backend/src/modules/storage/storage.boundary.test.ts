@@ -106,14 +106,10 @@ describe("Supabase Storage boundary", () => {
 	});
 
 	it("removes an uploaded proposal document when its database record fails", async () => {
-		const versionTransaction = {
-			execute: vi.fn().mockResolvedValue([{ max_ver: 2 }]),
-		};
 		const insertFailure = new Error("database unavailable");
+		vi.mocked(db.select).mockReturnValueOnce(mockSelectChain([proposal]) as never)
+			.mockReturnValueOnce(mockSelectChain([{ memberId: "member-1" }]) as never);
 		vi.mocked(db.transaction)
-			.mockImplementationOnce(
-				async (callback) => callback(versionTransaction as never) as never,
-			)
 			.mockImplementationOnce(async () => {
 				throw insertFailure;
 			});
@@ -128,9 +124,18 @@ describe("Supabase Storage boundary", () => {
 		expect(storageBucket.upload).toHaveBeenCalledOnce();
 		expect(storageBucket.remove).toHaveBeenCalledWith([
 			expect.stringMatching(
-				new RegExp(`^proposals/${proposalId}/v2_\\d+_[0-9a-f-]{36}_`),
+				new RegExp(`^proposals/${proposalId}/[0-9a-f-]{36}_`),
 			),
 		]);
+	});
+
+	it("cleans up a new avatar when the profile transaction throws", async () => {
+		vi.mocked(db.select).mockReturnValue(mockSelectChain([{ avatarUrl: null }]) as never);
+		const failure = new Error("profile persistence failed");
+		vi.mocked(db.transaction).mockRejectedValueOnce(failure);
+		const file = new File([Uint8Array.of(0xff, 0xd8, 0xff, 0xdb)], "avatar.jpg", { type: "image/jpeg" });
+		await expect(uploadUserAvatar(MOCK_USERS.faculty, file, "127.0.0.1")).rejects.toBe(failure);
+		expect(storageBucket.remove).toHaveBeenCalledWith([expect.stringMatching(/^users\//)]);
 	});
 
 	it("surfaces a signed URL provider failure without writing an audit record", async () => {

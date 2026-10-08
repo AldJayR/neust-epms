@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/select";
 import type { FacultyProjectItem } from "@/features/faculty/public";
 import { projectReportingScheduleQueryOptions } from "@/features/projects/public";
-import { toStableDate } from "@/lib/utils";
+import { canSubmitMilestone } from "@/features/projects/reporting-schedule.functions";
+import { toManilaDisplayDate as toStableDate } from "@/lib/dates";
 import { SubmitReportModal } from "./submit-report-modal";
 
 interface ReportSubmissionPickerDialogProps {
@@ -40,15 +41,19 @@ export function ReportSubmissionPickerDialog({
 		reportType: string;
 		dueAt: string;
 	} | null>(null);
-	const { data: schedule } = useQuery({
+	const {
+		data: schedule,
+		isLoading,
+		error,
+	} = useQuery({
 		...projectReportingScheduleQueryOptions(projectId),
 		enabled: open && Boolean(projectId),
 	});
-	const eligibleProjects = projects.filter(
-		(project) => project.projectStatus === "Ongoing",
+	const eligibleProjects = projects.filter((project) =>
+		["Ongoing", "Overdue"].includes(project.projectStatus),
 	);
 	const milestones = schedule?.schedule.milestones.filter(
-		(milestone) => !milestone.isCompleted,
+		(_milestone, index, all) => canSubmitMilestone(all, index),
 	);
 	const selectedProject = eligibleProjects.find(
 		(project) => project.projectId === projectId,
@@ -64,7 +69,7 @@ export function ReportSubmissionPickerDialog({
 
 	const handleContinue = () => {
 		const milestone = milestones?.find((item) => item.id === milestoneId);
-		if (!milestone) return;
+		if (!milestone || !selectedProject) return;
 		setSelectedMilestone({
 			id: milestone.id,
 			projectId,
@@ -85,6 +90,14 @@ export function ReportSubmissionPickerDialog({
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4 py-2">
+						{isLoading && (
+							<p className="text-sm">Loading reporting milestones...</p>
+						)}
+						{error && (
+							<p role="alert" className="text-sm text-destructive">
+								Unable to load the reporting schedule. Please try again.
+							</p>
+						)}
 						<Select
 							value={projectId}
 							onValueChange={(value) => handleProjectChange(value ?? "")}
@@ -132,7 +145,10 @@ export function ReportSubmissionPickerDialog({
 						<Button variant="ghost" onClick={() => onOpenChange(false)}>
 							Cancel
 						</Button>
-						<Button disabled={!milestoneId} onClick={handleContinue}>
+						<Button
+							disabled={!selectedProject || !selectedMilestoneOption}
+							onClick={handleContinue}
+						>
 							Continue
 						</Button>
 					</DialogFooter>

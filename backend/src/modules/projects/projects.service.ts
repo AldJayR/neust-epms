@@ -43,7 +43,11 @@ import {
 	ROLE_NAMES,
 } from "@/lib/types.js";
 import { getProposalExtensionServicesByProposalIds } from "@/modules/proposals/proposals.service.js";
-import { validateProjectTransition } from "./project-policies.js";
+import {
+	isActivationMoaValid,
+	reportingScheduleError,
+	validateProjectTransition,
+} from "./project-policies.js";
 
 // ── CRUD ──
 
@@ -96,6 +100,7 @@ export async function listProjects(
 				updatedAt: projects.updatedAt,
 				archivedAt: projects.archivedAt,
 				leaderFirstName: users.firstName,
+				leaderId: leaderMembers.userId,
 				leaderLastName: users.lastName,
 				leaderAcademicRank: users.academicRank,
 				isMember: sql<boolean>`COALESCE(${userMemberSubquery.isMember}, false)`,
@@ -683,7 +688,7 @@ export async function closeProject(
 	user: AuthUser,
 	ipAddress: string,
 ) {
-	return db.transaction(async (tx) => {
+	const result = await db.transaction(async (tx) => {
 		const [project] = await tx
 			.select({
 				projectId: projects.projectId,
@@ -719,14 +724,11 @@ export async function closeProject(
 			);
 		}
 
-		if (
-			project.projectStatus !== PROJECT_STATUS.ONGOING &&
-			project.projectStatus !== PROJECT_STATUS.PENDING_CLOSURE
-		) {
+		if (project.projectStatus !== PROJECT_STATUS.PENDING_CLOSURE) {
 			throw new ApiError(
 				400,
 				"INVALID_STATE",
-				"Only ongoing or pending closure projects can be closed",
+				"Only pending closure projects can be closed",
 			);
 		}
 
@@ -750,17 +752,7 @@ export async function closeProject(
 		const closureReport = reports.find(
 			(r) => r.reportType === REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL,
 		);
-		const legacyClosure = reports.some(
-			(terminal) =>
-				terminal.reportType === REPORT_TYPE.TERMINAL &&
-				reports.some(
-					(final) =>
-						final.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT &&
-						final.milestoneId === terminal.milestoneId,
-				),
-		);
-
-		if (!closureReport && !legacyClosure) {
+		if (!closureReport) {
 			throw new ApiError(
 				400,
 				"MISSING_CLOSURE_REPORT",
@@ -769,7 +761,11 @@ export async function closeProject(
 		}
 
 		if (closureReport) {
-			if (!closureReport.packageCompletedAt)
+			if (
+				!closureReport.packageCompletedAt ||
+				closureReport.traineeCount == null ||
+				closureReport.traineeCount < 0
+			)
 				throw new ApiError(
 					400,
 					"INCOMPLETE_PACKAGE",
@@ -786,6 +782,7 @@ export async function closeProject(
 							ATTACHMENT_TYPE.EVALUATION_FORMS,
 						),
 						isNull(reportAttachments.archivedAt),
+						isNotNull(reportAttachments.storagePath),
 					),
 				)
 				.limit(1);
@@ -859,23 +856,21 @@ export async function closeProject(
 			)
 			.limit(1);
 
-		if (leader) {
-			await createNotification({
-				recipientId: leader.userId,
-				type: "project",
-				title: "Terminal Report Approved",
-				message: `Terminal report for "${proposal?.title ?? "Untitled"}" has been approved by the Director. The project is officially closed.`,
-				sendEmail: true,
-			}).catch((err) => {
-				console.error(
-					"[notification] Failed to notify leader on closure:",
-					err,
-				);
-			});
-		}
-
-		return updated;
+		return { updated, leader, title: proposal?.title ?? "Untitled" };
 	});
+	if (result.leader) {
+		await createNotification({
+			recipientId: result.leader.userId,
+			type: "project",
+			title: "Terminal Report Approved",
+			message: `Terminal report for "${result.title}" has been approved by the Director. The project is officially closed.`,
+			sendEmail: true,
+		}).catch((err) => {
+			console.error("[notification] Failed to notify leader on closure:", err);
+		});
+	}
+
+	return result.updated;
 }
 
 export async function setProjectHold(
@@ -956,7 +951,9 @@ export async function activateProject(
 	user: AuthUser,
 	ipAddress: string,
 ) {
-	return db.transaction(async (tx) => {
+	const scheduleError = reportingScheduleError(body.milestones);
+	if (scheduleError) throw new ApiError(400, "INVALID_SCHEDULE", scheduleError);
+	const result = await db.transaction(async (tx) => {
 		let project = await tx
 			.select({
 				projectId: projects.projectId,
@@ -979,14 +976,11 @@ export async function activateProject(
 			const [proposal] = await tx
 				.select({ status: proposals.status })
 				.from(proposals)
-				.where(eq(proposals.proposalId, id))
+				.where(and(eq(proposals.proposalId, id), isNull(proposals.archivedAt)))
 				.for("update")
 				.limit(1);
 
-			if (
-				proposal?.status === PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED ||
-				proposal?.status === PROPOSAL_STATUS.APPROVED
-			) {
+			if (proposal?.status === PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED) {
 				await tx
 					.insert(projects)
 					.values({ proposalId: id, projectStatus: PROJECT_STATUS.APPROVED })
@@ -1017,13 +1011,18 @@ export async function activateProject(
 				status: proposals.status,
 			})
 			.from(proposals)
-			.where(eq(proposals.proposalId, project.proposalId))
+			.where(
+				and(
+					eq(proposals.proposalId, project.proposalId),
+					isNull(proposals.archivedAt),
+				),
+			)
+			.for("update")
 			.limit(1);
 
 		if (
-			proposal &&
-			proposal.status !== PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED &&
-			proposal.status !== PROPOSAL_STATUS.APPROVED
+			!proposal ||
+			proposal.status !== PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED
 		) {
 			throw new ApiError(
 				400,
@@ -1076,16 +1075,27 @@ export async function activateProject(
 		}
 
 		const [moa] = await tx
-			.select({ moaId: moas.moaId, validUntil: moas.validUntil })
+			.select({
+				moaId: moas.moaId,
+				validFrom: moas.validFrom,
+				validUntil: moas.validUntil,
+				archivedAt: moas.archivedAt,
+				storagePath: moas.storagePath,
+			})
 			.from(moas)
 			.where(eq(moas.moaId, body.moaId))
+			.for("update")
 			.limit(1);
 
 		if (!moa) {
 			throw new ApiError(404, "NOT_FOUND", "MOA not found");
 		}
-		if (moa.validUntil < new Date()) {
-			throw new ApiError(400, "MOA_EXPIRED", "The selected MOA is expired");
+		if (!isActivationMoaValid(moa)) {
+			throw new ApiError(
+				400,
+				"INVALID_MOA",
+				"Select a non-archived MOA with an uploaded document whose validity has started and has not expired",
+			);
 		}
 
 		const [updated] = await tx
@@ -1149,28 +1159,29 @@ export async function activateProject(
 			)
 			.limit(1);
 
-		if (leader) {
-			await createNotification({
-				recipientId: leader.userId,
-				type: "project",
-				title: "Project Activated",
-				message: `Your project "${proposal?.title ?? "Untitled"}" has been officially activated and is now ongoing.`,
-				sendEmail: true,
-			}).catch((err) => {
-				console.error(
-					"[notification] Failed to notify leader on activation:",
-					err,
-				);
-			});
-		}
-
-		return updated;
+		return { updated, leader, title: proposal.title };
 	});
+	if (result.leader) {
+		await createNotification({
+			recipientId: result.leader.userId,
+			type: "project",
+			title: "Project Activated",
+			message: `Your project "${result.title}" has been officially activated and is now ongoing.`,
+			sendEmail: true,
+		}).catch((err) => {
+			console.error(
+				"[notification] Failed to notify leader on activation:",
+				err,
+			);
+		});
+	}
+
+	return result.updated;
 }
 
 // ── Readiness & schedule ──
 
-export async function getProjectReadiness(id: string) {
+export async function getProjectReadiness(id: string, user: AuthUser) {
 	// 1. Get project
 	const [project] = await db
 		.select({
@@ -1180,10 +1191,12 @@ export async function getProjectReadiness(id: string) {
 			projectStatus: projects.projectStatus,
 		})
 		.from(projects)
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
 		.where(
 			and(
 				or(eq(projects.projectId, id), eq(projects.proposalId, id)),
 				isNull(projects.archivedAt),
+				...buildProposalScope(user),
 			),
 		)
 		.limit(1);
@@ -1215,7 +1228,12 @@ export async function getProjectReadiness(id: string) {
 			),
 		project.moaId
 			? db
-					.select({ validUntil: moas.validUntil })
+					.select({
+						validFrom: moas.validFrom,
+						validUntil: moas.validUntil,
+						archivedAt: moas.archivedAt,
+						storagePath: moas.storagePath,
+					})
 					.from(moas)
 					.where(and(eq(moas.moaId, project.moaId), isNull(moas.archivedAt)))
 					.limit(1)
@@ -1232,9 +1250,7 @@ export async function getProjectReadiness(id: string) {
 
 	// Check Proposal Approved
 	const isProposalApproved =
-		proposal.status === PROPOSAL_STATUS.APPROVED ||
-		proposal.status === PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED ||
-		project.projectStatus !== "Approved";
+		proposal.status === PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED;
 	const proposalApprovedDate = proposal.updatedAt.toLocaleDateString("en-US", {
 		month: "short",
 		day: "numeric",
@@ -1258,7 +1274,9 @@ export async function getProjectReadiness(id: string) {
 			: Promise.resolve([]),
 	]);
 
-	const specialOrdersUploadedCount = sOrders.length;
+	const specialOrdersUploadedCount = new Set(
+		sOrders.map((order) => order.memberId),
+	).size;
 	const isSpecialOrdersComplete =
 		pMembers.length > 0 ? specialOrdersUploadedCount === pMembers.length : true;
 
@@ -1266,7 +1284,7 @@ export async function getProjectReadiness(id: string) {
 	let isMoaValid = false;
 	let moaValidUntilDate = "";
 	if (moa) {
-		isMoaValid = new Date(moa.validUntil) > new Date();
+		isMoaValid = isActivationMoaValid(moa);
 		moaValidUntilDate = new Date(moa.validUntil).toLocaleDateString("en-US", {
 			month: "short",
 			day: "numeric",
@@ -1281,7 +1299,7 @@ export async function getProjectReadiness(id: string) {
 	// Construct prerequisites list
 	const prerequisites = [
 		{
-			name: "Proposal Approved",
+			name: "Institutional Approval",
 			complete: isProposalApproved,
 			owner: "Director/Admin",
 			details: isProposalApproved
@@ -1326,17 +1344,19 @@ export async function getProjectReadiness(id: string) {
 	return { isReady, prerequisites, blocker };
 }
 
-export async function getProjectReportingSchedule(id: string) {
+export async function getProjectReportingSchedule(id: string, user: AuthUser) {
 	// 1. Get project
 	const [project] = await db
 		.select({
 			projectId: projects.projectId,
 		})
 		.from(projects)
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
 		.where(
 			and(
 				or(eq(projects.projectId, id), eq(projects.proposalId, id)),
 				isNull(projects.archivedAt),
+				...buildProposalScope(user),
 			),
 		)
 		.limit(1);

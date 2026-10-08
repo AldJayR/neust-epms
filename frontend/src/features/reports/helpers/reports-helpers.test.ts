@@ -14,6 +14,7 @@ const reports: ReportItem[] = [
 		milestoneId: "m-2",
 		project: "Project One",
 		leader: "Leader One",
+		leaderId: "leader-1",
 		reportType: "Progress Report",
 		submitted: "2026-02-01T00:00:00Z",
 		department: null,
@@ -29,6 +30,7 @@ const reports: ReportItem[] = [
 		milestoneId: "m-1",
 		project: "Project One",
 		leader: "Leader One",
+		leaderId: "leader-1",
 		reportType: "Progress",
 		submitted: "2026-01-01T00:00:00Z",
 		department: null,
@@ -44,6 +46,7 @@ const reports: ReportItem[] = [
 		milestoneId: "m-3",
 		project: "Project Two",
 		leader: "Leader Two",
+		leaderId: "leader-2",
 		reportType: "Final Accomplishment",
 		submitted: null,
 		department: null,
@@ -61,7 +64,7 @@ describe("reports helpers", () => {
 			filterReportsForView(reports, {
 				activeTab: "my",
 				isRET: true,
-				userFullName: "Leader One",
+				userId: "leader-1",
 				myProjectIds: new Set(["p-2"]),
 			}),
 		).toHaveLength(2);
@@ -69,7 +72,7 @@ describe("reports helpers", () => {
 			filterReportsForView(reports, {
 				activeTab: "my",
 				isRET: false,
-				userFullName: "Other",
+				userId: "other-user",
 				myProjectIds: new Set(["p-2"]),
 			}),
 		).toHaveLength(1);

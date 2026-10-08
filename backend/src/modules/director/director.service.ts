@@ -30,12 +30,12 @@ import { proposals } from "@/db/schema/proposals.js";
 import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
 import { env } from "@/env.js";
-import { escapeHtml } from "@/lib/html.js";
-import { getLeaderSubquery } from "@/lib/leader-subquery.js";
 import {
 	getActiveInvolvementSubquery,
 	getActiveProjectConditions,
 } from "@/lib/faculty-involvement.js";
+import { escapeHtml } from "@/lib/html.js";
+import { getLeaderSubquery } from "@/lib/leader-subquery.js";
 import {
 	type AuthUser,
 	PROJECT_STATUS,
@@ -764,6 +764,7 @@ export async function getMoaRepository(query: {
 
 // ── 5. getActiveMoas ──
 export async function getActiveMoas() {
+	const now = new Date();
 	const rows = await db
 		.select({
 			moaId: moas.moaId,
@@ -773,7 +774,14 @@ export async function getActiveMoas() {
 		})
 		.from(moas)
 		.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
-		.where(isNull(moas.archivedAt))
+		.where(
+			and(
+				isNull(moas.archivedAt),
+				isNotNull(moas.storagePath),
+				sql`${moas.validFrom} <= ${now.toISOString()}`,
+				sql`${moas.validUntil} > ${now.toISOString()}`,
+			),
+		)
 		.orderBy(desc(moas.createdAt));
 
 	return rows.map((r) => ({

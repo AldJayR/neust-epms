@@ -4,6 +4,7 @@ export interface ReportItem {
 	milestoneId: string;
 	project: string;
 	leader: string;
+	leaderId?: string | null;
 	academicRank: string | null;
 	avatarUrl: string | null;
 	department: string | null;

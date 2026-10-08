@@ -21,7 +21,7 @@ import {
 } from "./fixtures.js";
 
 describe("project status and reporting schedule", () => {
-	it("persists approved-to-ongoing and ongoing-to-completed transitions", async () => {
+	it("rejects generic start/completion transitions without changing state", async () => {
 		const organization = await seedOrganization("status-transition");
 		const director = await seedAuthUser(organization, {
 			slug: "status-director",
@@ -38,18 +38,18 @@ describe("project status and reporting schedule", () => {
 		});
 		const project = await seedProject(proposal.proposalId, { moaId: moa.moaId });
 
-		await transitionProjectStatus(
+		await expect(transitionProjectStatus(
 			project.projectId,
 			PROJECT_STATUS.ONGOING,
 			director,
 			"127.0.0.1",
-		);
-		await transitionProjectStatus(
+		)).rejects.toMatchObject({ code: "DEPRECATED_TRANSITION" });
+		await expect(transitionProjectStatus(
 			project.projectId,
 			PROJECT_STATUS.COMPLETED,
 			director,
 			"127.0.0.1",
-		);
+		)).rejects.toMatchObject({ code: "DEPRECATED_TRANSITION" });
 
 		const [savedProject] = await db
 			.select({ projectStatus: projects.projectStatus })
@@ -60,8 +60,8 @@ describe("project status and reporting schedule", () => {
 			.from(auditLogs)
 			.where(eq(auditLogs.userId, director.userId));
 
-		expect(savedProject?.projectStatus).toBe(PROJECT_STATUS.COMPLETED);
-		expect(Number(auditCount?.value)).toBe(2);
+		expect(savedProject?.projectStatus).toBe(PROJECT_STATUS.APPROVED);
+		expect(Number(auditCount?.value)).toBe(0);
 	});
 
 	it("classifies incomplete milestones as overdue and upcoming", async () => {
@@ -93,7 +93,7 @@ describe("project status and reporting schedule", () => {
 			storagePath: "reports/overdue.pdf",
 		});
 
-		const schedule = await getProjectReportingSchedule(project.projectId);
+		const schedule = await getProjectReportingSchedule(project.projectId, leader);
 
 		expect(schedule.overdue).toHaveLength(1);
 		expect(schedule.overdue[0]?.id).toBe(overdue.milestoneId);

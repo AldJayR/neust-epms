@@ -57,7 +57,6 @@ export function useReportsView() {
 
 	const isFaculty = user?.roleName === "Faculty";
 	const isRET = user?.roleName === "RET Chair";
-	const userFullName = user ? `${user.firstName} ${user.lastName}` : "";
 	const [viewState, dispatchView] = useReducer(reportsViewReducer, {
 		activeTab: isFaculty || isRET ? "my" : "college",
 		search: "",
@@ -104,12 +103,14 @@ export function useReportsView() {
 
 	const reports = listData?.items ?? [];
 	const myProjectIds = new Set(
-		projectsData?.items?.map((project) => project.projectId) ?? [],
+		projectsData?.items
+			?.filter((project) => project.isMember)
+			.map((project) => project.projectId) ?? [],
 	);
 	const tabFilteredReports = filterReportsForView(reports, {
 		activeTab,
 		isRET: Boolean(isRET),
-		userFullName,
+		userId: user?.userId ?? "",
 		myProjectIds,
 	});
 	const filteredReports = filterReportsByType(tabFilteredReports, typeFilter);
@@ -125,7 +126,10 @@ export function useReportsView() {
 
 	return {
 		user,
-		projects: projectsData?.items ?? [],
+		projects:
+			projectsData?.items.filter(
+				(project) => project.leaderId === user?.userId,
+			) ?? [],
 		isFaculty: Boolean(isFaculty),
 		isRET: Boolean(isRET),
 		activeTab,

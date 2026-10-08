@@ -4,14 +4,16 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { bannerProgramsQueryOptions } from "@/features/banner-programs";
+import { uploadSpecialOrderFn } from "@/features/projects/special-orders.functions";
 import type { AuthUser } from "@/lib/auth";
+import { manilaCalendarTimestamp } from "@/lib/dates";
+import { invalidateWorkflowQueries } from "@/lib/workflow-queries";
 import { type FormValues, formSchema } from "../components/proposal-form";
 import {
 	canSubmitEditingProposal,
 	getFieldsToValidate,
 	requiresProposalDocument,
 } from "../helpers/proposal-wizard-helpers";
-import { uploadSpecialOrderFn } from "@/features/projects/special-orders.functions";
 import {
 	createProposalFn,
 	extensionServicesQueryOptions,
@@ -49,6 +51,11 @@ export function useProposalWizard({
 	hasExistingProposalDocument,
 }: UseProposalWizardOptions) {
 	const isEditing = Boolean(editingProposalId);
+	const draftIdRef = React.useRef<string | undefined>(editingProposalId);
+	const savingRef = React.useRef(false);
+	const uploadedDocumentRef = React.useRef(false);
+	const [isSaving, setIsSaving] = React.useState(false);
+	const [isSubmitting, setIsSubmitting] = React.useState(false);
 	const [state, setState] = React.useReducer(
 		(
 			previous: WizardState,
@@ -145,7 +152,10 @@ export function useProposalWizard({
 	});
 
 	const handleOpenChange = (isOpen: boolean) => {
+		if (savingRef.current) return;
 		if (!isOpen) {
+			draftIdRef.current = editingProposalId;
+			uploadedDocumentRef.current = false;
 			form.reset();
 			setState({ step: 1, file: null, soFiles: {} });
 		}
@@ -153,43 +163,81 @@ export function useProposalWizard({
 	};
 
 	const handleSave = async (shouldSubmit: boolean) => {
-		if (shouldSubmit && isEditing && !canSubmitEditingProposal(currentStatus)) {
-			toast.error(
-				"Only Draft or Returned proposals can be submitted for review",
-			);
-			return;
-		}
-
-		if (
-			requiresProposalDocument(
-				shouldSubmit,
-				isEditing,
-				hasExistingProposalDocument,
-			) &&
-			!state.file
-		) {
-			toast.error("Please upload the Project Proposal PDF");
-			return;
-		}
-
-		const values = form.getValues();
-
+		if (savingRef.current) return;
+		savingRef.current = true;
+		setIsSaving(true);
+		setIsSubmitting(shouldSubmit);
 		let timer: ReturnType<typeof setInterval> | null = null;
-
 		try {
-			setState({ uploadPhase: "creating", uploadProgress: 0 });
-			let proposalId = editingProposalId ?? "";
+			const draftFields: Array<keyof FormValues> = [
+				"title",
+				"bannerProgramId",
+				"projectLocale",
+				"extensionServiceIds",
+				"campusId",
+				"departmentId",
+				"members",
+				"budgetNeust",
+				"budgetPartner",
+			];
+			if (form.getValues("targetStartDate"))
+				draftFields.push("targetStartDate");
+			if (form.getValues("targetEndDate")) draftFields.push("targetEndDate");
+			if (!(await form.trigger(shouldSubmit ? undefined : draftFields))) return;
+			if (
+				shouldSubmit &&
+				isEditing &&
+				!canSubmitEditingProposal(currentStatus)
+			) {
+				toast.error(
+					"Only Draft or Returned proposals can be submitted for review",
+				);
+				return;
+			}
 
-			if (isEditing && editingProposalId) {
+			if (
+				requiresProposalDocument(
+					shouldSubmit,
+					Boolean(draftIdRef.current || editingProposalId),
+					uploadedDocumentRef.current ||
+						(currentStatus !== "Returned" && hasExistingProposalDocument),
+				) &&
+				!state.file
+			) {
+				toast.error("Please upload the Project Proposal PDF");
+				return;
+			}
+
+			const values = form.getValues();
+
+			setState({ uploadPhase: "creating", uploadProgress: 0 });
+			let proposalId = draftIdRef.current ?? editingProposalId ?? "";
+			if (proposalId && shouldSubmit) {
+				const saved = await getProposalByIdFn({ data: { proposalId } });
+				if (!["Draft", "Returned"].includes(saved.status)) {
+					await invalidateWorkflowQueries(queryClient);
+					toast.success("This proposal has already been submitted.");
+					onOpenChange(false);
+					return;
+				}
+			}
+
+			if (proposalId) {
 				await updateProposalMutation.mutateAsync({
 					data: {
-						proposalId: editingProposalId,
+						proposalId,
 						title: values.title,
 						bannerProgramId: values.bannerProgramId,
 						projectLocale: values.projectLocale,
 						extensionServiceIds: values.extensionServiceIds,
 						budgetPartner: values.budgetPartner,
 						budgetNeust: values.budgetNeust,
+						targetStartDate: values.targetStartDate
+							? manilaCalendarTimestamp(values.targetStartDate)
+							: null,
+						targetEndDate: values.targetEndDate
+							? manilaCalendarTimestamp(values.targetEndDate)
+							: null,
 						sectorNames: values.beneficiarySectors,
 						sdgIds: values.sdgIds,
 						members: values.members.map((member) => ({
@@ -209,8 +257,12 @@ export function useProposalWizard({
 						extensionServiceIds: values.extensionServiceIds,
 						budgetPartner: values.budgetPartner,
 						budgetNeust: values.budgetNeust,
-						targetStartDate: new Date(values.targetStartDate).toISOString(),
-						targetEndDate: new Date(values.targetEndDate).toISOString(),
+						targetStartDate: values.targetStartDate
+							? manilaCalendarTimestamp(values.targetStartDate)
+							: undefined,
+						targetEndDate: values.targetEndDate
+							? manilaCalendarTimestamp(values.targetEndDate)
+							: undefined,
 						sdgIds: values.sdgIds,
 						sectorNames: values.beneficiarySectors,
 						members: values.members.map((member) => ({
@@ -220,6 +272,7 @@ export function useProposalWizard({
 					},
 				});
 				proposalId = proposal.proposalId;
+				draftIdRef.current = proposalId;
 			}
 
 			if (state.file) {
@@ -240,6 +293,8 @@ export function useProposalWizard({
 				formData.append("file", state.file);
 				formData.append("proposalId", proposalId);
 				await uploadDocumentMutation.mutateAsync({ data: formData });
+				uploadedDocumentRef.current = true;
+				setState({ file: null });
 				if (timer) clearInterval(timer);
 			}
 
@@ -263,6 +318,9 @@ export function useProposalWizard({
 					);
 					soFormData.append("file", soFile);
 					await uploadSpecialOrderFn({ data: soFormData });
+					setState((previous) => ({
+						soFiles: { ...previous.soFiles, [member.userId]: null },
+					}));
 				}
 			}
 
@@ -273,6 +331,7 @@ export function useProposalWizard({
 				});
 			}
 
+			await invalidateWorkflowQueries(queryClient);
 			setState({ uploadProgress: 100, uploadPhase: "done" });
 			toast.success(
 				shouldSubmit
@@ -280,32 +339,35 @@ export function useProposalWizard({
 					: "Proposal draft saved successfully!",
 			);
 			onOpenChange(false);
+			draftIdRef.current = editingProposalId;
+			uploadedDocumentRef.current = false;
 			form.reset();
 			setState({ step: 1, file: null, soFiles: {} });
-			setTimeout(
-				() => setState({ uploadPhase: "idle", uploadProgress: 0 }),
-				1000,
-			);
+			setState({ uploadPhase: "idle", uploadProgress: 0 });
 		} catch (error: unknown) {
 			if (timer) clearInterval(timer);
 			toast.error(
 				error instanceof Error ? error.message : "Something went wrong",
 			);
-			setTimeout(
-				() => setState({ uploadPhase: "idle", uploadProgress: 0 }),
-				1000,
-			);
+			setState({ uploadPhase: "idle", uploadProgress: 0 });
+		} finally {
+			if (timer) clearInterval(timer);
+			savingRef.current = false;
+			setIsSaving(false);
+			setIsSubmitting(false);
 		}
 	};
 
 	const nextStep = async () => {
+		if (savingRef.current) return;
 		if (state.step === 1) {
 			setState((previous) => ({ step: previous.step + 1 }));
 			return;
 		}
 		const fieldsToValidate = getFieldsToValidate(state.step);
 		const isValid = await form.trigger(fieldsToValidate);
-		if (isValid) setState((previous) => ({ step: previous.step + 1 }));
+		if (isValid && !savingRef.current)
+			setState((previous) => ({ step: previous.step + 1 }));
 	};
 
 	return {
@@ -316,18 +378,20 @@ export function useProposalWizard({
 		bannerProgramsData,
 		isEditing,
 		hasExistingProposalDocument,
-		isBusy:
-			createProposalMutation.isPending ||
-			updateProposalMutation.isPending ||
-			submitProposalMutation.isPending ||
-			uploadDocumentMutation.isPending,
-		isSubmitting: submitProposalMutation.isPending,
+		isBusy: isSaving,
+		isSubmitting,
 		handleOpenChange,
 		handleSave,
 		nextStep,
-		previousStep: () => setState((previous) => ({ step: previous.step - 1 })),
-		setFile: (file: File | null) => setState({ file }),
+		previousStep: () => {
+			if (!savingRef.current)
+				setState((previous) => ({ step: previous.step - 1 }));
+		},
+		setFile: (file: File | null) => {
+			if (!savingRef.current) setState({ file });
+		},
 		setMemberSoFile: (userId: string, file: File | null) =>
+			!savingRef.current &&
 			setState((prev) => ({
 				soFiles: { ...prev.soFiles, [userId]: file },
 			})),

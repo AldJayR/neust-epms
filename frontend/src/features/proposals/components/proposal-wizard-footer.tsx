@@ -30,6 +30,7 @@ export function ProposalWizardFooter({
 						type="button"
 						variant="outline"
 						onClick={onPrevious}
+						disabled={isBusy}
 						className="shrink-0"
 					>
 						<ChevronLeft className="size-4" />
@@ -40,6 +41,7 @@ export function ProposalWizardFooter({
 						type="button"
 						variant="ghost"
 						onClick={onCancel}
+						disabled={isBusy}
 						className="shrink-0"
 					>
 						Cancel
@@ -51,6 +53,7 @@ export function ProposalWizardFooter({
 				<Button
 					type="button"
 					onClick={onNext}
+					disabled={isBusy}
 					className="shrink-0 bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
 				>
 					Next

@@ -27,6 +27,7 @@ import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { ApiError } from "@/lib/errors.js";
 import { escapeHtml } from "@/lib/html.js";
+import { getLeaderSubquery } from "@/lib/leader-subquery.js";
 import {
 	createNotification,
 	getUserIdsByRole,
@@ -61,8 +62,9 @@ function serializeReport(report: {
 	projectId: string;
 	milestoneId: string;
 	projectTitle: string;
-	leaderFirstName: string;
-	leaderLastName: string;
+	leaderId: string | null;
+	leaderFirstName: string | null;
+	leaderLastName: string | null;
 	leaderAcademicRank: string | null;
 	leaderAvatarUrl: string | null;
 	departmentName: string | null;
@@ -79,7 +81,11 @@ function serializeReport(report: {
 		projectId: report.projectId,
 		milestoneId: report.milestoneId,
 		project: report.projectTitle,
-		leader: `${report.leaderFirstName} ${report.leaderLastName}`,
+		leaderId: report.leaderId,
+		leader:
+			[report.leaderFirstName, report.leaderLastName]
+				.filter(Boolean)
+				.join(" ") || "Unassigned",
 		academicRank: report.leaderAcademicRank,
 		avatarUrl: report.leaderAvatarUrl,
 		department: report.departmentName,
@@ -98,6 +104,7 @@ const reportSelection = {
 	projectId: projectReports.projectId,
 	milestoneId: projectReports.milestoneId,
 	projectTitle: proposals.title,
+	leaderId: users.userId,
 	leaderFirstName: users.firstName,
 	leaderLastName: users.lastName,
 	leaderAcademicRank: users.academicRank,
@@ -114,6 +121,7 @@ const reportSelection = {
 
 export async function listReports(user: AuthUser, query: Pagination) {
 	const { page, limit, search } = query;
+	const leaderMembers = getLeaderSubquery();
 	const whereConditions: SQL[] = [
 		isNull(projectReports.archivedAt),
 		isNull(projects.archivedAt),
@@ -132,7 +140,8 @@ export async function listReports(user: AuthUser, query: Pagination) {
 		.from(projectReports)
 		.innerJoin(projects, eq(projectReports.projectId, projects.projectId))
 		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-		.innerJoin(users, eq(projectReports.submittedById, users.userId))
+		.leftJoin(leaderMembers, eq(proposals.proposalId, leaderMembers.proposalId))
+		.leftJoin(users, eq(leaderMembers.userId, users.userId))
 		.leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
 		.where(and(...whereConditions))
 		.orderBy(desc(projectReports.submittedAt))
@@ -227,6 +236,17 @@ export async function createReport(
 		body.reportType === REPORT_TYPE.PROGRESS_REPORT
 			? REPORT_TYPE.PROGRESS
 			: body.reportType;
+	if (
+		![REPORT_TYPE.PROGRESS, REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL].includes(
+			reportType,
+		)
+	) {
+		throw new ApiError(
+			400,
+			"LEGACY_CLOSURE_REPORT",
+			"Submit the unified Accomplishment and Terminal Report package instead of separate legacy closure reports",
+		);
+	}
 	const [milestone] = await db
 		.select({
 			milestoneId: projectReportingMilestones.milestoneId,
@@ -287,9 +307,7 @@ export async function createReport(
 				body.reportType === REPORT_TYPE.PROGRESS_REPORT)) ||
 		((milestone.reportType === "Terminal Report" ||
 			milestone.reportType === "Project Closure") &&
-			(body.reportType === REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL ||
-				body.reportType === REPORT_TYPE.TERMINAL ||
-				body.reportType === REPORT_TYPE.FINAL_ACCOMPLISHMENT));
+			body.reportType === REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL);
 	if (!isValidReportType) {
 		throw new ApiError(
 			400,

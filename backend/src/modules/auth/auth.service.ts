@@ -1,5 +1,5 @@
 import type { z } from "@hono/zod-openapi";
-import { and, eq, ilike, isNull, or } from "drizzle-orm";
+import { and, eq, gt, ilike, isNull, or } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { campuses } from "@/db/schema/campuses.js";
 import { departments } from "@/db/schema/departments.js";
@@ -7,11 +7,10 @@ import { passwordResetTokens } from "@/db/schema/password-reset-tokens.js";
 import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
-import { authUserCache, cacheEnabled } from "@/lib/cache.js";
 import { ApiError } from "@/lib/errors.js";
 import { isPasswordCompromised } from "@/lib/password-check.js";
 import { hashResetToken } from "@/lib/reset-token.js";
-import { supabase } from "@/lib/supabase.js";
+import { createUserAuthClient, supabase } from "@/lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import type {
 	ChangePasswordBodySchema,
@@ -30,18 +29,23 @@ export async function updateOwnProfile(
 	body: z.infer<typeof UpdateProfileBodySchema>,
 	ipAddress: string,
 ) {
-	const [updated] = await db
-		.update(users)
-		.set({ ...body, updatedAt: new Date() })
-		.where(eq(users.userId, user.userId))
-		.returning();
-	if (!updated) throw new ApiError(404, "NOT_FOUND", "User profile not found");
-	if (cacheEnabled) authUserCache.delete(`auth:user:${user.userId}`);
-	await insertAuditLog({
-		userId: user.userId,
-		action: "Updated own profile",
-		tableAffected: "users",
-		ipAddress,
+	await db.transaction(async (tx) => {
+		const [updated] = await tx
+			.update(users)
+			.set({ ...body, updatedAt: new Date() })
+			.where(and(eq(users.userId, user.userId), isNull(users.archivedAt)))
+			.returning();
+		if (!updated)
+			throw new ApiError(404, "NOT_FOUND", "User profile not found");
+		await insertAuditLog(
+			{
+				userId: user.userId,
+				action: "Updated own profile",
+				tableAffected: "users",
+				ipAddress,
+			},
+			tx,
+		);
 	});
 	const profile = await getUserProfileById(user.userId);
 	if (!profile) throw new ApiError(404, "NOT_FOUND", "User profile not found");
@@ -60,26 +64,35 @@ export async function changeOwnPassword(
 			"COMPROMISED_PASSWORD",
 			"Choose a password that has not appeared in a known data breach.",
 		);
-	const { error: verifyError } = await supabase.auth.signInWithPassword({
-		email: user.email,
-		password: body.currentPassword,
-	});
+	const { error: verifyError } =
+		await createUserAuthClient().auth.signInWithPassword({
+			email: user.email,
+			password: body.currentPassword,
+		});
 	if (verifyError)
 		throw new ApiError(
 			400,
 			"INVALID_PASSWORD",
 			"Your current password is incorrect.",
 		);
-	const { error } = await supabase.auth.admin.updateUserById(user.userId, {
-		password: body.newPassword,
-	});
-	if (error) throw new ApiError(400, "PASSWORD_UPDATE_FAILED", error.message);
-	await insertAuditLog({
-		userId: user.userId,
-		action: "Changed own password",
-		tableAffected: "users",
+	try {
+		const { error } = await supabase.auth.admin.updateUserById(user.userId, {
+			password: body.newPassword,
+		});
+		if (error) throw new ApiError(400, "PASSWORD_UPDATE_FAILED", error.message);
+	} catch (error) {
+		await auditExternalAuthOperation(
+			user.userId,
+			"Change own password failed",
+			ipAddress,
+		);
+		throw error;
+	}
+	await auditExternalAuthOperation(
+		user.userId,
+		"Changed own password",
 		ipAddress,
-	});
+	);
 	return { success: true };
 }
 
@@ -108,7 +121,7 @@ async function getUserProfileById(userId: string) {
 		.innerJoin(roles, eq(users.roleId, roles.roleId))
 		.innerJoin(campuses, eq(users.campusId, campuses.campusId))
 		.leftJoin(departments, eq(users.departmentId, departments.departmentId))
-		.where(eq(users.userId, userId))
+		.where(and(eq(users.userId, userId), isNull(users.archivedAt)))
 		.limit(1);
 
 	return row;
@@ -163,35 +176,44 @@ export async function resetPasswordWithToken(
 		);
 	}
 
-	const { error: updateError } = await supabase.auth.admin.updateUserById(
-		existing.userId,
-		{ password: newPassword },
-	);
-	if (updateError) {
-		throw new ApiError(400, "PASSWORD_UPDATE_FAILED", updateError.message);
-	}
-
-	// Best-effort session revocation; failing it must not block the reset.
-	await supabase.auth.admin
-		.signOut(existing.userId)
-		.catch(() => undefined);
-
-	await db.transaction(async (tx) => {
-		await tx
-			.update(passwordResetTokens)
-			.set({ usedAt: new Date() })
-			.where(eq(passwordResetTokens.id, existing.tokenId));
-
-		await insertAuditLog(
-			{
-				userId: existing.userId,
-				action: "Password reset via admin-generated link",
-				tableAffected: "users",
-				ipAddress,
-			},
-			tx,
+	// Claim once before the external operation. Never release the claim on an
+	// uncertain provider outcome: retry requires a newly issued reset link.
+	const [claimed] = await db
+		.update(passwordResetTokens)
+		.set({ usedAt: new Date() })
+		.where(
+			and(
+				eq(passwordResetTokens.id, existing.tokenId),
+				isNull(passwordResetTokens.usedAt),
+				gt(passwordResetTokens.expiresAt, new Date()),
+			),
+		)
+		.returning({ userId: passwordResetTokens.userId });
+	if (!claimed)
+		throw new ApiError(
+			400,
+			"INVALID_RESET_TOKEN",
+			"This reset link is invalid or has already been used.",
 		);
-	});
+
+	try {
+		const { error } = await supabase.auth.admin.updateUserById(claimed.userId, {
+			password: newPassword,
+		});
+		if (error) throw new ApiError(400, "PASSWORD_UPDATE_FAILED", error.message);
+	} catch (error) {
+		await auditExternalAuthOperation(
+			claimed.userId,
+			"Password reset via admin-generated link failed (token consumed)",
+			ipAddress,
+		);
+		throw error;
+	}
+	await auditExternalAuthOperation(
+		claimed.userId,
+		"Password reset via admin-generated link",
+		ipAddress,
+	);
 
 	return { success: true };
 }
@@ -364,23 +386,13 @@ export async function searchUsers(search: UserSearchQuery["search"]) {
 
 export async function login(body: LoginBody, ipAddress: string) {
 	const { data: authData, error: authError } =
-		await supabase.auth.signInWithPassword(body);
+		await createUserAuthClient().auth.signInWithPassword(body);
 
 	if (authError || !authData.session) {
 		throw new ApiError(401, "LOGIN_FAILED", "Invalid email or password");
 	}
 
-	let appUser: AuthUser | undefined;
-	if (cacheEnabled) {
-		appUser = authUserCache.get(`auth:user:${authData.user.id}`);
-	}
-
-	if (!appUser) {
-		appUser = await getUserProfileById(authData.user.id);
-		if (appUser && cacheEnabled) {
-			authUserCache.set(`auth:user:${authData.user.id}`, appUser);
-		}
-	}
+	const appUser = await getUserProfileById(authData.user.id);
 
 	if (!appUser) {
 		throw new ApiError(401, "USER_NOT_FOUND", "User profile not found");
@@ -423,17 +435,21 @@ export async function logout(
 	bearerToken: string | undefined,
 	ipAddress: string,
 ): Promise<{ ok: true }> {
-	await Promise.all([
-		insertAuditLog({
-			userId: authUser.userId,
-			action: "Logout",
-			tableAffected: "users",
+	if (!bearerToken)
+		throw new ApiError(401, "MISSING_TOKEN", "Logout requires a bearer token");
+	try {
+		const { error } = await supabase.auth.admin.signOut(bearerToken);
+		if (error)
+			throw new ApiError(503, "LOGOUT_FAILED", "Unable to revoke the session");
+	} catch (error) {
+		await auditExternalAuthOperation(
+			authUser.userId,
+			"Logout failed",
 			ipAddress,
-		}).catch((err) => {
-			console.error("Failed to write logout audit log:", err);
-		}),
-		bearerToken ? supabase.auth.admin.signOut(bearerToken) : Promise.resolve(),
-	]);
+		);
+		throw error;
+	}
+	await auditExternalAuthOperation(authUser.userId, "Logout", ipAddress);
 
 	return { ok: true };
 }
@@ -446,9 +462,24 @@ export async function completeOnboarding(
 		.set({ hasCompletedOnboarding: true })
 		.where(eq(users.userId, userId));
 
-	if (cacheEnabled) {
-		authUserCache.delete(`auth:user:${userId}`);
-	}
-
 	return { success: true };
+}
+
+async function auditExternalAuthOperation(
+	userId: string,
+	action: string,
+	ipAddress: string,
+) {
+	await insertAuditLog({
+		userId,
+		action,
+		tableAffected: "users",
+		ipAddress,
+	}).catch((error) => {
+		console.error("Failed to audit external auth operation:", {
+			userId,
+			action,
+			error,
+		});
+	});
 }

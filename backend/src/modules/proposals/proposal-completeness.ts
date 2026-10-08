@@ -23,10 +23,11 @@ export function validateProposalCompleteness(
 	}
 
 	if (
-		!facts.members.some((member) => member.projectRole === "Project Leader")
+		facts.members.filter((member) => member.projectRole === "Project Leader")
+			.length !== 1
 	) {
 		throw incomplete(
-			"At least one team member must have the Project Leader role.",
+			"Exactly one team member must have the Project Leader role.",
 		);
 	}
 
@@ -52,8 +53,10 @@ export function validateProposalCompleteness(
 		throw incomplete("Target start and end dates are required.");
 	}
 
-	if (new Date(facts.targetStartDate) > new Date(facts.targetEndDate)) {
-		throw incomplete("Target end date must be on or after target start date.");
+	const start = new Date(facts.targetStartDate).getTime();
+	const end = new Date(facts.targetEndDate).getTime();
+	if (!Number.isFinite(start) || !Number.isFinite(end) || start >= end) {
+		throw incomplete("Target end date must be after target start date.");
 	}
 
 	if (!facts.bannerProgramId) {

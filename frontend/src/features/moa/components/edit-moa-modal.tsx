@@ -21,6 +21,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { manilaCalendarTimestamp, toManilaDisplayDate } from "@/lib/dates";
 import { updateMoaFn } from "../functions";
 
 interface EditMoaModalProps {
@@ -43,23 +44,28 @@ export function EditMoaModal({
 	const queryClient = useQueryClient();
 	const [partnerName] = useState(initialPartnerName);
 	const [validFrom, setValidFrom] = useState<Date | undefined>(
-		initialValidFrom ? new Date(initialValidFrom) : undefined,
+		initialValidFrom ? toManilaDisplayDate(initialValidFrom) : undefined,
 	);
 	const [validUntil, setValidUntil] = useState<Date | undefined>(
-		initialValidUntil ? new Date(initialValidUntil) : undefined,
+		initialValidUntil ? toManilaDisplayDate(initialValidUntil) : undefined,
 	);
 	const updateMutation = useMutation({
 		mutationFn: (dates: { validFrom: Date; validUntil: Date }) =>
 			updateMoaFn({
 				data: {
 					moaId,
-					validFrom: dates.validFrom.toISOString(),
-					validUntil: dates.validUntil.toISOString(),
+					validFrom: manilaCalendarTimestamp(dates.validFrom),
+					validUntil: manilaCalendarTimestamp(dates.validUntil, true),
 				},
 			}),
 		onSuccess: () => {
 			toast.success("MOA updated successfully.");
 			queryClient.invalidateQueries({ queryKey: ["moas", moaId] });
+			queryClient.invalidateQueries({ queryKey: ["dashboard", "moas"] });
+			queryClient.invalidateQueries({
+				queryKey: ["director", "moas", "active"],
+			});
+			queryClient.invalidateQueries({ queryKey: ["action-center"] });
 			onOpenChange(false);
 		},
 		onError: (err) => {

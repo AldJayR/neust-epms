@@ -107,13 +107,34 @@ export const activateProjectFn = createServerFn({ method: "POST" })
 		z.object({
 			projectId: z.uuid(),
 			moaId: z.uuid(),
-			milestones: z.array(
-				z.object({
-					title: z.string().optional(),
-					reportType: z.string(),
-					dueAt: z.string(),
-				}),
-			),
+			milestones: z
+				.array(
+					z.object({
+						title: z.string().optional(),
+						reportType: z.enum([
+							"Progress",
+							"Terminal Report",
+							"Project Closure",
+						]),
+						dueAt: z.string().datetime(),
+					}),
+				)
+				.min(1)
+				.refine((milestones) => {
+					const closure = milestones.filter((m) => m.reportType !== "Progress");
+					const finalClosure = closure[0];
+					if (!finalClosure) return false;
+					const times = milestones.map((m) => new Date(m.dueAt).getTime());
+					return (
+						closure.length === 1 &&
+						new Set(times).size === times.length &&
+						milestones.every(
+							(m) =>
+								m.reportType !== "Progress" ||
+								new Date(m.dueAt) < new Date(finalClosure.dueAt),
+						)
+					);
+				}, "Require exactly one final closure milestone, unique dates, and progress dates before closure"),
 		}),
 	)
 	.handler(async ({ data }) => {

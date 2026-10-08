@@ -1,6 +1,8 @@
+import { randomUUID } from "node:crypto";
 import {
 	and,
 	asc,
+	desc,
 	eq,
 	ilike,
 	inArray,
@@ -21,10 +23,10 @@ import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposalSdgs } from "@/db/schema/proposal-sdgs.js";
 import { proposals } from "@/db/schema/proposals.js";
+import { roles } from "@/db/schema/roles.js";
 import { sdgs } from "@/db/schema/sdgs.js";
 import { specialOrders } from "@/db/schema/special-orders.js";
 import { users } from "@/db/schema/users.js";
-import { randomUUID } from "node:crypto";
 import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { ApiError } from "@/lib/errors.js";
@@ -44,16 +46,12 @@ import {
 	isProjectLeader,
 	PROJECT_LEADER_ROLE,
 } from "@/services/auth-user.service.js";
-import {
-	hashFileSha256,
-} from "@/services/file-integrity.service.js";
-import {
-	isPdfFile,
-	sanitizeFilename,
-} from "@/services/file.service.js";
+import { isPdfFile, sanitizeFilename } from "@/services/file.service.js";
+import { hashFileSha256 } from "@/services/file-integrity.service.js";
 import { validateBannerProgramForProposal } from "../banner-programs/banner-programs.service.js";
 import { validateProposalCompleteness } from "./proposal-completeness.js";
 import { resolveReviewPolicy } from "./proposal-review-policy.js";
+import { validateTargetDates } from "./proposal-target-dates.js";
 
 // ── Shared helpers ──
 
@@ -85,6 +83,34 @@ export async function checkDuplicateTitle(title: string): Promise<boolean> {
 }
 
 type ProposalTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function commitUploadedDocument<T>(
+	storagePath: string,
+	operation: (tx: ProposalTransaction) => Promise<T>,
+): Promise<T> {
+	try {
+		return await db.transaction(operation);
+	} catch (error) {
+		try {
+			const { error: cleanupError } = await supabase.storage
+				.from("documents")
+				.remove([storagePath]);
+			if (cleanupError)
+				console.error(
+					"[upload] Failed to clean up uncommitted proposal scan:",
+					storagePath,
+					cleanupError,
+				);
+		} catch (cleanupError) {
+			console.error(
+				"[upload] Failed to clean up uncommitted proposal scan:",
+				storagePath,
+				cleanupError,
+			);
+		}
+		throw error;
+	}
+}
 
 type ProposalMemberInput = {
 	userId: string;
@@ -177,11 +203,13 @@ async function synchronizeProposalMembers(
 	const validUsers = await tx
 		.select({ userId: users.userId })
 		.from(users)
+		.innerJoin(roles, eq(users.roleId, roles.roleId))
 		.where(
 			and(
 				inArray(users.userId, userIds),
 				eq(users.isActive, true),
 				isNull(users.archivedAt),
+				inArray(roles.roleName, [ROLE_NAMES.FACULTY, ROLE_NAMES.RET_CHAIR]),
 			),
 		);
 
@@ -315,6 +343,7 @@ export async function createProposalInTransaction(
 	user: AuthUser,
 	ipAddress = "127.0.0.1",
 ) {
+	validateTargetDates(body.targetStartDate, body.targetEndDate);
 	const selectedBannerProgram = await validateBannerProgramForProposal(
 		tx,
 		body.bannerProgramId,
@@ -360,31 +389,19 @@ export async function createProposalInTransaction(
 		throw new ApiError(500, "INSERT_FAILED", "Failed to create proposal");
 	}
 
-	const memberValues = (body.members ?? []).map((m) => ({
-		proposalId: proposal.proposalId,
-		userId: m.userId,
-		projectRole: m.projectRole,
-	}));
-
+	const memberValues = [...(body.members ?? [])];
 	if (!memberValues.some((m) => m.userId === user.userId)) {
 		memberValues.push({
-			proposalId: proposal.proposalId,
 			userId: user.userId,
 			projectRole: PROJECT_LEADER_ROLE,
 		});
 	}
-	if (
-		memberValues.filter((member) => member.projectRole === PROJECT_LEADER_ROLE)
-			.length > 1
-	) {
-		throw new ApiError(
-			400,
-			"MULTIPLE_PROJECT_LEADERS",
-			"A proposal can have only one Project Leader",
-		);
-	}
-
-	await tx.insert(proposalMembers).values(memberValues);
+	await synchronizeProposalMembers(
+		tx,
+		proposal.proposalId,
+		memberValues,
+		user.userId,
+	);
 
 	if (body.departmentIds && body.departmentIds.length > 0) {
 		await tx.insert(proposalDepartments).values(
@@ -402,14 +419,14 @@ export async function createProposalInTransaction(
 		})),
 	);
 
-	let sectorIdsToInsert = body.sectorIds || [];
+	const sectorIdsToInsert = [...new Set(body.sectorIds ?? [])];
 
 	if (
 		sectorIdsToInsert.length === 0 &&
 		body.sectorNames &&
 		body.sectorNames.length > 0
 	) {
-		for (const name of body.sectorNames) {
+		for (const name of new Set(body.sectorNames)) {
 			const trimmed = name.trim();
 			if (!trimmed) continue;
 
@@ -432,17 +449,18 @@ export async function createProposalInTransaction(
 			}
 		}
 	}
-	if (sectorIdsToInsert.length === 0) {
-		const [firstSector] = await tx
+	if (sectorIdsToInsert.length > 0) {
+		const sectors = await tx
 			.select({ sectorId: beneficiarySectors.sectorId })
 			.from(beneficiarySectors)
-			.limit(1);
-		if (firstSector) {
-			sectorIdsToInsert = [firstSector.sectorId];
+			.where(inArray(beneficiarySectors.sectorId, sectorIdsToInsert));
+		if (sectors.length !== sectorIdsToInsert.length) {
+			throw new ApiError(
+				400,
+				"INVALID_SECTORS",
+				"One or more selected beneficiary sectors are invalid.",
+			);
 		}
-	}
-
-	if (sectorIdsToInsert.length > 0) {
 		await tx.insert(proposalBeneficiaries).values(
 			sectorIdsToInsert.map((sectorId) => ({
 				proposalId: proposal.proposalId,
@@ -482,6 +500,8 @@ export async function updateProposalWithSectors(
 		extensionServiceIds?: number[] | undefined;
 		budgetPartner?: number | undefined;
 		budgetNeust?: number | undefined;
+		targetStartDate?: string | null | undefined;
+		targetEndDate?: string | null | undefined;
 		sectorNames?: string[] | undefined;
 		sdgIds?: number[] | undefined;
 		members?: ProposalMemberInput[] | undefined;
@@ -558,7 +578,22 @@ export async function updateProposalWithSectors(
 						existing.departmentId,
 					);
 
+		const targetStartDate =
+			body.targetStartDate === undefined
+				? existing.targetStartDate
+				: body.targetStartDate === null
+					? null
+					: new Date(body.targetStartDate);
+		const targetEndDate =
+			body.targetEndDate === undefined
+				? existing.targetEndDate
+				: body.targetEndDate === null
+					? null
+					: new Date(body.targetEndDate);
+		validateTargetDates(targetStartDate, targetEndDate);
 		const updateValues = {
+			targetStartDate,
+			targetEndDate,
 			...(body.title !== undefined ? { title: body.title } : {}),
 			...(selectedBannerProgram
 				? {
@@ -600,6 +635,17 @@ export async function updateProposalWithSectors(
 			);
 		}
 
+		if (body.sectorNames !== undefined && body.sectorNames.length === 0) {
+			await tx
+				.update(proposalBeneficiaries)
+				.set({ archivedAt: new Date() })
+				.where(
+					and(
+						eq(proposalBeneficiaries.proposalId, id),
+						isNull(proposalBeneficiaries.archivedAt),
+					),
+				);
+		}
 		if (body.sectorNames && body.sectorNames.length > 0) {
 			const sectorNames = [
 				...new Set(body.sectorNames.map((name) => name.trim()).filter(Boolean)),
@@ -709,7 +755,14 @@ export async function updateProposalWithSectors(
 		const diff = captureAuditDiff(
 			existing as unknown as Record<string, unknown>,
 			updated as unknown as Record<string, unknown>,
-			["title", "budgetNeust", "budgetPartner", "updatedAt"],
+			[
+				"title",
+				"budgetNeust",
+				"budgetPartner",
+				"targetStartDate",
+				"targetEndDate",
+				"updatedAt",
+			],
 		);
 		await insertAuditLog(
 			{
@@ -780,7 +833,10 @@ export async function getProposalExtensionServicesByProposalIds(
 
 // ── Submit flow ──
 
-export async function validateCompleteness(proposalId: string): Promise<void> {
+export async function validateCompleteness(
+	proposalId: string,
+	executor: Pick<typeof db, "select"> = db,
+): Promise<void> {
 	const [
 		docs,
 		members,
@@ -789,12 +845,12 @@ export async function validateCompleteness(proposalId: string): Promise<void> {
 		extensionServiceAlignments,
 		[proposalDetails],
 	] = await Promise.all([
-		db
+		executor
 			.select({ documentId: proposalDocuments.documentId })
 			.from(proposalDocuments)
 			.where(eq(proposalDocuments.proposalId, proposalId))
 			.limit(1),
-		db
+		executor
 			.select({
 				memberId: proposalMembers.memberId,
 				projectRole: proposalMembers.projectRole,
@@ -806,7 +862,7 @@ export async function validateCompleteness(proposalId: string): Promise<void> {
 					isNull(proposalMembers.archivedAt),
 				),
 			),
-		db
+		executor
 			.select({ sectorId: proposalBeneficiaries.sectorId })
 			.from(proposalBeneficiaries)
 			.where(
@@ -816,12 +872,12 @@ export async function validateCompleteness(proposalId: string): Promise<void> {
 				),
 			)
 			.limit(1),
-		db
+		executor
 			.select({ sdgId: proposalSdgs.sdgId })
 			.from(proposalSdgs)
 			.where(eq(proposalSdgs.proposalId, proposalId))
 			.limit(1),
-		db
+		executor
 			.select({
 				extensionServiceId: proposalExtensionServices.extensionServiceId,
 			})
@@ -833,7 +889,7 @@ export async function validateCompleteness(proposalId: string): Promise<void> {
 				),
 			)
 			.limit(1),
-		db
+		executor
 			.select({
 				targetStartDate: proposals.targetStartDate,
 				targetEndDate: proposals.targetEndDate,
@@ -858,72 +914,159 @@ export async function validateCompleteness(proposalId: string): Promise<void> {
 
 // ── Review state machine ──
 
+export async function submitProposal(
+	user: AuthUser,
+	proposalId: string,
+	ipAddress: string,
+) {
+	return db.transaction(async (tx) => {
+		const [existing] = await tx
+			.select()
+			.from(proposals)
+			.where(
+				and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
+			)
+			.for("update")
+			.limit(1);
+		if (!existing) throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+		if (
+			existing.status !== PROPOSAL_STATUS.DRAFT &&
+			existing.status !== PROPOSAL_STATUS.RETURNED
+		) {
+			throw new ApiError(
+				400,
+				"INVALID_STATUS",
+				"Only Draft or Returned proposals can be submitted",
+			);
+		}
+		if (!(await isProjectLeader(proposalId, user.userId, tx))) {
+			throw new ApiError(
+				403,
+				"NOT_LEADER",
+				"Only the project leader can submit",
+			);
+		}
+		await validateCompleteness(proposalId, tx);
+		if (existing.status === PROPOSAL_STATUS.RETURNED) {
+			const [latestReview] = await tx
+				.select({ reviewedAt: proposalReviews.reviewedAt })
+				.from(proposalReviews)
+				.where(eq(proposalReviews.proposalId, proposalId))
+				.orderBy(desc(proposalReviews.reviewedAt))
+				.limit(1);
+			const [latestDocument] = await tx
+				.select({ uploadedAt: proposalDocuments.uploadedAt })
+				.from(proposalDocuments)
+				.where(eq(proposalDocuments.proposalId, proposalId))
+				.orderBy(desc(proposalDocuments.uploadedAt))
+				.limit(1);
+			if (
+				!latestReview ||
+				!latestDocument ||
+				latestDocument.uploadedAt <= latestReview.reviewedAt
+			) {
+				throw new ApiError(
+					400,
+					"REVISED_DOCUMENT_REQUIRED",
+					"Upload a revised proposal PDF after the latest review before resubmitting.",
+				);
+			}
+		}
+		const [updated] = await tx
+			.update(proposals)
+			.set({
+				status: PROPOSAL_STATUS.PENDING_REVIEW,
+				bypassedRetChair: false,
+				updatedAt: new Date(),
+			})
+			.where(eq(proposals.proposalId, proposalId))
+			.returning();
+		await insertAuditLog(
+			{
+				userId: user.userId,
+				action: `Submitted proposal ${proposalId}`,
+				tableAffected: "proposals",
+				oldValue: { status: existing.status },
+				newValue: { status: PROPOSAL_STATUS.PENDING_REVIEW },
+				ipAddress,
+			},
+			tx,
+		);
+		return updated;
+	});
+}
+
 export async function processReview(
 	user: AuthUser,
 	proposalId: string,
 	body: { decision: string; comments?: string | undefined },
+	ipAddress = "127.0.0.1",
 ): Promise<{ decision: string }> {
-	const [existing] = await db
-		.select({
-			proposalId: proposals.proposalId,
-			title: proposals.title,
-			status: proposals.status,
-			revisionNum: proposals.revisionNum,
-			campusId: proposals.campusId,
-			departmentId: proposals.departmentId,
-		})
-		.from(proposals)
-		.where(
-			and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
-		)
-		.limit(1);
+	return db.transaction(async (tx) => {
+		const [existing] = await tx
+			.select({
+				proposalId: proposals.proposalId,
+				title: proposals.title,
+				status: proposals.status,
+				revisionNum: proposals.revisionNum,
+				campusId: proposals.campusId,
+				departmentId: proposals.departmentId,
+			})
+			.from(proposals)
+			.where(
+				and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
+			)
+			.for("update")
+			.limit(1);
 
-	if (!existing) {
-		throw new ApiError(404, "NOT_FOUND", "Proposal not found");
-	}
+		if (!existing) {
+			throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+		}
 
-	// Chairs may endorse their own submissions; the DFD uses a uniform Chair stage.
-	const isChairEndorsement =
-		user.roleName === ROLE_NAMES.RET_CHAIR &&
-		body.decision === REVIEW_DECISION.ENDORSED;
-	if (!isChairEndorsement && (await isProjectLeader(proposalId, user.userId))) {
-		throw new ApiError(
-			403,
-			"CONFLICT_OF_INTEREST",
-			"You cannot review your own proposal (EC-01)",
-		);
-	}
+		// Chairs may endorse their own submissions; the DFD uses a uniform Chair stage.
+		const isChairEndorsement =
+			user.roleName === ROLE_NAMES.RET_CHAIR &&
+			body.decision === REVIEW_DECISION.ENDORSED;
+		if (
+			!isChairEndorsement &&
+			(await isProjectLeader(proposalId, user.userId, tx))
+		) {
+			throw new ApiError(
+				403,
+				"CONFLICT_OF_INTEREST",
+				"You cannot review your own proposal (EC-01)",
+			);
+		}
 
-	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
-		if (user.isMainCampus && user.departmentId !== null) {
-			if (existing.departmentId !== user.departmentId) {
-				throw new ApiError(
-					403,
-					"FORBIDDEN",
-					"You can only review proposals from your department",
-				);
-			}
-		} else {
-			if (existing.campusId !== user.campusId) {
-				throw new ApiError(
-					403,
-					"FORBIDDEN",
-					"You can only review proposals from your campus",
-				);
+		if (user.roleName === ROLE_NAMES.RET_CHAIR) {
+			if (user.isMainCampus && user.departmentId !== null) {
+				if (existing.departmentId !== user.departmentId) {
+					throw new ApiError(
+						403,
+						"FORBIDDEN",
+						"You can only review proposals from your department",
+					);
+				}
+			} else {
+				if (existing.campusId !== user.campusId) {
+					throw new ApiError(
+						403,
+						"FORBIDDEN",
+						"You can only review proposals from your campus",
+					);
+				}
 			}
 		}
-	}
 
-	const reviewPolicy = resolveReviewPolicy(
-		{
-			roleName: user.roleName,
-			status: existing.status,
-			bypassedRetChair: false,
-		},
-		body.decision,
-	);
+		const reviewPolicy = resolveReviewPolicy(
+			{
+				roleName: user.roleName,
+				status: existing.status,
+				bypassedRetChair: false,
+			},
+			body.decision,
+		);
 
-	await db.transaction(async (tx) => {
 		await tx.insert(proposalReviews).values({
 			proposalId: proposalId,
 			reviewerId: user.userId,
@@ -973,9 +1116,17 @@ export async function processReview(
 				});
 			}
 		}
+		await insertAuditLog(
+			{
+				userId: user.userId,
+				action: `Reviewed proposal ${proposalId}: ${body.decision}`,
+				tableAffected: "proposal_reviews",
+				ipAddress,
+			},
+			tx,
+		);
+		return { decision: body.decision };
 	});
-
-	return { decision: body.decision };
 }
 
 export async function getLeaderUserId(
@@ -1082,7 +1233,7 @@ export async function recordChairEndorsement(
 		);
 	}
 
-	await db.transaction(async (tx) => {
+	await commitUploadedDocument(storagePath, async (tx) => {
 		await tx.insert(proposalReviews).values({
 			proposalId,
 			reviewerId: user.userId,
@@ -1107,6 +1258,7 @@ export async function recordChairEndorsement(
 				and(
 					eq(proposals.proposalId, proposalId),
 					eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
+					isNull(proposals.archivedAt),
 				),
 			)
 			.returning();
@@ -1118,21 +1270,26 @@ export async function recordChairEndorsement(
 				"Your endorsement wasn't saved because the proposal changed. Reload it and try again.",
 			);
 		}
+		await insertAuditLog(
+			{
+				userId: user.userId,
+				action: `Recorded Dean/Director signed endorsement scan for proposal ${proposalId}`,
+				tableAffected: "proposals",
+				newValue: {
+					status: PROPOSAL_STATUS.ENDORSED,
+					endorsementDocPath: storagePath,
+					endorsementDocHash: contentHash,
+				},
+				ipAddress,
+			},
+			tx,
+		);
 	});
 
-	await insertAuditLog({
-		userId: user.userId,
-		action: `Recorded Dean/Director signed endorsement scan for proposal ${proposalId}`,
-		tableAffected: "proposals",
-		newValue: {
-			status: PROPOSAL_STATUS.ENDORSED,
-			endorsementDocPath: storagePath,
-			endorsementDocHash: contentHash,
-		},
-		ipAddress,
+	const leaderUserId = await getLeaderUserId(proposalId).catch((error) => {
+		console.error("[notification] Failed to resolve proposal leader:", error);
+		return undefined;
 	});
-
-	const leaderUserId = await getLeaderUserId(proposalId);
 	if (leaderUserId && leaderUserId !== user.userId) {
 		await createNotification({
 			recipientId: leaderUserId,
@@ -1148,7 +1305,9 @@ export async function recordChairEndorsement(
 		});
 	}
 
-	const directorIds = await getUserIdsByRole(ROLE_NAMES.DIRECTOR).catch(() => []);
+	const directorIds = await getUserIdsByRole(ROLE_NAMES.DIRECTOR).catch(
+		() => [],
+	);
 	for (const directorId of directorIds) {
 		await createNotification({
 			recipientId: directorId,
@@ -1223,7 +1382,10 @@ export async function recordInstitutionalApproval(
 		});
 
 	if (uploadError) {
-		console.error("[upload] Institutional approval document upload failed:", uploadError);
+		console.error(
+			"[upload] Institutional approval document upload failed:",
+			uploadError,
+		);
 		throw new ApiError(
 			400,
 			"UPLOAD_FAILED",
@@ -1231,7 +1393,7 @@ export async function recordInstitutionalApproval(
 		);
 	}
 
-	await db.transaction(async (tx) => {
+	await commitUploadedDocument(storagePath, async (tx) => {
 		const [updated] = await tx
 			.update(proposals)
 			.set({
@@ -1245,6 +1407,7 @@ export async function recordInstitutionalApproval(
 				and(
 					eq(proposals.proposalId, proposalId),
 					eq(proposals.status, PROPOSAL_STATUS.APPROVED),
+					isNull(proposals.archivedAt),
 				),
 			)
 			.returning();
@@ -1287,7 +1450,10 @@ export async function recordInstitutionalApproval(
 		);
 	});
 
-	const leaderUserId = await getLeaderUserId(proposalId);
+	const leaderUserId = await getLeaderUserId(proposalId).catch((error) => {
+		console.error("[notification] Failed to resolve proposal leader:", error);
+		return undefined;
+	});
 	if (leaderUserId) {
 		await createNotification({
 			recipientId: leaderUserId,

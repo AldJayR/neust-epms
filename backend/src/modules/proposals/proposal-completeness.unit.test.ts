@@ -34,7 +34,7 @@ describe("validateProposalCompleteness", () => {
 				...complete,
 				members: [{ projectRole: "Member" }],
 			}),
-		).toThrowError("At least one team member must have the Project Leader role.");
+		).toThrowError("Exactly one team member must have the Project Leader role.");
 	});
 
 	it("requires both target dates in chronological order", () => {
@@ -47,6 +47,6 @@ describe("validateProposalCompleteness", () => {
 				targetStartDate: new Date("2027-01-01"),
 				targetEndDate: new Date("2026-12-31"),
 			}),
-		).toThrowError("Target end date must be on or after target start date.");
+		).toThrowError("Target end date must be after target start date.");
 	});
 });

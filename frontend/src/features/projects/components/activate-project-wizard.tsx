@@ -39,7 +39,11 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { getActiveMoasFn } from "@/features/moa/public";
-import { toStableDate } from "@/lib/utils";
+import {
+	manilaCalendarTimestamp,
+	toManilaDisplayDate as toStableDate,
+} from "@/lib/dates";
+import { invalidateWorkflowQueries } from "@/lib/workflow-queries";
 import { activateProjectFn } from "../functions";
 import {
 	type DueDateEntry,
@@ -89,10 +93,8 @@ export function ActivateProjectWizard({
 
 	const activateMutation = useMutation({
 		mutationFn: activateProjectFn,
-		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: ["dashboard", "proposals", projectId],
-			});
+		onSuccess: async () => {
+			await invalidateWorkflowQueries(queryClient);
 			toast.success("Project activated successfully!");
 			onOpenChange(false);
 			resetWizard();
@@ -109,7 +111,7 @@ export function ActivateProjectWizard({
 				: new Date();
 			const end = toStableDate(targetEndDate);
 			const diff = differenceInMonths(end, start);
-			if (diff > 0) return Math.min(diff, 60);
+			if (diff > 0) return Math.min(diff, 36);
 		}
 		return 6;
 	}, [targetStartDate, targetEndDate]);
@@ -195,6 +197,31 @@ export function ActivateProjectWizard({
 			toast.error("Please add at least one due date");
 			return;
 		}
+		const closure = validDueDates.filter(
+			(entry) => entry.reportType === "Terminal Report",
+		);
+		const finalClosure = closure[0];
+		if (closure.length !== 1 || !finalClosure) {
+			toast.error("Schedule exactly one final terminal report.");
+			return;
+		}
+		const dates = validDueDates.map((entry) => entry.dueDate.getTime());
+		if (new Set(dates).size !== dates.length) {
+			toast.error("Each report must have a different due date.");
+			return;
+		}
+		if (
+			validDueDates.some(
+				(entry) =>
+					entry.reportType === "Progress" &&
+					entry.dueDate >= finalClosure.dueDate,
+			)
+		) {
+			toast.error(
+				"Progress reports must be due before the final terminal report.",
+			);
+			return;
+		}
 
 		activateMutation.mutate({
 			data: {
@@ -203,7 +230,7 @@ export function ActivateProjectWizard({
 				milestones: validDueDates.map((d) => ({
 					title: d.title,
 					reportType: d.reportType,
-					dueAt: d.dueDate.toISOString(),
+					dueAt: manilaCalendarTimestamp(d.dueDate, true),
 				})),
 			},
 		});
@@ -329,7 +356,7 @@ export function ActivateProjectWizard({
 													setDurationMonths(
 														Math.max(
 															1,
-															Math.min(36, parseInt(e.target.value) || 1),
+															Math.min(36, parseInt(e.target.value, 10) || 1),
 														),
 													)
 												}

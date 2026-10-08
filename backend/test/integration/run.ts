@@ -51,10 +51,9 @@ async function applyMigrations(databaseUrl: string): Promise<void> {
 }
 
 async function runVitest(databaseUrl: string): Promise<number> {
-	const command = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 	const child = spawn(
-		command,
-		["exec", "vitest", "run", "--config", "vitest.integration.config.ts", ...process.argv.slice(2)],
+		process.execPath,
+		[path.join(backendRoot, "node_modules/vitest/vitest.mjs"), "run", "--config", "vitest.integration.config.ts", ...process.argv.slice(2)],
 		{
 			cwd: backendRoot,
 			env: {
@@ -75,7 +74,7 @@ async function runVitest(databaseUrl: string): Promise<number> {
 				PORT: "3000",
 			},
 			stdio: "inherit",
-			shell: process.platform === "win32",
+			shell: false,
 			windowsHide: true,
 		},
 	);

@@ -7,6 +7,7 @@ import {
 	authorizeSessionUser,
 	getValidAccessToken,
 } from "@/lib/session.server";
+import { pdfFileSchema } from "@/lib/upload-policy";
 import type { ProposalFull, ProposalItem } from "@/types/proposal";
 
 const RET_QUERY_STALE_TIME_MS = 1000 * 60 * 5;
@@ -198,9 +199,8 @@ export const uploadProposalDocumentFn = createServerFn({ method: "POST" })
 		if (!(file instanceof File)) {
 			throw new Error("file is required and must be a File");
 		}
-		if (file.type !== "application/pdf") {
-			throw new Error("Only PDF documents are allowed");
-		}
+		z.uuid().parse(proposalId);
+		pdfFileSchema.parse(file);
 		return data;
 	})
 	.handler(async ({ data }) => {
@@ -324,6 +324,8 @@ const updateProposalSchema = z.object({
 	extensionServiceIds: z.array(z.number()).min(1),
 	budgetPartner: z.number().optional(),
 	budgetNeust: z.number().optional(),
+	targetStartDate: z.string().datetime().nullable().optional(),
+	targetEndDate: z.string().datetime().nullable().optional(),
 	sectorNames: z.array(z.string()).optional(),
 	sdgIds: z.array(z.number()).optional(),
 	members: z
@@ -380,6 +382,8 @@ export const updateProposalFn = createServerFn({ method: "POST" })
 				extensionServiceIds: data.extensionServiceIds,
 				budgetPartner: data.budgetPartner,
 				budgetNeust: data.budgetNeust,
+				targetStartDate: data.targetStartDate,
+				targetEndDate: data.targetEndDate,
 				sectorNames: data.sectorNames,
 				sdgIds: data.sdgIds,
 				members: data.members,

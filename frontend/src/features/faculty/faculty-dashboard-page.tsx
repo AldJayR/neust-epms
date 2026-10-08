@@ -16,7 +16,7 @@ import {
 } from "@/features/faculty";
 import { CreateProposalModal } from "@/features/proposals";
 import type { AuthUser } from "@/lib/auth";
-import { toStableDate } from "@/lib/utils";
+import { toManilaDisplayDate as toStableDate } from "@/lib/dates";
 
 export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
@@ -42,15 +42,9 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 	const projectsList = projectsData?.items ?? [];
 	const proposalsList = proposalsData?.items ?? [];
 
-	const userFullName = `${user.firstName} ${user.lastName}`;
-
 	const combinedItems = [
 		...projectsList.map((p) => {
-			const isLeader =
-				(p.leaderFirstName &&
-					p.leaderLastName &&
-					`${p.leaderFirstName} ${p.leaderLastName}` === userFullName) ||
-				false;
+			const isLeader = p.leaderId === user.userId;
 			return {
 				id: p.projectId,
 				proposalId: p.proposalId,
@@ -69,11 +63,7 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 				(p) => !projectsList.some((proj) => proj.proposalId === p.proposalId),
 			)
 			.map((p) => {
-				const isLeader =
-					(p.leaderFirstName &&
-						p.leaderLastName &&
-						`${p.leaderFirstName} ${p.leaderLastName}` === userFullName) ||
-					false;
+				const isLeader = p.leaderId === user.userId;
 				return {
 					id: p.proposalId,
 					proposalId: p.proposalId,
