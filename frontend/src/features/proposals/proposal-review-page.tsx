@@ -9,7 +9,11 @@ import {
 	saveProposalCommentFn,
 } from "./comments.functions";
 import type { PdfViewerRef } from "./components/pdf-viewer";
-import { ProposalReviewProvider } from "./components/proposal-review-context";
+import {
+	INSTITUTIONAL_APPROVAL_DOCUMENT_ID,
+	ProposalReviewProvider,
+	SPECIAL_ORDERS_DOCUMENT_ID,
+} from "./components/proposal-review-context";
 import { ProposalReviewDocumentPane } from "./components/proposal-review-document-pane";
 import { ProposalReviewHeader } from "./components/proposal-review-header";
 import { ProposalReviewSidebar } from "./components/proposal-review-sidebar";
@@ -99,9 +103,14 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	const hasEndorsement =
 		data?.status !== "Pending Review" && Boolean(endorsement);
 	const currentDoc =
-		data?.attachments?.find(
-			(attachment) => attachment.id === activeAttachmentId,
-		) ?? data?.attachments?.[0];
+		activeAttachmentId === SPECIAL_ORDERS_DOCUMENT_ID
+			? undefined
+			: activeAttachmentId === INSTITUTIONAL_APPROVAL_DOCUMENT_ID &&
+					data?.institutionalApprovalDocUrl
+				? { id: undefined, url: data.institutionalApprovalDocUrl }
+				: (data?.attachments?.find(
+						(attachment) => attachment.id === activeAttachmentId,
+					) ?? data?.attachments?.[0]);
 	const userRole = user?.roleName ?? "";
 	const isRET = userRole === "RET Chair";
 	const isDirector = userRole === "Director";
@@ -295,8 +304,13 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 						<ProposalReviewDocumentPane
 							viewerRef={pdfViewerRef}
 							currentDocument={currentDoc}
+							specialOrderMembers={
+								activeAttachmentId === SPECIAL_ORDERS_DOCUMENT_ID
+									? data.members
+									: undefined
+							}
 							comments={comments}
-							canAnnotate={isReviewable}
+							canAnnotate={isReviewable && !!currentDoc?.id}
 							isTheaterMode={isTheaterMode}
 							onAddComment={async (content, annotation) => {
 								await addCommentMutation.mutateAsync({

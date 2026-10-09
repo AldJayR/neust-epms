@@ -17,7 +17,7 @@ const initialState: DocState = {
 	error: null,
 };
 
-export function usePdfDocument(url: string) {
+export function usePdfDocument(url: string, disableStream = false) {
 	const [state, dispatch] = useReducer(stateReducer, initialState);
 
 	useEffect(() => {
@@ -33,7 +33,10 @@ export function usePdfDocument(url: string) {
 			try {
 				dispatch({ loadingDoc: true, error: null });
 
-				loadingTask = pdfjsLib.getDocument(createPdfDocumentOptions(url));
+				loadingTask = pdfjsLib.getDocument({
+					...createPdfDocumentOptions(url),
+					disableStream,
+				});
 
 				const doc = await loadingTask.promise;
 				if (isDestroyed) {
@@ -64,7 +67,7 @@ export function usePdfDocument(url: string) {
 				loadingTask.destroy().catch(() => {});
 			}
 		};
-	}, [url]);
+	}, [url, disableStream]);
 
 	return {
 		pdfDoc: state.pdfDoc,

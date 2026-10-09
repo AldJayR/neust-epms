@@ -15,7 +15,11 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { toStableDate } from "@/lib/utils";
-import { useProposalReview } from "./proposal-review-context";
+import {
+	INSTITUTIONAL_APPROVAL_DOCUMENT_ID,
+	SPECIAL_ORDERS_DOCUMENT_ID,
+	useProposalReview,
+} from "./proposal-review-context";
 
 const formatBudget = (value: number) => `P${value.toLocaleString("en-PH")}`;
 
@@ -173,15 +177,24 @@ export function ProposalDetailsTab() {
 								</div>
 							)}
 							<div className="pl-7 pt-1">
-								<a
-									href={data.institutionalApprovalDocUrl}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline"
+								<button
+									type="button"
+									onClick={() =>
+										setActiveAttachmentId(INSTITUTIONAL_APPROVAL_DOCUMENT_ID)
+									}
+									aria-pressed={
+										activeAttachmentId === INSTITUTIONAL_APPROVAL_DOCUMENT_ID
+									}
+									className="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline cursor-pointer text-left"
 								>
 									<FileText className="size-3.5" />
 									View Institutional Approval Document (PDF)
-								</a>
+								</button>
+								{activeAttachmentId === INSTITUTIONAL_APPROVAL_DOCUMENT_ID && (
+									<p className="text-2xs text-muted-foreground">
+										Currently Viewing
+									</p>
+								)}
 							</div>
 						</div>
 					</div>
@@ -197,6 +210,27 @@ export function ProposalDetailsTab() {
 					Attached documents
 				</h2>
 				<div className="space-y-1">
+					<button
+						type="button"
+						onClick={() => setActiveAttachmentId(SPECIAL_ORDERS_DOCUMENT_ID)}
+						aria-pressed={activeAttachmentId === SPECIAL_ORDERS_DOCUMENT_ID}
+						className={`w-full px-3 py-2 rounded-[5px] flex flex-col gap-0.5 cursor-pointer text-left ${activeAttachmentId === SPECIAL_ORDERS_DOCUMENT_ID ? "bg-[#caf1f6] dark:bg-primary/20" : "bg-transparent hover:bg-gray-50 dark:hover:bg-muted"}`}
+					>
+						<span className="text-xs font-semibold flex items-center gap-1.5">
+							<FileText className="size-3.5" />
+							View All Member Special Orders
+						</span>
+						<span className="text-2xs text-muted-foreground">
+							{
+								data.members.filter(
+									(member) => member.specialOrder?.storagePath,
+								).length
+							}{" "}
+							of {data.members.length} uploaded
+							{activeAttachmentId === SPECIAL_ORDERS_DOCUMENT_ID &&
+								" · Currently Viewing"}
+						</span>
+					</button>
 					{data.attachments?.map((file) => {
 						const isActive =
 							activeAttachmentId === null

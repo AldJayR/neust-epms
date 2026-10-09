@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronDown, Download, Loader2 } from "lucide-react";
+import { ChevronDown, Download, FileUp, Loader2 } from "lucide-react";
 import { BrandButton } from "@/components/custom/brand-button";
 import {
 	Breadcrumb,
@@ -16,15 +16,13 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "@/components/ui/status-badge";
-
-import { FileUp } from "lucide-react";
 import { InstitutionalApprovalDialog } from "./institutional-approval-dialog";
 
 interface ProposalReviewHeaderProps {
 	proposalId: string;
 	title: string;
 	status: string;
-	currentDocument?: { id: string; url: string };
+	currentDocument?: { id?: string; url: string };
 	isDownloading: boolean;
 	onDownloadAnnotated: () => Promise<void>;
 	isDirector?: boolean;
@@ -98,14 +96,28 @@ export function ProposalReviewHeader({
 								type="button"
 								className="h-9 rounded-r-none border-r border-primary-foreground/25 px-4 text-sm font-medium"
 								disabled={isDownloading}
-								onClick={() => void onDownloadAnnotated()}
+								onClick={() => {
+									if (currentDocument.id) {
+										void onDownloadAnnotated();
+									} else {
+										window.open(
+											currentDocument.url,
+											"_blank",
+											"noopener,noreferrer",
+										);
+									}
+								}}
 							>
 								{isDownloading ? (
 									<Loader2 className="size-4 animate-spin" />
 								) : (
 									<Download className="size-4" />
 								)}
-								{isDownloading ? "Preparing..." : "Download Annotated Copy"}
+								{isDownloading
+									? "Preparing..."
+									: currentDocument.id
+										? "Download Annotated Copy"
+										: "Download Original PDF"}
 							</BrandButton>
 							<DropdownMenu>
 								<DropdownMenuTrigger
