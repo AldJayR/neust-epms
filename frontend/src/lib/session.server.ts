@@ -8,6 +8,9 @@ import type { AuthUser } from "./auth";
 import { type RoleName, requireRole } from "./permissions";
 
 export interface SessionData {
+	purpose?: "app" | "recovery";
+	recoveryUserId?: string;
+	recoveryVerifiedAt?: number;
 	/** Supabase access token (JWT) */
 	accessToken?: string;
 	/** Supabase refresh token */
@@ -66,17 +69,40 @@ interface RefreshResult {
 
 const activeRefreshes = new Map<string, Promise<RefreshResult>>();
 
-export async function getValidAccessToken(): Promise<string> {
+export const RECOVERY_SESSION_TTL_MS = 10 * 60 * 1000;
+
+export function isRecoverySession(data: SessionData): boolean {
+	return (
+		data.purpose === "recovery" &&
+		!!data.recoveryUserId &&
+		!!data.accessToken &&
+		!!data.refreshToken &&
+		typeof data.recoveryVerifiedAt === "number" &&
+		data.recoveryVerifiedAt <= Date.now() &&
+		Date.now() - data.recoveryVerifiedAt < RECOVERY_SESSION_TTL_MS &&
+		!data.user &&
+		!data.userId
+	);
+}
+
+export class SessionExpiredError extends Error {}
+
+export async function getValidAccessToken(
+	forceRefresh = false,
+): Promise<string> {
 	const session = await getAppSession();
+	if (session.data.purpose === "recovery") {
+		throw new Error("Password recovery cannot authorize application requests.");
+	}
 	const { accessToken, refreshToken } = session.data;
 
 	if (!refreshToken) {
 		await session.clear();
-		throw new Error("Session expired. Please log in again.");
+		throw new SessionExpiredError("Session expired. Please log in again.");
 	}
 
 	// Check if token is still valid (with 60s buffer)
-	if (accessToken) {
+	if (accessToken && !forceRefresh) {
 		try {
 			const { exp } = JSON.parse(atob(accessToken.split(".")[1]));
 			if (exp * 1000 > Date.now() + 60_000) {
@@ -95,14 +121,37 @@ export async function getValidAccessToken(): Promise<string> {
 				const supabase = createClient(
 					process.env.SUPABASE_URL ?? "",
 					process.env.SUPABASE_ANON_KEY ?? "",
+					{
+						auth: {
+							persistSession: false,
+							autoRefreshToken: false,
+							detectSessionInUrl: false,
+						},
+					},
 				);
 				const { data, error } = await supabase.auth.refreshSession({
 					refresh_token: refreshToken,
 				});
 
-				if (error || !data.session) {
-					throw new Error("Session expired. Please log in again.");
+				if (error) {
+					if (
+						error.status &&
+						error.status >= 400 &&
+						error.status < 500 &&
+						error.status !== 429
+					) {
+						throw new SessionExpiredError(
+							"Session expired. Please log in again.",
+						);
+					}
+					throw new Error(
+						"Authentication is temporarily unavailable. Please try again.",
+					);
 				}
+				if (!data.session)
+					throw new SessionExpiredError(
+						"Session expired. Please log in again.",
+					);
 
 				return {
 					accessToken: data.session.access_token,
@@ -123,7 +172,7 @@ export async function getValidAccessToken(): Promise<string> {
 		});
 		return result.accessToken;
 	} catch (err) {
-		await session.clear();
+		if (err instanceof SessionExpiredError) await session.clear();
 		throw err;
 	}
 }
@@ -136,6 +185,9 @@ export async function authorizeSessionUser(
 	...roles: RoleName[]
 ): Promise<AuthUser> {
 	const session = await getAppSession();
+	if (session.data.purpose === "recovery") {
+		throw new Error("Password recovery cannot authorize application requests.");
+	}
 	const user = session.data.user;
 
 	if (!user) {

@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { API_BASE } from "@/config/api";
+import { getErrorMessage } from "@/lib/api/client";
 import {
 	authorizeSessionUser,
 	getValidAccessToken,
@@ -32,7 +33,10 @@ export const getNotificationsFn = createServerFn({ method: "GET" }).handler(
 		const res = await fetch(`${API_BASE}/notifications`, {
 			headers: { Authorization: `Bearer ${accessToken}` },
 		});
-		if (!res.ok) return [] as Notification[];
+		if (!res.ok)
+			throw new Error(
+				await getErrorMessage(res, "Failed to fetch notifications"),
+			);
 		return (await res.json()) as Notification[];
 	},
 );
@@ -49,7 +53,10 @@ export const getUnreadCountFn = createServerFn({ method: "GET" }).handler(
 		const res = await fetch(`${API_BASE}/notifications/unread-count`, {
 			headers: { Authorization: `Bearer ${accessToken}` },
 		});
-		if (!res.ok) return { count: 0 };
+		if (!res.ok)
+			throw new Error(
+				await getErrorMessage(res, "Failed to fetch unread notification count"),
+			);
 		return (await res.json()) as { count: number };
 	},
 );
@@ -74,7 +81,9 @@ export const markNotificationReadFn = createServerFn({ method: "POST" })
 		);
 
 		if (!res.ok) {
-			throw new Error("Failed to mark notification as read");
+			throw new Error(
+				await getErrorMessage(res, "Failed to mark notification as read"),
+			);
 		}
 
 		return { ok: true as const };
@@ -97,7 +106,9 @@ export const markAllNotificationsReadFn = createServerFn({ method: "POST" })
 		});
 
 		if (!res.ok) {
-			throw new Error("Failed to mark all notifications as read");
+			throw new Error(
+				await getErrorMessage(res, "Failed to mark all notifications as read"),
+			);
 		}
 
 		return { ok: true as const };

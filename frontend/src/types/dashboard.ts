@@ -26,6 +26,7 @@ export interface DirectorMoa {
 }
 
 export interface DirectorDashboardResponse {
+	availableYears: number[];
 	metrics: DirectorDashboardMetric;
 	chartMonths: string[];
 	chartData: DirectorChartPoint[];

@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import { sanitizeFilename } from "@/services/file.service.js";
 import { hashFileSha256 } from "@/services/file-integrity.service.js";
+import { removeStorageObject } from "@/services/storage-cleanup.service.js";
 
 const specialOrderColumns = {
 	specialOrderId: specialOrders.specialOrderId,
@@ -142,21 +143,70 @@ export async function uploadSpecialOrder(
 		);
 	}
 
-	const [existing] = await db
-		.select(specialOrderColumns)
-		.from(specialOrders)
-		.where(
-			and(
-				eq(specialOrders.memberId, memberId),
-				isNull(specialOrders.archivedAt),
-			),
-		)
-		.limit(1);
-
 	let record: typeof specialOrders.$inferSelect;
 	let isNew = false;
+	let previousPath: string | null = null;
 	try {
 		const result = await db.transaction(async (tx) => {
+			const [parent] = await tx
+				.select({ proposalId: proposals.proposalId })
+				.from(proposals)
+				.where(
+					and(
+						eq(proposals.proposalId, member.proposalId),
+						...buildProposalScope(user),
+					),
+				)
+				.for("update")
+				.limit(1);
+			if (!parent) throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+			const [activeMember] = await tx
+				.select({ memberId: proposalMembers.memberId })
+				.from(proposalMembers)
+				.where(
+					and(
+						eq(proposalMembers.memberId, memberId),
+						isNull(proposalMembers.archivedAt),
+					),
+				)
+				.limit(1);
+			if (!activeMember)
+				throw new ApiError(
+					404,
+					"MEMBER_NOT_FOUND",
+					"Proposal member not found",
+				);
+			if (user.roleName !== ROLE_NAMES.DIRECTOR) {
+				const [leader] = await tx
+					.select({ userId: proposalMembers.userId })
+					.from(proposalMembers)
+					.where(
+						and(
+							eq(proposalMembers.proposalId, parent.proposalId),
+							eq(proposalMembers.userId, user.userId),
+							eq(proposalMembers.projectRole, "Project Leader"),
+							isNull(proposalMembers.archivedAt),
+						),
+					)
+					.limit(1);
+				if (!leader)
+					throw new ApiError(
+						403,
+						"FORBIDDEN",
+						"Only the current project leader can upload special orders",
+					);
+			}
+			const [existing] = await tx
+				.select(specialOrderColumns)
+				.from(specialOrders)
+				.where(
+					and(
+						eq(specialOrders.memberId, memberId),
+						isNull(specialOrders.archivedAt),
+					),
+				)
+				.limit(1);
+			previousPath = existing?.storagePath ?? null;
 			let nextRecord: typeof specialOrders.$inferSelect;
 			let nextIsNew = false;
 			if (existing) {
@@ -231,9 +281,7 @@ export async function uploadSpecialOrder(
 			constraint?: string;
 			cause?: { code?: string; constraint?: string };
 		};
-		try {
-			await supabase.storage.from("documents").remove([storagePath]);
-		} catch {}
+		await removeStorageObject("documents", storagePath);
 		if (err.code === "23505" || err.cause?.code === "23505") {
 			if (
 				err.constraint === "special_orders_one_active_per_member" ||
@@ -254,6 +302,8 @@ export async function uploadSpecialOrder(
 		throw error;
 	}
 
+	if (previousPath && previousPath !== storagePath)
+		await removeStorageObject("documents", previousPath);
 	return { record: serializeSpecialOrder(record), isNew };
 }
 

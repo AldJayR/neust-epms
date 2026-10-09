@@ -7,7 +7,7 @@ import {
 	FilePlus,
 	Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +20,10 @@ import {
 import { SubmitReportModal } from "@/features/reports/components/submit-report-modal";
 import { getReportSignedUrlFn } from "@/features/reports/functions";
 import { useProjectReportingSchedule } from "@/hooks/use-project-reporting-schedule";
-import { toStableDate } from "@/lib/utils";
+import {
+	reportingDeadline,
+	toManilaDisplayDate as toStableDate,
+} from "@/lib/dates";
 import {
 	canSubmitMilestone,
 	type ScheduledDueDate,
@@ -40,7 +43,11 @@ export function ReportingScheduleCard({
 	className,
 }: ReportingScheduleCardProps) {
 	const { data, isLoading, error } = useProjectReportingSchedule(projectId);
-	const [now] = useState(() => new Date());
+	const [now, setNow] = useState(() => new Date());
+	useEffect(() => {
+		const timer = setInterval(() => setNow(new Date()), 60_000);
+		return () => clearInterval(timer);
+	}, []);
 	const [selectedMilestone, setSelectedMilestone] =
 		useState<ScheduledDueDate | null>(null);
 
@@ -77,7 +84,13 @@ export function ReportingScheduleCard({
 	}
 
 	if (error || !data) {
-		return null;
+		return (
+			<Card size="sm" className={className}>
+				<CardContent role="alert" className="py-4 text-sm">
+					Unable to load the reporting schedule. Please reload to try again.
+				</CardContent>
+			</Card>
+		);
 	}
 
 	const { milestones } = data.schedule;
@@ -114,7 +127,8 @@ export function ReportingScheduleCard({
 				<div className="relative border-l border-border pl-6 ml-3 space-y-6">
 					{milestones.map((item, idx) => {
 						const dateObj = toStableDate(item.date);
-						const isOverdue = !item.isCompleted && dateObj < now;
+						const deadline = reportingDeadline(item.date);
+						const isOverdue = !item.isCompleted && deadline < now;
 						const reportId = item.reportId;
 						return (
 							<div key={item.id} className="relative">
@@ -146,7 +160,7 @@ export function ReportingScheduleCard({
 											<p className="text-xs text-red-500">
 												Overdue by{" "}
 												{Math.ceil(
-													(now.getTime() - dateObj.getTime()) /
+													(now.getTime() - deadline.getTime()) /
 														(1000 * 60 * 60 * 24),
 												)}{" "}
 												days

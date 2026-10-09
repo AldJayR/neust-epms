@@ -30,12 +30,16 @@ import { proposals } from "@/db/schema/proposals.js";
 import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
 import { env } from "@/env.js";
-import { escapeHtml } from "@/lib/html.js";
-import { getLeaderSubquery } from "@/lib/leader-subquery.js";
 import {
 	getActiveInvolvementSubquery,
 	getActiveProjectConditions,
 } from "@/lib/faculty-involvement.js";
+import { escapeHtml } from "@/lib/html.js";
+import { getLeaderSubquery } from "@/lib/leader-subquery.js";
+import {
+	projectPeriodClause,
+	projectYearBounds,
+} from "@/lib/project-period.js";
 import {
 	type AuthUser,
 	PROJECT_STATUS,
@@ -45,6 +49,10 @@ import {
 	REVIEW_STAGE,
 	ROLE_NAMES,
 } from "@/lib/types.js";
+import {
+	getPeriodChart,
+	getPeriodMetadata,
+} from "../dashboard/dashboard.service.js";
 
 // ── Helper: format relative time ──
 function formatRelativeTime(date: Date, now: Date): string {
@@ -91,16 +99,20 @@ function activityTitle(action: string, tableAffected: string): string {
 }
 
 // ── 1. getDashboardStats ──
-export async function getDashboardStats(user: AuthUser) {
+export async function getDashboardStats(user: AuthUser, year?: number) {
 	const now = new Date();
 	const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-	const chartStart = new Date(
-		Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11, 1),
-	);
-	const chartEnd = new Date(
-		Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
-	);
+	const chartStart =
+		year !== undefined
+			? projectYearBounds(year).start
+			: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11, 1));
+	const chartEnd =
+		year !== undefined
+			? projectYearBounds(year).end
+			: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
 	const chartMonths = Array.from({ length: 12 }, (_, index) => {
+		if (year !== undefined)
+			return `${year}-${String(index + 1).padStart(2, "0")}`;
 		const month = new Date(
 			Date.UTC(
 				chartStart.getUTCFullYear(),
@@ -112,13 +124,19 @@ export async function getDashboardStats(user: AuthUser) {
 	});
 
 	const projectMetricsConditions = [isNull(projects.archivedAt)];
+	projectMetricsConditions.push(isNull(proposals.archivedAt));
 	const underEvalConditions = [
 		isNull(proposals.archivedAt),
+		isNull(projects.archivedAt),
 		or(
 			eq(proposals.status, PROPOSAL_STATUS.PENDING_REVIEW),
 			eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
 		),
 	];
+	if (year !== undefined) {
+		projectMetricsConditions.push(projectPeriodClause(year));
+		underEvalConditions.push(projectPeriodClause(year));
+	}
 
 	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
 		if (user.isMainCampus && user.departmentId !== null) {
@@ -183,19 +201,22 @@ export async function getDashboardStats(user: AuthUser) {
 		db
 			.select({ value: count() })
 			.from(proposals)
+			.leftJoin(projects, eq(projects.proposalId, proposals.proposalId))
 			.where(and(...underEvalConditions)),
-		db
-			.select({
-				month: chartMonth,
-				campusId: campuses.campusId,
-				campusName: campuses.campusName,
-				value: count(),
-			})
-			.from(projects)
-			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-			.innerJoin(campuses, eq(proposals.campusId, campuses.campusId))
-			.where(and(...chartConditions))
-			.groupBy(chartMonth, campuses.campusId, campuses.campusName),
+		year !== undefined
+			? getPeriodChart(user, year)
+			: db
+					.select({
+						month: chartMonth,
+						campusId: campuses.campusId,
+						campusName: campuses.campusName,
+						value: count(),
+					})
+					.from(projects)
+					.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
+					.innerJoin(campuses, eq(proposals.campusId, campuses.campusId))
+					.where(and(...chartConditions))
+					.groupBy(chartMonth, campuses.campusId, campuses.campusName),
 		db
 			.select({
 				action: auditLogs.action,
@@ -223,6 +244,7 @@ export async function getDashboardStats(user: AuthUser) {
 	]);
 
 	return {
+		...(await getPeriodMetadata(user)),
 		metrics: {
 			totalProjects: Number(projectMetrics[0]?.total ?? 0),
 			ongoingProjects: Number(projectMetrics[0]?.ongoing ?? 0),
@@ -764,6 +786,7 @@ export async function getMoaRepository(query: {
 
 // ── 5. getActiveMoas ──
 export async function getActiveMoas() {
+	const now = new Date();
 	const rows = await db
 		.select({
 			moaId: moas.moaId,
@@ -773,7 +796,14 @@ export async function getActiveMoas() {
 		})
 		.from(moas)
 		.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
-		.where(isNull(moas.archivedAt))
+		.where(
+			and(
+				isNull(moas.archivedAt),
+				isNotNull(moas.storagePath),
+				sql`${moas.validFrom} <= ${now.toISOString()}`,
+				sql`${moas.validUntil} > ${now.toISOString()}`,
+			),
+		)
 		.orderBy(desc(moas.createdAt));
 
 	return rows.map((r) => ({
@@ -800,28 +830,41 @@ export async function getHubProjects(
 	const offset = (page - 1) * limit;
 
 	const leaderMembersSubquery = getLeaderSubquery();
-
+	// Reuse the existing projects page for a Chair's own editable proposals.
+	const ownEditableProposal =
+		user.roleName === ROLE_NAMES.RET_CHAIR
+			? and(
+					inArray(proposals.status, [
+						PROPOSAL_STATUS.DRAFT,
+						PROPOSAL_STATUS.RETURNED,
+					]),
+					eq(leaderMembersSubquery.userId, user.userId),
+				)
+			: undefined;
+	const eligibleForMonitoring = or(
+		// Keep already-progressed legacy projects visible without restoring bypass review.
+		inArray(proposals.status, [
+			PROPOSAL_STATUS.APPROVED,
+			PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED,
+		]),
+		exists(
+			db
+				.select()
+				.from(proposalReviews)
+				.where(
+					and(
+						eq(proposalReviews.proposalId, proposals.proposalId),
+						eq(proposalReviews.reviewStage, REVIEW_STAGE.ENDORSEMENT),
+						eq(proposalReviews.decision, REVIEW_DECISION.ENDORSED),
+					),
+				),
+		),
+	);
 	const whereConditions = [
 		isNull(proposals.archivedAt),
-		ne(proposals.status, PROPOSAL_STATUS.DRAFT),
 		or(
-			// Keep already-progressed legacy projects visible without restoring bypass review.
-			inArray(proposals.status, [
-				PROPOSAL_STATUS.APPROVED,
-				PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED,
-			]),
-			exists(
-				db
-					.select()
-					.from(proposalReviews)
-					.where(
-						and(
-							eq(proposalReviews.proposalId, proposals.proposalId),
-							eq(proposalReviews.reviewStage, REVIEW_STAGE.ENDORSEMENT),
-							eq(proposalReviews.decision, REVIEW_DECISION.ENDORSED),
-						),
-					),
-			),
+			ownEditableProposal,
+			and(ne(proposals.status, PROPOSAL_STATUS.DRAFT), eligibleForMonitoring),
 		),
 	];
 
@@ -832,12 +875,15 @@ export async function getHubProjects(
 			whereConditions.push(eq(proposals.campusId, user.campusId));
 		}
 		whereConditions.push(
-			inArray(projects.projectStatus, [
-				PROJECT_STATUS.APPROVED,
-				PROJECT_STATUS.ONGOING,
-				PROJECT_STATUS.PENDING_CLOSURE,
-				PROJECT_STATUS.OVERDUE,
-			]),
+			or(
+				ownEditableProposal,
+				inArray(projects.projectStatus, [
+					PROJECT_STATUS.APPROVED,
+					PROJECT_STATUS.ONGOING,
+					PROJECT_STATUS.PENDING_CLOSURE,
+					PROJECT_STATUS.OVERDUE,
+				]),
+			),
 		);
 	}
 

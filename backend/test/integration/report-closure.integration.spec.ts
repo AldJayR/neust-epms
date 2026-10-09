@@ -4,6 +4,8 @@ import { db } from "@/db/client.js";
 import { auditLogs } from "@/db/schema/audit-logs.js";
 import { projectReports } from "@/db/schema/project-reports.js";
 import { projects } from "@/db/schema/projects.js";
+import { reportAttachments } from "@/db/schema/report-attachments.js";
+import { finalizeTerminalPackage } from "@/modules/reports/terminal-package.js";
 import { closeProject } from "@/modules/projects/projects.service.js";
 import { createReport } from "@/modules/reports/reports.service.js";
 import { PROJECT_STATUS, PROPOSAL_STATUS, REPORT_TYPE, ROLE_NAMES } from "@/lib/types.js";
@@ -63,7 +65,7 @@ describe("report and project closure integration", () => {
 		).rejects.toMatchObject({ code: "NOT_MEMBER" });
 	});
 
-	it("requires uploaded Terminal and Final Accomplishment reports before closing", async () => {
+	it("requires a complete unified terminal package before Director closure", async () => {
 		const organization = await seedOrganization("report-close");
 		const leader = await seedAuthUser(organization, {
 			slug: "close-leader",
@@ -88,18 +90,17 @@ describe("report and project closure integration", () => {
 			new Date("2099-12-01T00:00:00.000Z"),
 		);
 
-		await seedReport(project.projectId, closureMilestone.milestoneId, leader.userId, {
-			reportType: REPORT_TYPE.TERMINAL,
+		const report = await seedReport(project.projectId, closureMilestone.milestoneId, leader.userId, {
+			reportType: REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL,
 			storagePath: "reports/terminal.pdf",
 		});
 		await expect(
 			closeProject(project.projectId, director, "127.0.0.1"),
-		).rejects.toMatchObject({ code: "MISSING_FINAL_ACCOMPLISHMENT_REPORT" });
+		).rejects.toMatchObject({ code: "INVALID_STATE" });
 
-		await seedReport(project.projectId, closureMilestone.milestoneId, leader.userId, {
-			reportType: REPORT_TYPE.FINAL_ACCOMPLISHMENT,
-			storagePath: "reports/final.pdf",
-		});
+		await db.update(projectReports).set({ traineeCount: 0 }).where(eq(projectReports.reportId, report.reportId));
+		await db.insert(reportAttachments).values({ reportId: report.reportId, attachmentType: "Evaluation Forms", storagePath: "reports/evaluation.pdf" });
+		await db.transaction((tx) => finalizeTerminalPackage(tx, report.reportId, leader, "127.0.0.1"));
 		await closeProject(project.projectId, director, "127.0.0.1");
 
 		const [savedProject] = await db

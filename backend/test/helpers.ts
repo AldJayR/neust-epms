@@ -24,6 +24,7 @@ export const MOCK_USERS = {
 		avatarUrl: null,
 		isActive: true,
 		isMainCampus: true,
+		hasCompletedOnboarding: false,
 	} satisfies AuthUser,
 
 	retChair: {
@@ -43,6 +44,7 @@ export const MOCK_USERS = {
 		avatarUrl: null,
 		isActive: true,
 		isMainCampus: true,
+		hasCompletedOnboarding: false,
 	} satisfies AuthUser,
 
 	director: {
@@ -62,6 +64,7 @@ export const MOCK_USERS = {
 		avatarUrl: null,
 		isActive: true,
 		isMainCampus: true,
+		hasCompletedOnboarding: false,
 	} satisfies AuthUser,
 
 	superAdmin: {
@@ -81,6 +84,7 @@ export const MOCK_USERS = {
 		avatarUrl: null,
 		isActive: true,
 		isMainCampus: true,
+		hasCompletedOnboarding: false,
 	} satisfies AuthUser,
 } as const;
 
@@ -114,7 +118,7 @@ export function createMockProposal(overrides: Record<string, unknown> = {}) {
 		bypassedRetChair: false,
 		revisionNum: 0,
 		targetStartDate: now,
-		targetEndDate: now,
+		targetEndDate: new Date(now.getTime() + 86_400_000),
 		createdAt: now,
 		updatedAt: now,
 		archivedAt: null,

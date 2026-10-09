@@ -57,6 +57,18 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["ret"] });
 			queryClient.invalidateQueries({ queryKey: ["projects"] });
+			queryClient.invalidateQueries({ queryKey: ["faculty", "proposals"] });
+			queryClient.invalidateQueries({ queryKey: ["faculty", "projects"] });
+			queryClient.invalidateQueries({
+				queryKey: ["proposal", "edit", proposalId],
+			});
+			queryClient.invalidateQueries({
+				queryKey: ["project-readiness", proposalId],
+			});
+			queryClient.invalidateQueries({
+				queryKey: ["project-derived-state", proposalId],
+			});
+			queryClient.invalidateQueries({ queryKey: ["analytics"] });
 
 			if (variables.decision === "Rejected") {
 				toast.success("Proposal has been rejected successfully.");
@@ -243,7 +255,17 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		return <ProposalReviewSkeleton />;
 	}
 
-	if (!data || !contextValue) return null;
+	if (error) {
+		return (
+			<div role="alert" className="flex items-center justify-center h-[500px]">
+				<p className="text-muted-foreground">
+					Failed to load proposal details. {error.message}
+				</p>
+			</div>
+		);
+	}
+
+	if (!data || !contextValue) return <p>Proposal not found.</p>;
 
 	return (
 		<ProposalReviewProvider value={contextValue}>

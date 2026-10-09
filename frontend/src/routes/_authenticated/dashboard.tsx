@@ -11,17 +11,15 @@ import {
 	DashboardPendingSkeleton,
 	DirectorDashboardPage,
 	directorDashboardQueryOptions,
+	facultyDashboardQueryOptions,
 } from "@/features/dashboard";
 import { FacultyDashboardPage } from "@/features/faculty/faculty-dashboard-page";
-import {
-	facultyProjectsQueryOptions,
-	facultyProposalsQueryOptions,
-} from "@/features/faculty/public";
 import {
 	retDashboardStatsQueryOptions,
 	retProposalsQueryOptions,
 } from "@/features/proposals/public";
 import { RETDashboardPage } from "@/features/ret/ret-dashboard-page";
+import { currentManilaYear, dashboardYearSchema } from "@/lib/dashboard-year";
 import {
 	isDeniedAccess,
 	isDirector,
@@ -30,6 +28,7 @@ import {
 } from "@/lib/permissions";
 
 const dashboardSearchSchema = z.object({
+	year: dashboardYearSchema.optional(),
 	page: z.number().optional().default(1),
 	pageSize: z.number().optional().default(10),
 	search: z.string().optional(),
@@ -39,6 +38,7 @@ const dashboardSearchSchema = z.object({
 export const Route = createFileRoute("/_authenticated/dashboard")({
 	validateSearch: (search) => dashboardSearchSchema.parse(search),
 	loaderDeps: ({ search }) => ({
+		year: search.year ?? currentManilaYear(),
 		page: search.page,
 		pageSize: search.pageSize,
 		search: search.search,
@@ -51,10 +51,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 			await Promise.all([
 				context.queryClient.ensureQueryData(actionCenterQueryOptions()),
 				context.queryClient.ensureQueryData(
-					facultyProposalsQueryOptions({ page: 1, limit: 100 }),
-				),
-				context.queryClient.ensureQueryData(
-					facultyProjectsQueryOptions({ page: 1, limit: 100 }),
+					facultyDashboardQueryOptions(deps.year, deps.page, deps.pageSize),
 				),
 			]);
 			return null;
@@ -78,9 +75,12 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 		if (isRETChair(context.auth.user)) {
 			await Promise.all([
 				context.queryClient.ensureQueryData(actionCenterQueryOptions()),
-				context.queryClient.ensureQueryData(retDashboardStatsQueryOptions()),
+				context.queryClient.ensureQueryData(
+					retDashboardStatsQueryOptions(deps.year),
+				),
 				context.queryClient.ensureQueryData(
 					retProposalsQueryOptions({
+						year: deps.year,
 						page: deps.page,
 						limit: deps.pageSize,
 						search: deps.search,
@@ -93,7 +93,9 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 		// Director path
 		await Promise.all([
 			context.queryClient.ensureQueryData(actionCenterQueryOptions()),
-			context.queryClient.ensureQueryData(directorDashboardQueryOptions()),
+			context.queryClient.ensureQueryData(
+				directorDashboardQueryOptions(deps.year),
+			),
 			context.queryClient.ensureQueryData({
 				queryKey: ["campuses"],
 				queryFn: () => getCampusesFn(),
@@ -113,8 +115,17 @@ function DashboardPendingComponent() {
 
 function DashboardPage() {
 	const { user } = Route.useRouteContext();
-	const { page, pageSize, search, isActive } = Route.useSearch();
+	const {
+		page,
+		pageSize,
+		search,
+		isActive,
+		year = currentManilaYear(),
+	} = Route.useSearch();
 	const navigate = Route.useNavigate();
+	const handleYearChange = (year: number) => {
+		navigate({ search: (old) => ({ ...old, year, page: 1 }) });
+	};
 
 	const handleSearch = (newSearch: string | undefined) => {
 		navigate({
@@ -153,12 +164,20 @@ function DashboardPage() {
 	}
 
 	if (isDirector(user)) {
-		return <DirectorDashboardPage user={user} />;
+		return (
+			<DirectorDashboardPage
+				user={user}
+				year={year}
+				onYearChange={handleYearChange}
+			/>
+		);
 	}
 
 	if (isRETChair(user)) {
 		return (
 			<RETDashboardPage
+				year={year}
+				onYearChange={handleYearChange}
 				user={user}
 				page={page}
 				pageSize={pageSize}
@@ -169,5 +188,14 @@ function DashboardPage() {
 		);
 	}
 
-	return <FacultyDashboardPage user={user} />;
+	return (
+		<FacultyDashboardPage
+			user={user}
+			year={year}
+			onYearChange={handleYearChange}
+			page={page}
+			pageSize={pageSize}
+			onPageChange={handlePageChange}
+		/>
+	);
 }

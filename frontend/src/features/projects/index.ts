@@ -35,7 +35,6 @@ export type {
 } from "./reporting-schedule.functions";
 export { projectReportingScheduleQueryOptions } from "./reporting-schedule.functions";
 export {
-	getAccessTokenForUploadFn,
 	getSpecialOrderSignedUrlFn,
 	uploadSpecialOrderFn,
 } from "./special-orders.functions";

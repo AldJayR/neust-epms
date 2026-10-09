@@ -32,11 +32,13 @@ export function ReportsPage() {
 							</Button>
 						)}
 						<Button
+							disabled
+							title="Report export is not available yet"
 							variant="outline"
 							className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-lg gap-2"
 						>
 							<Download className="size-4" />
-							Export Reports
+							Export unavailable
 						</Button>
 					</div>
 				}

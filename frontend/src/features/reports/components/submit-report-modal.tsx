@@ -233,6 +233,10 @@ export function SubmitReportModal({
 			}
 
 			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: ["dashboard", "proposals"] }),
+				queryClient.invalidateQueries({ queryKey: ["dashboard", "hub"] }),
+				queryClient.invalidateQueries({ queryKey: ["project-derived-state"] }),
+				queryClient.invalidateQueries({ queryKey: ["project-readiness"] }),
 				queryClient.invalidateQueries({
 					queryKey: ["project-reporting-schedule", milestone.projectId],
 				}),

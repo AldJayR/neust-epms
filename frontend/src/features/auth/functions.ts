@@ -9,8 +9,6 @@ import { getErrorMessage } from "@/lib/api/client";
 import type { SearchUserResponse } from "@/types/search";
 import type { AuthUser } from "@/types/user";
 
-const USER_PROFILE_CACHE_TTL_MS = 1000 * 30; // 30 seconds
-
 // ── Schemas ───────────────────────────────────────────────
 
 const loginSchema = z.object({
@@ -57,7 +55,9 @@ export const loginFn = createServerFn({ method: "POST" })
 		};
 
 		const session = await getAppSession();
+		await session.clear();
 		await session.update({
+			purpose: "app",
 			accessToken: access_token,
 			refreshToken: refresh_token,
 			userId: user.userId,
@@ -155,7 +155,8 @@ interface LookupItem {
 export const getDepartmentsFn = createServerFn({ method: "GET" }).handler(
 	async () => {
 		const response = await fetch(`${API_BASE}/auth/departments`);
-		if (!response.ok) return [] as LookupItem[];
+		if (!response.ok)
+			throw new Error("Unable to load departments. Please try again.");
 		return (await response.json()) as LookupItem[];
 	},
 );
@@ -163,7 +164,8 @@ export const getDepartmentsFn = createServerFn({ method: "GET" }).handler(
 export const getCampusesFn = createServerFn({ method: "GET" }).handler(
 	async () => {
 		const response = await fetch(`${API_BASE}/auth/campuses`);
-		if (!response.ok) return [] as LookupItem[];
+		if (!response.ok)
+			throw new Error("Unable to load campuses. Please try again.");
 		return (await response.json()) as LookupItem[];
 	},
 );
@@ -195,26 +197,12 @@ export const checkPasswordFn = createServerFn({ method: "POST" })
 export const getCurrentUserFn = createServerFn({ method: "POST" })
 	.validator(z.void())
 	.handler(async () => {
-		const [{ getAppSession, getValidAccessToken }, { supabase }] =
-			await Promise.all([
-				import("@/lib/session.server"),
-				import("@/lib/supabase.server"),
-			]);
+		const { getAppSession, getValidAccessToken, SessionExpiredError } =
+			await import("@/lib/session.server");
 
 		const session = await getAppSession();
-		const { userId, user, createdAt } = session.data;
-
-		if (
-			user &&
-			createdAt &&
-			Date.now() - createdAt < USER_PROFILE_CACHE_TTL_MS
-		) {
-			if (!user.isActive) {
-				await session.clear();
-				return null;
-			}
-			return user;
-		}
+		const { userId } = session.data;
+		if (session.data.purpose === "recovery") return null;
 
 		if (!userId) {
 			return null;
@@ -223,64 +211,38 @@ export const getCurrentUserFn = createServerFn({ method: "POST" })
 		let token: string;
 		try {
 			token = await getValidAccessToken();
-		} catch {
-			await session.clear();
-			return null;
+		} catch (error) {
+			if (error instanceof SessionExpiredError) return null;
+			throw error;
 		}
 
 		// Validate the token is still valid by calling our backend
-		const meResponse = await fetch(`${API_BASE}/auth/me`, {
+		let meResponse = await fetch(`${API_BASE}/auth/me`, {
 			headers: {
 				Authorization: `Bearer ${token}`,
 			},
 		});
 
-		if (!meResponse.ok) {
-			// Token may be expired — try refresh before clearing session
-			if (session.data.refreshToken) {
-				try {
-					const { data: refreshData, error: refreshError } =
-						await supabase.auth.refreshSession({
-							refresh_token: session.data.refreshToken,
-						});
-
-					if (!refreshError && refreshData.session) {
-						// Retry with new token
-						const retryResponse = await fetch(`${API_BASE}/auth/me`, {
-							headers: {
-								Authorization: `Bearer ${refreshData.session.access_token}`,
-							},
-						});
-
-						if (retryResponse.ok) {
-							const currentUser = (await retryResponse.json()) as AuthUser;
-							if (!currentUser.isActive) {
-								await session.clear();
-								return null;
-							}
-							const refreshSessionData = {
-								accessToken: refreshData.session.access_token,
-								refreshToken: refreshData.session.refresh_token,
-								userId: currentUser.userId,
-								email: currentUser.email,
-								user: currentUser,
-								createdAt: Date.now(),
-							};
-							await session.update(refreshSessionData);
-							return currentUser;
-						}
-					}
-				} catch {
-					// Refresh failed, fall through to clear session
-				}
+		if (meResponse.status === 401) {
+			try {
+				token = await getValidAccessToken(true);
+			} catch (error) {
+				if (error instanceof SessionExpiredError) return null;
+				throw error;
 			}
-			// Token expired and refresh failed — clear session
+			meResponse = await fetch(`${API_BASE}/auth/me`, {
+				headers: { Authorization: `Bearer ${token}` },
+			});
+		}
+		if (meResponse.status === 401 || meResponse.status === 403) {
 			await session.clear();
 			return null;
 		}
+		if (!meResponse.ok)
+			throw new Error("Unable to load your account. Please try again.");
 
 		const currentUser = (await meResponse.json()) as AuthUser;
-		if (!currentUser.isActive) {
+		if (!currentUser.isActive || currentUser.userId !== userId) {
 			await session.clear();
 			return null;
 		}
@@ -394,25 +356,45 @@ export const sendResetCodeFn = createServerFn({ method: "POST" })
 export const verifyResetCodeFn = createServerFn({ method: "POST" })
 	.validator(z.object({ email: z.email(), code: z.string().length(6) }))
 	.handler(async ({ data }) => {
-		const { supabase } = await import("@/lib/supabase.server");
-		const { data: verifyData, error } = await supabase.auth.verifyOtp({
+		const { getAppSession } = await import("@/lib/session.server");
+		const session = await getAppSession();
+		await session.clear();
+		const { createClient } = await import("@supabase/supabase-js");
+		const client = createClient(
+			process.env.SUPABASE_URL ?? "",
+			process.env.SUPABASE_ANON_KEY ?? "",
+			{
+				auth: {
+					persistSession: false,
+					autoRefreshToken: false,
+					detectSessionInUrl: false,
+				},
+			},
+		);
+		const { data: verifyData, error } = await client.auth.verifyOtp({
 			email: data.email,
 			token: data.code,
 			type: "recovery",
 		});
-		if (error || !verifyData.session) {
+		if (
+			error ||
+			!verifyData.session ||
+			!verifyData.user ||
+			verifyData.session.user.id !== verifyData.user.id
+		) {
 			return {
 				error: true as const,
 				message: error?.message ?? "Invalid or expired code",
 			};
 		}
 
-		const { getAppSession } = await import("@/lib/session.server");
-		const session = await getAppSession();
 		await session.update({
+			purpose: "recovery",
+			recoveryUserId: verifyData.user.id,
+			recoveryVerifiedAt: Date.now(),
 			accessToken: verifyData.session.access_token,
 			refreshToken: verifyData.session.refresh_token,
-			email: data.email,
+			email: verifyData.user.email,
 		});
 		return { error: false as const };
 	});
@@ -420,11 +402,13 @@ export const verifyResetCodeFn = createServerFn({ method: "POST" })
 export const setNewPasswordFn = createServerFn({ method: "POST" })
 	.validator(z.object({ password: z.string().min(8) }))
 	.handler(async ({ data }) => {
-		const { getAppSession } = await import("@/lib/session.server");
+		const { getAppSession, isRecoverySession } = await import(
+			"@/lib/session.server"
+		);
 		const session = await getAppSession();
 		const { accessToken, refreshToken } = session.data;
 
-		if (!accessToken || !refreshToken) {
+		if (!isRecoverySession(session.data) || !accessToken || !refreshToken) {
 			return {
 				error: true as const,
 				message:
@@ -441,15 +425,24 @@ export const setNewPasswordFn = createServerFn({ method: "POST" })
 			},
 		);
 
-		const { error: setSessionError } = await client.auth.setSession({
-			access_token: accessToken,
-			refresh_token: refreshToken,
-		});
+		const { data: restored, error: setSessionError } =
+			await client.auth.setSession({
+				access_token: accessToken,
+				refresh_token: refreshToken,
+			});
 
-		if (setSessionError) {
+		const { data: identity, error: identityError } =
+			await client.auth.getUser();
+		if (
+			setSessionError ||
+			identityError ||
+			!restored.user ||
+			identity.user?.id !== session.data.recoveryUserId ||
+			restored.user.id !== session.data.recoveryUserId
+		) {
 			console.error(
 				"[auth] Password reset session could not be restored:",
-				setSessionError,
+				setSessionError ?? identityError,
 			);
 			return {
 				error: true as const,

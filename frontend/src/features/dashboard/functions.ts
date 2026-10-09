@@ -4,6 +4,10 @@ import { z } from "zod";
 import { API_BASE } from "@/config/api";
 import { getErrorMessage } from "@/lib/api/client";
 import {
+	dashboardYearSchema,
+	periodMetadataSchema,
+} from "@/lib/dashboard-year";
+import {
 	authorizeSessionUser,
 	getValidAccessToken,
 } from "@/lib/session.server";
@@ -12,11 +16,14 @@ import type { DirectorDashboardResponse } from "@/types/dashboard";
 const STALE_TIME = 1000 * 60 * 5;
 
 const getDirectorDashboardFn = createServerFn({ method: "GET" })
-	.validator(z.void())
-	.handler(async () => {
+	.validator(z.object({ year: dashboardYearSchema.optional() }))
+	.handler(async ({ data }) => {
 		await authorizeSessionUser("Director", "RET Chair");
 		const token = await getValidAccessToken();
-		const response = await fetch(`${API_BASE}/director/dashboard`, {
+		const url = new URL(`${API_BASE}/director/dashboard`);
+		if (data.year !== undefined)
+			url.searchParams.set("year", String(data.year));
+		const response = await fetch(url.toString(), {
 			headers: { Authorization: `Bearer ${token}` },
 		});
 		if (!response.ok) {
@@ -24,13 +31,17 @@ const getDirectorDashboardFn = createServerFn({ method: "GET" })
 				await getErrorMessage(response, "Failed to fetch director dashboard"),
 			);
 		}
-		return (await response.json()) as DirectorDashboardResponse;
+		const payload = await response.json();
+		return {
+			...payload,
+			...periodMetadataSchema.parse(payload),
+		} as DirectorDashboardResponse;
 	});
 
-export function directorDashboardQueryOptions() {
+export function directorDashboardQueryOptions(year?: number) {
 	return queryOptions({
-		queryKey: ["dashboard", "stats"],
-		queryFn: () => getDirectorDashboardFn(),
+		queryKey: ["dashboard", "stats", { year }],
+		queryFn: () => getDirectorDashboardFn({ data: { year } }),
 		staleTime: STALE_TIME,
 	});
 }

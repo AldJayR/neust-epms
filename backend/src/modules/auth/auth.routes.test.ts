@@ -152,7 +152,7 @@ const validTokenBody = {
 };
 
 describe("POST /auth/reset-password", () => {
-	it("should reset the password and revoke sessions with a valid token", async () => {
+	it("should consume the token and reset the password without passing a UUID to signOut", async () => {
 		const { createClient } = await import("@supabase/supabase-js");
 		const mockSupabase = createClient("", "");
 		vi.mocked(mockSupabase.auth.admin.updateUserById).mockResolvedValueOnce({
@@ -166,7 +166,7 @@ describe("POST /auth/reset-password", () => {
 		vi.mocked(db.select).mockReturnValue(
 			mockSelectChain([mockTokenRow()]) as never,
 		);
-		vi.mocked(db.transaction).mockImplementation(mockTransaction({}) as never);
+		vi.mocked(db.update).mockReturnValue(mockMutationChain([{ userId: MOCK_USERS.faculty.userId }]) as never);
 
 		const res = await app.request("/auth/reset-password", {
 			method: "POST",
@@ -181,9 +181,7 @@ describe("POST /auth/reset-password", () => {
 			MOCK_USERS.faculty.userId,
 			{ password: validTokenBody.newPassword },
 		);
-		expect(mockSupabase.auth.admin.signOut).toHaveBeenCalledWith(
-			MOCK_USERS.faculty.userId,
-		);
+		expect(mockSupabase.auth.admin.signOut).not.toHaveBeenCalled();
 	});
 
 	it("should reject an unknown or already-used token", async () => {

@@ -1,19 +1,14 @@
-const nonces = new Map<string, string>();
-
-function getRequestKey(request: Request): string {
-	return request.headers.get("cf-ray") ?? request.url;
-}
+const nonces = new WeakMap<Request, string>();
 
 export function getCspNonce(request: Request): string {
-	const key = getRequestKey(request);
-	let nonce = nonces.get(key);
+	let nonce = nonces.get(request);
 	if (!nonce) {
 		nonce = crypto.randomUUID();
-		nonces.set(key, nonce);
+		nonces.set(request, nonce);
 	}
 	return nonce;
 }
 
 export function clearCspNonce(request: Request): void {
-	nonces.delete(getRequestKey(request));
+	nonces.delete(request);
 }

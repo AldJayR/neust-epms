@@ -1,4 +1,5 @@
 import { z } from "@hono/zod-openapi";
+import { PeriodMetadataSchema } from "../dashboard/dashboard.schema.js";
 
 // ── Hub Schemas ──
 export const HubProjectSchema = z
@@ -84,13 +85,15 @@ export const MoaSchema = z.object({
 	dueText: z.string(),
 });
 
-export const DirectorDashboardSchema = z.object({
-	metrics: DashboardMetricSchema,
-	chartMonths: z.array(z.string()),
-	chartData: z.array(ChartPointSchema),
-	recentActivities: z.array(ActivitySchema),
-	expiringMoas: z.array(MoaSchema),
-});
+export const DirectorDashboardSchema = z
+	.object({
+		metrics: DashboardMetricSchema,
+		chartMonths: z.array(z.string()),
+		chartData: z.array(ChartPointSchema),
+		recentActivities: z.array(ActivitySchema),
+		expiringMoas: z.array(MoaSchema),
+	})
+	.extend(PeriodMetadataSchema.shape);
 
 // ── MOA Repository Schemas ──
 export const MoaRepositoryItemSchema = z.object({

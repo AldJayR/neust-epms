@@ -94,6 +94,7 @@ const facultyProjectsParamsSchema = z.object({
 });
 
 export interface FacultyProposalItem {
+	leaderId?: string | null;
 	proposalId: string;
 	campusId: number;
 	departmentId: number | null;
@@ -121,6 +122,7 @@ export interface FacultyProposalListResponse {
 }
 
 export interface FacultyProjectItem {
+	leaderId?: string | null;
 	projectId: string;
 	proposalId: string;
 	moaId: string | null;

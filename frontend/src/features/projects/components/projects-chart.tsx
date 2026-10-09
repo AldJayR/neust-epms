@@ -12,7 +12,7 @@ interface ProjectsChartProps {
 
 const chartConfig = {
 	value: {
-		label: "Approved projects",
+		label: "Scheduled projects",
 		color: "var(--chart-1)",
 	},
 } satisfies ChartConfig;

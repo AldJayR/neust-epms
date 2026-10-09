@@ -34,10 +34,10 @@ export const formSchema = z
 			if (!data.targetStartDate || !data.targetEndDate) return true;
 			const start = new Date(data.targetStartDate);
 			const end = new Date(data.targetEndDate);
-			return end >= start;
+			return end > start;
 		},
 		{
-			message: "End date must be on or after the start date",
+			message: "End date must be after the start date",
 			path: ["targetEndDate"],
 		},
 	);

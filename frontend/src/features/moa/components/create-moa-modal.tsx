@@ -31,6 +31,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { manilaCalendarTimestamp } from "@/lib/dates";
 import { uploadMoaFn } from "../functions";
 
 interface CreateMoaModalProps {
@@ -62,14 +63,18 @@ export function CreateMoaModal({ open, onOpenChange }: CreateMoaModalProps) {
 		try {
 			const formData = new FormData();
 			formData.append("partnerName", partnerName);
-			formData.append("validFrom", validFrom.toISOString());
-			formData.append("validUntil", validUntil.toISOString());
+			formData.append("validFrom", manilaCalendarTimestamp(validFrom));
+			formData.append("validUntil", manilaCalendarTimestamp(validUntil, true));
 			formData.append("file", file);
 
 			await uploadMoaFn({ data: formData });
 
 			toast.success("MOA created successfully!");
-			queryClient.invalidateQueries({ queryKey: ["director", "moas"] });
+			await queryClient.invalidateQueries({ queryKey: ["dashboard", "moas"] });
+			queryClient.invalidateQueries({
+				queryKey: ["director", "moas", "active"],
+			});
+			queryClient.invalidateQueries({ queryKey: ["action-center"] });
 			onOpenChange(false);
 			// Reset state
 			setPartnerName("");

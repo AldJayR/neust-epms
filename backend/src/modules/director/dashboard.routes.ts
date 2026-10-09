@@ -2,6 +2,7 @@ import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { ROLE_NAMES } from "@/lib/types.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import { requireRole } from "@/middleware/rbac.js";
+import { DashboardYearQuery } from "../dashboard/dashboard.schema.js";
 import { DirectorDashboardSchema } from "./director.schema.js";
 import { getDashboardStats } from "./director.service.js";
 
@@ -16,6 +17,7 @@ const dashboardRoute = createRoute({
 	tags: ["Director"],
 	summary: "Get director dashboard summary",
 	security: [{ Bearer: [] }],
+	request: { query: DashboardYearQuery },
 	responses: {
 		200: {
 			content: { "application/json": { schema: DirectorDashboardSchema } },
@@ -26,7 +28,7 @@ const dashboardRoute = createRoute({
 
 app.openapi(dashboardRoute, async (c) => {
 	const user = c.get("user");
-	const data = await getDashboardStats(user);
+	const data = await getDashboardStats(user, c.req.valid("query").year);
 	return c.json(data, 200);
 });
 

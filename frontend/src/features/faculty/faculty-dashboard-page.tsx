@@ -8,96 +8,49 @@ import { MetricCard } from "@/components/custom/metric-card";
 import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ActionCenterCard } from "@/features/action-center";
+import { facultyDashboardQueryOptions } from "@/features/dashboard";
 import {
-	facultyProjectsQueryOptions,
-	facultyProposalsQueryOptions,
-} from "@/features/faculty";
+	DashboardPeriodNote,
+	DashboardYearFilter,
+} from "@/features/dashboard/components/dashboard-year-filter";
 import { CreateProposalModal } from "@/features/proposals";
 import type { AuthUser } from "@/lib/auth";
-import { toStableDate } from "@/lib/utils";
+import type { DashboardYearProps } from "@/lib/dashboard-year";
+import { toManilaDisplayDate as toStableDate } from "@/lib/dates";
 
-export function FacultyDashboardPage({ user }: { user: AuthUser }) {
+export function FacultyDashboardPage({
+	user,
+	year,
+	onYearChange,
+	page,
+	pageSize,
+	onPageChange,
+}: {
+	user: AuthUser;
+	page: number;
+	pageSize: number;
+	onPageChange: (page: number) => void;
+} & DashboardYearProps) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
 	const hour = new Date().getHours();
 	const timeOfDay = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
 
-	const { data: proposalsData, isLoading: isProposalsLoading } = useQuery(
-		facultyProposalsQueryOptions({
-			page: 1,
-			limit: 100,
-		}),
-	);
-
-	const { data: projectsData, isLoading: isProjectsLoading } = useQuery(
-		facultyProjectsQueryOptions({
-			page: 1,
-			limit: 100,
-		}),
-	);
-
-	const isLoading = isProposalsLoading || isProjectsLoading;
-
-	const projectsList = projectsData?.items ?? [];
-	const proposalsList = proposalsData?.items ?? [];
-
-	const userFullName = `${user.firstName} ${user.lastName}`;
-
-	const combinedItems = [
-		...projectsList.map((p) => {
-			const isLeader =
-				(p.leaderFirstName &&
-					p.leaderLastName &&
-					`${p.leaderFirstName} ${p.leaderLastName}` === userFullName) ||
-				false;
-			return {
-				id: p.projectId,
-				proposalId: p.proposalId,
-				title: p.title || "Untitled Project",
-				startDate: p.targetStartDate,
-				endDate: p.targetEndDate,
-				status: p.projectStatus,
-				createdAt: p.createdAt,
-				isLeader,
-				isProject: true,
-				isMember: p.isMember,
-			};
-		}),
-		...proposalsList
-			.filter(
-				(p) => !projectsList.some((proj) => proj.proposalId === p.proposalId),
-			)
-			.map((p) => {
-				const isLeader =
-					(p.leaderFirstName &&
-						p.leaderLastName &&
-						`${p.leaderFirstName} ${p.leaderLastName}` === userFullName) ||
-					false;
-				return {
-					id: p.proposalId,
-					proposalId: p.proposalId,
-					title: p.title || "Untitled Proposal",
-					startDate: p.targetStartDate,
-					endDate: p.targetEndDate,
-					status: p.status,
-					createdAt: p.createdAt,
-					isLeader,
-					isProject: false,
-					isMember: p.isMember,
-				};
-			}),
-	];
-
-	const userItems = combinedItems
-		.filter((item) => item.isMember || item.isLeader)
-		.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-
-	const myTotalSubmissions = userItems.length;
-	const ongoingProjects = userItems.filter(
-		(item) => item.status === "Ongoing",
-	).length;
-	const proposalsSubmitted = userItems.filter((item) => !item.isProject).length;
+	const {
+		data: dashboard,
+		isPending: isLoading,
+		error,
+		refetch,
+	} = useQuery(facultyDashboardQueryOptions(year, page, pageSize));
+	const userItems = (dashboard?.items ?? []).map((item) => ({
+		...item,
+		id: item.proposalId,
+		startDate: item.targetStartDate,
+		endDate: item.targetEndDate,
+		isProject: Boolean(item.projectId),
+	}));
 
 	const formatDateRange = (start?: string | null, end?: string | null) => {
 		if (!start && !end) return "No duration set";
@@ -125,29 +78,54 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 					</div>
 				}
 				actions={
-					<BrandButton onClick={() => setIsCreateModalOpen(true)}>
-						<Plus className="size-4" />
-						<span>Start New Project Proposal</span>
-					</BrandButton>
+					<div className="flex flex-wrap items-center gap-3">
+						<DashboardYearFilter
+							year={year}
+							onYearChange={onYearChange}
+							availableYears={dashboard?.availableYears}
+						/>
+						<BrandButton onClick={() => setIsCreateModalOpen(true)}>
+							<Plus className="size-4" />
+							<span>Start New Project Proposal</span>
+						</BrandButton>
+					</div>
 				}
 			/>
 
-			<ActionCenterCard />
+			<DashboardPeriodNote
+				year={year}
+			/>
+			<div>
+				<p className="mb-2 text-xs text-muted-foreground">
+					Current obligations · all project years
+				</p>
+				<ActionCenterCard />
+			</div>
+			{error && (
+				<div role="alert" className="flex items-center justify-between gap-3">
+					<p className="text-destructive">
+						Unable to load your dashboard. Please try again.
+					</p>
+					<Button variant="outline" onClick={() => void refetch()}>
+						Retry
+					</Button>
+				</div>
+			)}
 
 			<div className="grid gap-6 md:grid-cols-3">
 				<MetricCard
-					label="My Total Submission"
-					value={isLoading ? undefined : myTotalSubmissions}
+					label="My Proposals & Projects"
+					value={dashboard?.metrics.totalSubmissions}
 					isLoading={isLoading}
 				/>
 				<MetricCard
 					label="Ongoing Projects"
-					value={isLoading ? undefined : ongoingProjects}
+					value={dashboard?.metrics.ongoingProjects}
 					isLoading={isLoading}
 				/>
 				<MetricCard
-					label="Proposals Submitted"
-					value={isLoading ? undefined : proposalsSubmitted}
+					label="Proposals"
+					value={dashboard?.metrics.proposals}
 					isLoading={isLoading}
 				/>
 			</div>
@@ -172,13 +150,13 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 							</div>
 						</PageCard>
 					))
-				) : userItems.length === 0 ? (
+				) : !error && userItems.length === 0 ? (
 					<PageCard className="p-8 text-center">
 						<p className="text-sm font-medium text-foreground">
-							No proposals or projects yet
+							No proposals or projects scheduled during {year}
 						</p>
 						<p className="mt-1 text-sm text-muted-foreground">
-							Start a proposal to begin tracking your extension work here.
+							Choose another year or open Project Hub to find drafts without dates.
 						</p>
 					</PageCard>
 				) : (
@@ -226,6 +204,27 @@ export function FacultyDashboardPage({ user }: { user: AuthUser }) {
 					))
 				)}
 			</div>
+			{!isLoading && !error && (
+				<div className="flex items-center justify-between gap-3">
+					<Button
+						variant="outline"
+						disabled={page === 1}
+						onClick={() => onPageChange(page - 1)}
+					>
+						Previous
+					</Button>
+					<span className="text-sm text-muted-foreground">
+						Page {page} · {dashboard?.total ?? 0} records
+					</span>
+					<Button
+						variant="outline"
+						disabled={page * pageSize >= (dashboard?.total ?? 0)}
+						onClick={() => onPageChange(page + 1)}
+					>
+						Next
+					</Button>
+				</div>
+			)}
 
 			<CreateProposalModal
 				open={isCreateModalOpen}

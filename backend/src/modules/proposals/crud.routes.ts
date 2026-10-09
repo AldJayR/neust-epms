@@ -5,6 +5,7 @@ import {
 	desc,
 	eq,
 	ilike,
+	inArray,
 	isNotNull,
 	isNull,
 	type SQL,
@@ -23,6 +24,7 @@ import { deriveProposalState } from "@/lib/derived-states.js";
 import { ApiError } from "@/lib/errors.js";
 import { getLeaderSubquery } from "@/lib/leader-subquery.js";
 import { createNotification } from "@/lib/notification.helpers.js";
+import { projectPeriodClause } from "@/lib/project-period.js";
 import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
 import {
 	buildProposalScope,
@@ -36,6 +38,11 @@ import {
 import type { AuthEnv } from "@/middleware/auth.js";
 import { requireRole } from "@/middleware/rbac.js";
 import { PROJECT_LEADER_ROLE } from "@/services/auth-user.service.js";
+import { DashboardYearQuery } from "../dashboard/dashboard.schema.js";
+import {
+	dashboardScope,
+	getPeriodMetadata,
+} from "../dashboard/dashboard.service.js";
 import {
 	CreateProposalSchema,
 	DerivedStateSchema,
@@ -79,7 +86,7 @@ const listRoute = createRoute({
 
 app.openapi(listRoute, async (c) => {
 	const user = c.get("user");
-	const { page, limit, search, status, archived } = c.req.valid("query");
+	const { page, limit, search, status, archived, year } = c.req.valid("query");
 	const offset = (page - 1) * limit;
 	const showArchived = archived === "true";
 
@@ -98,6 +105,11 @@ app.openapi(listRoute, async (c) => {
 
 	const scopeClause = buildProposalScopeClause(user);
 	if (scopeClause) whereConditions.push(scopeClause);
+	if (year !== undefined)
+		whereConditions.push(
+			projectPeriodClause(year),
+			isNull(projects.archivedAt),
+		);
 
 	const leaderSubquery = getLeaderSubquery();
 	const userMemberSubquery = getUserMemberSubquery(user.userId);
@@ -126,6 +138,7 @@ app.openapi(listRoute, async (c) => {
 				updatedAt: proposals.updatedAt,
 				archivedAt: proposals.archivedAt,
 				leaderFirstName: users.firstName,
+				leaderId: leaderSubquery.userId,
 				leaderLastName: users.lastName,
 				leaderAcademicRank: users.academicRank,
 				isMember: sql<boolean>`COALESCE(${userMemberSubquery.isMember}, false)`,
@@ -148,6 +161,7 @@ app.openapi(listRoute, async (c) => {
 		db
 			.select({ value: count() })
 			.from(proposals)
+			.leftJoin(projects, eq(projects.proposalId, proposals.proposalId))
 			.where(and(...whereConditions)),
 	]);
 
@@ -186,6 +200,7 @@ const retStatsRoute = createRoute({
 	tags: ["Proposals"],
 	summary: "Get dashboard stats for RET Chair",
 	security: [{ Bearer: [] }],
+	request: { query: DashboardYearQuery },
 	responses: {
 		200: {
 			content: { "application/json": { schema: RETDashboardStatsSchema } },
@@ -205,19 +220,23 @@ app.openapi(retStatsRoute, async (c) => {
 		);
 	}
 
-	const whereConditions: SQL[] = [...buildProposalScope(user)];
+	const whereConditions: SQL[] = dashboardScope(user);
+	const { year } = c.req.valid("query");
+	if (year !== undefined) whereConditions.push(projectPeriodClause(year));
 
 	const [stats] = await db
 		.select({
 			pendingReview: sql<number>`count(*) filter (where ${proposals.status} = ${PROPOSAL_STATUS.PENDING_REVIEW})::int`,
-			approvedProjects: sql<number>`count(*) filter (where ${proposals.status} = ${PROPOSAL_STATUS.APPROVED})::int`,
+			approvedProjects: sql<number>`count(*) filter (where ${inArray(proposals.status, [PROPOSAL_STATUS.APPROVED, PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED])})::int`,
 			deniedProjects: sql<number>`count(*) filter (where ${proposals.status} = ${PROPOSAL_STATUS.REJECTED})::int`,
 		})
 		.from(proposals)
+		.leftJoin(projects, eq(projects.proposalId, proposals.proposalId))
 		.where(and(...whereConditions));
 
 	return c.json(
 		{
+			...(await getPeriodMetadata(user)),
 			pendingReview: Number(stats?.pendingReview ?? 0),
 			approvedProjects: Number(stats?.approvedProjects ?? 0),
 			deniedProjects: Number(stats?.deniedProjects ?? 0),

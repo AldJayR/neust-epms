@@ -1,5 +1,15 @@
 import type { z } from "@hono/zod-openapi";
-import { and, count, eq, ilike, inArray, or, sql, type SQL } from "drizzle-orm";
+import {
+	and,
+	count,
+	eq,
+	ilike,
+	inArray,
+	isNull,
+	or,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { campuses } from "@/db/schema/campuses.js";
 import { departments } from "@/db/schema/departments.js";
@@ -8,13 +18,9 @@ import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
-import { invalidateAuthUserCache } from "@/lib/cache.js";
 import { ApiError } from "@/lib/errors.js";
 import { createNotification } from "@/lib/notification.helpers.js";
-import {
-	createResetToken,
-	RESET_TOKEN_TTL_MS,
-} from "@/lib/reset-token.js";
+import { createResetToken, RESET_TOKEN_TTL_MS } from "@/lib/reset-token.js";
 import { supabase } from "@/lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import type {
@@ -124,21 +130,23 @@ export async function bulkUpdateUserStatus(
 		return { success: true, updatedCount: 0 };
 	}
 
-	const result = await db
-		.update(users)
-		.set({ isActive, updatedAt: new Date() })
-		.where(inArray(users.userId, userIds))
-		.returning({ userId: users.userId });
+	const result = await db.transaction(async (tx) => {
+		const updated = await tx
+			.update(users)
+			.set({ isActive, updatedAt: new Date() })
+			.where(and(inArray(users.userId, userIds), isNull(users.archivedAt)))
+			.returning({ userId: users.userId });
 
-	if (result.length > 0) {
-		invalidateAuthUserCache(result.map((r) => r.userId));
-	}
-
-	await insertAuditLog({
-		userId: authUser.userId,
-		action: `Bulk updated status of ${result.length} users to ${isActive ? "Active" : "Inactive"}`,
-		tableAffected: "users",
-		ipAddress,
+		await insertAuditLog(
+			{
+				userId: authUser.userId,
+				action: `Bulk updated status of ${updated.length} users to ${isActive ? "Active" : "Inactive"}`,
+				tableAffected: "users",
+				ipAddress,
+			},
+			tx,
+		);
+		return updated;
 	});
 
 	return { success: true, updatedCount: result.length };
@@ -164,6 +172,7 @@ export async function bulkApproveUsers(
 	const allRoles = await db.select().from(roles);
 	const roleMap = new Map(allRoles.map((r) => [r.roleName, r.roleId]));
 	let updatedCount = 0;
+	const approvedIds: string[] = [];
 
 	await db.transaction(async (tx) => {
 		for (const u of usersToApprove) {
@@ -172,9 +181,12 @@ export async function bulkApproveUsers(
 			const result = await tx
 				.update(users)
 				.set({ isActive: true, roleId, updatedAt: new Date() })
-				.where(eq(users.userId, u.userId))
+				.where(and(eq(users.userId, u.userId), isNull(users.archivedAt)))
 				.returning({ userId: users.userId });
-			if (result.length > 0) updatedCount++;
+			if (result.length > 0) {
+				updatedCount++;
+				approvedIds.push(u.userId);
+			}
 		}
 
 		if (updatedCount > 0) {
@@ -190,13 +202,9 @@ export async function bulkApproveUsers(
 		}
 	});
 
-	if (updatedCount > 0) {
-		invalidateAuthUserCache(usersToApprove.map((u) => u.userId));
-	}
-
-	for (const u of usersToApprove) {
+	for (const userId of approvedIds) {
 		await createNotification({
-			recipientId: u.userId,
+			recipientId: userId,
 			type: "system",
 			title: "Account Activated",
 			message: "Your account has been approved and activated.",
@@ -235,16 +243,34 @@ export async function rejectUser(
 		);
 	}
 
-	await db
-		.update(users)
-		.set({ archivedAt: new Date(), updatedAt: new Date() })
-		.where(eq(users.userId, id));
+	await db.transaction(async (tx) => {
+		const [rejected] = await tx
+			.update(users)
+			.set({ archivedAt: new Date(), updatedAt: new Date() })
+			.where(
+				and(
+					eq(users.userId, id),
+					eq(users.isActive, false),
+					isNull(users.archivedAt),
+				),
+			)
+			.returning({ userId: users.userId });
+		if (!rejected)
+			throw new ApiError(
+				409,
+				"UPDATE_CONFLICT",
+				"The account changed before rejection. Reload and try again.",
+			);
 
-	await insertAuditLog({
-		userId: authUser.userId,
-		action: `Rejected user ${id}${body.reason ? `: ${body.reason}` : ""}`,
-		tableAffected: "users",
-		ipAddress,
+		await insertAuditLog(
+			{
+				userId: authUser.userId,
+				action: `Rejected user ${id}${body.reason ? `: ${body.reason}` : ""}`,
+				tableAffected: "users",
+				ipAddress,
+			},
+			tx,
+		);
 	});
 
 	return { success: true, userId: id };
@@ -391,6 +417,13 @@ export async function updateUser(
 	if (authUser.roleName !== "Super Admin") {
 		throw new ApiError(403, "FORBIDDEN", "Only Super Admin can update users");
 	}
+	if (id === authUser.userId && body.isActive === false) {
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"You cannot deactivate your own account",
+		);
+	}
 
 	const [existing] = await db
 		.select()
@@ -398,7 +431,7 @@ export async function updateUser(
 		.where(eq(users.userId, id))
 		.limit(1);
 
-	if (!existing) {
+	if (!existing || existing.archivedAt) {
 		throw new ApiError(404, "NOT_FOUND", "User not found");
 	}
 
@@ -438,7 +471,12 @@ export async function updateUser(
 	);
 
 	await db.transaction(async (tx) => {
-		await tx.update(users).set(updateFields).where(eq(users.userId, id));
+		const result = await tx
+			.update(users)
+			.set(updateFields)
+			.where(and(eq(users.userId, id), isNull(users.archivedAt)))
+			.returning({ userId: users.userId });
+		if (!result.length) throw new ApiError(404, "NOT_FOUND", "User not found");
 
 		await insertAuditLog(
 			{
@@ -452,8 +490,6 @@ export async function updateUser(
 			tx,
 		);
 	});
-
-	invalidateAuthUserCache([id]);
 
 	return { success: true, userId: id };
 }

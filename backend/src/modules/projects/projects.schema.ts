@@ -1,4 +1,6 @@
 import { z } from "@hono/zod-openapi";
+import { ProjectYearSchema } from "@/lib/project-period.js";
+import { reportingScheduleError } from "./project-policies.js";
 
 // ── Response schemas ──
 
@@ -22,6 +24,7 @@ export const ProjectSchema = z
 		updatedAt: z.string(),
 		archivedAt: z.string().nullable(),
 		leaderFirstName: z.string().nullable().optional(),
+		leaderId: z.string().nullable(),
 		leaderLastName: z.string().nullable().optional(),
 		leaderAcademicRank: z.string().nullable().optional(),
 		isMember: z.boolean().optional(),
@@ -173,6 +176,7 @@ export const ParamId = z.object({
 });
 
 export const PaginationQuery = z.object({
+	year: ProjectYearSchema.optional(),
 	page: z.coerce
 		.number()
 		.int()
@@ -205,10 +209,18 @@ export const ActivateSchema = z
 			.array(
 				z.object({
 					title: z.string().optional(),
-					reportType: z.enum(["Progress", "Terminal Report", "Project Closure"]),
+					reportType: z.enum([
+						"Progress",
+						"Terminal Report",
+						"Project Closure",
+					]),
 					dueAt: z.string().datetime(),
 				}),
 			)
-			.min(1),
+			.min(1)
+			.refine((milestones) => !reportingScheduleError(milestones), {
+				message:
+					"Require exactly one final closure milestone, unique dates, and progress dates before closure",
+			}),
 	})
 	.openapi("ActivateProject");

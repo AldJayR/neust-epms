@@ -19,7 +19,7 @@ import {
 } from "@/features/faculty";
 import { CreateProposalModal } from "@/features/proposals";
 import type { AuthUser } from "@/lib/auth";
-import { toStableDate } from "@/lib/utils";
+import { toManilaDisplayDate as toStableDate } from "@/lib/dates";
 
 interface FacultyProjectHubPageProps {
 	user: AuthUser;
@@ -78,15 +78,9 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 		(p) => !projectsList.some((proj) => proj.proposalId === p.proposalId),
 	);
 
-	const userFullName = `${user.firstName} ${user.lastName}`;
-
 	const allItems = (() => {
 		const formattedProjects = projectsList.map((p) => {
-			const isLeader =
-				(p.leaderFirstName &&
-					p.leaderLastName &&
-					`${p.leaderFirstName} ${p.leaderLastName}` === userFullName) ||
-				false;
+			const isLeader = p.leaderId === user.userId;
 			return {
 				id: p.proposalId,
 				proposalId: p.proposalId,
@@ -101,11 +95,7 @@ export function FacultyProjectHubPage({ user }: FacultyProjectHubPageProps) {
 		});
 
 		const formattedProposals = activeProposals.map((p) => {
-			const isLeader =
-				(p.leaderFirstName &&
-					p.leaderLastName &&
-					`${p.leaderFirstName} ${p.leaderLastName}` === userFullName) ||
-				false;
+			const isLeader = p.leaderId === user.userId;
 			return {
 				id: p.proposalId,
 				proposalId: p.proposalId,

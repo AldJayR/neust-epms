@@ -10,13 +10,14 @@ import { insertAuditLog } from "@/lib/audit.js";
 import { ApiError } from "@/lib/errors.js";
 import { isProposalInScope } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
-import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
+import { type AuthUser, PROPOSAL_STATUS, ROLE_NAMES } from "@/lib/types.js";
 import { createAnnotatedProposalPdf } from "@/modules/proposals/proposal-annotation-pdf.service.js";
 import {
 	getAvatarExtension,
 	sanitizeFilename,
 } from "@/services/file.service.js";
 import { hashFileSha256 } from "@/services/file-integrity.service.js";
+import { removeStorageObject } from "@/services/storage-cleanup.service.js";
 
 const AVATARS_BUCKET = "avatars";
 
@@ -29,11 +30,10 @@ function canAccessProposalDocuments(
 
 function generateSecureStoragePath(
 	proposalId: string,
-	versionNum: number,
 	fileName: string,
 ): string {
 	const sanitizedFilename = sanitizeFilename(fileName);
-	return `proposals/${proposalId}/v${versionNum}_${Date.now()}_${randomUUID()}_${sanitizedFilename}`;
+	return `proposals/${proposalId}/${randomUUID()}_${sanitizedFilename}`;
 }
 
 async function getProposal(proposalId: string) {
@@ -100,24 +100,8 @@ export async function uploadProposalDocument(
 	file: File,
 	ipAddress: string,
 ) {
-	const nextVersion = await db.transaction(async (tx) => {
-		const result = await tx.execute(sql`
-			SELECT COALESCE(MAX(version_num), 0) + 1 AS max_ver
-			FROM (
-				SELECT version_num
-				FROM proposal_documents
-				WHERE proposal_id = ${proposalId}
-				FOR UPDATE
-			) locked
-		`);
-		return Number(result[0]?.max_ver ?? 1);
-	});
-
-	const storagePath = generateSecureStoragePath(
-		proposalId,
-		nextVersion,
-		file.name,
-	);
+	await ensureUploadProposalDocumentAccess(user, proposalId);
+	const storagePath = generateSecureStoragePath(proposalId, file.name);
 	const contentHash = await hashFileSha256(file);
 	const { error: uploadError } = await supabase.storage
 		.from("documents")
@@ -138,6 +122,60 @@ export async function uploadProposalDocument(
 	let doc: typeof proposalDocuments.$inferSelect;
 	try {
 		doc = await db.transaction(async (tx) => {
+			const [proposal] = await tx
+				.select()
+				.from(proposals)
+				.where(
+					and(
+						eq(proposals.proposalId, proposalId),
+						isNull(proposals.archivedAt),
+					),
+				)
+				.for("update")
+				.limit(1);
+			if (!proposal || !canAccessProposalDocuments(user, proposal)) {
+				throw new ApiError(
+					403,
+					"FORBIDDEN",
+					"You cannot upload to this proposal",
+				);
+			}
+			if (
+				proposal.status !== PROPOSAL_STATUS.DRAFT &&
+				proposal.status !== PROPOSAL_STATUS.RETURNED
+			) {
+				throw new ApiError(
+					400,
+					"INVALID_STATUS",
+					"Proposal documents can only be changed while Draft or Returned",
+				);
+			}
+			if (
+				user.roleName !== ROLE_NAMES.DIRECTOR &&
+				user.roleName !== ROLE_NAMES.SUPER_ADMIN
+			) {
+				const [member] = await tx
+					.select({ memberId: proposalMembers.memberId })
+					.from(proposalMembers)
+					.where(
+						and(
+							eq(proposalMembers.proposalId, proposalId),
+							eq(proposalMembers.userId, user.userId),
+							isNull(proposalMembers.archivedAt),
+						),
+					)
+					.limit(1);
+				if (!member)
+					throw new ApiError(
+						403,
+						"FORBIDDEN",
+						"You must be an active proposal member to upload documents",
+					);
+			}
+			const versions = await tx.execute(
+				sql`SELECT COALESCE(MAX(version_num), 0) + 1 AS max_ver FROM proposal_documents WHERE proposal_id = ${proposalId}`,
+			);
+			const nextVersion = Number(versions[0]?.max_ver ?? 1);
 			const [inserted] = await tx
 				.insert(proposalDocuments)
 				.values({
@@ -168,9 +206,7 @@ export async function uploadProposalDocument(
 			return inserted;
 		});
 	} catch (error) {
-		try {
-			await supabase.storage.from("documents").remove([storagePath]);
-		} catch {}
+		await removeStorageObject("documents", storagePath);
 		throw error;
 	}
 
@@ -307,21 +343,22 @@ export async function getAnnotatedProposalDocument(
 		throw new ApiError(404, "NOT_FOUND", "Document not found");
 	}
 
-	const [{ data: source, error: downloadError }, commentRows] = await Promise.all([
-		supabase.storage.from("documents").download(document.storagePath),
-		db
-			.select({
-				content: proposalComments.content,
-				annotationJson: proposalComments.annotationJson,
-				createdAt: proposalComments.createdAt,
-				firstName: users.firstName,
-				lastName: users.lastName,
-			})
-			.from(proposalComments)
-			.innerJoin(users, eq(proposalComments.userId, users.userId))
-			.where(eq(proposalComments.documentId, documentId))
-			.orderBy(proposalComments.createdAt),
-	]);
+	const [{ data: source, error: downloadError }, commentRows] =
+		await Promise.all([
+			supabase.storage.from("documents").download(document.storagePath),
+			db
+				.select({
+					content: proposalComments.content,
+					annotationJson: proposalComments.annotationJson,
+					createdAt: proposalComments.createdAt,
+					firstName: users.firstName,
+					lastName: users.lastName,
+				})
+				.from(proposalComments)
+				.innerJoin(users, eq(proposalComments.userId, users.userId))
+				.where(eq(proposalComments.documentId, documentId))
+				.orderBy(proposalComments.createdAt),
+		]);
 
 	if (downloadError || !source) {
 		throw new ApiError(500, "DOWNLOAD_FAILED", "Failed to download source PDF");
@@ -407,28 +444,40 @@ export async function uploadUserAvatar(
 	}
 
 	const avatarUrl = bucket.getPublicUrl(storagePath).data.publicUrl;
-	const [updated] = await db
-		.update(users)
-		.set({ avatarUrl, updatedAt: new Date() })
-		.where(eq(users.userId, user.userId))
-		.returning({ avatarUrl: users.avatarUrl });
-
-	if (!updated) {
-		await bucket.remove([storagePath]).catch(() => undefined);
-		throw new ApiError(500, "UPDATE_FAILED", "Unable to update avatar");
+	let previousUrl: string | null;
+	try {
+		previousUrl = await db.transaction(async (tx) => {
+			const [latest] = await tx
+				.select({ avatarUrl: users.avatarUrl })
+				.from(users)
+				.where(and(eq(users.userId, user.userId), isNull(users.archivedAt)))
+				.for("update")
+				.limit(1);
+			if (!latest)
+				throw new ApiError(404, "NOT_FOUND", "User profile not found");
+			await tx
+				.update(users)
+				.set({ avatarUrl, updatedAt: new Date() })
+				.where(eq(users.userId, user.userId));
+			await insertAuditLog(
+				{
+					userId: user.userId,
+					action: "Updated profile avatar",
+					tableAffected: "users",
+					ipAddress,
+				},
+				tx,
+			);
+			return latest.avatarUrl;
+		});
+	} catch (error) {
+		await removeStorageObject(AVATARS_BUCKET, storagePath);
+		throw error;
 	}
-
-	const previousPath = getManagedAvatarPath(current.avatarUrl);
+	const previousPath = getManagedAvatarPath(previousUrl);
 	if (previousPath && previousPath !== storagePath) {
-		await bucket.remove([previousPath]).catch(() => undefined);
+		await removeStorageObject(AVATARS_BUCKET, previousPath);
 	}
-
-	await insertAuditLog({
-		userId: user.userId,
-		action: "Updated profile avatar",
-		tableAffected: "users",
-		ipAddress,
-	});
 
 	return { avatarUrl };
 }

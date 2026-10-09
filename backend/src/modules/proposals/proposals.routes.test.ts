@@ -35,6 +35,7 @@ const PROPOSAL_ID = "eeeeeeee-5555-4555-8555-eeeeeeeeeeee";
 
 beforeEach(() => {
 	setMockUser(MOCK_USERS.faculty);
+	vi.mocked(db.transaction).mockImplementation(async (callback) => callback(db as never));
 });
 
 describe("GET /proposals", () => {
@@ -170,8 +171,12 @@ describe("POST /proposals", () => {
 		let selectCallCount = 0;
 		const tx = {
 			insert,
+			update: vi.fn(() => mockMutationChain([])),
 			select: vi.fn(() => {
 				selectCallCount++;
+				if (selectCallCount === 3) return mockSelectChain([{ userId: MOCK_USERS[role].userId }]);
+				if (selectCallCount === 4) return mockSelectChain([]);
+				if (selectCallCount === 5) return mockSelectChain([{ sectorId: 1 }]);
 				return selectCallCount === 1
 					? mockSelectChain([
 							{
@@ -257,7 +262,9 @@ describe("POST /proposals/:id/review", () => {
 			bypassedRetChair: true,
 		});
 		vi.mocked(db.select).mockReturnValue(mockSelectChain([proposal]) as never);
-		vi.mocked(db.transaction).mockImplementation(mockTransaction(proposal) as never);
+		vi.mocked(db.transaction).mockImplementation(async (callback) => callback({
+			select: db.select, insert: vi.fn(() => mockMutationChain([proposal])), update: vi.fn(() => mockMutationChain([proposal])),
+		} as never));
 		const response = await app.request(`/proposals/${PROPOSAL_ID}/review`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -289,10 +296,8 @@ describe("POST /proposals/:id/review", () => {
 				{ bypassedRetChair: false },
 			]) as never; // bypassRow
 		});
-		vi.mocked(db.transaction).mockImplementation(
-			mockTransaction(mock) as never,
-		);
-
+		vi.mocked(db.insert).mockReturnValue(mockMutationChain([mock]) as never);
+		vi.mocked(db.update).mockReturnValue(mockMutationChain([mock]) as never);
 		const res = await app.request(`/proposals/${PROPOSAL_ID}/review`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -317,10 +322,8 @@ describe("POST /proposals/:id/review", () => {
 				{ bypassedRetChair: false },
 			]) as never; // bypassRow
 		});
-		vi.mocked(db.transaction).mockImplementation(
-			mockTransaction(mock) as never,
-		);
-
+		vi.mocked(db.insert).mockReturnValue(mockMutationChain([mock]) as never);
+		vi.mocked(db.update).mockReturnValue(mockMutationChain([mock]) as never);
 		const res = await app.request(`/proposals/${PROPOSAL_ID}/review`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -373,10 +376,8 @@ describe("POST /proposals/:id/review", () => {
 				{ bypassedRetChair: true },
 			]) as never; // bypassRow
 		});
-		vi.mocked(db.transaction).mockImplementation(
-			mockTransaction(mock) as never,
-		);
-
+		vi.mocked(db.insert).mockReturnValue(mockMutationChain([mock]) as never);
+		vi.mocked(db.update).mockReturnValue(mockMutationChain([mock]) as never);
 		const res = await app.request(`/proposals/${PROPOSAL_ID}/review`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -400,10 +401,8 @@ describe("POST /proposals/:id/review", () => {
 				{ bypassedRetChair: false },
 			]) as never; // bypassRow
 		});
-		vi.mocked(db.transaction).mockImplementation(
-			mockTransaction(mock) as never,
-		);
-
+		vi.mocked(db.insert).mockReturnValue(mockMutationChain([mock]) as never);
+		vi.mocked(db.update).mockReturnValue(mockMutationChain([mock]) as never);
 		const res = await app.request(`/proposals/${PROPOSAL_ID}/review`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -412,17 +411,8 @@ describe("POST /proposals/:id/review", () => {
 
 		expect(res.status).toBe(200);
 		// Returned proposals must go through Chair endorsement again.
-		const txUpdate = vi.mocked(db.transaction).mock.calls[0][0];
-		const txObj = {
-			insert: vi.fn(() => ({ values: vi.fn(() => ({})) })),
-			update: vi.fn(() => ({
-				set: vi.fn((vals: Record<string, unknown>) => {
-					expect(vals.bypassedRetChair).toBe(false);
-					return { where: vi.fn(() => ({ returning: vi.fn(() => [mock]) })) };
-				}),
-			})),
-		};
-		await (txUpdate as (tx: unknown) => Promise<unknown>)(txObj);
+		const updateChain = vi.mocked(db.update).mock.results[0]!.value;
+		expect(updateChain.set).toHaveBeenCalledWith(expect.objectContaining({ bypassedRetChair: false, status: "Returned" }));
 	});
 });
 

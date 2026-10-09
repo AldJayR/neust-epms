@@ -1,14 +1,12 @@
-import { createClient } from "@supabase/supabase-js";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { createMiddleware } from "hono/factory";
 import { db } from "@/db/client.js";
 import { campuses } from "@/db/schema/campuses.js";
 import { departments } from "@/db/schema/departments.js";
 import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
-import { env } from "@/env.js";
-import { authUserCache, cacheEnabled } from "@/lib/cache.js";
 import { ApiError } from "@/lib/errors.js";
+import { supabase } from "@/lib/supabase.js";
 import type { AuthUser } from "@/lib/types.js";
 
 /** Hono env type that holds the authenticated user */
@@ -17,8 +15,6 @@ export interface AuthEnv {
 		user: AuthUser;
 	};
 }
-
-const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
 /**
  * JWT authentication middleware.
@@ -37,27 +33,27 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
 	}
 
 	const token = authHeader.slice(7);
-	// Validate every bearer token with Supabase so expiry, logout, password changes,
-	// and server-side session revocation take effect immediately.
+	// Verify identity on every request; application authorization is loaded below.
 	const {
 		data: { user: supabaseUser },
 		error,
 	} = await supabase.auth.getUser(token);
 
 	if (error || !supabaseUser) {
+		if (
+			error &&
+			(!error.status || error.status === 429 || error.status >= 500)
+		) {
+			throw new ApiError(
+				503,
+				"AUTH_UNAVAILABLE",
+				"Authentication is temporarily unavailable",
+			);
+		}
 		throw new ApiError(401, "INVALID_TOKEN", "Invalid or expired token");
 	}
 
 	const supabaseUserId = supabaseUser.id;
-
-	if (cacheEnabled) {
-		const cachedUser = authUserCache.get(`auth:user:${supabaseUserId}`);
-		if (cachedUser) {
-			c.set("user", cachedUser);
-			await next();
-			return;
-		}
-	}
 
 	// Fetch the application user record with role
 	const [appUser] = await db
@@ -78,13 +74,14 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
 			academicRank: users.academicRank,
 			avatarUrl: users.avatarUrl,
 			isActive: users.isActive,
+			archivedAt: users.archivedAt,
 			hasCompletedOnboarding: users.hasCompletedOnboarding,
 		})
 		.from(users)
 		.innerJoin(roles, eq(users.roleId, roles.roleId))
 		.innerJoin(campuses, eq(users.campusId, campuses.campusId))
 		.leftJoin(departments, eq(users.departmentId, departments.departmentId))
-		.where(eq(users.userId, supabaseUserId))
+		.where(and(eq(users.userId, supabaseUserId), isNull(users.archivedAt)))
 		.limit(1);
 
 	if (!appUser) {
@@ -98,6 +95,8 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
 	if (!appUser.isActive) {
 		throw new ApiError(403, "USER_INACTIVE", "User account is deactivated");
 	}
+	if (appUser.archivedAt)
+		throw new ApiError(403, "USER_ARCHIVED", "User account is archived");
 
 	const userContext: AuthUser = {
 		userId: appUser.userId,
@@ -118,10 +117,6 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
 		isActive: appUser.isActive,
 		hasCompletedOnboarding: appUser.hasCompletedOnboarding,
 	};
-
-	if (cacheEnabled) {
-		authUserCache.set(`auth:user:${supabaseUserId}`, userContext);
-	}
 
 	c.set("user", userContext);
 

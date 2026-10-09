@@ -7,6 +7,7 @@ export const ReportSchema = z
 		milestoneId: z.string(),
 		project: z.string(),
 		leader: z.string(),
+		leaderId: z.string().nullable(),
 		academicRank: z.string().nullable().optional(),
 		avatarUrl: z.string().nullable().optional(),
 		department: z.string().nullable(),
@@ -30,8 +31,6 @@ export const CreateReportSchema = z
 		reportType: z.enum([
 			"Progress",
 			"Progress Report",
-			"Terminal",
-			"Final Accomplishment",
 			"Accomplishment and Terminal Report",
 		]),
 		remarks: z.string().optional(),

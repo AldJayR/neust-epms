@@ -43,7 +43,7 @@ const projectReadinessRoute = createRoute({
 
 app.openapi(projectReadinessRoute, async (c) => {
 	const { id } = c.req.valid("param");
-	const result = await getProjectReadiness(id);
+	const result = await getProjectReadiness(id, c.get("user"));
 	return c.json(result, 200);
 });
 
@@ -71,7 +71,7 @@ const projectReportingScheduleRoute = createRoute({
 
 app.openapi(projectReportingScheduleRoute, async (c) => {
 	const { id } = c.req.valid("param");
-	const result = await getProjectReportingSchedule(id);
+	const result = await getProjectReportingSchedule(id, c.get("user"));
 	return c.json(result, 200);
 });
 

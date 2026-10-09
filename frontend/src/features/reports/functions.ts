@@ -7,6 +7,7 @@ import {
 	authorizeSessionUser,
 	getValidAccessToken,
 } from "@/lib/session.server";
+import { pdfFileSchema } from "@/lib/upload-policy";
 import type { ReportItem, ReportsResponse } from "@/types/report";
 
 const STALE_TIME = 1000 * 60 * 5;
@@ -155,12 +156,7 @@ export const submitReportFn = createServerFn({ method: "POST" })
 	.validator(
 		z.object({
 			milestoneId: z.uuid(),
-			reportType: z.enum([
-				"Progress",
-				"Terminal",
-				"Final Accomplishment",
-				"Accomplishment and Terminal Report",
-			]),
+			reportType: z.enum(["Progress", "Accomplishment and Terminal Report"]),
 			remarks: z.string().optional(),
 			traineeCount: z.number().int().min(0).max(2147483647).optional(),
 		}),
@@ -191,8 +187,8 @@ export const uploadReportDocumentFn = createServerFn({ method: "POST" })
 		if (typeof reportId !== "string" || !reportId || !(file instanceof File)) {
 			throw new Error("A report ID and PDF file are required");
 		}
-		if (file.type !== "application/pdf")
-			throw new Error("Only PDF documents are allowed");
+		z.uuid().parse(reportId);
+		pdfFileSchema.parse(file);
 		return data;
 	})
 	.handler(async ({ data }) => {
@@ -225,8 +221,13 @@ export const uploadReportAttachmentFn = createServerFn({ method: "POST" })
 		) {
 			throw new Error("A report ID, file, and attachment type are required");
 		}
-		if (file.type !== "application/pdf")
-			throw new Error("Only PDF documents are allowed");
+		z.uuid().parse(reportId);
+		z.enum([
+			"Evaluation Forms",
+			"Attendance Records",
+			"Means of Verification",
+		]).parse(attachmentType);
+		pdfFileSchema.parse(file);
 		return data;
 	})
 	.handler(async ({ data }) => {

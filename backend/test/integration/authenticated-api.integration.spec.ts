@@ -50,7 +50,7 @@ describe("authenticated HTTP workflow", () => {
 	it("returns the API's structured unauthorized response for an invalid token", async () => {
 		supabaseMock.auth.getUser.mockResolvedValueOnce({
 			data: { user: null },
-			error: { message: "Invalid token" },
+			error: { message: "Invalid token", status: 401 },
 		});
 
 		const response = await app.request("/api/v1/auth/me", {

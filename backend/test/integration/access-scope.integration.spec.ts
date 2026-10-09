@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { db } from "@/db/client.js";
 import { proposals } from "@/db/schema/proposals.js";
-import { listProjects } from "@/modules/projects/projects.service.js";
+import { getProjectReadiness, getProjectReportingSchedule, listProjects } from "@/modules/projects/projects.service.js";
 import { listReports } from "@/modules/reports/reports.service.js";
 import { PROJECT_STATUS, PROPOSAL_STATUS, REPORT_TYPE, ROLE_NAMES } from "@/lib/types.js";
 import {
@@ -38,7 +38,7 @@ describe("database-backed access scope", () => {
 		const visibleProject = await seedProject(visibleProposal.proposalId, {
 			status: PROJECT_STATUS.ONGOING,
 		});
-		await seedProject(hiddenProposal.proposalId, {
+		const hiddenProject = await seedProject(hiddenProposal.proposalId, {
 			status: PROJECT_STATUS.ONGOING,
 		});
 		const milestone = await seedMilestone(
@@ -60,6 +60,10 @@ describe("database-backed access scope", () => {
 		expect(reportList.items.map((item) => item.projectId)).toEqual([
 			visibleProject.projectId,
 		]);
+		expect(reportList.items[0]?.leaderId).toBe(faculty.userId);
+		expect(projectList.items[0]?.leaderId).toBe(faculty.userId);
+		await expect(getProjectReadiness(hiddenProject.projectId, faculty)).rejects.toMatchObject({ code: "NOT_FOUND" });
+		await expect(getProjectReportingSchedule(hiddenProject.projectId, faculty)).rejects.toMatchObject({ code: "NOT_FOUND" });
 		const [hidden] = await db
 			.select({ title: proposals.title })
 			.from(proposals)

@@ -5,6 +5,7 @@ import { db } from "@/db/client.js";
 import { projects } from "@/db/schema/projects.js";
 import { bannerPrograms } from "@/db/schema/banner-programs.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
+import { proposalDocuments } from "@/db/schema/proposal-documents.js";
 import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { processReview } from "@/modules/proposals/proposals.service.js";
@@ -50,6 +51,7 @@ describe("proposal review lifecycle", () => {
 			.where(eq(proposals.proposalId, proposal.proposalId));
 		await processReview(chair, proposal.proposalId, { decision: "Endorsed" });
 		await processReview(director, proposal.proposalId, { decision: "Returned" });
+		await db.insert(proposalDocuments).values({ proposalId: proposal.proposalId, storagePath: "proposals/revised.pdf", versionNum: 2 });
 		const app = new OpenAPIHono<AuthEnv>();
 		app.use("*", async (context, next) => {
 			context.set("user", leader);

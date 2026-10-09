@@ -6,6 +6,7 @@ import {
 	authorizeSessionUser,
 	getValidAccessToken,
 } from "@/lib/session.server";
+import { pdfFileSchema } from "@/lib/upload-policy";
 
 export const getSpecialOrderSignedUrlFn = createServerFn({ method: "GET" })
 	.validator(z.string())
@@ -24,24 +25,10 @@ export const getSpecialOrderSignedUrlFn = createServerFn({ method: "GET" })
 		return (await response.json()) as { url: string };
 	});
 
-export const getAccessTokenForUploadFn = createServerFn({ method: "GET" })
-	.validator(z.void())
-	.handler(async () => {
-		await authorizeSessionUser("Director", "RET Chair", "Faculty");
-		return getValidAccessToken();
-	});
-
 const uploadSchema = z.object({
 	memberId: z.uuid("Invalid member ID"),
 	soNumber: z.string().optional(),
-	file: z
-		.instanceof(File, { message: "A PDF file is required" })
-		.refine(
-			(file) =>
-				file.type === "application/pdf" ||
-				file.name.toLowerCase().endsWith(".pdf"),
-			"Only PDF files are allowed",
-		),
+	file: pdfFileSchema,
 });
 
 export const uploadSpecialOrderFn = createServerFn({ method: "POST" })

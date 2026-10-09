@@ -13,6 +13,7 @@ const ProjectsChart = React.lazy(() => import("./projects-chart"));
 import type { DirectorChartPoint } from "@/types/dashboard";
 
 interface ProjectsChartCardProps {
+	year: number;
 	chartData: DirectorChartPoint[];
 	chartMonths: string[];
 	campuses: { id: number; name: string }[];
@@ -35,6 +36,7 @@ export default function ProjectsChartCard({
 	campuses,
 	selectedCampus,
 	onCampusChange,
+	year,
 }: ProjectsChartCardProps) {
 	const filtered =
 		selectedCampus === "all"
@@ -73,10 +75,10 @@ export default function ProjectsChartCard({
 			<div className="flex flex-col gap-3 border-b border-border px-4 py-4 sm:h-[72px] sm:flex-row sm:items-start sm:justify-between sm:px-6 sm:pt-4 sm:pb-3">
 				<div className="leading-tight">
 					<p className="text-sm font-semibold leading-5 text-foreground">
-						Project Approvals
+						Projects scheduled by month
 					</p>
 					<p className="text-sm leading-5 text-muted-foreground">
-						Approved projects per month · last 12 months
+						January–December {year} · a project can span multiple months
 					</p>
 				</div>
 				<Select
@@ -110,11 +112,11 @@ export default function ProjectsChartCard({
 			<div className="flex min-h-[260px] flex-1 px-4 pb-4 pt-6 sm:h-[298px] sm:px-6 sm:pb-6 sm:pt-10">
 				{chartMonths.length === 0 ? (
 					<div className="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground">
-						No approval history available.
+						No schedule data available.
 					</div>
 				) : !hasData ? (
 					<div className="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground">
-						No projects were approved in the last 12 months.
+						No projects are scheduled during {year} for this campus selection.
 					</div>
 				) : (
 					<ClientOnly

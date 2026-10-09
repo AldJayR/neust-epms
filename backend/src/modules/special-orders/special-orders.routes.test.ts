@@ -152,6 +152,8 @@ describe("POST /special-orders/upload", () => {
 			.mockReturnValueOnce(
 				mockSelectChain([{ memberId: "member-1", proposalId: "proposal-1" }]) as never,
 			)
+			.mockReturnValueOnce(mockSelectChain([{ proposalId: "proposal-1" }]) as never)
+			.mockReturnValueOnce(mockSelectChain([{ memberId: "member-1" }]) as never)
 			.mockReturnValueOnce(mockSelectChain([]) as never);
 		vi.mocked(db.insert).mockReturnValue(mockMutationChain([created]) as never);
 
@@ -191,6 +193,9 @@ describe("POST /special-orders/upload", () => {
 			.mockReturnValueOnce(
 				mockSelectChain([{ userId: MOCK_USERS.faculty.userId }]) as never,
 			)
+			.mockReturnValueOnce(mockSelectChain([{ proposalId: "proposal-1" }]) as never)
+			.mockReturnValueOnce(mockSelectChain([{ memberId: "member-1" }]) as never)
+			.mockReturnValueOnce(mockSelectChain([{ userId: MOCK_USERS.faculty.userId }]) as never)
 			.mockReturnValueOnce(mockSelectChain([]) as never);
 		vi.mocked(db.insert).mockReturnValue(mockMutationChain([created]) as never);
 
@@ -217,6 +222,8 @@ describe("POST /special-orders/upload", () => {
 			.mockReturnValueOnce(
 				mockSelectChain([{ memberId: "member-1", proposalId: "proposal-1" }]) as never,
 			)
+			.mockReturnValueOnce(mockSelectChain([{ proposalId: "proposal-1" }]) as never)
+			.mockReturnValueOnce(mockSelectChain([{ memberId: "member-1" }]) as never)
 			.mockReturnValueOnce(mockSelectChain([]) as never);
 		vi.mocked(db.insert).mockReturnValue({
 			values: vi.fn().mockReturnValue({

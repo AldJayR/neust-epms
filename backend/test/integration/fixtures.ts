@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { beneficiarySectors } from "@/db/schema/beneficiary-sectors.js";
+import { bannerPrograms } from "@/db/schema/banner-programs.js";
 import { campuses } from "@/db/schema/campuses.js";
 import { departments } from "@/db/schema/departments.js";
 import { extensionServices } from "@/db/schema/extension-services.js";
@@ -58,7 +59,11 @@ export async function seedOrganization(prefix = "integration") {
 		})
 		.returning();
 
+	const [bannerProgram] = await db.insert(bannerPrograms).values({
+		programName: `${prefix} Integration Program`, campusId: mainCampus.campusId, departmentId: departmentA.departmentId,
+	}).returning();
 	return {
+		bannerProgram,
 		roleByName,
 		mainCampus,
 		satelliteCampus,
@@ -139,6 +144,7 @@ export async function seedProposal(
 			departmentId: (options.department ?? organization.departmentA).departmentId,
 			title: options.title,
 			bannerProgram: "Integration Program",
+			bannerProgramId: !options.campus && !options.department ? organization.bannerProgram.bannerProgramId : null,
 			projectLocale: "Cabanatuan City",
 			status: options.status ?? PROPOSAL_STATUS.PENDING_REVIEW,
 			bypassedRetChair: options.bypassedRetChair ?? false,
@@ -198,6 +204,7 @@ export async function seedPartnerAndMoa(
 			partnerId: partner.partnerId,
 			validFrom: new Date("2025-01-01T00:00:00.000Z"),
 			validUntil: options.validUntil,
+			storagePath: "moas/integration.pdf",
 			uploadedBy: uploader?.userId ?? null,
 		})
 		.returning();

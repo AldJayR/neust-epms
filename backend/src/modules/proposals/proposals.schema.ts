@@ -1,10 +1,12 @@
 import { z } from "@hono/zod-openapi";
+import { ProjectYearSchema } from "@/lib/project-period.js";
 import { ParamId } from "@/lib/schemas.js";
 import {
 	PROPOSAL_STATUS,
 	type ProposalStatus,
 	REVIEW_DECISION,
 } from "@/lib/types.js";
+import { PeriodMetadataSchema } from "../dashboard/dashboard.schema.js";
 
 const ProposalStatusQuerySchema = z.enum(
 	Object.values(PROPOSAL_STATUS) as [ProposalStatus, ...ProposalStatus[]],
@@ -40,6 +42,7 @@ export const ProposalSchema = z
 		updatedAt: z.string(),
 		archivedAt: z.string().nullable(),
 		leaderFirstName: z.string().nullable().optional(),
+		leaderId: z.string().nullable().optional(),
 		leaderLastName: z.string().nullable().optional(),
 		leaderAcademicRank: z.string().nullable().optional(),
 		isMember: z.boolean().optional(),
@@ -72,6 +75,7 @@ export const RETDashboardStatsSchema = z
 		approvedProjects: z.number(),
 		deniedProjects: z.number(),
 	})
+	.extend(PeriodMetadataSchema.shape)
 	.openapi("RETDashboardStats");
 
 export const CreateProposalSchema = z
@@ -104,6 +108,16 @@ export const CreateProposalSchema = z
 			)
 			.optional(),
 	})
+	.refine(
+		(body) =>
+			!body.targetStartDate ||
+			!body.targetEndDate ||
+			new Date(body.targetStartDate) < new Date(body.targetEndDate),
+		{
+			message: "Target end date must be after target start date",
+			path: ["targetEndDate"],
+		},
+	)
 	.openapi("CreateProposal");
 
 export const UpdateProposalSchema = z
@@ -120,6 +134,8 @@ export const UpdateProposalSchema = z
 			.optional(),
 		budgetPartner: z.coerce.number().nonnegative().finite().optional(),
 		budgetNeust: z.coerce.number().nonnegative().finite().optional(),
+		targetStartDate: z.string().datetime().nullable().optional(),
+		targetEndDate: z.string().datetime().nullable().optional(),
 		sectorNames: z.array(z.string().min(1)).optional(),
 		sdgIds: z
 			.array(z.number().int().positive())
@@ -153,6 +169,16 @@ export const UpdateProposalSchema = z
 			)
 			.optional(),
 	})
+	.refine(
+		(body) =>
+			!body.targetStartDate ||
+			!body.targetEndDate ||
+			new Date(body.targetStartDate) < new Date(body.targetEndDate),
+		{
+			message: "Target end date must be after target start date",
+			path: ["targetEndDate"],
+		},
+	)
 	.openapi("UpdateProposal");
 
 export const ReviewProposalSchema = z
@@ -236,6 +262,7 @@ export const CommentListSchema = z
 	.openapi("CommentList");
 
 export const ProposalPaginationQuery = z.object({
+	year: ProjectYearSchema.optional(),
 	page: z.coerce
 		.number()
 		.int()

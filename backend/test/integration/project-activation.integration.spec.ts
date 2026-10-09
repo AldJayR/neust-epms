@@ -30,7 +30,7 @@ describe("project activation", () => {
 		});
 		const proposal = await seedProposal(organization, {
 			title: "Activation Proposal",
-			status: PROPOSAL_STATUS.APPROVED,
+			status: PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED,
 		});
 		const member = await seedProposalMember(
 			proposal.proposalId,
@@ -113,7 +113,7 @@ describe("project activation", () => {
 		});
 		const proposal = await seedProposal(organization, {
 			title: "Blocked Activation Proposal",
-			status: PROPOSAL_STATUS.APPROVED,
+			status: PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED,
 		});
 		await seedProposalMember(proposal.proposalId, leader.userId, "Project Leader");
 		const project = await seedProject(proposal.proposalId);
@@ -132,6 +132,7 @@ describe("project activation", () => {
 							reportType: "Progress",
 							dueAt: "2099-06-01T00:00:00.000Z",
 						},
+						{ reportType: "Terminal Report", dueAt: "2099-12-01T00:00:00.000Z" },
 					],
 				},
 				director,

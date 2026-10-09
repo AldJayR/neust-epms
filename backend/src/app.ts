@@ -19,6 +19,7 @@ import analyticsRoutes from "./modules/analytics/index.js";
 import auditRoutes from "./modules/audit/index.js";
 import authRoutes from "./modules/auth/index.js";
 import bannerProgramRoutes from "./modules/banner-programs/index.js";
+import dashboardRoutes from "./modules/dashboard/index.js";
 import directorRoutes from "./modules/director/index.js";
 import memberRoutes from "./modules/members/index.js";
 import moaRoutes from "./modules/moas/index.js";
@@ -264,6 +265,7 @@ app.route("/api/v1", auditRoutes);
 app.route("/api/v1", settingRoutes);
 app.route("/api/v1", adminRoutes);
 app.route("/api/v1", directorRoutes);
+app.route("/api/v1", dashboardRoutes);
 app.route("/api/v1", searchRoutes);
 
 export default app;
