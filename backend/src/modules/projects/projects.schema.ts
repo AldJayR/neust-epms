@@ -1,4 +1,5 @@
 import { z } from "@hono/zod-openapi";
+import { ProjectYearSchema } from "@/lib/project-period.js";
 import { reportingScheduleError } from "./project-policies.js";
 
 // ── Response schemas ──
@@ -175,6 +176,7 @@ export const ParamId = z.object({
 });
 
 export const PaginationQuery = z.object({
+	year: ProjectYearSchema.optional(),
 	page: z.coerce
 		.number()
 		.int()

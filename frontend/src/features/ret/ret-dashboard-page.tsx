@@ -23,6 +23,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ActionCenterCard } from "@/features/action-center";
+import {
+	DashboardPeriodNote,
+	DashboardYearFilter,
+} from "@/features/dashboard/components/dashboard-year-filter";
 import { CreateProposalModal } from "@/features/proposals";
 import {
 	type ProposalStatusFilter,
@@ -30,10 +34,11 @@ import {
 	retProposalsQueryOptions,
 } from "@/features/proposals/public";
 import type { AuthUser } from "@/lib/auth";
+import type { DashboardYearProps } from "@/lib/dashboard-year";
 import { formatAcademicRank, toStableDate } from "@/lib/utils";
 import type { ProposalItem } from "@/types/proposal";
 
-interface RETDashboardPageProps {
+interface RETDashboardPageProps extends DashboardYearProps {
 	user: AuthUser;
 	page: number;
 	pageSize: number;
@@ -49,6 +54,8 @@ export function RETDashboardPage({
 	search,
 	onSearch,
 	onPageChange,
+	year,
+	onYearChange,
 }: RETDashboardPageProps) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
 	const [statusFilter, setStatusFilter] =
@@ -56,11 +63,20 @@ export function RETDashboardPage({
 	const [sorting, setSorting] = React.useState<SortingState>([]);
 	const navigate = useNavigate();
 
-	const { data: statsData, isLoading: isStatsLoading } = useQuery(
-		retDashboardStatsQueryOptions(),
-	);
-	const { data: proposalsData, isLoading: isProposalsLoading } = useQuery(
+	const {
+		data: statsData,
+		isLoading: isStatsLoading,
+		error: statsError,
+		refetch: refetchStats,
+	} = useQuery(retDashboardStatsQueryOptions(year));
+	const {
+		data: proposalsData,
+		isLoading: isProposalsLoading,
+		error: proposalsError,
+		refetch: refetchProposals,
+	} = useQuery(
 		retProposalsQueryOptions({
+			year,
 			page,
 			limit: pageSize,
 			search,
@@ -237,17 +253,48 @@ export function RETDashboardPage({
 					</div>
 				}
 				actions={
-					<BrandButton
-						onClick={() => setIsCreateModalOpen(true)}
-						className="h-9 gap-1.5 px-[10px] py-2 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
-					>
-						<Plus className="size-4" />
-						<span className="font-medium">Start New Project Proposal</span>
-					</BrandButton>
+					<div className="flex flex-wrap items-center gap-3">
+						<DashboardYearFilter
+							year={year}
+							onYearChange={onYearChange}
+							availableYears={statsData?.availableYears}
+						/>
+						<BrandButton
+							onClick={() => setIsCreateModalOpen(true)}
+							className="h-9 gap-1.5 px-[10px] py-2 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
+						>
+							<Plus className="size-4" />
+							<span className="font-medium">Start New Project Proposal</span>
+						</BrandButton>
+					</div>
 				}
 			/>
 
-			<ActionCenterCard />
+			<DashboardPeriodNote
+				year={year}
+			/>
+			{(statsError || proposalsError) && (
+				<div role="alert" className="flex items-center justify-between gap-3">
+					<p className="text-sm text-destructive">
+						Unable to load year-filtered dashboard data.
+					</p>
+					<Button
+						variant="outline"
+						onClick={() => {
+							void refetchStats();
+							void refetchProposals();
+						}}
+					>
+						Retry
+					</Button>
+				</div>
+			)}
+			<div>
+				<p className="mb-2 text-xs text-muted-foreground">
+					Current obligations · all project years
+				</p>
+				<ActionCenterCard />
+			</div>
 
 			{/* Stats Cards */}
 			<div className="grid gap-6 md:grid-cols-3">
@@ -261,43 +308,45 @@ export function RETDashboardPage({
 				))}
 			</div>
 
-			<DataTablePage
-				columns={columns}
-				data={proposals}
-				total={total}
-				isLoading={isLoading}
-				page={page}
-				pageSize={pageSize}
-				onPageChange={onPageChange}
-				search={search}
-				onSearch={(val) => onSearch(val || undefined)}
-				searchPlaceholder="Search by project proposals"
-				sorting={sorting}
-				onSortingChange={setSorting}
-				enableSorting
-				filters={
-					<DataTableFilter
-						value={statusFilter}
-						onValueChange={(v) => {
-							if (v) {
-								setStatusFilter(v as ProposalStatusFilter);
-								onPageChange(1);
-							}
-						}}
-						placeholder="All Statuses"
-						options={[
-							{ value: "all", label: "All Statuses" },
-							{ value: "Pending Review", label: "Pending Review" },
-							{ value: "Endorsed", label: "Endorsed" },
-							{ value: "Approved", label: "Approved" },
-						]}
-					/>
-				}
-				activeFilters={{ search, statusFilter }}
-				emptyMessage="No proposals found."
-				ariaLabel="Proposals table"
-				cardClassName="min-h-[400px]"
-			/>
+			{!proposalsError && (
+				<DataTablePage
+					columns={columns}
+					data={proposals}
+					total={total}
+					isLoading={isLoading}
+					page={page}
+					pageSize={pageSize}
+					onPageChange={onPageChange}
+					search={search}
+					onSearch={(val) => onSearch(val || undefined)}
+					searchPlaceholder="Search by project proposals"
+					sorting={sorting}
+					onSortingChange={setSorting}
+					enableSorting
+					filters={
+						<DataTableFilter
+							value={statusFilter}
+							onValueChange={(v) => {
+								if (v) {
+									setStatusFilter(v as ProposalStatusFilter);
+									onPageChange(1);
+								}
+							}}
+							placeholder="All Statuses"
+							options={[
+								{ value: "all", label: "All Statuses" },
+								{ value: "Pending Review", label: "Pending Review" },
+								{ value: "Endorsed", label: "Endorsed" },
+								{ value: "Approved", label: "Approved" },
+							]}
+						/>
+					}
+					activeFilters={{ search, statusFilter }}
+					emptyMessage="No proposals found."
+					ariaLabel="Proposals table"
+					cardClassName="min-h-[400px]"
+				/>
+			)}
 
 			<CreateProposalModal
 				open={isCreateModalOpen}

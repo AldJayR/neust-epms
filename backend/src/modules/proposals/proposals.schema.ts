@@ -1,10 +1,12 @@
 import { z } from "@hono/zod-openapi";
+import { ProjectYearSchema } from "@/lib/project-period.js";
 import { ParamId } from "@/lib/schemas.js";
 import {
 	PROPOSAL_STATUS,
 	type ProposalStatus,
 	REVIEW_DECISION,
 } from "@/lib/types.js";
+import { PeriodMetadataSchema } from "../dashboard/dashboard.schema.js";
 
 const ProposalStatusQuerySchema = z.enum(
 	Object.values(PROPOSAL_STATUS) as [ProposalStatus, ...ProposalStatus[]],
@@ -73,6 +75,7 @@ export const RETDashboardStatsSchema = z
 		approvedProjects: z.number(),
 		deniedProjects: z.number(),
 	})
+	.extend(PeriodMetadataSchema.shape)
 	.openapi("RETDashboardStats");
 
 export const CreateProposalSchema = z
@@ -259,6 +262,7 @@ export const CommentListSchema = z
 	.openapi("CommentList");
 
 export const ProposalPaginationQuery = z.object({
+	year: ProjectYearSchema.optional(),
 	page: z.coerce
 		.number()
 		.int()

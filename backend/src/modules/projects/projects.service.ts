@@ -31,6 +31,7 @@ import { deriveProjectState } from "@/lib/derived-states.js";
 import { ApiError } from "@/lib/errors.js";
 import { getLeaderSubquery } from "@/lib/leader-subquery.js";
 import { createNotification } from "@/lib/notification.helpers.js";
+import { projectPeriodClause } from "@/lib/project-period.js";
 import { buildProposalScope } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
 import {
@@ -53,13 +54,20 @@ import {
 
 export async function listProjects(
 	user: AuthUser,
-	opts: { page: number; limit: number; archived?: string | undefined },
+	opts: {
+		page: number;
+		limit: number;
+		archived?: string | undefined;
+		year?: number | undefined;
+	},
 ) {
 	const { page, limit, archived } = opts;
 	const offset = (page - 1) * limit;
 	const showArchived = archived === "true";
 
 	const proposalConditions = buildProposalScope(user);
+	if (opts.year !== undefined)
+		proposalConditions.push(projectPeriodClause(opts.year));
 
 	const allowedProposals = db
 		.select({ proposalId: proposals.proposalId })

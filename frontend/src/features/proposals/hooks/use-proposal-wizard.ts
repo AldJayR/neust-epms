@@ -118,6 +118,7 @@ export function useProposalWizard({
 	const createProposalMutation = useMutation({
 		mutationFn: createProposalFn,
 		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["ret"] });
 			queryClient.invalidateQueries({ queryKey: ["faculty"] });
@@ -127,6 +128,7 @@ export function useProposalWizard({
 	const updateProposalMutation = useMutation({
 		mutationFn: updateProposalFn,
 		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["ret"] });
 			queryClient.invalidateQueries({ queryKey: ["faculty"] });

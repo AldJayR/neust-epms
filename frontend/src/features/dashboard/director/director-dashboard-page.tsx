@@ -7,6 +7,11 @@ import { PageHeader } from "@/components/custom/page-header";
 import { ActionCenterCard } from "@/features/action-center";
 import { getCampusesFn } from "@/features/auth";
 import type { AuthUser } from "@/lib/auth";
+import type { DashboardYearProps } from "@/lib/dashboard-year";
+import {
+	DashboardPeriodNote,
+	DashboardYearFilter,
+} from "../components/dashboard-year-filter";
 import { directorDashboardQueryOptions } from "../functions";
 
 const ProjectsChartCard = React.lazy(() =>
@@ -128,12 +133,20 @@ function ExpiringMoasCard({
 	);
 }
 
-function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
+function DirectorDashboardContent({
+	user,
+	year,
+	onYearChange,
+}: { user?: AuthUser | null } & DashboardYearProps) {
 	const [selectedCampus, setSelectedCampus] = React.useState<number | "all">(
 		"all",
 	);
 
-	const { data: dashboard } = useQuery(directorDashboardQueryOptions());
+	const {
+		data: dashboard,
+		isPending,
+		error,
+	} = useQuery(directorDashboardQueryOptions(year));
 	const { data: campuses = [] } = useQuery({
 		queryKey: ["campuses"],
 		queryFn: () => getCampusesFn(),
@@ -154,6 +167,13 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 		<section>
 			<div className="flex min-h-full flex-col gap-8">
 				<PageHeader
+					actions={
+						<DashboardYearFilter
+							year={year}
+							onYearChange={onYearChange}
+							availableYears={dashboard?.availableYears}
+						/>
+					}
 					title={
 						<div className="flex flex-col gap-1">
 							<h1 className="text-2xl font-semibold text-heading">
@@ -165,13 +185,28 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 						</div>
 					}
 				/>
-				<ActionCenterCard />
+				<DashboardPeriodNote
+					year={year}
+					showDraftLink={false}
+				/>
+				{error && (
+					<p role="alert" className="text-destructive">
+						Unable to load dashboard metrics. Please try again.
+					</p>
+				)}
+				<div>
+					<p className="mb-2 text-xs text-muted-foreground">
+						Current obligations · all project years
+					</p>
+					<ActionCenterCard />
+				</div>
 				<div className="grid gap-6 md:grid-cols-3 xl:grid-cols-4">
 					{metricCards.map((card) => (
 						<MetricCard
 							key={card.label}
 							label={card.label}
-							value={metrics[card.key]}
+							value={error ? undefined : metrics[card.key]}
+							isLoading={isPending}
 						/>
 					))}
 				</div>
@@ -182,6 +217,7 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 						}
 					>
 						<ProjectsChartCard
+							year={year}
 							chartData={allChartData}
 							chartMonths={chartMonths}
 							campuses={campuses}
@@ -197,6 +233,16 @@ function DirectorDashboardContent({ user }: { user?: AuthUser | null }) {
 	);
 }
 
-export function DirectorDashboardPage({ user }: { user?: AuthUser | null }) {
-	return <DirectorDashboardContent user={user} />;
+export function DirectorDashboardPage({
+	user,
+	year,
+	onYearChange,
+}: { user?: AuthUser | null } & DashboardYearProps) {
+	return (
+		<DirectorDashboardContent
+			user={user}
+			year={year}
+			onYearChange={onYearChange}
+		/>
+	);
 }

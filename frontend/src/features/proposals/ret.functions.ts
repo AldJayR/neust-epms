@@ -4,6 +4,10 @@ import { z } from "zod";
 import { API_BASE } from "@/config/api";
 import { getErrorMessage } from "@/lib/api/client";
 import {
+	dashboardYearSchema,
+	periodMetadataSchema,
+} from "@/lib/dashboard-year";
+import {
 	authorizeSessionUser,
 	getValidAccessToken,
 } from "@/lib/session.server";
@@ -25,6 +29,7 @@ export type ProposalStatusFilter = z.infer<typeof proposalStatusFilterSchema>;
 // ── Schemas ───────────────────────────────────────────────
 
 const retDashboardParamsSchema = z.object({
+	year: dashboardYearSchema.optional(),
 	page: z.number(),
 	limit: z.number(),
 	search: z.string().optional(),
@@ -59,6 +64,7 @@ const createProposalSchema = z.object({
 // ── Interfaces ────────────────────────────────────────────
 
 export interface RETDashboardStats {
+	availableYears: number[];
 	pendingReview: number;
 	approvedProjects: number;
 	deniedProjects: number;
@@ -70,6 +76,7 @@ export interface ProposalListResponse {
 }
 
 export interface RETDashboardParams {
+	year?: number;
 	page: number;
 	limit: number;
 	search?: string;
@@ -109,12 +116,16 @@ export interface ExtensionService {
 
 // ── Server Functions ──────────────────────────────────────
 
-const getRETDashboardStatsFn = createServerFn({ method: "GET" }).handler(
-	async () => {
+const getRETDashboardStatsFn = createServerFn({ method: "GET" })
+	.validator(z.object({ year: dashboardYearSchema.optional() }))
+	.handler(async ({ data }) => {
 		await authorizeSessionUser("RET Chair", "Director");
 		const accessToken = await getValidAccessToken();
 
-		const response = await fetch(`${API_BASE}/proposals/ret/dashboard-stats`, {
+		const url = new URL(`${API_BASE}/proposals/ret/dashboard-stats`);
+		if (data.year !== undefined)
+			url.searchParams.set("year", String(data.year));
+		const response = await fetch(url.toString(), {
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
 			},
@@ -128,9 +139,14 @@ const getRETDashboardStatsFn = createServerFn({ method: "GET" }).handler(
 			throw new Error(message);
 		}
 
-		return (await response.json()) as RETDashboardStats;
-	},
-);
+		return periodMetadataSchema
+			.extend({
+				pendingReview: z.number(),
+				approvedProjects: z.number(),
+				deniedProjects: z.number(),
+			})
+			.parse(await response.json()) as RETDashboardStats;
+	});
 
 const getRETProposalsFn = createServerFn({ method: "GET" })
 	.validator(retDashboardParamsSchema)
@@ -139,6 +155,8 @@ const getRETProposalsFn = createServerFn({ method: "GET" })
 		const accessToken = await getValidAccessToken();
 
 		const url = new URL(`${API_BASE}/proposals`);
+		if (data.year !== undefined)
+			url.searchParams.set("year", String(data.year));
 		url.searchParams.set("page", data.page.toString());
 		url.searchParams.set("limit", data.limit.toString());
 		if (data.search) url.searchParams.set("search", data.search);
@@ -260,10 +278,10 @@ const getExtensionServicesFn = createServerFn({ method: "GET" }).handler(
 
 // ── Query Options ─────────────────────────────────────────
 
-export function retDashboardStatsQueryOptions() {
+export function retDashboardStatsQueryOptions(year?: number) {
 	return queryOptions({
-		queryKey: ["ret", "dashboard", "stats"],
-		queryFn: () => getRETDashboardStatsFn(),
+		queryKey: ["ret", "dashboard", "stats", { year }],
+		queryFn: () => getRETDashboardStatsFn({ data: { year } }),
 		staleTime: RET_QUERY_STALE_TIME_MS,
 	});
 }
