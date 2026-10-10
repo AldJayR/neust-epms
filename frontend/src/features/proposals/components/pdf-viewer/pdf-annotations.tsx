@@ -50,6 +50,9 @@ export function CommentHighlights({ comments }: CommentHighlightsProps) {
 								<p className="text-2xs leading-relaxed text-zinc-200">
 									"{comment.content}"
 								</p>
+								<p className="text-2xs font-semibold">
+									{comment.classification ?? "Remark"}
+								</p>
 								<span className="text-[9px] block text-zinc-500 text-right">
 									{toStableDate(comment.createdAt).toLocaleDateString("en-US", {
 										timeZone: "UTC",
@@ -68,6 +71,8 @@ interface CommentCreationPopoverProps {
 	pendingAnnotation: AnnotationData | null;
 	pageNumber: number;
 	commentText: string;
+	classification: "Remark" | "Revision required";
+	onClassificationChange: (value: "Remark" | "Revision required") => void;
 	onCommentTextChange: (text: string) => void;
 	onSave: () => void;
 	onCancel: () => void;
@@ -77,6 +82,8 @@ export function CommentCreationPopover({
 	pendingAnnotation,
 	pageNumber,
 	commentText,
+	classification,
+	onClassificationChange,
 	onCommentTextChange,
 	onSave,
 	onCancel,
@@ -105,6 +112,19 @@ export function CommentCreationPopover({
 					Page {pageNumber}
 				</span>
 			</div>
+			<select
+				aria-label="Feedback type"
+				value={classification}
+				onChange={(event) =>
+					onClassificationChange(
+						event.target.value as "Remark" | "Revision required",
+					)
+				}
+				className="rounded-md border border-border bg-background p-2 text-xs"
+			>
+				<option value="Revision required">Revision required</option>
+				<option value="Remark">Remark (informational)</option>
+			</select>
 			<textarea
 				ref={(el) => {
 					if (el) el.focus();

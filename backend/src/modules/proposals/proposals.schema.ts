@@ -215,6 +215,7 @@ export const CommentParams = z.object({
 
 export const CreateCommentSchema = z
 	.object({
+		classification: z.enum(["Remark", "Revision required"]).default("Remark"),
 		content: z.string().min(1),
 		annotationJson: z
 			.object({
@@ -238,6 +239,7 @@ export const CommentUserSchema = z.object({
 
 export const CommentResponseSchema = z
 	.object({
+		classification: z.enum(["Remark", "Revision required"]),
 		commentId: z.string().uuid(),
 		proposalId: z.string().uuid(),
 		documentId: z.string().uuid(),

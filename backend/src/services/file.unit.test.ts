@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	getAvatarExtension,
+	getProposalDocumentFilename,
 	isPdfFile,
 	sanitizeFilename,
 } from "./file.service.js";
@@ -22,6 +23,30 @@ describe("sanitizeFilename", () => {
 
 	it("does not duplicate an existing PDF extension", () => {
 		expect(sanitizeFilename("proposal.PDF")).toBe("proposal.PDF");
+	});
+});
+
+describe("getProposalDocumentFilename", () => {
+	it("hides the generated UUID on a resubmitted proposal attachment", () => {
+		expect(
+			getProposalDocumentFilename(
+				"proposals/proposal-1/9bd92c05-c44f-4f26-94a3-a14c86ca68df_Accomplishment-Report-FINAL.pdf",
+			),
+		).toBe("Accomplishment-Report-FINAL.pdf");
+	});
+
+	it("continues to hide legacy version and timestamp prefixes", () => {
+		expect(
+			getProposalDocumentFilename(
+				"proposals/proposal-1/v2_1720000000000_9bd92c05-c44f-4f26-94a3-a14c86ca68df_Proposal_FINAL_v2.pdf",
+			),
+		).toBe("Proposal_FINAL_v2.pdf");
+	});
+
+	it("preserves ordinary names that do not have a generated UUID prefix", () => {
+		expect(
+			getProposalDocumentFilename("proposals/proposal-1/2026_FINAL_Report.pdf"),
+		).toBe("2026_FINAL_Report.pdf");
 	});
 });
 

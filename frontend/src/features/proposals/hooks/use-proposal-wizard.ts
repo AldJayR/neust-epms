@@ -1,5 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	useIsMutating,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -23,6 +28,7 @@ import {
 	updateProposalFn,
 	uploadProposalDocumentFn,
 } from "../ret.functions";
+import { revisionReadinessQueryOptions } from "../revisions.functions";
 
 interface UseProposalWizardOptions {
 	open: boolean;
@@ -43,6 +49,7 @@ interface WizardState {
 }
 
 export function useProposalWizard({
+	open,
 	onOpenChange,
 	user,
 	initialData,
@@ -51,6 +58,7 @@ export function useProposalWizard({
 	hasExistingProposalDocument,
 }: UseProposalWizardOptions) {
 	const isEditing = Boolean(editingProposalId);
+	const isReturned = currentStatus === "Returned";
 	const draftIdRef = React.useRef<string | undefined>(editingProposalId);
 	const savingRef = React.useRef(false);
 	const uploadedDocumentRef = React.useRef(false);
@@ -76,6 +84,13 @@ export function useProposalWizard({
 	);
 
 	const queryClient = useQueryClient();
+	const responsesSaving = useIsMutating({
+		mutationKey: ["revision-response", editingProposalId],
+	});
+	const revisionQuery = useQuery({
+		...revisionReadinessQueryOptions(editingProposalId ?? ""),
+		enabled: open && isEditing && isReturned,
+	});
 	const defaultValues: FormValues = {
 		title: "",
 		bannerProgramId: 0,
@@ -154,7 +169,7 @@ export function useProposalWizard({
 	});
 
 	const handleOpenChange = (isOpen: boolean) => {
-		if (savingRef.current) return;
+		if (savingRef.current || responsesSaving > 0) return;
 		if (!isOpen) {
 			draftIdRef.current = editingProposalId;
 			uploadedDocumentRef.current = false;
@@ -164,8 +179,8 @@ export function useProposalWizard({
 		onOpenChange(isOpen);
 	};
 
-	const handleSave = async (shouldSubmit: boolean) => {
-		if (savingRef.current) return;
+	const handleSave = async (shouldSubmit: boolean, keepOpen = false) => {
+		if (savingRef.current || responsesSaving > 0) return;
 		savingRef.current = true;
 		setIsSaving(true);
 		setIsSubmitting(shouldSubmit);
@@ -202,6 +217,7 @@ export function useProposalWizard({
 					shouldSubmit,
 					Boolean(draftIdRef.current || editingProposalId),
 					uploadedDocumentRef.current ||
+						revisionQuery.data?.revisedDocumentReady ||
 						(currentStatus !== "Returned" && hasExistingProposalDocument),
 				) &&
 				!state.file
@@ -338,14 +354,21 @@ export function useProposalWizard({
 			toast.success(
 				shouldSubmit
 					? "Project proposal submitted successfully for review!"
-					: "Proposal draft saved successfully!",
+					: isReturned
+						? "Proposal changes saved successfully!"
+						: "Proposal draft saved successfully!",
 			);
+			if (keepOpen) {
+				setState({ uploadPhase: "idle", uploadProgress: 0 });
+				return true;
+			}
 			onOpenChange(false);
 			draftIdRef.current = editingProposalId;
 			uploadedDocumentRef.current = false;
 			form.reset();
 			setState({ step: 1, file: null, soFiles: {} });
 			setState({ uploadPhase: "idle", uploadProgress: 0 });
+			return true;
 		} catch (error: unknown) {
 			if (timer) clearInterval(timer);
 			toast.error(
@@ -362,6 +385,10 @@ export function useProposalWizard({
 
 	const nextStep = async () => {
 		if (savingRef.current) return;
+		if (isReturned && state.step === 5) {
+			if (await handleSave(false, true)) setState({ step: 6 });
+			return;
+		}
 		if (state.step === 1) {
 			setState((previous) => ({ step: previous.step + 1 }));
 			return;
@@ -379,8 +406,11 @@ export function useProposalWizard({
 		extensionServicesData,
 		bannerProgramsData,
 		isEditing,
+		isReturned,
+		revisionReadiness: revisionQuery.data,
+		revisionReadinessLoading: revisionQuery.isPending || revisionQuery.isError,
 		hasExistingProposalDocument,
-		isBusy: isSaving,
+		isBusy: isSaving || responsesSaving > 0,
 		isSubmitting,
 		handleOpenChange,
 		handleSave,

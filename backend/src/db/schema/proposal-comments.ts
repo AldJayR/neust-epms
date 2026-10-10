@@ -39,6 +39,10 @@ export const proposalComments = pgTable(
 			.notNull()
 			.references(() => users.userId),
 		content: text("content").notNull(),
+		classification: text("classification")
+			.$type<"Remark" | "Revision required">()
+			.notNull()
+			.default("Remark"),
 		annotationJson: jsonb("annotation_json").$type<AnnotationData | null>(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()

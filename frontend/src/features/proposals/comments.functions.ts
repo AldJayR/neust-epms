@@ -21,6 +21,7 @@ export interface ProposalComment {
 	documentId: string;
 	userId: string;
 	content: string;
+	classification?: "Remark" | "Revision required";
 	annotationJson: AnnotationData | null;
 	createdAt: string;
 	user: {
@@ -35,6 +36,7 @@ const saveCommentValidator = z.object({
 	proposalId: z.uuid(),
 	documentId: z.uuid(),
 	content: z.string().min(1),
+	classification: z.enum(["Remark", "Revision required"]).default("Remark"),
 	annotationJson: z
 		.object({
 			x: z.number(),
@@ -58,7 +60,8 @@ export const saveProposalCommentFn = createServerFn({ method: "POST" })
 		await authorizeSessionUser("Director", "RET Chair");
 		const token = await getValidAccessToken();
 
-		const { proposalId, documentId, content, annotationJson } = data;
+		const { proposalId, documentId, content, annotationJson, classification } =
+			data;
 
 		const response = await fetch(
 			`${API_BASE}/proposals/${proposalId}/documents/${documentId}/comments`,
@@ -70,6 +73,7 @@ export const saveProposalCommentFn = createServerFn({ method: "POST" })
 				},
 				body: JSON.stringify({
 					content,
+					classification,
 					annotationJson,
 				}),
 			},

@@ -18,10 +18,13 @@ const WIZARD_STEPS = ["Start", "Overview", "Plan", "Team", "File"] as const;
 export function ProposalWizardHeader({
 	step,
 	isEditing,
+	isReturned = false,
 }: {
 	step: number;
 	isEditing: boolean;
+	isReturned?: boolean;
 }) {
+	const steps = isReturned ? [...WIZARD_STEPS, "Responses"] : WIZARD_STEPS;
 	return (
 		<DialogHeader className="shrink-0 border-b border-border px-5 py-5 pr-12 sm:px-6">
 			<div className="flex items-baseline justify-between gap-4">
@@ -30,11 +33,13 @@ export function ProposalWizardHeader({
 						{isEditing ? "Edit project proposal" : "New project proposal"}
 					</DialogTitle>
 					<DialogDescription className="mt-1 truncate text-xs">
-						{getProposalWizardStepTitle(step)}
+						{step === 6
+							? "Respond to revision requests"
+							: getProposalWizardStepTitle(step)}
 					</DialogDescription>
 				</div>
 				<span className="shrink-0 text-xs font-medium text-muted-foreground">
-					{step} / 5
+					{step} / {steps.length}
 				</span>
 			</div>
 
@@ -45,7 +50,7 @@ export function ProposalWizardHeader({
 				className="mt-5 gap-0"
 			>
 				<StepperList className="mx-auto w-full max-w-[600px]">
-					{WIZARD_STEPS.map((label, index) => {
+					{steps.map((label, index) => {
 						const stepNumber = index + 1;
 						return (
 							<StepperItem
@@ -61,7 +66,7 @@ export function ProposalWizardHeader({
 										{label}
 									</StepperTitle>
 								</div>
-								{index < WIZARD_STEPS.length - 1 && (
+								{index < steps.length - 1 && (
 									<StepperSeparator className="mt-3" />
 								)}
 							</StepperItem>

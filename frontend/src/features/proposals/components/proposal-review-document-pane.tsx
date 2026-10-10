@@ -6,6 +6,7 @@ import { SpecialOrdersViewer } from "./special-orders-viewer";
 interface ProposalReviewDocumentPaneProps {
 	viewerRef: React.RefObject<PdfViewerRef | null>;
 	currentDocument?: { url: string };
+	initialPage?: number;
 	specialOrderMembers?: ProjectMember[];
 	comments: ProposalComment[];
 	canAnnotate: boolean;
@@ -19,6 +20,7 @@ interface ProposalReviewDocumentPaneProps {
 			height: number;
 			page: number;
 		} | null,
+		classification?: "Remark" | "Revision required",
 	) => Promise<void>;
 	onToggleTheaterMode: () => void;
 }
@@ -26,6 +28,7 @@ interface ProposalReviewDocumentPaneProps {
 export function ProposalReviewDocumentPane({
 	viewerRef,
 	currentDocument,
+	initialPage,
 	specialOrderMembers,
 	comments,
 	canAnnotate,
@@ -49,6 +52,7 @@ export function ProposalReviewDocumentPane({
 						key={currentDocument.url}
 						ref={viewerRef}
 						url={currentDocument.url}
+						initialPage={initialPage}
 						className="h-full"
 						comments={comments}
 						onAddComment={canAnnotate ? onAddComment : undefined}

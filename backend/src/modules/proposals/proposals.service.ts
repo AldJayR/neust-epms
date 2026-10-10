@@ -52,6 +52,11 @@ import { validateBannerProgramForProposal } from "../banner-programs/banner-prog
 import { validateProposalCompleteness } from "./proposal-completeness.js";
 import { resolveReviewPolicy } from "./proposal-review-policy.js";
 import { validateTargetDates } from "./proposal-target-dates.js";
+import {
+	prepareRevisionReview,
+	recordRevisionReturn,
+	recordRevisionSubmission,
+} from "./revisions.service.js";
 
 // ── Shared helpers ──
 
@@ -972,6 +977,7 @@ export async function submitProposal(
 				);
 			}
 		}
+		await recordRevisionSubmission(user, existing, tx);
 		const [updated] = await tx
 			.update(proposals)
 			.set({
@@ -1067,13 +1073,39 @@ export async function processReview(
 			body.decision,
 		);
 
-		await tx.insert(proposalReviews).values({
-			proposalId: proposalId,
-			reviewerId: user.userId,
-			reviewStage: reviewPolicy.reviewStage,
-			decision: body.decision,
-			comments: body.comments ?? null,
-		});
+		const submissionId = await prepareRevisionReview(
+			proposalId,
+			reviewPolicy.reviewStage,
+			body.decision,
+			tx,
+		);
+		const [review] = await tx
+			.insert(proposalReviews)
+			.values({
+				submissionId,
+				proposalId: proposalId,
+				reviewerId: user.userId,
+				reviewStage: reviewPolicy.reviewStage,
+				decision: body.decision,
+				comments: body.comments ?? null,
+			})
+			.returning();
+		if (!review)
+			throw new ApiError(
+				500,
+				"INSERT_FAILED",
+				"Failed to record review decision",
+			);
+		if (body.decision === REVIEW_DECISION.RETURNED) {
+			await recordRevisionReturn(
+				user,
+				proposalId,
+				reviewPolicy.reviewStage,
+				review.reviewId,
+				body.comments,
+				tx,
+			);
+		}
 
 		const [updated] = await tx
 			.update(proposals)

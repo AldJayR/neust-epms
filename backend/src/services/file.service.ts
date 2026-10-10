@@ -13,6 +13,15 @@ export function sanitizeFilename(fileName: string): string {
 		: `${candidate}.pdf`;
 }
 
+/** Extract the display name from current or legacy proposal storage paths. */
+export function getProposalDocumentFilename(storagePath: string): string {
+	const rawName = storagePath.split("/").pop() || storagePath;
+	return rawName.replace(
+		/^(?:v\d+_\d+_)?[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}_/i,
+		"",
+	);
+}
+
 export async function isPdfFile(file: File): Promise<boolean> {
 	const isPdfMimeOrName =
 		file.type === "application/pdf" ||

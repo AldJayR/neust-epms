@@ -15,6 +15,7 @@ interface PdfPageCanvasProps {
 	onAddComment?: (
 		content: string,
 		annotation: AnnotationData | null,
+		classification?: "Remark" | "Revision required",
 	) => Promise<void>;
 }
 
@@ -27,6 +28,7 @@ interface State {
 	dragCurrent: { x: number; y: number } | null;
 	showCommentPopover: boolean;
 	commentText: string;
+	classification: "Remark" | "Revision required";
 	pendingAnnotation: AnnotationData | null;
 	lastRendered: { width: number; scale: number };
 }
@@ -54,6 +56,7 @@ export function PdfPageCanvas({
 		dragCurrent: null,
 		showCommentPopover: false,
 		commentText: "",
+		classification: "Revision required" as const,
 		pendingAnnotation: null,
 		lastRendered: { width, scale },
 	}));
@@ -67,6 +70,7 @@ export function PdfPageCanvas({
 		dragCurrent,
 		showCommentPopover,
 		commentText,
+		classification,
 		pendingAnnotation,
 		lastRendered,
 	} = state;
@@ -246,7 +250,7 @@ export function PdfPageCanvas({
 		if (!commentText.trim() || !onAddComment || !pendingAnnotation) return;
 		try {
 			dispatch({ isLoading: true });
-			await onAddComment(commentText, pendingAnnotation);
+			await onAddComment(commentText, pendingAnnotation, classification);
 			dispatch({
 				commentText: "",
 				showCommentPopover: false,
@@ -373,6 +377,10 @@ export function PdfPageCanvas({
 					pendingAnnotation={pendingAnnotation}
 					pageNumber={pageNumber}
 					commentText={commentText}
+					classification={classification}
+					onClassificationChange={(value) =>
+						dispatch({ classification: value })
+					}
 					onCommentTextChange={(val) => dispatch({ commentText: val })}
 					onSave={handleSaveComment}
 					onCancel={handleCancelComment}

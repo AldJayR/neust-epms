@@ -44,6 +44,7 @@ import {
 	ROLE_NAMES,
 } from "@/lib/types.js";
 import { getProposalExtensionServicesByProposalIds } from "@/modules/proposals/proposals.service.js";
+import { getProposalDocumentFilename } from "@/services/file.service.js";
 import {
 	isActivationMoaValid,
 	reportingScheduleError,
@@ -518,12 +519,9 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 				.from("documents")
 				.createSignedUrl(doc.storagePath, 3600);
 
-			const rawName = doc.storagePath.split("/").pop() || doc.storagePath;
-			const cleanName = rawName.replace(/^v\d+_\d+_[a-f0-9-]+_/, "");
-
 			return {
 				id: doc.documentId,
-				name: cleanName,
+				name: getProposalDocumentFilename(doc.storagePath),
 				type: "pdf",
 				url: signedUrlData?.signedUrl ?? "",
 				version: `v${doc.versionNum}`,

@@ -5,6 +5,8 @@ import type { ProposalComment } from "../comments.functions";
 import { CommentsTab } from "./comments-tab";
 import type { PdfViewerRef } from "./pdf-viewer";
 import { ProposalDetailsTab } from "./proposal-details-tab";
+import { useProposalReview } from "./proposal-review-context";
+import { RevisionWorkspace } from "./revision-workspace";
 
 interface ProposalReviewSidebarProps {
 	comments: ProposalComment[];
@@ -18,6 +20,7 @@ export function ProposalReviewSidebar({
 	viewerRef,
 }: ProposalReviewSidebarProps) {
 	const [activeTab, setActiveTab] = useState<"details" | "comments">("details");
+	const { data, onNavigateDocument } = useProposalReview();
 
 	return (
 		<div className="lg:col-span-4 flex flex-col gap-6">
@@ -45,7 +48,7 @@ export function ProposalReviewSidebar({
 								value="comments"
 								className="flex-1 py-3 text-xs font-semibold rounded-none cursor-pointer data-active:bg-transparent data-active:shadow-none data-active:text-brand-primary after:!opacity-0"
 							>
-								Comments
+								Feedback
 								{comments.length > 0 && (
 									<span
 										className={`px-1.5 py-0.5 rounded-full text-[10px] transition-colors ${activeTab === "comments" ? "bg-primary text-primary-foreground" : "bg-gray-100 text-muted-foreground dark:bg-muted"}`}
@@ -65,11 +68,17 @@ export function ProposalReviewSidebar({
 					</TabsContent>
 
 					<TabsContent value="comments" className="mt-0">
-						<CommentsTab
-							comments={comments}
-							attachmentsCount={attachmentsCount}
-							pdfViewerRef={viewerRef}
-						/>
+						<div className="max-h-[750px] overflow-y-auto p-5 space-y-5">
+							<RevisionWorkspace
+								proposalId={data.id}
+								onNavigate={onNavigateDocument}
+							/>
+							<CommentsTab
+								comments={comments}
+								attachmentsCount={attachmentsCount}
+								pdfViewerRef={viewerRef}
+							/>
+						</div>
 					</TabsContent>
 				</Tabs>
 			</Card>

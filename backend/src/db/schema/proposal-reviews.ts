@@ -6,6 +6,7 @@ import {
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
+import { proposalSubmissions } from "./proposal-submissions.js";
 import { proposals } from "./proposals.js";
 import { users } from "./users.js";
 
@@ -17,6 +18,9 @@ export const proposalReviews = pgTable(
 	"proposal_reviews",
 	{
 		reviewId: uuid("review_id").primaryKey().defaultRandom(),
+		submissionId: uuid("submission_id").references(
+			() => proposalSubmissions.submissionId,
+		),
 		proposalId: uuid("proposal_id")
 			.notNull()
 			.references(() => proposals.proposalId),

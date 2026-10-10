@@ -334,7 +334,10 @@ export async function getSpecialOrderSignedUrl(
 		throw new ApiError(404, "NOT_FOUND", "Special order not found");
 	}
 
-	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
+	if (
+		user.roleName !== ROLE_NAMES.DIRECTOR &&
+		user.roleName !== ROLE_NAMES.RET_CHAIR
+	) {
 		const [member] = await db
 			.select({
 				memberId: proposalMembers.memberId,
@@ -375,7 +378,7 @@ export async function getSpecialOrderSignedUrl(
 			throw new ApiError(
 				403,
 				"FORBIDDEN",
-				"You must be the Director, Project Leader, or the member to access this file",
+				"You must be the Director, RET Chair, Project Leader, or the member to access this file",
 			);
 		}
 	}

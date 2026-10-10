@@ -9,6 +9,8 @@ export function invalidateWorkflowQueries(client: QueryClient) {
 			"ret",
 			"proposals",
 			"proposal",
+			"proposal-revisions",
+			"proposal-comments",
 			"projects",
 			"project-readiness",
 			"project-derived-state",

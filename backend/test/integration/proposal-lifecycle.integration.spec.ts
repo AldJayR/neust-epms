@@ -9,6 +9,7 @@ import { proposalDocuments } from "@/db/schema/proposal-documents.js";
 import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { processReview } from "@/modules/proposals/proposals.service.js";
+import { listRevisionRequests, saveRevisionResponse, verifyRevisionResponse } from "@/modules/proposals/revisions.service.js";
 import { getHubProjects } from "@/modules/director/director.service.js";
 import submitRoutes from "@/modules/proposals/submit.routes.js";
 import { installApiErrorHandler } from "@/lib/errors.js";
@@ -50,8 +51,10 @@ describe("proposal review lifecycle", () => {
 		await db.update(proposals).set({ bannerProgramId: bannerProgram.bannerProgramId })
 			.where(eq(proposals.proposalId, proposal.proposalId));
 		await processReview(chair, proposal.proposalId, { decision: "Endorsed" });
-		await processReview(director, proposal.proposalId, { decision: "Returned" });
+		await processReview(director, proposal.proposalId, { decision: "Returned", comments: "Clarify the timeline" });
 		await db.insert(proposalDocuments).values({ proposalId: proposal.proposalId, storagePath: "proposals/revised.pdf", versionNum: 2 });
+		const request = (await listRevisionRequests(leader, proposal.proposalId, { page: 1, limit: 20 })).items[0];
+		await saveRevisionResponse(leader, proposal.proposalId, request.requestId, { responseType: "Changed", explanation: "Clarified the timeline" }, "127.0.0.1");
 		const app = new OpenAPIHono<AuthEnv>();
 		app.use("*", async (context, next) => {
 			context.set("user", leader);
@@ -64,6 +67,8 @@ describe("proposal review lifecycle", () => {
 		await expect(processReview(director, proposal.proposalId, { decision: "Approved" }))
 			.rejects.toMatchObject({ code: "INVALID_STATE" });
 		await processReview(chair, proposal.proposalId, { decision: "Endorsed" });
+		const responseToVerify = (await listRevisionRequests(director, proposal.proposalId, { page: 1, limit: 20 })).items[0].responses[0];
+		await verifyRevisionResponse(director, proposal.proposalId, request.requestId, { responseId: responseToVerify.responseId, decision: "Resolved" }, "127.0.0.1");
 		await processReview(director, proposal.proposalId, { decision: "Approved" });
 		const [saved] = await db.select().from(proposals)
 			.where(eq(proposals.proposalId, proposal.proposalId));

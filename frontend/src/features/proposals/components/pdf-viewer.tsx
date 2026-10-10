@@ -10,11 +10,13 @@ export interface PdfViewerRef {
 
 interface PdfViewerProps {
 	url: string;
+	initialPage?: number;
 	className?: string;
 	comments?: ProposalComment[];
 	onAddComment?: (
 		content: string,
 		annotation: AnnotationData | null,
+		classification?: "Remark" | "Revision required",
 	) => Promise<void>;
 	isTheaterMode?: boolean;
 	onToggleTheaterMode?: () => void;
@@ -23,6 +25,7 @@ interface PdfViewerProps {
 
 export function PdfViewer({
 	url,
+	initialPage,
 	className,
 	comments,
 	onAddComment,
@@ -45,6 +48,7 @@ export function PdfViewer({
 				<PdfInner
 					ref={ref}
 					url={url}
+					initialPage={initialPage}
 					comments={comments}
 					onAddComment={onAddComment}
 					isTheaterMode={isTheaterMode}

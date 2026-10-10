@@ -50,6 +50,8 @@ export function ProposalDetailsTab() {
 		handleApprove,
 		isPending,
 		isRET,
+		stageOutstanding,
+		revisionsLoading,
 	} = useProposalReview();
 
 	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -281,6 +283,13 @@ export function ProposalDetailsTab() {
 
 			{isReviewable && (
 				<>
+					{stageOutstanding > 0 && (
+						<p className="px-5 pt-3 text-xs text-muted-foreground">
+							Verify {stageOutstanding} outstanding revision request(s) at your
+							stage in the Feedback tab before{" "}
+							{isRET ? "endorsing" : "approving"}.
+						</p>
+					)}
 					<div className="p-5 flex gap-3">
 						<Button
 							variant="outline"
@@ -293,6 +302,7 @@ export function ProposalDetailsTab() {
 							Return
 						</Button>
 						<LoadingButton
+							disabled={revisionsLoading || stageOutstanding > 0}
 							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg"
 							onClick={() => {
 								if (isRET) {
@@ -407,6 +417,11 @@ export function ProposalDetailsTab() {
 							onChange={(e) => setReturnReason(e.target.value)}
 							className="w-full min-h-[100px] border border-border rounded-lg p-3 text-sm focus-visible:ring-1 focus-visible:ring-brand-primary"
 						/>
+						<p className="text-xs text-muted-foreground">
+							{stageOutstanding > 0
+								? `${stageOutstanding} outstanding revision request(s) at your stage will require a saved leader response.`
+								: "Your return reason will become a general revision request that the leader must answer."}
+						</p>
 					</div>
 
 					<DialogFooter className="flex gap-3 mt-4">
@@ -419,6 +434,7 @@ export function ProposalDetailsTab() {
 						</Button>
 						<LoadingButton
 							className="flex-1 font-medium h-9 text-sm shadow-sm cursor-pointer rounded-lg bg-red-500 text-white hover:bg-red-600"
+							disabled={stageOutstanding === 0 && !returnReason.trim()}
 							onClick={async () => {
 								await handleDeny(returnReason);
 								setIsReturnOpen(false);

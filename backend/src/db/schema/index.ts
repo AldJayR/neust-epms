@@ -11,7 +11,6 @@ export { partners } from "./partners.js";
 export { passwordResetTokens } from "./password-reset-tokens.js";
 export { projectReportingMilestones } from "./project-reporting-milestones.js";
 export { projectReports } from "./project-reports.js";
-export { reportAttachments } from "./report-attachments.js";
 export { projects } from "./projects.js";
 export { proposalBeneficiaries } from "./proposal-beneficiaries.js";
 export type { AnnotationData } from "./proposal-comments.js";
@@ -21,8 +20,16 @@ export { proposalDocuments } from "./proposal-documents.js";
 export { proposalExtensionServices } from "./proposal-extension-services.js";
 export { proposalMembers } from "./proposal-members.js";
 export { proposalReviews } from "./proposal-reviews.js";
+export {
+	proposalRevisionReopenings,
+	proposalRevisionRequests,
+	proposalRevisionResponses,
+	proposalRevisionVerifications,
+} from "./proposal-revisions.js";
 export { proposalSdgs } from "./proposal-sdgs.js";
+export { proposalSubmissions } from "./proposal-submissions.js";
 export { proposals } from "./proposals.js";
+export { reportAttachments } from "./report-attachments.js";
 export { roles } from "./roles.js";
 export { sdgs } from "./sdgs.js";
 export { specialOrders } from "./special-orders.js";

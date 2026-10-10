@@ -18,6 +18,11 @@ import {
 	CommentResponseSchema,
 	CreateCommentSchema,
 } from "./proposals.schema.js";
+import {
+	assertCurrentReviewDocument,
+	createCommentRevisionRequest,
+	requireRevisionReviewer,
+} from "./revisions.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 
@@ -49,7 +54,7 @@ const createCommentRoute = createRoute({
 app.openapi(createCommentRoute, async (c) => {
 	const user = c.get("user");
 	const { id: proposalId, docId: documentId } = c.req.valid("param");
-	const { content, annotationJson } = c.req.valid("json");
+	const { content, annotationJson, classification } = c.req.valid("json");
 
 	const [document] = await db
 		.select({
@@ -83,18 +88,37 @@ app.openapi(createCommentRoute, async (c) => {
 	}
 
 	const newComment = await db.transaction(async (tx) => {
+		const { stage } = await requireRevisionReviewer(user, proposalId, tx);
+		const submissionId = await assertCurrentReviewDocument(
+			proposalId,
+			documentId,
+			tx,
+		);
 		const [created] = await tx
 			.insert(proposalComments)
 			.values({
 				documentId,
 				userId: user.userId,
 				content,
+				classification,
 				annotationJson: annotationJson ?? null,
 			})
 			.returning();
 
 		if (!created) {
 			throw new ApiError(500, "INSERT_FAILED", "Failed to create comment");
+		}
+		if (classification === "Revision required") {
+			await createCommentRevisionRequest(
+				user,
+				proposalId,
+				documentId,
+				created.commentId,
+				content,
+				stage,
+				submissionId,
+				tx,
+			);
 		}
 
 		await insertAuditLog(
@@ -118,6 +142,7 @@ app.openapi(createCommentRoute, async (c) => {
 			documentId: newComment.documentId,
 			userId: newComment.userId,
 			content: newComment.content,
+			classification: newComment.classification,
 			annotationJson: newComment.annotationJson,
 			createdAt: newComment.createdAt.toISOString(),
 			user: {
@@ -193,6 +218,7 @@ app.openapi(listCommentsRoute, async (c) => {
 			documentId: proposalComments.documentId,
 			userId: proposalComments.userId,
 			content: proposalComments.content,
+			classification: proposalComments.classification,
 			annotationJson: proposalComments.annotationJson,
 			createdAt: proposalComments.createdAt,
 			userFirstName: users.firstName,
@@ -217,6 +243,7 @@ app.openapi(listCommentsRoute, async (c) => {
 			documentId: row.documentId,
 			userId: row.userId,
 			content: row.content,
+			classification: row.classification,
 			annotationJson: row.annotationJson,
 			createdAt: row.createdAt.toISOString(),
 			user: {

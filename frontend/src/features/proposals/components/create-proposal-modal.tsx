@@ -9,6 +9,7 @@ import { ProposalStepMembers } from "./proposal-step-members";
 import { ProposalStepRequirements } from "./proposal-step-requirements";
 import { ProposalWizardFooter } from "./proposal-wizard-footer";
 import { ProposalWizardHeader } from "./proposal-wizard-header";
+import { RevisionWorkspace } from "./revision-workspace";
 
 interface CreateProposalModalProps {
 	open: boolean;
@@ -49,6 +50,7 @@ export function CreateProposalModal({
 					<ProposalWizardHeader
 						step={wizard.step}
 						isEditing={wizard.isEditing}
+						isReturned={wizard.isReturned}
 					/>
 
 					<div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 sm:py-7">
@@ -84,8 +86,16 @@ export function CreateProposalModal({
 									uploadProgress={wizard.uploadProgress}
 									isEditing={wizard.isEditing}
 									hasExistingDocument={
-										wizard.hasExistingProposalDocument === true
+										wizard.isReturned
+											? wizard.revisionReadiness?.revisedDocumentReady === true
+											: wizard.hasExistingProposalDocument === true
 									}
+								/>
+							)}
+							{wizard.step === 6 && editingProposalId && (
+								<RevisionWorkspace
+									proposalId={editingProposalId}
+									disabled={wizard.isBusy}
 								/>
 							)}
 						</div>
@@ -94,6 +104,11 @@ export function CreateProposalModal({
 					<DialogFooter className="shrink-0 border-t border-border px-5 py-3 sm:px-6">
 						<ProposalWizardFooter
 							step={wizard.step}
+							isReturned={wizard.isReturned}
+							canResubmit={
+								!wizard.revisionReadinessLoading &&
+								wizard.revisionReadiness?.canResubmit === true
+							}
 							isBusy={wizard.isBusy}
 							isSubmitting={wizard.isSubmitting}
 							onPrevious={wizard.previousStep}

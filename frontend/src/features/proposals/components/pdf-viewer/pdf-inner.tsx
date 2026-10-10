@@ -30,10 +30,12 @@ const BASE_WIDTH = 650;
 
 interface PdfInnerProps {
 	url: string;
+	initialPage?: number;
 	comments?: ProposalComment[];
 	onAddComment?: (
 		content: string,
 		annotation: AnnotationData | null,
+		classification?: "Remark" | "Revision required",
 	) => Promise<void>;
 	isTheaterMode?: boolean;
 	onToggleTheaterMode?: () => void;
@@ -44,6 +46,7 @@ const EMPTY_COMMENTS: ProposalComment[] = [];
 
 const PdfInner = ({
 	url,
+	initialPage,
 	comments = EMPTY_COMMENTS,
 	onAddComment,
 	isTheaterMode = false,
@@ -77,6 +80,7 @@ const PdfInner = ({
 	const [viewerWidth, setViewerWidth] = useState(1024);
 
 	useEffect(() => {
+		if (loadingDoc) return;
 		const element = scrollRef.current;
 		if (!element) return;
 
@@ -164,6 +168,21 @@ const PdfInner = ({
 			isDestroyed = true;
 		};
 	}, [pdfDoc, visiblePages]);
+
+	useEffect(() => {
+		if (!pdfDoc || loadingDoc || !initialPage) return;
+		const root = scrollRef.current;
+		const page = pageRefs.current.get(initialPage);
+		if (root && page) {
+			root.scrollTo({
+				top:
+					root.scrollTop +
+					page.getBoundingClientRect().top -
+					root.getBoundingClientRect().top,
+				behavior: "instant",
+			});
+		}
+	}, [pdfDoc, loadingDoc, initialPage]);
 
 	useImperativeHandle(ref, () => ({
 		scrollToPage: (pageNumber: number) => {

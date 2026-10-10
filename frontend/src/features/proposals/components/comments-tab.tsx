@@ -1,20 +1,15 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { toStableDate } from "@/lib/utils";
+import type { ProposalComment } from "../comments.functions";
+import { createRevisionRequestFn } from "../revisions.functions";
 import type { PdfViewerRef } from "./pdf-viewer";
+import { useProposalReview } from "./proposal-review-context";
 
 interface CommentsTabProps {
-	comments: {
-		commentId: string;
-		user: {
-			name: string;
-			roleName: string;
-		};
-		createdAt: string;
-		content: string;
-		annotationJson: {
-			page: number;
-		} | null;
-	}[];
+	comments: ProposalComment[];
 	attachmentsCount: number;
 	pdfViewerRef: React.RefObject<PdfViewerRef | null>;
 }
@@ -24,30 +19,40 @@ export function CommentsTab({
 	attachmentsCount,
 	pdfViewerRef,
 }: CommentsTabProps) {
+	const { data, isReviewable } = useProposalReview();
+	const client = useQueryClient();
+	const promote = useMutation({
+		mutationFn: (commentId: string) =>
+			createRevisionRequestFn({ data: { proposalId: data.id, commentId } }),
+		onSuccess: async () => {
+			await client.invalidateQueries({
+				queryKey: ["proposal-revisions", data.id],
+			});
+			await client.invalidateQueries({ queryKey: ["proposal-comments"] });
+			toast.success("Comment added to revision requests.");
+		},
+		onError: (error: Error) => toast.error(error.message),
+	});
 	return (
-		<div className="flex flex-col h-[750px] justify-between">
+		<div className="flex flex-col border-t border-border">
 			{/* Comments List */}
-			<div className="flex-1 overflow-y-auto p-5 space-y-4">
+			<div className="space-y-4 py-4">
+				<h3 className="text-sm font-semibold">Comments on the selected PDF</h3>
 				{comments.length === 0 ? (
 					<div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted-foreground gap-2">
 						<MessageSquare className="size-8 text-gray-300 animate-pulse dark:text-muted-foreground" />
 						<p className="text-sm font-semibold">No comments yet</p>
 						<p className="text-xs text-muted-foreground font-light">
-							Drag on the PDF page in comment mode to add remarks.
+							{isReviewable
+								? "Select the current proposal PDF and use comment mode to add feedback."
+								: "Earlier feedback stays attached to its original document version."}
 						</p>
 					</div>
 				) : (
 					comments.map((comment) => (
-						<button
-							type="button"
+						<article
 							key={comment.commentId}
 							className="w-full border border-border rounded-xl p-4 bg-gray-50 hover:bg-gray-100/70 transition-colors space-y-2 cursor-pointer text-left block dark:bg-card dark:hover:bg-muted/70"
-							onClick={() => {
-								const annot = comment.annotationJson;
-								if (annot?.page) {
-									pdfViewerRef.current?.scrollToPage(annot.page);
-								}
-							}}
 						>
 							<div className="flex items-center justify-between gap-4">
 								<div className="flex flex-col">
@@ -67,12 +72,35 @@ export function CommentsTab({
 							<p className="text-xs text-foreground/80 leading-relaxed break-words">
 								{comment.content}
 							</p>
+							<p className="text-xs font-semibold">
+								{comment.classification ?? "Remark"}
+							</p>
 							{comment.annotationJson && (
-								<span className="inline-block bg-brand-primary/10 text-brand-primary text-[9px] font-semibold px-2 py-0.5 rounded-[4px]">
+								<button
+									type="button"
+									onClick={() =>
+										pdfViewerRef.current?.scrollToPage(
+											comment.annotationJson?.page ?? 1,
+										)
+									}
+									className="inline-block bg-brand-primary/10 text-brand-primary text-[9px] font-semibold px-2 py-0.5 rounded-[4px]"
+								>
 									Page {comment.annotationJson.page}
-								</span>
+								</button>
 							)}
-						</button>
+							{isReviewable &&
+								comment.classification !== "Revision required" && (
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										disabled={promote.isPending}
+										onClick={() => promote.mutate(comment.commentId)}
+									>
+										Require revision
+									</Button>
+								)}
+						</article>
 					))
 				)}
 			</div>

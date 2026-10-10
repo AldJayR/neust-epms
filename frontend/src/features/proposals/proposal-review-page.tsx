@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { projectDetailsQueryOptions } from "@/features/projects/public";
 import type { AuthUser } from "@/lib/auth";
+import { invalidateWorkflowQueries } from "@/lib/workflow-queries";
 import {
 	getProposalCommentsFn,
 	saveProposalCommentFn,
@@ -26,6 +27,7 @@ import {
 	shouldBlockReviewAction,
 } from "./helpers/proposal-review-helpers";
 import { ProposalLifecycleStepper } from "./proposal-lifecycle-stepper";
+import { revisionReadinessQueryOptions } from "./revisions.functions";
 
 interface ProposalReviewPageProps {
 	proposalId: string;
@@ -45,6 +47,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	});
 
 	const queryClient = useQueryClient();
+	const revisionQuery = useQuery(revisionReadinessQueryOptions(proposalId));
 	const { data, isLoading, error } = useQuery(
 		projectDetailsQueryOptions(proposalId),
 	);
@@ -56,6 +59,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 			comments?: string;
 		}) => reviewProposalFn({ data: input }),
 		onSuccess: (_result, variables) => {
+			void invalidateWorkflowQueries(queryClient);
 			queryClient.invalidateQueries({ queryKey: ["action-center"] });
 			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
@@ -93,6 +97,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 		null,
 	);
 	const [isTheaterMode, setIsTheaterMode] = useState(false);
+	const [initialPage, setInitialPage] = useState<number | undefined>();
 	const [isDownloading, setIsDownloading] = useState(false);
 	const pdfViewerRef = useRef<PdfViewerRef>(null);
 
@@ -165,6 +170,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 				height: number;
 				page: number;
 			} | null;
+			classification?: "Remark" | "Revision required";
 		}) => {
 			if (!currentDoc?.id) {
 				throw new Error("No document is selected for comments.");
@@ -174,11 +180,15 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 					proposalId,
 					documentId: currentDoc.id,
 					content: input.content,
+					classification: input.classification ?? "Remark",
 					annotationJson: input.annotationJson,
 				},
 			});
 		},
 		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["proposal-revisions", proposalId],
+			});
 			queryClient.invalidateQueries({
 				queryKey: ["proposal-comments", currentDoc?.id],
 			});
@@ -249,7 +259,16 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 				data,
 				endorsement,
 				activeAttachmentId,
-				setActiveAttachmentId,
+				setActiveAttachmentId: (id: string) => {
+					setInitialPage(undefined);
+					setActiveAttachmentId(id);
+				},
+				onNavigateDocument: (id: string, page?: number | null) => {
+					setInitialPage(page ?? undefined);
+					setActiveAttachmentId(id);
+				},
+				stageOutstanding: revisionQuery.data?.stageOutstanding ?? 0,
+				revisionsLoading: revisionQuery.isPending || revisionQuery.isError,
 				isReviewable,
 				handleDeny,
 				handleReject,
@@ -304,18 +323,24 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 						<ProposalReviewDocumentPane
 							viewerRef={pdfViewerRef}
 							currentDocument={currentDoc}
+							initialPage={initialPage}
 							specialOrderMembers={
 								activeAttachmentId === SPECIAL_ORDERS_DOCUMENT_ID
 									? data.members
 									: undefined
 							}
 							comments={comments}
-							canAnnotate={isReviewable && !!currentDoc?.id}
+							canAnnotate={
+								isReviewable &&
+								!!currentDoc?.id &&
+								currentDoc.id === revisionQuery.data?.latestDocumentId
+							}
 							isTheaterMode={isTheaterMode}
-							onAddComment={async (content, annotation) => {
+							onAddComment={async (content, annotation, classification) => {
 								await addCommentMutation.mutateAsync({
 									content,
 									annotationJson: annotation,
+									classification: classification ?? "Remark",
 								});
 							}}
 							onToggleTheaterMode={() =>

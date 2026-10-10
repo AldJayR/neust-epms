@@ -71,6 +71,20 @@
       "when": 1790939610033,
       "tag": "0009_dazzling_nightcrawler",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791557503302,
+      "tag": "0010_proposal_revision_verification",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791635038712,
+      "tag": "0011_revision_request_reopenings",
+      "breakpoints": true
     }
   ]
 }

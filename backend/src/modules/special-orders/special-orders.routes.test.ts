@@ -242,6 +242,52 @@ describe("POST /special-orders/upload", () => {
 });
 
 describe("GET /special-orders/:id/url", () => {
+	it("should let a scoped RET Chair view another member's special order without being the leader", async () => {
+		setMockUser(MOCK_USERS.retChair);
+		const id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+		vi.mocked(db.select).mockReturnValueOnce(
+			mockSelectChain([
+				{
+					specialOrderId: id,
+					memberId: "member-1",
+					soNumber: "SO-004",
+					storagePath: "special-orders/member-1/order.pdf",
+					dateIssued: null,
+					status: "Pending",
+					createdAt: new Date(),
+					updatedAt: new Date(),
+					archivedAt: null,
+				},
+			]) as never,
+		);
+
+		const res = await app.request(`/special-orders/${id}/url`);
+
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({
+			url: "https://test.supabase.co/signed-url",
+		});
+		expect(db.select).toHaveBeenCalledTimes(1);
+		const bucket = vi.mocked(supabase.storage.from).mock.results.at(-1)?.value;
+		expect(bucket.createSignedUrl).toHaveBeenCalledWith(
+			"special-orders/member-1/order.pdf",
+			3600,
+		);
+	});
+
+	it("should not generate a URL when the scoped lookup finds no order for a RET Chair", async () => {
+		setMockUser(MOCK_USERS.retChair);
+		vi.mocked(db.select).mockReturnValueOnce(mockSelectChain([]) as never);
+
+		const res = await app.request(
+			"/special-orders/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/url",
+		);
+
+		expect(res.status).toBe(404);
+		expect((await res.json()).error.code).toBe("NOT_FOUND");
+		expect(supabase.storage.from).not.toHaveBeenCalled();
+	});
+
 	it("should let a Director generate a one-hour signed URL", async () => {
 		setMockUser(MOCK_USERS.director);
 		const id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";

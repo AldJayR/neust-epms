@@ -12,6 +12,9 @@ export interface ProposalReviewContextValue {
 	endorsement: ProjectHistoryItem | undefined;
 	activeAttachmentId: string | null;
 	setActiveAttachmentId: (id: string) => void;
+	onNavigateDocument: (id: string, page?: number | null) => void;
+	stageOutstanding: number;
+	revisionsLoading: boolean;
 	isReviewable: boolean;
 	handleDeny: (comments?: string) => Promise<void> | void;
 	handleReject: (comments?: string) => Promise<void> | void;
