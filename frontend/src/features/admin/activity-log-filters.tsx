@@ -4,6 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import type { AuditFilterOptions, AuditLogFilters } from "./functions";
 
 interface ActivityLogFiltersProps {
@@ -26,7 +33,6 @@ export function ActivityLogFilters({ filters, options, onApply }: ActivityLogFil
 		onApply(draft);
 		setOpen(false);
 	}
-	const selectClass = "h-9 w-full rounded-md border border-input bg-background px-3 text-sm";
 	return (
 		<Popover open={open} onOpenChange={(value) => {
 			if (value) setDraft(filters);
@@ -52,24 +58,67 @@ export function ActivityLogFilters({ filters, options, onApply }: ActivityLogFil
 					{invalidDates && <p role="alert" className="text-sm text-destructive">The start date must not be after the end date.</p>}
 					<Field>
 						<FieldLabel htmlFor="audit-action-type">Action Type</FieldLabel>
-						<select id="audit-action-type" className={selectClass} value={draft.actionType ?? ""} onChange={(event) => update("actionType", event.target.value as AuditLogFilters["actionType"])}>
-							<option value="">All types</option>
-							{["Approval", "Upload", "Login", "Status", "Account", "System"].map((type) => <option key={type} value={type}>{type}</option>)}
-						</select>
+						<Select
+							value={draft.actionType ?? "__all__"}
+							onValueChange={(value) =>
+								update(
+									"actionType",
+									(value === "__all__" ? "" : value) as AuditLogFilters["actionType"],
+								)
+							}
+						>
+							<SelectTrigger id="audit-action-type" className="w-full">
+								<SelectValue placeholder="All types" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="__all__">All types</SelectItem>
+								{["Approval", "Upload", "Login", "Status", "Account", "System"].map((type) => (
+									<SelectItem key={type} value={type}>{type}</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 					</Field>
 					<Field>
 						<FieldLabel htmlFor="audit-user">Performed By</FieldLabel>
-						<select id="audit-user" className={selectClass} value={draft.userId ?? ""} onChange={(event) => update("userId", event.target.value)}>
-							<option value="">All users</option>
-							{options?.users.map((user) => <option key={user.userId} value={user.userId}>{user.name} ({user.email})</option>)}
-						</select>
+						<Select
+							value={draft.userId ?? "__all__"}
+							onValueChange={(value) =>
+								update("userId", value === "__all__" ? "" : (value ?? ""))
+							}
+						>
+							<SelectTrigger id="audit-user" className="w-full">
+								<SelectValue placeholder="All users" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="__all__">All users</SelectItem>
+								{options?.users.map((user) => (
+									<SelectItem key={user.userId} value={user.userId}>
+										{user.name} ({user.email})
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 					</Field>
 					<Field>
 						<FieldLabel htmlFor="audit-module">Module</FieldLabel>
-						<select id="audit-module" className={selectClass} value={draft.module ?? ""} onChange={(event) => update("module", event.target.value)}>
-							<option value="">All modules</option>
-							{options?.modules.map((module) => <option key={module} value={module}>{module.replaceAll("_", " ")}</option>)}
-						</select>
+						<Select
+							value={draft.module ?? "__all__"}
+							onValueChange={(value) =>
+								update("module", value === "__all__" ? "" : (value ?? ""))
+							}
+						>
+							<SelectTrigger id="audit-module" className="w-full">
+								<SelectValue placeholder="All modules" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="__all__">All modules</SelectItem>
+								{options?.modules.map((module) => (
+									<SelectItem key={module} value={module}>
+										{module.replaceAll("_", " ")}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 					</Field>
 					<Field>
 						<FieldLabel htmlFor="audit-action">Action Contains</FieldLabel>

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Loader2, Pencil, Plus, Power, X } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,7 +105,11 @@ export function BannerProgramsSettings({ open }: BannerProgramsSettingsProps) {
 					<Loader2 className="size-4 animate-spin" /> Loading programs...
 				</div>
 			)}
-			{error && <p className="text-sm text-destructive">{error.message}</p>}
+			{error && (
+				<Alert variant="destructive">
+					<AlertDescription>{error.message}</AlertDescription>
+				</Alert>
+			)}
 
 			{data && data.programs.length === 0 && (
 				<p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">

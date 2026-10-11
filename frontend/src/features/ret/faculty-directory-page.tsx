@@ -7,6 +7,7 @@ import { DataTablePage } from "@/components/custom/data-table-page";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
 	Popover,
 	PopoverContent,
@@ -208,9 +209,9 @@ export function RetFacultyDirectoryPage({
 														}
 													}}
 												/>
-												<label htmlFor={checkboxId} className="cursor-pointer">
+												<Label htmlFor={checkboxId} className="cursor-pointer">
 													{r.label}
-												</label>
+												</Label>
 											</div>
 										);
 									})}
@@ -252,9 +253,9 @@ export function RetFacultyDirectoryPage({
 														}
 													}}
 												/>
-												<label htmlFor={checkboxId} className="cursor-pointer">
+												<Label htmlFor={checkboxId} className="cursor-pointer">
 													{l.label}
-												</label>
+												</Label>
 											</div>
 										);
 									})}

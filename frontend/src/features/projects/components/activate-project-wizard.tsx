@@ -32,6 +32,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Empty, EmptyContent, EmptyDescription } from "@/components/ui/empty";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
 	Popover,
@@ -346,7 +347,7 @@ export function ActivateProjectWizard({
 											>
 												Duration:
 											</Label>
-											<input
+											<Input
 												id="duration-months"
 												type="number"
 												min={1}
@@ -360,7 +361,7 @@ export function ActivateProjectWizard({
 														),
 													)
 												}
-												className="h-8 w-14 rounded-md border border-input bg-background px-2 text-center text-xs"
+												className="h-8 w-14 px-2 text-center text-xs"
 											/>
 											<span className="text-xs text-muted-foreground">
 												months

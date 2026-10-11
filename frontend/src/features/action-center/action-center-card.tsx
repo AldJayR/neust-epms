@@ -12,6 +12,7 @@ import {
 	UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useActionCenter } from "@/hooks/use-action-center";
@@ -165,20 +166,14 @@ export function ActionCenterCard() {
 
 	if (error || !data) {
 		return (
-			<Card size="sm" className="w-full">
-				<CardContent className="flex flex-col items-start gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
-					<div className="flex items-start gap-3">
-						<AlertCircle className="mt-0.5 size-5 shrink-0 text-danger" />
-						<div>
-							<p className="text-sm font-medium text-foreground">
-								Action Center unavailable
-							</p>
-							<p className="text-xs text-muted-foreground">
-								Your dashboard is still available. Try loading your work queue
-								again.
-							</p>
-						</div>
-					</div>
+			<Alert variant="destructive">
+				<AlertCircle />
+				<AlertTitle>Action Center unavailable</AlertTitle>
+				<AlertDescription className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+					<p>
+						Your dashboard is still available. Try loading your work queue
+						again.
+					</p>
 					<Button
 						variant="outline"
 						size="sm"
@@ -187,8 +182,8 @@ export function ActionCenterCard() {
 					>
 						{isRefetching ? "Retrying..." : "Try again"}
 					</Button>
-				</CardContent>
-			</Card>
+				</AlertDescription>
+			</Alert>
 		);
 	}
 

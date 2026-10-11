@@ -11,6 +11,7 @@ import {
 	User,
 } from "lucide-react";
 import * as React from "react";
+import { Button } from "@/components/ui/button";
 import {
 	Command,
 	CommandDialog,
@@ -207,10 +208,11 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 
 	return (
 		<>
-			<button
-				type="button"
+			<Button
+				variant="outline"
+				size="sm"
 				onClick={() => handleOpenChange(true)}
-				className="relative flex h-8 w-full max-w-[212px] items-center gap-2 rounded-lg border border-border bg-background px-3 text-sm text-muted-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+				className="relative h-8 w-full max-w-[212px] justify-start gap-2 rounded-lg px-3 text-sm text-muted-foreground"
 				aria-label="Open global search"
 			>
 				<Search className="size-4 shrink-0 text-muted-foreground" />
@@ -218,7 +220,7 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 				<kbd className="hidden rounded border border-border bg-muted px-1.5 text-[10px] font-medium text-muted-foreground sm:inline-block">
 					⌘K
 				</kbd>
-			</button>
+			</Button>
 
 			<CommandDialog open={open} onOpenChange={handleOpenChange}>
 				<Command shouldFilter={false} className="gap-0">

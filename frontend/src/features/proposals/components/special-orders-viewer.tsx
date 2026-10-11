@@ -2,6 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Download, Maximize2, Minimize2 } from "lucide-react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { getSpecialOrderSignedUrlFn } from "@/features/projects/public";
 import type { ProjectMember } from "@/types/project";
 
@@ -155,6 +162,7 @@ export function SpecialOrdersViewer({
 	const uploaded = members.filter((member) => member.specialOrder?.storagePath);
 	const scrollRef = useRef<HTMLElement>(null);
 	const [width, setWidth] = useState(650);
+	const [jumpTo, setJumpTo] = useState("");
 
 	useEffect(() => {
 		const root = scrollRef.current;
@@ -176,14 +184,13 @@ export function SpecialOrdersViewer({
 						{uploaded.length} of {members.length} uploaded
 					</p>
 				</div>
-				<select
-					aria-label="Jump to member special order"
-					defaultValue=""
-					className="max-w-full rounded-md border border-border bg-background p-2 text-sm sm:max-w-[240px]"
-					onChange={(event) => {
+				<Select
+					value={jumpTo}
+					onValueChange={(value) => {
+						const memberId = value ?? "";
 						const root = scrollRef.current;
 						const section = document.getElementById(
-							`special-order-${event.target.value}`,
+							`special-order-${memberId}`,
 						);
 						if (root && section) {
 							root.scrollTo({
@@ -194,23 +201,28 @@ export function SpecialOrdersViewer({
 								behavior: "instant",
 							});
 						}
-						event.target.value = "";
+						setJumpTo("");
 					}}
 				>
-					<option value="" disabled>
-						Jump to member…
-					</option>
-					{members.map((member) => (
-						<option
-							key={member.memberId}
-							value={member.memberId}
-							disabled={!member.specialOrder?.storagePath}
-						>
-							{member.name}
-							{!member.specialOrder?.storagePath && " — Not uploaded"}
-						</option>
-					))}
-				</select>
+					<SelectTrigger
+						aria-label="Jump to member special order"
+						className="max-w-full sm:max-w-[240px]"
+					>
+						<SelectValue placeholder="Jump to member…" />
+					</SelectTrigger>
+					<SelectContent>
+						{members.map((member) => (
+							<SelectItem
+								key={member.memberId}
+								value={member.memberId}
+								disabled={!member.specialOrder?.storagePath}
+							>
+								{member.name}
+								{!member.specialOrder?.storagePath && " — Not uploaded"}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 				<Button
 					variant="ghost"
 					size="icon"

@@ -14,6 +14,7 @@ import { sendResetCodeFn, verifyResetCodeFn } from "@/features/auth";
 import { passwordResetSearchSchema } from "@/features/auth/password-reset-search";
 import { AuthPageLayout } from "../components/custom/auth-page-layout";
 import { RHFSubmitButton } from "../components/rhf-auth-fields";
+import { Button } from "../components/ui/button";
 import { FieldError } from "../components/ui/field";
 import {
 	InputOTP,
@@ -151,14 +152,14 @@ function OtpVerificationPage() {
 
 					<div className="text-sm text-zinc-600 flex items-center justify-start gap-1 dark:text-muted-foreground">
 						<span>Didn&apos;t receive a code?</span>{" "}
-						<button
-							type="button"
+						<Button
+							variant="link"
 							onClick={handleResendCode}
 							disabled={isResending}
-							className="text-brand-primary font-medium hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 disabled:no-underline"
+							className="h-auto p-0 text-brand-primary font-medium"
 						>
 							{isResending ? "Resending..." : "Resend code"}
-						</button>
+						</Button>
 					</div>
 
 					<div className="flex gap-3 items-center justify-end w-full mt-7">

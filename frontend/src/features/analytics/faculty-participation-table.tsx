@@ -1,4 +1,5 @@
 import { DataTablePage } from "@/components/custom/data-table-page";
+import { Button } from "@/components/ui/button";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
 import type { FacultyAnalyticsItem } from "./schema";
 
@@ -24,13 +25,14 @@ export function FacultyParticipationTable({
 			accessorKey: "label",
 			header: "Faculty",
 			cell: ({ row }) => (
-				<button
-					type="button"
-					className="font-medium text-primary underline"
+				<Button
+					variant="link"
+					size="sm"
+					className="h-auto p-0 font-medium"
 					onClick={() => onSelectFaculty(row.original.userId)}
 				>
 					{row.original.label}
-				</button>
+				</Button>
 			),
 		},
 		{ accessorKey: "campus", header: "Campus" },

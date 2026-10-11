@@ -1,4 +1,5 @@
 import { PageCard } from "@/components/custom/page-card";
+import { Button } from "@/components/ui/button";
 import {
 	Empty,
 	EmptyDescription,
@@ -70,14 +71,15 @@ export function BreakdownCard({
 								key={group.key}
 								className="grid grid-cols-[minmax(100px,1fr)_2fr_auto] items-center gap-3 text-sm"
 							>
-								<button
-									type="button"
-									className="truncate text-left text-primary underline"
+								<Button
+									variant="link"
+									size="sm"
+									className="h-auto justify-start truncate p-0 text-left"
 									title={group.label}
 									onClick={() => onSelect(group.key)}
 								>
 									{group.label}
-								</button>
+								</Button>
 								<div className="h-3 rounded bg-muted" aria-hidden="true">
 									<div
 										className="h-3 rounded bg-primary"
@@ -112,13 +114,14 @@ export function BreakdownCard({
 							{groups.map((group) => (
 								<TableRow key={group.key}>
 									<TableHead scope="row" className="font-normal">
-										<button
-											type="button"
-											className="text-primary underline"
-											onClick={() => onSelect(group.key)}
-										>
-											{group.label}
-										</button>
+									<Button
+										variant="link"
+										size="sm"
+										className="h-auto p-0"
+										onClick={() => onSelect(group.key)}
+									>
+										{group.label}
+									</Button>
 									</TableHead>
 									<TableCell>{group.projects}</TableCell>
 									{view === "reach" && (

@@ -2,6 +2,7 @@ import { AlertTriangle, CheckCircle2, FileText } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/custom/confirm-dialog";
 import { LoadingButton } from "@/components/custom/loading-button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -458,13 +459,13 @@ export function ProposalDetailsTab() {
 						</DialogDescription>
 					</DialogHeader>
 
-					<div className="rounded-lg border border-red-200 bg-red-50 p-3 flex gap-3 dark:border-red-900/60 dark:bg-red-950/30">
-						<AlertTriangle className="size-4 text-red-600 mt-0.5 shrink-0 dark:text-red-300" />
-						<p className="text-sm text-red-800 dark:text-red-200">
+					<Alert variant="destructive">
+						<AlertTriangle />
+						<AlertDescription>
 							This will permanently decline the proposal. The project leader
 							will be notified that the proposal has been rejected.
-						</p>
-					</div>
+						</AlertDescription>
+					</Alert>
 
 					<div className="space-y-4">
 						<Textarea

@@ -2,6 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
@@ -112,19 +119,20 @@ export function CommentCreationPopover({
 					Page {pageNumber}
 				</span>
 			</div>
-			<select
-				aria-label="Feedback type"
+			<Select
 				value={classification}
-				onChange={(event) =>
-					onClassificationChange(
-						event.target.value as "Remark" | "Revision required",
-					)
+				onValueChange={(value) =>
+					onClassificationChange(value as "Remark" | "Revision required")
 				}
-				className="rounded-md border border-border bg-background p-2 text-xs"
 			>
-				<option value="Revision required">Revision required</option>
-				<option value="Remark">Remark (informational)</option>
-			</select>
+				<SelectTrigger aria-label="Feedback type" className="w-full text-xs">
+					<SelectValue />
+				</SelectTrigger>
+				<SelectContent>
+					<SelectItem value="Revision required">Revision required</SelectItem>
+					<SelectItem value="Remark">Remark (informational)</SelectItem>
+				</SelectContent>
+			</Select>
 			<textarea
 				ref={(el) => {
 					if (el) el.focus();

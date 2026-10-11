@@ -12,6 +12,7 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -202,12 +203,12 @@ export function ProposalStepInfo({
 											);
 										}}
 									/>
-									<label
+									<Label
 										htmlFor={`extension-service-${service.extensionServiceId}`}
 										className="cursor-pointer select-none text-sm font-normal"
 									>
 										{service.serviceName}
-									</label>
+									</Label>
 								</div>
 							))}
 						</div>
@@ -265,12 +266,12 @@ export function ProposalStepInfo({
 									}
 								}}
 							/>
-							<label
+							<Label
 								htmlFor={`sdg-${sdg.sdgId}`}
 								className="text-xs font-normal text-slate-600 cursor-pointer select-none dark:text-muted-foreground"
 							>
 								{sdg.sdgName}
-							</label>
+							</Label>
 						</div>
 					))}
 				</div>

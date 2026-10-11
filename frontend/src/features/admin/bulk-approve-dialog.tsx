@@ -5,6 +5,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { BrandButton } from "@/components/custom/brand-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTable, type DataTableColumnDef } from "@/components/ui/data-table";
 import {
@@ -338,10 +339,11 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 						</DialogTitle>
 						<DialogClose
 							render={
-								<button
-									type="button"
+								<Button
+									variant="ghost"
+									size="icon-xs"
 									aria-label="Close"
-									className="inline-flex h-4 w-4 items-center justify-center text-muted-foreground transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+									className="text-muted-foreground"
 								/>
 							}
 						>

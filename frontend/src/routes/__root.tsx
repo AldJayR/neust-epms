@@ -13,6 +13,7 @@ import { Loader2, Wifi, WifiOff } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { getCurrentUserFn } from "@/features/auth";
+import { Button } from "../components/ui/button";
 import { ThemeToaster } from "../components/custom/theme-toaster";
 import { Devtools } from "../components/devtools";
 import { ThemeProvider, ThemeScript } from "../components/theme-provider";
@@ -86,16 +87,15 @@ function RootError({ reset }: ErrorComponentProps) {
 				continues.
 			</p>
 			<div className="mt-8 flex gap-3">
-				<button
-					type="button"
+				<Button
 					onClick={() => {
 						router.invalidate();
 						reset();
 					}}
-					className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+					className="rounded-lg px-6 py-3 text-sm font-medium"
 				>
 					Try again
-				</button>
+				</Button>
 				<Link
 					to="/"
 					className="rounded-lg border border-border px-6 py-3 text-sm font-medium text-foreground hover:bg-muted"

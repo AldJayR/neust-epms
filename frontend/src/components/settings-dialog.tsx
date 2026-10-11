@@ -20,6 +20,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -329,7 +330,7 @@ export function SettingsDialog({
 											["nameSuffix", "Suffix"],
 										] as const
 									).map(([field, label]) => (
-										<label
+										<Label
 											key={field}
 											htmlFor={`settings-${field}`}
 											className="space-y-1.5 text-sm font-medium"
@@ -342,9 +343,9 @@ export function SettingsDialog({
 													updateProfileField(field, event.target.value)
 												}
 											/>
-										</label>
+										</Label>
 									))}
-									<label
+									<Label
 										htmlFor="settings-academic-rank"
 										className="space-y-1.5 text-sm font-medium"
 									>
@@ -382,7 +383,7 @@ export function SettingsDialog({
 												))}
 											</SelectContent>
 										</Select>
-									</label>
+									</Label>
 								</div>
 								<Button onClick={saveProfile} disabled={savingProfile}>
 									{savingProfile ? "Saving..." : "Save profile"}
@@ -420,7 +421,7 @@ export function SettingsDialog({
 											["confirmPassword", "Confirm new password"],
 										] as const
 									).map(([field, label]) => (
-										<label
+										<Label
 											key={field}
 											htmlFor={`settings-password-${field}`}
 											className="block space-y-1.5 text-sm font-medium"
@@ -437,7 +438,7 @@ export function SettingsDialog({
 													}))
 												}
 											/>
-										</label>
+										</Label>
 									))}
 								</div>
 								<Button

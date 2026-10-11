@@ -11,6 +11,7 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { InstitutionalApprovalDialog } from "@/features/proposals/components/institutional-approval-dialog";
 
@@ -145,9 +146,9 @@ export function ProjectDetailsHeader({
 			/>
 
 			{statusDescription && (
-				<div className="flex items-start gap-2.5 rounded-lg border border-border bg-muted/20 p-3 text-xs text-muted-foreground -mt-2">
-					<Info className="size-4 shrink-0 text-muted-foreground mt-0.5" />
-					<div className="space-y-1">
+				<Alert className="-mt-2 text-xs">
+					<Info />
+					<AlertDescription className="space-y-1 text-xs">
 						<p className="font-semibold text-foreground">
 							{statusDescription.explanation}
 						</p>
@@ -155,8 +156,8 @@ export function ProjectDetailsHeader({
 							<span className="font-semibold text-foreground">Next Step:</span>{" "}
 							{statusDescription.nextStep}
 						</p>
-					</div>
-				</div>
+					</AlertDescription>
+				</Alert>
 			)}
 		</>
 	);

@@ -9,6 +9,15 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { invalidateWorkflowQueries } from "@/lib/workflow-queries";
 import { getProposalCommentsFn } from "../comments.functions";
@@ -67,24 +76,26 @@ function ResponseEditor({
 	});
 	return (
 		<div className="space-y-3 border-t border-border pt-3">
-			<label
-				className="block text-xs font-medium"
-				htmlFor={`type-${request.requestId}`}
-			>
+			<Label className="block text-xs font-medium" htmlFor={`type-${request.requestId}`}>
 				Your response
-			</label>
-			<select
-				id={`type-${request.requestId}`}
+			</Label>
+			<Select
 				value={responseType}
-				disabled={disabled || mutation.isPending}
-				onChange={(event) =>
-					setResponseType(event.target.value as "Changed" | "Clarification")
+				onValueChange={(value) =>
+					setResponseType(value as "Changed" | "Clarification")
 				}
-				className="w-full rounded-md border border-border bg-background p-2 text-sm"
+				disabled={disabled || mutation.isPending}
 			>
-				<option value="Changed">Changed</option>
-				<option value="Clarification">Clarification / change not made</option>
-			</select>
+				<SelectTrigger id={`type-${request.requestId}`} className="w-full text-sm">
+					<SelectValue />
+				</SelectTrigger>
+				<SelectContent>
+					<SelectItem value="Changed">Changed</SelectItem>
+					<SelectItem value="Clarification">
+						Clarification / change not made
+					</SelectItem>
+				</SelectContent>
+			</Select>
 			<Textarea
 				aria-label="Explain how you handled the revision request"
 				value={explanation}
@@ -93,13 +104,13 @@ function ResponseEditor({
 				onChange={(event) => setExplanation(event.target.value)}
 				placeholder="Explain what changed or why no change was made…"
 			/>
-			<label
+			<Label
 				htmlFor={`page-${request.requestId}`}
 				className="block text-xs text-muted-foreground"
 			>
 				Revised PDF page (optional)
-			</label>
-			<input
+			</Label>
+			<Input
 				id={`page-${request.requestId}`}
 				type="number"
 				min="1"
@@ -107,7 +118,7 @@ function ResponseEditor({
 				value={page}
 				disabled={disabled || mutation.isPending}
 				onChange={(event) => setPage(event.target.value)}
-				className="w-24 rounded-md border border-border bg-background p-2 text-sm"
+				className="w-24"
 			/>
 			<p className="text-xs text-muted-foreground">
 				{request.draft &&
@@ -470,39 +481,47 @@ export function RevisionWorkspace({
 				</div>
 			)}
 			<div className="flex flex-wrap gap-2">
-				<select
-					aria-label="Filter revision status"
+				<Select
 					value={status}
-					onChange={(event) => {
-						setStatus(event.target.value);
+					onValueChange={(value) => {
+						setStatus(value ?? "Active");
 						setPage(1);
 					}}
-					className="max-w-full rounded-md border border-border bg-background p-2 text-xs"
 				>
-					{[
-						"Active",
-						"All",
-						"Response needed",
-						"Awaiting verification",
-						"Further revision needed",
-						"Resolved",
-					].map((value) => (
-						<option key={value}>{value}</option>
-					))}
-				</select>
-				<select
-					aria-label="Filter review stage"
-					value={stage}
-					onChange={(event) => {
-						setStage(event.target.value);
+					<SelectTrigger aria-label="Filter revision status" className="max-w-full text-xs">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{[
+							"Active",
+							"All",
+							"Response needed",
+							"Awaiting verification",
+							"Further revision needed",
+							"Resolved",
+						].map((value) => (
+							<SelectItem key={value} value={value}>
+								{value}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+				<Select
+					value={stage || "__all__"}
+					onValueChange={(value) => {
+						setStage(value && value !== "__all__" ? value : "");
 						setPage(1);
 					}}
-					className="rounded-md border border-border bg-background p-2 text-xs"
 				>
-					<option value="">All stages</option>
-					<option value="Endorsement">Chair</option>
-					<option value="Approval">Director</option>
-				</select>
+					<SelectTrigger aria-label="Filter review stage" className="text-xs">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="__all__">All stages</SelectItem>
+						<SelectItem value="Endorsement">Chair</SelectItem>
+						<SelectItem value="Approval">Director</SelectItem>
+					</SelectContent>
+				</Select>
 			</div>
 			{readiness?.canReview && (
 				<details className="text-xs">

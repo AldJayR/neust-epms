@@ -152,14 +152,15 @@ export function NotificationDropdown() {
 						<span>Notifications</span>
 						<div className="flex items-center gap-2">
 							{unreadCount > 0 && (
-								<button
-									type="button"
+								<Button
+									variant="ghost"
+									size="sm"
+									className="h-auto p-0 text-xs font-normal text-muted-foreground hover:text-foreground"
 									onClick={() => markAllReadMutation.mutate()}
 									disabled={markAllReadMutation.isPending}
-									className="text-xs font-normal text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
 								>
 									Mark all as read
-								</button>
+								</Button>
 							)}
 							{unreadCount > 0 && (
 								<span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
