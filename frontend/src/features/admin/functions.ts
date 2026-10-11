@@ -37,7 +37,19 @@ const auditLogsParamsSchema = z.object({
 	page: z.number(),
 	limit: z.number(),
 	search: z.string().optional(),
+	actionType: z.enum(["Approval", "Upload", "Login", "Status", "Account", "System"]).optional(),
+	action: z.string().max(255).optional(),
+	module: z.string().max(100).optional(),
+	userId: z.uuid().optional(),
+	dateFrom: z.string().date().optional(),
+	dateTo: z.string().date().optional(),
 });
+
+export type AuditLogFilters = Omit<z.infer<typeof auditLogsParamsSchema>, "page" | "limit" | "search">;
+export interface AuditFilterOptions {
+	users: { userId: string; name: string; email: string }[];
+	modules: string[];
+}
 
 export interface AdminStats {
 	totalAccounts: number;
@@ -284,6 +296,7 @@ export interface AuditLog {
 	logId: string;
 	userId: string;
 	action: string;
+	actionType?: "Approval" | "Upload" | "Login" | "Status" | "Account" | "System";
 	tableAffected: string;
 	oldValue: Record<string, JsonValue> | null;
 	newValue: Record<string, JsonValue> | null;
@@ -315,6 +328,9 @@ const getAuditLogsFn = createServerFn({ method: "GET" })
 		query.append("page", data.page.toString());
 		query.append("limit", data.limit.toString());
 		if (data.search) query.append("search", data.search);
+		for (const key of ["actionType", "action", "module", "userId", "dateFrom", "dateTo"] as const) {
+			if (data[key]) query.set(key, data[key]);
+		}
 
 		const response = await fetch(`${API_BASE}/audit-logs?${query.toString()}`, {
 			headers: {
@@ -360,12 +376,28 @@ export function auditLogsQueryOptions(params: {
 	page: number;
 	limit: number;
 	search?: string;
-}) {
+} & AuditLogFilters) {
 	return queryOptions({
 		queryKey: ["admin", "audit-logs", params],
 		queryFn: () => getAuditLogsFn({ data: params }),
 		staleTime: 1000 * 30, // 30 seconds
 		placeholderData: keepPreviousData,
+	});
+}
+
+const getAuditFilterOptionsFn = createServerFn({ method: "GET" }).handler(async () => {
+	await authorizeSessionUser("Super Admin");
+	const token = await getValidAccessToken();
+	const response = await fetch(`${API_BASE}/audit-logs/filters`, { headers: { Authorization: `Bearer ${token}` } });
+	if (!response.ok) throw new Error(await getErrorMessage(response, "Unable to load activity filters"));
+	return await response.json() as AuditFilterOptions;
+});
+
+export function auditFilterOptionsQueryOptions() {
+	return queryOptions({
+		queryKey: ["admin", "audit-filter-options"],
+		queryFn: () => getAuditFilterOptionsFn(),
+		staleTime: ADMIN_QUERY_STALE_TIME_MS,
 	});
 }
 

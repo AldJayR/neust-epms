@@ -16,6 +16,7 @@ import {
 	REPORT_TYPE,
 	ROLE_NAMES,
 } from "@/lib/types.js";
+import { assertReportSubmissionAccess } from "./report-permissions.js";
 
 export type ReportTransaction = Parameters<
 	Parameters<typeof db.transaction>[0]
@@ -94,6 +95,7 @@ export async function finalizeTerminalPackage(
 		)
 	)
 		return false;
+	await assertReportSubmissionAccess(user, project.proposalId, report.reportType, tx);
 	const completedAt = new Date();
 	await tx
 		.update(projectReports)

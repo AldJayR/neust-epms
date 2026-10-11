@@ -1,4 +1,5 @@
 import { z } from "@hono/zod-openapi";
+import { MOA_STATUSES } from "@/lib/moa-validity.js";
 import { PeriodMetadataSchema } from "../dashboard/dashboard.schema.js";
 
 // ── Hub Schemas ──
@@ -101,7 +102,7 @@ export const MoaRepositoryItemSchema = z.object({
 	partnerOrganization: z.string(),
 	dateSigned: z.string(),
 	daysToExpiry: z.union([z.number(), z.string()]),
-	status: z.enum(["Valid", "Renewal Needed", "Expired"]),
+	status: z.enum(MOA_STATUSES),
 });
 
 export const MoaRepositorySchema = z.object({
@@ -128,6 +129,8 @@ export const FacultyInvolvementSchema = z.object({
 	leadProjects: z.number(),
 	collaboratorProjects: z.number(),
 	totalInvolvement: z.number(),
+	leadProposals: z.number().optional(),
+	totalWorkload: z.number().optional(),
 });
 
 export const FacultyContributorAvatarSchema = z.object({

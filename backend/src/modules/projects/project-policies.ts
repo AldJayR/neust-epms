@@ -1,4 +1,5 @@
 import { ApiError } from "@/lib/errors.js";
+import { isMoaCurrentlyValid } from "@/lib/moa-validity.js";
 import { PROJECT_STATUS } from "@/lib/types.js";
 
 export interface ProjectTransitionInput {
@@ -37,12 +38,7 @@ export function isActivationMoaValid(
 	},
 	now = new Date(),
 ): boolean {
-	return (
-		!moa.archivedAt &&
-		Boolean(moa.storagePath?.trim()) &&
-		moa.validFrom <= now &&
-		now < moa.validUntil
-	);
+	return isMoaCurrentlyValid(moa, now);
 }
 
 export function reportingScheduleError(

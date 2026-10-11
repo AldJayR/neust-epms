@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import type { z } from "@hono/zod-openapi";
 import {
 	and,
@@ -6,6 +7,7 @@ import {
 	ilike,
 	inArray,
 	isNull,
+	ne,
 	or,
 	type SQL,
 	sql,
@@ -19,7 +21,6 @@ import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { ApiError } from "@/lib/errors.js";
-import { createNotification } from "@/lib/notification.helpers.js";
 import { createResetToken, RESET_TOKEN_TTL_MS } from "@/lib/reset-token.js";
 import { supabase } from "@/lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
@@ -31,6 +32,7 @@ import type {
 	RejectUserSchema,
 	UpdateUserSchema,
 } from "./admin.schema.js";
+import { notifyAccountChange } from "./account-notices.js";
 
 type AdminUsersQuery = z.infer<typeof AdminUsersQuerySchema>;
 type BulkUpdateStatusBody = z.infer<typeof BulkUpdateStatusSchema>;
@@ -45,7 +47,8 @@ export async function getAdminStats() {
 			totalAccounts: sql<number>`count(*)::int`,
 			pendingApproval: sql<number>`count(*) filter (where ${users.isActive} = false)::int`,
 		})
-		.from(users);
+		.from(users)
+		.where(isNull(users.archivedAt));
 
 	return {
 		totalAccounts: Number(stats?.totalAccounts ?? 0),
@@ -74,7 +77,7 @@ export async function listUsers(query: AdminUsersQuery) {
 		activeClause = eq(users.isActive, false);
 	}
 
-	const finalWhere = and(searchClause, activeClause);
+	const finalWhere = and(isNull(users.archivedAt), searchClause, activeClause);
 
 	const [totalResult, rows] = await Promise.all([
 		db.select({ value: count() }).from(users).where(finalWhere),
@@ -134,7 +137,7 @@ export async function bulkUpdateUserStatus(
 		const updated = await tx
 			.update(users)
 			.set({ isActive, updatedAt: new Date() })
-			.where(and(inArray(users.userId, userIds), isNull(users.archivedAt)))
+			.where(and(inArray(users.userId, userIds), isNull(users.archivedAt), ne(users.isActive, isActive)))
 			.returning({ userId: users.userId });
 
 		await insertAuditLog(
@@ -149,6 +152,13 @@ export async function bulkUpdateUserStatus(
 		return updated;
 	});
 
+	for (const account of result) {
+		await notifyAccountChange(
+			account.userId,
+			isActive ? "Account Activated" : "Account Deactivated",
+			isActive ? "Your account is active. You can now sign in." : "Your account has been deactivated. Contact the administrator if you need access.",
+		);
+	}
 	return { success: true, updatedCount: result.length };
 }
 
@@ -171,21 +181,26 @@ export async function bulkApproveUsers(
 
 	const allRoles = await db.select().from(roles);
 	const roleMap = new Map(allRoles.map((r) => [r.roleName, r.roleId]));
+	const assignments = new Map(usersToApprove.map((account) => [account.userId, account]));
 	let updatedCount = 0;
-	const approvedIds: string[] = [];
+	const approvedIds = new Set<string>();
 
 	await db.transaction(async (tx) => {
-		for (const u of usersToApprove) {
+		for (const u of assignments.values()) {
 			const roleId = roleMap.get(u.roleName);
 			if (!roleId) continue;
 			const result = await tx
 				.update(users)
 				.set({ isActive: true, roleId, updatedAt: new Date() })
-				.where(and(eq(users.userId, u.userId), isNull(users.archivedAt)))
+				.where(and(
+					eq(users.userId, u.userId),
+					isNull(users.archivedAt),
+					or(eq(users.isActive, false), ne(users.roleId, roleId)),
+				))
 				.returning({ userId: users.userId });
 			if (result.length > 0) {
-				updatedCount++;
-				approvedIds.push(u.userId);
+				if (!approvedIds.has(u.userId)) updatedCount++;
+				approvedIds.add(u.userId);
 			}
 		}
 
@@ -203,17 +218,8 @@ export async function bulkApproveUsers(
 	});
 
 	for (const userId of approvedIds) {
-		await createNotification({
-			recipientId: userId,
-			type: "system",
-			title: "Account Activated",
-			message: "Your account has been approved and activated.",
-		}).catch((err) => {
-			console.error(
-				"[notification] Failed to send activation notification:",
-				err,
-			);
-		});
+		const assignment = assignments.get(userId);
+		await notifyAccountChange(userId, "Account Approved", `Your account has been approved and activated${assignment ? ` as ${assignment.roleName}` : ""}. You can now sign in.`);
 	}
 
 	return { success: true, updatedCount };
@@ -273,6 +279,7 @@ export async function rejectUser(
 		);
 	});
 
+	await notifyAccountChange(id, "Registration Not Approved", `Your registration was not approved.${body.reason ? ` Reason: ${body.reason}` : " Contact the administrator for more information."}`);
 	return { success: true, userId: id };
 }
 
@@ -351,7 +358,7 @@ export async function provisionDirector(
 		throw new ApiError(500, "CONFIG_ERROR", "No campus found in system");
 	}
 
-	const tempPassword = `Temp-${Math.random().toString(36).slice(-8)}${Math.floor(Math.random() * 10)}`;
+	const tempPassword = `Temp-${randomBytes(18).toString("base64url")}9!`;
 
 	const { data: authData, error: authError } =
 		await supabase.auth.admin.createUser({
@@ -401,6 +408,7 @@ export async function provisionDirector(
 		throw error;
 	}
 
+	await notifyAccountChange(authData.user.id, "Account Created", "Your Director account has been created and activated. Use Forgot password on the sign-in page to set your password, or contact the administrator for your sign-in details.");
 	return {
 		success: true,
 		userId: authData.user.id,
@@ -461,7 +469,10 @@ export async function updateUser(
 		updated as unknown as Record<string, unknown>,
 		[
 			"firstName",
+			"middleName",
 			"lastName",
+			"nameSuffix",
+			"academicRank",
 			"email",
 			"roleId",
 			"isActive",
@@ -491,6 +502,17 @@ export async function updateUser(
 		);
 	});
 
+	const notices: string[] = [];
+	if (existing.isActive !== updated.isActive) {
+		notices.push(updated.isActive ? "Your account is now active." : "Your account has been deactivated.");
+	}
+	if (existing.roleId !== updated.roleId) {
+		notices.push("Your account role has been changed. Sign in to view your updated access.");
+	}
+	if (Object.keys(diff.newValue ?? {}).length && !notices.length) {
+		notices.push("The administrator has updated your account details.");
+	}
+	if (notices.length) await notifyAccountChange(id, "Account Updated", notices.join(" "));
 	return { success: true, userId: id };
 }
 

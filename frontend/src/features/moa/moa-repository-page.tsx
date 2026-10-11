@@ -254,6 +254,12 @@ export function MoaRepositoryPage({
 								<DropdownMenuRadioItem value="Expired">
 									Expired
 								</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="Not Yet Effective">
+									Not Yet Effective
+								</DropdownMenuRadioItem>
+								<DropdownMenuRadioItem value="Missing Document">
+									Missing Document
+								</DropdownMenuRadioItem>
 							</DropdownMenuRadioGroup>
 						</DropdownMenuContent>
 					</DropdownMenu>

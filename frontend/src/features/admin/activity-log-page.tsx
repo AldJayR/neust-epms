@@ -1,27 +1,17 @@
 import {
 	CircleCheck,
 	CloudUpload,
-	Download,
-	ListFilter,
 	LogIn,
 	Settings,
 	UserCircle,
 } from "lucide-react";
-import { BrandButton } from "@/components/custom/brand-button";
 import { DataTablePage } from "@/components/custom/data-table-page";
 import { MetricCard } from "@/components/custom/metric-card";
 import { PageHeader } from "@/components/custom/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import type { DataTableColumnDef } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuRadioGroup,
-	DropdownMenuRadioItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ActivityLogFilters } from "./activity-log-filters";
 import { ActivityLogEntryDialog } from "./activity-log-entry-dialog";
 import type { AuditLog } from "./functions";
 import {
@@ -50,10 +40,6 @@ interface ActivityLogPageProps {
 	onSearch: (search: string | undefined) => void;
 	onPageChange: (page: number) => void;
 }
-
-const exportToCsv = () => {
-	// Placeholder for CSV export
-};
 
 export function ActivityLogPage({
 	page,
@@ -148,7 +134,7 @@ export function ActivityLogPage({
 				"w-[130px] font-medium text-muted-foreground text-sm py-2.5 text-center",
 			cellClassName: "py-2.5 text-center",
 			cell: ({ row }) => {
-				const type = getActivityLogType(
+				const type = row.original.actionType ?? getActivityLogType(
 					row.original.action,
 					row.original.tableAffected,
 				);
@@ -181,15 +167,6 @@ export function ActivityLogPage({
 				title={
 					<h1 className="text-2xl font-semibold text-heading">Activity Log</h1>
 				}
-				actions={
-					<BrandButton
-						onClick={exportToCsv}
-						className="hover:bg-brand-primary-hover shadow-[0px_1px_2px_0px_var(--shadow-card)] h-9 px-3 gap-1.5"
-					>
-						<Download className="size-4" />
-						<span>Export CSV</span>
-					</BrandButton>
-				}
 			/>
 
 			<div className="grid gap-6 md:grid-cols-4">
@@ -208,54 +185,21 @@ export function ActivityLogPage({
 				onPageChange={onPageChange}
 				search={search}
 				onSearch={(val) => onSearch(val || undefined)}
-				searchPlaceholder="Search by users or email"
+				searchPlaceholder="Search actions, users, email, or module"
 				sorting={view.sorting}
 				onSortingChange={view.setSorting}
 				enableSorting
 				filters={
-					<DropdownMenu>
-						<DropdownMenuTrigger
-							render={
-								<Button
-									variant="outline"
-									size="icon"
-									className="h-9 w-9 border-border rounded-[8px] shadow-sm"
-									aria-label="Filter activity log"
-								>
-									<ListFilter className="size-4" />
-								</Button>
-							}
-						/>
-						<DropdownMenuContent align="end" className="w-48">
-							<DropdownMenuRadioGroup
-								value={view.typeFilter}
-								onValueChange={(value) =>
-									view.setTypeFilter(value as typeof view.typeFilter)
-								}
-							>
-								<DropdownMenuRadioItem value="all">
-									All Actions
-								</DropdownMenuRadioItem>
-								<DropdownMenuRadioItem value="approval">
-									Approval
-								</DropdownMenuRadioItem>
-								<DropdownMenuRadioItem value="upload">
-									Upload
-								</DropdownMenuRadioItem>
-								<DropdownMenuRadioItem value="login">
-									Login
-								</DropdownMenuRadioItem>
-								<DropdownMenuRadioItem value="status">
-									Status
-								</DropdownMenuRadioItem>
-								<DropdownMenuRadioItem value="account">
-									Account
-								</DropdownMenuRadioItem>
-							</DropdownMenuRadioGroup>
-						</DropdownMenuContent>
-					</DropdownMenu>
+					<ActivityLogFilters
+						filters={view.filters}
+						options={view.filterOptions}
+						onApply={(filters) => {
+							view.setFilters(filters);
+							onPageChange(1);
+						}}
+					/>
 				}
-				activeFilters={{ search, typeFilter: view.typeFilter }}
+				activeFilters={{ search, ...view.filters }}
 				emptyMessage="No activities found."
 				ariaLabel="Activity log"
 				onRowClick={view.setSelectedLog}

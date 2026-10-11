@@ -21,6 +21,8 @@ const directoryParamsSchema = z.object({
 	departmentId: z.number().optional(),
 	status: z.string().optional(),
 	load: z.enum(["all", "none", "active"]).optional(),
+	ranks: z.string().optional(),
+	projectLoads: z.string().optional(),
 	sort: z.enum(["load-desc", "load-asc", "name"]).optional(),
 	trendMonths: z.union([z.literal(6), z.literal(12), z.literal(24)]).optional(),
 });
@@ -40,6 +42,8 @@ const getFacultyDirectoryFn = createServerFn({ method: "GET" })
 			query.append("departmentId", String(data.departmentId));
 		if (data.status) query.append("status", data.status);
 		if (data.load) query.append("load", data.load);
+		if (data.ranks) query.append("ranks", data.ranks);
+		if (data.projectLoads) query.append("projectLoads", data.projectLoads);
 		if (data.sort) query.append("sort", data.sort);
 		if (data.trendMonths !== undefined)
 			query.append("trendMonths", String(data.trendMonths));

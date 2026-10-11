@@ -1,9 +1,11 @@
+export type MoaValidityStatus = "Valid" | "Renewal Needed" | "Expired" | "Not Yet Effective" | "Missing Document";
+
 export interface MoaItem {
 	id: string;
 	partnerOrganization: string;
 	dateSigned: string;
 	daysToExpiry: number | string;
-	status: "Valid" | "Renewal Needed" | "Expired" | "Terminated";
+	status: MoaValidityStatus | "Terminated";
 }
 
 export interface MoaDetails {
@@ -16,7 +18,7 @@ export interface MoaDetails {
 	createdAt: string;
 	updatedAt: string;
 	archivedAt: string | null;
-	status: "Valid" | "Renewal Needed" | "Expired";
+	status: MoaValidityStatus;
 	daysToExpiry: number | "Expired";
 }
 

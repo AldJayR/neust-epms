@@ -111,11 +111,11 @@ export function UsersPage({
 			value: statsData?.totalAccounts ?? "...",
 		},
 		{
-			label: "Pending Approval",
-			value: statsData?.pendingApproval ?? "...",
+			label: "Active Accounts",
+			value: statsData ? statsData.totalAccounts - statsData.deactivated : "...",
 		},
 		{
-			label: "Deactivated",
+			label: "Inactive Accounts",
 			value: statsData?.deactivated ?? "...",
 		},
 	];

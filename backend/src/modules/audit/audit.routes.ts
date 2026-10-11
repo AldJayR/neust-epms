@@ -8,9 +8,10 @@ import { requireRole } from "@/middleware/rbac.js";
 import {
 	AuditLogListSchema,
 	AuditStatsSchema,
+	AuditFilterOptionsSchema,
 	PaginationQuery,
 } from "./audit.schema.js";
-import { getAuditStats, listAuditLogs } from "./audit.service.js";
+import { getAuditFilterOptions, getAuditStats, listAuditLogs } from "./audit.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 
@@ -18,6 +19,13 @@ app.use("/audit-logs", authMiddleware);
 app.use("/audit-logs/*", authMiddleware);
 app.use("/audit-logs", requireRole(ROLE_NAMES.SUPER_ADMIN));
 app.use("/audit-logs/*", requireRole(ROLE_NAMES.SUPER_ADMIN));
+
+const filterOptionsRoute = createRoute({
+	method: "get", path: "/audit-logs/filters", tags: ["Audit"],
+	summary: "Get available audit users and modules", security: [{ Bearer: [] }],
+	responses: { 200: { content: { "application/json": { schema: AuditFilterOptionsSchema } }, description: "Available filters" } },
+});
+app.openapi(filterOptionsRoute, async (c) => c.json(await getAuditFilterOptions(), 200));
 
 // ── GET /audit-logs/stats ──
 const statsRoute = createRoute({
@@ -61,9 +69,9 @@ const listRoute = createRoute({
 
 app.openapi(listRoute, async (c) => {
 	const user = c.get("user");
-	const { page, limit, search } = c.req.valid("query");
+	const query = c.req.valid("query");
 	const ipAddress = getClientIp(c);
-	const result = await listAuditLogs(user, { page, limit, search }, ipAddress);
+	const result = await listAuditLogs(user, query, ipAddress);
 	return c.json(result, 200);
 });
 

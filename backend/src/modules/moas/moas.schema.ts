@@ -1,4 +1,5 @@
 import { z } from "@hono/zod-openapi";
+import { MOA_STATUSES } from "@/lib/moa-validity.js";
 
 export const MoaSchema = z
 	.object({
@@ -24,7 +25,7 @@ export const MoaDetailSchema = z
 		createdAt: z.string(),
 		updatedAt: z.string(),
 		archivedAt: z.string().nullable(),
-		status: z.enum(["Valid", "Renewal Needed", "Expired"]),
+		status: z.enum(MOA_STATUSES),
 		daysToExpiry: z.union([z.number(), z.literal("Expired")]),
 	})
 	.openapi("MoaDetail");

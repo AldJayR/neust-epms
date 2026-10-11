@@ -31,6 +31,8 @@ export interface FacultyInvolvement {
 	leadProjects: number;
 	collaboratorProjects: number;
 	totalInvolvement: number;
+	leadProposals?: number;
+	totalWorkload?: number;
 }
 
 export interface FacultyDirectoryResponse {

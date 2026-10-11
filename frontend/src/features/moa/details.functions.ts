@@ -7,6 +7,9 @@ import {
 	authorizeSessionUser,
 	getValidAccessToken,
 } from "@/lib/session.server";
+import type { MoaDetails } from "@/types/moa";
+
+export type { MoaDetails } from "@/types/moa";
 
 const STALE_TIME = 1000 * 60 * 5;
 
@@ -20,20 +23,6 @@ const updateMoaSchema = z.object({
 });
 
 // ── Interfaces ──────────────────────────────────────────────
-
-export interface MoaDetails {
-	moaId: string;
-	partnerId: string;
-	partnerName: string;
-	storagePath: string | null;
-	validFrom: string;
-	validUntil: string;
-	createdAt: string;
-	updatedAt: string;
-	archivedAt: string | null;
-	status: "Valid" | "Renewal Needed" | "Expired";
-	daysToExpiry: number | "Expired";
-}
 
 export interface MoaLinkedProject {
 	projectId: string;

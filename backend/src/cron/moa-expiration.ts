@@ -15,6 +15,7 @@ import {
 	createNotification,
 	getUserIdsByRole,
 } from "@/lib/notification.helpers.js";
+import { applyEffectiveMoaRenewals } from "@/modules/moas/moa-project-sync.service.js";
 
 /**
  * SYS-REQ-04.2: Scheduled background process that evaluates MOA expiration dates
@@ -30,7 +31,7 @@ async function getDirectorExecutorId(): Promise<string | null> {
 			.select({ userId: users.userId })
 			.from(users)
 			.innerJoin(roles, eq(users.roleId, roles.roleId))
-			.where(and(eq(roles.roleName, "Director"), eq(users.isActive, true)))
+			.where(and(eq(roles.roleName, "Director"), eq(users.isActive, true), isNull(users.archivedAt)))
 			.limit(1);
 		if (director) return director.userId;
 	} catch (e) {
@@ -56,6 +57,8 @@ export async function runMoaExpiration(): Promise<void> {
 
 	try {
 		const now = new Date();
+		const systemUserId = await getDirectorExecutorId();
+		await applyEffectiveMoaRenewals(systemUserId, now);
 
 		// Process every expired MOA so downtime longer than the usual polling
 		// interval cannot leave linked projects active indefinitely.
@@ -78,7 +81,6 @@ export async function runMoaExpiration(): Promise<void> {
 
 		// Notify Directors and flag linked projects as Expired.
 		const recipientIds = await getUserIdsByRole("Director");
-		const systemUserId = await getDirectorExecutorId();
 		const newlyNotifiedMoaIds = new Set<string>();
 
 		for (const moa of expiredMoas) {

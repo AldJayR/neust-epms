@@ -107,6 +107,13 @@ export function getFacultyDirectoryColumns(
 			cellClassName: "px-4 py-3 text-right text-sm font-medium text-foreground",
 			cell: ({ row }) => row.original.totalInvolvement,
 		},
+		{
+			id: "leadProposals",
+			accessorFn: (row) => row.leadProposals ?? 0,
+			header: "Pending Proposals Led",
+			cellClassName: "px-4 py-3 text-right text-sm",
+			cell: ({ row }) => row.original.leadProposals ?? 0,
+		},
 		createActionsColumn(),
 	];
 }

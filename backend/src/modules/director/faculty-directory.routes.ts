@@ -53,6 +53,10 @@ const facultyDirectoryRoute = createRoute({
 				.enum(["all", "none", "active"])
 				.default("all")
 				.openapi({ param: { name: "load", in: "query" } }),
+			ranks: z.string().transform((value) => value.split(",").filter(Boolean))
+				.pipe(z.array(z.enum(["instructor", "assistant", "associate", "professor"])).max(4)).optional(),
+			projectLoads: z.string().transform((value) => value.split(",").filter(Boolean))
+				.pipe(z.array(z.enum(["0", "1-2", "3+"])).max(3)).optional(),
 			sort: z
 				.enum(["load-desc", "load-asc", "name"])
 				.default("load-desc")

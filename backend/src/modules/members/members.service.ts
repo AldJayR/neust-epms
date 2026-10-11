@@ -1,5 +1,5 @@
 import type { z } from "@hono/zod-openapi";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, ne } from "drizzle-orm";
 import { db } from "@/db/client.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposals } from "@/db/schema/proposals.js";
@@ -210,6 +210,7 @@ export async function removeMember(
 			})
 			.from(proposals)
 			.where(eq(proposals.proposalId, proposalId))
+			.for("update")
 			.limit(1);
 
 		if (!proposal) {
@@ -217,11 +218,35 @@ export async function removeMember(
 		}
 		assertProposalAccess(authUser, proposal);
 
-		if (!(await isProjectLeader(proposalId, authUser.userId))) {
+		if (!(await isProjectLeader(proposalId, authUser.userId, tx))) {
 			throw new ApiError(
 				403,
 				"NOT_LEADER",
 				"Only the project leader can remove members",
+			);
+		}
+
+		const [member] = await tx
+			.select({ projectRole: proposalMembers.projectRole })
+			.from(proposalMembers)
+			.where(
+				and(
+					eq(proposalMembers.memberId, memberId),
+					eq(proposalMembers.proposalId, proposalId),
+					isNull(proposalMembers.archivedAt),
+				),
+			)
+			.for("update")
+			.limit(1);
+
+		if (!member) {
+			throw new ApiError(404, "MEMBER_NOT_FOUND", "Member not found");
+		}
+		if (member.projectRole === PROJECT_LEADER_ROLE) {
+			throw new ApiError(
+				409,
+				"PROJECT_LEADER_REQUIRED",
+				"The project must keep its Project Leader.",
 			);
 		}
 
@@ -233,6 +258,7 @@ export async function removeMember(
 					eq(proposalMembers.memberId, memberId),
 					eq(proposalMembers.proposalId, proposalId),
 					isNull(proposalMembers.archivedAt),
+					ne(proposalMembers.projectRole, PROJECT_LEADER_ROLE),
 				),
 			)
 			.returning();

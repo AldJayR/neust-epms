@@ -4,10 +4,8 @@ import {
 	count,
 	desc,
 	eq,
-	inArray,
 	isNotNull,
 	isNull,
-	ne,
 	sql,
 } from "drizzle-orm";
 import { db } from "@/db/client.js";
@@ -19,11 +17,13 @@ import { proposals } from "@/db/schema/proposals.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { ApiError } from "@/lib/errors.js";
+import { getMoaValidityStatus } from "@/lib/moa-validity.js";
 import { buildProposalScopeClause } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
 import { isPdfFile, sanitizeFilename } from "@/services/file.service.js";
 import { hashFileSha256 } from "@/services/file-integrity.service.js";
+import { syncProjectsToMoa } from "./moa-project-sync.service.js";
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
@@ -56,66 +56,6 @@ export async function isMoaLinkedToUserProject(
 		)
 		.limit(1);
 	return !!row;
-}
-
-export async function syncProjectsToNewMoa(
-	partnerId: string,
-	newMoaId: string,
-	validUntil: Date,
-	userId: string,
-	ipAddress: string | null,
-): Promise<void> {
-	const previousMoas = await db
-		.select({ moaId: moas.moaId })
-		.from(moas)
-		.where(
-			and(
-				eq(moas.partnerId, partnerId),
-				ne(moas.moaId, newMoaId),
-				isNull(moas.archivedAt),
-			),
-		);
-
-	const previousMoaIds = previousMoas.map((m) => m.moaId);
-	if (previousMoaIds.length === 0) return;
-
-	const projectsToSync = await db
-		.select({
-			projectId: projects.projectId,
-			projectStatus: projects.projectStatus,
-		})
-		.from(projects)
-		.where(
-			and(
-				inArray(projects.moaId, previousMoaIds),
-				inArray(projects.projectStatus, ["Ongoing", "Expired", "Overdue"]),
-				isNull(projects.archivedAt),
-			),
-		);
-
-	const now = new Date();
-	for (const p of projectsToSync) {
-		let nextStatus = p.projectStatus;
-		if (p.projectStatus === "Expired" && validUntil > now) {
-			nextStatus = "Ongoing";
-		}
-
-		await db
-			.update(projects)
-			.set({
-				moaId: newMoaId,
-				projectStatus: nextStatus,
-				updatedAt: now,
-			})
-			.where(eq(projects.projectId, p.projectId));
-
-		await insertAuditLog({
-			userId,
-			action: `Synced project ${p.projectId} to new MOA ${newMoaId} (status updated: ${p.projectStatus} -> ${nextStatus})`,
-			tableAffected: "projects",
-			ipAddress,
-		});
-	}
 }
 
 // ── Queries ──
@@ -215,12 +155,7 @@ export async function getMoaById(id: string, user: AuthUser) {
 		(row.validUntil.getTime() - now.getTime()) / (24 * 60 * 60 * 1000),
 	);
 
-	let status: "Valid" | "Renewal Needed" | "Expired" = "Valid";
-	if (row.validUntil < now) {
-		status = "Expired";
-	} else if (daysUntilExpiry <= 30) {
-		status = "Renewal Needed";
-	}
+	const status = getMoaValidityStatus(row, now);
 
 	return {
 		moaId: row.moaId,
@@ -233,7 +168,7 @@ export async function getMoaById(id: string, user: AuthUser) {
 		updatedAt: row.updatedAt.toISOString(),
 		archivedAt: row.archivedAt?.toISOString() ?? null,
 		status,
-		daysToExpiry: (daysUntilExpiry < 0 ? "Expired" : daysUntilExpiry) as
+		daysToExpiry: (status === "Expired" ? "Expired" : daysUntilExpiry) as
 			| number
 			| "Expired",
 	};
@@ -468,6 +403,7 @@ export async function uploadMoaDocument(
 				tx,
 			);
 
+			await syncProjectsToMoa(tx, record, user.userId, ipAddress);
 			return record;
 		});
 	} catch (error) {
@@ -482,14 +418,6 @@ export async function uploadMoaDocument(
 		await supabase.storage.from("documents").remove([storagePath]);
 		throw new ApiError(500, "INSERT_FAILED", "Failed to create MOA");
 	}
-
-	await syncProjectsToNewMoa(
-		created.partnerId,
-		created.moaId,
-		created.validUntil,
-		user.userId,
-		ipAddress,
-	);
 
 	return {
 		moaId: created.moaId,
@@ -517,101 +445,38 @@ export async function updateMoa(
 		throw new ApiError(403, "FORBIDDEN", "This action requires Director role");
 	}
 
-	const [existing] = await db
-		.select({
-			validFrom: moas.validFrom,
-			validUntil: moas.validUntil,
-		})
-		.from(moas)
-		.where(and(eq(moas.moaId, id), isNull(moas.archivedAt)))
-		.limit(1);
-
-	if (!existing) {
-		throw new ApiError(404, "NOT_FOUND", "MOA not found");
-	}
-
-	const nextValidFrom =
-		body.validFrom !== undefined
-			? new Date(body.validFrom)
-			: existing.validFrom;
-	const nextValidUntil =
-		body.validUntil !== undefined
-			? new Date(body.validUntil)
-			: existing.validUntil;
-
-	if (nextValidUntil <= nextValidFrom) {
-		throw new ApiError(
-			400,
-			"INVALID_DATES",
-			"validUntil must be after validFrom",
-		);
-	}
-
-	const setValues: Record<string, Date | string> = { updatedAt: new Date() };
-	if (body.partnerId !== undefined) {
-		const [partner] = await db
-			.select({ partnerId: partners.partnerId })
-			.from(partners)
-			.where(eq(partners.partnerId, body.partnerId))
-			.limit(1);
-
-		if (!partner) {
-			throw new ApiError(404, "PARTNER_NOT_FOUND", "Partner not found");
+	const updated = await db.transaction(async (tx) => {
+		const [existing] = await tx.select().from(moas)
+			.where(and(eq(moas.moaId, id), isNull(moas.archivedAt)))
+			.for("update").limit(1);
+		if (!existing) throw new ApiError(404, "NOT_FOUND", "MOA not found");
+		const validFrom = body.validFrom === undefined ? existing.validFrom : new Date(body.validFrom);
+		const validUntil = body.validUntil === undefined ? existing.validUntil : new Date(body.validUntil);
+		if (!Number.isFinite(validFrom.getTime()) || !Number.isFinite(validUntil.getTime()) || validUntil <= validFrom) {
+			throw new ApiError(400, "INVALID_DATES", "validUntil must be after a valid validFrom date");
 		}
-		setValues.partnerId = body.partnerId;
-	}
-	if (body.validFrom !== undefined)
-		setValues.validFrom = new Date(body.validFrom);
-	if (body.validUntil !== undefined)
-		setValues.validUntil = new Date(body.validUntil);
-
-	const [updated] = await db
-		.update(moas)
-		.set(setValues)
-		.where(and(eq(moas.moaId, id), isNull(moas.archivedAt)))
-		.returning();
-
-	if (!updated) {
-		throw new ApiError(404, "NOT_FOUND", "MOA not found");
-	}
-
-	await insertAuditLog({
-		userId: user.userId,
-		action: `Updated MOA ${id}`,
-		tableAffected: "moas",
-		ipAddress,
+		if (body.partnerId !== undefined && body.partnerId !== existing.partnerId) {
+			const [partner] = await tx.select({ id: partners.partnerId }).from(partners)
+				.where(eq(partners.partnerId, body.partnerId)).limit(1);
+			if (!partner) throw new ApiError(404, "PARTNER_NOT_FOUND", "Partner not found");
+			const [linked] = await tx.select({ id: projects.projectId }).from(projects)
+				.where(eq(projects.moaId, id)).limit(1);
+			if (linked) throw new ApiError(409, "MOA_PARTNER_LOCKED", "The partner cannot be changed while projects use this MOA.");
+		}
+		const [saved] = await tx.update(moas).set({
+			partnerId: body.partnerId ?? existing.partnerId,
+			validFrom, validUntil, updatedAt: new Date(),
+		}).where(and(eq(moas.moaId, id), isNull(moas.archivedAt))).returning();
+		if (!saved) throw new ApiError(409, "UPDATE_CONFLICT", "The MOA changed. Reload and try again.");
+		await insertAuditLog({
+			userId: user.userId, action: `Updated MOA ${id}`, tableAffected: "moas",
+			oldValue: { validFrom: existing.validFrom.toISOString(), validUntil: existing.validUntil.toISOString() },
+			newValue: { validFrom: saved.validFrom.toISOString(), validUntil: saved.validUntil.toISOString() },
+			ipAddress,
+		}, tx);
+		await syncProjectsToMoa(tx, saved, user.userId, ipAddress);
+		return saved;
 	});
-
-	const now = new Date();
-	if (updated.validUntil > now) {
-		const expiredProjects = await db
-			.select({ projectId: projects.projectId })
-			.from(projects)
-			.where(
-				and(
-					eq(projects.moaId, id),
-					eq(projects.projectStatus, "Expired"),
-					isNull(projects.archivedAt),
-				),
-			);
-
-		for (const p of expiredProjects) {
-			await db
-				.update(projects)
-				.set({
-					projectStatus: "Ongoing",
-					updatedAt: now,
-				})
-				.where(eq(projects.projectId, p.projectId));
-
-			await insertAuditLog({
-				userId: user.userId,
-				action: `Restored project ${p.projectId} status to Ongoing (MOA validity range extended)`,
-				tableAffected: "projects",
-				ipAddress,
-			});
-		}
-	}
 
 	return {
 		...updated,

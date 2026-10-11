@@ -292,8 +292,9 @@ export function AddUserDialog({ children }: { children?: React.ReactNode }) {
 						<Alert className="bg-amber-50/50 border-amber-200/60 text-amber-800 dark:bg-amber-950/30 dark:border-amber-900/60 dark:text-amber-200 flex items-start gap-2.5 p-3 rounded-lg">
 							<AlertCircle className="size-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-300" />
 							<AlertDescription className="text-amber-700 dark:text-amber-200 text-xs font-normal leading-relaxed">
-								A temporary password will be generated and sent to the email
-								address. The user will be prompted to change it on first login.
+								An account notice will be sent by email when delivery is
+								configured. The user can set a
+								password using Forgot password on the sign-in page.
 							</AlertDescription>
 						</Alert>
 					</div>

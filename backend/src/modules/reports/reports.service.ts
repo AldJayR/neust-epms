@@ -49,6 +49,7 @@ import {
 	TERMINAL_REPORT_TYPES,
 } from "./report-metrics.js";
 import type { CreateReportSchema, PaginationQuery } from "./reports.schema.js";
+import { assertReportSubmissionAccess } from "./report-permissions.js";
 import {
 	finalizeTerminalPackage,
 	notifyTerminalReady,
@@ -283,23 +284,7 @@ export async function createReport(
 			"Reports can only be submitted for ongoing or overdue projects",
 		);
 	}
-	const [membership] = await db
-		.select({ memberId: proposalMembers.memberId })
-		.from(proposalMembers)
-		.where(
-			and(
-				eq(proposalMembers.proposalId, milestone.proposalId),
-				eq(proposalMembers.userId, user.userId),
-				isNull(proposalMembers.archivedAt),
-			),
-		)
-		.limit(1);
-	if (!membership)
-		throw new ApiError(
-			403,
-			"NOT_MEMBER",
-			"Only project members can submit reports for this project",
-		);
+	await assertReportSubmissionAccess(user, milestone.proposalId, reportType);
 	const isValidReportType =
 		((milestone.reportType === REPORT_TYPE.PROGRESS ||
 			milestone.reportType === REPORT_TYPE.PROGRESS_REPORT) &&
@@ -403,6 +388,7 @@ export async function createReport(
 				"INVALID_STATE",
 				"This project is no longer accepting reports",
 			);
+		await assertReportSubmissionAccess(user, milestone.proposalId, reportType, tx);
 		let saved: typeof projectReports.$inferSelect;
 		if (existing) {
 			const [current] = await tx
@@ -521,6 +507,7 @@ export async function uploadReportDocument(
 		.select({
 			reportId: projectReports.reportId,
 			projectId: projectReports.projectId,
+			proposalId: projects.proposalId,
 			milestoneId: projectReports.milestoneId,
 			submittedById: projectReports.submittedById,
 			storagePath: projectReports.storagePath,
@@ -541,6 +528,7 @@ export async function uploadReportDocument(
 		.limit(1);
 
 	if (!report) throw new ApiError(404, "NOT_FOUND", "Report not found");
+	await assertReportSubmissionAccess(user, report.proposalId, report.reportType);
 	if (report.submittedById !== user.userId) {
 		throw new ApiError(
 			403,
@@ -585,6 +573,8 @@ export async function uploadReportDocument(
 					submittedById: projectReports.submittedById,
 					storagePath: projectReports.storagePath,
 					projectStatus: projects.projectStatus,
+					proposalId: projects.proposalId,
+					reportType: projectReports.reportType,
 				})
 				.from(projectReports)
 				.innerJoin(projects, eq(projectReports.projectId, projects.projectId))
@@ -603,6 +593,7 @@ export async function uploadReportDocument(
 			if (!current) {
 				throw new ApiError(404, "NOT_FOUND", "Report not found");
 			}
+			await assertReportSubmissionAccess(user, current.proposalId, current.reportType, tx);
 			if (current.submittedById !== user.userId) {
 				throw new ApiError(
 					403,
@@ -896,6 +887,7 @@ export async function uploadReportAttachment(
 		.select({
 			reportId: projectReports.reportId,
 			projectId: projectReports.projectId,
+			proposalId: projects.proposalId,
 			reportType: projectReports.reportType,
 			submittedById: projectReports.submittedById,
 			projectStatus: projects.projectStatus,
@@ -917,26 +909,7 @@ export async function uploadReportAttachment(
 		throw new ApiError(404, "NOT_FOUND", "Report not found");
 	}
 
-	const [membership] = await db
-		.select({ memberId: proposalMembers.memberId })
-		.from(proposalMembers)
-		.innerJoin(projects, eq(projects.proposalId, proposalMembers.proposalId))
-		.where(
-			and(
-				eq(projects.projectId, report.projectId),
-				eq(proposalMembers.userId, user.userId),
-				isNull(proposalMembers.archivedAt),
-			),
-		)
-		.limit(1);
-
-	if (!membership) {
-		throw new ApiError(
-			403,
-			"FORBIDDEN",
-			"Only project members can upload report attachments",
-		);
-	}
+	await assertReportSubmissionAccess(user, report.proposalId, report.reportType);
 	if (
 		![
 			PROJECT_STATUS.ONGOING,
@@ -1014,6 +987,7 @@ export async function uploadReportAttachment(
 				)
 			)
 				throw new ApiError(400, "INVALID_STATE", "Project is closed");
+			await assertReportSubmissionAccess(user, parent.proposalId, report.reportType, tx);
 			const [existing] = await tx
 				.select()
 				.from(reportAttachments)

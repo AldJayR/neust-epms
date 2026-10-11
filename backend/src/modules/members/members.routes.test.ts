@@ -319,7 +319,8 @@ describe("DELETE /proposals/:proposalId/members/:memberId", () => {
 			const tx = {
 				select: vi
 					.fn()
-					.mockReturnValueOnce(mockSelectChain([proposal])),
+					.mockReturnValueOnce(mockSelectChain([proposal]))
+					.mockReturnValueOnce(mockSelectChain([])),
 				insert: vi.fn(() => mockMutationChain([])),
 				update: vi.fn(() => mockMutationChain([])),
 				delete: vi.fn(() => mockMutationChain([])),
@@ -356,7 +357,9 @@ describe("DELETE /proposals/:proposalId/members/:memberId", () => {
 								archivedAt: null,
 							},
 						]),
-					),
+					)
+					.mockReturnValueOnce(mockSelectChain([{ memberId: "leader-m" }]))
+					.mockReturnValueOnce(mockSelectChain([])),
 				insert: vi.fn(() => mockMutationChain([])),
 				update: vi.fn(() => mockMutationChain([])),
 				delete: vi.fn(() => mockMutationChain([])),
@@ -386,7 +389,9 @@ describe("DELETE /proposals/:proposalId/members/:memberId", () => {
 			const tx = {
 				select: vi
 					.fn()
-					.mockReturnValueOnce(mockSelectChain([proposal])),
+					.mockReturnValueOnce(mockSelectChain([proposal]))
+					.mockReturnValueOnce(mockSelectChain([{ memberId: "leader-m" }]))
+					.mockReturnValueOnce(mockSelectChain([{ projectRole: "Project Staff" }])),
 				insert: vi.fn(() => mockMutationChain([])),
 				update: vi.fn(() => mockMutationChain([archived])),
 				delete: vi.fn(() => mockMutationChain([])),

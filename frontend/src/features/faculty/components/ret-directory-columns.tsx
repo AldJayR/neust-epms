@@ -72,6 +72,13 @@ export const retFacultyDirectoryColumns: DataTableColumnDef<FacultyInvolvement>[
 			cell: ({ row }) => row.original.totalInvolvement,
 		},
 		{
+			id: "leadProposals",
+			accessorFn: (row) => row.leadProposals ?? 0,
+			header: "Pending Proposals Led",
+			cellClassName: "px-4 py-3 text-sm text-center",
+			cell: ({ row }) => row.original.leadProposals ?? 0,
+		},
+		{
 			id: "status",
 			accessorKey: "isActive",
 			header: ({ column }) => (

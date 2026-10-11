@@ -3,6 +3,8 @@ import type { SortingState } from "@tanstack/react-table";
 import * as React from "react";
 import {
 	type AuditLog,
+	type AuditLogFilters,
+	auditFilterOptionsQueryOptions,
 	auditLogsQueryOptions,
 	auditStatsQueryOptions,
 } from "../functions";
@@ -47,31 +49,23 @@ export function useActivityLogView({
 	limit: number;
 	search?: string;
 }) {
-	const [typeFilter, setTypeFilter] = React.useState<ActivityLogType | "all">(
-		"all",
-	);
+	const [filters, setFilters] = React.useState<AuditLogFilters>({});
 	const [sorting, setSorting] = React.useState<SortingState>([]);
 	const [selectedLog, setSelectedLog] = React.useState<AuditLog | null>(null);
 	const { data: statsData } = useQuery(auditStatsQueryOptions());
+	const { data: filterOptions } = useQuery(auditFilterOptionsQueryOptions());
 	const { data: logsData, isLoading } = useQuery(
-		auditLogsQueryOptions({ page, limit, search }),
+		auditLogsQueryOptions({ page, limit, search, ...filters }),
 	);
 
-	const logs = (() => {
-		const all = logsData?.items ?? [];
-		if (typeFilter === "all") return all;
-		return all.filter(
-			(log) => getActivityLogType(log.action, log.tableAffected) === typeFilter,
-		);
-	})();
-
 	return {
-		logs,
+		logs: logsData?.items ?? [],
 		statsData,
 		total: logsData?.total ?? 0,
 		isLoading,
-		typeFilter,
-		setTypeFilter,
+		filters,
+		setFilters,
+		filterOptions,
 		sorting,
 		setSorting,
 		selectedLog,

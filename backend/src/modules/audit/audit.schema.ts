@@ -1,4 +1,5 @@
 import { z } from "@hono/zod-openapi";
+import { AUDIT_ACTION_TYPES } from "./audit-filters.js";
 
 export const AuditValueSchema = z.record(z.string(), z.any()).nullable();
 
@@ -7,6 +8,7 @@ export const AuditLogSchema = z
 		logId: z.string().uuid(),
 		userId: z.string().uuid(),
 		action: z.string(),
+		actionType: z.enum(AUDIT_ACTION_TYPES).optional(),
 		tableAffected: z.string(),
 		oldValue: AuditValueSchema,
 		newValue: AuditValueSchema,
@@ -49,9 +51,22 @@ export const PaginationQuery = z.object({
 			param: { name: "limit", in: "query" },
 		}),
 	search: z
-		.string()
+		.string().trim().max(200)
 		.optional()
 		.openapi({
 			param: { name: "search", in: "query" },
 		}),
+	actionType: z.enum(AUDIT_ACTION_TYPES).optional(),
+	action: z.string().trim().max(255).optional(),
+	module: z.string().trim().max(100).optional(),
+	userId: z.string().uuid().optional(),
+	dateFrom: z.string().date().optional(),
+	dateTo: z.string().date().optional(),
+}).refine((query) => !query.dateFrom || !query.dateTo || query.dateFrom <= query.dateTo, {
+	message: "The start date must not be after the end date", path: ["dateTo"],
+});
+
+export const AuditFilterOptionsSchema = z.object({
+	users: z.array(z.object({ userId: z.string().uuid(), name: z.string(), email: z.string() })),
+	modules: z.array(z.string()),
 });

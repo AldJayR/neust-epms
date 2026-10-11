@@ -7,8 +7,6 @@ import {
 	gte,
 	ilike,
 	inArray,
-	or,
-	type SQL,
 	sql,
 } from "drizzle-orm";
 import { db } from "@/db/client.js";
@@ -22,6 +20,7 @@ import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import type { AuthUser } from "@/lib/types.js";
 import { type AuditLogSchema, AuditValueSchema } from "./audit.schema.js";
+import { auditActionTypeExpression, type AuditFilters, buildAuditFilters } from "./audit-filters.js";
 
 type AuditLog = z.infer<typeof AuditLogSchema>;
 
@@ -32,7 +31,7 @@ export async function getAuditStats(now = new Date()): Promise<{
 	failedLogins: number;
 }> {
 	const today = new Date(now);
-	today.setHours(0, 0, 0, 0);
+	today.setUTCHours(0, 0, 0, 0);
 
 	const [totalActionsResult, accountChangesResult, failedLoginsResult] =
 		await Promise.all([
@@ -76,7 +75,7 @@ export async function getAuditStats(now = new Date()): Promise<{
 
 export async function listAuditLogs(
 	user: AuthUser,
-	query: { page: number; limit: number; search?: string | undefined },
+	query: { page: number; limit: number } & AuditFilters,
 	ipAddress: string,
 ): Promise<{ items: AuditLog[]; total: number }> {
 	const { page, limit, search } = query;
@@ -86,19 +85,11 @@ export async function listAuditLogs(
 		userId: user.userId,
 		action: "Viewed audit logs",
 		tableAffected: "audit_logs",
-		newValue: { page, limit, hasSearch: Boolean(search) },
+		newValue: { ...query, hasSearch: Boolean(search) },
 		ipAddress,
 	});
 
-	let whereClause: SQL | undefined;
-	if (search) {
-		whereClause = or(
-			ilike(auditLogs.action, `${search}%`),
-			ilike(users.firstName, `${search}%`),
-			ilike(users.lastName, `${search}%`),
-			ilike(users.email, `${search}%`),
-		);
-	}
+	const whereClause = buildAuditFilters(query);
 
 	const [totalResult, rows] = await Promise.all([
 		db
@@ -111,6 +102,7 @@ export async function listAuditLogs(
 				logId: auditLogs.logId,
 				userId: auditLogs.userId,
 				action: auditLogs.action,
+				actionType: auditActionTypeExpression(),
 				tableAffected: auditLogs.tableAffected,
 				oldValue: auditLogs.oldValue,
 				newValue: auditLogs.newValue,
@@ -123,7 +115,7 @@ export async function listAuditLogs(
 			.leftJoin(users, eq(auditLogs.userId, users.userId))
 			.leftJoin(roles, eq(users.roleId, roles.roleId))
 			.where(whereClause)
-			.orderBy(desc(auditLogs.createdAt))
+			.orderBy(desc(auditLogs.createdAt), desc(auditLogs.logId))
 			.limit(limit)
 			.offset(offset),
 	]);
@@ -199,4 +191,14 @@ export async function listAuditLogs(
 	});
 
 	return { items, total: Number(totalResult[0]?.value ?? 0) };
+}
+
+export async function getAuditFilterOptions() {
+	const [actors, modules] = await Promise.all([
+		db.select({ userId: users.userId, name: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`, email: users.email })
+			.from(auditLogs).innerJoin(users, eq(auditLogs.userId, users.userId))
+			.groupBy(users.userId, users.firstName, users.lastName, users.email).orderBy(users.lastName, users.firstName),
+		db.select({ name: auditLogs.tableAffected }).from(auditLogs).groupBy(auditLogs.tableAffected).orderBy(auditLogs.tableAffected),
+	]);
+	return { users: actors, modules: modules.map((module) => module.name) };
 }

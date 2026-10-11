@@ -88,6 +88,8 @@ const removeMemberRoute = createRoute({
 	path: "/proposals/{proposalId}/members/{memberId}",
 	tags: ["Members"],
 	summary: "Remove a member from a proposal (project leader only)",
+	description:
+		"The Project Leader cannot be removed. Other active members may be removed by the leader.",
 	security: [{ Bearer: [] }],
 	request: { params: MemberParam },
 	responses: {
@@ -102,6 +104,10 @@ const removeMemberRoute = createRoute({
 		404: {
 			content: { "application/json": { schema: ErrorSchema } },
 			description: "Not found",
+		},
+		409: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "The project must keep its Project Leader",
 		},
 	},
 });

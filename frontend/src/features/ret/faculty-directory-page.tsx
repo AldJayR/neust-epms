@@ -49,47 +49,14 @@ export function RetFacultyDirectoryPage({
 			limit,
 			search,
 			status: activeTab === "pending" ? "pending" : "active",
+			ranks: selectedRanks.join(",") || undefined,
+			projectLoads: selectedLoads.join(",") || undefined,
 		}),
 	);
-	const selectedRankPattern = selectedRanks.length
-		? new RegExp(
-				selectedRanks
-					.map((rank) => rank.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-					.join("|"),
-				"i",
-			)
-		: null;
-
-	const filteredItems = (() => {
-		let result = data?.items ?? [];
-
-		// 1. Rank filter
-		if (selectedRanks.length > 0) {
-			result = result.filter((item) => {
-				const rank = item.academicRank?.toLowerCase() ?? "";
-				return selectedRankPattern?.test(rank) ?? true;
-			});
-		}
-
-		// 2. Load filter
-		if (selectedLoads.length > 0) {
-			result = result.filter((item) => {
-				const count = item.totalInvolvement ?? 0;
-				return selectedLoads.some((load) => {
-					if (load === "0") return count === 0;
-					if (load === "1-2") return count >= 1 && count <= 2;
-					if (load === "3+") return count >= 3;
-					return true;
-				});
-			});
-		}
-
-		return result;
-	})();
 
 	const activeFilterCount = selectedRanks.length + selectedLoads.length;
 	const total = data?.total ?? 0;
-	const metrics = data?.metrics ?? { totalActiveExtension: 0 };
+	const metrics = data?.metrics;
 
 	const columns = retFacultyDirectoryColumns;
 
@@ -101,8 +68,7 @@ export function RetFacultyDirectoryPage({
 					Faculty Directory
 				</h1>
 				<p className="text-sm font-normal leading-4 text-brand-primary">
-					{user?.departmentName ||
-						"College of Information and Communications Technology"}
+					{user?.departmentName || user?.campusName || "Faculty Directory"}
 				</p>
 			</div>
 
@@ -120,14 +86,14 @@ export function RetFacultyDirectoryPage({
 				/>
 				<MetricCard
 					label="Faculty without Extension Projects"
-					value="0"
+					value={(metrics?.facultyWithNoActiveProjects ?? 0).toLocaleString()}
 					className="flex-1"
 				/>
 			</div>
 
 			<DataTablePage
 				columns={columns}
-				data={filteredItems}
+				data={data?.items ?? []}
 				total={total}
 				isLoading={isLoading}
 				page={page}
@@ -186,6 +152,7 @@ export function RetFacultyDirectoryPage({
 										onClick={() => {
 											setSelectedLoads(["0"]);
 											setSelectedRanks([]);
+											onPageChange(1);
 										}}
 									>
 										Available for Assignment
@@ -197,6 +164,7 @@ export function RetFacultyDirectoryPage({
 										onClick={() => {
 											setSelectedLoads(["3+"]);
 											setSelectedRanks([]);
+											onPageChange(1);
 										}}
 									>
 										Highly Loaded (3+)
@@ -227,6 +195,7 @@ export function RetFacultyDirectoryPage({
 													id={checkboxId}
 													checked={isChecked}
 													onCheckedChange={(checked) => {
+														onPageChange(1);
 														if (checked) {
 															setSelectedRanks((currentRanks) => [
 																...currentRanks,
@@ -270,6 +239,7 @@ export function RetFacultyDirectoryPage({
 													id={checkboxId}
 													checked={isChecked}
 													onCheckedChange={(checked) => {
+														onPageChange(1);
 														if (checked) {
 															setSelectedLoads((currentLoads) => [
 																...currentLoads,
@@ -301,6 +271,7 @@ export function RetFacultyDirectoryPage({
 										onClick={() => {
 											setSelectedRanks([]);
 											setSelectedLoads([]);
+											onPageChange(1);
 										}}
 									>
 										Reset All

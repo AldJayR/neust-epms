@@ -6,11 +6,13 @@ import {
 	eq,
 	exists,
 	gte,
+	gt,
 	ilike,
 	inArray,
 	isNotNull,
 	isNull,
 	lt,
+	lte,
 	ne,
 	or,
 	type SQL,
@@ -36,6 +38,7 @@ import {
 } from "@/lib/faculty-involvement.js";
 import { escapeHtml } from "@/lib/html.js";
 import { getLeaderSubquery } from "@/lib/leader-subquery.js";
+import { moaValidityStatusExpression } from "@/lib/moa-validity.js";
 import {
 	projectPeriodClause,
 	projectYearBounds,
@@ -309,6 +312,8 @@ type FacultyDirectoryQuery = {
 	load?: FacultyLoadFilter | undefined;
 	sort?: FacultyDirectorySort | undefined;
 	trendMonths?: FacultyTrendMonths | undefined;
+	ranks?: ("instructor" | "assistant" | "associate" | "professor")[] | undefined;
+	projectLoads?: ("0" | "1-2" | "3+")[] | undefined;
 };
 
 function getFacultyScopeConditions(user: AuthUser): SQL[] {
@@ -351,6 +356,10 @@ function applyFacultyDirectoryFilters(
 	} else if (query.college) {
 		conditions.push(eq(departments.departmentName, query.college));
 	}
+	if (query.ranks?.length) {
+		const rankFilter = or(...query.ranks.map((rank) => ilike(users.academicRank, `${rank}%`)));
+		if (rankFilter) conditions.push(rankFilter);
+	}
 }
 
 function getTrendMonthRange(monthCount: FacultyTrendMonths, now = new Date()) {
@@ -380,6 +389,13 @@ export async function getFacultyDirectory(
 	const activeInvolvement = getActiveInvolvementSubquery();
 	const whereConditions = getFacultyScopeConditions(user);
 	applyFacultyDirectoryFilters(whereConditions, query);
+	if (query.projectLoads?.length) {
+		const load = sql<number>`coalesce(${activeInvolvement.totalInvolvement}, 0)`;
+		const loadFilter = or(...query.projectLoads.map((range) =>
+			range === "0" ? eq(load, 0) : range === "1-2" ? and(gte(load, 1), lte(load, 2)) : gte(load, 3),
+		));
+		if (loadFilter) whereConditions.push(loadFilter);
+	}
 
 	if (query.load === "none") {
 		whereConditions.push(
@@ -405,6 +421,8 @@ export async function getFacultyDirectory(
 			leadProjects: sql<number>`coalesce(${activeInvolvement.leadProjects}, 0)`,
 			collaboratorProjects: sql<number>`coalesce(${activeInvolvement.collaboratorProjects}, 0)`,
 			totalInvolvement: sql<number>`coalesce(${activeInvolvement.totalInvolvement}, 0)`,
+			leadProposals: sql<number>`coalesce(${activeInvolvement.leadProposals}, 0)`,
+			totalWorkload: sql<number>`coalesce(${activeInvolvement.totalWorkload}, 0)`,
 		})
 		.from(users)
 		.innerJoin(roles, eq(users.roleId, roles.roleId))
@@ -473,6 +491,7 @@ export async function getFacultyDirectory(
 				.select({
 					name: departments.departmentName,
 					contributors: count(),
+					workload: sql<number>`sum(${metricsInvolvement.totalWorkload})`,
 				})
 				.from(users)
 				.innerJoin(roles, eq(users.roleId, roles.roleId))
@@ -480,9 +499,10 @@ export async function getFacultyDirectory(
 					departments,
 					eq(users.departmentId, departments.departmentId),
 				)
-				.where(and(...mostActiveCollegeConditions))
+				.innerJoin(metricsInvolvement, eq(users.userId, metricsInvolvement.userId))
+				.where(and(...mostActiveCollegeConditions, gt(metricsInvolvement.totalWorkload, 0)))
 				.groupBy(departments.departmentName)
-				.orderBy(desc(count()))
+				.orderBy(desc(sql`sum(${metricsInvolvement.totalWorkload})`), asc(departments.departmentName))
 				.limit(1),
 		]);
 
@@ -502,9 +522,11 @@ export async function getFacultyDirectory(
 					departments,
 					eq(users.departmentId, departments.departmentId),
 				)
+				.innerJoin(metricsInvolvement, eq(users.userId, metricsInvolvement.userId))
 				.where(
 					and(
 						...mostActiveCollegeConditions,
+						gt(metricsInvolvement.totalWorkload, 0),
 						eq(departments.departmentName, mostActiveCollegeRow.name),
 					),
 				)
@@ -526,6 +548,8 @@ export async function getFacultyDirectory(
 			leadProjects,
 			collaboratorProjects,
 			totalInvolvement: leadProjects + collaboratorProjects,
+			leadProposals: Number(row.leadProposals ?? 0),
+			totalWorkload: Number(row.totalWorkload ?? 0),
 		};
 	});
 
@@ -682,33 +706,8 @@ export async function getMoaRepository(query: {
 		whereConditions.push(ilike(partners.partnerName, `${search}%`));
 	}
 
-	if (status) {
-		const thirtyDaysFromNow = new Date(
-			now.getTime() + 30 * 24 * 60 * 60 * 1000,
-		);
-
-		switch (status) {
-			case "Valid":
-				whereConditions.push(
-					and(
-						sql`${moas.validUntil} > ${now.toISOString()}`,
-						sql`${moas.validUntil} > ${thirtyDaysFromNow.toISOString()}`,
-					),
-				);
-				break;
-			case "Renewal Needed":
-				whereConditions.push(
-					and(
-						sql`${moas.validUntil} > ${now.toISOString()}`,
-						sql`${moas.validUntil} <= ${thirtyDaysFromNow.toISOString()}`,
-					),
-				);
-				break;
-			case "Expired":
-				whereConditions.push(sql`${moas.validUntil} <= ${now.toISOString()}`);
-				break;
-		}
-	}
+	const validityStatus = moaValidityStatusExpression(now);
+	if (status) whereConditions.push(eq(validityStatus, status));
 
 	const queryBuilder = db
 		.select({
@@ -716,6 +715,7 @@ export async function getMoaRepository(query: {
 			partnerName: partners.partnerName,
 			validFrom: moas.validFrom,
 			validUntil: moas.validUntil,
+			status: validityStatus,
 		})
 		.from(moas)
 		.innerJoin(partners, eq(moas.partnerId, partners.partnerId))
@@ -737,16 +737,22 @@ export async function getMoaRepository(query: {
 			.where(
 				and(
 					isNull(moas.archivedAt),
+					sql`${moas.validFrom} <= ${now.toISOString()}`,
+					isNotNull(moas.storagePath),
+					sql`trim(${moas.storagePath}) <> ''`,
 					sql`${moas.validUntil} > ${now.toISOString()}`,
 					sql`${moas.validUntil} <= ${ninetyDaysFromNow.toISOString()}`,
 				),
 			),
 		db
-			.select({ value: count() })
+			.select({ value: sql<number>`count(distinct ${moas.partnerId})` })
 			.from(moas)
 			.where(
 				and(
 					isNull(moas.archivedAt),
+					sql`${moas.validFrom} <= ${now.toISOString()}`,
+					isNotNull(moas.storagePath),
+					sql`trim(${moas.storagePath}) <> ''`,
 					sql`${moas.validUntil} > ${now.toISOString()}`,
 				),
 			),
@@ -757,19 +763,12 @@ export async function getMoaRepository(query: {
 			(r.validUntil.getTime() - now.getTime()) / (24 * 60 * 60 * 1000),
 		);
 
-		let moaStatus: "Valid" | "Renewal Needed" | "Expired" = "Valid";
-		if (r.validUntil < now) {
-			moaStatus = "Expired";
-		} else if (daysUntilExpiry <= 30) {
-			moaStatus = "Renewal Needed";
-		}
-
 		return {
 			id: r.moaId,
 			partnerOrganization: r.partnerName,
 			dateSigned: r.validFrom.toISOString(),
-			daysToExpiry: daysUntilExpiry < 0 ? "Expired" : daysUntilExpiry,
-			status: moaStatus,
+			daysToExpiry: r.status === "Expired" ? "Expired" : daysUntilExpiry,
+			status: r.status,
 		};
 	});
 
@@ -800,6 +799,7 @@ export async function getActiveMoas() {
 			and(
 				isNull(moas.archivedAt),
 				isNotNull(moas.storagePath),
+				sql`trim(${moas.storagePath}) <> ''`,
 				sql`${moas.validFrom} <= ${now.toISOString()}`,
 				sql`${moas.validUntil} > ${now.toISOString()}`,
 			),
