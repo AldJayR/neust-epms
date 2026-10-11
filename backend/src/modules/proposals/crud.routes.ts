@@ -584,10 +584,11 @@ app.openapi(listSdgsRoute, async (c) => {
 	const rows = await db
 		.select({
 			sdgId: sdgs.sdgId,
+			sdgNumber: sdgs.sdgNumber,
 			sdgName: sdgs.sdgTitle,
 		})
 		.from(sdgs)
-		.orderBy(sdgs.sdgId);
+		.orderBy(sdgs.sdgNumber);
 
 	return c.json(rows, 200);
 });

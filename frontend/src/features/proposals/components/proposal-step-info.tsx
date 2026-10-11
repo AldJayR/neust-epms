@@ -27,7 +27,7 @@ import type { FormValues } from "./proposal-form";
 interface ProposalStepInfoProps {
 	form: UseFormReturn<FormValues>;
 	user: AuthUser;
-	sdgsData?: Array<{ sdgId: number; sdgName: string }>;
+	sdgsData?: Array<{ sdgId: number; sdgNumber: number; sdgName: string }>;
 	extensionServicesData?: Array<{
 		extensionServiceId: number;
 		serviceName: string;
@@ -270,7 +270,7 @@ export function ProposalStepInfo({
 								htmlFor={`sdg-${sdg.sdgId}`}
 								className="text-xs font-normal text-slate-600 cursor-pointer select-none dark:text-muted-foreground"
 							>
-								{sdg.sdgName}
+								SDG {sdg.sdgNumber} · {sdg.sdgName}
 							</Label>
 						</div>
 					))}

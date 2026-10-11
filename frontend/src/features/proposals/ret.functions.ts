@@ -106,6 +106,7 @@ export interface CreateProposalInput {
 
 export interface SDG {
 	sdgId: number;
+	sdgNumber: number;
 	sdgName: string;
 }
 
