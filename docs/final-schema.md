@@ -15,45 +15,52 @@
 
 # **SYSTEM BUSINESS RULES**
 
-### **1. Campus Organization & Scoping Rules**
-* **BR-01 (Campus Structure Duality):** Main campuses (Sumacab and General Tinio Street / GTS) operate with distinct academic departments/colleges (e.g., CICT, COE, CoEd). Branch campuses (Gabaldon, Talavera, San Isidro, Atate, etc.) operate as unified campus units without independent departmental subdivisions.
-* **BR-02 (Banner Program Ownership & Scoping):** Every Banner Program is an umbrella extension agenda scoped to a specific implementing unit using a composite `unit_scope`:
+### **1. Campus Organization & Program Scoping**
+* **BR-01 (Campus Structure Duality):** Main campuses (Sumacab and General Tinio Street / GTS) operate with distinct academic departments/colleges (e.g., CICT, COE, CoEd). Branch campuses (Gabaldon, Talavera, San Isidro, Atate, etc.) operate as unified campus units without departmental subdivisions.
+* **BR-02 (Banner Program Ownership & Scoping):** Every Banner Program is an umbrella extension agenda scoped to an implementing unit using a composite `unit_scope`:
   * Main campus departmental programs use the composite prefix `SUM-{DEPT}` or `GTS-{DEPT}` (e.g., `'SUM-CICT'`, `'SUM-COE'`, `'GTS-COED'`).
   * Branch campuses use the campus prefix (e.g., `'GAB'`, `'TAL'`).
-  * To prevent circular foreign key loops on the ERD, `banner_programs` is modeled as a Reference Catalog without direct foreign key lines to `campuses` or `departments`. Scoping is strictly enforced via `unit_scope`.
+  * To eliminate circular foreign key loops, `banner_programs` is modeled as a Reference Catalog with zero outgoing foreign keys to `campuses` or `departments`.
 * **BR-03 (RET Chair Program Administration):** An RET Chair or Coordinator may only create and manage Banner Programs matching their assigned unit scope (`current_user.department_code` for main campuses; `current_user.campus_code` for branch campuses).
-* **BR-04 (Proposal Banner Program Visibility):** When a proponent initiates a project proposal, the Banner Program dropdown is filtered to match the target implementing unit:
+* **BR-04 (Proposal Banner Program Visibility):** When a proponent initiates a project proposal, the Banner Program dropdown displays only agendas matching the target implementing unit:
   * For local proposals, the dropdown queries `WHERE unit_scope = current_user.department_code` (or campus code).
   * This prevents branch campus faculty (e.g., Gabaldon IT faculty) from seeing or selecting main campus programs (e.g., Sumacab CICT).
-* **BR-05 (Cross-Campus Project Deployment):** A faculty member stationed at a main campus (e.g., Sumacab) may initiate and lead an extension project targeted for an off-campus (e.g., Talavera). In this case, the proponent selects the target campus's banner program (`unit_scope = 'TAL'`). The faculty's home station (`users.campus_id = Sumacab`) remains distinct from the project's implementing banner program.
+* **BR-05 (Cross-Campus Project Deployment):** A faculty member stationed at a main campus (e.g., Sumacab) may initiate and lead an extension project targeted for an off-campus (e.g., Talavera). The proponent selects the target campus's banner program (`unit_scope = 'TAL'`). The faculty's home station (`users.campus_id = Sumacab`) remains separate from the project's implementing banner program.
 
 ---
 
-### **2. Proposal Lifecycle & Endorsement Rules**
+### **2. Proposal Formulation & Endorsement**
 * **BR-06 (Mandatory Banner Program Anchor):** Every proposal must anchor to exactly one active Banner Program (`proposals.banner_program_id [NN]`). Standalone or unclassified proposals are prohibited.
-* **BR-07 (Derived Lead & Collaborating Units):** Proposals do not store redundant `campus_id` or `department_id` columns. The project's institutional affiliation is derived from its mandatory `banner_program_id`. Collaborating departments are derived directly from the team roster (`proposal_members → users → departments`).
-* **BR-08 (Mandatory Single Project Leader):** Every proposal must have exactly one active member with the role `'Project Leader'` (`proposal_members.project_role = 'Project Leader'`). Additional members may be assigned as Assistant Project Leaders or Project Staff.
-* **BR-09 (Universal Chair Endorsement — No Bypass):** All proposals must undergo RET Chair endorsement. Even if the proposal is submitted by an RET Chair, the Chair must endorse their own proposal through the system.
-* **BR-10 (Verified Dean/Director Endorsement Form):** For a proposal to be endorsed by the RET Chair, the Chair must upload a scanned physical endorsement form signed by the College Dean (for main campuses) or Campus Director (for branch campuses). Stored via `endorsement_doc_path` and `endorsement_doc_hash`.
-* **BR-11 (Director Institutional Approval):** The University Extension Director reviews the proposal and the verified Dean/Director endorsement form. Upon approval, the Director uploads the final scanned approval document signed by university executive leadership (`institutional_approval_doc_path`).
+* **BR-07 (Derived Unit Lineage — 3NF):** Proposals do not store redundant `campus_id` or `department_id` columns. The project's institutional scope is derived from its mandatory `banner_program_id`. Collaborating departments are derived directly from the team roster (`proposal_members → users → departments`).
+* **BR-08 (Mandatory Single Project Leader):** Every proposal must have exactly one active member with the role `'Project Leader'` (`proposal_members.project_role = 'Project Leader'`). Additional members are assigned as Assistant Project Leaders or Project Staff.
+* **BR-09 (Universal Digital Chair Endorsement):** All proposals must undergo RET Chair endorsement. Even if the proposal is submitted by an RET Chair, the Chair must endorse their own proposal through the system. Endorsement is a 100% digital evaluation action; physical scanned endorsement forms are not required.
+* **BR-10 (Director Institutional Approval Scan):** The University Extension Director reviews the proposal digitally. Upon approval, the Director uploads the final scanned approval document signed by university executive leadership (`institutional_approval_doc_path` and `institutional_approval_hash`).
 
 ---
 
-### **3. Project Implementation & Reporting Rules**
-* **BR-12 (Project Activation Prerequisite):** A proposal may only mature into an active `project` record once it reaches `'Approved'` status with a valid institutional approval scan. If the project involves an external community partner, an active, verified partner MOA (`moa_id`) must be linked.
-* **BR-13 (Mandatory Reporting Milestones):** Every active project must have scheduled reporting milestones (`project_reporting_milestones`) established at activation on a monthly cadence starting 1 month post-activation concluding with Terminal Report.
-* **BR-14 (Consolidated Terminal Report Submission):** When fulfilling a Terminal Report milestone, the project leader must submit the unified **`Accomplishment and Terminal Report`** as the primary report file (`project_reports`).
-* **BR-15 (Closure Supporting Documents):** The `Accomplishment and Terminal Report` must be accompanied by participant **`Evaluation Forms`** (mandatory) and **`Attendance Records`** (optional sign-in sheets), stored in `report_attachments`.
-* **BR-16 (Director Final Closure Approval):** Submission of closure reports transitions the project status to `'Pending Closure'`. The project is only marked `'Closed'` once the Extension Director signs off on the closure decision.
+### **3. Proposal Revision & Reviewer Verification Workflow**
+* **BR-11 (Actionable Revision Requests):** When returning a proposal at either the Endorsement or Approval stage, a reviewer creates blocking `proposal_revision_requests` scoped to that review stage (`review_stage`). To eliminate cyclic triangles and diamond anomalies, requests belong directly to the `proposals` entity without foreign key lines to `proposal_comments` or `proposal_reviews`.
+* **BR-12 (Resubmission Gate):** A proposal cannot be resubmitted while any blocking request at the active cycle remains unanswered. The project leader must submit a non-draft `proposal_revision_responses` (`Changed` or `Clarification`) for every outstanding request before resubmission.
+* **BR-13 (Reviewer Verification Gate):** Endorse (Chair) and Approve (Director) actions are strictly blocked (`UNVERIFIED_REVISIONS`) while any request at that stage is not marked `Resolved`. The same-stage reviewer must evaluate each submitted response and record an append-only `proposal_revision_verifications` decision (`Resolved` or `Further revision needed`).
+* **BR-14 (Additive Reopening for Regressions):** If a previously `Resolved` request regresses due to changes in a subsequent submission, a same-stage reviewer logs a `proposal_revision_reopenings` record with a mandatory explanation. Reopening sets the request status back to `Further revision needed` without rewriting historical verifications.
 
 ---
 
-### **4. Diagramming & Normalization Integrity Rules**
-* **BR-17 (Zero Loop Diagram Constraint):** To prevent circular dependency flags during defense, the following relationship lines are omitted from the physical ERD canvas while maintaining foreign key integrity in SQL:
+### **4. Project Implementation & Executive Closure**
+* **BR-15 (Project Activation Prerequisite):** A proposal may only mature into an active `project` record once it reaches `'Approved'` status with a valid institutional approval scan. If the project involves an external community partner, an active, verified partner MOA (`moa_id`) must be linked.
+* **BR-16 (Mandatory Reporting Milestones):** Every active project must have scheduled reporting milestones (`project_reporting_milestones`) established at activation.
+* **BR-17 (Consolidated Project Closure Submission):** When fulfilling a project closure milestone, the project leader must submit the unified **`Accomplishment and Terminal Report`** as the primary report file (`project_reports`).
+* **BR-18 (Closure Supporting Documents):** The `Accomplishment and Terminal Report` must be accompanied by participant **`Evaluation Forms`** (mandatory) and **`Attendance Records`** (optional sign-in sheets), stored in `report_attachments`.
+* **BR-19 (Director Final Closure Sign-Off & Signed Report Scan):** Submitting closure deliverables flags the project as `'Pending Closure'`. To officially mark the project as `'Closed'`, the Extension Director conducts final review and **uploads the signed, scanned copy of the Terminal Accomplishment Report** (`signed_terminal_report_doc_path` and `signed_terminal_report_hash`). This commits the closed state and records the completion date (`actual_end_date`).
+
+---
+
+### **5. Diagramming & Normalization Integrity**
+* **BR-20 (Zero Loop Diagram Constraint):** To prevent circular dependency flags during defense, author/actor attribution stamps in SQL are treated as metadata rather than structural ERD relationship lines:
   * `proposal_comments.user_id` is an author attribution stamp; `proposal_comments` is drawn as a leaf dependent entity of `proposal_documents`.
   * `project_reports.submitted_by_id` is an audit attribution stamp; `project_reports` is drawn as a dependent entity of `project_reporting_milestones`.
-  * `uploaded_by` in document/MOA/report tables is an audit attribute without an ERD relationship line to `users`.
-* **BR-18 (Evaluator vs. Proponent Role Separation):** The relationship between `users` and `proposal_reviews` represents an **Evaluator**, which is semantically distinct from `users` and `proposal_members` (representing a **Proponent**). A check constraint prevents self-review.
+  * `uploaded_by`, `verified_by`, and `reopened_by` are audit attributes without ERD relationship lines to `users`.
+* **BR-21 (Evaluator vs. Proponent Role Separation):** The relationship between `users` and `proposal_reviews` represents an **Evaluator**, distinct from `users` and `proposal_members` (representing a **Proponent**). A check constraint prevents self-review.
 
 ---
 
@@ -76,7 +83,7 @@
 * `is_main_campus` : Boolean [NN, Default: false]
 * **Relationships:**
   * `campuses` `||` ─── stations / home station of ─── `>|` `users`
-    *(Faculty Employment Station / Home Campus)*
+    *(Faculty Employment Station)*
 
 ---
 
@@ -179,13 +186,11 @@
 * `proposal_id` : UUID [PK]
 * `banner_program_id` : Integer [NN, FK $\to$ `banner_programs.banner_program_id`]
 * `title` : String [NN]
-* `project_locale` : String [NN] *(Specific venue, e.g., 'Brgy. Poblacion, Talavera, Nueva Ecija')*
+* `project_locale` : String [NN] *(Specific target community venue)*
 * `budget_partner` : Decimal(14, 2) [NN, Default: 0, Constraint: $\ge 0$]
 * `budget_neust` : Decimal(14, 2) [NN, Default: 0, Constraint: $\ge 0$]
 * `status` : String [NN, Default: 'Pending Review']
 * `revision_num` : Integer [NN, Default: 0]
-* `endorsement_doc_path` : String [Nullable]
-* `endorsement_doc_hash` : Char(64) [Nullable]
 * `endorsed_at` : Timestamp [Nullable]
 * `institutional_approval_doc_path` : String [Nullable]
 * `institutional_approval_hash` : Char(64) [Nullable]
@@ -203,6 +208,7 @@
     *(Mandatory: $\ge 1$ member / Project Leader. Collaborating departments derived from members)*
   * `proposals` `||` ─── documents / attaches to ─── `>|` `proposal_documents`
   * `proposals` `||` ─── evaluated by / evaluates ─── `>O` `proposal_reviews`
+  * `proposals` `||` ─── receives / raised on ─── `>O` `proposal_revision_requests`
   * `proposals` `||` ─── advances / is advanced by ─── `>|` `proposal_sdgs`
   * `proposals` `||` ─── targets / is targeted by ─── `>|` `proposal_beneficiaries`
   * `proposals` `||` ─── delivers / is delivered by ─── `>|` `proposal_extension_services`
@@ -298,6 +304,62 @@
 
 ---
 
+### `proposal_revision_requests` *(Dependent Entity)*
+* `request_id` : UUID [PK]
+* `proposal_id` : UUID [NN, FK $\to$ `proposals.proposal_id`]
+* `review_stage` : String [NN, Domain: `'Chair Endorsement'`, `'Director Approval'`]
+* `content` : Text [NN]
+* `target_page` : Integer [Nullable] *(Optional reference to reviewed page)*
+* `status` : String [NN, Default: 'Response needed', Domain: `'Response needed'`, `'Awaiting verification'`, `'Resolved'`, `'Further revision needed'`]
+* `created_at` : Timestamp [NN]
+* **Relationships:**
+  * `proposals` `||` ─── receives / raised on ─── `>O` `proposal_revision_requests`
+    *(Stage-scoped gate on the proposal; zero foreign keys to comments or reviews destroys triangle loops)*
+  * `proposal_revision_requests` `||` ─── answered by / responds to ─── `>O` `proposal_revision_responses`
+  * `proposal_revision_requests` `||` ─── reopened by / reopens ─── `>O` `proposal_revision_reopenings`
+
+---
+
+### `proposal_revision_responses` *(Dependent Entity)*
+* `response_id` : UUID [PK]
+* `request_id` : UUID [NN, FK $\to$ `proposal_revision_requests.request_id`]
+* `revision_num` : Integer [Nullable] *(NULL = draft; set to proposals.revision_num on submit)*
+* `response_type` : String [NN, Domain: `'Changed'`, `'Clarification'`]
+* `explanation` : Text [NN]
+* `revised_page` : Integer [Nullable]
+* `updated_at` : Timestamp [NN]
+* `submitted_at` : Timestamp [Nullable]
+* **Alternate Keys:** `request_id` [AK: where `submitted_at IS NULL` (Enforces 1 draft per request)]
+* **Relationships:**
+  * `proposal_revision_requests` `||` ─── answered by / responds to ─── `>O` `proposal_revision_responses`
+  * `proposal_revision_responses` `||` ─── verified by / verifies ─── `>O` `proposal_revision_verifications`
+
+---
+
+### `proposal_revision_verifications` *(Dependent Entity — Append-Only Audit)*
+* `verification_id` : UUID [PK]
+* `response_id` : UUID [NN, FK $\to$ `proposal_revision_responses.response_id`]
+* `decision` : String [NN, Domain: `'Resolved'`, `'Further revision needed'`]
+* `explanation` : Text [Nullable] *(Mandatory in practice when decision is 'Further revision needed')*
+* `verified_by` : UUID [NN, FK $\to$ `users.user_id`] *(Reviewer audit stamp)*
+* `verified_at` : Timestamp [NN]
+* **Relationships:**
+  * `proposal_revision_responses` `||` ─── verified by / verifies ─── `>O` `proposal_revision_verifications`
+
+---
+
+### `proposal_revision_reopenings` *(Dependent Entity — Append-Only Audit)*
+* `reopening_id` : UUID [PK]
+* `request_id` : UUID [NN, FK $\to$ `proposal_revision_requests.request_id`]
+* `revision_num` : Integer [NN] *(Proposal submission sequence that triggered regression)*
+* `explanation` : Text [NN] *(Mandatory reason for reopening)*
+* `reopened_by` : UUID [NN, FK $\to$ `users.user_id`] *(Reviewer audit stamp)*
+* `reopened_at` : Timestamp [NN]
+* **Relationships:**
+  * `proposal_revision_requests` `||` ─── reopened by / reopens ─── `>O` `proposal_revision_reopenings`
+
+---
+
 ## 4. Projects, MOAs & Reporting
 
 ### `moas`
@@ -327,6 +389,8 @@
 * `actual_end_date` : Timestamp [Nullable]
 * `project_status` : String [NN, Default: 'Approved']
 * `on_hold` : Boolean [NN, Default: false]
+* `signed_terminal_report_doc_path` : String [Nullable] *(Uploaded by Director at final closure)*
+* `signed_terminal_report_hash` : Char(64) [Nullable]
 * `created_at` : Timestamp [NN]
 * `updated_at` : Timestamp [NN]
 * `archived_at` : Timestamp [Nullable]
@@ -356,7 +420,7 @@
 ### `project_reports` *(Dependent Entity)*
 * `report_id` : UUID [PK]
 * `milestone_id` : UUID [NN, FK $\to$ `project_reporting_milestones.milestone_id`]
-* `submitted_by_id` : UUID [NN, FK $\to$ `users.user_id`] *(Audit attribution stamp in SQL table; no relationship line drawn on ERD)*
+* `submitted_by_id` : UUID [NN, FK $\to$ `users.user_id`] *(Audit attribution stamp in SQL; no relationship line drawn on ERD canvas)*
 * `report_type` : String [NN, Domain: `'Progress Report'`, `'Accomplishment and Terminal Report'`]
 * `storage_path` : String [NN]
 * `content_hash` : Char(64) [Nullable]

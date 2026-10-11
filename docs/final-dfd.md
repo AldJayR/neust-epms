@@ -1,4 +1,4 @@
-# **NEUST-EPMS DATA FLOW DIAGRAM SPECIFICATION**
+# **NEUST-EPMS COMPLETE DATA FLOW DIAGRAM SPECIFICATION**
 ### **Extension Services Project Management System**
 *Aligned with Dennis, Wixom, & Roth (Systems Analysis and Design, Chapter 5)* [1]
 
@@ -19,22 +19,22 @@
 
 **Process 0:** Extension Services Project Management System
 
-### **External Entities and System Interfaces**
+### **External Entity Interfaces**
 
 #### **Super Admin**
-* Super Admin → 0 — **Access Credentials**
 * Super Admin → 0 — **User Management Requests**
+* Super Admin → 0 — **Access Credentials**
 * Super Admin → 0 — **Audit Request**
-* 0 → Super Admin — **Access Response**
-* 0 → Super Admin — **Account Status Notice**
 * 0 → Super Admin — **Queried User Profiles**
+* 0 → Super Admin — **Account Status Notice**
+* 0 → Super Admin — **Access Response**
 * 0 → Super Admin — **System Audit Trail Logs**
 
 #### **Director**
 * Director → 0 — **Access Credentials**
 * Director → 0 — **MOA Agreement Documents**
 * Director → 0 — **Approved Evaluation Package**
-* Director → 0 — **Project Directives**
+* Director → 0 — **Project Directives** *(Includes Signed Terminal Report Scan at closure)*
 * Director → 0 — **Dashboard Request**
 * Director → 0 — **Overview Request**
 * 0 → Director — **Access Response**
@@ -48,7 +48,7 @@
 * RET Chair → 0 — **Access Credentials**
 * RET Chair → 0 — **Roster Request**
 * RET Chair → 0 — **Proposal Submissions**
-* RET Chair → 0 — **Chair Evaluation Package**
+* RET Chair → 0 — **Chair Evaluation Package** *(Digital endorsement; no scanned form upload)*
 * RET Chair → 0 — **Project Implementation Updates**
 * RET Chair → 0 — **Report Submissions**
 * RET Chair → 0 — **Dashboard Request**
@@ -85,11 +85,11 @@
 * **Audit Request** = Audit Log Request + Filter And Search Parameters
 * **MOA Agreement Documents** = Partner MOA Document + Validity Terms + Updated Validity Dates + Selected MOA
 * **MOA Verification Details** = MOA Status + Linked Project Records
-* **Chair Evaluation Package** = Evaluation Decisions + Review Comments
-* **Approved Evaluation Package** = Director Evaluation Decision + Approved Proposal Scan
-* **Proposal Submissions** = Draft Proposal Documents + Special Order Documents + Revised Proposal Documents
-* **Proposal Review Documents** = Proposal Details + Chair Endorsement Record
-* **Project Directives** = Activation Request + Selected MOA + Reporting Schedule + Project Implementation Updates + Closure Approval Decision
+* **Chair Evaluation Package** = Evaluation Decisions + Review Comments + Revision Requests + Response Verifications + Revision Reopenings
+* **Approved Evaluation Package** = Director Evaluation Decision + Approved Proposal Scan + Revision Requests + Response Verifications + Revision Reopenings
+* **Proposal Submissions** = Draft Proposal Documents + Special Order Documents + Revised Proposal Documents + Revision Responses
+* **Proposal Review Documents** = Proposal Details + Revision Verifications
+* **Project Directives** = Activation Request + Selected MOA + Reporting Schedule + Project Implementation Updates + Closure Approval Decision + Signed Terminal Report Scan
 * **Project Implementation Updates** = Progress Scope Changes + Task Completion Updates
 * **Report Submissions** = Progress Report Documents + Terminal Accomplishment Report + Evaluation Forms + Attendance Records *(where applicable)*
 * **Dashboard Metrics** = Project Metrics + College Project Metrics *(where applicable)* + Faculty Activity Overview *(where applicable)*
@@ -98,13 +98,13 @@
 
 ---
 
-# **LEVEL 0 DFD (NO DATA STORES PER OVERRIDE)**
+# **LEVEL 0 DFD (STRICT SEQUENTIAL LIFECYCLE PIPELINE)**
 
 ### **Process 1.0 — Manage User Accounts**
 * **Inputs:**
   * Super Admin → 1.0 — **User Management Requests**
   * RET Chair → 1.0 — **Roster Request**
-  * 2.0 → 1.0 — **Pending User Record** *(Self-registration handoff)*
+  * 2.0 → 1.0 — **Pending User Record** *(Parallel return loop)*
 * **Outputs:**
   * **1.0 → 2.0 — Provisioned Account Records** *(Linear Backbone: 1.0 $\rightarrow$ 2.0)*
   * 1.0 → Super Admin — **Queried User Profiles**
@@ -177,7 +177,7 @@
 ### **Process 6.0 — Manage Projects**
 * **Inputs:**
   * **5.0 → 6.0 — Verified Project Package** *(From 5.0)*
-  * Director → 6.0 — **Project Directives**
+  * Director → 6.0 — **Project Directives** *(Includes Signed Terminal Report Scan)*
   * RET Chair → 6.0 — **Project Implementation Updates**
   * Faculty → 6.0 — **Project Implementation Updates**
   * 7.0 → 6.0 — **Submitted Report Records** *(Parallel return loop)*
@@ -277,10 +277,10 @@
 
 **Sub-processes:**
 * **1.1 — Evaluate Pending Registrations** — Queries D1 to retrieve pending user registrations, processes the Super Admin's selection, and outputs profile details for review.
-* **1.2 — Authorize User Profile** — Commits the Super Admin's approval, rejection, or role modification into D1, forwarding authorized account records for notification.
-* **1.3 — Finalize Activation** — Dispatches account status notices to all affected actors and logs administrative actions in D6.
-* **1.4 — Generate User Roster** — Filters user profiles from D1 according to RET Chair campus scope or Admin search parameters; outputs faculty rosters or search results.
-* **1.5 — Provision Account** — Directly initializes and stores administrative and faculty user profiles in D1, issues activation notices, and logs account provisioning in D6.
+* **1.2 — Authorize User Profile** — Commits the Super Admin's approval, rejection, or role modification into D1, forwarding authorized account records for notification dispatch.
+* **1.3 — Finalize Activation** — Dispatches account status notices to all affected actors and logs administrative activation events in D6.
+* **1.4 — Generate User Roster** — Filters user profiles from D1 according to RET Chair campus scope or Admin search parameters; outputs faculty rosters or search result sets.
+* **1.5 — Provision Account** — Directly constructs and activates administrative and faculty user profiles in D1, issues activation notices, and logs account provisioning in D6.
 
 ---
 
@@ -330,8 +330,8 @@
 * 2.4 → D6 — Access Event Logs
 
 **Sub-processes:**
-* **2.1 — Authenticate User** — Validates login credentials against authorized account records stored in D1, issuing access authorizations and logging authentication events in D6.
-* **2.2 — Process Self-Registration** — Accepts initial self-registration details from applicants, creates a pending profile in D1, issues an acknowledgment notice, and logs the event in D6.
+* **2.1 — Authenticate User** — Validates login credentials against authorized account records stored in D1, issuing access authorizations and logging authentication transactions in D6.
+* **2.2 — Process Self-Registration** — Accepts initial self-registration details from applicants, writes pending profiles into D1, issues acknowledgment notices, and logs events in D6.
 * **2.3 — Generate Reset Verification Code** — Confirms that an active account exists in D1, generates a temporary reset verification code, stores it in D7, and dispatches it to the user.
 * **2.4 — Finalize Password Reset** — Validates the submitted code against D7; upon verification, updates the stored password in D1, marks the verification code invalid in D7, and logs the reset transaction in D6.
 
@@ -358,46 +358,48 @@
 * 3.3 → D6 — Proposal Event Logs
 
 * Faculty → 3.4 — Revised Proposal Documents
+* Faculty → 3.4 — Revision Responses
 * RET Chair → 3.4 — Revised Proposal Documents
+* RET Chair → 3.4 — Revision Responses
+* D2 → 3.4 — Actionable Revision Requests
 * D2 → 3.4 — Updated Proposal Status
 * D2 → 3.4 — Proposal Feedback Record
+* D2 → 3.4 — Submission History
 * 3.4 → Faculty — Submission Acknowledgment
 * 3.4 → RET Chair — Submission Acknowledgment
 * 3.4 → D2 — Pending Proposal Record
 * 3.4 → D2 — Revised Proposal Record
+* 3.4 → D2 — Submitted Revision Responses
+* 3.4 → D2 — Updated Submission History
 * 3.4 → D6 — Proposal Event Logs
 
 **Sub-processes:**
-* **3.1 — Review Proposal Submission** — Checks submitted proposal documents and member special orders against D2 to verify structural completeness and prevent duplicate active submissions.
-* **3.2 — Record Proposal Data** — Writes validated proposal submissions into D2 with an initial status of "pending review," stores member special order records, initializes the submission history, and prepares proposal records for evaluation.
+* **3.1 — Review Proposal Submission** — Checks submitted proposal files and member special orders against D2 to verify complete documentation and prevent duplicate active submissions.
+* **3.2 — Record Proposal Data** — Writes validated proposal submissions into D2 with an initial status of "pending review," stores member special orders, initializes the submission history, and prepares proposal records for evaluation.
 * **3.3 — Route Proposal for Review** — Issues submission receipts to project leaders and logs proposal intake in D6.
-* **3.4 — Process Proposal Resubmission** — Accepts revised documents for returned proposals, validates them against stored feedback in D2, updates the record status to "pending review," appends to the submission history, issues an acknowledgment, and logs the resubmission in D6.
+* **3.4 — Process Proposal Resubmission** — Enforces the Resubmission Gate by verifying that every outstanding blocking revision request from D2 has a submitted response; stores revised document versions, freezes submitted revision response snapshots bound to the new submission in D2, updates proposal states, issues receipts, and logs the resubmission in D6.
 
 ---
 
 ## **LEVEL 1 DFD — Process 4.0: Evaluate Project Proposal (4 Sub-Processes)**
 
-* D2 → 4.1 — Pending Proposal Record
+* D2 → 4.1 — Proposal Evaluation Package
 * D2 → 4.1 — Submission History
 * 4.1 → 4.2 — Retrieved Proposal Details
 
 * 4.1 → 4.2 — Retrieved Proposal Details
-* RET Chair → 4.2 — Evaluation Decisions
+* RET Chair → 4.2 — Chair Evaluation Package *(Decisions, comments, revision requests, verifications, reopenings)*
+* D2 → 4.2 — Active Revision Records *(Submitted responses and active blocking requests)*
 * 4.2 → RET Chair — Proposal Details
 * 4.2 → Faculty — Proposal Status And Feedback
-* 4.2 → D2 — Endorsed Proposal Record
-* 4.2 → D2 — Updated Proposal Status
-* 4.2 → D2 — Proposal Feedback Record
+* 4.2 → D2 — Endorsement Evaluation Records *(Endorsed state, verification decisions, requests)*
 * 4.2 → D6 — Evaluation Event Logs
 
-* D2 → 4.3 — Endorsed Proposal Record
-* D2 → 4.3 — Chair Endorsement Record
-* Director → 4.3 — Evaluation Decisions
+* D2 → 4.3 — Endorsed Proposal Package *(Endorsed proposal and active requests)*
+* Director → 4.3 — Executive Evaluation Package *(Decisions, requests, verifications, reopenings)*
 * 4.3 → Director — Proposal Details
 * 4.3 → Faculty — Proposal Status And Feedback
-* 4.3 → D2 — Director-Approved Proposal Record
-* 4.3 → D2 — Updated Proposal Status
-* 4.3 → D2 — Proposal Feedback Record
+* 4.3 → D2 — Approval Evaluation Records *(Approved state, verification decisions, requests)*
 * 4.3 → D6 — Evaluation Event Logs
 
 * Director → 4.4 — Approved Proposal Scan
@@ -408,9 +410,9 @@
 
 **Sub-processes:**
 * **4.1 — Retrieve Proposal Details** — Queries D2 for submitted proposals awaiting evaluation; extracts structural details and submission histories, routing all proposals uniformly into the Chair endorsement stage.
-* **4.2 — Process Chair Endorsement** — Evaluates the RET Chair's endorsement decision for all proposals (including the Chair's own submissions); endorsement is a direct action with optional review comments and requires no endorsement document upload; writes the endorsed record, status, and feedback into D2, notifying the project leader and logging the event in D6. Returned proposals must pass through Chair endorsement again after resubmission.
-* **4.3 — Process Director Approval** — Presents endorsed proposals and the recorded Chair endorsement decision to the Director for final executive review; records approval, return, or rejection decisions in D2, notifies the project leader, and logs the review in D6.
-* **4.4 — Record Institutional Approval** — Receives the final signed institutional approval scan from the Director, updates the proposal state to "institutionally approved" in D2, alerts the project leader, and logs the sign-off in D6.
+* **4.2 — Process Chair Endorsement** — Evaluates proposals at the Endorsement stage; allows the RET Chair to issue revision requests, verify leader responses, append reopening records, and digitally endorse proposals without physical form uploads; enforces the Verification Gate blocking endorsement until all stage requests are Resolved; commits records to D2 and logs events in D6.
+* **4.3 — Process Director Approval** — Presents endorsed proposals and revision histories to the Director; allows the Director to issue Approval-stage requests, verify leader responses, or reopen resolved items; enforces the Verification Gate blocking approval until all stage requests are Resolved; commits decisions to D2 and logs events in D6.
+* **4.4 — Record Institutional Approval** — Receives the final signed institutional approval document scan from the Director, updates the proposal state to "institutionally approved" in D2, notifies the project leader, and logs the sign-off in D6.
 
 ---
 
@@ -479,11 +481,12 @@
 * 6.4 → D4 — Aggregated Project Summaries
 
 * Director → 6.5 — Closure Approval Decision
+* Director → 6.5 — Signed Terminal Report Scan *(Executive signed completion document)*
 * D4 → 6.5 — Pending Closure Project Records
 * 6.5 → Director — Active Project Status
 * 6.5 → RET Chair — Active Project Status
 * 6.5 → Faculty — Active Project Status
-* 6.5 → D4 — Closed Project Record
+* 6.5 → D4 — Closed Project Record *(Contains signed scan path and hash)*
 * 6.5 → D6 — Project Event Logs
 
 **Sub-processes:**
@@ -491,11 +494,11 @@
 * **6.2 — Process Project Update** — Accepts implementation updates from project leaders or the Director, updates project records in D4, notifies stakeholders, and logs the event in D6.
 * **6.3 — Update Linked MOA** — Re-links active projects in D4 to extended MOA references from D3, maintaining relational validity and logging the update in D6.
 * **6.4 — Update Project Metrics** — Synthesizes active project statuses from D4 to refresh summary project statistics for dashboard queries.
-* **6.5 — Approve Project Closure** — Evaluates projects flagged as "pending closure" in D4 upon receipt of closure reports and the Director's closure approval decision, transitions project status to "closed" in D4, notifies all stakeholders, and logs project closure in D6.
+* **6.5 — Approve Project Closure** — Evaluates projects in pending closure status upon receipt of the Director's closure approval decision and uploaded signed Terminal Accomplishment Report scan; commits the verified document reference, cryptographic hash, and closed state to D4, notifies all project stakeholders of completion, and logs the final closeout event in D6.
 
 ---
 
-## **LEVEL 1 DFD — Process 7.0: Manage Project Reports (3 Sub-Processes)**
+## **LEVEL 1 DFD — Process 7.0: Manage Project Reports (2 Sub-Processes)**
 
 * Faculty → 7.1 — Progress Report Documents
 * RET Chair → 7.1 — Progress Report Documents
@@ -523,13 +526,9 @@
 * 7.2 → D5 — Submitted Report Records
 * 7.2 → D6 — Report Event Logs
 
-* D5 → 7.3 — Submitted Report Records
-* 7.3 → D5 — Project Report Metrics
-
 **Sub-processes:**
-* **7.1 — Process Progress Report** — Validates submitted progress reports against active project reporting milestones in D4, commits report records to D5, issues an acknowledgment to the submitter, and logs the intake in D6.
+* **7.1 — Process Progress Report** — Validates submitted progress reports against active project reporting milestones in D4, commits report records to D5, issues an acknowledgment receipt to the submitter, and logs the intake in D6.
 * **7.2 — Finalize Project Closure** — Validates the concurrent submission of the unified Terminal Accomplishment Report, participant Evaluation Forms, and optional Attendance Records; commits all closure documents into D5, flags the project record in D4 as "pending closure" awaiting final Director sign-off, issues an acknowledgment receipt, and logs the closure submission in D6.
-* **7.3 — Update Report Metrics** — Aggregates report submission counts and milestone compliance in D5 for dashboard reporting.
 
 ---
 
@@ -615,5 +614,5 @@
 
 **Sub-processes:**
 * **6.1.1 — Process Activation Request** — Confirms that the target proposal has attained institutional approval in D2, accepts the Director's activation command, writes member special orders into D4, and structures core activation parameters.
-* **6.1.2 — Configure Reporting Schedule** — Translates the Director's reporting timeline into discrete calendar reporting milestones for project tracking, establishing monthly progress reporting milestones post-activation concluding with Terminal Report.
+* **6.1.2 — Configure Reporting Schedule** — Translates the Director's reporting timeline into discrete calendar reporting milestones for project tracking.
 * **6.1.3 — Create Active Project Record** — Combines activation parameters and reporting milestones with the validated partner MOA from D3 to create the active project record in D4, sets MOA linkage, dispatches active status notices to all stakeholders, and logs the activation transaction in D6.
