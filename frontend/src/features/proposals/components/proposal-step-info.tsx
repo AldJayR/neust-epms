@@ -102,7 +102,7 @@ export function ProposalStepInfo({
 				</Field>
 			</div>
 
-			<div>
+			<div className="min-w-0">
 				<Field>
 					<FieldLabel>Banner Program</FieldLabel>
 					<FieldContent>
@@ -120,8 +120,9 @@ export function ProposalStepInfo({
 							}
 							disabled={!bannerProgramsData || bannerProgramsData.length === 0}
 						>
-							<SelectTrigger>
+							<SelectTrigger className="w-full min-w-0">
 								<SelectValue
+									className="min-w-0 overflow-hidden"
 									placeholder={
 										!bannerProgramsData
 											? "Loading programs..."
@@ -130,22 +131,32 @@ export function ProposalStepInfo({
 												: "Select a banner program"
 									}
 								>
-									{(value) =>
-										value
-											? (bannerProgramLabels[value] ?? value)
-											: (!bannerProgramsData
-												? "Loading programs..."
-												: bannerProgramsData.length === 0
-													? "No programs configured"
-													: "Select a banner program")
-									}
+									{(value) => (
+										<span
+											className="block min-w-0 truncate"
+											title={value ? bannerProgramLabels[value] : undefined}
+										>
+											{value
+												? (bannerProgramLabels[value] ?? value)
+												: (!bannerProgramsData
+													? "Loading programs..."
+													: bannerProgramsData.length === 0
+														? "No programs configured"
+														: "Select a banner program")}
+										</span>
+									)}
 								</SelectValue>
 							</SelectTrigger>
-							<SelectContent>
+							<SelectContent
+								align="start"
+								alignItemWithTrigger={false}
+								className="w-(--anchor-width) min-w-0 max-w-(--available-width)"
+							>
 								{bannerProgramsData?.map((program) => (
 									<SelectItem
 										key={program.bannerProgramId}
 										value={String(program.bannerProgramId)}
+										className="[&>span]:min-w-0 [&>span]:shrink [&>span]:whitespace-normal [&>span]:break-words"
 									>
 										{program.programName}
 									</SelectItem>
@@ -282,7 +293,7 @@ export function ProposalStepInfo({
 				<FieldLabel>Target Beneficiary Sectors</FieldLabel>
 				<div className="flex flex-wrap gap-1.5 min-h-[38px] p-2 border rounded-md">
 					{watchedSectors.map((sector) => (
-						<Badge key={sector} variant="secondary" className="gap-1 pr-1">
+						<Badge key={sector} variant="secondary" className="h-9 gap-1 pr-1">
 							{sector}
 							<button
 								type="button"
