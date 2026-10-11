@@ -316,6 +316,7 @@ app.openapi(getRoute, async (c) => {
 			extensionServices: selectedExtensionServices,
 			sdgIds: editData.sdgIds,
 			beneficiarySectors: editData.beneficiarySectors,
+			sectors: editData.sectors,
 			hasProposalDocument: editData.hasProposalDocument,
 			members: editData.members,
 			createdAt: row.createdAt.toISOString(),

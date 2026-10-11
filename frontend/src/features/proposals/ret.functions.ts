@@ -2,6 +2,10 @@ import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { API_BASE } from "@/config/api";
+import {
+	sectorSelectionSchema,
+	type SectorSelection,
+} from "@/features/beneficiary-sectors/schema";
 import { getErrorMessage } from "@/lib/api/client";
 import {
 	dashboardYearSchema,
@@ -50,6 +54,7 @@ const createProposalSchema = z.object({
 	departmentIds: z.array(z.number()).optional(),
 	sectorIds: z.array(z.number()).optional(),
 	sectorNames: z.array(z.string()).optional(),
+	sectors: z.array(sectorSelectionSchema).max(100).optional(),
 	sdgIds: z.array(z.number()).optional(),
 	members: z
 		.array(
@@ -97,6 +102,7 @@ export interface CreateProposalInput {
 	departmentIds?: number[];
 	sectorIds?: number[];
 	sectorNames?: string[];
+	sectors?: SectorSelection[];
 	sdgIds?: number[];
 	members?: {
 		userId: string;
@@ -346,6 +352,7 @@ const updateProposalSchema = z.object({
 	targetStartDate: z.string().datetime().nullable().optional(),
 	targetEndDate: z.string().datetime().nullable().optional(),
 	sectorNames: z.array(z.string()).optional(),
+	sectors: z.array(sectorSelectionSchema).max(100).optional(),
 	sdgIds: z.array(z.number()).optional(),
 	members: z
 		.array(
@@ -404,6 +411,7 @@ export const updateProposalFn = createServerFn({ method: "POST" })
 				targetStartDate: data.targetStartDate,
 				targetEndDate: data.targetEndDate,
 				sectorNames: data.sectorNames,
+				sectors: data.sectors,
 				sdgIds: data.sdgIds,
 				members: data.members,
 			}),

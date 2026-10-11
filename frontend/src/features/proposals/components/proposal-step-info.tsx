@@ -1,9 +1,5 @@
-import { X } from "lucide-react";
-import * as React from "react";
 import type { UseFormReturn } from "react-hook-form";
-import { useWatch } from "react-hook-form";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Controller, useWatch } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Field,
@@ -21,7 +17,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import type { AuthUser } from "@/lib/auth";
-import { appendBeneficiarySector } from "../helpers/proposal-wizard-helpers";
+import { BeneficiarySectorPicker } from "@/features/beneficiary-sectors/public";
 import type { FormValues } from "./proposal-form";
 
 interface ProposalStepInfoProps {
@@ -51,40 +47,20 @@ export function ProposalStepInfo({
 			name: "sdgIds",
 		}) || [];
 
-	const watchedSectors =
-		useWatch({
-			control: form.control,
-			name: "beneficiarySectors",
-		}) || [];
-
 	const watchedExtensionServiceIds =
 		useWatch({
 			control: form.control,
 			name: "extensionServiceIds",
 		}) || [];
 
-	const [sectorInput, setSectorInput] = React.useState("");
-
-	const addSector = () => {
-		form.setValue(
-			"beneficiarySectors",
-			appendBeneficiarySector(watchedSectors, sectorInput),
-		);
-		setSectorInput("");
-	};
-
-	const removeSector = (sector: string) => {
-		form.setValue(
-			"beneficiarySectors",
-			watchedSectors.filter((s) => s !== sector),
-		);
-	};
-
 	const watchedSdgIdSet = new Set(watchedSdgIds);
 	const watchedExtensionServiceIdSet = new Set(watchedExtensionServiceIds);
 
 	const bannerProgramLabels = Object.fromEntries(
-		(bannerProgramsData ?? []).map((p) => [String(p.bannerProgramId), p.programName]),
+		(bannerProgramsData ?? []).map((p) => [
+			String(p.bannerProgramId),
+			p.programName,
+		]),
 	) as Record<string, string>;
 
 	return (
@@ -138,11 +114,11 @@ export function ProposalStepInfo({
 										>
 											{value
 												? (bannerProgramLabels[value] ?? value)
-												: (!bannerProgramsData
+												: !bannerProgramsData
 													? "Loading programs..."
 													: bannerProgramsData.length === 0
 														? "No programs configured"
-														: "Select a banner program")}
+														: "Select a banner program"}
 										</span>
 									)}
 								</SelectValue>
@@ -290,51 +266,26 @@ export function ProposalStepInfo({
 			</div>
 
 			<div className="md:col-span-2 space-y-2">
-				<FieldLabel>Target Beneficiary Sectors</FieldLabel>
-				<div className="flex flex-wrap gap-1.5 min-h-[38px] p-2 border rounded-md">
-					{watchedSectors.map((sector) => (
-						<Badge key={sector} variant="secondary" className="h-9 gap-1 pr-1">
-							{sector}
-							<button
-								type="button"
-								onClick={() => removeSector(sector)}
-								aria-label={`Remove ${sector}`}
-								className="rounded-full p-0.5 hover:bg-muted"
-							>
-								<X className="size-3" />
-							</button>
-						</Badge>
-					))}
-					<div className="flex min-w-[180px] flex-1 items-center gap-2">
-						<Input
-							placeholder={
-								watchedSectors.length === 0 ? "Type a sector" : "Add more..."
-							}
-							value={sectorInput}
-							onChange={(e) => setSectorInput(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter") {
-									e.preventDefault();
-									addSector();
-								}
-							}}
-							className="min-w-0 flex-1 border-0 p-0 shadow-none focus-visible:ring-0"
-						/>
-						<Button
-							type="button"
-							size="xs"
-							onClick={addSector}
-							disabled={!sectorInput.trim()}
-						>
-							Add
-						</Button>
-					</div>
-				</div>
-				<p className="text-xs text-muted-foreground">
-					Type a sector, then select Add. e.g. Farmers, Youth, Senior Citizens,
-					Women, Children
-				</p>
-				<FieldError errors={[form.formState.errors.beneficiarySectors]} />
+				<FieldLabel htmlFor="beneficiary-sectors">
+					Target Beneficiary Sectors
+				</FieldLabel>
+				<Controller
+					control={form.control}
+					name="beneficiarySectors"
+					render={({ field, fieldState }) => (
+						<>
+							<BeneficiarySectorPicker
+								id="beneficiary-sectors"
+								inputRef={field.ref}
+								value={field.value}
+								onChange={field.onChange}
+								onBlur={field.onBlur}
+								invalid={fieldState.invalid}
+							/>
+							<FieldError errors={[fieldState.error]} />
+						</>
+					)}
+				/>
 			</div>
 		</div>
 	);

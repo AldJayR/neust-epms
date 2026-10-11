@@ -7,6 +7,10 @@ import {
 	REVIEW_DECISION,
 } from "@/lib/types.js";
 import { PeriodMetadataSchema } from "../dashboard/dashboard.schema.js";
+import {
+	SectorLabelSchema,
+	SectorSelectionSchema,
+} from "../beneficiary-sectors/beneficiary-sectors.schema.js";
 
 const ProposalStatusQuerySchema = z.enum(
 	Object.values(PROPOSAL_STATUS) as [ProposalStatus, ...ProposalStatus[]],
@@ -52,6 +56,9 @@ export const ProposalSchema = z
 export const ProposalDetailSchema = ProposalSchema.extend({
 	sdgIds: z.array(z.number().int().positive()),
 	beneficiarySectors: z.array(z.string()),
+	sectors: z.array(
+		SectorSelectionSchema.extend({ sectorId: z.number().int().positive() }),
+	),
 	hasProposalDocument: z.boolean(),
 	members: z.array(
 		z.object({
@@ -96,8 +103,9 @@ export const CreateProposalSchema = z
 		targetStartDate: z.string().datetime().optional(),
 		targetEndDate: z.string().datetime().optional(),
 		departmentIds: z.array(z.number().int().positive()).optional(),
-		sectorIds: z.array(z.number().int().positive()).optional(),
-		sectorNames: z.array(z.string().min(1)).optional(),
+		sectorIds: z.array(z.number().int().positive()).max(100).optional(),
+		sectorNames: z.array(SectorLabelSchema).max(100).optional(),
+		sectors: z.array(SectorSelectionSchema).max(100).optional(),
 		sdgIds: z.array(z.number().int().positive()).optional(),
 		members: z
 			.array(
@@ -136,7 +144,9 @@ export const UpdateProposalSchema = z
 		budgetNeust: z.coerce.number().nonnegative().finite().optional(),
 		targetStartDate: z.string().datetime().nullable().optional(),
 		targetEndDate: z.string().datetime().nullable().optional(),
-		sectorNames: z.array(z.string().min(1)).optional(),
+		sectorIds: z.array(z.number().int().positive()).max(100).optional(),
+		sectorNames: z.array(SectorLabelSchema).max(100).optional(),
+		sectors: z.array(SectorSelectionSchema).max(100).optional(),
 		sdgIds: z
 			.array(z.number().int().positive())
 			.refine((ids) => new Set(ids).size === ids.length, {

@@ -67,7 +67,10 @@ function projectBase(
 			c.campus_name AS campus, d.department_name AS department,
 			p.project_id, COALESCE(p.project_status, pr.status) AS status, p.actual_end_date AS closed_at,
 			r.report_id, r.trainee_count,
-			(p.project_status IN (${sql.join(ACTIVE_EXTENSION_PROJECT_STATUSES.map((status) => sql`${status}`), sql`, `)})) AS active
+			(p.project_status IN (${sql.join(
+				ACTIVE_EXTENSION_PROJECT_STATUSES.map((status) => sql`${status}`),
+				sql`, `,
+			)})) AS active
 		FROM proposals pr
 		JOIN campuses c ON c.campus_id = pr.campus_id JOIN departments d ON d.department_id = pr.department_id
 		LEFT JOIN projects p ON p.proposal_id = pr.proposal_id
@@ -105,9 +108,14 @@ function selectedProjects(
 	filters: AnalyticsFilters,
 	view: AnalyticsView,
 ) {
+	// Existing bookmarked sector filters remain valid after formatting-variant consolidation.
+	const categoryKey =
+		filters.groupBy === "sector" && filters.category
+			? sql`COALESCE((SELECT COALESCE(s.merged_into_id, s.sector_id)::text FROM beneficiary_sectors s WHERE s.sector_id::text = ${filters.category}), ${filters.category})`
+			: sql`${filters.category}`;
 	const selection =
 		filters.category && view === "coverage"
-			? sql`AND EXISTS (SELECT 1 FROM categories cat WHERE cat.proposal_id = b.proposal_id AND cat.key = ${filters.category})`
+			? sql`AND EXISTS (SELECT 1 FROM categories cat WHERE cat.proposal_id = b.proposal_id AND cat.key = ${categoryKey})`
 			: sql``;
 	const missing =
 		view === "reach" && filters.missing === "true"
@@ -121,7 +129,9 @@ function involvementProjectScope(user: AuthUser, filters: AnalyticsFilters) {
 	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
 		projectConditions.push(eq(proposals.campusId, user.campusId));
 		if (user.isMainCampus) {
-			projectConditions.push(sql`${proposals.departmentId} = ${user.departmentId}`);
+			projectConditions.push(
+				sql`${proposals.departmentId} = ${user.departmentId}`,
+			);
 		}
 	}
 	if (filters.campusId)
@@ -199,13 +209,17 @@ export async function getAnalytics(
 		active: number;
 		implemented: number;
 		closed: number;
-	}>(facultyList ? sql`${facultyRows(user, filters)} SELECT count(*)::int AS total, count(*) FILTER (WHERE projects > 0)::int AS participating, COALESCE(avg(projects), 0)::text AS average FROM faculty` : sql`${cte} SELECT count(*)::int AS total, COALESCE(sum(trainee_count) FILTER (WHERE status = 'Closed'), 0)::text AS trainees,
+	}>(
+		facultyList
+			? sql`${facultyRows(user, filters)} SELECT count(*)::int AS total, count(*) FILTER (WHERE projects > 0)::int AS participating, COALESCE(avg(projects), 0)::text AS average FROM faculty`
+			: sql`${cte} SELECT count(*)::int AS total, COALESCE(sum(trainee_count) FILTER (WHERE status = 'Closed'), 0)::text AS trainees,
 		count(*) FILTER (WHERE trainee_count IS NOT NULL AND status = 'Closed')::int AS recorded,
 		count(*) FILTER (WHERE trainee_count IS NULL AND status = 'Closed')::int AS missing,
 		count(*) FILTER (WHERE project_id IS NULL)::int AS proposals,
 		count(*) FILTER (WHERE active)::int AS active,
 		count(*) FILTER (WHERE project_id IS NOT NULL AND status IN ('Ongoing', 'Overdue', 'Pending Closure', 'Closed', 'Completed', 'Expired'))::int AS implemented,
-		count(*) FILTER (WHERE status = 'Closed')::int AS closed FROM selected`);
+		count(*) FILTER (WHERE status = 'Closed')::int AS closed FROM selected`,
+	);
 	const groups =
 		view === "coverage"
 			? await query(
@@ -283,9 +297,7 @@ export async function getAnalytics(
 			),
 			metric(
 				"Participation (%)",
-				total
-					? Math.round(((counts?.participating ?? 0) / total) * 100)
-					: null,
+				total ? Math.round(((counts?.participating ?? 0) / total) * 100) : null,
 				"Share of active faculty involved in active projects",
 			),
 			metric(
@@ -474,9 +486,7 @@ export async function exportAnalytics(
 								item.status,
 								item.closedAt,
 								item.traineeCount,
-								...(view === "participation"
-									? [item.projectRole]
-									: []),
+								...(view === "participation" ? [item.projectRole] : []),
 							],
 				);
 			return rows.map((row) => row.map(csvCell).join(",")).join("\r\n");

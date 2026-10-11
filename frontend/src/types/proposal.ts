@@ -1,3 +1,5 @@
+import type { SectorSelection } from "@/features/beneficiary-sectors/schema";
+
 export interface ProposalItem {
 	proposalId: string;
 	campusId: number;
@@ -46,6 +48,7 @@ export interface ProposalFull {
 	targetEndDate: string | null;
 	sdgIds: number[];
 	beneficiarySectors: string[];
+	sectors?: SectorSelection[];
 	hasProposalDocument: boolean;
 	members: ProposalEditMember[];
 }

@@ -92,6 +92,13 @@
       "when": 1791704563759,
       "tag": "0012_signed_terminal_report_closure",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791731240148,
+      "tag": "0013_beneficiary_sector_search",
+      "breakpoints": true
     }
   ]
 }

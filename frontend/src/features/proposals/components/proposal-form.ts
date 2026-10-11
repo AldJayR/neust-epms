@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { sectorSelectionSchema } from "@/features/beneficiary-sectors/schema";
 
 export const formSchema = z
 	.object({
@@ -12,7 +13,8 @@ export const formSchema = z
 		departmentId: z.string().min(1, "Department is required"),
 		sdgIds: z.array(z.number()).min(1, "Select at least one SDG"),
 		beneficiarySectors: z
-			.array(z.string())
+			.array(sectorSelectionSchema)
+			.max(100, "Select at most 100 beneficiary sectors")
 			.min(1, "Enter at least one target beneficiary sector"),
 		targetStartDate: z.string().min(1, "Start date is required"),
 		targetEndDate: z.string().min(1, "End date is required"),

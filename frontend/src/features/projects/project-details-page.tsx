@@ -97,7 +97,11 @@ export function ProjectDetailsPage({
 				campusId: editProposalData.campusId.toString(),
 				departmentId: editProposalData.departmentId?.toString() ?? "",
 				sdgIds: editProposalData.sdgIds,
-				beneficiarySectors: editProposalData.beneficiarySectors,
+				beneficiarySectors:
+					editProposalData.sectors ??
+					editProposalData.beneficiarySectors.map((sectorName) => ({
+						sectorName,
+					})),
 				targetStartDate: editProposalData.targetStartDate
 					? toDateOnly(toManilaDisplayDate(editProposalData.targetStartDate))
 					: "",

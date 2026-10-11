@@ -46,6 +46,8 @@ import {
 import { isPdfFile, sanitizeFilename } from "@/services/file.service.js";
 import { hashFileSha256 } from "@/services/file-integrity.service.js";
 import { validateBannerProgramForProposal } from "../banner-programs/banner-programs.service.js";
+import type { SectorSelection } from "../beneficiary-sectors/beneficiary-sectors.schema.js";
+import { synchronizeProposalSectors } from "../beneficiary-sectors/beneficiary-sectors.service.js";
 import { validateProposalCompleteness } from "./proposal-completeness.js";
 import { resolveReviewPolicy } from "./proposal-review-policy.js";
 import { validateTargetDates } from "./proposal-target-dates.js";
@@ -270,7 +272,11 @@ export async function getProposalEditData(proposalId: string) {
 			.where(eq(proposalSdgs.proposalId, proposalId))
 			.orderBy(asc(proposalSdgs.sdgId)),
 		db
-			.select({ sectorName: beneficiarySectors.sectorName })
+			.select({
+				sectorId: beneficiarySectors.sectorId,
+				sectorName: beneficiarySectors.sectorName,
+				enteredLabels: proposalBeneficiaries.enteredLabels,
+			})
 			.from(proposalBeneficiaries)
 			.innerJoin(
 				beneficiarySectors,
@@ -318,6 +324,7 @@ export async function getProposalEditData(proposalId: string) {
 	return {
 		sdgIds: sdgRows.map((row) => row.sdgId),
 		beneficiarySectors: sectorRows.map((row) => row.sectorName),
+		sectors: sectorRows,
 		hasProposalDocument: documentRows.length > 0,
 		members: memberRows,
 	};
@@ -339,6 +346,7 @@ export async function createProposalInTransaction(
 		departmentIds?: number[] | undefined;
 		sectorIds?: number[] | undefined;
 		sectorNames?: string[] | undefined;
+		sectors?: SectorSelection[] | undefined;
 		sdgIds?: number[] | undefined;
 		members?: { userId: string; projectRole: string }[] | undefined;
 	},
@@ -421,55 +429,7 @@ export async function createProposalInTransaction(
 		})),
 	);
 
-	const sectorIdsToInsert = [...new Set(body.sectorIds ?? [])];
-
-	if (
-		sectorIdsToInsert.length === 0 &&
-		body.sectorNames &&
-		body.sectorNames.length > 0
-	) {
-		for (const name of new Set(body.sectorNames)) {
-			const trimmed = name.trim();
-			if (!trimmed) continue;
-
-			const [existing] = await tx
-				.select({ sectorId: beneficiarySectors.sectorId })
-				.from(beneficiarySectors)
-				.where(eq(beneficiarySectors.sectorName, trimmed))
-				.limit(1);
-
-			if (existing) {
-				sectorIdsToInsert.push(existing.sectorId);
-			} else {
-				const [created] = await tx
-					.insert(beneficiarySectors)
-					.values({ sectorName: trimmed })
-					.returning({ sectorId: beneficiarySectors.sectorId });
-				if (created) {
-					sectorIdsToInsert.push(created.sectorId);
-				}
-			}
-		}
-	}
-	if (sectorIdsToInsert.length > 0) {
-		const sectors = await tx
-			.select({ sectorId: beneficiarySectors.sectorId })
-			.from(beneficiarySectors)
-			.where(inArray(beneficiarySectors.sectorId, sectorIdsToInsert));
-		if (sectors.length !== sectorIdsToInsert.length) {
-			throw new ApiError(
-				400,
-				"INVALID_SECTORS",
-				"One or more selected beneficiary sectors are invalid.",
-			);
-		}
-		await tx.insert(proposalBeneficiaries).values(
-			sectorIdsToInsert.map((sectorId) => ({
-				proposalId: proposal.proposalId,
-				sectorId,
-			})),
-		);
-	}
+	await synchronizeProposalSectors(tx, proposal.proposalId, body);
 
 	if (body.sdgIds && body.sdgIds.length > 0) {
 		await tx.insert(proposalSdgs).values(
@@ -504,7 +464,9 @@ export async function updateProposalWithSectors(
 		budgetNeust?: number | undefined;
 		targetStartDate?: string | null | undefined;
 		targetEndDate?: string | null | undefined;
+		sectorIds?: number[] | undefined;
 		sectorNames?: string[] | undefined;
+		sectors?: SectorSelection[] | undefined;
 		sdgIds?: number[] | undefined;
 		members?: ProposalMemberInput[] | undefined;
 	},
@@ -637,73 +599,12 @@ export async function updateProposalWithSectors(
 			);
 		}
 
-		if (body.sectorNames !== undefined && body.sectorNames.length === 0) {
-			await tx
-				.update(proposalBeneficiaries)
-				.set({ archivedAt: new Date() })
-				.where(
-					and(
-						eq(proposalBeneficiaries.proposalId, id),
-						isNull(proposalBeneficiaries.archivedAt),
-					),
-				);
-		}
-		if (body.sectorNames && body.sectorNames.length > 0) {
-			const sectorNames = [
-				...new Set(body.sectorNames.map((name) => name.trim()).filter(Boolean)),
-			];
-			if (sectorNames.length > 0) {
-				await tx
-					.insert(beneficiarySectors)
-					.values(sectorNames.map((sectorName) => ({ sectorName })))
-					.onConflictDoNothing();
-
-				const sectors = await tx
-					.select({
-						sectorId: beneficiarySectors.sectorId,
-						sectorName: beneficiarySectors.sectorName,
-					})
-					.from(beneficiarySectors)
-					.where(inArray(beneficiarySectors.sectorName, sectorNames));
-				const sectorIds = sectors.map((sector) => sector.sectorId);
-
-				await tx
-					.update(proposalBeneficiaries)
-					.set({ archivedAt: new Date() })
-					.where(
-						and(
-							eq(proposalBeneficiaries.proposalId, id),
-							isNull(proposalBeneficiaries.archivedAt),
-							notInArray(proposalBeneficiaries.sectorId, sectorIds),
-						),
-					);
-
-				await tx
-					.update(proposalBeneficiaries)
-					.set({ archivedAt: null })
-					.where(
-						and(
-							eq(proposalBeneficiaries.proposalId, id),
-							inArray(proposalBeneficiaries.sectorId, sectorIds),
-						),
-					);
-
-				const existingLinks = await tx
-					.select({ sectorId: proposalBeneficiaries.sectorId })
-					.from(proposalBeneficiaries)
-					.where(eq(proposalBeneficiaries.proposalId, id));
-				const existingIds = new Set(existingLinks.map((link) => link.sectorId));
-				const newSectorIds = sectorIds.filter(
-					(sectorId) => !existingIds.has(sectorId),
-				);
-				if (newSectorIds.length > 0) {
-					await tx
-						.insert(proposalBeneficiaries)
-						.values(
-							newSectorIds.map((sectorId) => ({ proposalId: id, sectorId })),
-						);
-				}
-			}
+		if (
+			body.sectors !== undefined ||
+			body.sectorNames !== undefined ||
+			body.sectorIds !== undefined
+		) {
+			await synchronizeProposalSectors(tx, id, body);
 		}
 
 		if (body.extensionServiceIds !== undefined) {

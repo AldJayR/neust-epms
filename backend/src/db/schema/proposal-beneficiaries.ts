@@ -4,6 +4,7 @@ import {
 	integer,
 	pgTable,
 	primaryKey,
+	text,
 	timestamp,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -24,6 +25,10 @@ export const proposalBeneficiaries = pgTable(
 			.notNull()
 			.references(() => beneficiarySectors.sectorId),
 		archivedAt: timestamp("archived_at", { withTimezone: true }),
+		enteredLabels: text("entered_labels")
+			.array()
+			.notNull()
+			.default(sql`'{}'::text[]`),
 	},
 	(table) => ({
 		pk: primaryKey({ columns: [table.proposalId, table.sectorId] }),

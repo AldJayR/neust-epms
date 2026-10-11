@@ -9,6 +9,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { bannerProgramsQueryOptions } from "@/features/banner-programs";
+import { SECTOR_SEARCH_QUERY_KEY } from "@/features/beneficiary-sectors/functions";
 import { uploadSpecialOrderFn } from "@/features/projects/special-orders.functions";
 import type { AuthUser } from "@/lib/auth";
 import { manilaCalendarTimestamp } from "@/lib/dates";
@@ -133,6 +134,8 @@ export function useProposalWizard({
 	const createProposalMutation = useMutation({
 		mutationFn: createProposalFn,
 		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: SECTOR_SEARCH_QUERY_KEY });
+			queryClient.invalidateQueries({ queryKey: ["analytics"] });
 			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["ret"] });
@@ -143,6 +146,8 @@ export function useProposalWizard({
 	const updateProposalMutation = useMutation({
 		mutationFn: updateProposalFn,
 		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: SECTOR_SEARCH_QUERY_KEY });
+			queryClient.invalidateQueries({ queryKey: ["analytics"] });
 			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
 			queryClient.invalidateQueries({ queryKey: ["proposals"] });
 			queryClient.invalidateQueries({ queryKey: ["ret"] });
@@ -256,7 +261,7 @@ export function useProposalWizard({
 						targetEndDate: values.targetEndDate
 							? manilaCalendarTimestamp(values.targetEndDate)
 							: null,
-						sectorNames: values.beneficiarySectors,
+						sectors: values.beneficiarySectors,
 						sdgIds: values.sdgIds,
 						members: values.members.map((member) => ({
 							userId: member.userId,
@@ -282,7 +287,7 @@ export function useProposalWizard({
 							? manilaCalendarTimestamp(values.targetEndDate)
 							: undefined,
 						sdgIds: values.sdgIds,
-						sectorNames: values.beneficiarySectors,
+						sectors: values.beneficiarySectors,
 						members: values.members.map((member) => ({
 							userId: member.userId,
 							projectRole: member.projectRole,

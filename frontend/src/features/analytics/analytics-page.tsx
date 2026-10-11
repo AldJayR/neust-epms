@@ -370,9 +370,14 @@ export function AnalyticsPage({
 					)}
 					{view === "coverage" && (
 						<p className="rounded-md border p-3 text-sm">
-							Projects can support more than one category. Select a category to
-							see its projects. Beneficiary sectors show who the projects
-							intended to serve.
+							Select a category to see its projects. Beneficiary sectors show
+							who the projects intended to serve.
+							{filters.groupBy !== "program" && (
+								<>
+									{" "}A project may belong to multiple categories. Category counts
+									are not additive.
+								</>
+							)}
 						</p>
 					)}
 					{view === "participation" && (
