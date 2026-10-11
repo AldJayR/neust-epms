@@ -21,7 +21,6 @@ import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposalSdgs } from "@/db/schema/proposal-sdgs.js";
 import { proposals } from "@/db/schema/proposals.js";
-import { reportAttachments } from "@/db/schema/report-attachments.js";
 import { sdgs } from "@/db/schema/sdgs.js";
 import { specialOrders } from "@/db/schema/special-orders.js";
 import { users } from "@/db/schema/users.js";
@@ -35,12 +34,10 @@ import { projectPeriodClause } from "@/lib/project-period.js";
 import { buildProposalScope } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
 import {
-	ATTACHMENT_TYPE,
 	type AuthUser,
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
 	type ProjectStatus,
-	REPORT_TYPE,
 	ROLE_NAMES,
 } from "@/lib/types.js";
 import { getProposalExtensionServicesByProposalIds } from "@/modules/proposals/proposals.service.js";
@@ -50,6 +47,8 @@ import {
 	reportingScheduleError,
 	validateProjectTransition,
 } from "./project-policies.js";
+
+export { closeProject } from "./project-closure.service.js";
 
 // ── CRUD ──
 
@@ -263,6 +262,8 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 			endorsedAt: proposals.endorsedAt,
 			institutionalApprovalDocPath: proposals.institutionalApprovalDocPath,
 			institutionalApprovedAt: proposals.institutionalApprovedAt,
+			signedTerminalReportDocPath: projects.signedTerminalReportDocPath,
+			actualEndDate: projects.actualEndDate,
 		})
 		.from(proposals)
 		.innerJoin(
@@ -509,6 +510,17 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 		});
 	}
 
+	if (row.signedTerminalReportDocPath && row.actualEndDate) {
+		history.push({
+			id: `project-closure-${row.proposalId}`,
+			version: "Final",
+			status: PROJECT_STATUS.CLOSED,
+			actorName: "Director",
+			date: row.actualEndDate.toISOString(),
+			comment: "Signed terminal report recorded and project closed.",
+		});
+	}
+
 	history.sort(
 		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
 	);
@@ -528,6 +540,19 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 			};
 		}),
 	);
+
+	if (row.signedTerminalReportDocPath) {
+		const { data: signedUrlData } = await supabase.storage
+			.from("documents")
+			.createSignedUrl(row.signedTerminalReportDocPath, 3600);
+		attachments.push({
+			id: `signed-terminal-report-${row.proposalId}`,
+			name: "Signed Terminal Report.pdf",
+			type: "pdf",
+			url: signedUrlData?.signedUrl ?? "",
+			version: "Director signed",
+		});
+	}
 
 	let endorsementDocUrl: string | null = null;
 	if (row.endorsementDocPath) {
@@ -687,196 +712,6 @@ export async function transitionProjectStatus(
 
 		return updated;
 	});
-}
-
-export async function closeProject(
-	projectId: string,
-	user: AuthUser,
-	ipAddress: string,
-) {
-	const result = await db.transaction(async (tx) => {
-		const [project] = await tx
-			.select({
-				projectId: projects.projectId,
-				projectStatus: projects.projectStatus,
-				proposalId: projects.proposalId,
-				archivedAt: projects.archivedAt,
-			})
-			.from(projects)
-			.where(
-				and(
-					or(
-						eq(projects.projectId, projectId),
-						eq(projects.proposalId, projectId),
-					),
-					isNull(projects.archivedAt),
-				),
-			)
-			.for("update")
-			.limit(1);
-
-		if (!project) {
-			throw new ApiError(404, "NOT_FOUND", "Project not found");
-		}
-
-		if (
-			project.projectStatus === PROJECT_STATUS.CLOSED ||
-			project.projectStatus === PROJECT_STATUS.COMPLETED
-		) {
-			throw new ApiError(
-				400,
-				"ALREADY_CLOSED",
-				"Project is already closed or completed",
-			);
-		}
-
-		if (project.projectStatus !== PROJECT_STATUS.PENDING_CLOSURE) {
-			throw new ApiError(
-				400,
-				"INVALID_STATE",
-				"Only pending closure projects can be closed",
-			);
-		}
-
-		const reports = await tx
-			.select({
-				reportId: projectReports.reportId,
-				reportType: projectReports.reportType,
-				traineeCount: projectReports.traineeCount,
-				packageCompletedAt: projectReports.packageCompletedAt,
-				milestoneId: projectReports.milestoneId,
-			})
-			.from(projectReports)
-			.where(
-				and(
-					eq(projectReports.projectId, project.projectId),
-					isNull(projectReports.archivedAt),
-					isNotNull(projectReports.storagePath),
-				),
-			);
-
-		const closureReport = reports.find(
-			(r) => r.reportType === REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL,
-		);
-		if (!closureReport) {
-			throw new ApiError(
-				400,
-				"MISSING_CLOSURE_REPORT",
-				"An Accomplishment and Terminal Report must be submitted before closing",
-			);
-		}
-
-		if (closureReport) {
-			if (
-				!closureReport.packageCompletedAt ||
-				closureReport.traineeCount == null ||
-				closureReport.traineeCount < 0
-			)
-				throw new ApiError(
-					400,
-					"INCOMPLETE_PACKAGE",
-					"Complete the terminal package and trainee count before closure",
-				);
-			const [hasEval] = await tx
-				.select({ attachmentId: reportAttachments.attachmentId })
-				.from(reportAttachments)
-				.where(
-					and(
-						eq(reportAttachments.reportId, closureReport.reportId),
-						eq(
-							reportAttachments.attachmentType,
-							ATTACHMENT_TYPE.EVALUATION_FORMS,
-						),
-						isNull(reportAttachments.archivedAt),
-						isNotNull(reportAttachments.storagePath),
-					),
-				)
-				.limit(1);
-
-			if (!hasEval) {
-				throw new ApiError(
-					400,
-					"MISSING_EVALUATION_FORMS",
-					"Evaluation Forms attachment is required for the Accomplishment and Terminal Report before closing",
-				);
-			}
-		}
-
-		const diff = captureAuditDiff(
-			{ projectStatus: project.projectStatus },
-			{ projectStatus: PROJECT_STATUS.CLOSED },
-			["projectStatus"],
-		);
-
-		const [updated] = await tx
-			.update(projects)
-			.set({
-				projectStatus: PROJECT_STATUS.CLOSED,
-				actualEndDate: new Date(),
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(projects.projectId, project.projectId),
-					eq(projects.projectStatus, project.projectStatus),
-					isNull(projects.archivedAt),
-				),
-			)
-			.returning({ projectId: projects.projectId });
-
-		if (!updated) {
-			throw new ApiError(
-				409,
-				"UPDATE_CONFLICT",
-				"Project changed before it could be closed",
-			);
-		}
-
-		await insertAuditLog(
-			{
-				userId: user.userId,
-				action: `Closed project ${project.projectId}`,
-				tableAffected: "projects",
-				oldValue: diff.oldValue,
-				newValue: diff.newValue,
-				ipAddress,
-			},
-			tx,
-		);
-
-		const [proposal] = await tx
-			.select({ title: proposals.title })
-			.from(proposals)
-			.where(eq(proposals.proposalId, project.proposalId))
-			.limit(1);
-
-		const [leader] = await tx
-			.select({ userId: proposalMembers.userId })
-			.from(proposalMembers)
-			.where(
-				and(
-					eq(proposalMembers.proposalId, project.proposalId),
-					eq(proposalMembers.projectRole, "Project Leader"),
-					isNull(proposalMembers.archivedAt),
-				),
-			)
-			.limit(1);
-
-		return { updated, leader, title: proposal?.title ?? "Untitled" };
-	});
-	if (result.leader) {
-		await createNotification({
-			recipientId: result.leader.userId,
-			type: "project",
-			title: "Terminal Report Approved",
-			message: `Terminal report for "${result.title}" has been approved by the Director. The project is officially closed.`,
-			sendEmail: true,
-		}).catch((err) => {
-			console.error("[notification] Failed to notify leader on closure:", err);
-		});
-	}
-
-	return result.updated;
 }
 
 export async function setProjectHold(

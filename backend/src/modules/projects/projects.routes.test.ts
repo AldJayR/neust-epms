@@ -6,6 +6,12 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { db } from "@/db/client.js";
+import { projects } from "@/db/schema/projects.js";
+import { projectReports } from "@/db/schema/project-reports.js";
+import { reportAttachments } from "@/db/schema/report-attachments.js";
+import { supabase } from "@/lib/supabase.js";
+import { MAX_PDF_UPLOAD_BYTES } from "@/services/file.service.js";
+import { closeProject } from "./project-closure.service.js";
 import {
 	setMockUser,
 	MOCK_USERS,
@@ -104,193 +110,169 @@ describe("POST /projects/:id/transition", () => {
 });
 
 describe("POST /projects/:id/close", () => {
-	it("should close a pending project with a complete unified package", async () => {
-		const project = createMockProject({ projectStatus: "Pending Closure" });
-		const reports = [
-			{ reportId: "report-1", reportType: "Accomplishment and Terminal Report", traineeCount: 10, packageCompletedAt: new Date() },
-		];
+	const upload = vi.fn();
+	const remove = vi.fn();
+	const projectId = createMockProject().projectId;
+	const completeReport = { reportId: "report-1", traineeCount: 10, packageCompletedAt: new Date() };
+	const signedFile = () => new File(["%PDF-1.4\nsigned terminal report"], "signed.pdf", { type: "application/pdf" });
+	const signedBody = (file = signedFile()) => {
+		const body = new FormData();
+		body.set("file", file);
+		return body;
+	};
 
-		let callCount = 0;
+	beforeEach(() => {
+		upload.mockReset().mockResolvedValue({ error: null });
+		remove.mockReset().mockResolvedValue({ error: null });
+		vi.mocked(supabase.storage.from).mockReturnValue({ upload, remove } as never);
+		vi.mocked(db.transaction).mockImplementation(async (callback) => callback(db as never));
+	});
+
+	function mockClosure(
+		project = createMockProject({ projectStatus: "Pending Closure" }),
+		reports: unknown[] = [completeReport],
+		evaluations: unknown[] = [{ attachmentId: "eval-1" }],
+	) {
 		vi.mocked(db.select).mockImplementation(() => {
-			callCount++;
-			if (callCount === 1) return mockSelectChain([project]) as never;
-			if (callCount === 2) return mockSelectChain(reports) as never;
-			if (callCount === 3) return mockSelectChain([{ attachmentId: "eval-1" }]) as never;
-			return mockSelectChain([]) as never;
+			const chain = mockSelectChain([]);
+			chain.from = vi.fn((table) => mockSelectChain(
+				table === projects ? [project] : table === projectReports ? reports : table === reportAttachments ? evaluations : [],
+			));
+			return chain as never;
 		});
 		vi.mocked(db.update).mockReturnValue(mockMutationChain([project]) as never);
+		return project;
+	}
 
-		const res = await app.request(`/projects/${project.projectId}/close`, {
-			method: "POST",
-		});
-
-		expect(res.status).toBe(200);
-		const body = await res.json();
-		expect(body.message).toBe("Project closed");
-
-		expect(insertAuditLog).toHaveBeenCalledWith(
-			expect.objectContaining({
-				action: `Closed project ${project.projectId}`,
-				oldValue: { projectStatus: "Pending Closure" },
-				newValue: { projectStatus: "Closed" },
-			}),
-			expect.anything(),
+	it.each(["projectId", "proposalId"] as const)("closes using %s and saves the signed PDF and hash", async (key) => {
+		const project = mockClosure();
+		const response = await app.request(`/projects/${project[key]}/close`, { method: "POST", body: signedBody() });
+		expect(response.status).toBe(200);
+		expect(await response.json()).toEqual({ message: "Project closed" });
+		expect(upload).toHaveBeenCalledWith(
+			expect.stringContaining(`projects/${project.projectId}/signed-terminal-report_`),
+			expect.any(File),
+			{ contentType: "application/pdf", upsert: false },
 		);
+		const updateChain = vi.mocked(db.update).mock.results[0]!.value;
+		expect(updateChain.set).toHaveBeenCalledWith(expect.objectContaining({
+			projectStatus: "Closed",
+			actualEndDate: expect.any(Date),
+			signedTerminalReportDocPath: upload.mock.calls[0]![0],
+			signedTerminalReportHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+		}));
+		expect(insertAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+			action: `Closed project ${project.projectId}`,
+			oldValue: { projectStatus: "Pending Closure" },
+			newValue: expect.objectContaining({ projectStatus: "Closed", signedTerminalReportHash: expect.stringMatching(/^[a-f0-9]{64}$/) }),
+		}), expect.anything());
+		expect(remove).not.toHaveBeenCalled();
 	});
 
-	it("should close a project when referenced by proposalId", async () => {
-		const project = createMockProject({ projectStatus: "Pending Closure" });
-		const reports = [
-			{ reportId: "report-1", reportType: "Accomplishment and Terminal Report", traineeCount: 10, packageCompletedAt: new Date() },
-		];
-
-		let callCount = 0;
-		vi.mocked(db.select).mockImplementation(() => {
-			callCount++;
-			if (callCount === 1) return mockSelectChain([project]) as never;
-			if (callCount === 2) return mockSelectChain(reports) as never;
-			if (callCount === 3) return mockSelectChain([{ attachmentId: "eval-1" }]) as never;
-			return mockSelectChain([]) as never;
-		});
-		vi.mocked(db.update).mockReturnValue(mockMutationChain([project]) as never);
-
-		const res = await app.request(`/projects/${project.proposalId}/close`, {
-			method: "POST",
-		});
-
-		expect(res.status).toBe(200);
-		const body = await res.json();
-		expect(body.message).toBe("Project closed");
+	it("rejects the old bodyless closure request", async () => {
+		const response = await app.request(`/projects/${projectId}/close`, { method: "POST" });
+		expect(response.status).toBe(400);
+		expect(upload).not.toHaveBeenCalled();
+		expect(db.update).not.toHaveBeenCalled();
 	});
 
-	it("should close a project that is pending closure", async () => {
-		const project = createMockProject({ projectStatus: "Pending Closure" });
-		const reports = [
-			{ reportId: "report-1", reportType: "Accomplishment and Terminal Report", traineeCount: 10, packageCompletedAt: new Date() },
-		];
-
-		let callCount = 0;
-		vi.mocked(db.select).mockImplementation(() => {
-			callCount++;
-			if (callCount === 1) return mockSelectChain([project]) as never;
-			if (callCount === 2) return mockSelectChain(reports) as never;
-			if (callCount === 3) return mockSelectChain([{ attachmentId: "eval-1" }]) as never;
-			return mockSelectChain([]) as never;
-		});
-		vi.mocked(db.update).mockReturnValue(mockMutationChain([project]) as never);
-
-		const res = await app.request(`/projects/${project.projectId}/close`, {
-			method: "POST",
-		});
-
-		expect(res.status).toBe(200);
-		expect(await res.json()).toMatchObject({ message: "Project closed" });
+	it.each(["faculty", "retChair", "superAdmin"] as const)("rejects signed uploads from %s", async (role) => {
+		setMockUser(MOCK_USERS[role]);
+		const response = await app.request(`/projects/${projectId}/close`, { method: "POST", body: signedBody() });
+		expect(response.status).toBe(403);
+		expect(upload).not.toHaveBeenCalled();
 	});
 
-	it("should reject close when Final Accomplishment report is missing", async () => {
-		const project = createMockProject({ projectStatus: "Pending Closure" });
-		const reports = [{ reportType: "Terminal" }];
-
-		let callCount = 0;
-		vi.mocked(db.select).mockImplementation(() => {
-			callCount++;
-			if (callCount === 1) return mockSelectChain([project]) as never;
-			return mockSelectChain(reports) as never;
-		});
-
-		const res = await app.request(`/projects/${project.projectId}/close`, {
-			method: "POST",
-		});
-
-		expect(res.status).toBe(400);
-		const body = await res.json();
-		expect(body.error.code).toBe("MISSING_CLOSURE_REPORT");
+	it("checks the Director role inside the service too", async () => {
+		await expect(closeProject(projectId, MOCK_USERS.faculty, signedFile(), "127.0.0.1")).rejects.toMatchObject({ code: "FORBIDDEN" });
+		expect(upload).not.toHaveBeenCalled();
 	});
 
-	it("should reject close when Terminal report is missing", async () => {
-		const project = createMockProject({ projectStatus: "Pending Closure" });
-		const reports = [{ reportType: "Final Accomplishment" }];
-
-		let callCount = 0;
-		vi.mocked(db.select).mockImplementation(() => {
-			callCount++;
-			if (callCount === 1) return mockSelectChain([project]) as never;
-			return mockSelectChain(reports) as never;
+	it.each(["", "not a PDF"])("rejects an empty or disguised PDF", async (content) => {
+		const response = await app.request(`/projects/${projectId}/close`, {
+			method: "POST", body: signedBody(new File([content], "fake.pdf", { type: "application/pdf" })),
 		});
-
-		const res = await app.request(`/projects/${project.projectId}/close`, {
-			method: "POST",
-		});
-
-		expect(res.status).toBe(400);
-		const body = await res.json();
-		expect(body.error.code).toBe("MISSING_CLOSURE_REPORT");
+		expect(response.status).toBe(422);
+		expect(upload).not.toHaveBeenCalled();
 	});
 
-	it("should reject close when no reports exist", async () => {
-		const project = createMockProject({ projectStatus: "Pending Closure" });
-
-		let callCount = 0;
-		vi.mocked(db.select).mockImplementation(() => {
-			callCount++;
-			if (callCount === 1) return mockSelectChain([project]) as never;
-			return mockSelectChain([]) as never;
+	it("rejects oversized requests before parsing the file", async () => {
+		const response = await app.request(`/projects/${projectId}/close`, {
+			method: "POST", headers: { "Content-Length": String(MAX_PDF_UPLOAD_BYTES + 1) }, body: signedBody(),
 		});
-
-		const res = await app.request(`/projects/${project.projectId}/close`, {
-			method: "POST",
-		});
-
-		expect(res.status).toBe(400);
-		const body = await res.json();
-		expect(body.error.code).toBe("MISSING_CLOSURE_REPORT");
+		expect(response.status).toBe(413);
+		expect(upload).not.toHaveBeenCalled();
 	});
 
-	it("should reject close when project is already closed", async () => {
-		const project = createMockProject({ projectStatus: "Closed" });
-
-		vi.mocked(db.select).mockImplementation(() => {
-			return mockSelectChain([project]) as never;
-		});
-
-		const res = await app.request(`/projects/${project.projectId}/close`, {
-			method: "POST",
-		});
-
-		expect(res.status).toBe(400);
-		const body = await res.json();
-		expect(body.error.code).toBe("ALREADY_CLOSED");
+	it("checks the actual file size inside the service", async () => {
+		const file = signedFile();
+		vi.spyOn(file, "size", "get").mockReturnValue(MAX_PDF_UPLOAD_BYTES + 1);
+		await expect(closeProject(projectId, MOCK_USERS.director, file, "127.0.0.1")).rejects.toMatchObject({ code: "PAYLOAD_TOO_LARGE" });
+		expect(upload).not.toHaveBeenCalled();
 	});
 
-	it("should reject close when project is not Ongoing", async () => {
-		const project = createMockProject({ projectStatus: "Approved" });
-
-		vi.mocked(db.select).mockImplementation(() => {
-			return mockSelectChain([project]) as never;
-		});
-
-		const res = await app.request(`/projects/${project.projectId}/close`, {
-			method: "POST",
-		});
-
-		expect(res.status).toBe(400);
-		const body = await res.json();
-		expect(body.error.code).toBe("INVALID_STATE");
+	it.each([
+		["Closed", "ALREADY_CLOSED"], ["Completed", "ALREADY_CLOSED"],
+		["Approved", "INVALID_STATE"], ["Ongoing", "INVALID_STATE"],
+	])("rejects a project in %s state", async (status, code) => {
+		mockClosure(createMockProject({ projectStatus: status }));
+		const response = await app.request(`/projects/${projectId}/close`, { method: "POST", body: signedBody() });
+		expect(response.status).toBe(400);
+		expect((await response.json()).error.code).toBe(code);
+		expect(upload).not.toHaveBeenCalled();
 	});
 
-	it("should reject close when project is already completed", async () => {
-		const project = createMockProject({ projectStatus: "Completed" });
+	it("still requires the leader's terminal report", async () => {
+		mockClosure(undefined, []);
+		const response = await app.request(`/projects/${projectId}/close`, { method: "POST", body: signedBody() });
+		expect(response.status).toBe(400);
+		expect((await response.json()).error.code).toBe("MISSING_CLOSURE_REPORT");
+		expect(upload).not.toHaveBeenCalled();
+	});
 
-		vi.mocked(db.select).mockImplementation(() => {
-			return mockSelectChain([project]) as never;
+	it("still requires a completed terminal package", async () => {
+		mockClosure(undefined, [{ ...completeReport, packageCompletedAt: null }]);
+		const response = await app.request(`/projects/${projectId}/close`, { method: "POST", body: signedBody() });
+		expect(response.status).toBe(400);
+		expect((await response.json()).error.code).toBe("INCOMPLETE_PACKAGE");
+		expect(upload).not.toHaveBeenCalled();
+	});
+
+	it("still requires evaluation forms", async () => {
+		mockClosure(undefined, [completeReport], []);
+		const response = await app.request(`/projects/${projectId}/close`, { method: "POST", body: signedBody() });
+		expect(response.status).toBe(400);
+		expect((await response.json()).error.code).toBe("MISSING_EVALUATION_FORMS");
+		expect(upload).not.toHaveBeenCalled();
+	});
+
+	it("does not change project state when uploading fails", async () => {
+		mockClosure();
+		upload.mockResolvedValueOnce({ error: { message: "Storage unavailable" } });
+		const response = await app.request(`/projects/${projectId}/close`, { method: "POST", body: signedBody() });
+		expect(response.status).toBe(400);
+		expect((await response.json()).error.code).toBe("UPLOAD_FAILED");
+		expect(db.transaction).not.toHaveBeenCalled();
+		expect(db.update).not.toHaveBeenCalled();
+	});
+
+	it("rechecks project state after uploading and removes a losing upload", async () => {
+		const project = mockClosure();
+		upload.mockImplementationOnce(async () => {
+			project.projectStatus = "Closed";
+			return { error: null };
 		});
+		const response = await app.request(`/projects/${projectId}/close`, { method: "POST", body: signedBody() });
+		expect(response.status).toBe(400);
+		expect((await response.json()).error.code).toBe("ALREADY_CLOSED");
+		expect(db.update).not.toHaveBeenCalled();
+		expect(remove).toHaveBeenCalledWith([upload.mock.calls[0]![0]]);
+	});
 
-		const res = await app.request(`/projects/${project.projectId}/close`, {
-			method: "POST",
-		});
-
-		expect(res.status).toBe(400);
-		const body = await res.json();
-		expect(body.error.code).toBe("ALREADY_CLOSED");
+	it("removes the uploaded scan when the transaction fails", async () => {
+		mockClosure();
+		vi.mocked(db.transaction).mockRejectedValueOnce(new Error("Database unavailable"));
+		await expect(closeProject(projectId, MOCK_USERS.director, signedFile(), "127.0.0.1")).rejects.toThrow("Database unavailable");
+		expect(remove).toHaveBeenCalledWith([upload.mock.calls[0]![0]]);
 	});
 });

@@ -7,6 +7,7 @@ import {
 	authorizeSessionUser,
 	getValidAccessToken,
 } from "@/lib/session.server";
+import { pdfFileSchema } from "@/lib/upload-policy";
 import type {
 	ProjectDetailsResponse,
 	ProjectHubParams,
@@ -83,15 +84,21 @@ export const transitionProjectFn = createServerFn({ method: "POST" })
 	});
 
 export const closeProjectFn = createServerFn({ method: "POST" })
-	.validator(z.object({ projectId: z.uuid() }))
+	.validator((data: FormData) => {
+		z.uuid().parse(data.get("projectId"));
+		pdfFileSchema.parse(data.get("file"));
+		return data;
+	})
 	.handler(async ({ data }) => {
 		await authorizeSessionUser("Director");
 		const token = await getValidAccessToken();
+		const projectId = data.get("projectId") as string;
 		const response = await fetch(
-			`${API_BASE}/projects/${data.projectId}/close`,
+			`${API_BASE}/projects/${projectId}/close`,
 			{
 				method: "POST",
 				headers: { Authorization: `Bearer ${token}` },
+				body: data,
 			},
 		);
 		if (!response.ok) {

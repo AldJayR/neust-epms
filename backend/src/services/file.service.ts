@@ -1,3 +1,5 @@
+export const MAX_PDF_UPLOAD_BYTES = 50 * 1024 * 1024;
+
 export function sanitizeFilename(fileName: string): string {
 	const normalized = fileName
 		.normalize("NFKD")

@@ -1,8 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Info } from "lucide-react";
 import { useReducer, useState } from "react";
-import { toast } from "sonner";
-import { ConfirmDialog } from "@/components/custom/confirm-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CreateProposalModal } from "@/features/proposals";
 import { getProposalByIdFn } from "@/features/proposals/public";
@@ -10,14 +8,14 @@ import { useProjectReadiness } from "@/hooks/use-project-readiness";
 import type { AuthUser } from "@/lib/auth";
 import { toDateOnly, toManilaDisplayDate } from "@/lib/dates";
 import { getStatusDescription } from "@/lib/status-descriptions";
-import { invalidateWorkflowQueries } from "@/lib/workflow-queries";
 import { ActivateProjectWizard } from "./components/activate-project-wizard";
 import { ActivityHistoryCard } from "./components/activity-history-card";
 import { AttachmentsCard } from "./components/attachments-card";
+import { CloseProjectDialog } from "./components/close-project-dialog";
 import { ProjectDetailsHeader } from "./components/project-details-header";
 import { ProjectDetailsSkeleton } from "./components/project-details-skeleton";
 import { ProjectOverviewCard } from "./components/project-overview-card";
-import { closeProjectFn, projectDetailsQueryOptions } from "./functions";
+import { projectDetailsQueryOptions } from "./functions";
 import {
 	canReadProject,
 	canSubmitProjectReports,
@@ -59,17 +57,6 @@ export function ProjectDetailsPage({
 	const { data: readiness } = useProjectReadiness(proposalId);
 	const [showActivateWizard, setShowActivateWizard] = useState(false);
 	const [showCloseDialog, setShowCloseDialog] = useState(false);
-
-	const closeMutation = useMutation({
-		mutationFn: closeProjectFn,
-		onSuccess: async () => {
-			await invalidateWorkflowQueries(queryClient);
-			toast.success("Project closed successfully!");
-		},
-		onError: (error: Error) => {
-			toast.error(error.message);
-		},
-	});
 
 	if (isLoading) {
 		return <ProjectDetailsSkeleton />;
@@ -262,18 +249,15 @@ export function ProjectDetailsPage({
 				targetEndDate={data.targetEndDate}
 			/>
 
-			<ConfirmDialog
-				open={showCloseDialog}
-				onOpenChange={setShowCloseDialog}
-				onConfirm={async () => {
-					await closeMutation.mutateAsync({ data: { projectId: proposalId } });
-				}}
-				title="Close Project"
-				description={`Close "${data.title}" with ${terminalResults.data?.traineeCount?.toLocaleString() ?? "no recorded"} trainees. ${terminalResults.data?.completed ? "The required report and evaluation forms are complete." : "Review the terminal report and evaluation forms before approving closure."} Recorded trainee counts will be included in official reports once you approve.`}
-				confirmLabel="Close Project"
-				confirmVariant="destructive"
-				requireTyping="CLOSE"
-			/>
+			{showCloseButton && showCloseDialog && (
+				<CloseProjectDialog
+					open={showCloseDialog}
+					onOpenChange={setShowCloseDialog}
+					projectId={proposalId}
+					projectTitle={data.title}
+					traineeCount={terminalResults.data?.traineeCount}
+				/>
+			)}
 		</div>
 	);
 }

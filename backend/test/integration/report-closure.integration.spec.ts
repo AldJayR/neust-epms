@@ -1,5 +1,6 @@
+import { createHash, randomUUID } from "node:crypto";
 import { count, eq } from "drizzle-orm";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/client.js";
 import { auditLogs } from "@/db/schema/audit-logs.js";
 import { projectReports } from "@/db/schema/project-reports.js";
@@ -18,6 +19,22 @@ import {
 	seedProposalMember,
 	seedReport,
 } from "./fixtures.js";
+
+const storage = vi.hoisted(() => ({ upload: vi.fn(), remove: vi.fn() }));
+vi.mock("@/lib/supabase.js", () => ({ supabase: { storage: { from: () => storage } } }));
+vi.mock("@/lib/notification.helpers.js", () => ({
+	createNotification: vi.fn().mockResolvedValue(undefined),
+	getUserIdsByRole: vi.fn().mockResolvedValue([]),
+}));
+
+beforeEach(() => {
+	storage.upload.mockReset().mockResolvedValue({ error: null });
+	storage.remove.mockReset().mockResolvedValue({ error: null });
+});
+
+function signedFile(content = "%PDF-1.4\nsigned terminal report") {
+	return new File([content], "signed-terminal.pdf", { type: "application/pdf" });
+}
 
 describe("report and project closure integration", () => {
 	it("creates a report draft only for an active project member", async () => {
@@ -95,16 +112,41 @@ describe("report and project closure integration", () => {
 			storagePath: "reports/terminal.pdf",
 		});
 		await expect(
-			closeProject(project.projectId, director, "127.0.0.1"),
+			closeProject(project.projectId, director, signedFile(), "127.0.0.1"),
 		).rejects.toMatchObject({ code: "INVALID_STATE" });
 
 		await db.update(projectReports).set({ traineeCount: 0 }).where(eq(projectReports.reportId, report.reportId));
 		await db.insert(reportAttachments).values({ reportId: report.reportId, attachmentType: "Evaluation Forms", storagePath: "reports/evaluation.pdf" });
 		await db.transaction((tx) => finalizeTerminalPackage(tx, report.reportId, leader, "127.0.0.1"));
-		await closeProject(project.projectId, director, "127.0.0.1");
+
+		const [pending] = await db.select().from(projects).where(eq(projects.projectId, project.projectId));
+		expect(pending.projectStatus).toBe(PROJECT_STATUS.PENDING_CLOSURE);
+		expect(pending.signedTerminalReportDocPath).toBeNull();
+		await expect(closeProject(project.projectId, director, undefined as never, "127.0.0.1"))
+			.rejects.toMatchObject({ code: "MISSING_SIGNED_TERMINAL_REPORT" });
+		await expect(closeProject(project.projectId, leader, signedFile(), "127.0.0.1"))
+			.rejects.toMatchObject({ code: "FORBIDDEN" });
+
+		// An audit failure must roll back the file reference, completion date, and closed state.
+		await expect(closeProject(project.projectId, { ...director, userId: randomUUID() }, signedFile(), "127.0.0.1"))
+			.rejects.toThrow();
+		const [rolledBack] = await db.select().from(projects).where(eq(projects.projectId, project.projectId));
+		expect(rolledBack).toMatchObject({
+			projectStatus: PROJECT_STATUS.PENDING_CLOSURE,
+			actualEndDate: null,
+			signedTerminalReportDocPath: null,
+			signedTerminalReportHash: null,
+		});
+
+		const attempts = await Promise.allSettled([
+			closeProject(project.projectId, director, signedFile(), "127.0.0.1"),
+			closeProject(project.projectId, director, signedFile(), "127.0.0.1"),
+		]);
+		expect(attempts.filter((attempt) => attempt.status === "fulfilled")).toHaveLength(1);
+		expect(attempts.filter((attempt) => attempt.status === "rejected")).toHaveLength(1);
 
 		const [savedProject] = await db
-			.select({ projectStatus: projects.projectStatus, actualEndDate: projects.actualEndDate })
+			.select()
 			.from(projects)
 			.where(eq(projects.projectId, project.projectId));
 		const [auditCount] = await db
@@ -114,6 +156,12 @@ describe("report and project closure integration", () => {
 
 		expect(savedProject?.projectStatus).toBe(PROJECT_STATUS.CLOSED);
 		expect(savedProject?.actualEndDate).toBeInstanceOf(Date);
+		expect(savedProject?.signedTerminalReportDocPath).toContain(`projects/${project.projectId}/signed-terminal-report_`);
+		expect(savedProject?.signedTerminalReportHash).toBe(createHash("sha256").update("%PDF-1.4\nsigned terminal report").digest("hex"));
 		expect(Number(auditCount?.value)).toBe(1);
-	});
+		expect(storage.remove).toHaveBeenCalled();
+		expect(storage.remove.mock.calls.flat(2)).not.toContain(savedProject.signedTerminalReportDocPath);
+		const [savedReport] = await db.select().from(projectReports).where(eq(projectReports.reportId, report.reportId));
+		expect(savedReport.storagePath).toBe("reports/terminal.pdf");
+	}, 90_000);
 });

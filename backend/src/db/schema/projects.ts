@@ -28,6 +28,12 @@ export const projects = pgTable(
 			.notNull()
 			.default("Approved"),
 		onHold: boolean("on_hold").notNull().default(false),
+		signedTerminalReportDocPath: varchar("signed_terminal_report_doc_path", {
+			length: 500,
+		}),
+		signedTerminalReportHash: varchar("signed_terminal_report_hash", {
+			length: 64,
+		}),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),

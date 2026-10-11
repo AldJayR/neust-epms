@@ -160,6 +160,16 @@ export const ProjectReportingScheduleSchema = z
 
 // ── Request schemas ──
 
+export const CloseProjectSchema = z
+	.object({
+		file: z
+			.custom<File>((value) => value instanceof File, {
+				message: "Upload the signed terminal report as a PDF",
+			})
+			.openapi({ type: "string", format: "binary" }),
+	})
+	.openapi("CloseProject");
+
 export const TransitionSchema = z
 	.object({ status: z.enum(["Ongoing", "Completed"]) })
 	.openapi("TransitionProject");
