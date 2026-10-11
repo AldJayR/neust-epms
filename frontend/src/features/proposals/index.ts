@@ -20,7 +20,6 @@ export { ProposalWizardHeader } from "./components/proposal-wizard-header";
 export type { DerivedStateResponse } from "./derived-states.functions";
 export { proposalDerivedStateQueryOptions } from "./derived-states.functions";
 export {
-	recordChairEndorsementFn,
 	recordInstitutionalApprovalFn,
 	reviewProposalFn,
 } from "./functions";

@@ -224,7 +224,19 @@ describe("POST /proposals", () => {
 describe("POST /proposals/:id/submit", () => {
 	it("should allow submission of a Draft proposal", async () => {
 		const mock = createMockProposal({ status: "Draft", projectRole: "Project Leader" });
-		vi.mocked(db.select).mockReturnValue(mockSelectChain([mock]) as never);
+		vi.mocked(db.select)
+			.mockReturnValueOnce(mockSelectChain([mock]) as never) // proposal
+			.mockReturnValueOnce(mockSelectChain([{ memberId: "leader" }]) as never)
+			.mockReturnValueOnce(mockSelectChain([{ documentId: "document" }]) as never)
+			.mockReturnValueOnce(mockSelectChain([{ projectRole: "Project Leader" }]) as never)
+			.mockReturnValueOnce(mockSelectChain([{ sectorId: 1 }]) as never)
+			.mockReturnValueOnce(mockSelectChain([{ sdgId: 1 }]) as never)
+			.mockReturnValueOnce(mockSelectChain([{ extensionServiceId: 1 }]) as never)
+			.mockReturnValueOnce(mockSelectChain([mock]) as never) // target dates and banner
+			.mockReturnValueOnce(mockSelectChain([{ documentId: "document" }]) as never)
+			.mockReturnValueOnce(mockSelectChain([]) as never) // no prior submission
+			.mockReturnValueOnce(mockSelectChain([]) as never); // no revision requests
+		vi.mocked(db.insert).mockReturnValue(mockMutationChain([{ submissionId: "submission" }]) as never);
 		vi.mocked(db.update).mockReturnValue(mockMutationChain([mock]) as never);
 
 		const res = await app.request(`/proposals/${PROPOSAL_ID}/submit`, {
@@ -250,7 +262,55 @@ describe("POST /proposals/:id/submit", () => {
 	});
 });
 
+describe("POST /proposals/:id/endorsement", () => {
+	it.each(["faculty", "retChair", "director", "superAdmin"] as const)(
+		"does not accept the removed upload route for %s",
+		async (role) => {
+			setMockUser(MOCK_USERS[role]);
+			const body = new FormData();
+			body.set("file", new File(["%PDF-1.4\n"], "endorsement.pdf", { type: "application/pdf" }));
+
+			const response = await app.request(`/proposals/${PROPOSAL_ID}/endorsement`, {
+				method: "POST",
+				body,
+			});
+
+			expect(response.status).toBe(404);
+			expect(db.transaction).not.toHaveBeenCalled();
+			expect(db.insert).not.toHaveBeenCalled();
+			expect(db.update).not.toHaveBeenCalled();
+			expect(createNotification).not.toHaveBeenCalled();
+		},
+	);
+});
+
 describe("POST /proposals/:id/review", () => {
+	it.each(["Response needed", "Awaiting verification", "Further revision needed"])(
+		"blocks Chair endorsement when a revision is %s",
+		async (status) => {
+			setMockUser(MOCK_USERS.retChair);
+			const proposal = createMockProposal({
+				status: "Pending Review",
+				departmentId: MOCK_USERS.retChair.departmentId,
+			});
+			vi.mocked(db.select)
+				.mockReturnValueOnce(mockSelectChain([proposal]) as never)
+				.mockReturnValueOnce(mockSelectChain([{ requestId: "outstanding", status }]) as never);
+
+			const response = await app.request(`/proposals/${PROPOSAL_ID}/review`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ decision: "Endorsed" }),
+			});
+
+			expect(response.status).toBe(409);
+			expect((await response.json()).error.code).toBe("UNVERIFIED_REVISIONS");
+			expect(db.insert).not.toHaveBeenCalled();
+			expect(db.update).not.toHaveBeenCalled();
+			expect(createNotification).not.toHaveBeenCalled();
+		},
+	);
+
 	it("allows a Chair to directly endorse their own submission without a document", async () => {
 		setMockUser(MOCK_USERS.retChair);
 		vi.mocked(getUserIdsByRole).mockResolvedValueOnce([MOCK_USERS.director.userId]);
@@ -261,7 +321,11 @@ describe("POST /proposals/:id/review", () => {
 			projectRole: "Project Leader",
 			bypassedRetChair: true,
 		});
-		vi.mocked(db.select).mockReturnValue(mockSelectChain([proposal]) as never);
+		vi.mocked(db.select)
+			.mockReturnValue(mockSelectChain([proposal]) as never)
+			.mockReturnValueOnce(mockSelectChain([proposal]) as never)
+			.mockReturnValueOnce(mockSelectChain([]) as never) // no unresolved revisions
+			.mockReturnValueOnce(mockSelectChain([{ submissionId: "current-submission" }]) as never);
 		vi.mocked(db.transaction).mockImplementation(async (callback) => callback({
 			select: db.select, insert: vi.fn(() => mockMutationChain([proposal])), update: vi.fn(() => mockMutationChain([proposal])),
 		} as never));
