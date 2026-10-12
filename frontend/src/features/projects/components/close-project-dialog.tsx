@@ -87,7 +87,10 @@ export function CloseProjectDialog({
 					aria-busy={mutation.isPending}
 				>
 					<Field>
-						<FieldLabel htmlFor="signed-terminal-report">
+						<FieldLabel
+							htmlFor="signed-terminal-report"
+							className="text-foreground"
+						>
 							Signed Terminal Report
 						</FieldLabel>
 						<Input
@@ -108,7 +111,10 @@ export function CloseProjectDialog({
 						</p>
 					</Field>
 					<Field>
-						<FieldLabel htmlFor="close-project-confirmation">
+						<FieldLabel
+							htmlFor="close-project-confirmation"
+							className="text-foreground"
+						>
 							Type CLOSE to confirm
 						</FieldLabel>
 						<Input
