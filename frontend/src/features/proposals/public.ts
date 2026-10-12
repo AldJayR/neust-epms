@@ -1,4 +1,5 @@
 export type { AnnotationData, ProposalComment } from "./comments.functions";
+export { PdfFirstPagePreview } from "./components/pdf-first-page-preview";
 export {
 	getProposalCommentsFn,
 	saveProposalCommentFn,

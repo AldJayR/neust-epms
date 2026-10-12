@@ -21,7 +21,6 @@ import {
 	canSubmitProjectReports,
 	isProjectLeader,
 } from "./helpers/project-details-helpers";
-import { ProjectReadinessCard } from "./project-readiness-card";
 import { ReportingScheduleCard } from "./reporting-schedule-card";
 import {
 	TerminalResultsCard,
@@ -62,7 +61,7 @@ export function ProjectDetailsPage({
 		return <ProjectDetailsSkeleton />;
 	}
 
-	if (error)
+	if (error && !data)
 		return (
 			<div role="alert" className="p-6">
 				Unable to load project details. Please reload to try again.
@@ -145,16 +144,6 @@ export function ProjectDetailsPage({
 
 			{(data.status === "Approved" ||
 				data.status === "Institutionally Approved") &&
-				readiness && (
-					<ProjectReadinessCard
-						isReady={readiness.isReady}
-						prerequisites={readiness.prerequisites}
-						blocker={readiness.blocker}
-					/>
-				)}
-
-			{(data.status === "Approved" ||
-				data.status === "Institutionally Approved") &&
 				projectLeader && (
 					<Alert>
 						<Info className="size-4 text-blue-500" />
@@ -164,18 +153,17 @@ export function ProjectDetailsPage({
 								Great news — your project proposal has been approved. Here's
 								what to do next:
 							</p>
-							<ol className="list-decimal pl-5 space-y-1">
-								<li>
-									<strong>Print the proposal document</strong> and submit the
-									physical copy to the Extension Services Department Office for
-									their records.
-								</li>
-								<li>
-									<strong>Check the Special Orders</strong> in Project Team. A
-									Special Order PDF must be on file for every team member before
-									activation.
-								</li>
-							</ol>
+							<p>
+								As the project leader, you must print the{" "}
+								<strong>proposal document</strong>, the{" "}
+								<strong>Special Orders</strong>, and the{" "}
+								<strong>
+									endorsement document signed by the College Dean/Campus
+									Director
+								</strong>
+								. Submit all physical copies to the Extension Services
+								Department Office for their records.
+							</p>
 							<p className="pt-1">
 								The Director must record the signed institutional approval
 								document and activate the project before work begins.

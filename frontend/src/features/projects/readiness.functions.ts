@@ -40,7 +40,7 @@ const getProjectReadinessFn = createServerFn({ method: "GET" })
 		if (!response.ok) {
 			const message = await getErrorMessage(
 				response,
-				"Failed to fetch project readiness checklist",
+				"Failed to check project activation readiness",
 			);
 			throw new Error(message);
 		}

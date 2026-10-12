@@ -12,6 +12,7 @@ interface PdfPageCanvasProps {
 	aspectRatio: number;
 	toolMode: "hand" | "comment";
 	comments: ProposalComment[];
+	readOnly?: boolean;
 	onAddComment?: (
 		content: string,
 		annotation: AnnotationData | null,
@@ -41,6 +42,7 @@ export function PdfPageCanvas({
 	aspectRatio,
 	toolMode,
 	comments,
+	readOnly = false,
 	onAddComment,
 }: PdfPageCanvasProps) {
 	const canvasRef1 = useRef<HTMLCanvasElement>(null);
@@ -356,23 +358,25 @@ export function PdfPageCanvas({
 			<div ref={textLayerRef} className="textLayer" style={textLayerStyle} />
 
 			{/* Interactive Overlay Layer */}
-			<button
-				type="button"
-				ref={overlayRef}
-				style={overlayStyle}
-				aria-label="PDF Interaction Overlay"
-				onMouseDown={handleMouseDown}
-				onMouseMove={handleMouseMove}
-				onMouseUp={handleMouseUp}
-			>
-				{dragBoxStyle && <div style={dragBoxStyle} />}
-			</button>
+			{!readOnly && (
+				<button
+					type="button"
+					ref={overlayRef}
+					style={overlayStyle}
+					aria-label="PDF Interaction Overlay"
+					onMouseDown={handleMouseDown}
+					onMouseMove={handleMouseMove}
+					onMouseUp={handleMouseUp}
+				>
+					{dragBoxStyle && <div style={dragBoxStyle} />}
+				</button>
+			)}
 
 			{/* Render existing comments highlights (hoverable in hand mode) */}
-			<CommentHighlights comments={comments} />
+			{!readOnly && <CommentHighlights comments={comments} />}
 
 			{/* Comment creation popover */}
-			{showCommentPopover && (
+			{!readOnly && showCommentPopover && (
 				<CommentCreationPopover
 					pendingAnnotation={pendingAnnotation}
 					pageNumber={pageNumber}

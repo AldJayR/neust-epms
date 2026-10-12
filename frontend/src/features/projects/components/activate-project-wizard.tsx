@@ -50,6 +50,7 @@ import {
 	type DueDateEntry,
 	generateMonthlyMilestones,
 } from "../reporting-schedule.functions";
+import { ActivationProposalPreview } from "./activation-proposal-preview";
 
 interface ActivateProjectWizardProps {
 	open: boolean;
@@ -257,9 +258,17 @@ export function ActivateProjectWizard({
 
 				<div className="p-6 overflow-y-auto max-h-[60vh]">
 					{step === 1 && (
-						<div className="space-y-4">
+						<div className="min-w-0 space-y-4">
 							<div className="space-y-2">
-								<Label>Select MOA</Label>
+								<div className="flex flex-wrap items-center justify-between gap-2">
+									<Label>Select MOA</Label>
+									{open && (
+										<ActivationProposalPreview
+											key={projectId}
+											projectId={projectId}
+										/>
+									)}
+								</div>
 								{moasLoading ? (
 									<div className="flex items-center gap-2 text-sm text-muted-foreground">
 										<Loader2 className="size-4 animate-spin" />
