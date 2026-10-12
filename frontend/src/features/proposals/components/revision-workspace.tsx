@@ -87,7 +87,13 @@ function ResponseEditor({
 				disabled={disabled || mutation.isPending}
 			>
 				<SelectTrigger id={`type-${request.requestId}`} className="w-full text-sm">
-					<SelectValue />
+					<SelectValue>
+						{(value) =>
+							value === "Clarification"
+								? "Clarification / change not made"
+								: "Changed"
+						}
+					</SelectValue>
 				</SelectTrigger>
 				<SelectContent>
 					<SelectItem value="Changed">Changed</SelectItem>
@@ -514,7 +520,15 @@ export function RevisionWorkspace({
 					}}
 				>
 					<SelectTrigger aria-label="Filter review stage" className="text-xs">
-						<SelectValue />
+						<SelectValue>
+							{(value) =>
+								value === "Endorsement"
+									? "Chair"
+									: value === "Approval"
+										? "Director"
+										: "All stages"
+							}
+						</SelectValue>
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="__all__">All stages</SelectItem>

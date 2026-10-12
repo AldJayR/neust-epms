@@ -71,7 +71,7 @@ export function FacultyInvolvementTrendChart({
 					}}
 				>
 					<SelectTrigger className="h-9 w-full sm:w-[150px]">
-						<SelectValue />
+						<SelectValue>{`Last ${months} months`}</SelectValue>
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="6">Last 6 months</SelectItem>

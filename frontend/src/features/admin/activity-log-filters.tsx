@@ -59,7 +59,7 @@ export function ActivityLogFilters({ filters, options, onApply }: ActivityLogFil
 					<Field>
 						<FieldLabel htmlFor="audit-action-type">Action Type</FieldLabel>
 						<Select
-							value={draft.actionType ?? "__all__"}
+							value={draft.actionType || "__all__"}
 							onValueChange={(value) =>
 								update(
 									"actionType",
@@ -68,7 +68,11 @@ export function ActivityLogFilters({ filters, options, onApply }: ActivityLogFil
 							}
 						>
 							<SelectTrigger id="audit-action-type" className="w-full">
-								<SelectValue placeholder="All types" />
+								<SelectValue placeholder="All types">
+									{(value) =>
+										value && value !== "__all__" ? value : "All types"
+									}
+								</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="__all__">All types</SelectItem>
@@ -81,13 +85,23 @@ export function ActivityLogFilters({ filters, options, onApply }: ActivityLogFil
 					<Field>
 						<FieldLabel htmlFor="audit-user">Performed By</FieldLabel>
 						<Select
-							value={draft.userId ?? "__all__"}
+							value={draft.userId || "__all__"}
 							onValueChange={(value) =>
 								update("userId", value === "__all__" ? "" : (value ?? ""))
 							}
 						>
 							<SelectTrigger id="audit-user" className="w-full">
-								<SelectValue placeholder="All users" />
+								<SelectValue placeholder="All users">
+									{(value) => {
+										if (!value || value === "__all__") return "All users";
+										const user = options?.users.find(
+											(user) => user.userId === value,
+										);
+										return user
+											? `${user.name} (${user.email})`
+											: "Selected user";
+									}}
+								</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="__all__">All users</SelectItem>
@@ -102,13 +116,19 @@ export function ActivityLogFilters({ filters, options, onApply }: ActivityLogFil
 					<Field>
 						<FieldLabel htmlFor="audit-module">Module</FieldLabel>
 						<Select
-							value={draft.module ?? "__all__"}
+							value={draft.module || "__all__"}
 							onValueChange={(value) =>
 								update("module", value === "__all__" ? "" : (value ?? ""))
 							}
 						>
 							<SelectTrigger id="audit-module" className="w-full">
-								<SelectValue placeholder="All modules" />
+								<SelectValue placeholder="All modules">
+									{(value) =>
+										value && value !== "__all__"
+											? value.replaceAll("_", " ")
+											: "All modules"
+									}
+								</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="__all__">All modules</SelectItem>

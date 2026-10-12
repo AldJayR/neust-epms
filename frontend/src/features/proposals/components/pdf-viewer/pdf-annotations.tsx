@@ -126,7 +126,11 @@ export function CommentCreationPopover({
 				}
 			>
 				<SelectTrigger aria-label="Feedback type" className="w-full text-xs">
-					<SelectValue />
+					<SelectValue>
+						{(value) =>
+							value === "Remark" ? "Remark (informational)" : "Revision required"
+						}
+					</SelectValue>
 				</SelectTrigger>
 				<SelectContent>
 					<SelectItem value="Revision required">Revision required</SelectItem>

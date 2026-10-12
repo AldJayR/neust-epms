@@ -208,7 +208,12 @@ export function SpecialOrdersViewer({
 						aria-label="Jump to member special order"
 						className="max-w-full sm:max-w-[240px]"
 					>
-						<SelectValue placeholder="Jump to member…" />
+						<SelectValue placeholder="Jump to member…">
+							{(value) =>
+								members.find((member) => member.memberId === value)?.name ??
+								"Jump to member…"
+							}
+						</SelectValue>
 					</SelectTrigger>
 					<SelectContent>
 						{members.map((member) => (
