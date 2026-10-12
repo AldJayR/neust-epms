@@ -48,6 +48,7 @@ export function ProjectOverviewCard({
 	status: _status,
 }: ProjectOverviewCardProps) {
 	const { uploadErrors, handleViewSO } = useProjectSpecialOrders(proposalId);
+	const linkedMoa = metadata.moaLinked?.trim();
 
 	const isAllowedToManageSO = canManageSpecialOrders(
 		currentUserId,
@@ -86,15 +87,8 @@ export function ProjectOverviewCard({
 				<DetailsRow label="Extension Services Offered">
 					{metadata.extensionServices.join(", ") || "None"}
 				</DetailsRow>
-				{![
-					"Draft",
-					"Pending Review",
-					"Endorsed",
-					"Approved",
-					"Returned",
-					"Rejected",
-				].includes(status) && (
-					<DetailsRow label="Active MOA">{metadata.moaLinked}</DetailsRow>
+				{linkedMoa && linkedMoa.toLowerCase() !== "none" && (
+					<DetailsRow label="Active MOA">{linkedMoa}</DetailsRow>
 				)}
 				<DetailsRow label="Total Budget">
 					<div className="flex flex-col items-end">
