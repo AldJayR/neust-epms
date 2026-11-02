@@ -56,7 +56,7 @@ export function ProposalStepRequirements() {
 				requirements?.documents.find(
 					(document) => document.type === "special_orders_pdf",
 				)?.description ||
-				"One PDF containing all team members’ Special Order pages. SO numbers are not entered separately.",
+				"One PDF containing all team members’ Special Order pages.",
 		},
 	];
 

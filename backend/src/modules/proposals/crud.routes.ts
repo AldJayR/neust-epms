@@ -647,7 +647,7 @@ app.openapi(listRequirementsRoute, (c) => {
 				label: "Combined Special Order PDF",
 				required: true,
 				description:
-					"One PDF containing all team members’ Special Order pages. SO numbers are not entered separately.",
+					"One PDF containing all team members’ Special Order pages.",
 			},
 		],
 		members: {

@@ -103,7 +103,7 @@ export function CreateProposalModal({
 										isEditing={wizard.isEditing}
 										hasExistingDocument={wizard.hasExistingSpecialOrderDocument}
 										label="Combined Special Order PDF"
-										description="Upload one PDF containing all team members’ Special Order pages. No SO numbers need to be entered. Required to submit for review."
+										description="Upload one PDF containing all team members’ Special Order pages. Required to submit for review."
 									/>
 								</div>
 							)}
