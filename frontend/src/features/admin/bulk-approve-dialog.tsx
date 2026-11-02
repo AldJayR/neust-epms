@@ -334,7 +334,7 @@ export function BulkApproveDialog({ children }: BulkApproveDialogProps) {
 			>
 				<div className="flex h-full flex-col gap-6 p-6">
 					<DialogHeader className="flex flex-row items-center justify-between gap-4">
-						<DialogTitle className="text-[20px] font-semibold leading-5 text-foreground">
+						<DialogTitle className="text-xl font-semibold leading-5 text-foreground">
 							Bulk Approve
 						</DialogTitle>
 						<DialogClose

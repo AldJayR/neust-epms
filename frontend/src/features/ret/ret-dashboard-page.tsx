@@ -147,7 +147,7 @@ export function RETDashboardPage({
 							<span className="text-sm font-normal text-foreground leading-5">
 								{proposal.leaderFirstName} {proposal.leaderLastName}
 							</span>
-							<span className="text-xs text-muted-foreground leading-[14px]">
+							<span className="text-xs text-muted-foreground leading-[0.875rem]">
 								{formatAcademicRank(proposal.leaderAcademicRank ?? null)}
 							</span>
 						</div>

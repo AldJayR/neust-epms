@@ -59,10 +59,10 @@ export function ProposalWizardHeader({
 								className="group min-w-0 flex-1 items-start"
 							>
 								<div className="flex min-w-0 flex-col items-center gap-1.5">
-									<StepperIndicator className="size-6 border-border bg-background text-[11px] shadow-none data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=completed]:border-primary data-[state=completed]:bg-primary data-[state=completed]:text-primary-foreground">
+									<StepperIndicator className="size-6 border-border bg-background text-2xs shadow-none data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=completed]:border-primary data-[state=completed]:bg-primary data-[state=completed]:text-primary-foreground">
 										{stepNumber}
 									</StepperIndicator>
-									<StepperTitle className="hidden whitespace-nowrap text-center text-[11px] font-medium text-muted-foreground group-data-[state=active]:text-foreground sm:block">
+									<StepperTitle className="hidden whitespace-nowrap text-center text-2xs font-medium text-muted-foreground group-data-[state=active]:text-foreground sm:block">
 										{label}
 									</StepperTitle>
 								</div>

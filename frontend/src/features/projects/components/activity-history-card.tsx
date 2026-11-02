@@ -53,7 +53,7 @@ export function ActivityHistoryCard({ history }: { history: Activity[] }) {
 														: item.status === "Updated"
 															? "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/60"
 															: "bg-gray-50 text-gray-600 border-gray-100 dark:bg-muted dark:text-muted-foreground dark:border-border"
-											} rounded-md px-2 py-0 h-5 text-[10px] font-semibold uppercase`}
+											} rounded-md px-2 py-0 h-5 text-3xs font-semibold uppercase`}
 										>
 											{item.status}
 										</Badge>
@@ -64,7 +64,7 @@ export function ActivityHistoryCard({ history }: { history: Activity[] }) {
 											.replace(/, (\d{2}:\d{2} [AP]M)$/, " · $1")}
 									</span>
 								</div>
-								<p className="text-[13px] text-muted-foreground">
+								<p className="text-[0.8125rem] text-muted-foreground">
 									{item.type === "edit"
 										? `Edited by ${item.actorName}`
 										: item.status === "Returned"

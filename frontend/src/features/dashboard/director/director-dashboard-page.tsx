@@ -44,11 +44,11 @@ function RecentActivitiesCard({
 											{activity.title}
 										</p>
 									</div>
-									<p className="text-xs leading-[14px] text-muted-foreground">
+									<p className="text-xs leading-[0.875rem] text-muted-foreground">
 										{activity.description}
 									</p>
 								</div>
-								<p className="text-xs leading-[14px] text-muted-foreground">
+								<p className="text-xs leading-[0.875rem] text-muted-foreground">
 									{activity.time}
 								</p>
 							</div>

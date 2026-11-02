@@ -55,7 +55,7 @@ export function ProjectOverviewCard({
 								src={metadata.leader.avatarUrl}
 								alt={metadata.leader.name}
 							/>
-							<AvatarFallback className="bg-brand-primary/10 text-brand-primary text-[10px]">
+							<AvatarFallback className="bg-brand-primary/10 text-brand-primary text-3xs">
 								{metadata.leader.name
 									.split(" ")
 									.map((name) => name[0])
@@ -107,7 +107,7 @@ export function ProjectOverviewCard({
 										className="size-8 border-2 border-white ring-1 ring-border dark:border-border"
 									>
 										<AvatarImage src={member.avatarUrl} alt={member.name} />
-										<AvatarFallback className="bg-gray-100 text-gray-600 text-[10px] dark:bg-muted dark:text-muted-foreground">
+										<AvatarFallback className="bg-gray-100 text-gray-600 text-3xs dark:bg-muted dark:text-muted-foreground">
 											{member.name
 												.split(" ")
 												.map((name) => name[0])
@@ -116,7 +116,7 @@ export function ProjectOverviewCard({
 									</Avatar>
 								))}
 								{members.length > 4 && (
-									<div className="flex size-8 items-center justify-center rounded-full border-2 border-white bg-gray-50 text-[10px] font-bold text-muted-foreground ring-1 ring-border dark:border-border dark:bg-muted">
+									<div className="flex size-8 items-center justify-center rounded-full border-2 border-white bg-gray-50 text-3xs font-bold text-muted-foreground ring-1 ring-border dark:border-border dark:bg-muted">
 										+{members.length - 4}
 									</div>
 								)}

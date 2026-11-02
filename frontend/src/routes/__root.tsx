@@ -13,10 +13,14 @@ import { Loader2, Wifi, WifiOff } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { getCurrentUserFn } from "@/features/auth";
-import { Button } from "../components/ui/button";
 import { ThemeToaster } from "../components/custom/theme-toaster";
 import { Devtools } from "../components/devtools";
+import {
+	DisplaySizeProvider,
+	DisplaySizeScript,
+} from "../components/display-size-provider";
 import { ThemeProvider, ThemeScript } from "../components/theme-provider";
+import { Button } from "../components/ui/button";
 import { TooltipProvider } from "../components/ui/tooltip";
 import type { AuthContext } from "../lib/auth";
 import { getCachedUser, isCacheStale, setCachedUser } from "../lib/auth-cache";
@@ -139,15 +143,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
 			disconnectToastId = toast.custom(
 				() => (
-					<div className="relative flex items-center gap-4 border border-border bg-background rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
+					<div className="relative flex items-center gap-4 border border-border bg-background rounded-xl shadow-md p-4 w-[min(22.25rem,calc(100vw-2rem))] overflow-hidden">
 						<div className="flex size-9 items-center justify-center rounded-full bg-red-50 text-red-500 dark:bg-red-950/40 dark:text-red-300 shrink-0">
 							<WifiOff className="size-5" />
 						</div>
-						<div className="flex flex-col text-left">
-							<span className="text-[14px] font-semibold text-foreground leading-tight">
+						<div className="min-w-0 flex-1 flex flex-col text-left">
+							<span className="text-sm font-semibold text-foreground leading-tight">
 								Connection Lost
 							</span>
-							<span className="text-[12px] text-muted-foreground mt-1 leading-tight">
+							<span className="text-xs text-muted-foreground mt-1 leading-tight">
 								Reconnecting in {remainingSeconds} seconds...
 							</span>
 						</div>
@@ -168,15 +172,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				}
 				toast.custom(
 					() => (
-						<div className="relative flex items-center gap-4 border border-border bg-background rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
+						<div className="relative flex items-center gap-4 border border-border bg-background rounded-xl shadow-md p-4 w-[min(22.25rem,calc(100vw-2rem))] overflow-hidden">
 							<div className="flex size-9 items-center justify-center rounded-full bg-red-50 text-red-500 dark:bg-red-950/40 dark:text-red-300 shrink-0">
 								<WifiOff className="size-5" />
 							</div>
-							<div className="flex flex-col text-left">
-								<span className="text-[14px] font-semibold text-foreground leading-tight">
+							<div className="min-w-0 flex-1 flex flex-col text-left">
+								<span className="text-sm font-semibold text-foreground leading-tight">
 									Connection Lost
 								</span>
-								<span className="text-[12px] text-muted-foreground mt-1 leading-tight">
+								<span className="text-xs text-muted-foreground mt-1 leading-tight">
 									Reconnecting in {remainingSeconds} seconds...
 								</span>
 							</div>
@@ -204,15 +208,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			}
 			toast.custom(
 				() => (
-					<div className="relative flex items-center gap-4 border border-border bg-background rounded-xl shadow-md p-4 w-[356px] overflow-hidden">
+					<div className="relative flex items-center gap-4 border border-border bg-background rounded-xl shadow-md p-4 w-[min(22.25rem,calc(100vw-2rem))] overflow-hidden">
 						<div className="flex size-9 items-center justify-center rounded-full bg-green-50 text-green-600 dark:bg-green-950/40 dark:text-green-300 shrink-0">
 							<Wifi className="size-5" />
 						</div>
-						<div className="flex flex-col text-left">
-							<span className="text-[14px] font-semibold text-foreground leading-tight">
+						<div className="min-w-0 flex-1 flex flex-col text-left">
+							<span className="text-sm font-semibold text-foreground leading-tight">
 								Connection Restored
 							</span>
-							<span className="text-[12px] text-muted-foreground mt-1 leading-tight">
+							<span className="text-xs text-muted-foreground mt-1 leading-tight">
 								You are back online.
 							</span>
 						</div>
@@ -243,14 +247,17 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 		<html lang="en" suppressHydrationWarning>
 			<head>
 				<ThemeScript defaultTheme="system" storageKey="theme" />
+				<DisplaySizeScript />
 				<HeadContent />
 			</head>
 			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
 				{isPending && <div className="global-loading-bar" />}
 				<ThemeProvider defaultTheme="system" storageKey="theme">
-					<TooltipProvider>{children}</TooltipProvider>
-					<ThemeToaster position="top-right" />
-					<Devtools />
+					<DisplaySizeProvider>
+						<TooltipProvider>{children}</TooltipProvider>
+						<ThemeToaster position="top-right" />
+						<Devtools />
+					</DisplaySizeProvider>
 				</ThemeProvider>
 				<Scripts />
 			</body>

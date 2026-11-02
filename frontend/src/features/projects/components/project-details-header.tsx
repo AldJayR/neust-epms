@@ -76,7 +76,7 @@ export function ProjectDetailsHeader({
 
 			<PageHeader
 				title={
-					<h1 className="flex flex-wrap items-center gap-3 text-[22px] font-semibold text-heading">
+					<h1 className="flex flex-wrap items-center gap-3 text-[1.375rem] font-semibold text-heading">
 						<span>{title}</span>
 						<StatusBadge status={status} />
 					</h1>

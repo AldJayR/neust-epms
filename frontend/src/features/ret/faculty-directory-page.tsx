@@ -142,7 +142,7 @@ export function RetFacultyDirectoryPage({
 
 							{/* Presets / Quick Filters */}
 							<div className="flex flex-col gap-2 border-t border-border pt-3">
-								<span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+								<span className="text-3xs font-bold uppercase tracking-wider text-muted-foreground">
 									Quick Actions
 								</span>
 								<div className="flex flex-wrap gap-1.5">
@@ -175,7 +175,7 @@ export function RetFacultyDirectoryPage({
 
 							{/* Rank Select */}
 							<div className="flex flex-col gap-2 border-t border-border pt-3">
-								<span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+								<span className="text-3xs font-bold uppercase tracking-wider text-muted-foreground">
 									Academic Ranks
 								</span>
 								<div className="grid grid-cols-2 gap-x-4 gap-y-2">
@@ -220,7 +220,7 @@ export function RetFacultyDirectoryPage({
 
 							{/* Project Load Select */}
 							<div className="flex flex-col gap-2 border-t border-border pt-3">
-								<span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+								<span className="text-3xs font-bold uppercase tracking-wider text-muted-foreground">
 									Project Involvement
 								</span>
 								<div className="grid grid-cols-2 gap-x-4 gap-y-2">

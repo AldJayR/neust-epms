@@ -11,8 +11,8 @@ import {
 	Loader2,
 	UserPlus,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useActionCenter } from "@/hooks/use-action-center";
@@ -114,7 +114,7 @@ function ActionItemsList({
 										{item.title}
 									</h4>
 									<span
-										className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getUrgencyClassName(item.urgency)}`}
+										className={`rounded-md px-1.5 py-0.5 text-2xs font-medium ${getUrgencyClassName(item.urgency)}`}
 									>
 										{getUrgencyLabel(item.urgency)}
 									</span>
@@ -227,9 +227,7 @@ export function ActionCenterCard() {
 						["Monitoring", watchItems.length, "text-muted-foreground"],
 					].map(([label, count, color]) => (
 						<div key={label} className="min-w-0">
-							<p className="truncate text-[11px] text-muted-foreground">
-								{label}
-							</p>
+							<p className="truncate text-2xs text-muted-foreground">{label}</p>
 							<p className={`text-lg font-semibold ${color}`}>{count}</p>
 						</div>
 					))}
@@ -243,7 +241,7 @@ export function ActionCenterCard() {
 						<TabsTrigger value="action" className="px-1 pb-2 font-semibold">
 							Needs Action
 							{actItems.length > 0 && (
-								<span className="ml-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger/10 px-1 text-[10px] font-bold text-danger">
+								<span className="ml-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger/10 px-1 text-3xs font-bold text-danger">
 									{actItems.length}
 								</span>
 							)}
@@ -251,7 +249,7 @@ export function ActionCenterCard() {
 						<TabsTrigger value="waiting" className="px-1 pb-2 font-semibold">
 							Waiting
 							{waitItems.length > 0 && (
-								<span className="ml-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-warning/10 px-1 text-[10px] font-bold text-warning">
+								<span className="ml-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-warning/10 px-1 text-3xs font-bold text-warning">
 									{waitItems.length}
 								</span>
 							)}
@@ -259,7 +257,7 @@ export function ActionCenterCard() {
 						<TabsTrigger value="monitoring" className="px-1 pb-2 font-semibold">
 							Monitoring
 							{watchItems.length > 0 && (
-								<span className="ml-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1 text-[10px] font-bold text-muted-foreground">
+								<span className="ml-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1 text-3xs font-bold text-muted-foreground">
 									{watchItems.length}
 								</span>
 							)}

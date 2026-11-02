@@ -83,7 +83,7 @@ export function CommentsTab({
 											comment.annotationJson?.page ?? 1,
 										)
 									}
-									className="inline-block bg-brand-primary/10 text-brand-primary text-[9px] font-semibold px-2 py-0.5 rounded-[4px]"
+									className="inline-block bg-brand-primary/10 text-brand-primary text-[0.5625rem] font-semibold px-2 py-0.5 rounded-[4px]"
 								>
 									Page {comment.annotationJson.page}
 								</button>

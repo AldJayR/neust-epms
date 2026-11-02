@@ -217,7 +217,7 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 			>
 				<Search className="size-4 shrink-0 text-muted-foreground" />
 				<span className="flex-1 text-left">Type to search…</span>
-				<kbd className="hidden rounded border border-border bg-muted px-1.5 text-[10px] font-medium text-muted-foreground sm:inline-block">
+				<kbd className="hidden rounded border border-border bg-muted px-1.5 text-3xs font-medium text-muted-foreground sm:inline-block">
 					⌘K
 				</kbd>
 			</Button>
@@ -266,7 +266,7 @@ export function GlobalSearch({ user }: GlobalSearchProps) {
 											<span className="flex-1 font-medium text-sm truncate">
 												{r.query}
 											</span>
-											<span className="rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+											<span className="rounded-full bg-muted/60 px-2 py-0.5 text-3xs font-semibold text-muted-foreground uppercase tracking-wider">
 												{TYPE_LABELS[r.type]}
 											</span>
 										</CommandItem>

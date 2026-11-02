@@ -32,6 +32,7 @@ export function ThemeToaster({ ...props }: ToasterProps) {
 				} as CSSProperties
 			}
 			toastOptions={{
+				style: { fontSize: "0.8125rem" },
 				classNames: {
 					toast: "cn-toast",
 				},

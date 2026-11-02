@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
+import { DisplaySizeSettings } from "@/components/display-size-settings";
 import { useTheme } from "@/components/theme-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -207,10 +208,10 @@ export function SettingsDialog({
 
 				<Tabs
 					defaultValue="general"
-					className="min-h-0 flex-1 sm:grid sm:grid-cols-[150px_minmax(0,1fr)] sm:items-start sm:gap-5 sm:p-5"
+					className="min-h-0 flex-1 sm:grid sm:grid-cols-[11rem_minmax(0,1fr)] sm:items-start sm:gap-5 sm:p-5"
 				>
 					<TabsList
-						className={`grid h-auto w-full shrink-0 gap-1 !rounded-none !border-0 !bg-transparent !p-0 ${canManageBannerPrograms ? "grid-cols-2 sm:grid-cols-1" : "grid-cols-2"} sm:flex sm:w-[150px] sm:flex-col sm:items-stretch sm:self-start sm:!rounded-none sm:!border-0 sm:!bg-transparent sm:!p-0`}
+						className={`grid h-auto w-full shrink-0 gap-1 !rounded-none !border-0 !bg-transparent !p-0 ${canManageBannerPrograms ? "grid-cols-2 sm:grid-cols-1" : "grid-cols-2"} sm:flex sm:w-[11rem] sm:flex-col sm:items-stretch sm:self-start sm:!rounded-none sm:!border-0 sm:!bg-transparent sm:!p-0`}
 					>
 						<TabsTrigger value="general" className="justify-start gap-2">
 							<Settings2 className="size-4" />
@@ -239,10 +240,11 @@ export function SettingsDialog({
 							<div>
 								<h2 className="text-base font-semibold">Appearance</h2>
 								<p className="mt-1 text-sm text-muted-foreground">
-									Choose the theme used by EPMS on this device.
+									Choose the theme and display size used by EPMS in this
+									browser.
 								</p>
 							</div>
-							<div className="grid gap-2 sm:grid-cols-3">
+							<div className="grid gap-2 lg:grid-cols-3">
 								{themeOptions.map(({ value, label, icon: Icon }) => (
 									<Button
 										key={value}
@@ -255,6 +257,7 @@ export function SettingsDialog({
 									</Button>
 								))}
 							</div>
+							<DisplaySizeSettings />
 						</div>
 					</TabsContent>
 

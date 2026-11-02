@@ -60,7 +60,7 @@ export function CommentHighlights({ comments }: CommentHighlightsProps) {
 								<p className="text-2xs font-semibold">
 									{comment.classification ?? "Remark"}
 								</p>
-								<span className="text-[9px] block text-zinc-500 text-right">
+								<span className="text-[0.5625rem] block text-zinc-500 text-right">
 									{toStableDate(comment.createdAt).toLocaleDateString("en-US", {
 										timeZone: "UTC",
 									})}

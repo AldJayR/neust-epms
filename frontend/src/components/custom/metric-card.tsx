@@ -109,7 +109,7 @@ export function MetricCard({
 												alt={contributor.name}
 											/>
 										)}
-										<AvatarFallback className="bg-muted text-[10px] text-muted-foreground">
+										<AvatarFallback className="bg-muted text-3xs text-muted-foreground">
 											{getInitials(contributor.name)}
 										</AvatarFallback>
 									</Avatar>

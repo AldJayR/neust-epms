@@ -203,6 +203,11 @@ body,
   min-height: 100%;
 }
 
+/* Percentages preserve the browser's default font preference and normal zoom. */
+html {
+  font-size: var(--app-font-size, 100%);
+}
+
 body {
   margin: 0;
   color: var(--sea-ink);

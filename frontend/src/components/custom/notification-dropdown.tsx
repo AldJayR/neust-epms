@@ -209,7 +209,7 @@ export function NotificationDropdown() {
 											<span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" />
 										)}
 									</div>
-									<span className="ml-6.5 text-[10px] text-muted-foreground/60">
+									<span className="ml-6.5 text-3xs text-muted-foreground/60">
 										{timeAgo(n.createdAt)}
 									</span>
 								</DropdownMenuItem>
