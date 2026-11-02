@@ -25,7 +25,6 @@ import { proposalSdgs } from "@/db/schema/proposal-sdgs.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { roles } from "@/db/schema/roles.js";
 import { sdgs } from "@/db/schema/sdgs.js";
-import { specialOrders } from "@/db/schema/special-orders.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
@@ -290,28 +289,21 @@ export async function getProposalEditData(proposalId: string) {
 			)
 			.orderBy(asc(beneficiarySectors.sectorName)),
 		db
-			.select({ documentId: proposalDocuments.documentId })
+			.select({
+				documentId: proposalDocuments.documentId,
+				documentType: proposalDocuments.documentType,
+			})
 			.from(proposalDocuments)
-			.where(eq(proposalDocuments.proposalId, proposalId))
-			.limit(1),
+			.where(eq(proposalDocuments.proposalId, proposalId)),
 		db
 			.select({
 				memberId: proposalMembers.memberId,
 				userId: proposalMembers.userId,
 				projectRole: proposalMembers.projectRole,
 				name: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
-				soNumber: specialOrders.soNumber,
-				hasSpecialOrder: sql<boolean>`case when ${specialOrders.specialOrderId} is not null then true else false end`,
 			})
 			.from(proposalMembers)
 			.innerJoin(users, eq(proposalMembers.userId, users.userId))
-			.leftJoin(
-				specialOrders,
-				and(
-					eq(proposalMembers.memberId, specialOrders.memberId),
-					isNull(specialOrders.archivedAt),
-				),
-			)
 			.where(
 				and(
 					eq(proposalMembers.proposalId, proposalId),
@@ -325,7 +317,12 @@ export async function getProposalEditData(proposalId: string) {
 		sdgIds: sdgRows.map((row) => row.sdgId),
 		beneficiarySectors: sectorRows.map((row) => row.sectorName),
 		sectors: sectorRows,
-		hasProposalDocument: documentRows.length > 0,
+		hasProposalDocument: documentRows.some(
+			(document) => document.documentType === "Proposal",
+		),
+		hasSpecialOrderDocument: documentRows.some(
+			(document) => document.documentType === "Special Orders",
+		),
 		members: memberRows,
 	};
 }
@@ -749,10 +746,12 @@ export async function validateCompleteness(
 		[proposalDetails],
 	] = await Promise.all([
 		executor
-			.select({ documentId: proposalDocuments.documentId })
+			.select({
+				documentId: proposalDocuments.documentId,
+				documentType: proposalDocuments.documentType,
+			})
 			.from(proposalDocuments)
-			.where(eq(proposalDocuments.proposalId, proposalId))
-			.limit(1),
+			.where(eq(proposalDocuments.proposalId, proposalId)),
 		executor
 			.select({
 				memberId: proposalMembers.memberId,
@@ -804,7 +803,7 @@ export async function validateCompleteness(
 	]);
 
 	validateProposalCompleteness({
-		documentCount: docs.length,
+		documentCount: docs.filter((doc) => doc.documentType === "Proposal").length,
 		members,
 		beneficiarySectorCount: sectors.length,
 		sdgAlignmentCount: sdgAlignments.length,
@@ -813,6 +812,13 @@ export async function validateCompleteness(
 		targetEndDate: proposalDetails?.targetEndDate,
 		bannerProgramId: proposalDetails?.bannerProgramId,
 	});
+	if (!docs.some((doc) => doc.documentType === "Special Orders")) {
+		throw new ApiError(
+			400,
+			"SPECIAL_ORDER_REQUIRED",
+			"Upload one combined Special Order PDF containing all team members’ pages before submitting",
+		);
+	}
 }
 
 // ── Review state machine ──
@@ -871,7 +877,7 @@ export async function submitProposal(
 				throw new ApiError(
 					400,
 					"REVISED_DOCUMENT_REQUIRED",
-					"Upload a revised proposal PDF after the latest review before resubmitting.",
+					"Upload a revised proposal or combined Special Order PDF after the latest review before resubmitting.",
 				);
 			}
 		}

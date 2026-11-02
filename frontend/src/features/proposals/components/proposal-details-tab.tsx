@@ -18,7 +18,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { toStableDate } from "@/lib/utils";
 import {
 	INSTITUTIONAL_APPROVAL_DOCUMENT_ID,
-	SPECIAL_ORDERS_DOCUMENT_ID,
 	useProposalReview,
 } from "./proposal-review-context";
 
@@ -213,27 +212,6 @@ export function ProposalDetailsTab() {
 					Attached documents
 				</h2>
 				<div className="space-y-1">
-					<button
-						type="button"
-						onClick={() => setActiveAttachmentId(SPECIAL_ORDERS_DOCUMENT_ID)}
-						aria-pressed={activeAttachmentId === SPECIAL_ORDERS_DOCUMENT_ID}
-						className={`w-full px-3 py-2 rounded-[5px] flex flex-col gap-0.5 cursor-pointer text-left ${activeAttachmentId === SPECIAL_ORDERS_DOCUMENT_ID ? "bg-[#caf1f6] dark:bg-primary/20" : "bg-transparent hover:bg-gray-50 dark:hover:bg-muted"}`}
-					>
-						<span className="text-xs font-semibold flex items-center gap-1.5">
-							<FileText className="size-3.5" />
-							View All Member Special Orders
-						</span>
-						<span className="text-2xs text-muted-foreground">
-							{
-								data.members.filter(
-									(member) => member.specialOrder?.storagePath,
-								).length
-							}{" "}
-							of {data.members.length} uploaded
-							{activeAttachmentId === SPECIAL_ORDERS_DOCUMENT_ID &&
-								" · Currently Viewing"}
-						</span>
-					</button>
 					{data.attachments?.map((file) => {
 						const isActive =
 							activeAttachmentId === null
@@ -260,7 +238,10 @@ export function ProposalDetailsTab() {
 									{file.name}
 								</span>
 								<span className="text-2xs text-muted-foreground">
-									{file.version} {isActive && "· Currently Viewing"}
+									{file.documentType === "Special Orders"
+										? "Combined Special Orders"
+										: file.documentType}{" "}
+									· {file.version} {isActive && "· Currently Viewing"}
 								</span>
 							</button>
 						);

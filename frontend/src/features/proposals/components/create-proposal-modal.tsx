@@ -19,6 +19,7 @@ interface CreateProposalModalProps {
 	editingProposalId?: string;
 	currentStatus?: string;
 	hasExistingProposalDocument?: boolean;
+	hasExistingSpecialOrderDocument?: boolean;
 }
 
 export function CreateProposalModal({
@@ -29,6 +30,7 @@ export function CreateProposalModal({
 	editingProposalId,
 	currentStatus,
 	hasExistingProposalDocument,
+	hasExistingSpecialOrderDocument,
 }: CreateProposalModalProps) {
 	const wizard = useProposalWizard({
 		open,
@@ -38,6 +40,7 @@ export function CreateProposalModal({
 		editingProposalId,
 		currentStatus,
 		hasExistingProposalDocument,
+		hasExistingSpecialOrderDocument,
 	});
 
 	return (
@@ -70,27 +73,39 @@ export function CreateProposalModal({
 							{wizard.step === 3 && <ProposalStepDetails form={wizard.form} />}
 
 							{wizard.step === 4 && (
-								<ProposalStepMembers
-									form={wizard.form}
-									user={user}
-									soFiles={wizard.soFiles}
-									onSetSoFile={wizard.setMemberSoFile}
-								/>
+								<ProposalStepMembers form={wizard.form} user={user} />
 							)}
 
 							{wizard.step === 5 && (
-								<ProposalStepDocuments
-									file={wizard.file}
-									setFile={wizard.setFile}
-									uploadPhase={wizard.uploadPhase}
-									uploadProgress={wizard.uploadProgress}
-									isEditing={wizard.isEditing}
-									hasExistingDocument={
-										wizard.isReturned
-											? wizard.revisionReadiness?.revisedDocumentReady === true
-											: wizard.hasExistingProposalDocument === true
-									}
-								/>
+								<div className="space-y-8">
+									{wizard.isReturned && (
+										<p className="text-sm text-muted-foreground">
+											Upload a revised proposal or combined Special Order PDF
+											before resubmitting. You can keep the other document
+											unchanged.
+										</p>
+									)}
+									<ProposalStepDocuments
+										file={wizard.file}
+										setFile={wizard.setFile}
+										uploadPhase={wizard.uploadPhase}
+										uploadProgress={wizard.uploadProgress}
+										isEditing={wizard.isEditing}
+										hasExistingDocument={
+											wizard.hasExistingProposalDocument === true
+										}
+									/>
+									<ProposalStepDocuments
+										file={wizard.soFile}
+										setFile={wizard.setSoFile}
+										uploadPhase={wizard.uploadPhase}
+										uploadProgress={wizard.uploadProgress}
+										isEditing={wizard.isEditing}
+										hasExistingDocument={wizard.hasExistingSpecialOrderDocument}
+										label="Combined Special Order PDF"
+										description="Upload one PDF containing all team members’ Special Order pages. No SO numbers need to be entered. Required to submit for review."
+									/>
+								</div>
 							)}
 							{wizard.step === 6 && editingProposalId && (
 								<RevisionWorkspace

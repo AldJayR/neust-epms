@@ -50,6 +50,7 @@ export interface ProposalFull {
 	beneficiarySectors: string[];
 	sectors?: SectorSelection[];
 	hasProposalDocument: boolean;
+	hasSpecialOrderDocument: boolean;
 	members: ProposalEditMember[];
 }
 
@@ -58,8 +59,6 @@ export interface ProposalEditMember {
 	userId: string;
 	projectRole: string;
 	name: string;
-	soNumber?: string | null;
-	hasSpecialOrder?: boolean;
 }
 
 export interface ProposalExtensionService {

@@ -82,6 +82,7 @@ export const RevisionItemSchema = z.object({
 	createdAt: z.string(),
 	commentId: z.uuid().nullable(),
 	documentId: z.uuid().nullable(),
+	documentType: z.enum(["Proposal", "Special Orders"]),
 	version: z.number().nullable(),
 	originalPage: z.number().nullable(),
 	canRespond: z.boolean(),
@@ -116,5 +117,6 @@ export const RevisionReadinessSchema = z.object({
 	stageOutstanding: z.number(),
 	revisedDocumentReady: z.boolean(),
 	latestDocumentId: z.uuid().nullable(),
+	currentDocumentIds: z.array(z.uuid()),
 	canResubmit: z.boolean(),
 });

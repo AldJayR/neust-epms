@@ -20,9 +20,9 @@ import { proposalDocuments } from "@/db/schema/proposal-documents.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposalSdgs } from "@/db/schema/proposal-sdgs.js";
+import { proposalSubmissions } from "@/db/schema/proposal-submissions.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { sdgs } from "@/db/schema/sdgs.js";
-import { specialOrders } from "@/db/schema/special-orders.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
@@ -49,6 +49,31 @@ import {
 } from "./project-policies.js";
 
 export { closeProject } from "./project-closure.service.js";
+
+async function hasSubmittedSpecialOrder(
+	proposalId: string,
+	connection: Pick<typeof db, "select">,
+) {
+	const [submission] = await connection
+		.select({ documentId: proposalSubmissions.specialOrderDocumentId })
+		.from(proposalSubmissions)
+		.where(eq(proposalSubmissions.proposalId, proposalId))
+		.orderBy(desc(proposalSubmissions.sequence))
+		.limit(1);
+	if (!submission?.documentId) return false;
+	const [document] = await connection
+		.select({ documentId: proposalDocuments.documentId })
+		.from(proposalDocuments)
+		.where(
+			and(
+				eq(proposalDocuments.documentId, submission.documentId),
+				eq(proposalDocuments.proposalId, proposalId),
+				eq(proposalDocuments.documentType, "Special Orders"),
+			),
+		)
+		.limit(1);
+	return !!document;
+}
 
 // ── CRUD ──
 
@@ -316,94 +341,69 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 		}
 	}
 
-	const [
-		memberRows,
-		documentRows,
-		reviewRows,
-		sdgRows,
-		extensionServiceRows,
-		specialOrderRows,
-	] = await Promise.all([
-		db
-			.select({
-				userId: users.userId,
-				firstName: users.firstName,
-				lastName: users.lastName,
-				role: proposalMembers.projectRole,
-				memberId: proposalMembers.memberId,
-				avatarUrl: users.avatarUrl,
-			})
-			.from(proposalMembers)
-			.innerJoin(users, eq(proposalMembers.userId, users.userId))
-			.where(
-				and(
-					eq(proposalMembers.proposalId, row.proposalId),
-					isNull(proposalMembers.archivedAt),
+	const [memberRows, documentRows, reviewRows, sdgRows, extensionServiceRows] =
+		await Promise.all([
+			db
+				.select({
+					userId: users.userId,
+					firstName: users.firstName,
+					lastName: users.lastName,
+					role: proposalMembers.projectRole,
+					memberId: proposalMembers.memberId,
+					avatarUrl: users.avatarUrl,
+				})
+				.from(proposalMembers)
+				.innerJoin(users, eq(proposalMembers.userId, users.userId))
+				.where(
+					and(
+						eq(proposalMembers.proposalId, row.proposalId),
+						isNull(proposalMembers.archivedAt),
+					),
 				),
+
+			db
+				.select({
+					documentId: proposalDocuments.documentId,
+					versionNum: proposalDocuments.versionNum,
+					documentType: proposalDocuments.documentType,
+					storagePath: proposalDocuments.storagePath,
+					uploadedAt: proposalDocuments.uploadedAt,
+				})
+				.from(proposalDocuments)
+				.where(eq(proposalDocuments.proposalId, row.proposalId))
+				.orderBy(
+					proposalDocuments.documentType,
+					desc(proposalDocuments.versionNum),
+				),
+
+			db
+				.select({
+					reviewId: proposalReviews.reviewId,
+					decision: proposalReviews.decision,
+					comments: proposalReviews.comments,
+					reviewedAt: proposalReviews.reviewedAt,
+					reviewerFirstName: users.firstName,
+					reviewerLastName: users.lastName,
+				})
+				.from(proposalReviews)
+				.innerJoin(users, eq(proposalReviews.reviewerId, users.userId))
+				.where(eq(proposalReviews.proposalId, row.proposalId))
+				.orderBy(desc(proposalReviews.reviewedAt)),
+
+			db
+				.select({
+					sdgNumber: sdgs.sdgNumber,
+					sdgTitle: sdgs.sdgTitle,
+				})
+				.from(proposalSdgs)
+				.innerJoin(sdgs, eq(proposalSdgs.sdgId, sdgs.sdgId))
+				.where(eq(proposalSdgs.proposalId, row.proposalId))
+				.orderBy(sdgs.sdgNumber),
+
+			getProposalExtensionServicesByProposalIds([row.proposalId]).then(
+				(servicesByProposal) => servicesByProposal.get(row.proposalId) ?? [],
 			),
-
-		db
-			.select({
-				documentId: proposalDocuments.documentId,
-				versionNum: proposalDocuments.versionNum,
-				storagePath: proposalDocuments.storagePath,
-				uploadedAt: proposalDocuments.uploadedAt,
-			})
-			.from(proposalDocuments)
-			.where(eq(proposalDocuments.proposalId, row.proposalId))
-			.orderBy(desc(proposalDocuments.versionNum)),
-
-		db
-			.select({
-				reviewId: proposalReviews.reviewId,
-				decision: proposalReviews.decision,
-				comments: proposalReviews.comments,
-				reviewedAt: proposalReviews.reviewedAt,
-				reviewerFirstName: users.firstName,
-				reviewerLastName: users.lastName,
-			})
-			.from(proposalReviews)
-			.innerJoin(users, eq(proposalReviews.reviewerId, users.userId))
-			.where(eq(proposalReviews.proposalId, row.proposalId))
-			.orderBy(desc(proposalReviews.reviewedAt)),
-
-		db
-			.select({
-				sdgNumber: sdgs.sdgNumber,
-				sdgTitle: sdgs.sdgTitle,
-			})
-			.from(proposalSdgs)
-			.innerJoin(sdgs, eq(proposalSdgs.sdgId, sdgs.sdgId))
-			.where(eq(proposalSdgs.proposalId, row.proposalId))
-			.orderBy(sdgs.sdgNumber),
-
-		getProposalExtensionServicesByProposalIds([row.proposalId]).then(
-			(servicesByProposal) => servicesByProposal.get(row.proposalId) ?? [],
-		),
-
-		db
-			.select({
-				memberId: specialOrders.memberId,
-				specialOrderId: specialOrders.specialOrderId,
-				soNumber: specialOrders.soNumber,
-				storagePath: specialOrders.storagePath,
-				dateIssued: specialOrders.dateIssued,
-				status: specialOrders.status,
-			})
-			.from(specialOrders)
-			.innerJoin(
-				proposalMembers,
-				eq(specialOrders.memberId, proposalMembers.memberId),
-			)
-			.where(
-				and(
-					eq(proposalMembers.proposalId, row.proposalId),
-					isNull(proposalMembers.archivedAt),
-					isNull(specialOrders.archivedAt),
-				),
-			)
-			.orderBy(desc(specialOrders.createdAt)),
-	]);
+		]);
 
 	const months = [
 		"Jan",
@@ -427,33 +427,12 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 	const budgetNeust = Number(row.budgetNeust ?? 0);
 	const budgetPartner = Number(row.budgetPartner ?? 0);
 
-	const specialOrderMap = new Map<
-		string,
-		{
-			specialOrderId: string;
-			soNumber: string;
-			storagePath: string | null;
-			dateIssued: string | null;
-			status: string;
-		}
-	>();
-	for (const so of specialOrderRows) {
-		specialOrderMap.set(so.memberId, {
-			specialOrderId: so.specialOrderId,
-			soNumber: so.soNumber,
-			storagePath: so.storagePath,
-			dateIssued: so.dateIssued?.toISOString() ?? null,
-			status: so.status,
-		});
-	}
-
 	const members = memberRows.map((m) => ({
 		memberId: m.memberId,
 		userId: m.userId,
 		name: `${m.firstName} ${m.lastName}`,
 		role: m.role,
 		avatarUrl: m.avatarUrl,
-		specialOrder: specialOrderMap.get(m.memberId) ?? null,
 	}));
 
 	const history: Array<{
@@ -465,20 +444,28 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 		comment?: string;
 	}> = [];
 
-	documentRows.forEach((doc) => {
-		history.push({
-			id: doc.documentId,
-			version: `v${doc.versionNum}`,
-			status:
-				doc.versionNum === documentRows[0]?.versionNum ? "Current" : "Previous",
-			actorName: "System",
-			date: doc.uploadedAt.toISOString(),
+	documentRows
+		.filter((doc) => doc.documentType === "Proposal")
+		.forEach((doc) => {
+			history.push({
+				id: doc.documentId,
+				version: `v${doc.versionNum}`,
+				status:
+					doc.documentId ===
+					documentRows.find((item) => item.documentType === "Proposal")
+						?.documentId
+						? "Current"
+						: "Previous",
+				actorName: "System",
+				date: doc.uploadedAt.toISOString(),
+			});
 		});
-	});
 
 	reviewRows.forEach((review) => {
 		const matchingDoc = documentRows.find(
-			(doc) => doc.uploadedAt.getTime() <= review.reviewedAt.getTime(),
+			(doc) =>
+				doc.documentType === "Proposal" &&
+				doc.uploadedAt.getTime() <= review.reviewedAt.getTime(),
 		);
 		const reviewVersion = matchingDoc
 			? `v${matchingDoc.versionNum}`
@@ -535,6 +522,7 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 				id: doc.documentId,
 				name: getProposalDocumentFilename(doc.storagePath),
 				type: "pdf",
+				documentType: doc.documentType as string,
 				url: signedUrlData?.signedUrl ?? "",
 				version: `v${doc.versionNum}`,
 			};
@@ -549,6 +537,7 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 			id: `signed-terminal-report-${row.proposalId}`,
 			name: "Signed Terminal Report.pdf",
 			type: "pdf",
+			documentType: "Terminal Report" as const,
 			url: signedUrlData?.signedUrl ?? "",
 			version: "Director signed",
 		});
@@ -880,39 +869,12 @@ export async function activateProject(
 			);
 		}
 
-		const members = await tx
-			.select({ memberId: proposalMembers.memberId })
-			.from(proposalMembers)
-			.where(
-				and(
-					eq(proposalMembers.proposalId, project.proposalId),
-					isNull(proposalMembers.archivedAt),
-				),
+		if (!(await hasSubmittedSpecialOrder(project.proposalId, tx))) {
+			throw new ApiError(
+				400,
+				"INCOMPLETE_SPECIAL_ORDERS",
+				"A combined Special Order PDF must be included in the approved proposal before activation",
 			);
-		if (members.length > 0) {
-			const uploadedOrders = await tx
-				.select({ memberId: specialOrders.memberId })
-				.from(specialOrders)
-				.where(
-					and(
-						inArray(
-							specialOrders.memberId,
-							members.map((member) => member.memberId),
-						),
-						isNull(specialOrders.archivedAt),
-						isNotNull(specialOrders.storagePath),
-					),
-				);
-			const uploadedMemberIds = new Set(
-				uploadedOrders.map((order) => order.memberId),
-			);
-			if (members.some((member) => !uploadedMemberIds.has(member.memberId))) {
-				throw new ApiError(
-					400,
-					"INCOMPLETE_SPECIAL_ORDERS",
-					"Special Orders must be uploaded for every project member before activation",
-				);
-			}
 		}
 
 		const [moa] = await tx
@@ -1047,7 +1009,7 @@ export async function getProjectReadiness(id: string, user: AuthUser) {
 	}
 
 	// 2. Fetch proposal, members, moa, and reporting schedule in parallel
-	const [[proposal], pMembers, [moa], milestones] = await Promise.all([
+	const [[proposal], [moa], milestones] = await Promise.all([
 		db
 			.select({
 				status: proposals.status,
@@ -1058,15 +1020,6 @@ export async function getProjectReadiness(id: string, user: AuthUser) {
 			.from(proposals)
 			.where(eq(proposals.proposalId, project.proposalId))
 			.limit(1),
-		db
-			.select({ memberId: proposalMembers.memberId })
-			.from(proposalMembers)
-			.where(
-				and(
-					eq(proposalMembers.proposalId, project.proposalId),
-					isNull(proposalMembers.archivedAt),
-				),
-			),
 		project.moaId
 			? db
 					.select({
@@ -1098,28 +1051,10 @@ export async function getProjectReadiness(id: string, user: AuthUser) {
 		year: "numeric",
 	});
 
-	// 3. Fetch special orders and reporting dates in parallel
-	const memberIds = pMembers.map((m) => m.memberId);
-	const [sOrders] = await Promise.all([
-		memberIds.length > 0
-			? db
-					.select({ memberId: specialOrders.memberId })
-					.from(specialOrders)
-					.where(
-						and(
-							inArray(specialOrders.memberId, memberIds),
-							isNull(specialOrders.archivedAt),
-							sql`${specialOrders.storagePath} IS NOT NULL`,
-						),
-					)
-			: Promise.resolve([]),
-	]);
-
-	const specialOrdersUploadedCount = new Set(
-		sOrders.map((order) => order.memberId),
-	).size;
-	const isSpecialOrdersComplete =
-		pMembers.length > 0 ? specialOrdersUploadedCount === pMembers.length : true;
+	const isSpecialOrdersComplete = await hasSubmittedSpecialOrder(
+		project.proposalId,
+		db,
+	);
 
 	// Check Valid MOA Assigned
 	let isMoaValid = false;
@@ -1148,12 +1083,12 @@ export async function getProjectReadiness(id: string, user: AuthUser) {
 				: "Awaiting proposal approval",
 		},
 		{
-			name: "Special Orders Uploaded",
+			name: "Combined Special Order PDF",
 			complete: isSpecialOrdersComplete,
 			owner: "Project Leader",
 			details: isSpecialOrdersComplete
-				? `All ${pMembers.length} Special Orders uploaded`
-				: `${specialOrdersUploadedCount} of ${pMembers.length} Special Orders uploaded`,
+				? "Combined Special Order PDF included in the approved submission"
+				: "Combined Special Order PDF is missing from the submitted proposal",
 		},
 		{
 			name: "Valid MOA Assigned",

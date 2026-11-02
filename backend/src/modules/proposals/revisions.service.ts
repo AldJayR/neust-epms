@@ -97,11 +97,20 @@ async function latestSubmission(id: string, connection: Database) {
 	return submission;
 }
 
-async function latestDocument(id: string, connection: Database) {
+async function latestDocument(
+	id: string,
+	connection: Database,
+	documentType: "Proposal" | "Special Orders" = "Proposal",
+) {
 	const [document] = await connection
 		.select()
 		.from(proposalDocuments)
-		.where(eq(proposalDocuments.proposalId, id))
+		.where(
+			and(
+				eq(proposalDocuments.proposalId, id),
+				eq(proposalDocuments.documentType, documentType),
+			),
+		)
 		.orderBy(desc(proposalDocuments.versionNum))
 		.limit(1);
 	return document;
@@ -128,9 +137,13 @@ export async function assertCurrentReviewDocument(
 	tx: RevisionTransaction,
 ) {
 	const submission = await latestSubmission(id, tx);
-	const currentId =
-		submission?.documentId ?? (await latestDocument(id, tx))?.documentId;
-	if (currentId !== documentId)
+	const currentIds = submission
+		? [submission.documentId, submission.specialOrderDocumentId]
+		: [
+				(await latestDocument(id, tx))?.documentId,
+				(await latestDocument(id, tx, "Special Orders"))?.documentId,
+			];
+	if (!currentIds.includes(documentId))
 		throw new ApiError(
 			409,
 			"OLD_DOCUMENT",
@@ -196,7 +209,11 @@ export async function createRevisionRequest(
 			if (!comment) throw new ApiError(404, "NOT_FOUND", "Comment not found");
 			documentId = comment.documentId;
 			content = comment.content;
-			if (documentId !== submission?.documentId) sourceSubmissionId = null;
+			if (
+				documentId !== submission?.documentId &&
+				documentId !== submission?.specialOrderDocumentId
+			)
+				sourceSubmissionId = null;
 			const [existing] = await tx
 				.select()
 				.from(requests)
@@ -331,6 +348,11 @@ export async function recordRevisionSubmission(
 	tx: RevisionTransaction,
 ) {
 	const document = await latestDocument(proposal.proposalId, tx);
+	const specialOrder = await latestDocument(
+		proposal.proposalId,
+		tx,
+		"Special Orders",
+	);
 	if (!document)
 		throw new ApiError(
 			400,
@@ -386,6 +408,7 @@ export async function recordRevisionSubmission(
 		.values({
 			proposalId: proposal.proposalId,
 			documentId: document.documentId,
+			specialOrderDocumentId: specialOrder?.documentId ?? null,
 			sequence: (previous?.sequence ?? 0) + 1,
 			submittedBy: user.userId,
 		})
@@ -660,7 +683,15 @@ export async function reopenRevisionRequest(
 
 export async function revisionReadiness(user: AuthUser, id: string) {
 	const proposal = await loadProposal(user, id, db);
-	const [outstanding, cycle, document, leader, reviewer] = await Promise.all([
+	const [
+		outstanding,
+		cycle,
+		document,
+		leader,
+		reviewer,
+		specialOrder,
+		submission,
+	] = await Promise.all([
 		db
 			.select()
 			.from(requests)
@@ -669,6 +700,8 @@ export async function revisionReadiness(user: AuthUser, id: string) {
 		latestDocument(id, db),
 		isProjectLeader(id, user.userId),
 		canReview(user, proposal, db),
+		latestDocument(id, db, "Special Orders"),
+		latestSubmission(id, db),
 	]);
 	const drafts =
 		cycle && outstanding.length
@@ -688,7 +721,10 @@ export async function revisionReadiness(user: AuthUser, id: string) {
 			: [];
 	const answered = drafts.filter((draft) => !!draft.explanation.trim()).length;
 	const revisedDocumentReady =
-		!!document && (!cycle || document.uploadedAt > cycle.reviewedAt);
+		!!document &&
+		(!cycle ||
+			document.uploadedAt > cycle.reviewedAt ||
+			(!!specialOrder && specialOrder.uploadedAt > cycle.reviewedAt));
 	const canRespond = proposal.status === "Returned" && leader;
 	return {
 		status: proposal.status,
@@ -702,6 +738,11 @@ export async function revisionReadiness(user: AuthUser, id: string) {
 		).length,
 		revisedDocumentReady,
 		latestDocumentId: document?.documentId ?? null,
+		currentDocumentIds: submission
+			? [submission.documentId, submission.specialOrderDocumentId].filter(
+					(value): value is string => !!value,
+				)
+			: [],
 		canResubmit:
 			canRespond && revisedDocumentReady && answered === outstanding.length,
 	};
@@ -718,6 +759,10 @@ export async function listRevisionRequests(
 	},
 ) {
 	const proposal = await loadProposal(user, id, db);
+	const documents = await db
+		.select()
+		.from(proposalDocuments)
+		.where(eq(proposalDocuments.proposalId, id));
 	const filters = and(
 		eq(requests.proposalId, id),
 		query.status === "Active"
@@ -767,17 +812,13 @@ export async function listRevisionRequests(
 					response: responses,
 					name: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
 					documentId: proposalSubmissions.documentId,
-					version: proposalDocuments.versionNum,
+					specialOrderDocumentId: proposalSubmissions.specialOrderDocumentId,
 				})
 				.from(responses)
 				.innerJoin(users, eq(responses.respondedBy, users.userId))
 				.leftJoin(
 					proposalSubmissions,
 					eq(responses.submissionId, proposalSubmissions.submissionId),
-				)
-				.leftJoin(
-					proposalDocuments,
-					eq(proposalSubmissions.documentId, proposalDocuments.documentId),
 				)
 				.where(inArray(responses.requestId, ids))
 				.orderBy(desc(responses.updatedAt))
@@ -789,17 +830,13 @@ export async function listRevisionRequests(
 					reopening: reopenings,
 					name: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
 					documentId: proposalSubmissions.documentId,
-					version: proposalDocuments.versionNum,
+					specialOrderDocumentId: proposalSubmissions.specialOrderDocumentId,
 				})
 				.from(reopenings)
 				.innerJoin(users, eq(reopenings.reopenedBy, users.userId))
 				.innerJoin(
 					proposalSubmissions,
 					eq(reopenings.submissionId, proposalSubmissions.submissionId),
-				)
-				.innerJoin(
-					proposalDocuments,
-					eq(proposalSubmissions.documentId, proposalDocuments.documentId),
 				)
 				.where(inArray(reopenings.requestId, ids))
 				.orderBy(desc(reopenings.reopenedAt))
@@ -816,6 +853,23 @@ export async function listRevisionRequests(
 				.orderBy(desc(verifications.verifiedAt))
 		: [];
 	const items = rows.map(({ request, name, version, annotation }) => {
+		const isSpecialOrder =
+			documents.find((document) => document.documentId === request.documentId)
+				?.documentType === "Special Orders";
+		const responseDocument = (row: {
+			documentId: string | null;
+			specialOrderDocumentId: string | null;
+		}) => {
+			const documentId = isSpecialOrder
+				? row.specialOrderDocumentId
+				: row.documentId;
+			return {
+				documentId,
+				version:
+					documents.find((document) => document.documentId === documentId)
+						?.versionNum ?? null,
+			};
+		};
 		const replies = replyRows.filter(
 			(row) => row.response.requestId === request.requestId,
 		);
@@ -824,8 +878,7 @@ export async function listRevisionRequests(
 			responseType: row.response.responseType,
 			explanation: row.response.explanation,
 			revisedPage: row.response.revisedPage,
-			documentId: row.documentId,
-			version: row.version,
+			...responseDocument(row),
 			respondedBy: row.name,
 			updatedAt: row.response.updatedAt.toISOString(),
 			submittedAt: row.response.submittedAt?.toISOString() ?? null,
@@ -858,6 +911,9 @@ export async function listRevisionRequests(
 			createdAt: request.createdAt.toISOString(),
 			commentId: request.commentId,
 			documentId: request.documentId,
+			documentType: isSpecialOrder
+				? ("Special Orders" as const)
+				: ("Proposal" as const),
 			version,
 			originalPage: annotation?.page ?? null,
 			canRespond:
@@ -876,14 +932,20 @@ export async function listRevisionRequests(
 				!!submission,
 			reopenings: reopeningRows
 				.filter((row) => row.reopening.requestId === request.requestId)
-				.map((row) => ({
-					reopeningId: row.reopening.reopeningId,
-					documentId: row.documentId,
-					version: row.version,
-					explanation: row.reopening.explanation,
-					reopenedBy: row.name,
-					reopenedAt: row.reopening.reopenedAt.toISOString(),
-				})),
+				.flatMap((row) => {
+					const document = responseDocument(row);
+					if (!document.documentId || document.version === null) return [];
+					return [
+						{
+							reopeningId: row.reopening.reopeningId,
+							documentId: document.documentId,
+							version: document.version,
+							explanation: row.reopening.explanation,
+							reopenedBy: row.name,
+							reopenedAt: row.reopening.reopenedAt.toISOString(),
+						},
+					];
+				}),
 			draft: draft ? format(draft) : null,
 			responses: replies
 				.filter((row) => row.response.submissionId !== null)

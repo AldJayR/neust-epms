@@ -173,11 +173,20 @@ app.openapi(uploadRoute, async (c) => {
 	}
 
 	const ipAddress = getClientIp(c);
+	const documentType = formData.get("documentType") ?? "Proposal";
+	if (documentType !== "Proposal" && documentType !== "Special Orders") {
+		throw new ApiError(
+			400,
+			"INVALID_DOCUMENT_TYPE",
+			"Invalid proposal document type",
+		);
+	}
 	const document = await uploadProposalDocument(
 		user,
 		proposalId,
 		file,
 		ipAddress,
+		documentType,
 	);
 	return c.json(document, 201);
 });

@@ -109,10 +109,7 @@ export function ProjectDetailsPage({
 					: "",
 				budgetPartner: Number(editProposalData.budgetPartner ?? 0),
 				budgetNeust: Number(editProposalData.budgetNeust ?? 0),
-				members: (editProposalData.members ?? []).map((m) => ({
-					...m,
-					soNumber: m.soNumber ?? "",
-				})),
+				members: editProposalData.members ?? [],
 			}
 		: undefined;
 
@@ -211,7 +208,10 @@ export function ProjectDetailsPage({
 
 				{isAllowedToReadProposal && (
 					<div className="lg:col-span-4 flex flex-col gap-6">
-						<AttachmentsCard attachments={data.attachments} />
+						<AttachmentsCard
+							attachments={data.attachments}
+							proposalId={proposalId}
+						/>
 					</div>
 				)}
 			</div>
@@ -231,6 +231,9 @@ export function ProjectDetailsPage({
 				editingProposalId={proposalId}
 				currentStatus={data.status}
 				hasExistingProposalDocument={editProposalData?.hasProposalDocument}
+				hasExistingSpecialOrderDocument={
+					editProposalData?.hasSpecialOrderDocument
+				}
 			/>
 
 			<ActivateProjectWizard

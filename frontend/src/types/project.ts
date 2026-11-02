@@ -1,18 +1,9 @@
-export interface ProjectMemberSpecialOrder {
-	specialOrderId: string;
-	soNumber: string;
-	storagePath: string | null;
-	dateIssued: string | null;
-	status: string;
-}
-
 export interface ProjectMember {
 	memberId: string;
 	userId: string;
 	name: string;
 	role: string;
 	avatarUrl?: string;
-	specialOrder?: ProjectMemberSpecialOrder | null;
 }
 
 export interface ProjectHistoryItem {
@@ -57,6 +48,7 @@ export interface ProjectAttachment {
 	id: string;
 	name: string;
 	type: string;
+	documentType: "Proposal" | "Special Orders" | "Terminal Report";
 	url: string;
 	version: string;
 }

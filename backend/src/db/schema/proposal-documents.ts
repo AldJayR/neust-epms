@@ -22,6 +22,12 @@ export const proposalDocuments = pgTable(
 			.notNull()
 			.references(() => proposals.proposalId),
 		storagePath: varchar("storage_path", { length: 500 }).notNull(),
+		documentType: varchar("document_type", {
+			length: 30,
+			enum: ["Proposal", "Special Orders"],
+		})
+			.notNull()
+			.default("Proposal"),
 		versionNum: integer("version_num").notNull(),
 		contentHash: varchar("content_hash", { length: 64 }),
 		uploadedBy: uuid("uploaded_by").references(() => users.userId),
@@ -34,6 +40,7 @@ export const proposalDocuments = pgTable(
 		proposalIdx: index("pd_proposal_id_idx").on(table.proposalId),
 		proposalVersionUnique: unique("pd_proposal_version_unique").on(
 			table.proposalId,
+			table.documentType,
 			table.versionNum,
 		),
 	}),

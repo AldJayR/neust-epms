@@ -13,7 +13,6 @@ import type { PdfViewerRef } from "./components/pdf-viewer";
 import {
 	INSTITUTIONAL_APPROVAL_DOCUMENT_ID,
 	ProposalReviewProvider,
-	SPECIAL_ORDERS_DOCUMENT_ID,
 } from "./components/proposal-review-context";
 import { ProposalReviewDocumentPane } from "./components/proposal-review-document-pane";
 import { ProposalReviewHeader } from "./components/proposal-review-header";
@@ -31,9 +30,13 @@ import { revisionReadinessQueryOptions } from "./revisions.functions";
 
 interface ProposalReviewPageProps {
 	proposalId: string;
+	initialDocumentId?: string;
 }
 
-export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
+export function ProposalReviewPage({
+	proposalId,
+	initialDocumentId,
+}: ProposalReviewPageProps) {
 	const user = useRouterState({
 		select: (state) => {
 			const authMatch = state.matches.find(
@@ -94,7 +97,7 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	});
 
 	const [activeAttachmentId, setActiveAttachmentId] = useState<string | null>(
-		null,
+		initialDocumentId ?? null,
 	);
 	const [isTheaterMode, setIsTheaterMode] = useState(false);
 	const [initialPage, setInitialPage] = useState<number | undefined>();
@@ -107,15 +110,17 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 	);
 	const hasEndorsement =
 		data?.status !== "Pending Review" && Boolean(endorsement);
+	const selectedAttachment =
+		data?.attachments?.find(
+			(attachment) => attachment.id === activeAttachmentId,
+		) ?? data?.attachments?.[0];
 	const currentDoc =
-		activeAttachmentId === SPECIAL_ORDERS_DOCUMENT_ID
-			? undefined
-			: activeAttachmentId === INSTITUTIONAL_APPROVAL_DOCUMENT_ID &&
-					data?.institutionalApprovalDocUrl
-				? { id: undefined, url: data.institutionalApprovalDocUrl }
-				: (data?.attachments?.find(
-						(attachment) => attachment.id === activeAttachmentId,
-					) ?? data?.attachments?.[0]);
+		activeAttachmentId === INSTITUTIONAL_APPROVAL_DOCUMENT_ID &&
+		data?.institutionalApprovalDocUrl
+			? { id: undefined, url: data.institutionalApprovalDocUrl }
+			: selectedAttachment?.documentType === "Terminal Report"
+				? { id: undefined, url: selectedAttachment.url }
+				: selectedAttachment;
 	const userRole = user?.roleName ?? "";
 	const isRET = userRole === "RET Chair";
 	const isDirector = userRole === "Director";
@@ -324,16 +329,14 @@ export function ProposalReviewPage({ proposalId }: ProposalReviewPageProps) {
 							viewerRef={pdfViewerRef}
 							currentDocument={currentDoc}
 							initialPage={initialPage}
-							specialOrderMembers={
-								activeAttachmentId === SPECIAL_ORDERS_DOCUMENT_ID
-									? data.members
-									: undefined
-							}
 							comments={comments}
 							canAnnotate={
 								isReviewable &&
 								!!currentDoc?.id &&
-								currentDoc.id === revisionQuery.data?.latestDocumentId
+								(revisionQuery.data?.currentDocumentIds.includes(
+									currentDoc.id,
+								) ??
+									false)
 							}
 							isTheaterMode={isTheaterMode}
 							onAddComment={async (content, annotation, classification) => {

@@ -318,6 +318,7 @@ app.openapi(getRoute, async (c) => {
 			beneficiarySectors: editData.beneficiarySectors,
 			sectors: editData.sectors,
 			hasProposalDocument: editData.hasProposalDocument,
+			hasSpecialOrderDocument: editData.hasSpecialOrderDocument,
 			members: editData.members,
 			createdAt: row.createdAt.toISOString(),
 			updatedAt: row.updatedAt.toISOString(),
@@ -640,6 +641,13 @@ app.openapi(listRequirementsRoute, (c) => {
 				label: "Project Proposal PDF",
 				required: true,
 				description: "Official project proposal document in PDF format.",
+			},
+			{
+				type: "special_orders_pdf",
+				label: "Combined Special Order PDF",
+				required: true,
+				description:
+					"One PDF containing all team members’ Special Order pages. SO numbers are not entered separately.",
 			},
 		],
 		members: {

@@ -20,6 +20,9 @@ export const proposalSubmissions = pgTable(
 		documentId: uuid("document_id")
 			.notNull()
 			.references(() => proposalDocuments.documentId),
+		specialOrderDocumentId: uuid("special_order_document_id").references(
+			() => proposalDocuments.documentId,
+		),
 		sequence: integer("sequence").notNull(),
 		submittedBy: uuid("submitted_by")
 			.notNull()

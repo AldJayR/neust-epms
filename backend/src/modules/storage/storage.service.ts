@@ -78,6 +78,7 @@ export async function listProposalDocuments(
 			proposalId: proposalDocuments.proposalId,
 			storagePath: proposalDocuments.storagePath,
 			versionNum: proposalDocuments.versionNum,
+			documentType: proposalDocuments.documentType,
 			uploadedAt: proposalDocuments.uploadedAt,
 		})
 		.from(proposalDocuments)
@@ -90,6 +91,7 @@ export async function listProposalDocuments(
 		documentId: row.documentId,
 		proposalId: row.proposalId,
 		versionNum: row.versionNum,
+		documentType: row.documentType,
 		uploadedAt: row.uploadedAt.toISOString(),
 	}));
 }
@@ -99,6 +101,7 @@ export async function uploadProposalDocument(
 	proposalId: string,
 	file: File,
 	ipAddress: string,
+	documentType: "Proposal" | "Special Orders" = "Proposal",
 ) {
 	await ensureUploadProposalDocumentAccess(user, proposalId);
 	const storagePath = generateSecureStoragePath(proposalId, file.name);
@@ -173,13 +176,14 @@ export async function uploadProposalDocument(
 					);
 			}
 			const versions = await tx.execute(
-				sql`SELECT COALESCE(MAX(version_num), 0) + 1 AS max_ver FROM proposal_documents WHERE proposal_id = ${proposalId}`,
+				sql`SELECT COALESCE(MAX(version_num), 0) + 1 AS max_ver FROM proposal_documents WHERE proposal_id = ${proposalId} AND document_type = ${documentType}`,
 			);
 			const nextVersion = Number(versions[0]?.max_ver ?? 1);
 			const [inserted] = await tx
 				.insert(proposalDocuments)
 				.values({
 					proposalId,
+					documentType,
 					storagePath,
 					versionNum: nextVersion,
 					contentHash,
@@ -195,7 +199,7 @@ export async function uploadProposalDocument(
 			await insertAuditLog(
 				{
 					userId: user.userId,
-					action: `Uploaded document v${nextVersion} for proposal ${proposalId}`,
+					action: `Uploaded ${documentType} document v${nextVersion} for proposal ${proposalId}`,
 					tableAffected: "proposal_documents",
 					newValue: { contentHash, uploadedBy: user.userId },
 					ipAddress,
@@ -214,6 +218,7 @@ export async function uploadProposalDocument(
 		documentId: doc.documentId,
 		storagePath: doc.storagePath,
 		versionNum: doc.versionNum,
+		documentType: doc.documentType,
 	};
 }
 
@@ -329,6 +334,7 @@ export async function getAnnotatedProposalDocument(
 			documentId: proposalDocuments.documentId,
 			storagePath: proposalDocuments.storagePath,
 			versionNum: proposalDocuments.versionNum,
+			documentType: proposalDocuments.documentType,
 		})
 		.from(proposalDocuments)
 		.where(
@@ -394,7 +400,7 @@ export async function getAnnotatedProposalDocument(
 	return {
 		bytes,
 		fileName: sanitizeFilename(
-			`${proposal.title}_annotated_v${document.versionNum}.pdf`,
+			`${proposal.title}_${document.documentType === "Special Orders" ? "special_orders" : "proposal"}_annotated_v${document.versionNum}.pdf`,
 		),
 	};
 }

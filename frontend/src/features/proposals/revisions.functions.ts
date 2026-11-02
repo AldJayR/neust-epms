@@ -34,6 +34,7 @@ export interface RevisionRequest {
 	createdAt: string;
 	commentId: string | null;
 	documentId: string | null;
+	documentType?: "Proposal" | "Special Orders";
 	version: number | null;
 	originalPage: number | null;
 	canRespond: boolean;
@@ -60,6 +61,7 @@ export interface RevisionReadiness {
 	stageOutstanding: number;
 	revisedDocumentReady: boolean;
 	latestDocumentId: string | null;
+	currentDocumentIds: string[];
 	canResubmit: boolean;
 }
 

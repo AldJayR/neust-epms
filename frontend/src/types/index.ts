@@ -20,7 +20,6 @@ export type {
 	ProjectHubParams,
 	ProjectHubResponse,
 	ProjectMember,
-	ProjectMemberSpecialOrder,
 } from "./project";
 export type { ProposalFull, ProposalItem } from "./proposal";
 export type {

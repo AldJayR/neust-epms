@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { z } from "zod";
 import { projectDetailsQueryOptions } from "@/features/projects/public";
 import {
 	ProposalReviewPage,
@@ -7,6 +8,9 @@ import {
 import { isDeniedAccess } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/proposals/$proposalId")({
+	validateSearch: z.object({
+		documentId: z.uuid().optional().catch(undefined),
+	}),
 	beforeLoad: ({ context }) => {
 		if (isDeniedAccess(context.auth.user, "Director", "RET Chair", "Faculty")) {
 			throw redirect({
@@ -36,5 +40,12 @@ export const Route = createFileRoute("/_authenticated/proposals/$proposalId")({
 
 function ProposalReviewComponent() {
 	const { proposalId } = Route.useParams();
-	return <ProposalReviewPage proposalId={proposalId} />;
+	const { documentId } = Route.useSearch();
+	return (
+		<ProposalReviewPage
+			key={`${proposalId}:${documentId ?? ""}`}
+			proposalId={proposalId}
+			initialDocumentId={documentId}
+		/>
+	);
 }

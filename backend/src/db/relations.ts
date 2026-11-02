@@ -8,7 +8,6 @@ import { moas } from "./schema/moas.js";
 import { partners } from "./schema/partners.js";
 import { projectReportingMilestones } from "./schema/project-reporting-milestones.js";
 import { projectReports } from "./schema/project-reports.js";
-import { reportAttachments } from "./schema/report-attachments.js";
 import { projects } from "./schema/projects.js";
 import { proposalBeneficiaries } from "./schema/proposal-beneficiaries.js";
 import { proposalComments } from "./schema/proposal-comments.js";
@@ -19,9 +18,9 @@ import { proposalMembers } from "./schema/proposal-members.js";
 import { proposalReviews } from "./schema/proposal-reviews.js";
 import { proposalSdgs } from "./schema/proposal-sdgs.js";
 import { proposals } from "./schema/proposals.js";
+import { reportAttachments } from "./schema/report-attachments.js";
 import { roles } from "./schema/roles.js";
 import { sdgs } from "./schema/sdgs.js";
-import { specialOrders } from "./schema/special-orders.js";
 import { users } from "./schema/users.js";
 
 // ── Roles ──
@@ -124,7 +123,7 @@ export const proposalDepartmentsRelations = relations(
 // ── Proposal Members ──
 export const proposalMembersRelations = relations(
 	proposalMembers,
-	({ one, many }) => ({
+	({ one }) => ({
 		proposal: one(proposals, {
 			fields: [proposalMembers.proposalId],
 			references: [proposals.proposalId],
@@ -133,17 +132,8 @@ export const proposalMembersRelations = relations(
 			fields: [proposalMembers.userId],
 			references: [users.userId],
 		}),
-		specialOrders: many(specialOrders),
 	}),
 );
-
-// ── Special Orders ──
-export const specialOrdersRelations = relations(specialOrders, ({ one }) => ({
-	member: one(proposalMembers, {
-		fields: [specialOrders.memberId],
-		references: [proposalMembers.memberId],
-	}),
-}));
 
 // ── Proposal Documents ──
 export const proposalDocumentsRelations = relations(

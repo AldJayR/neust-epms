@@ -32,6 +32,5 @@ export { proposals } from "./proposals.js";
 export { reportAttachments } from "./report-attachments.js";
 export { roles } from "./roles.js";
 export { sdgs } from "./sdgs.js";
-export { specialOrders } from "./special-orders.js";
 export { systemSettings } from "./system-settings.js";
 export { users } from "./users.js";

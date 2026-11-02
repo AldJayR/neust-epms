@@ -34,7 +34,3 @@ export type {
 	ScheduledDueDate,
 } from "./reporting-schedule.functions";
 export { projectReportingScheduleQueryOptions } from "./reporting-schedule.functions";
-export {
-	getSpecialOrderSignedUrlFn,
-	uploadSpecialOrderFn,
-} from "./special-orders.functions";

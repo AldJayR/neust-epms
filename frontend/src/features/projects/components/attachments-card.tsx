@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Download, Eye, FileText } from "lucide-react";
 import { PageCard } from "@/components/custom/page-card";
 import {
@@ -22,10 +23,15 @@ interface AttachmentsCardProps {
 		type: string;
 		url: string;
 		version: string;
+		documentType?: string;
 	}[];
+	proposalId?: string;
 }
 
-export function AttachmentsCard({ attachments }: AttachmentsCardProps) {
+export function AttachmentsCard({
+	attachments,
+	proposalId,
+}: AttachmentsCardProps) {
 	return (
 		<PageCard>
 			<div className="bg-card border-b border-border px-6 py-3">
@@ -40,7 +46,8 @@ export function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 						<AttachmentContent>
 							<AttachmentTitle>{attachment.name}</AttachmentTitle>
 							<AttachmentDescription>
-								{attachment.type} · {attachment.version}
+								{attachment.documentType ?? attachment.type} ·{" "}
+								{attachment.version}
 							</AttachmentDescription>
 						</AttachmentContent>
 						<AttachmentActions>
@@ -50,14 +57,26 @@ export function AttachmentsCard({ attachments }: AttachmentsCardProps) {
 										<AttachmentAction
 											nativeButton={false}
 											render={
-												<a
-													href={attachment.url}
-													target="_blank"
-													rel="noopener noreferrer"
-													aria-label="View file"
-												>
-													<Eye className="size-3.5" />
-												</a>
+												proposalId &&
+												attachment.documentType !== "Terminal Report" ? (
+													<Link
+														to="/proposals/$proposalId"
+														params={{ proposalId }}
+														search={{ documentId: String(attachment.id) }}
+														aria-label="View file in proposal review"
+													>
+														<Eye className="size-3.5" />
+													</Link>
+												) : (
+													<a
+														href={attachment.url}
+														target="_blank"
+														rel="noopener noreferrer"
+														aria-label="View file"
+													>
+														<Eye className="size-3.5" />
+													</a>
+												)
 											}
 										/>
 									}

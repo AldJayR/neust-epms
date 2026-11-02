@@ -76,7 +76,10 @@ function ResponseEditor({
 	});
 	return (
 		<div className="space-y-3 border-t border-border pt-3">
-			<Label className="block text-xs font-medium" htmlFor={`type-${request.requestId}`}>
+			<Label
+				className="block text-xs font-medium"
+				htmlFor={`type-${request.requestId}`}
+			>
 				Your response
 			</Label>
 			<Select
@@ -86,7 +89,10 @@ function ResponseEditor({
 				}
 				disabled={disabled || mutation.isPending}
 			>
-				<SelectTrigger id={`type-${request.requestId}`} className="w-full text-sm">
+				<SelectTrigger
+					id={`type-${request.requestId}`}
+					className="w-full text-sm"
+				>
 					<SelectValue>
 						{(value) =>
 							value === "Clarification"
@@ -213,7 +219,10 @@ function RevisionCard({
 				{request.content}
 			</p>
 			<p className="text-xs text-muted-foreground">
-				{request.createdBy}
+				{request.createdBy} ·{" "}
+				{request.documentType === "Special Orders"
+					? "Combined Special Orders"
+					: "Proposal"}
 				{request.version !== null && ` · Original v${request.version}`}
 				{request.originalPage && ` · Page ${request.originalPage}`}
 			</p>
@@ -494,7 +503,10 @@ export function RevisionWorkspace({
 						setPage(1);
 					}}
 				>
-					<SelectTrigger aria-label="Filter revision status" className="max-w-full text-xs">
+					<SelectTrigger
+						aria-label="Filter revision status"
+						className="max-w-full text-xs"
+					>
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>

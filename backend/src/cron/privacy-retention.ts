@@ -3,10 +3,8 @@ import cron from "node-cron";
 import { db } from "@/db/client.js";
 import { projectReports } from "@/db/schema/project-reports.js";
 import { projects } from "@/db/schema/projects.js";
-import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { roles } from "@/db/schema/roles.js";
-import { specialOrders } from "@/db/schema/special-orders.js";
 import { systemSettings } from "@/db/schema/system-settings.js";
 import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
@@ -130,23 +128,6 @@ export async function archiveExpiredProjects(
 						isNull(projectReports.archivedAt),
 					),
 				);
-
-			const memberRows = await tx
-				.select({ memberId: proposalMembers.memberId })
-				.from(proposalMembers)
-				.where(eq(proposalMembers.proposalId, candidate.proposalId));
-			const memberIds = memberRows.map((row) => row.memberId);
-			if (memberIds.length > 0) {
-				await tx
-					.update(specialOrders)
-					.set({ archivedAt, updatedAt: now })
-					.where(
-						and(
-							inArray(specialOrders.memberId, memberIds),
-							isNull(specialOrders.archivedAt),
-						),
-					);
-			}
 
 			await insertAuditLog(
 				{

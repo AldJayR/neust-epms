@@ -1,9 +1,7 @@
-import { ChevronRight, Eye, User } from "lucide-react";
+import { ChevronRight, User } from "lucide-react";
 import { DetailsRow } from "@/components/custom/details-row";
 import { PageCard } from "@/components/custom/page-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -12,8 +10,6 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import type { ProjectMember } from "@/types/project";
-import { canManageSpecialOrders } from "../helpers/project-details-helpers";
-import { useProjectSpecialOrders } from "../hooks/use-project-special-orders";
 
 interface ProjectOverviewCardProps {
 	metadata: {
@@ -42,19 +38,9 @@ interface ProjectOverviewCardProps {
 export function ProjectOverviewCard({
 	metadata,
 	members,
-	currentUserId,
-	currentUserRole,
-	proposalId,
 	status: _status,
 }: ProjectOverviewCardProps) {
-	const { uploadErrors, handleViewSO } = useProjectSpecialOrders(proposalId);
 	const linkedMoa = metadata.moaLinked?.trim();
-
-	const isAllowedToManageSO = canManageSpecialOrders(
-		currentUserId,
-		currentUserRole,
-		members,
-	);
 
 	return (
 		<PageCard>
@@ -114,14 +100,6 @@ export function ProjectOverviewCard({
 					>
 						<span className="text-sm text-muted-foreground">Project Team</span>
 						<div className="flex items-center gap-4">
-							{isAllowedToManageSO && (
-								<Badge
-									variant="outline"
-									className="text-[10px] font-normal text-muted-foreground border-dashed"
-								>
-									Manage SO
-								</Badge>
-							)}
 							<div className="flex -space-x-2">
 								{members.slice(0, 4).map((member) => (
 									<Avatar
@@ -151,12 +129,6 @@ export function ProjectOverviewCard({
 							<DialogTitle className="text-base font-semibold text-heading">
 								Project Members
 							</DialogTitle>
-							{isAllowedToManageSO && (
-								<span className="text-xs text-muted-foreground">
-									{members.filter((member) => member.specialOrder).length}/
-									{members.length} Special Orders uploaded
-								</span>
-							)}
 						</DialogHeader>
 						<ul className="flex flex-col gap-1 max-h-[400px] overflow-y-auto pr-2">
 							{members.map((member) => (
@@ -179,44 +151,7 @@ export function ProjectOverviewCard({
 												{member.role}
 											</span>
 										</div>
-
-										{isAllowedToManageSO &&
-											(member.specialOrder ? (
-												<div className="flex items-center gap-2">
-													<Badge
-														variant="outline"
-														className="text-green-600 border-green-200 bg-green-50 text-[10px] px-1.5 dark:text-green-300 dark:border-green-900/60 dark:bg-green-950/30"
-													>
-														{member.specialOrder.soNumber}
-													</Badge>
-													<Button
-														size="sm"
-														variant="outline"
-														className="h-7 text-xs"
-														onClick={() =>
-															handleViewSO(
-																member.specialOrder?.specialOrderId ?? "",
-															)
-														}
-													>
-														<Eye className="mr-1 size-3" />
-														View
-													</Button>
-												</div>
-											) : (
-												<Badge
-													variant="outline"
-													className="text-muted-foreground text-[10px] px-1.5"
-												>
-													No SO Attached
-												</Badge>
-											))}
 									</div>
-									{uploadErrors[member.userId] && (
-										<span className="ml-12 text-xs text-red-500">
-											{uploadErrors[member.userId]}
-										</span>
-									)}
 								</li>
 							))}
 						</ul>

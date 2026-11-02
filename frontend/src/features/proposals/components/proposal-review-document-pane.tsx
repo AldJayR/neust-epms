@@ -1,13 +1,10 @@
-import type { ProjectMember } from "@/types/project";
 import type { ProposalComment } from "../comments.functions";
 import { PdfViewer, type PdfViewerRef } from "./pdf-viewer";
-import { SpecialOrdersViewer } from "./special-orders-viewer";
 
 interface ProposalReviewDocumentPaneProps {
 	viewerRef: React.RefObject<PdfViewerRef | null>;
 	currentDocument?: { url: string };
 	initialPage?: number;
-	specialOrderMembers?: ProjectMember[];
 	comments: ProposalComment[];
 	canAnnotate: boolean;
 	isTheaterMode: boolean;
@@ -29,7 +26,6 @@ export function ProposalReviewDocumentPane({
 	viewerRef,
 	currentDocument,
 	initialPage,
-	specialOrderMembers,
 	comments,
 	canAnnotate,
 	isTheaterMode,
@@ -41,13 +37,7 @@ export function ProposalReviewDocumentPane({
 			className={`${isTheaterMode ? "lg:col-span-12 w-full" : "lg:col-span-8"} flex flex-col gap-4`}
 		>
 			<div className="bg-muted border border-border rounded-[12px] shadow-[0_1px_3px_0_var(--shadow-card)] overflow-hidden min-h-[480px] h-[min(844px,calc(100dvh-10rem))] lg:h-[844px]">
-				{specialOrderMembers ? (
-					<SpecialOrdersViewer
-						members={specialOrderMembers}
-						isTheaterMode={isTheaterMode}
-						onToggleTheaterMode={onToggleTheaterMode}
-					/>
-				) : currentDocument ? (
+				{currentDocument ? (
 					<PdfViewer
 						key={currentDocument.url}
 						ref={viewerRef}

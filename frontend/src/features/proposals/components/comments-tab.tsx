@@ -44,7 +44,7 @@ export function CommentsTab({
 						<p className="text-sm font-semibold">No comments yet</p>
 						<p className="text-xs text-muted-foreground font-light">
 							{isReviewable
-								? "Select the current proposal PDF and use comment mode to add feedback."
+								? "Select a current proposal or combined Special Order PDF and use comment mode to add feedback."
 								: "Earlier feedback stays attached to its original document version."}
 						</p>
 					</div>

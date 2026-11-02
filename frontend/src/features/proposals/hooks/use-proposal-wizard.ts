@@ -10,7 +10,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { bannerProgramsQueryOptions } from "@/features/banner-programs";
 import { SECTOR_SEARCH_QUERY_KEY } from "@/features/beneficiary-sectors/functions";
-import { uploadSpecialOrderFn } from "@/features/projects/special-orders.functions";
 import type { AuthUser } from "@/lib/auth";
 import { manilaCalendarTimestamp } from "@/lib/dates";
 import { invalidateWorkflowQueries } from "@/lib/workflow-queries";
@@ -39,12 +38,13 @@ interface UseProposalWizardOptions {
 	editingProposalId?: string;
 	currentStatus?: string;
 	hasExistingProposalDocument?: boolean;
+	hasExistingSpecialOrderDocument?: boolean;
 }
 
 interface WizardState {
 	step: number;
 	file: File | null;
-	soFiles: Record<string, File | null>;
+	soFile: File | null;
 	uploadProgress: number;
 	uploadPhase: "idle" | "creating" | "uploading" | "done";
 }
@@ -57,12 +57,14 @@ export function useProposalWizard({
 	editingProposalId,
 	currentStatus,
 	hasExistingProposalDocument,
+	hasExistingSpecialOrderDocument,
 }: UseProposalWizardOptions) {
 	const isEditing = Boolean(editingProposalId);
 	const isReturned = currentStatus === "Returned";
 	const draftIdRef = React.useRef<string | undefined>(editingProposalId);
 	const savingRef = React.useRef(false);
 	const uploadedDocumentRef = React.useRef(false);
+	const uploadedSpecialOrderRef = React.useRef(false);
 	const [isSaving, setIsSaving] = React.useState(false);
 	const [isSubmitting, setIsSubmitting] = React.useState(false);
 	const [state, setState] = React.useReducer(
@@ -78,7 +80,7 @@ export function useProposalWizard({
 		{
 			step: 1,
 			file: null,
-			soFiles: {},
+			soFile: null,
 			uploadProgress: 0,
 			uploadPhase: "idle" as const,
 		},
@@ -110,7 +112,6 @@ export function useProposalWizard({
 				userId: user.userId,
 				projectRole: "Project Leader",
 				name: `${user.firstName} ${user.lastName}`,
-				soNumber: "",
 			},
 		],
 	};
@@ -178,8 +179,9 @@ export function useProposalWizard({
 		if (!isOpen) {
 			draftIdRef.current = editingProposalId;
 			uploadedDocumentRef.current = false;
+			uploadedSpecialOrderRef.current = false;
 			form.reset();
-			setState({ step: 1, file: null, soFiles: {} });
+			setState({ step: 1, file: null, soFile: null });
 		}
 		onOpenChange(isOpen);
 	};
@@ -222,16 +224,29 @@ export function useProposalWizard({
 					shouldSubmit,
 					Boolean(draftIdRef.current || editingProposalId),
 					uploadedDocumentRef.current ||
+						(isReturned && uploadedSpecialOrderRef.current) ||
 						revisionQuery.data?.revisedDocumentReady ||
 						(currentStatus !== "Returned" && hasExistingProposalDocument),
 				) &&
-				!state.file
+				!state.file &&
+				!(isReturned && state.soFile)
 			) {
 				toast.error("Please upload the Project Proposal PDF");
 				return;
 			}
 
 			const values = form.getValues();
+			if (
+				shouldSubmit &&
+				!state.soFile &&
+				!uploadedSpecialOrderRef.current &&
+				!hasExistingSpecialOrderDocument
+			) {
+				toast.error(
+					"Please upload the combined Special Order PDF containing all team members’ pages",
+				);
+				return;
+			}
 
 			setState({ uploadPhase: "creating", uploadProgress: 0 });
 			let proposalId = draftIdRef.current ?? editingProposalId ?? "";
@@ -321,30 +336,15 @@ export function useProposalWizard({
 				if (timer) clearInterval(timer);
 			}
 
-			// Upload member Special Orders if provided
-			const targetProposalId = editingProposalId ?? proposalId;
-			const proposalDetails = await getProposalByIdFn({
-				data: { proposalId: targetProposalId },
-			});
-			for (const member of values.members) {
-				const soFile = state.soFiles[member.userId];
-				const proposalMember = proposalDetails.members.find(
-					(m) => m.userId === member.userId,
-				);
-				if (soFile && proposalMember?.memberId) {
-					const soFormData = new FormData();
-					soFormData.append("memberId", proposalMember.memberId);
-					soFormData.append(
-						"soNumber",
-						member.soNumber?.trim() ||
-							`SO-PENDING-${proposalMember.memberId.slice(0, 8).toUpperCase()}`,
-					);
-					soFormData.append("file", soFile);
-					await uploadSpecialOrderFn({ data: soFormData });
-					setState((previous) => ({
-						soFiles: { ...previous.soFiles, [member.userId]: null },
-					}));
-				}
+			if (state.soFile) {
+				setState({ uploadPhase: "uploading" });
+				const formData = new FormData();
+				formData.append("file", state.soFile);
+				formData.append("proposalId", proposalId);
+				formData.append("documentType", "Special Orders");
+				await uploadDocumentMutation.mutateAsync({ data: formData });
+				uploadedSpecialOrderRef.current = true;
+				setState({ soFile: null });
 			}
 
 			if (shouldSubmit) {
@@ -370,8 +370,9 @@ export function useProposalWizard({
 			onOpenChange(false);
 			draftIdRef.current = editingProposalId;
 			uploadedDocumentRef.current = false;
+			uploadedSpecialOrderRef.current = false;
 			form.reset();
-			setState({ step: 1, file: null, soFiles: {} });
+			setState({ step: 1, file: null, soFile: null });
 			setState({ uploadPhase: "idle", uploadProgress: 0 });
 			return true;
 		} catch (error: unknown) {
@@ -414,7 +415,10 @@ export function useProposalWizard({
 		isReturned,
 		revisionReadiness: revisionQuery.data,
 		revisionReadinessLoading: revisionQuery.isPending || revisionQuery.isError,
-		hasExistingProposalDocument,
+		hasExistingProposalDocument:
+			hasExistingProposalDocument || uploadedDocumentRef.current,
+		hasExistingSpecialOrderDocument:
+			hasExistingSpecialOrderDocument || uploadedSpecialOrderRef.current,
 		isBusy: isSaving || responsesSaving > 0,
 		isSubmitting,
 		handleOpenChange,
@@ -427,10 +431,8 @@ export function useProposalWizard({
 		setFile: (file: File | null) => {
 			if (!savingRef.current) setState({ file });
 		},
-		setMemberSoFile: (userId: string, file: File | null) =>
-			!savingRef.current &&
-			setState((prev) => ({
-				soFiles: { ...prev.soFiles, [userId]: file },
-			})),
+		setSoFile: (soFile: File | null) => {
+			if (!savingRef.current) setState({ soFile });
+		},
 	};
 }

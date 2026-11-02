@@ -50,16 +50,6 @@ export const ProjectDetailsMemberSchema = z.object({
 	name: z.string(),
 	role: z.string(),
 	avatarUrl: z.string().nullable().optional(),
-	specialOrder: z
-		.object({
-			specialOrderId: z.string(),
-			soNumber: z.string(),
-			storagePath: z.string().nullable(),
-			dateIssued: z.string().nullable(),
-			status: z.string(),
-		})
-		.nullable()
-		.optional(),
 });
 
 export const ProjectDetailsHistoryItemSchema = z.object({
@@ -75,6 +65,7 @@ export const ProjectDetailsAttachmentSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	type: z.string(),
+	documentType: z.string(),
 	url: z.string(),
 	version: z.string(),
 });

@@ -49,6 +49,15 @@ export function ProposalStepRequirements() {
 				requirements?.documents[0]?.description ||
 				"PDF upload of the physical signed proposal form.",
 		},
+		{
+			title: "Combined Special Order PDF",
+			icon: <FileText className="size-4 text-muted-foreground" />,
+			desc:
+				requirements?.documents.find(
+					(document) => document.type === "special_orders_pdf",
+				)?.description ||
+				"One PDF containing all team members’ Special Order pages. SO numbers are not entered separately.",
+		},
 	];
 
 	return (

@@ -5,6 +5,7 @@ export const UploadResponseSchema = z
 		documentId: z.string(),
 		storagePath: z.string(),
 		versionNum: z.number(),
+		documentType: z.enum(["Proposal", "Special Orders"]),
 	})
 	.openapi("UploadResponse");
 
@@ -15,6 +16,7 @@ export const DocumentListSchema = z
 				documentId: z.string(),
 				proposalId: z.string(),
 				versionNum: z.number(),
+				documentType: z.enum(["Proposal", "Special Orders"]),
 				uploadedAt: z.string(),
 			}),
 		),

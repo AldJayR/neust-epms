@@ -3,8 +3,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { API_BASE } from "@/config/api";
 import {
-	sectorSelectionSchema,
 	type SectorSelection,
+	sectorSelectionSchema,
 } from "@/features/beneficiary-sectors/schema";
 import { getErrorMessage } from "@/lib/api/client";
 import {
@@ -225,6 +225,9 @@ export const uploadProposalDocumentFn = createServerFn({ method: "POST" })
 			throw new Error("file is required and must be a File");
 		}
 		z.uuid().parse(proposalId);
+		z.enum(["Proposal", "Special Orders"]).parse(
+			data.get("documentType") ?? "Proposal",
+		);
 		pdfFileSchema.parse(file);
 		return data;
 	})

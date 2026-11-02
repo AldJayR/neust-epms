@@ -6,11 +6,11 @@ import {
 	type ProposalStatus,
 	REVIEW_DECISION,
 } from "@/lib/types.js";
-import { PeriodMetadataSchema } from "../dashboard/dashboard.schema.js";
 import {
 	SectorLabelSchema,
 	SectorSelectionSchema,
 } from "../beneficiary-sectors/beneficiary-sectors.schema.js";
+import { PeriodMetadataSchema } from "../dashboard/dashboard.schema.js";
 
 const ProposalStatusQuerySchema = z.enum(
 	Object.values(PROPOSAL_STATUS) as [ProposalStatus, ...ProposalStatus[]],
@@ -60,14 +60,13 @@ export const ProposalDetailSchema = ProposalSchema.extend({
 		SectorSelectionSchema.extend({ sectorId: z.number().int().positive() }),
 	),
 	hasProposalDocument: z.boolean(),
+	hasSpecialOrderDocument: z.boolean(),
 	members: z.array(
 		z.object({
 			memberId: z.string().uuid().optional(),
 			userId: z.string().uuid(),
 			projectRole: z.string(),
 			name: z.string(),
-			soNumber: z.string().nullable().optional(),
-			hasSpecialOrder: z.boolean().optional(),
 		}),
 	),
 }).openapi("ProposalDetail");

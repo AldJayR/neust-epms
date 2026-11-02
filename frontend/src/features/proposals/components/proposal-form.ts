@@ -26,7 +26,6 @@ export const formSchema = z
 					userId: z.uuid(),
 					projectRole: z.string().min(1, "Role is required"),
 					name: z.string(),
-					soNumber: z.string().optional(),
 				}),
 			)
 			.min(1, "At least one team member is required"),

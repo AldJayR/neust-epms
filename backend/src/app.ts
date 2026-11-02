@@ -30,7 +30,6 @@ import proposalRoutes from "./modules/proposals/index.js";
 import reportRoutes from "./modules/reports/index.js";
 import searchRoutes from "./modules/search/index.js";
 import settingRoutes from "./modules/settings/index.js";
-import specialOrderRoutes from "./modules/special-orders/index.js";
 import storageRoutes from "./modules/storage/index.js";
 
 // ── Create root app ──
@@ -260,7 +259,6 @@ app.route("/api/v1", proposalRoutes);
 app.route("/api/v1", bannerProgramRoutes);
 app.route("/api/v1", beneficiarySectorRoutes);
 app.route("/api/v1", memberRoutes);
-app.route("/api/v1", specialOrderRoutes);
 app.route("/api/v1", moaRoutes);
 app.route("/api/v1", projectRoutes);
 app.route("/api/v1", storageRoutes);

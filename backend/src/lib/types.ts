@@ -5,7 +5,6 @@ import type { campuses } from "@/db/schema/campuses.js";
 import type { departments } from "@/db/schema/departments.js";
 import type { moas } from "@/db/schema/moas.js";
 import type { projectReports } from "@/db/schema/project-reports.js";
-import type { reportAttachments } from "@/db/schema/report-attachments.js";
 import type { projects } from "@/db/schema/projects.js";
 import type { proposalBeneficiaries } from "@/db/schema/proposal-beneficiaries.js";
 import type { proposalComments } from "@/db/schema/proposal-comments.js";
@@ -15,9 +14,9 @@ import type { proposalMembers } from "@/db/schema/proposal-members.js";
 import type { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import type { proposalSdgs } from "@/db/schema/proposal-sdgs.js";
 import type { proposals } from "@/db/schema/proposals.js";
+import type { reportAttachments } from "@/db/schema/report-attachments.js";
 import type { roles } from "@/db/schema/roles.js";
 import type { sdgs } from "@/db/schema/sdgs.js";
-import type { specialOrders } from "@/db/schema/special-orders.js";
 import type { systemSettings } from "@/db/schema/system-settings.js";
 import type { users } from "@/db/schema/users.js";
 
@@ -29,7 +28,6 @@ export type User = InferSelectModel<typeof users>;
 export type Proposal = InferSelectModel<typeof proposals>;
 export type ProposalDepartment = InferSelectModel<typeof proposalDepartments>;
 export type ProposalMember = InferSelectModel<typeof proposalMembers>;
-export type SpecialOrder = InferSelectModel<typeof specialOrders>;
 export type ProposalDocument = InferSelectModel<typeof proposalDocuments>;
 export type ProposalComment = InferSelectModel<typeof proposalComments>;
 export type ProposalReview = InferSelectModel<typeof proposalReviews>;
@@ -56,7 +54,6 @@ export type NewProposalDepartment = InferInsertModel<
 	typeof proposalDepartments
 >;
 export type NewProposalMember = InferInsertModel<typeof proposalMembers>;
-export type NewSpecialOrder = InferInsertModel<typeof specialOrders>;
 export type NewProposalDocument = InferInsertModel<typeof proposalDocuments>;
 export type NewProposalComment = InferInsertModel<typeof proposalComments>;
 export type NewProposalReview = InferInsertModel<typeof proposalReviews>;
