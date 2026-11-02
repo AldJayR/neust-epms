@@ -42,6 +42,10 @@ export interface ProjectHubParams {
 	college?: string;
 	status?: string;
 	myProjectsOnly?: string;
+	year?: number;
+	campusId?: number;
+	departmentId?: number;
+	kind?: "projects" | "submitted";
 }
 
 export interface ProjectAttachment {

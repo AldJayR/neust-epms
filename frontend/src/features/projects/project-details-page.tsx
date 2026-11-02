@@ -2,11 +2,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Info } from "lucide-react";
 import { useReducer, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { CreateProposalModal } from "@/features/proposals";
 import { getProposalByIdFn } from "@/features/proposals/public";
-import { useProjectReadiness } from "@/hooks/use-project-readiness";
 import type { AuthUser } from "@/lib/auth";
 import { toDateOnly, toManilaDisplayDate } from "@/lib/dates";
+import type { DirectorDashboardState } from "@/lib/director-dashboard-state";
 import { getStatusDescription } from "@/lib/status-descriptions";
 import { ActivateProjectWizard } from "./components/activate-project-wizard";
 import { ActivityHistoryCard } from "./components/activity-history-card";
@@ -21,6 +22,7 @@ import {
 	canSubmitProjectReports,
 	isProjectLeader,
 } from "./helpers/project-details-helpers";
+import { projectReadinessQueryOptions } from "./readiness.functions";
 import { ReportingScheduleCard } from "./reporting-schedule-card";
 import {
 	TerminalResultsCard,
@@ -30,11 +32,17 @@ import {
 interface ProjectDetailsPageProps {
 	proposalId: string;
 	currentUser: AuthUser;
+	dashboardContext?: DirectorDashboardState;
+	initialAction?: "activation";
+	onActionHandled?: () => void;
 }
 
 export function ProjectDetailsPage({
 	proposalId,
 	currentUser,
+	dashboardContext,
+	initialAction,
+	onActionHandled,
 }: ProjectDetailsPageProps) {
 	const { userId: currentUserId, roleName: currentUserRole } = currentUser;
 	const queryClient = useQueryClient();
@@ -53,7 +61,11 @@ export function ProjectDetailsPage({
 		enabled: isEditing,
 	});
 
-	const { data: readiness } = useProjectReadiness(proposalId);
+	const readinessQuery = useQuery({
+		...projectReadinessQueryOptions(proposalId),
+		refetchOnMount: initialAction === "activation" ? "always" : true,
+	});
+	const readiness = readinessQuery.data;
 	const [showActivateWizard, setShowActivateWizard] = useState(false);
 	const [showCloseDialog, setShowCloseDialog] = useState(false);
 
@@ -124,6 +136,7 @@ export function ProjectDetailsPage({
 	return (
 		<div className="flex flex-col gap-6">
 			<ProjectDetailsHeader
+				dashboardContext={dashboardContext}
 				proposalId={proposalId}
 				title={data.title}
 				status={data.status}
@@ -139,6 +152,43 @@ export function ProjectDetailsPage({
 				isDirector={isDirector}
 				hasSignedSpecialOrder={!!data.signedSpecialOrderDocPath}
 			/>
+			{initialAction === "activation" &&
+				showActivateButton &&
+				!readinessQuery.isFetchedAfterMount &&
+				readinessQuery.isFetching && (
+					<p role="status" className="text-sm text-muted-foreground">
+						Checking activation requirements…
+					</p>
+				)}
+			{initialAction === "activation" &&
+				showActivateButton &&
+				readinessQuery.isError && (
+					<Alert variant="destructive">
+						<AlertTitle>Unable to check activation requirements</AlertTitle>
+						<AlertDescription>
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={readinessQuery.isFetching}
+								onClick={() => void readinessQuery.refetch()}
+							>
+								Try again
+							</Button>
+						</AlertDescription>
+					</Alert>
+				)}
+			{initialAction === "activation" &&
+				(!showActivateButton || (readiness && !readiness.isReady)) && (
+					<Alert>
+						<Info />
+						<AlertTitle>Activation requirements have changed</AlertTitle>
+						<AlertDescription>
+							{readiness?.blocker
+								? `Complete ${readiness.blocker.toLowerCase()} before activation.`
+								: "Check this project's current status before continuing."}
+						</AlertDescription>
+					</Alert>
+				)}
 
 			{(data.status === "Approved" ||
 				data.status === "Institutionally Approved") &&
@@ -185,21 +235,38 @@ export function ProjectDetailsPage({
 					{["Ongoing", "Overdue", "Pending Completion", "Completed"].includes(
 						data.status,
 					) && (
-						<ReportingScheduleCard
-							projectId={proposalId}
-							canSubmitReports={canSubmitReports}
-							allowAttachmentUpload={[
-								"Ongoing",
-								"Overdue",
-								"Pending Completion",
-							].includes(data.status)}
-						/>
+						<section
+							id="reporting-schedule"
+							tabIndex={-1}
+							aria-label="Project reporting schedule"
+							className="scroll-mt-6"
+						>
+							<ReportingScheduleCard
+								projectId={proposalId}
+								canSubmitReports={canSubmitReports}
+								allowAttachmentUpload={[
+									"Ongoing",
+									"Overdue",
+									"Pending Completion",
+								].includes(data.status)}
+							/>
+						</section>
 					)}
 					<ActivityHistoryCard history={data.history} />
 					{["Ongoing", "Overdue", "Pending Completion", "Completed"].includes(
 						data.status,
 					) && (
-						<TerminalResultsCard projectId={proposalId} status={data.status} />
+						<section
+							id="terminal-results"
+							tabIndex={-1}
+							aria-label="Terminal report and project results"
+							className="scroll-mt-6"
+						>
+							<TerminalResultsCard
+								projectId={proposalId}
+								status={data.status}
+							/>
+						</section>
 					)}
 				</div>
 
@@ -234,8 +301,18 @@ export function ProjectDetailsPage({
 			/>
 
 			<ActivateProjectWizard
-				open={showActivateWizard}
-				onOpenChange={setShowActivateWizard}
+				open={
+					showActivateWizard ||
+					(initialAction === "activation" &&
+						showActivateButton &&
+						!readinessQuery.isError &&
+						readinessQuery.isFetchedAfterMount &&
+						Boolean(readiness?.isReady))
+				}
+				onOpenChange={(open) => {
+					setShowActivateWizard(open);
+					if (!open && initialAction === "activation") onActionHandled?.();
+				}}
 				projectId={proposalId}
 				targetStartDate={data.targetStartDate}
 				targetEndDate={data.targetEndDate}

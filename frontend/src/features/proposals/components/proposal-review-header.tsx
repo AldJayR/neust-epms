@@ -16,6 +16,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "@/components/ui/status-badge";
+import type { DirectorDashboardState } from "@/lib/director-dashboard-state";
 import { InstitutionalApprovalDialog } from "./institutional-approval-dialog";
 
 interface ProposalReviewHeaderProps {
@@ -27,6 +28,7 @@ interface ProposalReviewHeaderProps {
 	onDownloadAnnotated: () => Promise<void>;
 	isDirector?: boolean;
 	hasSignedSpecialOrder?: boolean;
+	dashboardContext?: DirectorDashboardState;
 }
 
 export function ProposalReviewHeader({
@@ -38,6 +40,7 @@ export function ProposalReviewHeader({
 	onDownloadAnnotated,
 	isDirector,
 	hasSignedSpecialOrder,
+	dashboardContext,
 }: ProposalReviewHeaderProps) {
 	return (
 		<>
@@ -46,7 +49,10 @@ export function ProposalReviewHeader({
 					<BreadcrumbItem>
 						<BreadcrumbLink
 							render={
-								<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />
+								<Link
+									to="/dashboard"
+									search={{ page: 1, pageSize: 10, ...dashboardContext }}
+								/>
 							}
 						>
 							Dashboard
@@ -59,6 +65,7 @@ export function ProposalReviewHeader({
 								<Link
 									to="/projects/$projectId"
 									params={{ projectId: proposalId }}
+									search={{ dashboard: dashboardContext }}
 								/>
 							}
 						>
@@ -87,7 +94,7 @@ export function ProposalReviewHeader({
 							trigger={
 								<BrandButton type="button" className="h-9 gap-2 text-sm">
 									<FileUp className="size-4" />
-									Record Institutional Approval
+									Upload Signed Documents
 								</BrandButton>
 							}
 						/>

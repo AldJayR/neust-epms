@@ -4,6 +4,7 @@ import {
 	PROPOSAL_STATUS,
 	type ProjectStatus,
 	type ProposalStatus,
+	ROLE_NAMES,
 } from "./types.js";
 
 export interface DerivedState {
@@ -103,16 +104,16 @@ export function deriveProposalState(
 				state: "ACT",
 				owner: "You",
 				reason:
-					"Proposal approved. Upload the signed institutional approval document.",
-				nextTransition: "Upload signed approval document",
+					"Proposal approved. Upload the signed approved proposal and signed Special Order scans.",
+				nextTransition: "Upload signed documents",
 			};
 		}
 		return {
 			state: "WAIT",
 			owner: "Director/Admin",
 			reason:
-				"Director approved — awaiting the signed institutional approval document.",
-			nextTransition: "Signed approval document",
+				"Director approved — awaiting the signed proposal and signed Special Order scans.",
+			nextTransition: "Signed documents",
 		};
 	}
 
@@ -153,6 +154,7 @@ export function deriveProjectState(
 		reportingSchedule?: boolean | undefined;
 		leaderId?: string | null | undefined;
 		hasInstitutionalScans?: boolean | undefined;
+		hasSubmittedSpecialOrder?: boolean | undefined;
 	},
 	user: AuthUser,
 ): DerivedState {
@@ -160,7 +162,7 @@ export function deriveProjectState(
 
 	if (projectStatus === PROJECT_STATUS.OVERDUE) {
 		return {
-			state: "ACT",
+			state: user.roleName === ROLE_NAMES.DIRECTOR ? "WATCH" : "ACT",
 			owner: "Project Leader",
 			reason: "One or more reports are overdue. Immediate attention required.",
 			nextTransition: "Submit overdue report(s)",
@@ -183,21 +185,24 @@ export function deriveProjectState(
 			blockers.push(
 				"Institutional approval and both signed scans must be recorded",
 			);
-		if (!project.moaId) blockers.push("Valid MOA not assigned");
-		if (!project.reportingSchedule) blockers.push("Report due dates not set");
+		if (project.hasSubmittedSpecialOrder === false)
+			blockers.push(
+				"Combined Special Order missing from the latest submission",
+			);
 
 		if (blockers.length > 0) {
 			return {
 				state: "WAIT",
 				owner: "Director/Admin",
 				reason: `Project approved but not yet activated. ${blockers.join("; ")}.`,
-				nextTransition: "Activate project (Director/Admin)",
+				nextTransition: "Complete activation prerequisites",
 			};
 		}
 		return {
 			state: "ACT",
 			owner: "Director/Admin",
-			reason: "Requirements complete. Ready for activation.",
+			reason:
+				"Ready for the activation wizard. Select a valid MOA and set report dates during activation.",
 			nextTransition: "Activate project",
 		};
 	}
@@ -212,6 +217,13 @@ export function deriveProjectState(
 	}
 
 	if (projectStatus === PROJECT_STATUS.PENDING_COMPLETION) {
+		if (user.roleName === ROLE_NAMES.DIRECTOR)
+			return {
+				state: "ACT",
+				owner: "You",
+				reason: "Terminal package submitted — ready for completion review.",
+				nextTransition: "Review and approve completion",
+			};
 		if (user.userId === project.leaderId) {
 			return {
 				state: "ACT",

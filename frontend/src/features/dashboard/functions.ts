@@ -11,7 +11,13 @@ import {
 	authorizeSessionUser,
 	getValidAccessToken,
 } from "@/lib/session.server";
-import type { DirectorDashboardResponse } from "@/types/dashboard";
+import type {
+	DirectorDashboardResponse,
+	DirectorOverviewFilters,
+	DirectorOverviewResponse,
+	DirectorWorkQueue,
+	DirectorWorkQueueResponse,
+} from "@/types/dashboard";
 
 const STALE_TIME = 1000 * 60 * 5;
 
@@ -43,5 +49,86 @@ export function directorDashboardQueryOptions(year?: number) {
 		queryKey: ["dashboard", "stats", { year }],
 		queryFn: () => getDirectorDashboardFn({ data: { year } }),
 		staleTime: STALE_TIME,
+	});
+}
+
+const getDirectorOverviewFn = createServerFn({ method: "GET" })
+	.validator(
+		z.object({
+			year: dashboardYearSchema,
+			campusId: z.number().int().positive().optional(),
+			departmentId: z.number().int().nonnegative().optional(),
+		}),
+	)
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director");
+		const token = await getValidAccessToken();
+		const query = new URLSearchParams({ year: String(data.year) });
+		if (data.campusId !== undefined)
+			query.set("campusId", String(data.campusId));
+		if (data.departmentId !== undefined)
+			query.set("departmentId", String(data.departmentId));
+		const response = await fetch(`${API_BASE}/director/overview?${query}`, {
+			headers: { Authorization: `Bearer ${token}` },
+		});
+		if (!response.ok)
+			throw new Error(
+				await getErrorMessage(
+					response,
+					"Unable to load institutional overview",
+				),
+			);
+		return (await response.json()) as DirectorOverviewResponse;
+	});
+
+export function directorOverviewQueryOptions(filters: DirectorOverviewFilters) {
+	return queryOptions({
+		queryKey: ["dashboard", "director-overview", filters],
+		queryFn: () => getDirectorOverviewFn({ data: filters }),
+		staleTime: STALE_TIME,
+	});
+}
+
+const getDirectorWorkQueueFn = createServerFn({ method: "GET" })
+	.validator(
+		z.object({
+			queue: z.enum([
+				"review",
+				"signing",
+				"activation",
+				"completion",
+				"reports",
+			]),
+			page: z.number().int().min(1).max(100000),
+			limit: z.number().int().min(1).max(50),
+		}),
+	)
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director");
+		const token = await getValidAccessToken();
+		const query = new URLSearchParams({
+			queue: data.queue,
+			page: String(data.page),
+			limit: String(data.limit),
+		});
+		const response = await fetch(`${API_BASE}/director/work-queues?${query}`, {
+			headers: { Authorization: `Bearer ${token}` },
+		});
+		if (!response.ok)
+			throw new Error(
+				await getErrorMessage(response, "Unable to load current work"),
+			);
+		return (await response.json()) as DirectorWorkQueueResponse;
+	});
+
+export function directorWorkQueueQueryOptions(
+	queue: DirectorWorkQueue,
+	page = 1,
+	limit = 5,
+) {
+	return queryOptions({
+		queryKey: ["dashboard", "director-work", { queue, page, limit }],
+		queryFn: () => getDirectorWorkQueueFn({ data: { queue, page, limit } }),
+		staleTime: 60 * 1000,
 	});
 }

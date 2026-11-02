@@ -17,6 +17,10 @@ import type {
 const STALE_TIME = 1000 * 60 * 5;
 
 const projectHubParamsSchema = z.object({
+	year: z.number().int().min(2000).max(2200).optional(),
+	campusId: z.number().int().positive().optional(),
+	departmentId: z.number().int().nonnegative().optional(),
+	kind: z.enum(["projects", "submitted"]).optional(),
 	page: z.number(),
 	limit: z.number(),
 	search: z.string().optional(),
@@ -37,6 +41,12 @@ const getProjectHubFn = createServerFn({ method: "GET" })
 		if (data.search) query.append("search", data.search);
 		if (data.college) query.append("college", data.college);
 		if (data.status) query.append("status", data.status);
+		if (data.year !== undefined) query.set("year", String(data.year));
+		if (data.campusId !== undefined)
+			query.set("campusId", String(data.campusId));
+		if (data.departmentId !== undefined)
+			query.set("departmentId", String(data.departmentId));
+		if (data.kind) query.set("kind", data.kind);
 		if (data.myProjectsOnly)
 			query.append("myProjectsOnly", data.myProjectsOnly);
 		const response = await fetch(`${API_BASE}/director/hub/projects?${query}`, {

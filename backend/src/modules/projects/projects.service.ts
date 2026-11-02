@@ -20,7 +20,6 @@ import { proposalDocuments } from "@/db/schema/proposal-documents.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { proposalReviews } from "@/db/schema/proposal-reviews.js";
 import { proposalSdgs } from "@/db/schema/proposal-sdgs.js";
-import { proposalSubmissions } from "@/db/schema/proposal-submissions.js";
 import { proposals } from "@/db/schema/proposals.js";
 import { sdgs } from "@/db/schema/sdgs.js";
 import { users } from "@/db/schema/users.js";
@@ -31,6 +30,10 @@ import { ApiError } from "@/lib/errors.js";
 import { getLeaderSubquery } from "@/lib/leader-subquery.js";
 import { createNotification } from "@/lib/notification.helpers.js";
 import { projectPeriodClause } from "@/lib/project-period.js";
+import {
+	institutionalScansRecorded,
+	submittedSpecialOrderExists,
+} from "@/lib/proposal-readiness.js";
 import { buildProposalScope } from "@/lib/scope-helpers.js";
 import { supabase } from "@/lib/supabase.js";
 import {
@@ -55,24 +58,11 @@ async function hasSubmittedSpecialOrder(
 	connection: Pick<typeof db, "select">,
 ) {
 	const [submission] = await connection
-		.select({ documentId: proposalSubmissions.specialOrderDocumentId })
-		.from(proposalSubmissions)
-		.where(eq(proposalSubmissions.proposalId, proposalId))
-		.orderBy(desc(proposalSubmissions.sequence))
+		.select({ exists: submittedSpecialOrderExists() })
+		.from(proposals)
+		.where(eq(proposals.proposalId, proposalId))
 		.limit(1);
-	if (!submission?.documentId) return false;
-	const [document] = await connection
-		.select({ documentId: proposalDocuments.documentId })
-		.from(proposalDocuments)
-		.where(
-			and(
-				eq(proposalDocuments.documentId, submission.documentId),
-				eq(proposalDocuments.proposalId, proposalId),
-				eq(proposalDocuments.documentType, "Special Orders"),
-			),
-		)
-		.limit(1);
-	return !!document;
+	return submission?.exists ?? false;
 }
 
 // ── CRUD ──
@@ -214,7 +204,8 @@ export async function getProjectDerivedState(id: string, user: AuthUser) {
 			projectStatus: projects.projectStatus,
 			moaId: projects.moaId,
 			leaderId: leaderMembers.userId,
-			hasInstitutionalScans: sql<boolean>`${proposals.status} = ${PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED} AND ${proposals.institutionalApprovalDocPath} IS NOT NULL AND ${proposals.signedSpecialOrderDocPath} IS NOT NULL`,
+			hasInstitutionalScans: institutionalScansRecorded(),
+			hasSubmittedSpecialOrder: submittedSpecialOrderExists(),
 		})
 		.from(projects)
 		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
@@ -258,6 +249,7 @@ export async function getProjectDerivedState(id: string, user: AuthUser) {
 			hasReports: !!report,
 			leaderId: row.leaderId ?? undefined,
 			hasInstitutionalScans: row.hasInstitutionalScans,
+			hasSubmittedSpecialOrder: row.hasSubmittedSpecialOrder,
 		},
 		user,
 	);

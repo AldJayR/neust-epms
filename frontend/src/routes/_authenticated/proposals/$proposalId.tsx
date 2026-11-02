@@ -5,10 +5,13 @@ import {
 	ProposalReviewPage,
 	ProposalReviewSkeleton,
 } from "@/features/proposals";
+import { dashboardReturnSchema } from "@/lib/director-dashboard-state";
 import { isDeniedAccess } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/proposals/$proposalId")({
 	validateSearch: z.object({
+		dashboard: dashboardReturnSchema,
+		intent: z.literal("signing").optional().catch(undefined),
 		documentId: z
 			.union([
 				z.uuid(),
@@ -46,12 +49,22 @@ export const Route = createFileRoute("/_authenticated/proposals/$proposalId")({
 
 function ProposalReviewComponent() {
 	const { proposalId } = Route.useParams();
-	const { documentId } = Route.useSearch();
+	const { documentId, dashboard, intent } = Route.useSearch();
+	const navigate = Route.useNavigate();
 	return (
 		<ProposalReviewPage
 			key={`${proposalId}:${documentId ?? ""}`}
 			proposalId={proposalId}
 			initialDocumentId={documentId}
+			dashboardContext={dashboard}
+			initialAction={intent}
+			onActionHandled={() =>
+				void navigate({
+					search: (old) => ({ ...old, intent: undefined }),
+					replace: true,
+					resetScroll: false,
+				})
+			}
 		/>
 	);
 }

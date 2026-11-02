@@ -19,6 +19,7 @@ interface ProjectsChartCardProps {
 	campuses: { id: number; name: string }[];
 	selectedCampus: number | "all";
 	onCampusChange: (campus: number | "all") => void;
+	showCampusFilter?: boolean;
 }
 
 function formatMonthLabel(month: string): string {
@@ -37,6 +38,7 @@ export default function ProjectsChartCard({
 	selectedCampus,
 	onCampusChange,
 	year,
+	showCampusFilter = true,
 }: ProjectsChartCardProps) {
 	const filtered =
 		selectedCampus === "all"
@@ -74,40 +76,44 @@ export default function ProjectsChartCard({
 		<div className="flex min-h-[340px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_2px_0_var(--shadow-card)]">
 			<div className="flex flex-col gap-3 border-b border-border px-4 py-4 sm:h-[72px] sm:flex-row sm:items-start sm:justify-between sm:px-6 sm:pt-4 sm:pb-3">
 				<div className="leading-tight">
-					<p className="text-sm font-semibold leading-5 text-foreground">
+					<h3 className="text-sm font-semibold leading-5 text-foreground">
 						Projects scheduled by month
-					</p>
+					</h3>
 					<p className="text-sm leading-5 text-muted-foreground">
 						January–December {year} · a project can span multiple months
 					</p>
 				</div>
-				<Select
-					value={campusSelectValue}
-					onValueChange={handleCampusChange}
-					modal={false}
-				>
-					<SelectTrigger className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm shadow-sm sm:w-[200px]">
-						<SelectValue placeholder="Select campus...">
-							{(val) => {
-								if (val === "all" || !val) return "All Campuses";
-								return campuses.find((c) => String(c.id) === val)?.name ?? val;
-							}}
-						</SelectValue>
-					</SelectTrigger>
-					<SelectContent
-						side="bottom"
-						sideOffset={8}
-						align="start"
-						alignItemWithTrigger={false}
+				{showCampusFilter && (
+					<Select
+						value={campusSelectValue}
+						onValueChange={handleCampusChange}
+						modal={false}
 					>
-						<SelectItem value="all">All Campuses</SelectItem>
-						{campuses.map((campus) => (
-							<SelectItem key={campus.id} value={String(campus.id)}>
-								{campus.name}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+						<SelectTrigger className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm shadow-sm sm:w-[200px]">
+							<SelectValue placeholder="Select campus...">
+								{(val) => {
+									if (val === "all" || !val) return "All Campuses";
+									return (
+										campuses.find((c) => String(c.id) === val)?.name ?? val
+									);
+								}}
+							</SelectValue>
+						</SelectTrigger>
+						<SelectContent
+							side="bottom"
+							sideOffset={8}
+							align="start"
+							alignItemWithTrigger={false}
+						>
+							<SelectItem value="all">All Campuses</SelectItem>
+							{campuses.map((campus) => (
+								<SelectItem key={campus.id} value={String(campus.id)}>
+									{campus.name}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				)}
 			</div>
 			<div className="flex min-h-[260px] flex-1 px-4 pb-4 pt-6 sm:h-[298px] sm:px-6 sm:pb-6 sm:pt-10">
 				{chartMonths.length === 0 ? (

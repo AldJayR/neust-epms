@@ -10,6 +10,7 @@ import {
 import { ProjectHubPage } from "@/features/projects";
 import { projectHubQueryOptions } from "@/features/projects/public";
 import { ProjectMonitoringPage } from "@/features/ret/project-monitoring-page";
+import { dashboardReturnSchema } from "@/lib/director-dashboard-state";
 import {
 	isDeniedAccess,
 	isDirector,
@@ -18,6 +19,11 @@ import {
 } from "@/lib/permissions";
 
 const projectsSearchSchema = z.object({
+	dashboard: dashboardReturnSchema,
+	year: z.number().int().min(2000).max(2200).optional(),
+	campusId: z.number().int().positive().optional(),
+	departmentId: z.number().int().nonnegative().optional(),
+	kind: z.enum(["projects", "submitted"]).optional(),
 	page: z.number().optional().default(1),
 	limit: z.number().optional().default(10),
 	search: z.string().optional(),
@@ -52,6 +58,10 @@ const ProjectsPendingComponent = () => {
 export const Route = createFileRoute("/_authenticated/projects/")({
 	validateSearch: (search) => projectsSearchSchema.parse(search),
 	loaderDeps: ({ search }) => ({
+		year: search.year,
+		campusId: search.campusId,
+		departmentId: search.departmentId,
+		kind: search.kind,
 		page: search.page,
 		limit: search.limit,
 		search: search.search,
@@ -86,6 +96,10 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 		await Promise.all([
 			context.queryClient.ensureQueryData(
 				projectHubQueryOptions({
+					year: deps.year,
+					campusId: deps.campusId,
+					departmentId: deps.departmentId,
+					kind: deps.kind,
 					page: deps.page,
 					limit: deps.limit,
 					search: deps.search,
@@ -106,6 +120,7 @@ function ProjectsIndexPage() {
 	const user = context.auth.user;
 	const { page, limit, search, college, status, myProjectsOnly } =
 		Route.useSearch();
+	const { year, campusId, departmentId, kind, dashboard } = Route.useSearch();
 	const navigate = Route.useNavigate();
 
 	const handleSearch = (newSearch: string) => {
@@ -116,7 +131,13 @@ function ProjectsIndexPage() {
 
 	const handleCollegeChange = (newCollege: string) => {
 		navigate({
-			search: (old) => ({ ...old, college: newCollege || undefined, page: 1 }),
+			search: (old) => ({
+				...old,
+				college:
+					newCollege === "Unassigned" ? undefined : newCollege || undefined,
+				departmentId: newCollege === "Unassigned" ? 0 : undefined,
+				page: 1,
+			}),
 		});
 	};
 
@@ -153,6 +174,8 @@ function ProjectsIndexPage() {
 	if (isDirector(user)) {
 		return (
 			<ProjectHubPage
+				dashboardContext={dashboard}
+				scope={{ year, campusId, departmentId, kind }}
 				page={page}
 				limit={limit}
 				search={search}

@@ -33,6 +33,7 @@ import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
 import { env } from "@/env.js";
 import {
+	ACTIVE_EXTENSION_PROJECT_STATUSES,
 	getActiveInvolvementSubquery,
 	getActiveProjectConditions,
 } from "@/lib/faculty-involvement.js";
@@ -86,19 +87,25 @@ function formatRelativeTime(date: Date, now: Date): string {
 }
 
 // ── Helper: activity title ──
-function activityTitle(action: string, tableAffected: string): string {
+export function activityTitle(action: string, tableAffected: string): string {
 	const lowerAction = action.toLowerCase();
-	if (
-		lowerAction.includes("bulk approved") ||
-		lowerAction.includes("approved") ||
-		tableAffected === "projects"
-	) {
-		return "Project Approved";
-	}
-	if (lowerAction.includes("submitted") || tableAffected === "proposals") {
-		return "New Proposal Submitted";
-	}
-	return "Review Pending";
+	if (/^(completed|closed) project\b/.test(lowerAction))
+		return "Project Completed";
+	if (lowerAction.startsWith("activated project ")) return "Project Activated";
+	if (lowerAction.startsWith("recorded institutional approval "))
+		return "Institutional Approval Recorded";
+	if (lowerAction.startsWith("recorded signed special order "))
+		return "Signed Special Order Recorded";
+	if (lowerAction.startsWith("submitted proposal "))
+		return "Proposal Submitted";
+	if (lowerAction.startsWith("created proposal ")) return "Proposal Created";
+	const review = lowerAction.startsWith("reviewed proposal ")
+		? lowerAction.match(/:\s*(approved|endorsed|returned|rejected)\s*$/)?.[1]
+		: undefined;
+	if (review) return `Proposal ${review[0]?.toUpperCase()}${review.slice(1)}`;
+	if (tableAffected === "projects") return "Project Updated";
+	if (tableAffected === "proposals") return "Proposal Updated";
+	return "Activity Recorded";
 }
 
 // ── 1. getDashboardStats ──
@@ -847,6 +854,10 @@ export async function getHubProjects(
 		college?: string | undefined;
 		status?: string | undefined;
 		myProjectsOnly?: string | undefined;
+		year?: number | undefined;
+		campusId?: number | undefined;
+		departmentId?: number | undefined;
+		kind?: "projects" | "submitted" | undefined;
 	},
 	user: AuthUser,
 ) {
@@ -886,11 +897,31 @@ export async function getHubProjects(
 	);
 	const whereConditions = [
 		isNull(proposals.archivedAt),
-		or(
-			ownEditableProposal,
-			and(ne(proposals.status, PROPOSAL_STATUS.DRAFT), eligibleForMonitoring),
-		),
+		isNull(projects.archivedAt),
+		query.kind && user.roleName === ROLE_NAMES.DIRECTOR
+			? query.kind === "projects"
+				? isNotNull(projects.projectId)
+				: ne(proposals.status, PROPOSAL_STATUS.DRAFT)
+			: or(
+					ownEditableProposal,
+					and(
+						ne(proposals.status, PROPOSAL_STATUS.DRAFT),
+						eligibleForMonitoring,
+					),
+				),
 	];
+	if (query.year !== undefined)
+		whereConditions.push(projectPeriodClause(query.year));
+	if (query.campusId !== undefined)
+		whereConditions.push(eq(proposals.campusId, query.campusId));
+	if (query.departmentId !== undefined)
+		whereConditions.push(
+			query.departmentId === 0
+				? isNull(proposals.departmentId)
+				: eq(proposals.departmentId, query.departmentId),
+		);
+	if (query.kind === "projects")
+		whereConditions.push(isNotNull(projects.projectId));
 
 	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
 		if (user.isMainCampus && user.departmentId !== null) {
@@ -932,7 +963,15 @@ export async function getHubProjects(
 	}
 
 	if (status) {
-		if (Object.values(PROJECT_STATUS).includes(status as ProjectStatus)) {
+		if (query.kind === "submitted") {
+			whereConditions.push(eq(proposals.status, status));
+		} else if (status === "Active") {
+			whereConditions.push(
+				inArray(projects.projectStatus, ACTIVE_EXTENSION_PROJECT_STATUSES),
+			);
+		} else if (
+			Object.values(PROJECT_STATUS).includes(status as ProjectStatus)
+		) {
 			whereConditions.push(eq(projects.projectStatus, status));
 		} else {
 			whereConditions.push(eq(proposals.status, status));
@@ -977,11 +1016,11 @@ export async function getHubProjects(
 			lastReportDate: latestReportsSubquery.lastReportDate,
 		})
 		.from(proposals)
-		.innerJoin(
+		.leftJoin(
 			leaderMembersSubquery,
 			eq(proposals.proposalId, leaderMembersSubquery.proposalId),
 		)
-		.innerJoin(users, eq(leaderMembersSubquery.userId, users.userId))
+		.leftJoin(users, eq(leaderMembersSubquery.userId, users.userId))
 		.leftJoin(departments, eq(proposals.departmentId, departments.departmentId))
 		.leftJoin(campuses, eq(proposals.campusId, campuses.campusId))
 		.leftJoin(projects, eq(proposals.proposalId, projects.proposalId))
@@ -996,11 +1035,11 @@ export async function getHubProjects(
 		db
 			.select({ value: count() })
 			.from(proposals)
-			.innerJoin(
+			.leftJoin(
 				leaderMembersSubquery,
 				eq(proposals.proposalId, leaderMembersSubquery.proposalId),
 			)
-			.innerJoin(users, eq(leaderMembersSubquery.userId, users.userId))
+			.leftJoin(users, eq(leaderMembersSubquery.userId, users.userId))
 			.leftJoin(
 				departments,
 				eq(proposals.departmentId, departments.departmentId),
@@ -1013,7 +1052,9 @@ export async function getHubProjects(
 	const items = rows.map((r) => ({
 		id: r.id,
 		title: r.title,
-		leaderName: `${r.leaderFirstName} ${r.leaderLastName}`,
+		leaderName:
+			[r.leaderFirstName, r.leaderLastName].filter(Boolean).join(" ") ||
+			"No leader assigned",
 		leaderRank: r.leaderRank,
 		college: r.college,
 		departmentCode: r.departmentCode ?? null,
@@ -1023,10 +1064,14 @@ export async function getHubProjects(
 			? new Date(r.lastReportDate).toISOString()
 			: null,
 		status:
-			r.projectStatus && r.projectStatus !== PROJECT_STATUS.APPROVED
-				? r.projectStatus
-				: r.proposalStatus,
-		type: (r.projectStatus && r.projectStatus !== PROJECT_STATUS.APPROVED
+			query.kind === "submitted"
+				? r.proposalStatus
+				: r.projectStatus && r.projectStatus !== PROJECT_STATUS.APPROVED
+					? r.projectStatus
+					: r.proposalStatus,
+		type: (query.kind !== "submitted" &&
+		r.projectStatus &&
+		r.projectStatus !== PROJECT_STATUS.APPROVED
 			? "Project"
 			: "Proposal") as "Project" | "Proposal",
 	}));

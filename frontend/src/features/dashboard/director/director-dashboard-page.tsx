@@ -1,31 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
+import { useIsFetching, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import * as React from "react";
-import { MetricCard } from "@/components/custom/metric-card";
+import { RefreshCw } from "lucide-react";
 import { PageCard } from "@/components/custom/page-card";
 import { PageHeader } from "@/components/custom/page-header";
-import { ActionCenterCard } from "@/features/action-center";
-import { getCampusesFn } from "@/features/auth";
+import { Button } from "@/components/ui/button";
 import type { AuthUser } from "@/lib/auth";
 import type { DashboardYearProps } from "@/lib/dashboard-year";
-import {
-	DashboardPeriodNote,
-	DashboardYearFilter,
-} from "../components/dashboard-year-filter";
 import { directorDashboardQueryOptions } from "../functions";
-
-const ProjectsChartCard = React.lazy(() =>
-	import("@/features/projects").then(({ ProjectsChartCard }) => ({
-		default: ProjectsChartCard,
-	})),
-);
-
-const metricCards = [
-	{ label: "Total Projects", key: "totalProjects" as const },
-	{ label: "Ongoing Projects", key: "ongoingProjects" as const },
-	{ label: "Under Evaluation", key: "underEvaluation" as const },
-	{ label: "Completed", key: "completed" as const },
-];
+import {
+	DashboardError,
+	DashboardUpdatedAt,
+} from "./components/dashboard-feedback";
+import { DirectorDecisionsPanel } from "./components/director-decisions-panel";
+import { InstitutionalOverview } from "./components/institutional-overview";
 
 function RecentActivitiesCard({
 	activities,
@@ -36,7 +23,7 @@ function RecentActivitiesCard({
 		<PageCard className="flex min-h-[300px] max-h-[370px] flex-col">
 			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
 				<h2 className="text-sm font-semibold leading-5 text-heading">
-					Recent Activities
+					Your Recent Activities
 				</h2>
 			</div>
 			<ul className="flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
@@ -138,28 +125,10 @@ function DirectorDashboardContent({
 	year,
 	onYearChange,
 }: { user?: AuthUser | null } & DashboardYearProps) {
-	const [selectedCampus, setSelectedCampus] = React.useState<number | "all">(
-		"all",
-	);
-
-	const {
-		data: dashboard,
-		isPending,
-		error,
-	} = useQuery(directorDashboardQueryOptions(year));
-	const { data: campuses = [] } = useQuery({
-		queryKey: ["campuses"],
-		queryFn: () => getCampusesFn(),
-	});
-
-	const metrics = dashboard?.metrics ?? {
-		totalProjects: 0,
-		ongoingProjects: 0,
-		underEvaluation: 0,
-		completed: 0,
-	};
-	const allChartData = dashboard?.chartData ?? [];
-	const chartMonths = dashboard?.chartMonths ?? [];
+	const queryClient = useQueryClient();
+	const refreshing = useIsFetching({ queryKey: ["dashboard"] }) > 0;
+	const supportQuery = useQuery(directorDashboardQueryOptions());
+	const dashboard = supportQuery.data;
 	const activities = dashboard?.recentActivities ?? [];
 	const moas = dashboard?.expiringMoas ?? [];
 
@@ -168,63 +137,69 @@ function DirectorDashboardContent({
 			<div className="flex min-h-full flex-col gap-8">
 				<PageHeader
 					actions={
-						<DashboardYearFilter
-							year={year}
-							onYearChange={onYearChange}
-							availableYears={dashboard?.availableYears}
-						/>
+						<Button
+							variant="outline"
+							size="sm"
+							disabled={refreshing}
+							onClick={() =>
+								void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
+							}
+						>
+							<RefreshCw
+								className={`size-4 ${refreshing ? "animate-spin" : ""}`}
+							/>
+							{refreshing ? "Refreshing…" : "Refresh dashboard"}
+						</Button>
 					}
 					title={
 						<div className="flex flex-col gap-1">
 							<h1 className="text-2xl font-semibold text-heading">
-								Welcome, {user?.firstName ? `${user.firstName}!` : "Director"}!
+								Director Dashboard
 							</h1>
 							<p className="text-sm text-muted-foreground">
-								Project approvals, activation, and reporting overview
+								{user?.firstName ? `${user.firstName}, manage` : "Manage"}{" "}
+								extension projects, approvals, and faculty participation.
 							</p>
 						</div>
 					}
 				/>
-				<DashboardPeriodNote year={year} showDraftLink={false} />
-				{error && (
-					<p role="alert" className="text-destructive">
-						Unable to load dashboard metrics. Please try again.
+				<DirectorDecisionsPanel />
+				<InstitutionalOverview
+					year={year}
+					onYearChange={onYearChange}
+					availableYears={dashboard?.availableYears}
+				/>
+				<DirectorDecisionsPanel reporting />
+				{supportQuery.isError && !dashboard ? (
+					<DashboardError
+						section="your activities and expiring MOAs"
+						onRetry={() => void supportQuery.refetch()}
+						retrying={supportQuery.isFetching}
+					/>
+				) : supportQuery.isPending ? (
+					<p role="status" className="text-sm text-muted-foreground">
+						Loading activities and MOAs…
 					</p>
+				) : (
+					<div className="space-y-4">
+						<DashboardUpdatedAt
+							timestamp={supportQuery.dataUpdatedAt}
+							refreshing={supportQuery.isFetching}
+						/>
+						{supportQuery.isError && (
+							<DashboardError
+								section="your activities and expiring MOAs"
+								stale
+								onRetry={() => void supportQuery.refetch()}
+								retrying={supportQuery.isFetching}
+							/>
+						)}
+						<div className="grid items-start gap-5 lg:grid-cols-2">
+							<ExpiringMoasCard moas={moas} />
+							<RecentActivitiesCard activities={activities} />
+						</div>
+					</div>
 				)}
-				<div>
-					<p className="mb-2 text-xs text-muted-foreground">
-						Current obligations · all project years
-					</p>
-					<ActionCenterCard />
-				</div>
-				<div className="grid gap-6 md:grid-cols-3 xl:grid-cols-4">
-					{metricCards.map((card) => (
-						<MetricCard
-							key={card.label}
-							label={card.label}
-							value={error ? undefined : metrics[card.key]}
-							isLoading={isPending}
-						/>
-					))}
-				</div>
-				<div className="grid gap-8 lg:grid-cols-[minmax(0,630px)_minmax(0,1fr)]">
-					<React.Suspense
-						fallback={
-							<div className="min-h-[340px] animate-pulse rounded-xl border border-border bg-card" />
-						}
-					>
-						<ProjectsChartCard
-							year={year}
-							chartData={allChartData}
-							chartMonths={chartMonths}
-							campuses={campuses}
-							selectedCampus={selectedCampus}
-							onCampusChange={setSelectedCampus}
-						/>
-					</React.Suspense>
-					<RecentActivitiesCard activities={activities} />
-				</div>
-				<ExpiringMoasCard moas={moas} />
 			</div>
 		</section>
 	);

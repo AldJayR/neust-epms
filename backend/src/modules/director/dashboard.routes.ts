@@ -3,6 +3,16 @@ import { ROLE_NAMES } from "@/lib/types.js";
 import { type AuthEnv, authMiddleware } from "@/middleware/auth.js";
 import { requireRole } from "@/middleware/rbac.js";
 import { DashboardYearQuery } from "../dashboard/dashboard.schema.js";
+import {
+	DirectorOverviewSchema,
+	OverviewQuerySchema,
+	WorkQueueQuerySchema,
+	WorkQueueResponseSchema,
+} from "./dashboard-overview.schema.js";
+import {
+	getDirectorOverview,
+	getDirectorWorkQueue,
+} from "./dashboard-overview.service.js";
 import { DirectorDashboardSchema } from "./director.schema.js";
 import { getDashboardStats } from "./director.service.js";
 
@@ -31,5 +41,44 @@ app.openapi(dashboardRoute, async (c) => {
 	const data = await getDashboardStats(user, c.req.valid("query").year);
 	return c.json(data, 200);
 });
+
+app.use("/director/overview", requireRole(ROLE_NAMES.DIRECTOR));
+app.use("/director/work-queues", requireRole(ROLE_NAMES.DIRECTOR));
+
+app.openapi(
+	createRoute({
+		method: "get",
+		path: "/director/overview",
+		tags: ["Director"],
+		security: [{ Bearer: [] }],
+		request: { query: OverviewQuerySchema },
+		responses: {
+			200: {
+				content: { "application/json": { schema: DirectorOverviewSchema } },
+				description: "Filtered institutional overview",
+			},
+		},
+	}),
+	async (c) =>
+		c.json(await getDirectorOverview(c.get("user"), c.req.valid("query")), 200),
+);
+
+app.openapi(
+	createRoute({
+		method: "get",
+		path: "/director/work-queues",
+		tags: ["Director"],
+		security: [{ Bearer: [] }],
+		request: { query: WorkQueueQuerySchema },
+		responses: {
+			200: {
+				content: { "application/json": { schema: WorkQueueResponseSchema } },
+				description:
+					"Institution-wide current decisions and terminal report obligations",
+			},
+		},
+	}),
+	async (c) => c.json(await getDirectorWorkQueue(c.req.valid("query")), 200),
+);
 
 export default app;

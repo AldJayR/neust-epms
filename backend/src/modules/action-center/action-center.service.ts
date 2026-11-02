@@ -7,6 +7,7 @@ import {
 	countDistinct,
 	desc,
 	eq,
+	exists,
 	gt,
 	gte,
 	inArray,
@@ -25,6 +26,10 @@ import {
 	deriveProjectState,
 	deriveProposalState,
 } from "@/lib/derived-states.js";
+import {
+	institutionalScansRecorded,
+	submittedSpecialOrderExists,
+} from "@/lib/proposal-readiness.js";
 import { buildProposalScopeClause } from "@/lib/scope-helpers.js";
 import {
 	type AuthUser,
@@ -196,6 +201,8 @@ async function getProjectsByStatus(opts: {
 			title: proposals.title,
 			projectStatus: projects.projectStatus,
 			moaId: projects.moaId,
+			hasInstitutionalScans: institutionalScansRecorded(),
+			hasSubmittedSpecialOrder: submittedSpecialOrderExists(),
 			createdAt: projects.createdAt,
 			leaderId: leaderSubquery.userId,
 		})
@@ -209,6 +216,7 @@ async function getProjectsByStatus(opts: {
 	const conditions: SQL[] = [
 		eq(projects.projectStatus, opts.projectStatus),
 		isNull(projects.archivedAt),
+		isNull(proposals.archivedAt),
 	];
 	if (opts.scopeClause) conditions.push(opts.scopeClause);
 	if (opts.memberUserId) {
@@ -255,7 +263,7 @@ async function getProjectsByStatus(opts: {
 async function getUpcomingReports(opts: {
 	now: Date;
 	scopeClause?: SQL;
-	leaderUserId: string;
+	leaderUserId?: string;
 }) {
 	const leaderSubquery = getLeaderSubquery();
 	const query = db
@@ -278,13 +286,6 @@ async function getUpcomingReports(opts: {
 		.leftJoin(
 			leaderSubquery,
 			eq(proposals.proposalId, leaderSubquery.proposalId),
-		)
-		.innerJoin(
-			proposalMembers,
-			and(
-				eq(proposals.proposalId, proposalMembers.proposalId),
-				buildReportObligationScope(opts.leaderUserId),
-			),
 		);
 
 	const conditions: SQL[] = [
@@ -295,8 +296,27 @@ async function getUpcomingReports(opts: {
 			new Date(opts.now.getTime() + UPCOMING_REPORT_HORIZON_MS),
 		),
 		isNull(projects.archivedAt),
+		isNull(proposals.archivedAt),
+		inArray(projects.projectStatus, [
+			PROJECT_STATUS.ONGOING,
+			PROJECT_STATUS.OVERDUE,
+		]),
 	];
 	if (opts.scopeClause) conditions.push(opts.scopeClause);
+	if (opts.leaderUserId)
+		conditions.push(
+			exists(
+				db
+					.select()
+					.from(proposalMembers)
+					.where(
+						and(
+							eq(proposalMembers.proposalId, proposals.proposalId),
+							buildReportObligationScope(opts.leaderUserId),
+						),
+					),
+			),
+		);
 	const countQuery = db
 		.select({ value: countDistinct(projectReportingMilestones.milestoneId) })
 		.from(projectReportingMilestones)
@@ -304,14 +324,7 @@ async function getUpcomingReports(opts: {
 			projects,
 			eq(projectReportingMilestones.projectId, projects.projectId),
 		)
-		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
-		.innerJoin(
-			proposalMembers,
-			and(
-				eq(proposals.proposalId, proposalMembers.proposalId),
-				buildReportObligationScope(opts.leaderUserId),
-			),
-		);
+		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId));
 
 	const [rows, [total]] = await Promise.all([
 		query
@@ -472,6 +485,8 @@ function buildProjectItem(
 		moaId: string | null;
 		createdAt: Date;
 		leaderId: string | null;
+		hasInstitutionalScans?: boolean;
+		hasSubmittedSpecialOrder?: boolean;
 	},
 	user: AuthUser,
 	scheduleExists: boolean,
@@ -486,6 +501,8 @@ function buildProjectItem(
 			moaId: proj.moaId,
 			reportingSchedule: scheduleExists,
 			leaderId: proj.leaderId ?? undefined,
+			hasInstitutionalScans: proj.hasInstitutionalScans,
+			hasSubmittedSpecialOrder: proj.hasSubmittedSpecialOrder,
 		},
 		user,
 	);
@@ -514,6 +531,7 @@ function buildReportItem(
 		createdAt: Date;
 	},
 	now: Date,
+	monitoring = false,
 ): ActionItem {
 	const sevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 	const thirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -526,7 +544,7 @@ function buildReportItem(
 				: ("routine" as const);
 
 	const derivedState =
-		urgency === "routine"
+		monitoring || urgency === "routine"
 			? ("WATCH" as const)
 			: urgency === "urgent"
 				? ("ACT" as const)
@@ -538,8 +556,8 @@ function buildReportItem(
 		type: "report",
 		title: `Report deadline for ${rep.title}`,
 		status: "Upcoming",
-		actionRequired: `Submit progress report by ${rep.reportingDate.toLocaleDateString()}`,
-		owner: "You",
+		actionRequired: `${monitoring ? "Awaiting Project Leader's report" : "Submit report"} by ${rep.reportingDate.toLocaleDateString()}`,
+		owner: monitoring ? "Project Leader" : "You",
 		derivedState,
 		createdAt: rep.createdAt.toISOString(),
 		urgency,
@@ -640,6 +658,7 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			overdueResult,
 			reportsResult,
 			overdueReportCount,
+			completionResult,
 		] = await Promise.all([
 			getPendingProposals({
 				statusFilter: eq(proposals.status, PROPOSAL_STATUS.ENDORSED),
@@ -650,8 +669,9 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 			getProjectsByStatus({
 				projectStatus: PROJECT_STATUS.OVERDUE,
 			}),
-			getUpcomingReports({ now, leaderUserId: user.userId }),
+			getUpcomingReports({ now }),
 			getOverdueReportCount({ now }),
+			getProjectsByStatus({ projectStatus: PROJECT_STATUS.PENDING_COMPLETION }),
 		]);
 		const pending = pendingResult.rows;
 		const approved = approvedResult.rows;
@@ -682,6 +702,8 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 					moaId: p.moaId,
 					reportingSchedule: approvedSchedMap.get(p.projectId) ?? false,
 					leaderId: p.leaderId ?? undefined,
+					hasInstitutionalScans: p.hasInstitutionalScans,
+					hasSubmittedSpecialOrder: p.hasSubmittedSpecialOrder,
 				},
 				user,
 			);
@@ -708,29 +730,27 @@ export async function getActionItemsForRole(user: AuthUser): Promise<{
 		}
 
 		for (const r of reports) {
-			const item = buildReportItem(r, now);
+			const item = buildReportItem(r, now, true);
 			(item.derivedState === "ACT" ? actItems : watchItems).push(item);
 		}
+		for (const project of completionResult.rows)
+			actItems.push(buildProjectItem(project, user, true));
 	} else if (user.roleName === ROLE_NAMES.FACULTY) {
-		const [
-			returnedResult,
-			overdueResult,
-			reportsResult,
-			overdueReportCount,
-		] = await Promise.all([
-			getReturnedProposals({
-				memberUserId: user.userId,
-			}),
-			getProjectsByStatus({
-				projectStatus: PROJECT_STATUS.OVERDUE,
-				memberUserId: user.userId,
-			}),
-			getUpcomingReports({
-				now,
-				leaderUserId: user.userId,
-			}),
-			getOverdueReportCount({ now, leaderUserId: user.userId }),
-		]);
+		const [returnedResult, overdueResult, reportsResult, overdueReportCount] =
+			await Promise.all([
+				getReturnedProposals({
+					memberUserId: user.userId,
+				}),
+				getProjectsByStatus({
+					projectStatus: PROJECT_STATUS.OVERDUE,
+					memberUserId: user.userId,
+				}),
+				getUpcomingReports({
+					now,
+					leaderUserId: user.userId,
+				}),
+				getOverdueReportCount({ now, leaderUserId: user.userId }),
+			]);
 		const returned = returnedResult.rows;
 		const overdue = overdueResult.rows;
 		const reports = reportsResult.rows;

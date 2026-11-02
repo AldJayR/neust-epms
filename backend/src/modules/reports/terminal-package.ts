@@ -17,6 +17,7 @@ import {
 	ROLE_NAMES,
 } from "@/lib/types.js";
 import { assertReportSubmissionAccess } from "./report-permissions.js";
+import { terminalPackageMissingRequirements } from "./terminal-package-requirements.js";
 
 export type ReportTransaction = Parameters<
 	Parameters<typeof db.transaction>[0]
@@ -60,10 +61,7 @@ export async function finalizeTerminalPackage(
 	if (
 		!report ||
 		report.reportType !== REPORT_TYPE.ACCOMPLISHMENT_AND_TERMINAL ||
-		report.packageCompletedAt ||
-		!report.storagePath ||
-		report.traineeCount === null ||
-		report.traineeCount === undefined
+		report.packageCompletedAt
 	)
 		return false;
 	const [evaluation] = await tx
@@ -77,7 +75,14 @@ export async function finalizeTerminalPackage(
 			),
 		)
 		.limit(1);
-	if (!evaluation) return false;
+	if (
+		terminalPackageMissingRequirements({
+			documentUploaded: Boolean(report.storagePath),
+			evaluationUploaded: Boolean(evaluation),
+			traineeCount: report.traineeCount,
+		}).length > 0
+	)
+		return false;
 	const [project] = await tx
 		.select()
 		.from(projects)

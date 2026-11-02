@@ -1,5 +1,6 @@
 import { z } from "@hono/zod-openapi";
 import { MOA_STATUSES } from "@/lib/moa-validity.js";
+import { ProjectYearSchema } from "@/lib/project-period.js";
 import { PeriodMetadataSchema } from "../dashboard/dashboard.schema.js";
 
 // ── Hub Schemas ──
@@ -27,6 +28,10 @@ export const HubProjectListSchema = z
 	.openapi("HubProjectList");
 
 export const HubQuerySchema = z.object({
+	year: ProjectYearSchema.optional(),
+	campusId: z.coerce.number().int().positive().optional(),
+	departmentId: z.coerce.number().int().nonnegative().optional(),
+	kind: z.enum(["projects", "submitted"]).optional(),
 	page: z.coerce
 		.number()
 		.int()

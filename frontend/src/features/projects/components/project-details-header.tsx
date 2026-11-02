@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { InstitutionalApprovalDialog } from "@/features/proposals/components/institutional-approval-dialog";
+import type { DirectorDashboardState } from "@/lib/director-dashboard-state";
 
 interface ProjectDetailsHeaderProps {
 	proposalId: string;
@@ -30,6 +31,7 @@ interface ProjectDetailsHeaderProps {
 	onEdit: () => void;
 	onActivate: () => void;
 	onClose: () => void;
+	dashboardContext?: DirectorDashboardState;
 }
 
 export function ProjectDetailsHeader({
@@ -47,6 +49,7 @@ export function ProjectDetailsHeader({
 	onEdit,
 	onActivate,
 	onClose,
+	dashboardContext,
 }: ProjectDetailsHeaderProps) {
 	return (
 		<>
@@ -55,7 +58,10 @@ export function ProjectDetailsHeader({
 					<BreadcrumbItem>
 						<BreadcrumbLink
 							render={
-								<Link to="/dashboard" search={{ page: 1, pageSize: 10 }} />
+								<Link
+									to="/dashboard"
+									search={{ page: 1, pageSize: 10, ...dashboardContext }}
+								/>
 							}
 						>
 							Dashboard
@@ -88,7 +94,7 @@ export function ProjectDetailsHeader({
 									>
 										<FileUp className="size-4" />
 										<span className="text-sm font-medium">
-											Record Institutional Approval
+											Upload Signed Documents
 										</span>
 									</BrandButton>
 								}
@@ -114,7 +120,11 @@ export function ProjectDetailsHeader({
 								nativeButton={false}
 								className="flex w-fit items-center gap-2 px-5 h-9 shadow-[0px_1px_2px_0px_var(--shadow-card)]"
 								render={
-									<Link to="/proposals/$proposalId" params={{ proposalId }} />
+									<Link
+										to="/proposals/$proposalId"
+										params={{ proposalId }}
+										search={{ dashboard: dashboardContext }}
+									/>
 								}
 							>
 								<Eye className="size-4" />

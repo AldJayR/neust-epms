@@ -13,6 +13,10 @@ import {
 	directorDashboardQueryOptions,
 	facultyDashboardQueryOptions,
 } from "@/features/dashboard";
+import {
+	directorOverviewQueryOptions,
+	directorWorkQueueQueryOptions,
+} from "@/features/dashboard/functions";
 import { FacultyDashboardPage } from "@/features/faculty/faculty-dashboard-page";
 import {
 	retDashboardStatsQueryOptions,
@@ -20,6 +24,7 @@ import {
 } from "@/features/proposals/public";
 import { RETDashboardPage } from "@/features/ret/ret-dashboard-page";
 import { currentManilaYear, dashboardYearSchema } from "@/lib/dashboard-year";
+import { directorDashboardStateSchema } from "@/lib/director-dashboard-state";
 import {
 	isDeniedAccess,
 	isDirector,
@@ -28,6 +33,7 @@ import {
 } from "@/lib/permissions";
 
 const dashboardSearchSchema = z.object({
+	...directorDashboardStateSchema.shape,
 	year: dashboardYearSchema.optional(),
 	page: z.number().optional().default(1),
 	pageSize: z.number().optional().default(10),
@@ -38,6 +44,13 @@ const dashboardSearchSchema = z.object({
 export const Route = createFileRoute("/_authenticated/dashboard")({
 	validateSearch: (search) => dashboardSearchSchema.parse(search),
 	loaderDeps: ({ search }) => ({
+		campusId: search.campusId,
+		departmentId: search.departmentId,
+		decisionQueue: search.decisionQueue ?? "review",
+		decisionPage: search.decisionPage ?? 1,
+		decisionExpanded: search.decisionExpanded ?? false,
+		reportPage: search.reportPage ?? 1,
+		reportExpanded: search.reportExpanded ?? false,
 		year: search.year ?? currentManilaYear(),
 		page: search.page,
 		pageSize: search.pageSize,
@@ -92,11 +105,29 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 		// Director path
 		await Promise.all([
-			context.queryClient.ensureQueryData(actionCenterQueryOptions()),
-			context.queryClient.ensureQueryData(
-				directorDashboardQueryOptions(deps.year),
+			context.queryClient.prefetchQuery(directorDashboardQueryOptions()),
+			context.queryClient.prefetchQuery(
+				directorOverviewQueryOptions({
+					year: deps.year,
+					campusId: deps.campusId,
+					departmentId: deps.departmentId,
+				}),
 			),
-			context.queryClient.ensureQueryData({
+			context.queryClient.prefetchQuery(
+				directorWorkQueueQueryOptions(
+					deps.decisionQueue,
+					deps.decisionPage,
+					deps.decisionExpanded ? 10 : 5,
+				),
+			),
+			context.queryClient.prefetchQuery(
+				directorWorkQueueQueryOptions(
+					"reports",
+					deps.reportPage,
+					deps.reportExpanded ? 10 : 5,
+				),
+			),
+			context.queryClient.prefetchQuery({
 				queryKey: ["campuses"],
 				queryFn: () => getCampusesFn(),
 				staleTime: Number.POSITIVE_INFINITY,

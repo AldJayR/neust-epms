@@ -2,13 +2,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { projectDetailsQueryOptions } from "@/features/projects/public";
 import type { AuthUser } from "@/lib/auth";
+import type { DirectorDashboardState } from "@/lib/director-dashboard-state";
 import { invalidateWorkflowQueries } from "@/lib/workflow-queries";
 import {
 	getProposalCommentsFn,
 	saveProposalCommentFn,
 } from "./comments.functions";
+import { InstitutionalApprovalDialog } from "./components/institutional-approval-dialog";
 import type { PdfViewerRef } from "./components/pdf-viewer";
 import {
 	INSTITUTIONAL_APPROVAL_DOCUMENT_ID,
@@ -31,11 +34,17 @@ import { revisionReadinessQueryOptions } from "./revisions.functions";
 interface ProposalReviewPageProps {
 	proposalId: string;
 	initialDocumentId?: string;
+	dashboardContext?: DirectorDashboardState;
+	initialAction?: "signing";
+	onActionHandled?: () => void;
 }
 
 export function ProposalReviewPage({
 	proposalId,
 	initialDocumentId,
+	dashboardContext,
+	initialAction,
+	onActionHandled,
 }: ProposalReviewPageProps) {
 	const user = useRouterState({
 		select: (state) => {
@@ -301,11 +310,18 @@ export function ProposalReviewPage({
 	}
 
 	if (!data || !contextValue) return <p>Proposal not found.</p>;
+	const canUploadSignedDocuments =
+		isDirector &&
+		(data.status === "Approved" ||
+			(data.status === "Institutionally Approved" &&
+				!!data.institutionalApprovalDocPath &&
+				!data.signedSpecialOrderDocPath));
 
 	return (
 		<ProposalReviewProvider value={contextValue}>
 			<div className="flex flex-col gap-6">
 				<ProposalReviewHeader
+					dashboardContext={dashboardContext}
 					proposalId={proposalId}
 					title={data.title}
 					status={data.status}
@@ -315,6 +331,28 @@ export function ProposalReviewPage({
 					isDirector={isDirector}
 					hasSignedSpecialOrder={!!data.signedSpecialOrderDocPath}
 				/>
+				{initialAction === "signing" &&
+					(canUploadSignedDocuments ? (
+						<InstitutionalApprovalDialog
+							proposalId={proposalId}
+							proposalTitle={data.title}
+							signedSpecialOrderOnly={
+								data.status === "Institutionally Approved"
+							}
+							open
+							onOpenChange={(open) => {
+								if (!open) onActionHandled?.();
+							}}
+						/>
+					) : (
+						<Alert>
+							<AlertTitle>Signed-document requirements have changed</AlertTitle>
+							<AlertDescription>
+								The upload shortcut is no longer available for this proposal's
+								current status. Review the recorded documents below.
+							</AlertDescription>
+						</Alert>
+					))}
 
 				<div className="bg-card border border-border rounded-xl p-6 shadow-sm">
 					<ProposalLifecycleStepper currentStatus={data.status} />

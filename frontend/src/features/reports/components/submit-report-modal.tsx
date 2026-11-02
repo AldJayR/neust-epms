@@ -35,6 +35,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toStableDate } from "@/lib/utils";
+import { invalidateWorkflowQueries } from "@/lib/workflow-queries";
 import {
 	getReportPackageFn,
 	submitReportFn,
@@ -164,9 +165,7 @@ export function SubmitReportModal({
 						queryKey: ["report-package", milestone.id],
 					});
 				}
-				await queryClient.invalidateQueries({
-					queryKey: ["project-reporting-schedule", milestone.projectId],
-				});
+				await invalidateWorkflowQueries(queryClient);
 				toast.success("Your report is already submitted.");
 				onOpenChange(false);
 				return;
@@ -232,22 +231,7 @@ export function SubmitReportModal({
 				await uploadReportDocumentFn({ data: formData });
 			}
 
-			await Promise.all([
-				queryClient.invalidateQueries({ queryKey: ["dashboard", "proposals"] }),
-				queryClient.invalidateQueries({ queryKey: ["dashboard", "hub"] }),
-				queryClient.invalidateQueries({ queryKey: ["project-derived-state"] }),
-				queryClient.invalidateQueries({ queryKey: ["project-readiness"] }),
-				queryClient.invalidateQueries({
-					queryKey: ["project-reporting-schedule", milestone.projectId],
-				}),
-				queryClient.invalidateQueries({ queryKey: ["dashboard", "reports"] }),
-				queryClient.invalidateQueries({ queryKey: ["faculty", "projects"] }),
-				queryClient.invalidateQueries({
-					queryKey: ["report-package", milestone.id],
-				}),
-				queryClient.invalidateQueries({ queryKey: ["analytics"] }),
-				queryClient.invalidateQueries({ queryKey: ["action-center"] }),
-			]);
+			await invalidateWorkflowQueries(queryClient);
 			toast.success(
 				isClosure
 					? "Terminal report submitted. The Director can now review it and approve project completion."
@@ -256,6 +240,8 @@ export function SubmitReportModal({
 			onOpenChange(false);
 			resetForm();
 		} catch (error) {
+			// A required upload may have completed the package before an optional upload failed.
+			await invalidateWorkflowQueries(queryClient);
 			const refreshed = await packageQuery.refetch();
 			if (
 				refreshed.data?.completed &&

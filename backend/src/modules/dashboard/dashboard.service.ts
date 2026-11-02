@@ -15,8 +15,24 @@ import { buildProposalScope } from "@/lib/scope-helpers.js";
 import { type AuthUser, OPERATIONAL_ROLES, ROLE_NAMES } from "@/lib/types.js";
 import { PeriodChartPointSchema } from "./dashboard.schema.js";
 
-export async function getPeriodChart(user: AuthUser, year: number) {
+export async function getPeriodChart(
+	user: AuthUser,
+	year: number,
+	filters: {
+		campusId?: number | undefined;
+		departmentId?: number | undefined;
+	} = {},
+) {
 	projectYearBounds(year);
+	const scope = dashboardScope(user);
+	if (filters.campusId !== undefined)
+		scope.push(eq(proposals.campusId, filters.campusId));
+	if (filters.departmentId !== undefined)
+		scope.push(
+			filters.departmentId === 0
+				? isNull(proposals.departmentId)
+				: eq(proposals.departmentId, filters.departmentId),
+		);
 	const rows = await db.execute(sql`
 		SELECT to_char(calendar.month, 'YYYY-MM') AS month,
 			${campuses.campusId} AS "campusId", ${campuses.campusName} AS "campusName", count(*)::int AS value
@@ -25,7 +41,7 @@ export async function getPeriodChart(user: AuthUser, year: number) {
 			AND ${proposals.targetEndDate} >= (calendar.month AT TIME ZONE 'Asia/Manila')
 		JOIN ${projects} ON ${projects.proposalId} = ${proposals.proposalId}
 		JOIN ${campuses} ON ${campuses.campusId} = ${proposals.campusId}
-		WHERE ${and(...dashboardScope(user))}
+		WHERE ${and(...scope)}
 		GROUP BY calendar.month, ${campuses.campusId}, ${campuses.campusName}
 		ORDER BY calendar.month, ${campuses.campusId}
 	`);
