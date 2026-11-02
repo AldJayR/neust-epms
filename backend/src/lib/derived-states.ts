@@ -83,8 +83,7 @@ export function deriveProposalState(
 		return {
 			state: "WAIT",
 			owner: "Director/Admin",
-			reason:
-				"Endorsed by the RET Chair — awaiting Director/Admin approval.",
+			reason: "Endorsed by the RET Chair — awaiting Director/Admin approval.",
 			nextTransition: "Approval decision",
 		};
 	}
@@ -121,8 +120,7 @@ export function deriveProposalState(
 		return {
 			state: "WATCH",
 			owner: "System",
-			reason:
-				"Institutional approval recorded — awaiting project activation.",
+			reason: "Institutional approval recorded — awaiting project activation.",
 			nextTransition: "Project activation",
 		};
 	}
@@ -181,8 +179,7 @@ export function deriveProjectState(
 	if (projectStatus === PROJECT_STATUS.APPROVED) {
 		const blockers: string[] = [];
 		if (!project.moaId) blockers.push("Valid MOA not assigned");
-		if (!project.reportingSchedule)
-			blockers.push("Report due dates not set");
+		if (!project.reportingSchedule) blockers.push("Report due dates not set");
 
 		if (blockers.length > 0) {
 			return {
@@ -209,21 +206,21 @@ export function deriveProjectState(
 		};
 	}
 
-	if (projectStatus === PROJECT_STATUS.PENDING_CLOSURE) {
+	if (projectStatus === PROJECT_STATUS.PENDING_COMPLETION) {
 		if (user.userId === project.leaderId) {
 			return {
 				state: "ACT",
 				owner: "You",
 				reason:
-					"Final reports submitted — awaiting the Director/Admin closure decision.",
-				nextTransition: "View closure status",
+					"Final reports submitted — awaiting the Director's completion approval.",
+				nextTransition: "View completion status",
 			};
 		}
 		return {
 			state: "WATCH",
 			owner: "Director/Admin",
-			reason: "Pending closure — awaiting Director/Admin review.",
-			nextTransition: "Close project",
+			reason: "Pending completion — awaiting Director review.",
+			nextTransition: "Approve completion",
 		};
 	}
 
@@ -232,15 +229,6 @@ export function deriveProjectState(
 			state: "WATCH",
 			owner: "System",
 			reason: "Project completed.",
-			nextTransition: "No further action",
-		};
-	}
-
-	if (projectStatus === PROJECT_STATUS.CLOSED) {
-		return {
-			state: "WATCH",
-			owner: "System",
-			reason: "Project closed. No further action required.",
 			nextTransition: "No further action",
 		};
 	}

@@ -124,8 +124,7 @@ export const PROJECT_STATUS = {
 	APPROVED: "Approved",
 	ONGOING: "Ongoing",
 	COMPLETED: "Completed",
-	CLOSED: "Closed",
-	PENDING_CLOSURE: "Pending Closure",
+	PENDING_COMPLETION: "Pending Completion",
 	OVERDUE: "Overdue",
 	EXPIRED: "Expired",
 } as const;

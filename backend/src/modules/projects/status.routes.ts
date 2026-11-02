@@ -24,7 +24,11 @@ app.use("/projects/:id/close", authMiddleware);
 app.use("/projects/:id/close", requireRole(ROLE_NAMES.DIRECTOR));
 app.use("/projects/:id/close", async (c, next) => {
 	if (Number(c.req.header("content-length") ?? 0) > MAX_PDF_UPLOAD_BYTES) {
-		throw new ApiError(413, "PAYLOAD_TOO_LARGE", "Upload exceeds the 50MB limit");
+		throw new ApiError(
+			413,
+			"PAYLOAD_TOO_LARGE",
+			"Upload exceeds the 50MB limit",
+		);
 	}
 	await next();
 });
@@ -68,7 +72,7 @@ const closeProjectRoute = createRoute({
 	method: "post",
 	path: "/projects/{id}/close",
 	tags: ["Projects"],
-	summary: "Explicitly close a project (Director only)",
+	summary: "Approve project completion (Director only)",
 	description:
 		"Requires a complete terminal package and the Director's uploaded PDF scan of the signed terminal report.",
 	security: [{ Bearer: [] }],
@@ -82,7 +86,7 @@ const closeProjectRoute = createRoute({
 	responses: {
 		200: {
 			content: { "application/json": { schema: MessageSchema } },
-			description: "Project closed",
+			description: "Project completed",
 		},
 		400: {
 			content: { "application/json": { schema: ErrorSchema } },
@@ -98,7 +102,7 @@ const closeProjectRoute = createRoute({
 		},
 		409: {
 			content: { "application/json": { schema: ErrorSchema } },
-			description: "Project changed during closure",
+			description: "Project changed during completion approval",
 		},
 		413: {
 			content: { "application/json": { schema: ErrorSchema } },
@@ -118,14 +122,14 @@ app.openapi(
 		const { id } = c.req.valid("param");
 		const { file } = c.req.valid("form");
 		await closeProject(id, user, file, getClientIp(c));
-		return c.json({ message: "Project closed" }, 200);
+		return c.json({ message: "Project completed" }, 200);
 	},
 	(result) => {
 		if (!result.success && result.target === "form") {
 			throw new ApiError(
 				400,
 				"MISSING_SIGNED_TERMINAL_REPORT",
-				"Upload the signed terminal report as a PDF before closing the project",
+				"Upload the signed terminal report as a PDF before approving project completion",
 			);
 		}
 		return undefined;

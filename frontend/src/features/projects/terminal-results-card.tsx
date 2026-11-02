@@ -63,10 +63,10 @@ export function TerminalResultsCard({
 						</strong>
 					</p>
 					<Badge variant="outline">
-						{status === "Closed"
-							? "Closure approved"
+						{status === "Completed"
+							? "Completion approved"
 							: result.data?.completed
-								? "Awaiting closure review"
+								? "Awaiting completion review"
 								: "Submission incomplete"}
 					</Badge>
 					<ul className="text-sm">

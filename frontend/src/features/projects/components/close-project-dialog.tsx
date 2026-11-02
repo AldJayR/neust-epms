@@ -43,7 +43,7 @@ export function CloseProjectDialog({
 			return closeProjectFn({ data });
 		},
 		onSuccess: async () => {
-			toast.success("Signed terminal report saved. Project closed.");
+			toast.success("Signed terminal report saved. Project completed.");
 			onOpenChange(false);
 			await invalidateWorkflowQueries(queryClient);
 		},
@@ -52,11 +52,12 @@ export function CloseProjectDialog({
 
 	function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
-		if (mutation.isPending || confirmation !== "CLOSE") return;
+		if (mutation.isPending || confirmation !== "COMPLETE") return;
 		const result = pdfFileSchema.safeParse(file);
 		if (!result.success) {
 			toast.error(
-				result.error.issues[0]?.message ?? "Choose a signed terminal report PDF.",
+				result.error.issues[0]?.message ??
+					"Choose a signed terminal report PDF.",
 			);
 			return;
 		}
@@ -72,11 +73,11 @@ export function CloseProjectDialog({
 		>
 			<DialogContent showCloseButton={!mutation.isPending}>
 				<DialogHeader>
-					<DialogTitle>Close Project</DialogTitle>
+					<DialogTitle>Approve Completion</DialogTitle>
 					<DialogDescription>
-						Review the leader's terminal report and evaluation forms for
-						"{projectTitle}". Then upload the signed terminal report to close the
-						project.
+						Review the leader's terminal report and evaluation forms for "
+						{projectTitle}". Then upload the signed terminal report to mark the
+						project as Completed.
 						{traineeCount != null &&
 							` The project has ${traineeCount.toLocaleString()} recorded trainees.`}
 					</DialogDescription>
@@ -115,7 +116,7 @@ export function CloseProjectDialog({
 							htmlFor="close-project-confirmation"
 							className="text-foreground"
 						>
-							Type CLOSE to confirm
+							Type COMPLETE to confirm
 						</FieldLabel>
 						<Input
 							id="close-project-confirmation"
@@ -142,10 +143,16 @@ export function CloseProjectDialog({
 						<Button
 							type="submit"
 							variant="destructive"
-							disabled={!file || confirmation !== "CLOSE" || mutation.isPending}
+							disabled={
+								!file || confirmation !== "COMPLETE" || mutation.isPending
+							}
 						>
-							{mutation.isPending && <Loader2 className="size-4 animate-spin" />}
-							{mutation.isPending ? "Uploading..." : "Upload and Close Project"}
+							{mutation.isPending && (
+								<Loader2 className="size-4 animate-spin" />
+							)}
+							{mutation.isPending
+								? "Uploading..."
+								: "Upload and Mark Completed"}
 						</Button>
 					</DialogFooter>
 				</form>

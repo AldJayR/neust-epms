@@ -43,21 +43,18 @@ async function getClosureReadyProject(
 		.limit(1);
 	const [project] = await (lock ? query.for("update") : query);
 	if (!project) throw new ApiError(404, "NOT_FOUND", "Project not found");
-	if (
-		project.projectStatus === PROJECT_STATUS.CLOSED ||
-		project.projectStatus === PROJECT_STATUS.COMPLETED
-	) {
+	if (project.projectStatus === PROJECT_STATUS.COMPLETED) {
 		throw new ApiError(
 			400,
-			"ALREADY_CLOSED",
-			"Project is already closed or completed",
+			"ALREADY_COMPLETED",
+			"Project is already completed",
 		);
 	}
-	if (project.projectStatus !== PROJECT_STATUS.PENDING_CLOSURE) {
+	if (project.projectStatus !== PROJECT_STATUS.PENDING_COMPLETION) {
 		throw new ApiError(
 			400,
 			"INVALID_STATE",
-			"Only pending closure projects can be closed",
+			"Only projects pending completion can be marked completed",
 		);
 	}
 
@@ -81,7 +78,7 @@ async function getClosureReadyProject(
 		throw new ApiError(
 			400,
 			"MISSING_CLOSURE_REPORT",
-			"An Accomplishment and Terminal Report must be submitted before closing",
+			"An Accomplishment and Terminal Report must be submitted before approving completion",
 		);
 	}
 	if (
@@ -92,7 +89,7 @@ async function getClosureReadyProject(
 		throw new ApiError(
 			400,
 			"INCOMPLETE_PACKAGE",
-			"Complete the terminal package and trainee count before closure",
+			"Complete the terminal package and trainee count before approving completion",
 		);
 	}
 	const [evaluation] = await executor
@@ -111,7 +108,7 @@ async function getClosureReadyProject(
 		throw new ApiError(
 			400,
 			"MISSING_EVALUATION_FORMS",
-			"Evaluation Forms are required before closing the project",
+			"Evaluation Forms are required before approving project completion",
 		);
 	}
 	return project;
@@ -124,13 +121,17 @@ export async function closeProject(
 	ipAddress: string,
 ) {
 	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
-		throw new ApiError(403, "FORBIDDEN", "Only the Director can close a project");
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"Only the Director can approve project completion",
+		);
 	}
 	if (!(file instanceof File)) {
 		throw new ApiError(
 			400,
 			"MISSING_SIGNED_TERMINAL_REPORT",
-			"Upload the signed terminal report before closing the project",
+			"Upload the signed terminal report before approving project completion",
 		);
 	}
 	if (file.size > MAX_PDF_UPLOAD_BYTES) {
@@ -151,7 +152,11 @@ export async function closeProject(
 	const project = await getClosureReadyProject(id, db);
 	const storagePath = `projects/${project.projectId}/signed-terminal-report_${randomUUID()}.pdf`;
 	const contentHash = await hashFileSha256(file);
-	let result;
+	let result: {
+		updated: { projectId: string };
+		leader: { userId: string } | undefined;
+		title: string;
+	};
 	try {
 		const { error } = await supabase.storage
 			.from("documents")
@@ -173,7 +178,7 @@ export async function closeProject(
 			const [updated] = await tx
 				.update(projects)
 				.set({
-					projectStatus: PROJECT_STATUS.CLOSED,
+					projectStatus: PROJECT_STATUS.COMPLETED,
 					signedTerminalReportDocPath: storagePath,
 					signedTerminalReportHash: contentHash,
 					actualEndDate: completedAt,
@@ -182,7 +187,7 @@ export async function closeProject(
 				.where(
 					and(
 						eq(projects.projectId, latest.projectId),
-						eq(projects.projectStatus, PROJECT_STATUS.PENDING_CLOSURE),
+						eq(projects.projectStatus, PROJECT_STATUS.PENDING_COMPLETION),
 						isNull(projects.archivedAt),
 					),
 				)
@@ -191,17 +196,17 @@ export async function closeProject(
 				throw new ApiError(
 					409,
 					"UPDATE_CONFLICT",
-					"Project changed before it could be closed",
+					"Project changed before completion could be approved",
 				);
 			}
 			await insertAuditLog(
 				{
 					userId: user.userId,
-					action: `Closed project ${latest.projectId}`,
+					action: `Completed project ${latest.projectId}`,
 					tableAffected: "projects",
 					oldValue: { projectStatus: latest.projectStatus },
 					newValue: {
-						projectStatus: PROJECT_STATUS.CLOSED,
+						projectStatus: PROJECT_STATUS.COMPLETED,
 						signedTerminalReportDocPath: storagePath,
 						signedTerminalReportHash: contentHash,
 						actualEndDate: completedAt.toISOString(),
@@ -238,10 +243,13 @@ export async function closeProject(
 			recipientId: result.leader.userId,
 			type: "project",
 			title: "Terminal Report Approved",
-			message: `The Director recorded the signed terminal report for "${result.title}". The project is officially closed.`,
+			message: `The Director approved completion and recorded the signed terminal report for "${result.title}". The project is officially completed.`,
 			sendEmail: true,
 		}).catch((error) => {
-			console.error("[notification] Failed to notify leader on closure:", error);
+			console.error(
+				"[notification] Failed to notify leader on closure:",
+				error,
+			);
 		});
 	}
 	return result.updated;

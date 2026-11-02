@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Eye, FileUp, Info, Pencil, Play } from "lucide-react";
 import { BrandButton } from "@/components/custom/brand-button";
 import { PageHeader } from "@/components/custom/page-header";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -11,7 +12,6 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { InstitutionalApprovalDialog } from "@/features/proposals/components/institutional-approval-dialog";
 
@@ -138,7 +138,7 @@ export function ProjectDetailsHeader({
 								className="flex w-fit items-center gap-2 px-4 h-9"
 								onClick={onClose}
 							>
-								<span className="text-sm font-medium">Close Project</span>
+								<span className="text-sm font-medium">Approve Completion</span>
 							</Button>
 						)}
 					</>

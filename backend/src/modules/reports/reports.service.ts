@@ -48,8 +48,8 @@ import {
 	PROGRESS_REPORT_TYPES,
 	TERMINAL_REPORT_TYPES,
 } from "./report-metrics.js";
-import type { CreateReportSchema, PaginationQuery } from "./reports.schema.js";
 import { assertReportSubmissionAccess } from "./report-permissions.js";
+import type { CreateReportSchema, PaginationQuery } from "./reports.schema.js";
 import {
 	finalizeTerminalPackage,
 	notifyTerminalReady,
@@ -388,7 +388,12 @@ export async function createReport(
 				"INVALID_STATE",
 				"This project is no longer accepting reports",
 			);
-		await assertReportSubmissionAccess(user, milestone.proposalId, reportType, tx);
+		await assertReportSubmissionAccess(
+			user,
+			milestone.proposalId,
+			reportType,
+			tx,
+		);
 		let saved: typeof projectReports.$inferSelect;
 		if (existing) {
 			const [current] = await tx
@@ -528,7 +533,11 @@ export async function uploadReportDocument(
 		.limit(1);
 
 	if (!report) throw new ApiError(404, "NOT_FOUND", "Report not found");
-	await assertReportSubmissionAccess(user, report.proposalId, report.reportType);
+	await assertReportSubmissionAccess(
+		user,
+		report.proposalId,
+		report.reportType,
+	);
 	if (report.submittedById !== user.userId) {
 		throw new ApiError(
 			403,
@@ -593,7 +602,12 @@ export async function uploadReportDocument(
 			if (!current) {
 				throw new ApiError(404, "NOT_FOUND", "Report not found");
 			}
-			await assertReportSubmissionAccess(user, current.proposalId, current.reportType, tx);
+			await assertReportSubmissionAccess(
+				user,
+				current.proposalId,
+				current.reportType,
+				tx,
+			);
 			if (current.submittedById !== user.userId) {
 				throw new ApiError(
 					403,
@@ -727,13 +741,13 @@ export async function uploadReportDocument(
 				) {
 					const diff = captureAuditDiff(
 						{ projectStatus: projectStatusRow.projectStatus },
-						{ projectStatus: PROJECT_STATUS.PENDING_CLOSURE },
+						{ projectStatus: PROJECT_STATUS.PENDING_COMPLETION },
 						["projectStatus"],
 					);
 					const [transitioned] = await tx
 						.update(projects)
 						.set({
-							projectStatus: PROJECT_STATUS.PENDING_CLOSURE,
+							projectStatus: PROJECT_STATUS.PENDING_COMPLETION,
 							updatedAt: new Date(),
 						})
 						.where(
@@ -750,7 +764,7 @@ export async function uploadReportDocument(
 						await insertAuditLog(
 							{
 								userId: user.userId,
-								action: `Transitioned project ${report.projectId} to Pending Closure (all closure reports submitted)`,
+								action: `Transitioned project ${report.projectId} to Pending Completion (all terminal reports submitted)`,
 								tableAffected: "projects",
 								oldValue: diff.oldValue,
 								newValue: diff.newValue,
@@ -909,20 +923,24 @@ export async function uploadReportAttachment(
 		throw new ApiError(404, "NOT_FOUND", "Report not found");
 	}
 
-	await assertReportSubmissionAccess(user, report.proposalId, report.reportType);
+	await assertReportSubmissionAccess(
+		user,
+		report.proposalId,
+		report.reportType,
+	);
 	if (
 		![
 			PROJECT_STATUS.ONGOING,
 			PROJECT_STATUS.OVERDUE,
-			PROJECT_STATUS.PENDING_CLOSURE,
+			PROJECT_STATUS.PENDING_COMPLETION,
 		].includes(
-			report.projectStatus as "Ongoing" | "Overdue" | "Pending Closure",
+			report.projectStatus as "Ongoing" | "Overdue" | "Pending Completion",
 		)
 	) {
 		throw new ApiError(
 			400,
 			"INVALID_STATE",
-			"Attachments cannot be changed after project closure",
+			"Attachments cannot be changed after project completion",
 		);
 	}
 
@@ -981,13 +999,18 @@ export async function uploadReportAttachment(
 				![
 					PROJECT_STATUS.ONGOING,
 					PROJECT_STATUS.OVERDUE,
-					PROJECT_STATUS.PENDING_CLOSURE,
+					PROJECT_STATUS.PENDING_COMPLETION,
 				].includes(
-					parent.projectStatus as "Ongoing" | "Overdue" | "Pending Closure",
+					parent.projectStatus as "Ongoing" | "Overdue" | "Pending Completion",
 				)
 			)
-				throw new ApiError(400, "INVALID_STATE", "Project is closed");
-			await assertReportSubmissionAccess(user, parent.proposalId, report.reportType, tx);
+				throw new ApiError(400, "INVALID_STATE", "Project is completed");
+			await assertReportSubmissionAccess(
+				user,
+				parent.proposalId,
+				report.reportType,
+				tx,
+			);
 			const [existing] = await tx
 				.select()
 				.from(reportAttachments)

@@ -27,13 +27,15 @@ export const PROPOSAL_STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 		label: "Director Approved — Approval Document Pending",
 		explanation:
 			"The Director has approved your proposal. The signed institutional approval document still needs to be uploaded.",
-		nextStep: "The Director uploads the signed institutional approval document next.",
+		nextStep:
+			"The Director uploads the signed institutional approval document next.",
 	},
 	"Institutionally Approved": {
 		label: "Institutionally Approved — Awaiting Activation",
 		explanation:
 			"Institutional approval has been recorded. The Director must activate the project before work begins.",
-		nextStep: "Director/Admin completes the requirements before the project can start.",
+		nextStep:
+			"Director/Admin completes the requirements before the project can start.",
 	},
 	Returned: {
 		label: "Revision Required",
@@ -73,21 +75,16 @@ export const PROJECT_STATUS_DESCRIPTIONS: Record<string, StatusDescription> = {
 			"The Memorandum of Agreement covering this project has expired. The project cannot continue until a valid MOA is renewed.",
 		nextStep: "Contact the Extension Services office.",
 	},
-	"Pending Closure": {
-		label: "Pending Closure",
+	"Pending Completion": {
+		label: "Pending Completion",
 		explanation:
-			"Final reports have been submitted. The project is awaiting final review and closure.",
-		nextStep: "Awaiting the Director/Admin closure decision.",
+			"Final reports have been submitted. The project is awaiting the Director's final review and completion approval.",
+		nextStep: "Awaiting the Director's completion approval.",
 	},
 	Completed: {
 		label: "Completed",
-		explanation: "All reports submitted and project activities finished.",
-		nextStep: "No further action required.",
-	},
-	Closed: {
-		label: "Closed",
 		explanation:
-			"The Director has approved project closure.",
+			"The Director has approved project completion and recorded the signed terminal report.",
 		nextStep: "No further action required.",
 	},
 };

@@ -5,8 +5,8 @@ import {
 	desc,
 	eq,
 	exists,
-	gte,
 	gt,
+	gte,
 	ilike,
 	inArray,
 	isNotNull,
@@ -194,9 +194,9 @@ export async function getDashboardStats(user: AuthUser, year?: number) {
 			.select({
 				total: sql<number>`count(*)`,
 				ongoing: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.ONGOING})`,
-				completed: sql<number>`count(*) filter (where ${inArray(projects.projectStatus, [PROJECT_STATUS.COMPLETED, PROJECT_STATUS.CLOSED])})`,
+				completed: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.COMPLETED})`,
 				overdue: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.OVERDUE})`,
-				pendingClosure: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.PENDING_CLOSURE})`,
+				pendingClosure: sql<number>`count(*) filter (where ${projects.projectStatus} = ${PROJECT_STATUS.PENDING_COMPLETION})`,
 			})
 			.from(projects)
 			.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
@@ -312,7 +312,9 @@ type FacultyDirectoryQuery = {
 	load?: FacultyLoadFilter | undefined;
 	sort?: FacultyDirectorySort | undefined;
 	trendMonths?: FacultyTrendMonths | undefined;
-	ranks?: ("instructor" | "assistant" | "associate" | "professor")[] | undefined;
+	ranks?:
+		| ("instructor" | "assistant" | "associate" | "professor")[]
+		| undefined;
 	projectLoads?: ("0" | "1-2" | "3+")[] | undefined;
 };
 
@@ -357,7 +359,9 @@ function applyFacultyDirectoryFilters(
 		conditions.push(eq(departments.departmentName, query.college));
 	}
 	if (query.ranks?.length) {
-		const rankFilter = or(...query.ranks.map((rank) => ilike(users.academicRank, `${rank}%`)));
+		const rankFilter = or(
+			...query.ranks.map((rank) => ilike(users.academicRank, `${rank}%`)),
+		);
 		if (rankFilter) conditions.push(rankFilter);
 	}
 }
@@ -391,9 +395,15 @@ export async function getFacultyDirectory(
 	applyFacultyDirectoryFilters(whereConditions, query);
 	if (query.projectLoads?.length) {
 		const load = sql<number>`coalesce(${activeInvolvement.totalInvolvement}, 0)`;
-		const loadFilter = or(...query.projectLoads.map((range) =>
-			range === "0" ? eq(load, 0) : range === "1-2" ? and(gte(load, 1), lte(load, 2)) : gte(load, 3),
-		));
+		const loadFilter = or(
+			...query.projectLoads.map((range) =>
+				range === "0"
+					? eq(load, 0)
+					: range === "1-2"
+						? and(gte(load, 1), lte(load, 2))
+						: gte(load, 3),
+			),
+		);
 		if (loadFilter) whereConditions.push(loadFilter);
 	}
 
@@ -499,10 +509,21 @@ export async function getFacultyDirectory(
 					departments,
 					eq(users.departmentId, departments.departmentId),
 				)
-				.innerJoin(metricsInvolvement, eq(users.userId, metricsInvolvement.userId))
-				.where(and(...mostActiveCollegeConditions, gt(metricsInvolvement.totalWorkload, 0)))
+				.innerJoin(
+					metricsInvolvement,
+					eq(users.userId, metricsInvolvement.userId),
+				)
+				.where(
+					and(
+						...mostActiveCollegeConditions,
+						gt(metricsInvolvement.totalWorkload, 0),
+					),
+				)
 				.groupBy(departments.departmentName)
-				.orderBy(desc(sql`sum(${metricsInvolvement.totalWorkload})`), asc(departments.departmentName))
+				.orderBy(
+					desc(sql`sum(${metricsInvolvement.totalWorkload})`),
+					asc(departments.departmentName),
+				)
 				.limit(1),
 		]);
 
@@ -522,7 +543,10 @@ export async function getFacultyDirectory(
 					departments,
 					eq(users.departmentId, departments.departmentId),
 				)
-				.innerJoin(metricsInvolvement, eq(users.userId, metricsInvolvement.userId))
+				.innerJoin(
+					metricsInvolvement,
+					eq(users.userId, metricsInvolvement.userId),
+				)
 				.where(
 					and(
 						...mostActiveCollegeConditions,
@@ -880,8 +904,9 @@ export async function getHubProjects(
 				inArray(projects.projectStatus, [
 					PROJECT_STATUS.APPROVED,
 					PROJECT_STATUS.ONGOING,
-					PROJECT_STATUS.PENDING_CLOSURE,
+					PROJECT_STATUS.PENDING_COMPLETION,
 					PROJECT_STATUS.OVERDUE,
+					PROJECT_STATUS.COMPLETED,
 				]),
 			),
 		);

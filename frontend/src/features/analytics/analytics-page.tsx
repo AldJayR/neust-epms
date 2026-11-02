@@ -216,7 +216,7 @@ export function AnalyticsPage({
 				{!showFaculty && (
 					<Field className="w-auto gap-1">
 						<FieldLabel htmlFor={yearInputId} className="text-muted-foreground">
-							{view === "reach" ? "Closure year" : "Project creation year"}
+							{view === "reach" ? "Completion year" : "Project creation year"}
 						</FieldLabel>
 						<Input
 							id={yearInputId}
@@ -290,7 +290,7 @@ export function AnalyticsPage({
 						label="Count availability"
 						value={filters.missing}
 						options={[
-							{ value: "false", label: "All closed projects" },
+							{ value: "false", label: "All completed projects" },
 							{ value: "true", label: "Missing counts" },
 						]}
 						onChange={(value) => change({ missing: value as "true" | "false" })}
@@ -352,7 +352,7 @@ export function AnalyticsPage({
 					</div>
 					{view === "reach" && (
 						<p className="rounded-md border p-3 text-sm">
-							Official totals include Director-approved closed projects only.
+							Official totals include Director-approved completed projects only.
 							People are counted once per project and may appear in multiple
 							projects. Missing counts are unknown, not zero.
 						</p>
@@ -360,10 +360,10 @@ export function AnalyticsPage({
 					{view === "reach" && Boolean(data?.undatedProjects) && (
 						<Alert role="note">
 							<Info />
-							<AlertTitle>Some closure dates are missing</AlertTitle>
+							<AlertTitle>Some completion dates are missing</AlertTitle>
 							<AlertDescription>
-								{data?.undatedProjects} closed projects in this scope have no
-								recorded closure date. They aren't included in the selected
+								{data?.undatedProjects} completed projects in this scope have no
+								recorded completion date. They aren't included in the selected
 								year's totals.
 							</AlertDescription>
 						</Alert>
@@ -374,7 +374,8 @@ export function AnalyticsPage({
 							who the projects intended to serve.
 							{filters.groupBy !== "program" && (
 								<>
-									{" "}A project may belong to multiple categories. Category counts
+									{" "}
+									A project may belong to multiple categories. Category counts
 									are not additive.
 								</>
 							)}

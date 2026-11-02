@@ -221,7 +221,7 @@ export const ActivateSchema = z
 			.min(1)
 			.refine((milestones) => !reportingScheduleError(milestones), {
 				message:
-					"Require exactly one final closure milestone, unique dates, and progress dates before closure",
+					"Require exactly one final terminal report milestone, unique dates, and progress dates before completion",
 			}),
 	})
 	.openapi("ActivateProject");

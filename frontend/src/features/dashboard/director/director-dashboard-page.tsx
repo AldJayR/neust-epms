@@ -24,7 +24,7 @@ const metricCards = [
 	{ label: "Total Projects", key: "totalProjects" as const },
 	{ label: "Ongoing Projects", key: "ongoingProjects" as const },
 	{ label: "Under Evaluation", key: "underEvaluation" as const },
-	{ label: "Closed / Completed", key: "completed" as const },
+	{ label: "Completed", key: "completed" as const },
 ];
 
 function RecentActivitiesCard({
@@ -185,10 +185,7 @@ function DirectorDashboardContent({
 						</div>
 					}
 				/>
-				<DashboardPeriodNote
-					year={year}
-					showDraftLink={false}
-				/>
+				<DashboardPeriodNote year={year} showDraftLink={false} />
 				{error && (
 					<p role="alert" className="text-destructive">
 						Unable to load dashboard metrics. Please try again.

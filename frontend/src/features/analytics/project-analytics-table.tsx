@@ -51,7 +51,7 @@ export function ProjectAnalyticsTable({
 	columns.push(
 		{
 			accessorKey: "closedAt",
-			header: "Closure date",
+			header: "Completion date",
 			cell: ({ row }) =>
 				row.original.closedAt
 					? new Date(row.original.closedAt).toLocaleDateString("en-PH", {
@@ -63,7 +63,7 @@ export function ProjectAnalyticsTable({
 			accessorKey: "traineeCount",
 			header: "Approved project reach",
 			cell: ({ row }) =>
-				row.original.status !== "Closed"
+				row.original.status !== "Completed"
 					? "Not yet approved"
 					: row.original.traineeCount === null
 						? "Not recorded"

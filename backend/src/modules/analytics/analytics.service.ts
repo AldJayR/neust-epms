@@ -42,7 +42,7 @@ function projectBase(
 		predicates.push(sql`pr.campus_id = ${filters.campusId}`);
 	if (filters.departmentId)
 		predicates.push(sql`pr.department_id = ${filters.departmentId}`);
-	if (view === "reach") predicates.push(sql`p.project_status = 'Closed'`);
+	if (view === "reach") predicates.push(sql`p.project_status = 'Completed'`);
 	const date = view === "reach" ? sql`p.actual_end_date` : sql`pr.created_at`;
 	if (view !== "participation" && includePeriod)
 		predicates.push(
@@ -181,7 +181,7 @@ async function getAnalyticsItems(
 	const statement = isFacultyList(user, filters, view)
 		? sql`${facultyRows(user, filters)} SELECT 'faculty' AS kind, id::text, label, campus, department, id::text AS "userId", projects, lead, collaboration FROM faculty ORDER BY projects DESC, label, id LIMIT ${filters.limit} OFFSET ${(filters.page - 1) * filters.limit}`
 		: sql`${selectedProjects(user, filters, view)} SELECT 'project' AS kind, b.proposal_id::text AS id, b.title AS label, b.campus, b.department, b.proposal_id::text AS "proposalId", b.report_id::text AS "reportId", b.status,
-			b.closed_at::text AS "closedAt", CASE WHEN b.status = 'Closed' THEN b.trainee_count ELSE NULL END AS "traineeCount",
+			b.closed_at::text AS "closedAt", CASE WHEN b.status = 'Completed' THEN b.trainee_count ELSE NULL END AS "traineeCount",
 			${view === "participation" ? sql`CASE WHEN EXISTS (SELECT 1 FROM proposal_members m WHERE m.proposal_id = b.proposal_id AND m.archived_at IS NULL AND m.user_id = ${filters.facultyId ?? user.userId} AND m.project_role = 'Project Leader') THEN 'Project Leader' ELSE 'Collaborator' END` : sql`NULL::text`} AS "projectRole"
 			FROM selected b WHERE true ${view === "participation" ? sql`AND b.created_at >= ${`${filters.year}-01-01T00:00:00+08:00`}::timestamptz AND b.created_at < ${`${filters.year + 1}-01-01T00:00:00+08:00`}::timestamptz` : sql``}
 			ORDER BY b.created_at DESC, b.proposal_id LIMIT ${filters.limit} OFFSET ${(filters.page - 1) * filters.limit}`;
@@ -208,17 +208,17 @@ export async function getAnalytics(
 		proposals: number;
 		active: number;
 		implemented: number;
-		closed: number;
+		completed: number;
 	}>(
 		facultyList
 			? sql`${facultyRows(user, filters)} SELECT count(*)::int AS total, count(*) FILTER (WHERE projects > 0)::int AS participating, COALESCE(avg(projects), 0)::text AS average FROM faculty`
-			: sql`${cte} SELECT count(*)::int AS total, COALESCE(sum(trainee_count) FILTER (WHERE status = 'Closed'), 0)::text AS trainees,
-		count(*) FILTER (WHERE trainee_count IS NOT NULL AND status = 'Closed')::int AS recorded,
-		count(*) FILTER (WHERE trainee_count IS NULL AND status = 'Closed')::int AS missing,
+			: sql`${cte} SELECT count(*)::int AS total, COALESCE(sum(trainee_count) FILTER (WHERE status = 'Completed'), 0)::text AS trainees,
+		count(*) FILTER (WHERE trainee_count IS NOT NULL AND status = 'Completed')::int AS recorded,
+		count(*) FILTER (WHERE trainee_count IS NULL AND status = 'Completed')::int AS missing,
 		count(*) FILTER (WHERE project_id IS NULL)::int AS proposals,
 		count(*) FILTER (WHERE active)::int AS active,
-		count(*) FILTER (WHERE project_id IS NOT NULL AND status IN ('Ongoing', 'Overdue', 'Pending Closure', 'Closed', 'Completed', 'Expired'))::int AS implemented,
-		count(*) FILTER (WHERE status = 'Closed')::int AS closed FROM selected`,
+		count(*) FILTER (WHERE project_id IS NOT NULL AND status IN ('Ongoing', 'Overdue', 'Pending Completion', 'Completed', 'Expired'))::int AS implemented,
+		count(*) FILTER (WHERE status = 'Completed')::int AS completed FROM selected`,
 	);
 	const groups =
 		view === "coverage"
@@ -228,8 +228,8 @@ export async function getAnalytics(
 			: view === "participation"
 				? []
 				: await query(sql`${cte} SELECT ${filters.campusId ? sql`department_id` : sql`campus_id`}::text AS key, ${filters.campusId ? sql`department` : sql`campus`} AS label, count(*)::int AS projects,
-			COALESCE(sum(trainee_count) FILTER (WHERE status = 'Closed'), 0)::text AS trainees,
-			count(*) FILTER (WHERE trainee_count IS NOT NULL AND status = 'Closed')::int AS recorded, count(*) FILTER (WHERE trainee_count IS NULL AND status = 'Closed')::int AS missing
+			COALESCE(sum(trainee_count) FILTER (WHERE status = 'Completed'), 0)::text AS trainees,
+			count(*) FILTER (WHERE trainee_count IS NOT NULL AND status = 'Completed')::int AS recorded, count(*) FILTER (WHERE trainee_count IS NULL AND status = 'Completed')::int AS missing
 			FROM selected GROUP BY key, label ORDER BY projects DESC, label`);
 	let total = counts?.total ?? 0;
 	const metric = (
@@ -243,7 +243,7 @@ export async function getAnalytics(
 					metric(
 						"Reported trainees",
 						Number(counts?.trainees ?? 0),
-						"From projects with Director-approved closure",
+						"From projects with Director-approved completion",
 					),
 					metric(
 						"Projects with counts",
@@ -258,7 +258,7 @@ export async function getAnalytics(
 					metric(
 						"Counts recorded (%)",
 						total ? Math.round(((counts?.recorded ?? 0) / total) * 100) : null,
-						"Share of closed projects with trainee counts",
+						"Share of completed projects with trainee counts",
 					),
 				]
 			: [
@@ -270,12 +270,12 @@ export async function getAnalytics(
 					metric(
 						"Implementation started",
 						counts?.implemented ?? 0,
-						"Projects that moved beyond approval, including closed projects",
+						"Projects that moved beyond approval, including completed projects",
 					),
 					metric(
-						"Closed projects",
-						counts?.closed ?? 0,
-						"Closure approved by the Director",
+						"Completed projects",
+						counts?.completed ?? 0,
+						"Completion approved by the Director",
 					),
 					metric(
 						"Projects and proposals",
@@ -326,7 +326,7 @@ export async function getAnalytics(
 			}>(sql`${cte} SELECT
 				COALESCE(max(${involvement.leadProjects}), 0)::int AS lead,
 				COALESCE(max(${involvement.collaboratorProjects}), 0)::int AS collaboration,
-				COALESCE(sum(b.trainee_count) FILTER (WHERE b.status = 'Closed' AND b.created_at >= ${`${filters.year}-01-01T00:00:00+08:00`}::timestamptz AND b.created_at < ${`${filters.year + 1}-01-01T00:00:00+08:00`}::timestamptz), 0)::text AS trainees
+				COALESCE(sum(b.trainee_count) FILTER (WHERE b.status = 'Completed' AND b.created_at >= ${`${filters.year}-01-01T00:00:00+08:00`}::timestamptz AND b.created_at < ${`${filters.year + 1}-01-01T00:00:00+08:00`}::timestamptz), 0)::text AS trainees
 				FROM selected b JOIN proposal_members m ON m.proposal_id = b.proposal_id AND m.archived_at IS NULL AND m.user_id = ${filters.facultyId ?? user.userId}
 				LEFT JOIN ${involvement} ON ${involvement.userId} = m.user_id`);
 			metrics = [
@@ -348,7 +348,7 @@ export async function getAnalytics(
 				metric(
 					"Reach of involved projects",
 					Number(contributions?.trainees ?? 0),
-					"Recorded trainees of closed projects in this history; not personally delivered reach",
+					"Recorded trainees of completed projects in this history; not personally delivered reach",
 				),
 			];
 		}
@@ -368,7 +368,7 @@ export async function getAnalytics(
 		total,
 		dateBasis:
 			view === "reach"
-				? `Projects closed in ${filters.year} · Philippine time`
+				? `Projects completed in ${filters.year} · Philippine time`
 				: view === "coverage"
 					? `Projects and proposals created in ${filters.year} · Philippine time`
 					: !filters.facultyId && user.roleName !== ROLE_NAMES.FACULTY
@@ -425,14 +425,14 @@ export async function exportAnalytics(
 					"Filters",
 					JSON.stringify({ ...filters, page: undefined, limit: undefined }),
 				],
-				["Closed projects without closure dates", first.undatedProjects],
+				["Completed projects without completion dates", first.undatedProjects],
 				...first.metrics.map((m) => [m.label, m.value]),
 				[],
 				view === "coverage"
 					? ["Category", "Projects and proposals"]
 					: [
 							"Unit",
-							"Closed projects",
+							"Completed projects",
 							"Reported trainees",
 							"Counts recorded",
 							"Missing counts",
@@ -463,7 +463,7 @@ export async function exportAnalytics(
 							"Campus",
 							"Lead department",
 							"Status",
-							"Closure date",
+							"Completion date",
 							"Approved project reach",
 							...(view === "participation" ? ["Project role"] : []),
 						],

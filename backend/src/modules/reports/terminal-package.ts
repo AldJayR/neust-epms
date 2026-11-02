@@ -33,7 +33,7 @@ export async function notifyTerminalReady(reportId: string): Promise<void> {
 				dedupeKey: `terminal-package:${reportId}:${recipientId}`,
 				title: "Terminal report ready for review",
 				message:
-					"The terminal report, evaluation forms and trainee count are complete. You can now review the project for closure.",
+					"The terminal report, evaluation forms and trainee count are complete. You can now review the project and approve completion.",
 			});
 	} catch (error) {
 		console.error("[notification] Terminal report notification failed", error);
@@ -95,7 +95,12 @@ export async function finalizeTerminalPackage(
 		)
 	)
 		return false;
-	await assertReportSubmissionAccess(user, project.proposalId, report.reportType, tx);
+	await assertReportSubmissionAccess(
+		user,
+		project.proposalId,
+		report.reportType,
+		tx,
+	);
 	const completedAt = new Date();
 	await tx
 		.update(projectReports)
@@ -108,7 +113,7 @@ export async function finalizeTerminalPackage(
 	await tx
 		.update(projects)
 		.set({
-			projectStatus: PROJECT_STATUS.PENDING_CLOSURE,
+			projectStatus: PROJECT_STATUS.PENDING_COMPLETION,
 			updatedAt: completedAt,
 		})
 		.where(eq(projects.projectId, report.projectId));
@@ -119,7 +124,7 @@ export async function finalizeTerminalPackage(
 			tableAffected: "project_reports",
 			newValue: {
 				traineeCount: report.traineeCount,
-				projectStatus: PROJECT_STATUS.PENDING_CLOSURE,
+				projectStatus: PROJECT_STATUS.PENDING_COMPLETION,
 			},
 			ipAddress,
 		},

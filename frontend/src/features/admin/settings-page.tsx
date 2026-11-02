@@ -56,7 +56,7 @@ export function SettingsPage() {
 				<div className="space-y-4">
 					<div className="flex flex-col gap-1.5">
 						<Label htmlFor="retention-years">
-							Archive closed projects after (years)
+							Archive completed projects after (years)
 						</Label>
 						<Input
 							id="retention-years"
@@ -69,7 +69,7 @@ export function SettingsPage() {
 							className="w-32"
 						/>
 						<p className="text-xs text-muted-foreground">
-							Closed projects are moved to Archives automatically after this
+							Completed projects are moved to Archives automatically after this
 							period.
 						</p>
 					</div>

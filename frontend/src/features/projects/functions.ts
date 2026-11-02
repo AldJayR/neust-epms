@@ -93,14 +93,11 @@ export const closeProjectFn = createServerFn({ method: "POST" })
 		await authorizeSessionUser("Director");
 		const token = await getValidAccessToken();
 		const projectId = data.get("projectId") as string;
-		const response = await fetch(
-			`${API_BASE}/projects/${projectId}/close`,
-			{
-				method: "POST",
-				headers: { Authorization: `Bearer ${token}` },
-				body: data,
-			},
-		);
+		const response = await fetch(`${API_BASE}/projects/${projectId}/close`, {
+			method: "POST",
+			headers: { Authorization: `Bearer ${token}` },
+			body: data,
+		});
 		if (!response.ok) {
 			throw new Error(
 				await getErrorMessage(response, "Failed to close project"),
@@ -141,7 +138,7 @@ export const activateProjectFn = createServerFn({ method: "POST" })
 								new Date(m.dueAt) < new Date(finalClosure.dueAt),
 						)
 					);
-				}, "Require exactly one final closure milestone, unique dates, and progress dates before closure"),
+				}, "Require exactly one final terminal report milestone, unique dates, and progress dates before completion"),
 		}),
 	)
 	.handler(async ({ data }) => {

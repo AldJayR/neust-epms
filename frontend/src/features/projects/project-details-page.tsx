@@ -119,7 +119,7 @@ export function ProjectDetailsPage({
 		: undefined;
 	const showActivateButton =
 		isDirector && data.status === "Institutionally Approved";
-	const showCloseButton = isDirector && data.status === "Pending Closure";
+	const showCloseButton = isDirector && data.status === "Pending Completion";
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -181,25 +181,21 @@ export function ProjectDetailsPage({
 						proposalId={proposalId}
 						status={data.status}
 					/>
-					{[
-						"Ongoing",
-						"Overdue",
-						"Pending Closure",
-						"Completed",
-						"Closed",
-					].includes(data.status) && (
+					{["Ongoing", "Overdue", "Pending Completion", "Completed"].includes(
+						data.status,
+					) && (
 						<ReportingScheduleCard
 							projectId={proposalId}
 							canSubmitReports={canSubmitReports}
 							allowAttachmentUpload={[
 								"Ongoing",
 								"Overdue",
-								"Pending Closure",
+								"Pending Completion",
 							].includes(data.status)}
 						/>
 					)}
 					<ActivityHistoryCard history={data.history} />
-					{["Ongoing", "Overdue", "Pending Closure", "Closed"].includes(
+					{["Ongoing", "Overdue", "Pending Completion", "Completed"].includes(
 						data.status,
 					) && (
 						<TerminalResultsCard projectId={proposalId} status={data.status} />

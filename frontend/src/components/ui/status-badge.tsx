@@ -59,8 +59,8 @@ const STATUS_MAP: Record<string, StatusConfig> = {
 		icon: AlertTriangle,
 		iconClassName: "text-danger",
 	},
-	"Pending Closure": {
-		label: "Pending Closure",
+	"Pending Completion": {
+		label: "Pending Completion",
 		icon: Clock,
 		iconClassName: "text-warning",
 	},
@@ -108,11 +108,6 @@ const STATUS_MAP: Record<string, StatusConfig> = {
 		label: "Rejected",
 		icon: XCircle,
 		iconClassName: "text-danger",
-	},
-	Closed: {
-		label: "Closed",
-		icon: XCircle,
-		iconClassName: "text-muted-foreground",
 	},
 	Progress: {
 		label: "Progress",

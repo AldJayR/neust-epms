@@ -250,7 +250,7 @@ export function SubmitReportModal({
 			]);
 			toast.success(
 				isClosure
-					? "Terminal report submitted. The Director can now review it and approve project closure."
+					? "Terminal report submitted. The Director can now review it and approve project completion."
 					: `${reportTypeName} submitted successfully!`,
 			);
 			onOpenChange(false);
@@ -297,7 +297,7 @@ export function SubmitReportModal({
 					{packageQuery.data?.completed && (
 						<p className="rounded-md border p-3 text-sm">
 							{isClosure
-								? "The required submission is complete. You can add attendance records before the Director approves closure."
+								? "The required submission is complete. You can add attendance records before the Director approves completion."
 								: "This progress report has already been submitted."}
 						</p>
 					)}
@@ -350,7 +350,7 @@ export function SubmitReportModal({
 								<FieldDescription id={`${countId}-help`}>
 									Count each person once within this project, even if they
 									attended multiple sessions. Enter 0 if no trainees were
-									served. Official totals follow Director closure approval.
+									served. Official totals follow Director completion approval.
 								</FieldDescription>
 								<FieldError id={`${countId}-error`}>{countError}</FieldError>
 							</Field>

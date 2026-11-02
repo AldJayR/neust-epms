@@ -156,7 +156,7 @@ export function ProjectMonitoringPage({
 					value={metrics?.overdueProjects ?? "..."}
 				/>
 				<MetricCard
-					label="Pending Closure"
+					label="Pending Completion"
 					value={metrics?.pendingClosureProjects ?? "..."}
 				/>
 			</div>
@@ -186,7 +186,8 @@ export function ProjectMonitoringPage({
 							{ value: "all", label: "All Statuses" },
 							{ value: "Approved", label: "Approved" },
 							{ value: "Ongoing", label: "Ongoing" },
-							{ value: "Pending Closure", label: "Pending Closure" },
+							{ value: "Pending Completion", label: "Pending Completion" },
+							{ value: "Completed", label: "Completed" },
 							{ value: "Overdue", label: "Overdue" },
 						]}
 					/>

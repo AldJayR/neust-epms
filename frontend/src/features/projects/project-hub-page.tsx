@@ -183,6 +183,7 @@ export function ProjectHubPage({
 							{ value: "Pending Review", label: "For Review" },
 							{ value: "Returned", label: "Needs Revision" },
 							{ value: "Ongoing", label: "Ongoing" },
+							{ value: "Pending Completion", label: "Pending Completion" },
 							{ value: "Completed", label: "Completed" },
 						]}
 					/>

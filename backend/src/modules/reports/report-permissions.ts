@@ -16,19 +16,29 @@ export async function assertReportSubmissionAccess(
 	const [membership] = await executor
 		.select({ projectRole: proposalMembers.projectRole })
 		.from(proposalMembers)
-		.where(and(
-			eq(proposalMembers.proposalId, proposalId),
-			eq(proposalMembers.userId, user.userId),
-			isNull(proposalMembers.archivedAt),
-		))
+		.where(
+			and(
+				eq(proposalMembers.proposalId, proposalId),
+				eq(proposalMembers.userId, user.userId),
+				isNull(proposalMembers.archivedAt),
+			),
+		)
 		.limit(1);
 	if (!membership) {
-		throw new ApiError(403, "NOT_MEMBER", "Only project members can submit reports for this project");
+		throw new ApiError(
+			403,
+			"NOT_MEMBER",
+			"Only project members can submit reports for this project",
+		);
 	}
 	if (
 		TERMINAL_REPORT_TYPES.some((type) => type === reportType) &&
 		membership.projectRole !== PROJECT_LEADER_ROLE
 	) {
-		throw new ApiError(403, "NOT_LEADER", "Only the Project Leader can submit the terminal report and closure documents.");
+		throw new ApiError(
+			403,
+			"NOT_LEADER",
+			"Only the Project Leader can submit the terminal report and completion documents.",
+		);
 	}
 }

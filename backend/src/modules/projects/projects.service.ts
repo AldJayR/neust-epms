@@ -501,10 +501,10 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 		history.push({
 			id: `project-closure-${row.proposalId}`,
 			version: "Final",
-			status: PROJECT_STATUS.CLOSED,
+			status: PROJECT_STATUS.COMPLETED,
 			actorName: "Director",
 			date: row.actualEndDate.toISOString(),
-			comment: "Signed terminal report recorded and project closed.",
+			comment: "Signed terminal report recorded and project completed.",
 		});
 	}
 

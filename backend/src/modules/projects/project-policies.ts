@@ -19,7 +19,7 @@ export function validateProjectTransition(
 		throw new ApiError(
 			400,
 			"DEPRECATED_TRANSITION",
-			"Use project activation with an MOA and reporting schedule, or Director closure approval with a complete unified terminal package.",
+			"Use project activation with an MOA and reporting schedule, or Director completion approval with a complete unified terminal package.",
 		);
 	}
 	throw new ApiError(
@@ -50,7 +50,7 @@ export function reportingScheduleError(
 	);
 	const finalClosure = closure[0];
 	if (closure.length !== 1 || !finalClosure)
-		return "Schedule exactly one final closure milestone.";
+		return "Schedule exactly one final terminal report milestone.";
 	const closureTime = new Date(finalClosure.dueAt).getTime();
 	const dates = new Set<number>();
 	for (const milestone of milestones) {
@@ -62,7 +62,7 @@ export function reportingScheduleError(
 		dates.add(time);
 		if (milestone.reportType === "Progress") {
 			if (time >= closureTime)
-				return "Progress reports must be due before the final closure milestone.";
+				return "Progress reports must be due before the final terminal report milestone.";
 		} else if (milestone !== finalClosure) {
 			return "Unsupported reporting milestone type.";
 		}
