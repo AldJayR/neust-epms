@@ -48,7 +48,12 @@ export interface ProjectAttachment {
 	id: string;
 	name: string;
 	type: string;
-	documentType: "Proposal" | "Special Orders" | "Terminal Report";
+	documentType:
+		| "Proposal"
+		| "Special Orders"
+		| "Terminal Report"
+		| "Signed Proposal"
+		| "Signed Special Order";
 	url: string;
 	version: string;
 }
@@ -64,6 +69,8 @@ export interface ProjectDetailsResponse {
 	endorsedAt?: string | null;
 	institutionalApprovalDocPath?: string | null;
 	institutionalApprovalDocUrl?: string | null;
+	signedSpecialOrderDocPath?: string | null;
+	signedSpecialOrderDocUrl?: string | null;
 	institutionalApprovedAt?: string | null;
 	metadata: {
 		leader: { name: string; avatarUrl?: string };

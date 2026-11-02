@@ -79,6 +79,15 @@ app.use("*", async (c, next) => {
 	const contentType = c.req.header("content-type") ?? "";
 
 	if (contentType.includes("multipart/form-data")) {
+		const isInstitutionalApproval =
+			c.req.method === "POST" &&
+			/^\/api\/v1\/proposals\/[^/]+\/institutional-approval$/.test(c.req.path);
+		const isSignedSpecialOrder =
+			c.req.method === "POST" &&
+			/^\/api\/v1\/proposals\/[^/]+\/signed-special-order$/.test(c.req.path);
+		const multipartLimit = isInstitutionalApproval
+			? MAX_MULTIPART_BYTES * 2 + 1024 * 1024
+			: MAX_MULTIPART_BYTES + (isSignedSpecialOrder ? 1024 * 1024 : 0);
 		// Hono buffers form data before route handlers can inspect individual files.
 		// Require an upfront, server-enforced bound to prevent unbounded buffering.
 		if (!contentLengthHeader || !Number.isSafeInteger(contentLength)) {
@@ -92,12 +101,14 @@ app.use("*", async (c, next) => {
 				411,
 			);
 		}
-		if (contentLength > MAX_MULTIPART_BYTES) {
+		if (contentLength > multipartLimit) {
 			return c.json(
 				{
 					error: {
 						code: "PAYLOAD_TOO_LARGE",
-						message: "Upload exceeds 50MB limit",
+						message: isInstitutionalApproval
+							? "Upload exceeds the combined limit for two 50 MB PDFs"
+							: "Upload exceeds 50MB limit",
 					},
 				},
 				413,

@@ -5,6 +5,7 @@ import type {
 } from "@/features/projects/public";
 
 export const INSTITUTIONAL_APPROVAL_DOCUMENT_ID = "institutional-approval";
+export const SIGNED_SPECIAL_ORDER_DOCUMENT_ID = "signed-special-order";
 
 export interface ProposalReviewContextValue {
 	data: ProjectDetailsResponse;

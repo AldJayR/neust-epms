@@ -53,11 +53,16 @@ export const proposals = pgTable(
 		endorsementDocPath: varchar("endorsement_doc_path", { length: 500 }),
 		endorsementDocHash: varchar("endorsement_doc_hash", { length: 64 }),
 		endorsedAt: timestamp("endorsed_at", { withTimezone: true }),
-		institutionalApprovalDocPath: varchar(
-			"institutional_approval_doc_path",
-			{ length: 500 },
-		),
+		institutionalApprovalDocPath: varchar("institutional_approval_doc_path", {
+			length: 500,
+		}),
 		institutionalApprovalHash: varchar("institutional_approval_hash", {
+			length: 64,
+		}),
+		signedSpecialOrderDocPath: varchar("signed_special_order_doc_path", {
+			length: 500,
+		}),
+		signedSpecialOrderHash: varchar("signed_special_order_hash", {
 			length: 64,
 		}),
 		institutionalApprovedAt: timestamp("institutional_approved_at", {

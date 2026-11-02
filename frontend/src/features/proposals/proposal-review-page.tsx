@@ -118,7 +118,9 @@ export function ProposalReviewPage({
 		activeAttachmentId === INSTITUTIONAL_APPROVAL_DOCUMENT_ID &&
 		data?.institutionalApprovalDocUrl
 			? { id: undefined, url: data.institutionalApprovalDocUrl }
-			: selectedAttachment?.documentType === "Terminal Report"
+			: selectedAttachment &&
+					selectedAttachment.documentType !== "Proposal" &&
+					selectedAttachment.documentType !== "Special Orders"
 				? { id: undefined, url: selectedAttachment.url }
 				: selectedAttachment;
 	const userRole = user?.roleName ?? "";
@@ -311,6 +313,7 @@ export function ProposalReviewPage({
 					isDownloading={isDownloading}
 					onDownloadAnnotated={handleDownloadAnnotated}
 					isDirector={isDirector}
+					hasSignedSpecialOrder={!!data.signedSpecialOrderDocPath}
 				/>
 
 				<div className="bg-card border border-border rounded-xl p-6 shadow-sm">

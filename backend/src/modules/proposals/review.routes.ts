@@ -11,14 +11,25 @@ import {
 import { ErrorSchema, MessageSchema } from "@/lib/schemas.js";
 import { PROPOSAL_STATUS, ROLE_NAMES } from "@/lib/types.js";
 import type { AuthEnv } from "@/middleware/auth.js";
+import { requireRole } from "@/middleware/rbac.js";
 import { ParamId, ReviewProposalSchema } from "./proposals.schema.js";
 import {
 	getLeaderUserId,
 	processReview,
 	recordInstitutionalApproval,
+	recordSignedSpecialOrder,
 } from "./proposals.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
+
+app.use(
+	"/proposals/:id/institutional-approval",
+	requireRole(ROLE_NAMES.DIRECTOR),
+);
+app.use(
+	"/proposals/:id/signed-special-order",
+	requireRole(ROLE_NAMES.DIRECTOR),
+);
 
 // ── POST /proposals/:id/review ──
 const reviewRoute = createRoute({
@@ -146,9 +157,9 @@ const institutionalApprovalRoute = createRoute({
 	method: "post",
 	path: "/proposals/{id}/institutional-approval",
 	tags: ["Proposals"],
-	summary: "Upload signed institutional approval scan (Director only)",
+	summary: "Upload signed proposal and Special Order scans (Director only)",
 	description:
-		"DFD Process 6.4: Records the Director's uploaded scan of the institutionally signed proposal, finalizing the proposal as institutionally approved.",
+		"Records both signed scans before finalizing the proposal as institutionally approved.",
 	security: [{ Bearer: [] }],
 	request: {
 		params: ParamId,
@@ -172,7 +183,7 @@ const institutionalApprovalRoute = createRoute({
 		},
 		422: {
 			content: { "application/json": { schema: ErrorSchema } },
-			description: "Invalid file type",
+			 description: "Invalid file type",
 		},
 	},
 });
@@ -183,19 +194,89 @@ app.openapi(institutionalApprovalRoute, async (c) => {
 
 	const body = await c.req.parseBody();
 	const file = body.file;
+	const specialOrderFile = body.specialOrderFile;
 
 	if (!(file instanceof File)) {
-		throw new ApiError(400, "MISSING_FILE", "No PDF file uploaded");
+		throw new ApiError(
+			400,
+			"MISSING_FILE",
+			"The signed approved proposal PDF is required",
+		);
 	}
+	if (!(specialOrderFile instanceof File))
+		throw new ApiError(
+			400,
+			"MISSING_SPECIAL_ORDER",
+			"The signed Special Order PDF is required",
+		);
 
 	const result = await recordInstitutionalApproval(
 		user,
 		id,
 		file,
+		specialOrderFile,
 		getClientIp(c),
 	);
 
 	return c.json({ message: result.message }, 200);
+});
+
+const signedSpecialOrderRoute = createRoute({
+	method: "post",
+	path: "/proposals/{id}/signed-special-order",
+	tags: ["Proposals"],
+	summary:
+		"Upload a missing signed Special Order before activation (Director only)",
+	security: [{ Bearer: [] }],
+	request: { params: ParamId },
+	responses: {
+		200: {
+			content: { "application/json": { schema: MessageSchema } },
+			description: "Signed Special Order recorded",
+		},
+		400: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid state or missing file",
+		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Director only",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Proposal not found",
+		},
+		409: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Scan already recorded or proposal changed",
+		},
+		413: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "File too large",
+		},
+		422: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Invalid PDF",
+		},
+	},
+});
+
+app.openapi(signedSpecialOrderRoute, async (c) => {
+	const { id } = c.req.valid("param");
+	const body = await c.req.parseBody();
+	if (!(body.file instanceof File))
+		throw new ApiError(
+			400,
+			"MISSING_FILE",
+			"The signed Special Order PDF is required",
+		);
+	const result = await recordSignedSpecialOrder(
+		c.get("user"),
+		id,
+		body.file,
+		getClientIp(c),
+	);
+	return c.json(result, 200);
 });
 
 export default app;

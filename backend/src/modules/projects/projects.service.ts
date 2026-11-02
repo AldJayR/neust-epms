@@ -214,6 +214,7 @@ export async function getProjectDerivedState(id: string, user: AuthUser) {
 			projectStatus: projects.projectStatus,
 			moaId: projects.moaId,
 			leaderId: leaderMembers.userId,
+			hasInstitutionalScans: sql<boolean>`${proposals.status} = ${PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED} AND ${proposals.institutionalApprovalDocPath} IS NOT NULL AND ${proposals.signedSpecialOrderDocPath} IS NOT NULL`,
 		})
 		.from(projects)
 		.innerJoin(proposals, eq(projects.proposalId, proposals.proposalId))
@@ -256,6 +257,7 @@ export async function getProjectDerivedState(id: string, user: AuthUser) {
 			reportingSchedule: !!milestone,
 			hasReports: !!report,
 			leaderId: row.leaderId ?? undefined,
+			hasInstitutionalScans: row.hasInstitutionalScans,
 		},
 		user,
 	);
@@ -286,6 +288,7 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 			endorsementDocPath: proposals.endorsementDocPath,
 			endorsedAt: proposals.endorsedAt,
 			institutionalApprovalDocPath: proposals.institutionalApprovalDocPath,
+			signedSpecialOrderDocPath: proposals.signedSpecialOrderDocPath,
 			institutionalApprovedAt: proposals.institutionalApprovedAt,
 			signedTerminalReportDocPath: projects.signedTerminalReportDocPath,
 			actualEndDate: projects.actualEndDate,
@@ -558,6 +561,31 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 			.createSignedUrl(row.institutionalApprovalDocPath, 3600);
 		institutionalApprovalDocUrl = signedUrlData?.signedUrl ?? null;
 	}
+	let signedSpecialOrderDocUrl: string | null = null;
+	if (row.signedSpecialOrderDocPath) {
+		const { data } = await supabase.storage
+			.from("documents")
+			.createSignedUrl(row.signedSpecialOrderDocPath, 3600);
+		signedSpecialOrderDocUrl = data?.signedUrl ?? null;
+	}
+	if (institutionalApprovalDocUrl)
+		attachments.push({
+			id: "institutional-approval",
+			name: "Signed Approved Proposal.pdf",
+			type: "pdf",
+			documentType: "Signed Proposal",
+			url: institutionalApprovalDocUrl,
+			version: "Institutional approval",
+		});
+	if (signedSpecialOrderDocUrl)
+		attachments.push({
+			id: "signed-special-order",
+			name: "Signed Special Order.pdf",
+			type: "pdf",
+			documentType: "Signed Special Order",
+			url: signedSpecialOrderDocUrl,
+			version: "Institutional approval",
+		});
 
 	return {
 		id: row.proposalId,
@@ -573,6 +601,8 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 		endorsedAt: row.endorsedAt?.toISOString() ?? null,
 		institutionalApprovalDocPath: row.institutionalApprovalDocPath,
 		institutionalApprovalDocUrl,
+		signedSpecialOrderDocPath: row.signedSpecialOrderDocPath,
+		signedSpecialOrderDocUrl,
 		institutionalApprovedAt: row.institutionalApprovedAt?.toISOString() ?? null,
 		metadata: {
 			leader: {
@@ -839,6 +869,8 @@ export async function activateProject(
 				proposalId: proposals.proposalId,
 				title: proposals.title,
 				status: proposals.status,
+				institutionalApprovalDocPath: proposals.institutionalApprovalDocPath,
+				signedSpecialOrderDocPath: proposals.signedSpecialOrderDocPath,
 			})
 			.from(proposals)
 			.where(
@@ -858,6 +890,16 @@ export async function activateProject(
 				400,
 				"INVALID_STATE",
 				"Proposal must be institutionally approved before project activation",
+			);
+		}
+		if (
+			!proposal.institutionalApprovalDocPath ||
+			!proposal.signedSpecialOrderDocPath
+		) {
+			throw new ApiError(
+				400,
+				"MISSING_SIGNED_DOCUMENTS",
+				"The signed approved proposal and signed Special Order scans are required before activation",
 			);
 		}
 
@@ -1014,6 +1056,9 @@ export async function getProjectReadiness(id: string, user: AuthUser) {
 			.select({
 				status: proposals.status,
 				title: proposals.title,
+				institutionalApprovalDocPath: proposals.institutionalApprovalDocPath,
+				signedSpecialOrderDocPath: proposals.signedSpecialOrderDocPath,
+				institutionalApprovedAt: proposals.institutionalApprovedAt,
 				createdAt: proposals.createdAt,
 				updatedAt: proposals.updatedAt,
 			})
@@ -1044,8 +1089,12 @@ export async function getProjectReadiness(id: string, user: AuthUser) {
 
 	// Check Proposal Approved
 	const isProposalApproved =
-		proposal.status === PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED;
-	const proposalApprovedDate = proposal.updatedAt.toLocaleDateString("en-US", {
+		proposal.status === PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED &&
+		!!proposal.institutionalApprovalDocPath &&
+		!!proposal.signedSpecialOrderDocPath;
+	const proposalApprovedDate = (
+		proposal.institutionalApprovedAt ?? proposal.updatedAt
+	).toLocaleDateString("en-US", {
 		month: "short",
 		day: "numeric",
 		year: "numeric",
@@ -1080,7 +1129,9 @@ export async function getProjectReadiness(id: string, user: AuthUser) {
 			owner: "Director/Admin",
 			details: isProposalApproved
 				? `Proposal approved on ${proposalApprovedDate}`
-				: "Awaiting proposal approval",
+				: proposal.status === PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED
+					? "The signed approved proposal and signed Special Order scans are required before activation"
+					: "Awaiting institutional approval and both signed scans",
 		},
 		{
 			name: "Combined Special Order PDF",

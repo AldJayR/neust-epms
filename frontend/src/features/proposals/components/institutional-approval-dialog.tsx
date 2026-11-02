@@ -15,7 +15,13 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { recordInstitutionalApprovalFn } from "../functions";
+import { Label } from "@/components/ui/label";
+import { pdfFileSchema } from "@/lib/upload-policy";
+import { invalidateWorkflowQueries } from "@/lib/workflow-queries";
+import {
+	recordInstitutionalApprovalFn,
+	recordSignedSpecialOrderFn,
+} from "../functions";
 
 interface InstitutionalApprovalDialogProps {
 	proposalId: string;
@@ -23,6 +29,7 @@ interface InstitutionalApprovalDialogProps {
 	trigger?: React.ReactElement;
 	open?: boolean;
 	onOpenChange?: (open: boolean) => void;
+	signedSpecialOrderOnly?: boolean;
 }
 
 export function InstitutionalApprovalDialog({
@@ -31,9 +38,14 @@ export function InstitutionalApprovalDialog({
 	trigger,
 	open: controlledOpen,
 	onOpenChange: setControlledOpen,
+	signedSpecialOrderOnly = false,
 }: InstitutionalApprovalDialogProps) {
 	const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false);
 	const [file, setFile] = React.useState<File | null>(null);
+	const [specialOrderFile, setSpecialOrderFile] = React.useState<File | null>(
+		null,
+	);
+	const inputId = React.useId();
 
 	const isControlled = controlledOpen !== undefined;
 	const open = isControlled ? controlledOpen : uncontrolledOpen;
@@ -44,90 +56,169 @@ export function InstitutionalApprovalDialog({
 	const queryClient = useQueryClient();
 
 	const mutation = useMutation({
-		mutationFn: async (uploadedFile: File) => {
+		mutationFn: async (uploads: {
+			proposalFile: File | null;
+			specialOrderFile: File;
+		}) => {
 			const formData = new FormData();
 			formData.append("proposalId", proposalId);
-			formData.append("file", uploadedFile);
+			if (signedSpecialOrderOnly) {
+				formData.append("file", uploads.specialOrderFile);
+				return recordSignedSpecialOrderFn({ data: formData });
+			}
+			if (!uploads.proposalFile)
+				throw new Error("Choose the signed approved proposal PDF");
+			formData.append("file", uploads.proposalFile);
+			formData.append("specialOrderFile", uploads.specialOrderFile);
 			return recordInstitutionalApprovalFn({ data: formData });
 		},
-		onSuccess: () => {
-			toast.success("Signed institutional approval document saved.");
-			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-			queryClient.invalidateQueries({
-				queryKey: ["dashboard", "proposals", proposalId],
-			});
-			queryClient.invalidateQueries({ queryKey: ["proposals"] });
-			queryClient.invalidateQueries({ queryKey: ["projects"] });
-			queryClient.invalidateQueries({ queryKey: ["action-center"] });
-			queryClient.invalidateQueries({
-				queryKey: ["project-readiness", proposalId],
-			});
-			queryClient.invalidateQueries({ queryKey: ["project-readiness"] });
+		onSuccess: async () => {
+			toast.success(
+				signedSpecialOrderOnly
+					? "Signed Special Order saved."
+					: "Signed approved proposal and Special Order saved. Institutional approval recorded.",
+			);
+			await invalidateWorkflowQueries(queryClient);
 			setFile(null);
+			setSpecialOrderFile(null);
 			setOpen(false);
 		},
 		onError: (error: Error) => {
 			toast.error(
-				error.message ||
-					"We couldn't upload the signed institutional approval document. Please try again.",
+				error.message || "We couldn't save the signed scans. Please try again.",
 			);
 		},
 	});
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!file) {
-			toast.error("Choose a PDF scan of the signed institutional proposal.");
+		if (mutation.isPending) return;
+		const specialOrder = pdfFileSchema.safeParse(specialOrderFile);
+		if (!specialOrder.success) {
+			toast.error(
+				specialOrder.error.issues[0]?.message ??
+					"Choose the signed Special Order PDF",
+			);
 			return;
 		}
-		mutation.mutate(file);
+		if (!signedSpecialOrderOnly) {
+			const proposal = pdfFileSchema.safeParse(file);
+			if (!proposal.success) {
+				toast.error(
+					proposal.error.issues[0]?.message ??
+						"Choose the signed approved proposal PDF",
+				);
+				return;
+			}
+		}
+		mutation.mutate({
+			proposalFile: file,
+			specialOrderFile: specialOrder.data,
+		});
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
+		<Dialog
+			open={open}
+			onOpenChange={(nextOpen) => {
+				if (mutation.isPending) return;
+				if (!nextOpen) {
+					setFile(null);
+					setSpecialOrderFile(null);
+					mutation.reset();
+				}
+				setOpen(nextOpen);
+			}}
+		>
 			{trigger && <DialogTrigger render={trigger} />}
-			<DialogContent className="sm:max-w-[500px]">
+			<DialogContent
+				className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto"
+				showCloseButton={!mutation.isPending}
+			>
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<FileUp className="size-5 text-primary" />
-						Record Institutional Approval
+						{signedSpecialOrderOnly
+							? "Upload Signed Special Order"
+							: "Record Institutional Approval"}
 					</DialogTitle>
 					<DialogDescription>
-						Upload a PDF scan of the institutionally signed proposal{" "}
+						{signedSpecialOrderOnly
+							? "Upload the missing signed Special Order scan for "
+							: "Upload the approved proposal scan and signed Special Order scan for "}
 						<span className="font-semibold text-foreground">
 							"{proposalTitle}"
 						</span>{" "}
-						to record institutional approval. Activation is still required
-						before work begins.
+						{signedSpecialOrderOnly
+							? "before project activation. The existing institutional approval remains recorded."
+							: "to record institutional approval. Both PDFs are required. Activation is still required before work begins."}
 					</DialogDescription>
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4 py-2">
-					<div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-6 hover:bg-muted/40 transition-colors">
-						<UploadCloud className="size-10 text-muted-foreground mb-2" />
-						<p className="text-sm font-medium text-foreground mb-1">
-							{file ? file.name : "Choose signed approval document (PDF)"}
-						</p>
-						<p className="text-xs text-muted-foreground mb-3">
-							PDF only, up to 50 MB.
+					{!signedSpecialOrderOnly && (
+						<div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-4 hover:bg-muted/40 transition-colors gap-2">
+							<UploadCloud className="size-10 text-muted-foreground mb-2" />
+							<Label
+								htmlFor={`${inputId}-proposal`}
+								className="text-foreground"
+							>
+								Scanned Approved Project Proposal
+							</Label>
+							<p className="text-xs text-muted-foreground mb-3">
+								PDF only, up to 50 MB.
+							</p>
+							<Input
+								id={`${inputId}-proposal`}
+								type="file"
+								accept=".pdf,application/pdf"
+								className="max-w-xs text-xs file:h-6 file:text-xs"
+								onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+								disabled={mutation.isPending}
+								required
+							/>
+						</div>
+					)}
+					<div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-4 gap-2">
+						<Label htmlFor={`${inputId}-so`} className="text-foreground">
+							Scanned Signed Special Order
+						</Label>
+						<p className="text-xs text-muted-foreground">
+							One combined PDF containing all members’ signed Special Order
+							pages. Up to 50 MB.
 						</p>
 						<Input
-							id="institutional-approval-file"
+							id={`${inputId}-so`}
 							type="file"
-							accept=".pdf,application/pdf"
+							accept=".pdf,application/pdf,application/x-pdf"
 							className="max-w-xs text-xs file:h-6 file:text-xs"
-							onChange={(e) => setFile(e.target.files?.[0] ?? null)}
 							disabled={mutation.isPending}
+							required
+							onChange={(event) =>
+								setSpecialOrderFile(event.target.files?.[0] ?? null)
+							}
 						/>
 					</div>
 
 					<DialogFooter className="gap-2 sm:gap-0">
-						<DialogClose render={<Button variant="outline" />}>
+						<DialogClose
+							render={
+								<Button
+									type="button"
+									variant="outline"
+									disabled={mutation.isPending}
+								/>
+							}
+						>
 							Cancel
 						</DialogClose>
 						<BrandButton
 							type="submit"
-							disabled={!file || mutation.isPending}
+							disabled={
+								(!signedSpecialOrderOnly && !file) ||
+								!specialOrderFile ||
+								mutation.isPending
+							}
 							className="gap-2"
 						>
 							{mutation.isPending ? (
@@ -135,6 +226,8 @@ export function InstitutionalApprovalDialog({
 									<Loader2 className="size-4 animate-spin" />
 									Uploading...
 								</>
+							) : signedSpecialOrderOnly ? (
+								"Save signed Special Order"
 							) : (
 								"Record institutional approval"
 							)}

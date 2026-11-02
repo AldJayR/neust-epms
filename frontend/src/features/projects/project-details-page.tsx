@@ -137,6 +137,7 @@ export function ProjectDetailsPage({
 				onActivate={() => setShowActivateWizard(true)}
 				onClose={() => setShowCloseDialog(true)}
 				isDirector={isDirector}
+				hasSignedSpecialOrder={!!data.signedSpecialOrderDocPath}
 			/>
 
 			{(data.status === "Approved" ||

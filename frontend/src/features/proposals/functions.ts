@@ -50,6 +50,7 @@ export const recordInstitutionalApprovalFn = createServerFn({ method: "POST" })
 		}
 		z.uuid().parse(proposalId);
 		pdfFileSchema.parse(file);
+		pdfFileSchema.parse(data.get("specialOrderFile"));
 		return data;
 	})
 	.handler(async ({ data }) => {
@@ -74,6 +75,33 @@ export const recordInstitutionalApprovalFn = createServerFn({ method: "POST" })
 				),
 			);
 		}
+		return (await response.json()) as { message: string };
+	});
+
+export const recordSignedSpecialOrderFn = createServerFn({ method: "POST" })
+	.validator((data: FormData) => {
+		z.uuid().parse(data.get("proposalId"));
+		pdfFileSchema.parse(data.get("file"));
+		return data;
+	})
+	.handler(async ({ data }) => {
+		await authorizeSessionUser("Director");
+		const token = await getValidAccessToken();
+		const response = await fetch(
+			`${API_BASE}/proposals/${data.get("proposalId")}/signed-special-order`,
+			{
+				method: "POST",
+				headers: { Authorization: `Bearer ${token}` },
+				body: data,
+			},
+		);
+		if (!response.ok)
+			throw new Error(
+				await getErrorMessage(
+					response,
+					"Failed to record the signed Special Order",
+				),
+			);
 		return (await response.json()) as { message: string };
 	});
 

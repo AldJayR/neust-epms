@@ -26,6 +26,7 @@ interface ProjectDetailsHeaderProps {
 	activateReady: boolean;
 	statusDescription?: { explanation: string; nextStep: string } | null;
 	isDirector?: boolean;
+	hasSignedSpecialOrder?: boolean;
 	onEdit: () => void;
 	onActivate: () => void;
 	onClose: () => void;
@@ -42,6 +43,7 @@ export function ProjectDetailsHeader({
 	activateReady,
 	statusDescription,
 	isDirector,
+	hasSignedSpecialOrder,
 	onEdit,
 	onActivate,
 	onClose,
@@ -92,6 +94,21 @@ export function ProjectDetailsHeader({
 								}
 							/>
 						)}
+						{isDirector &&
+							status === "Institutionally Approved" &&
+							hasSignedSpecialOrder === false && (
+								<InstitutionalApprovalDialog
+									proposalId={proposalId}
+									proposalTitle={title}
+									signedSpecialOrderOnly
+									trigger={
+										<BrandButton type="button" className="h-9 gap-2 text-sm">
+											<FileUp className="size-4" />
+											Upload Signed Special Order
+										</BrandButton>
+									}
+								/>
+							)}
 						{isAllowedToReadProposal ? (
 							<BrandButton
 								nativeButton={false}

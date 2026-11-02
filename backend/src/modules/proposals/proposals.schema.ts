@@ -39,6 +39,7 @@ export const ProposalSchema = z
 		endorsementDocPath: z.string().nullable().optional(),
 		endorsedAt: z.string().nullable().optional(),
 		institutionalApprovalDocPath: z.string().nullable().optional(),
+		signedSpecialOrderDocPath: z.string().nullable().optional(),
 		institutionalApprovedAt: z.string().nullable().optional(),
 		targetStartDate: z.string().nullable().optional(),
 		targetEndDate: z.string().nullable().optional(),

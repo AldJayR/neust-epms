@@ -26,6 +26,7 @@ interface ProposalReviewHeaderProps {
 	isDownloading: boolean;
 	onDownloadAnnotated: () => Promise<void>;
 	isDirector?: boolean;
+	hasSignedSpecialOrder?: boolean;
 }
 
 export function ProposalReviewHeader({
@@ -36,6 +37,7 @@ export function ProposalReviewHeader({
 	isDownloading,
 	onDownloadAnnotated,
 	isDirector,
+	hasSignedSpecialOrder,
 }: ProposalReviewHeaderProps) {
 	return (
 		<>
@@ -90,6 +92,21 @@ export function ProposalReviewHeader({
 							}
 						/>
 					)}
+					{isDirector &&
+						status === "Institutionally Approved" &&
+						hasSignedSpecialOrder === false && (
+							<InstitutionalApprovalDialog
+								proposalId={proposalId}
+								proposalTitle={title}
+								signedSpecialOrderOnly
+								trigger={
+									<BrandButton type="button" className="h-9 gap-2 text-sm">
+										<FileUp className="size-4" />
+										Upload Signed Special Order
+									</BrandButton>
+								}
+							/>
+						)}
 					{currentDocument && (
 						<div className="flex items-center">
 							<BrandButton

@@ -76,6 +76,8 @@ export const ProjectDetailsSchema = z.object({
 	status: z.string(),
 	version: z.string(),
 	bypassedRetChair: z.boolean(),
+	signedSpecialOrderDocPath: z.string().nullable().optional(),
+	signedSpecialOrderDocUrl: z.string().nullable().optional(),
 	metadata: z.object({
 		leader: z.object({
 			name: z.string(),

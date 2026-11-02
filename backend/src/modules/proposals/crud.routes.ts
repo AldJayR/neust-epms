@@ -291,6 +291,7 @@ app.openapi(getRoute, async (c) => {
 			endorsementDocPath: proposals.endorsementDocPath,
 			endorsedAt: proposals.endorsedAt,
 			institutionalApprovalDocPath: proposals.institutionalApprovalDocPath,
+			signedSpecialOrderDocPath: proposals.signedSpecialOrderDocPath,
 			institutionalApprovedAt: proposals.institutionalApprovedAt,
 			targetStartDate: proposals.targetStartDate,
 			targetEndDate: proposals.targetEndDate,

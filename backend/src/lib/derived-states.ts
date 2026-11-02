@@ -152,6 +152,7 @@ export function deriveProjectState(
 		hasReports?: boolean | undefined;
 		reportingSchedule?: boolean | undefined;
 		leaderId?: string | null | undefined;
+		hasInstitutionalScans?: boolean | undefined;
 	},
 	user: AuthUser,
 ): DerivedState {
@@ -178,6 +179,10 @@ export function deriveProjectState(
 
 	if (projectStatus === PROJECT_STATUS.APPROVED) {
 		const blockers: string[] = [];
+		if (project.hasInstitutionalScans === false)
+			blockers.push(
+				"Institutional approval and both signed scans must be recorded",
+			);
 		if (!project.moaId) blockers.push("Valid MOA not assigned");
 		if (!project.reportingSchedule) blockers.push("Report due dates not set");
 

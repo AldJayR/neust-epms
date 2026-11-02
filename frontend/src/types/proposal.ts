@@ -17,6 +17,7 @@ export interface ProposalItem {
 	endorsementDocPath?: string | null;
 	endorsedAt?: string | null;
 	institutionalApprovalDocPath?: string | null;
+	signedSpecialOrderDocPath?: string | null;
 	institutionalApprovedAt?: string | null;
 	targetStartDate?: string | null;
 	targetEndDate?: string | null;

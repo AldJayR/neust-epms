@@ -9,7 +9,13 @@ import { isDeniedAccess } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/proposals/$proposalId")({
 	validateSearch: z.object({
-		documentId: z.uuid().optional().catch(undefined),
+		documentId: z
+			.union([
+				z.uuid(),
+				z.enum(["institutional-approval", "signed-special-order"]),
+			])
+			.optional()
+			.catch(undefined),
 	}),
 	beforeLoad: ({ context }) => {
 		if (isDeniedAccess(context.auth.user, "Director", "RET Chair", "Faculty")) {

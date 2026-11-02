@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toStableDate } from "@/lib/utils";
 import {
 	INSTITUTIONAL_APPROVAL_DOCUMENT_ID,
+	SIGNED_SPECIAL_ORDER_DOCUMENT_ID,
 	useProposalReview,
 } from "./proposal-review-context";
 
@@ -190,12 +191,27 @@ export function ProposalDetailsTab() {
 									className="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline cursor-pointer text-left"
 								>
 									<FileText className="size-3.5" />
-									View Institutional Approval Document (PDF)
+									View Signed Approved Proposal (PDF)
 								</button>
 								{activeAttachmentId === INSTITUTIONAL_APPROVAL_DOCUMENT_ID && (
 									<p className="text-2xs text-muted-foreground">
 										Currently Viewing
 									</p>
+								)}
+								{data.signedSpecialOrderDocUrl && (
+									<button
+										type="button"
+										onClick={() =>
+											setActiveAttachmentId(SIGNED_SPECIAL_ORDER_DOCUMENT_ID)
+										}
+										aria-pressed={
+											activeAttachmentId === SIGNED_SPECIAL_ORDER_DOCUMENT_ID
+										}
+										className="mt-2 flex items-center gap-1.5 text-xs text-primary font-medium hover:underline cursor-pointer text-left"
+									>
+										<FileText className="size-3.5" />
+										View Signed Special Order (PDF)
+									</button>
 								)}
 							</div>
 						</div>

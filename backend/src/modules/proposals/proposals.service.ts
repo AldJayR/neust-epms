@@ -6,6 +6,7 @@ import {
 	eq,
 	ilike,
 	inArray,
+	isNotNull,
 	isNull,
 	notInArray,
 	or,
@@ -42,8 +43,13 @@ import {
 	isProjectLeader,
 	PROJECT_LEADER_ROLE,
 } from "@/services/auth-user.service.js";
-import { isPdfFile, sanitizeFilename } from "@/services/file.service.js";
+import {
+	isPdfFile,
+	MAX_PDF_UPLOAD_BYTES,
+	sanitizeFilename,
+} from "@/services/file.service.js";
 import { hashFileSha256 } from "@/services/file-integrity.service.js";
+import { removeStorageObject } from "@/services/storage-cleanup.service.js";
 import { validateBannerProgramForProposal } from "../banner-programs/banner-programs.service.js";
 import type { SectorSelection } from "../beneficiary-sectors/beneficiary-sectors.schema.js";
 import { synchronizeProposalSectors } from "../beneficiary-sectors/beneficiary-sectors.service.js";
@@ -86,34 +92,6 @@ export async function checkDuplicateTitle(title: string): Promise<boolean> {
 }
 
 type ProposalTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-async function commitUploadedDocument<T>(
-	storagePath: string,
-	operation: (tx: ProposalTransaction) => Promise<T>,
-): Promise<T> {
-	try {
-		return await db.transaction(operation);
-	} catch (error) {
-		try {
-			const { error: cleanupError } = await supabase.storage
-				.from("documents")
-				.remove([storagePath]);
-			if (cleanupError)
-				console.error(
-					"[upload] Failed to clean up uncommitted proposal scan:",
-					storagePath,
-					cleanupError,
-				);
-		} catch (cleanupError) {
-			console.error(
-				"[upload] Failed to clean up uncommitted proposal scan:",
-				storagePath,
-				cleanupError,
-			);
-		}
-		throw error;
-	}
-}
 
 type ProposalMemberInput = {
 	userId: string;
@@ -1086,6 +1064,7 @@ export async function recordInstitutionalApproval(
 	user: AuthUser,
 	proposalId: string,
 	file: File,
+	specialOrderFile: File,
 	ipAddress: string,
 ) {
 	if (user.roleName !== ROLE_NAMES.DIRECTOR) {
@@ -1120,93 +1099,89 @@ export async function recordInstitutionalApproval(
 		);
 	}
 
-	if (!(await isPdfFile(file))) {
-		throw new ApiError(
-			422,
-			"INVALID_FILE_TYPE",
-			"The uploaded file must be a valid PDF document",
+	await validateSignedScan(file, "Signed approved proposal");
+	await validateSignedScan(specialOrderFile, "Signed Special Order");
+	const uploadedPaths: string[] = [];
+	let proposalScan: { storagePath: string; contentHash: string };
+	try {
+		proposalScan = await uploadSignedScan(
+			proposalId,
+			file,
+			"institutional_approval",
+			uploadedPaths,
 		);
-	}
-
-	const sanitizedFilename = sanitizeFilename(file.name);
-	const storagePath = `proposals/${proposalId}/institutional_approval_${Date.now()}_${randomUUID()}_${sanitizedFilename}`;
-	const contentHash = await hashFileSha256(file);
-
-	const { error: uploadError } = await supabase.storage
-		.from("documents")
-		.upload(storagePath, file, {
-			contentType: file.type,
-			upsert: false,
-		});
-
-	if (uploadError) {
-		console.error(
-			"[upload] Institutional approval document upload failed:",
-			uploadError,
+		const specialOrderScan = await uploadSignedScan(
+			proposalId,
+			specialOrderFile,
+			"signed_special_order",
+			uploadedPaths,
 		);
-		throw new ApiError(
-			400,
-			"UPLOAD_FAILED",
-			"We couldn't upload the signed institutional approval document. Please try again.",
-		);
-	}
-
-	await commitUploadedDocument(storagePath, async (tx) => {
-		const [updated] = await tx
-			.update(proposals)
-			.set({
-				status: PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED,
-				institutionalApprovalDocPath: storagePath,
-				institutionalApprovalHash: contentHash,
-				institutionalApprovedAt: new Date(),
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(proposals.proposalId, proposalId),
-					eq(proposals.status, PROPOSAL_STATUS.APPROVED),
-					isNull(proposals.archivedAt),
-				),
-			)
-			.returning();
-
-		if (!updated) {
-			throw new ApiError(
-				400,
-				"INVALID_STATE",
-				"The approval document wasn't saved because the proposal changed. Reload it and try again.",
-			);
-		}
-
-		const [existingProject] = await tx
-			.select({ projectId: projects.projectId })
-			.from(projects)
-			.where(eq(projects.proposalId, proposalId))
-			.limit(1);
-
-		if (!existingProject) {
-			await tx.insert(projects).values({
-				proposalId: proposalId,
-				projectStatus: PROJECT_STATUS.APPROVED,
-			});
-		}
-
-		await insertAuditLog(
-			{
-				userId: user.userId,
-				action: `Recorded institutional approval for proposal ${proposalId}`,
-				tableAffected: "proposals",
-				oldValue: { status: PROPOSAL_STATUS.APPROVED },
-				newValue: {
+		await db.transaction(async (tx) => {
+			const [updated] = await tx
+				.update(proposals)
+				.set({
 					status: PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED,
-					storagePath,
-					contentHash,
+					institutionalApprovalDocPath: proposalScan.storagePath,
+					institutionalApprovalHash: proposalScan.contentHash,
+					signedSpecialOrderDocPath: specialOrderScan.storagePath,
+					signedSpecialOrderHash: specialOrderScan.contentHash,
+					institutionalApprovedAt: new Date(),
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(proposals.proposalId, proposalId),
+						eq(proposals.status, PROPOSAL_STATUS.APPROVED),
+						isNull(proposals.archivedAt),
+					),
+				)
+				.returning();
+
+			if (!updated) {
+				throw new ApiError(
+					400,
+					"INVALID_STATE",
+					"The signed documents weren't saved because the proposal changed. Reload it and try again.",
+				);
+			}
+
+			const [existingProject] = await tx
+				.select({ projectId: projects.projectId })
+				.from(projects)
+				.where(eq(projects.proposalId, proposalId))
+				.limit(1);
+
+			if (!existingProject) {
+				await tx.insert(projects).values({
+					proposalId: proposalId,
+					projectStatus: PROJECT_STATUS.APPROVED,
+				});
+			}
+
+			await insertAuditLog(
+				{
+					userId: user.userId,
+					action: `Recorded institutional approval for proposal ${proposalId}`,
+					tableAffected: "proposals",
+					oldValue: { status: PROPOSAL_STATUS.APPROVED },
+					newValue: {
+						status: PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED,
+						institutionalApprovalDocPath: proposalScan.storagePath,
+						institutionalApprovalHash: proposalScan.contentHash,
+						signedSpecialOrderDocPath: specialOrderScan.storagePath,
+						signedSpecialOrderHash: specialOrderScan.contentHash,
+					},
+					ipAddress,
 				},
-				ipAddress,
-			},
-			tx,
+				tx,
+			);
+		});
+	} catch (error) {
+		await Promise.all(
+			uploadedPaths.map((path) => removeStorageObject("documents", path)),
 		);
-	});
+		throw error;
+	}
 
 	const leaderUserId = await getLeaderUserId(proposalId).catch((error) => {
 		console.error("[notification] Failed to resolve proposal leader:", error);
@@ -1217,7 +1192,7 @@ export async function recordInstitutionalApproval(
 			recipientId: leaderUserId,
 			type: "proposal",
 			title: "Institutional Approval Recorded",
-			message: `Your proposal "${proposal.title}" has received final institutional approval and is now ready for project activation.`,
+			message: `Your proposal "${proposal.title}" has received final institutional approval. The signed proposal and Special Order scans are recorded and it is now ready for project activation.`,
 			sendEmail: true,
 		}).catch((err) => {
 			console.error(
@@ -1231,6 +1206,175 @@ export async function recordInstitutionalApproval(
 		message: "Institutional approval recorded successfully",
 		proposalId,
 		status: PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED,
-		storagePath,
+		storagePath: proposalScan.storagePath,
 	};
+}
+
+async function validateSignedScan(file: File, label: string) {
+	if (!(file instanceof File) || file.size === 0) {
+		throw new ApiError(400, "MISSING_FILE", `${label} PDF scan is required`);
+	}
+	if (file.size > MAX_PDF_UPLOAD_BYTES) {
+		throw new ApiError(
+			413,
+			"FILE_TOO_LARGE",
+			`${label} must be 50 MB or smaller`,
+		);
+	}
+	if (!(await isPdfFile(file))) {
+		throw new ApiError(
+			422,
+			"INVALID_FILE_TYPE",
+			`${label} must be a valid PDF`,
+		);
+	}
+}
+
+async function uploadSignedScan(
+	proposalId: string,
+	file: File,
+	prefix: string,
+	uploadedPaths: string[],
+) {
+	const storagePath = `proposals/${proposalId}/${prefix}_${randomUUID()}_${sanitizeFilename(file.name)}`;
+	const contentHash = await hashFileSha256(file);
+	uploadedPaths.push(storagePath);
+	const { error } = await supabase.storage
+		.from("documents")
+		.upload(storagePath, file, {
+			contentType: "application/pdf",
+			upsert: false,
+		});
+	if (error)
+		throw new ApiError(
+			400,
+			"UPLOAD_FAILED",
+			"Unable to upload the signed documents. Please try again.",
+		);
+	return { storagePath, contentHash };
+}
+
+/** Complete a legacy institutional approval without repeating the approval or changing active projects. */
+export async function recordSignedSpecialOrder(
+	user: AuthUser,
+	proposalId: string,
+	file: File,
+	ipAddress: string,
+) {
+	if (user.roleName !== ROLE_NAMES.DIRECTOR)
+		throw new ApiError(
+			403,
+			"FORBIDDEN",
+			"Only the Director can record a signed Special Order",
+		);
+	const [proposal] = await db
+		.select()
+		.from(proposals)
+		.where(
+			and(eq(proposals.proposalId, proposalId), isNull(proposals.archivedAt)),
+		)
+		.limit(1);
+	if (!proposal) throw new ApiError(404, "NOT_FOUND", "Proposal not found");
+	if (
+		proposal.status !== PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED ||
+		!proposal.institutionalApprovalDocPath
+	) {
+		throw new ApiError(
+			400,
+			"INVALID_STATE",
+			"Record institutional approval and the signed proposal first",
+		);
+	}
+	if (proposal.signedSpecialOrderDocPath)
+		throw new ApiError(
+			409,
+			"ALREADY_RECORDED",
+			"The signed Special Order is already recorded",
+		);
+	const [existingProject] = await db
+		.select({ status: projects.projectStatus })
+		.from(projects)
+		.where(
+			and(eq(projects.proposalId, proposalId), isNull(projects.archivedAt)),
+		)
+		.limit(1);
+	if (existingProject?.status !== PROJECT_STATUS.APPROVED) {
+		throw new ApiError(
+			400,
+			"INVALID_STATE",
+			"Signed Special Orders can only be added before project activation",
+		);
+	}
+	await validateSignedScan(file, "Signed Special Order");
+	const uploadedPaths: string[] = [];
+	try {
+		const scan = await uploadSignedScan(
+			proposalId,
+			file,
+			"signed_special_order",
+			uploadedPaths,
+		);
+		await db.transaction(async (tx) => {
+			// Use the same project -> proposal lock order as activation.
+			const [project] = await tx
+				.select()
+				.from(projects)
+				.where(eq(projects.proposalId, proposalId))
+				.for("update")
+				.limit(1);
+			if (
+				!project ||
+				project.archivedAt ||
+				project.projectStatus !== PROJECT_STATUS.APPROVED
+			) {
+				throw new ApiError(
+					400,
+					"INVALID_STATE",
+					"Signed Special Orders can only be added before project activation",
+				);
+			}
+			const [updated] = await tx
+				.update(proposals)
+				.set({
+					signedSpecialOrderDocPath: scan.storagePath,
+					signedSpecialOrderHash: scan.contentHash,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(proposals.proposalId, proposalId),
+						eq(proposals.status, PROPOSAL_STATUS.INSTITUTIONALLY_APPROVED),
+						isNull(proposals.archivedAt),
+						isNull(proposals.signedSpecialOrderDocPath),
+						isNotNull(proposals.institutionalApprovalDocPath),
+					),
+				)
+				.returning({ proposalId: proposals.proposalId });
+			if (!updated)
+				throw new ApiError(
+					409,
+					"UPDATE_CONFLICT",
+					"The proposal changed. Reload it and try again.",
+				);
+			await insertAuditLog(
+				{
+					userId: user.userId,
+					action: `Recorded signed Special Order for proposal ${proposalId}`,
+					tableAffected: "proposals",
+					newValue: {
+						signedSpecialOrderDocPath: scan.storagePath,
+						signedSpecialOrderHash: scan.contentHash,
+					},
+					ipAddress,
+				},
+				tx,
+			);
+		});
+	} catch (error) {
+		await Promise.all(
+			uploadedPaths.map((path) => removeStorageObject("documents", path)),
+		);
+		throw error;
+	}
+	return { message: "Signed Special Order recorded successfully" };
 }
