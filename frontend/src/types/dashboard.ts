@@ -70,6 +70,7 @@ export interface DirectorOverviewResponse {
 	departmentOptions: { id: number; name: string }[];
 	proposalStages: { status: string; count: number }[];
 	faculty: DirectorFacultyCounts;
+	progressReports: { due: number; submitted: number; overdue: number };
 	chartMonths: string[];
 	chartData: DirectorChartPoint[];
 }

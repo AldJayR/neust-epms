@@ -52,6 +52,11 @@ export const DirectorOverviewSchema = z.object({
 	departmentOptions: z.array(z.object({ id: z.number(), name: z.string() })),
 	proposalStages: z.array(z.object({ status: z.string(), count: z.number() })),
 	faculty: FacultyCountsSchema,
+	progressReports: z.object({
+		due: z.number(),
+		submitted: z.number(),
+		overdue: z.number(),
+	}),
 	chartMonths: z.array(z.string()),
 	chartData: z.array(
 		z.object({

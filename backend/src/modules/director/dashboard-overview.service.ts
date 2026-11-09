@@ -47,6 +47,7 @@ import {
 	REVIEW_STAGE,
 } from "@/lib/types.js";
 import { getPeriodChart } from "../dashboard/dashboard.service.js";
+import { PROGRESS_REPORT_TYPES } from "../reports/report-metrics.js";
 import { terminalPackageMissingRequirements } from "../reports/terminal-package-requirements.js";
 import type {
 	OverviewQuerySchema,
@@ -71,6 +72,7 @@ export async function getDirectorOverview(
 	user: AuthUser,
 	query: OverviewQuery,
 ) {
+	const now = new Date();
 	const scope: SQL[] = [
 		isNull(proposals.archivedAt),
 		isNull(projects.archivedAt),
@@ -120,6 +122,7 @@ export async function getDirectorOverview(
 		departmentCatalog,
 		affiliations,
 		chartData,
+		progressReportRows,
 	] = await Promise.all([
 		db
 			.select({
@@ -181,6 +184,26 @@ export async function getDirectorOverview(
 			campusId: query.campusId,
 			departmentId: query.departmentId,
 		}),
+		db
+			.select({
+				due: sql<number>`count(*)::int`,
+				submitted: sql<number>`count(*) FILTER (WHERE ${projectReportingMilestones.completedAt} IS NOT NULL)::int`,
+				overdue: sql<number>`count(*) FILTER (WHERE ${projectReportingMilestones.completedAt} IS NULL AND ${projectReportingMilestones.dueAt} < ${now.toISOString()})::int`,
+			})
+			.from(projectReportingMilestones)
+			.innerJoin(
+				projects,
+				eq(projects.projectId, projectReportingMilestones.projectId),
+			)
+			.innerJoin(proposals, eq(proposals.proposalId, projects.proposalId))
+			.where(
+				and(
+					...scope,
+					inArray(projectReportingMilestones.reportType, [
+						...PROGRESS_REPORT_TYPES,
+					]),
+				),
+			),
 	]);
 	const emptyCounts = {
 		totalProjects: 0,
@@ -296,6 +319,11 @@ export async function getDirectorOverview(
 			(_, index) => `${query.year}-${String(index + 1).padStart(2, "0")}`,
 		),
 		chartData,
+		progressReports: progressReportRows[0] ?? {
+			due: 0,
+			submitted: 0,
+			overdue: 0,
+		},
 	};
 }
 

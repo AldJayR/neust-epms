@@ -237,7 +237,7 @@ export function InstitutionalOverview({
 								retrying={query.isFetching}
 							/>
 						)}
-						<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
 							{[
 								{
 									label: "Total Projects",
@@ -285,6 +285,16 @@ export function InstitutionalOverview({
 									</p>
 								</div>
 							))}
+							<div className="space-y-2">
+								<MetricCard
+									label="Progress Reports Submitted"
+									value={data.progressReports.submitted.toLocaleString()}
+								/>
+								<p className="px-1 text-xs text-muted-foreground">
+									{data.progressReports.due} due ·{" "}
+									{data.progressReports.overdue} overdue
+								</p>
+							</div>
 						</div>
 						<CollegeCampusProjectBreakdown
 							units={data.units}
