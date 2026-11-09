@@ -101,12 +101,7 @@ export async function finalizeTerminalPackage(
 		)
 	)
 		return false;
-	await assertReportSubmissionAccess(
-		user,
-		project.proposalId,
-		report.reportType,
-		tx,
-	);
+	await assertReportSubmissionAccess(user, project.proposalId, tx);
 	const completedAt = new Date();
 	await tx
 		.update(projectReports)

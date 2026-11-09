@@ -285,7 +285,7 @@ export async function createReport(
 			"Reports can only be submitted for ongoing or overdue projects",
 		);
 	}
-	await assertReportSubmissionAccess(user, milestone.proposalId, reportType);
+	await assertReportSubmissionAccess(user, milestone.proposalId);
 	const isValidReportType =
 		((milestone.reportType === REPORT_TYPE.PROGRESS ||
 			milestone.reportType === REPORT_TYPE.PROGRESS_REPORT) &&
@@ -389,12 +389,7 @@ export async function createReport(
 				"INVALID_STATE",
 				"This project is no longer accepting reports",
 			);
-		await assertReportSubmissionAccess(
-			user,
-			milestone.proposalId,
-			reportType,
-			tx,
-		);
+		await assertReportSubmissionAccess(user, milestone.proposalId, tx);
 		let saved: typeof projectReports.$inferSelect;
 		if (existing) {
 			const [current] = await tx
@@ -534,11 +529,7 @@ export async function uploadReportDocument(
 		.limit(1);
 
 	if (!report) throw new ApiError(404, "NOT_FOUND", "Report not found");
-	await assertReportSubmissionAccess(
-		user,
-		report.proposalId,
-		report.reportType,
-	);
+	await assertReportSubmissionAccess(user, report.proposalId);
 	if (report.submittedById !== user.userId) {
 		throw new ApiError(
 			403,
@@ -603,12 +594,7 @@ export async function uploadReportDocument(
 			if (!current) {
 				throw new ApiError(404, "NOT_FOUND", "Report not found");
 			}
-			await assertReportSubmissionAccess(
-				user,
-				current.proposalId,
-				current.reportType,
-				tx,
-			);
+			await assertReportSubmissionAccess(user, current.proposalId, tx);
 			if (current.submittedById !== user.userId) {
 				throw new ApiError(
 					403,
@@ -930,11 +916,7 @@ export async function uploadReportAttachment(
 		throw new ApiError(404, "NOT_FOUND", "Report not found");
 	}
 
-	await assertReportSubmissionAccess(
-		user,
-		report.proposalId,
-		report.reportType,
-	);
+	await assertReportSubmissionAccess(user, report.proposalId);
 	if (
 		![
 			PROJECT_STATUS.ONGOING,
@@ -1012,12 +994,7 @@ export async function uploadReportAttachment(
 				)
 			)
 				throw new ApiError(400, "INVALID_STATE", "Project is completed");
-			await assertReportSubmissionAccess(
-				user,
-				parent.proposalId,
-				report.reportType,
-				tx,
-			);
+			await assertReportSubmissionAccess(user, parent.proposalId, tx);
 			const [existing] = await tx
 				.select()
 				.from(reportAttachments)

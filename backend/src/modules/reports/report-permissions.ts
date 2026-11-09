@@ -4,13 +4,11 @@ import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { ApiError } from "@/lib/errors.js";
 import type { AuthUser } from "@/lib/types.js";
 import { PROJECT_LEADER_ROLE } from "@/services/auth-user.service.js";
-import { TERMINAL_REPORT_TYPES } from "./report-metrics.js";
 
-/** Terminal packages are leader-owned; progress reports retain member access. */
+/** All report uploads are leader-owned. */
 export async function assertReportSubmissionAccess(
 	user: AuthUser,
 	proposalId: string,
-	reportType: string,
 	executor: Pick<typeof db, "select"> = db,
 ) {
 	const [membership] = await executor
@@ -31,14 +29,11 @@ export async function assertReportSubmissionAccess(
 			"Only project members can submit reports for this project",
 		);
 	}
-	if (
-		TERMINAL_REPORT_TYPES.some((type) => type === reportType) &&
-		membership.projectRole !== PROJECT_LEADER_ROLE
-	) {
+	if (membership.projectRole !== PROJECT_LEADER_ROLE) {
 		throw new ApiError(
 			403,
 			"NOT_LEADER",
-			"Only the Project Leader can submit the terminal report and completion documents.",
+			"Only the Project Leader can submit reports for this project.",
 		);
 	}
 }
