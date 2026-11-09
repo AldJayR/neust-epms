@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useCallback } from "react";
 import { z } from "zod";
 import { PageSkeleton } from "@/components/custom/page-skeleton";
 import { directorDashboardQueryOptions } from "@/features/dashboard";
@@ -129,17 +130,20 @@ function ProjectsIndexPage() {
 		});
 	};
 
-	const handleCollegeChange = (newCollege: string) => {
-		navigate({
-			search: (old) => ({
-				...old,
-				college:
-					newCollege === "Unassigned" ? undefined : newCollege || undefined,
-				departmentId: newCollege === "Unassigned" ? 0 : undefined,
-				page: 1,
-			}),
-		});
-	};
+	const handleCollegeChange = useCallback(
+		(newCollege: string) => {
+			navigate({
+				search: (old) => ({
+					...old,
+					college:
+						newCollege === "Unassigned" ? undefined : newCollege || undefined,
+					departmentId: newCollege === "Unassigned" ? 0 : undefined,
+					page: 1,
+				}),
+			});
+		},
+		[navigate],
+	);
 
 	const handleStatusChange = (newStatus: string) => {
 		navigate({
@@ -185,6 +189,17 @@ function ProjectsIndexPage() {
 				onSearchChange={handleSearch}
 				onCollegeChange={handleCollegeChange}
 				onStatusChange={handleStatusChange}
+				onCampusChange={(next) =>
+					void navigate({
+						search: (old) => ({
+							...old,
+							campusId: next,
+							departmentId: undefined,
+							college: undefined,
+							page: 1,
+						}),
+					})
+				}
 			/>
 		);
 	}

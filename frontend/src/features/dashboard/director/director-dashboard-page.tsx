@@ -13,58 +13,7 @@ import {
 } from "./components/dashboard-feedback";
 import { DirectorDecisionsPanel } from "./components/director-decisions-panel";
 import { InstitutionalOverview } from "./components/institutional-overview";
-
-function RecentActivitiesCard({
-	activities,
-}: {
-	activities: { title: string; description: string; time: string }[];
-}) {
-	return (
-		<PageCard className="flex min-h-[300px] max-h-[370px] flex-col">
-			<div className="flex items-center justify-between px-4 py-2 text-muted-foreground">
-				<h2 className="text-sm font-semibold leading-5 text-heading">
-					Your Recent Activities
-				</h2>
-			</div>
-			<ul className="flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
-				{activities.length > 0 ? (
-					activities.map((activity) => (
-						<li
-							key={`${activity.title}-${activity.time}`}
-							className="border-t border-border p-4"
-						>
-							<div className="flex flex-col gap-3">
-								<div className="flex flex-col gap-1">
-									<div className="flex items-center gap-1.5">
-										<span
-											className="size-2 shrink-0 rounded-full bg-muted-foreground/50"
-											aria-hidden="true"
-										/>
-										<p className="text-sm font-medium leading-5 text-foreground">
-											{activity.title}
-										</p>
-									</div>
-									<p className="text-xs leading-[0.875rem] text-muted-foreground">
-										{activity.description}
-									</p>
-								</div>
-								<p className="text-xs leading-[0.875rem] text-muted-foreground">
-									{activity.time}
-								</p>
-							</div>
-						</li>
-					))
-				) : (
-					<li className="flex flex-1 items-center justify-center px-4">
-						<p className="text-sm text-muted-foreground italic">
-							No recent activities.
-						</p>
-					</li>
-				)}
-			</ul>
-		</PageCard>
-	);
-}
+import { RecentProjectUpdates } from "./components/recent-project-updates";
 
 function ExpiringMoasCard({
 	moas,
@@ -129,7 +78,6 @@ function DirectorDashboardContent({
 	const refreshing = useIsFetching({ queryKey: ["dashboard"] }) > 0;
 	const supportQuery = useQuery(directorDashboardQueryOptions());
 	const dashboard = supportQuery.data;
-	const activities = dashboard?.recentActivities ?? [];
 	const moas = dashboard?.expiringMoas ?? [];
 
 	return (
@@ -170,36 +118,36 @@ function DirectorDashboardContent({
 					availableYears={dashboard?.availableYears}
 				/>
 				<DirectorDecisionsPanel reporting />
-				{supportQuery.isError && !dashboard ? (
-					<DashboardError
-						section="your activities and expiring MOAs"
-						onRetry={() => void supportQuery.refetch()}
-						retrying={supportQuery.isFetching}
-					/>
-				) : supportQuery.isPending ? (
-					<p role="status" className="text-sm text-muted-foreground">
-						Loading activities and MOAs…
-					</p>
-				) : (
-					<div className="space-y-4">
-						<DashboardUpdatedAt
-							timestamp={supportQuery.dataUpdatedAt}
-							refreshing={supportQuery.isFetching}
+				<div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+					<RecentProjectUpdates currentUserId={user?.userId} />
+					{supportQuery.isError && !dashboard ? (
+						<DashboardError
+							section="expiring MOAs"
+							onRetry={() => void supportQuery.refetch()}
+							retrying={supportQuery.isFetching}
 						/>
-						{supportQuery.isError && (
-							<DashboardError
-								section="your activities and expiring MOAs"
-								stale
-								onRetry={() => void supportQuery.refetch()}
-								retrying={supportQuery.isFetching}
+					) : supportQuery.isPending ? (
+						<p role="status" className="text-sm text-muted-foreground">
+							Loading expiring MOAs…
+						</p>
+					) : (
+						<div className="space-y-4">
+							<DashboardUpdatedAt
+								timestamp={supportQuery.dataUpdatedAt}
+								refreshing={supportQuery.isFetching}
 							/>
-						)}
-						<div className="grid items-start gap-5 lg:grid-cols-2">
+							{supportQuery.isError && (
+								<DashboardError
+									section="expiring MOAs"
+									stale
+									onRetry={() => void supportQuery.refetch()}
+									retrying={supportQuery.isFetching}
+								/>
+							)}
 							<ExpiringMoasCard moas={moas} />
-							<RecentActivitiesCard activities={activities} />
 						</div>
-					</div>
-				)}
+					)}
+				</div>
 			</div>
 		</section>
 	);

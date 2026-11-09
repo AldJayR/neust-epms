@@ -16,6 +16,7 @@ import {
 	REPORT_TYPE,
 	ROLE_NAMES,
 } from "@/lib/types.js";
+import { recordProjectMilestone } from "@/services/project-milestones.service.js";
 import { assertReportSubmissionAccess } from "./report-permissions.js";
 import { terminalPackageMissingRequirements } from "./terminal-package-requirements.js";
 
@@ -122,6 +123,13 @@ export async function finalizeTerminalPackage(
 			updatedAt: completedAt,
 		})
 		.where(eq(projects.projectId, report.projectId));
+	await recordProjectMilestone(tx, {
+		proposalId: project.proposalId,
+		kind: "terminal_package_completed",
+		actorId: user.userId,
+		sourceKey: `terminal-package:${report.milestoneId}`,
+		occurredAt: completedAt,
+	});
 	await insertAuditLog(
 		{
 			userId: user.userId,

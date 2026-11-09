@@ -45,6 +45,10 @@ import {
 	projectYearBounds,
 } from "@/lib/project-period.js";
 import {
+	reportingProposalScope,
+	reportingUnitLabel,
+} from "@/lib/reporting-units.js";
+import {
 	type AuthUser,
 	PROJECT_STATUS,
 	PROPOSAL_STATUS,
@@ -181,6 +185,12 @@ export async function getDashboardStats(user: AuthUser, year?: number) {
 		sql`${moas.validUntil} > ${now.toISOString()}`,
 		sql`${moas.validUntil} <= ${twoWeeksFromNow.toISOString()}`,
 	];
+	if (user.roleName === ROLE_NAMES.DIRECTOR) {
+		projectMetricsConditions.push(...reportingProposalScope());
+		underEvalConditions.push(...reportingProposalScope());
+		chartConditions.push(...reportingProposalScope());
+		expiringMoaConditions.push(...reportingProposalScope());
+	}
 
 	if (user.roleName === ROLE_NAMES.RET_CHAIR) {
 		if (user.isMainCampus && user.departmentId !== null) {
@@ -227,18 +237,20 @@ export async function getDashboardStats(user: AuthUser, year?: number) {
 					.innerJoin(campuses, eq(proposals.campusId, campuses.campusId))
 					.where(and(...chartConditions))
 					.groupBy(chartMonth, campuses.campusId, campuses.campusName),
-		db
-			.select({
-				action: auditLogs.action,
-				tableAffected: auditLogs.tableAffected,
-				createdAt: auditLogs.createdAt,
-				actorName: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
-			})
-			.from(auditLogs)
-			.innerJoin(users, eq(auditLogs.userId, users.userId))
-			.where(eq(auditLogs.userId, user.userId))
-			.orderBy(desc(auditLogs.createdAt))
-			.limit(3),
+		user.roleName === ROLE_NAMES.DIRECTOR
+			? Promise.resolve([])
+			: db
+					.select({
+						action: auditLogs.action,
+						tableAffected: auditLogs.tableAffected,
+						createdAt: auditLogs.createdAt,
+						actorName: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
+					})
+					.from(auditLogs)
+					.innerJoin(users, eq(auditLogs.userId, users.userId))
+					.where(eq(auditLogs.userId, user.userId))
+					.orderBy(desc(auditLogs.createdAt))
+					.limit(3),
 		db
 			.select({
 				partnerName: partners.partnerName,
@@ -912,14 +924,18 @@ export async function getHubProjects(
 	];
 	if (query.year !== undefined)
 		whereConditions.push(projectPeriodClause(query.year));
-	if (query.campusId !== undefined)
-		whereConditions.push(eq(proposals.campusId, query.campusId));
-	if (query.departmentId !== undefined)
-		whereConditions.push(
-			query.departmentId === 0
-				? isNull(proposals.departmentId)
-				: eq(proposals.departmentId, query.departmentId),
-		);
+	if (user.roleName === ROLE_NAMES.DIRECTOR)
+		whereConditions.push(...reportingProposalScope(query));
+	else {
+		if (query.campusId !== undefined)
+			whereConditions.push(eq(proposals.campusId, query.campusId));
+		if (query.departmentId !== undefined)
+			whereConditions.push(
+				query.departmentId === 0
+					? isNull(proposals.departmentId)
+					: eq(proposals.departmentId, query.departmentId),
+			);
+	}
 	if (query.kind === "projects")
 		whereConditions.push(isNotNull(projects.projectId));
 
@@ -953,7 +969,7 @@ export async function getHubProjects(
 		);
 	}
 
-	if (college) {
+	if (college && user.roleName !== ROLE_NAMES.DIRECTOR) {
 		whereConditions.push(
 			or(
 				eq(departments.departmentName, college),
@@ -1011,6 +1027,7 @@ export async function getHubProjects(
 			departmentCode: departments.departmentCode,
 			campusName: campuses.campusName,
 			dateSubmitted: proposals.createdAt,
+			unitLabel: reportingUnitLabel(),
 			proposalStatus: proposals.status,
 			projectStatus: projects.projectStatus,
 			lastReportDate: latestReportsSubquery.lastReportDate,
@@ -1059,6 +1076,7 @@ export async function getHubProjects(
 		college: r.college,
 		departmentCode: r.departmentCode ?? null,
 		campusName: r.campusName ?? null,
+		unitLabel: r.unitLabel,
 		dateSubmitted: new Date(r.dateSubmitted).toISOString(),
 		lastReportDate: r.lastReportDate
 			? new Date(r.lastReportDate).toISOString()

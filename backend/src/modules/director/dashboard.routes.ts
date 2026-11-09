@@ -15,6 +15,11 @@ import {
 } from "./dashboard-overview.service.js";
 import { DirectorDashboardSchema } from "./director.schema.js";
 import { getDashboardStats } from "./director.service.js";
+import {
+	MilestonesQuerySchema,
+	MilestonesResponseSchema,
+} from "./milestones.schema.js";
+import { getDirectorMilestones } from "./milestones.service.js";
 
 const app = new OpenAPIHono<AuthEnv>();
 
@@ -44,6 +49,28 @@ app.openapi(dashboardRoute, async (c) => {
 
 app.use("/director/overview", requireRole(ROLE_NAMES.DIRECTOR));
 app.use("/director/work-queues", requireRole(ROLE_NAMES.DIRECTOR));
+app.use("/director/milestones", requireRole(ROLE_NAMES.DIRECTOR));
+
+app.openapi(
+	createRoute({
+		method: "get",
+		path: "/director/milestones",
+		tags: ["Director"],
+		security: [{ Bearer: [] }],
+		request: { query: MilestonesQuerySchema },
+		responses: {
+			200: {
+				content: { "application/json": { schema: MilestonesResponseSchema } },
+				description: "Recent workflow milestones across all project years",
+			},
+		},
+	}),
+	async (c) =>
+		c.json(
+			await getDirectorMilestones(c.get("user"), c.req.valid("query")),
+			200,
+		),
+);
 
 app.openapi(
 	createRoute({

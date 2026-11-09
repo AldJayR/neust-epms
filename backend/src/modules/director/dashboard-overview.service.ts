@@ -12,6 +12,7 @@ import {
 	sql,
 } from "drizzle-orm";
 import { db } from "@/db/client.js";
+import { campuses } from "@/db/schema/campuses.js";
 import { departments } from "@/db/schema/departments.js";
 import { projectReportingMilestones } from "@/db/schema/project-reporting-milestones.js";
 import { projectReports } from "@/db/schema/project-reports.js";
@@ -29,6 +30,13 @@ import {
 	institutionalScansRecorded,
 	submittedSpecialOrderExists,
 } from "@/lib/proposal-readiness.js";
+import {
+	reportingDepartmentId,
+	reportingProposalScope,
+	reportingUnitKey,
+	reportingUnitLabel,
+	visibleReportingCampus,
+} from "@/lib/reporting-units.js";
 import {
 	ATTACHMENT_TYPE,
 	type AuthUser,
@@ -67,15 +75,9 @@ export async function getDirectorOverview(
 		isNull(proposals.archivedAt),
 		isNull(projects.archivedAt),
 		projectPeriodClause(query.year),
+		...reportingProposalScope(query),
 	];
-	if (query.campusId !== undefined)
-		scope.push(eq(proposals.campusId, query.campusId));
-	if (query.departmentId !== undefined)
-		scope.push(
-			query.departmentId === 0
-				? isNull(proposals.departmentId)
-				: eq(proposals.departmentId, query.departmentId),
-		);
+	const unitDepartment = reportingDepartmentId();
 	const facultySelection = {
 		faculty: sql<number>`count(DISTINCT ${users.userId})::int`,
 		leaders: sql<number>`count(*) FILTER (WHERE ${proposalMembers.projectRole} = 'Project Leader')::int`,
@@ -84,12 +86,12 @@ export async function getDirectorOverview(
 	const facultyQuery = (byDepartment: boolean) =>
 		db
 			.select({
-				departmentId: byDepartment
-					? proposals.departmentId
-					: sql<number | null>`NULL`,
+				campusId: byDepartment ? proposals.campusId : sql<number | null>`NULL`,
+				departmentId: byDepartment ? unitDepartment : sql<number | null>`NULL`,
 				...facultySelection,
 			})
 			.from(proposals)
+			.innerJoin(campuses, eq(campuses.campusId, proposals.campusId))
 			.innerJoin(projects, eq(projects.proposalId, proposals.proposalId))
 			.innerJoin(
 				proposalMembers,
@@ -114,7 +116,9 @@ export async function getDirectorOverview(
 		stages,
 		facultyRows,
 		facultyTotals,
-		options,
+		campusOptions,
+		departmentCatalog,
+		affiliations,
 		chartData,
 	] = await Promise.all([
 		db
@@ -126,20 +130,34 @@ export async function getDirectorOverview(
 			.leftJoin(projects, eq(projects.proposalId, proposals.proposalId))
 			.where(and(...scope)),
 		db
-			.select({ departmentId: proposals.departmentId, ...projectCounts() })
+			.select({
+				campusId: proposals.campusId,
+				departmentId: unitDepartment,
+				...projectCounts(),
+			})
 			.from(proposals)
+			.innerJoin(campuses, eq(campuses.campusId, proposals.campusId))
 			.innerJoin(projects, eq(projects.proposalId, proposals.proposalId))
 			.where(and(...scope))
-			.groupBy(proposals.departmentId),
+			.groupBy(proposals.campusId, unitDepartment),
 		db
 			.select({ status: proposals.status, count: sql<number>`count(*)::int` })
 			.from(proposals)
 			.leftJoin(projects, eq(projects.proposalId, proposals.proposalId))
 			.where(and(...scope, ne(proposals.status, PROPOSAL_STATUS.DRAFT)))
 			.groupBy(proposals.status),
-		facultyQuery(true).groupBy(proposals.departmentId),
+		facultyQuery(true).groupBy(proposals.campusId, unitDepartment),
 		// Distinct faculty across departments cannot be obtained by summing department counts.
 		facultyQuery(false),
+		db
+			.select({
+				id: campuses.campusId,
+				name: campuses.campusName,
+				isMainCampus: campuses.isMainCampus,
+			})
+			.from(campuses)
+			.where(visibleReportingCampus())
+			.orderBy(campuses.campusName),
 		db
 			.select({
 				id: departments.departmentId,
@@ -147,12 +165,18 @@ export async function getDirectorOverview(
 				code: departments.departmentCode,
 			})
 			.from(departments)
-			.where(
-				query.campusId === undefined
-					? undefined
-					: sql`EXISTS (SELECT 1 FROM ${users} WHERE ${users.departmentId} = ${departments.departmentId} AND ${users.campusId} = ${query.campusId} AND ${users.archivedAt} IS NULL) OR EXISTS (SELECT 1 FROM ${proposals} WHERE ${proposals.departmentId} = ${departments.departmentId} AND ${proposals.campusId} = ${query.campusId} AND ${proposals.archivedAt} IS NULL)`,
-			)
 			.orderBy(asc(departments.departmentName)),
+		// Keep zero-project colleges visible using known campus affiliations, across all years.
+		db.execute(sql`
+			SELECT ${users.campusId} AS "campusId", ${users.departmentId} AS "departmentId"
+			FROM ${users} JOIN ${campuses} ON ${campuses.campusId} = ${users.campusId}
+			WHERE ${users.archivedAt} IS NULL AND ${users.departmentId} IS NOT NULL
+				AND ${campuses.isMainCampus} AND ${visibleReportingCampus()}
+			UNION
+			SELECT ${proposals.campusId}, ${proposals.departmentId}
+			FROM ${proposals} JOIN ${campuses} ON ${campuses.campusId} = ${proposals.campusId}
+			WHERE ${proposals.archivedAt} IS NULL AND ${campuses.isMainCampus} AND ${visibleReportingCampus()}
+		`),
 		getPeriodChart(user, query.year, {
 			campusId: query.campusId,
 			departmentId: query.departmentId,
@@ -166,36 +190,107 @@ export async function getDirectorOverview(
 		pendingCompletionProjects: 0,
 		completedProjects: 0,
 	};
-	const departmentMap = new Map<number | null, (typeof departmentRows)[number]>(
-		departmentRows.map((row) => [row.departmentId, row]),
+	const departmentMap = new Map(
+		departmentRows.map((row) => [
+			reportingUnitKey(row.campusId, row.departmentId),
+			row,
+		]),
 	);
-	const facultyMap = new Map(facultyRows.map((row) => [row.departmentId, row]));
-	const units: { id: number | null; name: string; code: string }[] = [
-		...options,
-	];
-	if (departmentMap.has(null) || query.departmentId === 0)
-		units.push({ id: null, name: "Unassigned", code: "Unassigned" });
+	const facultyMap = new Map(
+		facultyRows.map((row) => [
+			reportingUnitKey(Number(row.campusId), row.departmentId),
+			row,
+		]),
+	);
+	const campusMap = new Map(campusOptions.map((campus) => [campus.id, campus]));
+	const catalogMap = new Map(
+		departmentCatalog.map((department) => [department.id, department]),
+	);
+	type Unit = {
+		key: string;
+		campusId: number;
+		campusName: string;
+		isMainCampus: boolean;
+		departmentId: number | null;
+		name: string;
+		code: string;
+	};
+	const units = new Map<string, Unit>();
+	const addUnit = (campusId: number, departmentId: number | null) => {
+		const campus = campusMap.get(campusId);
+		if (
+			!campus ||
+			(query.campusId !== undefined && query.campusId !== campusId)
+		)
+			return;
+		const effectiveDepartment = campus.isMainCampus ? departmentId : null;
+		if (query.departmentId !== undefined) {
+			if (
+				campus.isMainCampus &&
+				(effectiveDepartment ?? 0) !== query.departmentId
+			)
+				return;
+			if (!campus.isMainCampus && query.campusId === undefined) return;
+		}
+		const department =
+			effectiveDepartment === null
+				? undefined
+				: catalogMap.get(effectiveDepartment);
+		const key = reportingUnitKey(campusId, effectiveDepartment);
+		units.set(key, {
+			key,
+			campusId,
+			campusName: campus.name,
+			isMainCampus: campus.isMainCampus,
+			departmentId: effectiveDepartment,
+			name: campus.isMainCampus
+				? (department?.name ?? "Unassigned college")
+				: campus.name,
+			code: campus.isMainCampus
+				? (department?.code ?? "Unassigned")
+				: campus.name,
+		});
+	};
+	for (const campus of campusOptions)
+		if (!campus.isMainCampus) addUnit(campus.id, null);
+	for (const row of affiliations)
+		addUnit(Number(row.campusId), Number(row.departmentId));
+	for (const row of departmentRows) addUnit(row.campusId, row.departmentId);
+	if (
+		query.campusId !== undefined &&
+		query.departmentId !== undefined &&
+		campusMap.get(query.campusId)?.isMainCampus &&
+		(query.departmentId === 0 || catalogMap.has(query.departmentId))
+	)
+		addUnit(query.campusId, query.departmentId || null);
+	const optionIds = new Set(
+		affiliations
+			.filter(
+				(row) =>
+					query.campusId === undefined ||
+					Number(row.campusId) === query.campusId,
+			)
+			.map((row) => Number(row.departmentId)),
+	);
 	return {
 		metrics: metrics[0] ?? { ...emptyCounts, submittedProposals: 0 },
-		departments: units
-			.filter(
-				(unit) =>
-					query.departmentId === undefined ||
-					(unit.id ?? 0) === query.departmentId,
-			)
-			.map((unit) => ({
-				...emptyCounts,
-				...departmentMap.get(unit.id),
-				departmentId: unit.id,
-				name: unit.name,
-				code: unit.code,
-				faculty: facultyMap.get(unit.id)?.faculty ?? 0,
-				leaders: facultyMap.get(unit.id)?.leaders ?? 0,
-				collaborators: facultyMap.get(unit.id)?.collaborators ?? 0,
-			})),
-		departmentOptions: options.map(({ id, name }) => ({ id, name })),
+		units: [...units.values()].map((unit) => ({
+			...emptyCounts,
+			...departmentMap.get(unit.key),
+			...unit,
+			faculty: facultyMap.get(unit.key)?.faculty ?? 0,
+			leaders: facultyMap.get(unit.key)?.leaders ?? 0,
+			collaborators: facultyMap.get(unit.key)?.collaborators ?? 0,
+		})),
+		departmentOptions: departmentCatalog
+			.filter((department) => optionIds.has(department.id))
+			.map(({ id, name }) => ({ id, name })),
 		proposalStages: stages,
-		faculty: facultyTotals[0] ?? { faculty: 0, leaders: 0, collaborators: 0 },
+		faculty: {
+			faculty: facultyTotals[0]?.faculty ?? 0,
+			leaders: facultyTotals[0]?.leaders ?? 0,
+			collaborators: facultyTotals[0]?.collaborators ?? 0,
+		},
 		chartMonths: Array.from(
 			{ length: 12 },
 			(_, index) => `${query.year}-${String(index + 1).padStart(2, "0")}`,
@@ -222,7 +317,11 @@ export async function getDirectorWorkQueue(
 	query: z.infer<typeof WorkQueueQuerySchema>,
 ) {
 	const now = new Date();
-	const scope = and(isNull(proposals.archivedAt), isNull(projects.archivedAt));
+	const scope = and(
+		isNull(proposals.archivedAt),
+		isNull(projects.archivedAt),
+		...reportingProposalScope(),
+	);
 	const queue = decisionQueue();
 	const classified = db
 		.select({ queue: queue.as("queue") })
@@ -282,7 +381,7 @@ export async function getDirectorWorkQueue(
 		proposalId: proposals.proposalId,
 		projectId: projects.projectId,
 		title: proposals.title,
-		department: sql<string>`coalesce(${departments.departmentCode}, 'Unassigned')`,
+		unitLabel: reportingUnitLabel(),
 		leader: sql<string>`coalesce(nullif(trim(concat(${users.firstName}, ' ', ${users.lastName})), ''), 'No leader assigned')`,
 	};
 	const total = counts[query.queue];
@@ -337,6 +436,7 @@ export async function getDirectorWorkQueue(
 				departments,
 				eq(departments.departmentId, proposals.departmentId),
 			)
+			.leftJoin(campuses, eq(campuses.campusId, proposals.campusId))
 			.leftJoin(leader, eq(leader.proposalId, proposals.proposalId))
 			.leftJoin(users, eq(users.userId, leader.userId))
 			.leftJoin(
@@ -412,6 +512,7 @@ export async function getDirectorWorkQueue(
 				departments,
 				eq(departments.departmentId, proposals.departmentId),
 			)
+			.leftJoin(campuses, eq(campuses.campusId, proposals.campusId))
 			.leftJoin(leader, eq(leader.proposalId, proposals.proposalId))
 			.leftJoin(users, eq(users.userId, leader.userId))
 			.where(and(scope, eq(queue, query.queue)))

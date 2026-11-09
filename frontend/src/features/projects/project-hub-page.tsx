@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createActionsColumn } from "@/components/custom/data-table-columns";
 import { DataTableFilter } from "@/components/custom/data-table-filter";
 import { DataTablePage } from "@/components/custom/data-table-page";
@@ -28,6 +28,7 @@ interface ProjectHubPageProps {
 	onSearchChange: (search: string) => void;
 	onCollegeChange: (college: string) => void;
 	onStatusChange: (status: string) => void;
+	onCampusChange: (campusId: number | undefined) => void;
 	scope?: Pick<ProjectHubParams, "year" | "campusId" | "departmentId" | "kind">;
 	dashboardContext?: DirectorDashboardState;
 }
@@ -42,6 +43,7 @@ export function ProjectHubPage({
 	onSearchChange,
 	onCollegeChange,
 	onStatusChange,
+	onCampusChange,
 	scope = {},
 	dashboardContext,
 }: ProjectHubPageProps) {
@@ -65,6 +67,13 @@ export function ProjectHubPage({
 			? "Unassigned"
 			: departments.find((department) => department.id === scope.departmentId)
 					?.name;
+	const campusWide =
+		campuses.find((campus) => campus.id === scope.campusId)?.isMainCampus ===
+		false;
+	useEffect(() => {
+		if (campusWide && (college || scope.departmentId !== undefined))
+			onCollegeChange("");
+	}, [campusWide, college, scope.departmentId, onCollegeChange]);
 
 	const items = data?.items ?? [];
 	const total = data?.total ?? 0;
@@ -116,9 +125,9 @@ export function ProjectHubPage({
 		},
 		{
 			id: "implementingUnit",
-			accessorFn: (row) => row.departmentCode ?? row.college ?? "",
+			accessorFn: (row) => row.unitLabel,
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Implementing Unit" />
+				<DataTableColumnHeader column={column} title="College / Campus" />
 			),
 			headerClassName: "w-[15%] font-medium text-muted-foreground",
 			cellClassName: "text-foreground text-left",
@@ -126,14 +135,7 @@ export function ProjectHubPage({
 				const project = row.original;
 				return (
 					<div className="flex flex-col text-left">
-						<span className="text-sm text-foreground">
-							{project.departmentCode ?? project.college ?? "—"}
-						</span>
-						{project.campusName && (
-							<span className="text-xs text-muted-foreground">
-								{project.campusName}
-							</span>
-						)}
+						<span className="text-sm text-foreground">{project.unitLabel}</span>
 					</div>
 				);
 			},
@@ -194,20 +196,38 @@ export function ProjectHubPage({
 			filters={
 				<>
 					<DataTableFilter
-						value={selectedDepartment || college || "all"}
-						onValueChange={(val: string | null) =>
-							onCollegeChange(val === "all" ? "" : (val ?? ""))
+						value={
+							scope.campusId === undefined ? "all" : String(scope.campusId)
 						}
-						placeholder="All Implementing Units"
+						onValueChange={(value) =>
+							onCampusChange(value === "all" ? undefined : Number(value))
+						}
+						placeholder="All campuses"
 						options={[
-							{ value: "all", label: "All Implementing Units" },
-							...departments.map((department) => ({
-								value: department.name,
-								label: department.name,
+							{ value: "all", label: "All campuses" },
+							...campuses.map((campus) => ({
+								value: String(campus.id),
+								label: campus.name,
 							})),
-							{ value: "Unassigned", label: "Unassigned" },
 						]}
 					/>
+					{!campusWide && (
+						<DataTableFilter
+							value={selectedDepartment || college || "all"}
+							onValueChange={(val: string | null) =>
+								onCollegeChange(val === "all" ? "" : (val ?? ""))
+							}
+							placeholder="All Colleges/Departments"
+							options={[
+								{ value: "all", label: "All Colleges/Departments" },
+								...departments.map((department) => ({
+									value: department.name,
+									label: department.name,
+								})),
+								{ value: "Unassigned", label: "Unassigned" },
+							]}
+						/>
+					)}
 					<DataTableFilter
 						value={status || "all"}
 						onValueChange={(val: string | null) =>

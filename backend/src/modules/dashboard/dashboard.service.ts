@@ -11,6 +11,7 @@ import {
 	projectPeriodClause,
 	projectYearBounds,
 } from "@/lib/project-period.js";
+import { reportingProposalScope } from "@/lib/reporting-units.js";
 import { buildProposalScope } from "@/lib/scope-helpers.js";
 import { type AuthUser, OPERATIONAL_ROLES, ROLE_NAMES } from "@/lib/types.js";
 import { PeriodChartPointSchema } from "./dashboard.schema.js";
@@ -25,14 +26,18 @@ export async function getPeriodChart(
 ) {
 	projectYearBounds(year);
 	const scope = dashboardScope(user);
-	if (filters.campusId !== undefined)
-		scope.push(eq(proposals.campusId, filters.campusId));
-	if (filters.departmentId !== undefined)
-		scope.push(
-			filters.departmentId === 0
-				? isNull(proposals.departmentId)
-				: eq(proposals.departmentId, filters.departmentId),
-		);
+	if (user.roleName === ROLE_NAMES.DIRECTOR)
+		scope.push(...reportingProposalScope(filters));
+	else {
+		if (filters.campusId !== undefined)
+			scope.push(eq(proposals.campusId, filters.campusId));
+		if (filters.departmentId !== undefined)
+			scope.push(
+				filters.departmentId === 0
+					? isNull(proposals.departmentId)
+					: eq(proposals.departmentId, filters.departmentId),
+			);
+	}
 	const rows = await db.execute(sql`
 		SELECT to_char(calendar.month, 'YYYY-MM') AS month,
 			${campuses.campusId} AS "campusId", ${campuses.campusName} AS "campusName", count(*)::int AS value
@@ -56,6 +61,8 @@ export function dashboardScope(user: AuthUser): SQL[] {
 			"Operational dashboard access required",
 		);
 	const scope = [...buildProposalScope(user), isNull(projects.archivedAt)];
+	if (user.roleName === ROLE_NAMES.DIRECTOR)
+		scope.push(...reportingProposalScope());
 	if (user.roleName === ROLE_NAMES.FACULTY) {
 		scope.push(
 			sql`EXISTS (SELECT 1 FROM ${proposalMembers} WHERE ${proposalMembers.proposalId} = ${proposals.proposalId} AND ${proposalMembers.userId} = ${user.userId} AND ${proposalMembers.archivedAt} IS NULL)`,

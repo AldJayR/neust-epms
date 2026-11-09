@@ -57,8 +57,12 @@ export interface DirectorFacultyCounts {
 
 export interface DirectorOverviewResponse {
 	metrics: DirectorProjectCounts & { submittedProposals: number };
-	departments: (DirectorProjectCounts &
+	units: (DirectorProjectCounts &
 		DirectorFacultyCounts & {
+			key: string;
+			campusId: number;
+			campusName: string;
+			isMainCampus: boolean;
 			departmentId: number | null;
 			name: string;
 			code: string;
@@ -82,7 +86,7 @@ export interface DirectorWorkItem {
 	proposalId: string;
 	projectId: string | null;
 	title: string;
-	department: string;
+	unitLabel: string;
 	leader: string;
 	status: string;
 	since: string | null;
@@ -98,4 +102,34 @@ export interface DirectorWorkQueueResponse {
 	page: number;
 	limit: number;
 	items: DirectorWorkItem[];
+}
+
+export type DirectorMilestoneKind =
+	| "proposal_endorsed"
+	| "proposal_approved"
+	| "proposal_returned"
+	| "proposal_rejected"
+	| "signed_documents_completed"
+	| "project_activated"
+	| "terminal_package_completed"
+	| "project_completed";
+
+export interface DirectorMilestone {
+	id: string;
+	kind: DirectorMilestoneKind;
+	proposalId: string;
+	projectId: string | null;
+	title: string;
+	unitLabel: string;
+	campus: string;
+	actorId: string | null;
+	actorName: string | null;
+	occurredAt: string;
+}
+
+export interface DirectorMilestonesResponse {
+	items: DirectorMilestone[];
+	total: number;
+	page: number;
+	limit: number;
 }

@@ -44,6 +44,7 @@ import {
 } from "@/lib/types.js";
 import { isPdfFile, sanitizeFilename } from "@/services/file.service.js";
 import { hashFileSha256 } from "@/services/file-integrity.service.js";
+import { recordProjectMilestone } from "@/services/project-milestones.service.js";
 import {
 	PROGRESS_REPORT_TYPES,
 	TERMINAL_REPORT_TYPES,
@@ -761,6 +762,12 @@ export async function uploadReportDocument(
 						)
 						.returning({ projectId: projects.projectId });
 					if (transitioned) {
+						await recordProjectMilestone(tx, {
+							proposalId: current.proposalId,
+							kind: "terminal_package_completed",
+							actorId: user.userId,
+							sourceKey: `terminal-package:${report.milestoneId}`,
+						});
 						await insertAuditLog(
 							{
 								userId: user.userId,

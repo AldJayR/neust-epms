@@ -9,6 +9,7 @@ export { moas } from "./moas.js";
 export { notifications } from "./notifications.js";
 export { partners } from "./partners.js";
 export { passwordResetTokens } from "./password-reset-tokens.js";
+export { projectMilestones } from "./project-milestones.js";
 export { projectReportingMilestones } from "./project-reporting-milestones.js";
 export { projectReports } from "./project-reports.js";
 export { projects } from "./projects.js";

@@ -19,6 +19,7 @@ import {
 } from "@/lib/types.js";
 import { isPdfFile, MAX_PDF_UPLOAD_BYTES } from "@/services/file.service.js";
 import { hashFileSha256 } from "@/services/file-integrity.service.js";
+import { recordProjectMilestone } from "@/services/project-milestones.service.js";
 import { removeStorageObject } from "@/services/storage-cleanup.service.js";
 
 /** Used before upload and again under the project lock before committing. */
@@ -199,6 +200,13 @@ export async function closeProject(
 					"Project changed before completion could be approved",
 				);
 			}
+			await recordProjectMilestone(tx, {
+				proposalId: latest.proposalId,
+				kind: "project_completed",
+				actorId: user.userId,
+				sourceKey: `completion:${latest.projectId}`,
+				occurredAt: completedAt,
+			});
 			await insertAuditLog(
 				{
 					userId: user.userId,

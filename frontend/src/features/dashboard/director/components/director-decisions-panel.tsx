@@ -282,7 +282,7 @@ export function DirectorDecisionsPanel({
 														{item.title}
 													</p>
 													<p className="text-xs text-muted-foreground">
-														{item.department} · {item.leader}
+														{item.unitLabel} · {item.leader}
 													</p>
 													{item.dueAt ? (
 														<div className="flex flex-wrap items-center gap-2 text-xs">

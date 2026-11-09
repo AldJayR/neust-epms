@@ -19,8 +19,8 @@ import type { DirectorOverviewResponse } from "@/types/dashboard";
 
 export function FacultyInvolvementSummary({
 	faculty,
-	departments,
-}: Pick<DirectorOverviewResponse, "faculty" | "departments">) {
+	units,
+}: Pick<DirectorOverviewResponse, "faculty" | "units">) {
 	return (
 		<Card>
 			<CardHeader>
@@ -53,22 +53,25 @@ export function FacultyInvolvementSummary({
 				</div>
 				<p className="text-xs text-muted-foreground">
 					One person may participate in multiple projects. Involvements are
-					memberships, not unique people; department faculty counts may overlap.
+					memberships, not unique people; college/campus faculty counts may
+					overlap.
 				</p>
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>Unit</TableHead>
+							<TableHead>College / Campus</TableHead>
 							<TableHead className="text-right">Faculty</TableHead>
 							<TableHead className="text-right">Lead</TableHead>
 							<TableHead className="text-right">Collaborator</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{departments.map((unit) => (
-							<TableRow key={unit.departmentId ?? "unassigned"}>
+						{units.map((unit) => (
+							<TableRow key={unit.key}>
 								<TableHead scope="row" title={unit.name}>
-									{unit.code}
+									{unit.isMainCampus
+										? `${unit.code} · ${unit.campusName}`
+										: unit.campusName}
 								</TableHead>
 								<TableCell className="text-right tabular-nums">
 									{unit.faculty}
@@ -81,7 +84,7 @@ export function FacultyInvolvementSummary({
 								</TableCell>
 							</TableRow>
 						))}
-						{departments.length === 0 && (
+						{units.length === 0 && (
 							<TableRow>
 								<TableCell
 									colSpan={4}

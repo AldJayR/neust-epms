@@ -14,6 +14,8 @@ export const directorDashboardStateSchema = z.object({
 	decisionExpanded: z.boolean().optional().catch(undefined),
 	reportPage: z.number().int().min(1).max(100000).optional().catch(undefined),
 	reportExpanded: z.boolean().optional().catch(undefined),
+	updatesPage: z.number().int().min(1).max(100000).optional().catch(undefined),
+	updatesExpanded: z.boolean().optional().catch(undefined),
 	departmentSort: z
 		.enum(["name", "active", "completed", "total"])
 		.optional()

@@ -166,7 +166,9 @@ export const getCampusesFn = createServerFn({ method: "GET" }).handler(
 		const response = await fetch(`${API_BASE}/auth/campuses`);
 		if (!response.ok)
 			throw new Error("Unable to load campuses. Please try again.");
-		return (await response.json()) as LookupItem[];
+		return (await response.json()) as (LookupItem & {
+			isMainCampus: boolean;
+		})[];
 	},
 );
 

@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { RotateCcw } from "lucide-react";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { MetricCard } from "@/components/custom/metric-card";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,12 +21,12 @@ import {
 } from "../../components/dashboard-year-filter";
 import { directorOverviewQueryOptions } from "../../functions";
 import { useDirectorDashboardState } from "../use-director-dashboard-state";
+import { CollegeCampusProjectBreakdown } from "./college-campus-project-breakdown";
 import {
 	DashboardError,
 	DashboardLoading,
 	DashboardUpdatedAt,
 } from "./dashboard-feedback";
-import { DepartmentProjectBreakdown } from "./department-project-breakdown";
 import { FacultyInvolvementSummary } from "./faculty-involvement-summary";
 import { ProjectCountLink } from "./project-count-link";
 import { ProposalStages } from "./proposal-stages";
@@ -87,29 +87,47 @@ export function InstitutionalOverview({
 	availableYears,
 }: DashboardYearProps & { availableYears?: number[] }) {
 	const { state, update } = useDirectorDashboardState();
-	const { campusId, departmentId } = state;
-	const filters = { year, campusId, departmentId };
-	const query = useQuery({
-		...directorOverviewQueryOptions(filters),
-		placeholderData: keepPreviousData,
-	});
+	const { campusId } = state;
 	const campuses = useQuery({
 		queryKey: ["campuses"],
 		queryFn: () => getCampusesFn(),
 		staleTime: 60 * 60 * 1000,
 	});
+	const selectedCampus = campuses.data?.find(
+		(campus) => campus.id === campusId,
+	);
+	const campusWide = selectedCampus?.isMainCampus === false;
+	const departmentId = campusWide ? undefined : state.departmentId;
+	const filters = { year, campusId, departmentId };
+	const query = useQuery({
+		...directorOverviewQueryOptions(filters),
+		placeholderData: keepPreviousData,
+	});
+	const unavailableCampus =
+		campuses.isSuccess && campusId !== undefined && !selectedCampus;
+	useEffect(() => {
+		if (unavailableCampus)
+			void update({ campusId: undefined, departmentId: undefined });
+		else if (campusWide && state.departmentId !== undefined)
+			void update({ departmentId: undefined });
+	}, [unavailableCampus, campusWide, state.departmentId, update]);
 	const data = query.data;
 	// Preserve lookup labels while loading, but never display old metrics as the new scope.
 	const departmentOptions = data?.departmentOptions ?? [];
 	const isLoading = query.isPending || query.isPlaceholderData;
 	const campusName =
 		campusId === undefined
-			? "All campuses"
+			? departmentId === undefined
+				? "All campuses"
+				: "Main campuses"
 			: (campuses.data?.find((campus) => campus.id === campusId)?.name ??
 				`Campus ${campusId}`);
-	const departmentName =
-		departmentId === undefined
-			? "All colleges/departments"
+	const departmentName = campusWide
+		? "Campus-wide totals"
+		: departmentId === undefined
+			? campusId === undefined
+				? "All colleges and campuses"
+				: "All colleges/departments"
 			: departmentId === 0
 				? "Unassigned"
 				: (departmentOptions.find(
@@ -154,13 +172,15 @@ export function InstitutionalOverview({
 							void update({ campusId: next, departmentId: undefined });
 						}}
 					/>
-					<ScopeSelect
-						label="College/Department"
-						value={departmentId}
-						options={[...departmentOptions, { id: 0, name: "Unassigned" }]}
-						disabled={isLoading}
-						onChange={(next) => void update({ departmentId: next })}
-					/>
+					{!campusWide && (
+						<ScopeSelect
+							label="College/Department"
+							value={departmentId}
+							options={[...departmentOptions, { id: 0, name: "Unassigned" }]}
+							disabled={isLoading}
+							onChange={(next) => void update({ departmentId: next })}
+						/>
+					)}
 					<Button
 						variant="ghost"
 						size="sm"
@@ -266,8 +286,8 @@ export function InstitutionalOverview({
 								</div>
 							))}
 						</div>
-						<DepartmentProjectBreakdown
-							departments={data.departments}
+						<CollegeCampusProjectBreakdown
+							units={data.units}
 							filters={filters}
 							sort={state.departmentSort ?? "name"}
 							onSortChange={(departmentSort) => void update({ departmentSort })}
@@ -276,7 +296,7 @@ export function InstitutionalOverview({
 							<ProposalStages stages={data.proposalStages} filters={filters} />
 							<FacultyInvolvementSummary
 								faculty={data.faculty}
-								departments={data.departments}
+								units={data.units}
 							/>
 						</div>
 						<Suspense fallback={<DashboardLoading />}>

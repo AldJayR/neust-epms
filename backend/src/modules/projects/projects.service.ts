@@ -45,6 +45,7 @@ import {
 } from "@/lib/types.js";
 import { getProposalExtensionServicesByProposalIds } from "@/modules/proposals/proposals.service.js";
 import { getProposalDocumentFilename } from "@/services/file.service.js";
+import { recordProjectMilestone } from "@/services/project-milestones.service.js";
 import {
 	isActivationMoaValid,
 	reportingScheduleError,
@@ -974,6 +975,12 @@ export async function activateProject(
 			})),
 		);
 
+		await recordProjectMilestone(tx, {
+			proposalId: project.proposalId,
+			kind: "project_activated",
+			actorId: user.userId,
+			sourceKey: `activation:${project.projectId}`,
+		});
 		await insertAuditLog(
 			{
 				userId: user.userId,

@@ -1,4 +1,5 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useCallback } from "react";
 import { currentManilaYear } from "@/lib/dashboard-year";
 import {
 	type DirectorDashboardState,
@@ -12,11 +13,14 @@ export function useDirectorDashboardState() {
 		...search,
 		year: search.year ?? currentManilaYear(),
 	});
-	const update = (patch: Partial<DirectorDashboardState>) =>
-		navigate({
-			to: "/dashboard",
-			search: (old) => ({ ...old, ...patch }),
-			resetScroll: false,
-		});
+	const update = useCallback(
+		(patch: Partial<DirectorDashboardState>) =>
+			navigate({
+				to: "/dashboard",
+				search: (old) => ({ ...old, ...patch }),
+				resetScroll: false,
+			}),
+		[navigate],
+	);
 	return { state, update };
 }

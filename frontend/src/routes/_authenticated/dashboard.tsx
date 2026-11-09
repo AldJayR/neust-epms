@@ -17,6 +17,7 @@ import {
 	directorOverviewQueryOptions,
 	directorWorkQueueQueryOptions,
 } from "@/features/dashboard/functions";
+import { directorMilestonesQueryOptions } from "@/features/dashboard/milestones.functions";
 import { FacultyDashboardPage } from "@/features/faculty/faculty-dashboard-page";
 import {
 	retDashboardStatsQueryOptions,
@@ -44,6 +45,8 @@ const dashboardSearchSchema = z.object({
 export const Route = createFileRoute("/_authenticated/dashboard")({
 	validateSearch: (search) => dashboardSearchSchema.parse(search),
 	loaderDeps: ({ search }) => ({
+		updatesPage: search.updatesPage ?? 1,
+		updatesExpanded: search.updatesExpanded ?? false,
 		campusId: search.campusId,
 		departmentId: search.departmentId,
 		decisionQueue: search.decisionQueue ?? "review",
@@ -105,6 +108,12 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 		// Director path
 		await Promise.all([
+			context.queryClient.prefetchQuery(
+				directorMilestonesQueryOptions(
+					deps.updatesExpanded ? deps.updatesPage : 1,
+					deps.updatesExpanded ? 10 : 5,
+				),
+			),
 			context.queryClient.prefetchQuery(directorDashboardQueryOptions()),
 			context.queryClient.prefetchQuery(
 				directorOverviewQueryOptions({

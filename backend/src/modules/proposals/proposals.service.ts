@@ -49,6 +49,10 @@ import {
 	sanitizeFilename,
 } from "@/services/file.service.js";
 import { hashFileSha256 } from "@/services/file-integrity.service.js";
+import {
+	recordProjectMilestone,
+	reviewMilestoneKind,
+} from "@/services/project-milestones.service.js";
 import { removeStorageObject } from "@/services/storage-cleanup.service.js";
 import { validateBannerProgramForProposal } from "../banner-programs/banner-programs.service.js";
 import type { SectorSelection } from "../beneficiary-sectors/beneficiary-sectors.schema.js";
@@ -1030,6 +1034,18 @@ export async function processReview(
 				});
 			}
 		}
+		const milestoneKind = reviewMilestoneKind(
+			reviewPolicy.reviewStage,
+			body.decision,
+		);
+		if (milestoneKind)
+			await recordProjectMilestone(tx, {
+				proposalId,
+				kind: milestoneKind,
+				actorId: user.userId,
+				sourceKey: `review:${review.reviewId}`,
+				occurredAt: review.reviewedAt,
+			});
 		await insertAuditLog(
 			{
 				userId: user.userId,
@@ -1157,6 +1173,13 @@ export async function recordInstitutionalApproval(
 					projectStatus: PROJECT_STATUS.APPROVED,
 				});
 			}
+			await recordProjectMilestone(tx, {
+				proposalId,
+				kind: "signed_documents_completed",
+				actorId: user.userId,
+				sourceKey: `signed-documents:${proposalId}`,
+				occurredAt: updated.institutionalApprovedAt ?? new Date(),
+			});
 
 			await insertAuditLog(
 				{
@@ -1356,6 +1379,12 @@ export async function recordSignedSpecialOrder(
 					"UPDATE_CONFLICT",
 					"The proposal changed. Reload it and try again.",
 				);
+			await recordProjectMilestone(tx, {
+				proposalId,
+				kind: "signed_documents_completed",
+				actorId: user.userId,
+				sourceKey: `signed-documents:${proposalId}`,
+			});
 			await insertAuditLog(
 				{
 					userId: user.userId,

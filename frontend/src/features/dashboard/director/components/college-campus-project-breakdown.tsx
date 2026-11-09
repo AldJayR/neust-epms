@@ -29,25 +29,25 @@ import { ProjectCountLink } from "./project-count-link";
 
 type DepartmentSort = NonNullable<DirectorDashboardState["departmentSort"]>;
 const sortOptions = [
-	{ value: "name", label: "Department name" },
+	{ value: "name", label: "College / campus name" },
 	{ value: "active", label: "Active projects" },
 	{ value: "completed", label: "Completed projects" },
 	{ value: "total", label: "Total projects" },
 ] as const;
 
-export function DepartmentProjectBreakdown({
-	departments,
+export function CollegeCampusProjectBreakdown({
+	units,
 	filters,
 	sort,
 	onSortChange,
 }: {
-	departments: DirectorOverviewResponse["departments"];
+	units: DirectorOverviewResponse["units"];
 	filters: DirectorOverviewFilters;
 	sort: DepartmentSort;
 	onSortChange: (sort: DepartmentSort) => void;
 }) {
-	const maximum = Math.max(1, ...departments.map((unit) => unit.totalProjects));
-	const orderedDepartments = [...departments].sort((a, b) => {
+	const maximum = Math.max(1, ...units.map((unit) => unit.totalProjects));
+	const orderedUnits = [...units].sort((a, b) => {
 		const key =
 			sort === "active"
 				? "activeProjects"
@@ -55,18 +55,20 @@ export function DepartmentProjectBreakdown({
 					? "completedProjects"
 					: "totalProjects";
 		return (
-			(sort === "name" ? 0 : b[key] - a[key]) || a.name.localeCompare(b.name)
+			(sort === "name" ? 0 : b[key] - a[key]) ||
+			a.name.localeCompare(b.name) ||
+			a.campusName.localeCompare(b.campusName)
 		);
 	});
 	return (
 		<Card>
 			<CardHeader>
 				<CardTitle>
-					<h3>Projects by College/Department</h3>
+					<h3>Projects by College and Campus</h3>
 				</CardTitle>
 				<CardDescription>
-					Projects are attributed to their implementing unit. Bars compare total
-					projects; select a count to view matching records.
+					Colleges/departments at General Tinio Street and Sumacab; campus-wide
+					totals for other campuses. Select a count to view matching records.
 				</CardDescription>
 				<div className="mt-3 flex flex-wrap items-center gap-2">
 					<span className="text-xs text-muted-foreground">Sort by</span>
@@ -76,7 +78,10 @@ export function DepartmentProjectBreakdown({
 							if (value) onSortChange(value as DepartmentSort);
 						}}
 					>
-						<SelectTrigger aria-label="Sort departments by" className="w-52">
+						<SelectTrigger
+							aria-label="Sort colleges and campuses by"
+							className="w-52"
+						>
 							<SelectValue>
 								{sortOptions.find((option) => option.value === sort)?.label}
 							</SelectValue>
@@ -95,18 +100,24 @@ export function DepartmentProjectBreakdown({
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>Implementing unit</TableHead>
+							<TableHead>College / Campus</TableHead>
 							<TableHead className="text-right">Active</TableHead>
 							<TableHead className="text-right">Completed</TableHead>
 							<TableHead className="text-right">Total</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{orderedDepartments.map((unit) => (
-							<TableRow key={unit.departmentId ?? "unassigned"}>
+						{orderedUnits.map((unit) => (
+							<TableRow key={unit.key}>
 								<TableHead scope="row" className="min-w-44 py-3 text-left">
-									<p className="font-medium">{unit.code}</p>
-									<p className="text-xs text-muted-foreground">{unit.name}</p>
+									<p className="font-medium">
+										{unit.isMainCampus
+											? `${unit.code} · ${unit.campusName}`
+											: unit.campusName}
+									</p>
+									<p className="text-xs text-muted-foreground">
+										{unit.isMainCampus ? unit.name : "Campus-wide totals"}
+									</p>
 									<div
 										className="mt-2 h-1.5 max-w-56 overflow-hidden rounded-full bg-muted"
 										aria-hidden="true"
@@ -143,7 +154,10 @@ export function DepartmentProjectBreakdown({
 										<ProjectCountLink
 											filters={{
 												...filters,
-												departmentId: unit.departmentId ?? 0,
+												campusId: unit.campusId,
+												departmentId: unit.isMainCampus
+													? (unit.departmentId ?? 0)
+													: undefined,
 											}}
 											status={cell.status}
 											label={`View ${cell.name} projects for ${unit.name}`}
@@ -154,13 +168,13 @@ export function DepartmentProjectBreakdown({
 								))}
 							</TableRow>
 						))}
-						{departments.length === 0 && (
+						{units.length === 0 && (
 							<TableRow>
 								<TableCell
 									colSpan={4}
 									className="py-8 text-center text-muted-foreground"
 								>
-									No implementing units match this scope.
+									No college or campus records match this scope.
 								</TableCell>
 							</TableRow>
 						)}

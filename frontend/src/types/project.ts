@@ -24,6 +24,7 @@ export interface HubProject {
 	college: string | null;
 	departmentCode?: string | null;
 	campusName?: string | null;
+	unitLabel: string;
 	dateSubmitted: string;
 	lastReportDate?: string | null;
 	status: string;

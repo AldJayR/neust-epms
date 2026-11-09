@@ -9,6 +9,7 @@ import { users } from "@/db/schema/users.js";
 import { insertAuditLog } from "@/lib/audit.js";
 import { ApiError } from "@/lib/errors.js";
 import { isPasswordCompromised } from "@/lib/password-check.js";
+import { visibleReportingCampus } from "@/lib/reporting-units.js";
 import { hashResetToken } from "@/lib/reset-token.js";
 import { createUserAuthClient, supabase } from "@/lib/supabase.js";
 import { type AuthUser, ROLE_NAMES } from "@/lib/types.js";
@@ -358,11 +359,17 @@ export async function listCampuses() {
 		.select({
 			campusId: campuses.campusId,
 			campusName: campuses.campusName,
+			isMainCampus: campuses.isMainCampus,
 		})
 		.from(campuses)
+		.where(visibleReportingCampus())
 		.orderBy(campuses.campusName);
 
-	return rows.map((r) => ({ id: r.campusId, name: r.campusName }));
+	return rows.map((r) => ({
+		id: r.campusId,
+		name: r.campusName,
+		isMainCampus: r.isMainCampus,
+	}));
 }
 
 export async function searchUsers(search: UserSearchQuery["search"]) {

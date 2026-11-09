@@ -35,8 +35,12 @@ const FacultyCountsSchema = z.object({
 });
 export const DirectorOverviewSchema = z.object({
 	metrics: ProjectCountsSchema.extend({ submittedProposals: z.number() }),
-	departments: z.array(
+	units: z.array(
 		ProjectCountsSchema.extend({
+			key: z.string(),
+			campusId: z.number(),
+			campusName: z.string(),
+			isMainCampus: z.boolean(),
 			departmentId: z.number().nullable(),
 			name: z.string(),
 			code: z.string(),
@@ -77,7 +81,7 @@ export const WorkQueueResponseSchema = z.object({
 			proposalId: z.string(),
 			projectId: z.string().nullable(),
 			title: z.string(),
-			department: z.string(),
+			unitLabel: z.string(),
 			leader: z.string(),
 			status: z.string(),
 			since: z.string().nullable(),

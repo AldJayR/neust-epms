@@ -13,6 +13,7 @@ export const HubProjectSchema = z
 		college: z.string().nullable(),
 		departmentCode: z.string().nullable().optional(),
 		campusName: z.string().nullable().optional(),
+		unitLabel: z.string(),
 		dateSubmitted: z.string(),
 		lastReportDate: z.string().nullable().optional(),
 		status: z.string(),
