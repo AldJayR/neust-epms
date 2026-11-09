@@ -111,6 +111,7 @@ export function useProposalWizard({
 			{
 				userId: user.userId,
 				projectRole: "Project Leader",
+				specificRole: "",
 				name: `${user.firstName} ${user.lastName}`,
 			},
 		],
@@ -281,6 +282,7 @@ export function useProposalWizard({
 						members: values.members.map((member) => ({
 							userId: member.userId,
 							projectRole: member.projectRole,
+							specificRole: member.specificRole || null,
 						})),
 					},
 				});
@@ -306,6 +308,7 @@ export function useProposalWizard({
 						members: values.members.map((member) => ({
 							userId: member.userId,
 							projectRole: member.projectRole,
+							specificRole: member.specificRole || null,
 						})),
 					},
 				});

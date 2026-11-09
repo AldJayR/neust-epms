@@ -22,6 +22,7 @@ export const proposalMembers = pgTable(
 			.notNull()
 			.references(() => users.userId),
 		projectRole: varchar("project_role", { length: 100 }).notNull(),
+		specificRole: varchar("specific_role", { length: 100 }),
 		addedAt: timestamp("added_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),

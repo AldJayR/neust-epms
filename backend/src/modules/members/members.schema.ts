@@ -1,4 +1,5 @@
 import { z } from "@hono/zod-openapi";
+import { PROJECT_ROLES } from "@/lib/project-roles.js";
 
 export const MemberSchema = z
 	.object({
@@ -6,6 +7,7 @@ export const MemberSchema = z
 		proposalId: z.string(),
 		userId: z.string(),
 		projectRole: z.string(),
+		specificRole: z.string().nullable().optional(),
 		addedAt: z.string(),
 	})
 	.openapi("ProposalMember");
@@ -17,7 +19,8 @@ export const MemberListSchema = z
 export const AddMemberSchema = z
 	.object({
 		userId: z.string(),
-		projectRole: z.string().min(1),
+		projectRole: z.enum(PROJECT_ROLES),
+		specificRole: z.string().trim().max(100).nullable().optional(),
 	})
 	.openapi("AddMember");
 

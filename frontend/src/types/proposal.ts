@@ -1,4 +1,5 @@
 import type { SectorSelection } from "@/features/beneficiary-sectors/schema";
+import type { ProjectRole } from "@/lib/project-roles";
 
 export interface ProposalItem {
 	proposalId: string;
@@ -58,7 +59,8 @@ export interface ProposalFull {
 export interface ProposalEditMember {
 	memberId?: string;
 	userId: string;
-	projectRole: string;
+	projectRole: ProjectRole;
+	specificRole?: string | null;
 	name: string;
 }
 

@@ -345,6 +345,7 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 					firstName: users.firstName,
 					lastName: users.lastName,
 					role: proposalMembers.projectRole,
+					specificRole: proposalMembers.specificRole,
 					memberId: proposalMembers.memberId,
 					avatarUrl: users.avatarUrl,
 				})
@@ -428,6 +429,7 @@ export async function getProjectDetails(id: string, user: AuthUser) {
 		userId: m.userId,
 		name: `${m.firstName} ${m.lastName}`,
 		role: m.role,
+		specificRole: m.specificRole,
 		avatarUrl: m.avatarUrl,
 	}));
 

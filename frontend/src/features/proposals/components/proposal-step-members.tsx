@@ -1,13 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Search, Trash2 } from "lucide-react";
 import * as React from "react";
-import { type UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
+import { Controller, type UseFormReturn, useFieldArray } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { searchUsersFn } from "@/features/auth";
 import type { AuthUser } from "@/lib/auth";
+import { MEMBER_ROLE_OPTIONS, PROJECT_MEMBER_ROLE } from "@/lib/project-roles";
 import type { FormValues } from "./proposal-form";
 
 export function ProposalStepMembers({
@@ -28,7 +36,6 @@ export function ProposalStepMembers({
 		control: form.control,
 		name: "members",
 	});
-	const members = useWatch({ control: form.control, name: "members" });
 	return (
 		<div className="space-y-4">
 			<div className="space-y-2">
@@ -57,7 +64,8 @@ export function ProposalStepMembers({
 									else
 										append({
 											userId: candidate.userId,
-											projectRole: "Member",
+											projectRole: PROJECT_MEMBER_ROLE,
+											specificRole: "",
 											name: `${candidate.firstName} ${candidate.lastName}`,
 										});
 									setSearch("");
@@ -81,35 +89,60 @@ export function ProposalStepMembers({
 				<FieldLabel>Team Members &amp; Roles</FieldLabel>
 				<div className="border rounded-md divide-y max-h-[280px] overflow-y-auto">
 					{fields.map((field, index) => (
-						<div
-							key={field.id}
-							className="p-3.5 flex items-center justify-between gap-3"
-						>
-							<p className="text-sm font-medium truncate">{field.name}</p>
+						<div key={field.id} className="p-3.5 space-y-2">
+							<div className="flex items-center justify-between gap-3">
+								<p className="text-sm font-medium truncate">{field.name}</p>
+								{field.userId !== user.userId && (
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										aria-label={`Remove ${field.name}`}
+										className="text-destructive shrink-0"
+										onClick={() => remove(index)}
+									>
+										<Trash2 className="size-4" />
+									</Button>
+								)}
+							</div>
 							<div className="flex items-center gap-2">
 								{field.userId === user.userId ? (
-									<span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-										{members?.[index]?.projectRole ?? field.projectRole}
+									<span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded shrink-0">
+										Project Leader
 									</span>
 								) : (
-									<>
-										<Input
-											{...form.register(`members.${index}.projectRole`)}
-											placeholder="Role (e.g. Co-Leader)"
-											className="h-8 w-[150px] text-xs"
-										/>
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon"
-											aria-label={`Remove ${field.name}`}
-											className="text-destructive shrink-0"
-											onClick={() => remove(index)}
-										>
-											<Trash2 className="size-4" />
-										</Button>
-									</>
+									<Controller
+										control={form.control}
+										name={`members.${index}.projectRole`}
+										render={({ field: roleField }) => (
+											<Select
+												value={roleField.value}
+												onValueChange={roleField.onChange}
+											>
+												<SelectTrigger
+													size="sm"
+													aria-label={`Role for ${field.name}`}
+													className="w-[150px] text-xs"
+												>
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													{MEMBER_ROLE_OPTIONS.map((role) => (
+														<SelectItem key={role} value={role}>
+															{role}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										)}
+									/>
 								)}
+								<Input
+									{...form.register(`members.${index}.specificRole`)}
+									placeholder="Specific role (optional)"
+									maxLength={100}
+									className="h-8 flex-1 text-xs"
+								/>
 							</div>
 						</div>
 					))}

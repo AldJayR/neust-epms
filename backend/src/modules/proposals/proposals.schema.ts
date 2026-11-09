@@ -1,5 +1,6 @@
 import { z } from "@hono/zod-openapi";
 import { ProjectYearSchema } from "@/lib/project-period.js";
+import { PROJECT_ROLES } from "@/lib/project-roles.js";
 import { ParamId } from "@/lib/schemas.js";
 import {
 	PROPOSAL_STATUS,
@@ -67,6 +68,7 @@ export const ProposalDetailSchema = ProposalSchema.extend({
 			memberId: z.string().uuid().optional(),
 			userId: z.string().uuid(),
 			projectRole: z.string(),
+			specificRole: z.string().nullable().optional(),
 			name: z.string(),
 		}),
 	),
@@ -111,7 +113,8 @@ export const CreateProposalSchema = z
 			.array(
 				z.object({
 					userId: z.string().uuid(),
-					projectRole: z.string().min(1),
+					projectRole: z.enum(PROJECT_ROLES),
+					specificRole: z.string().trim().max(100).nullable().optional(),
 				}),
 			)
 			.optional(),
@@ -157,7 +160,8 @@ export const UpdateProposalSchema = z
 			.array(
 				z.object({
 					userId: z.string().uuid(),
-					projectRole: z.string().trim().min(1).max(100),
+					projectRole: z.enum(PROJECT_ROLES),
+					specificRole: z.string().trim().max(100).nullable().optional(),
 				}),
 			)
 			.min(1)

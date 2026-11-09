@@ -49,6 +49,7 @@ export const ProjectDetailsMemberSchema = z.object({
 	userId: z.string(),
 	name: z.string(),
 	role: z.string(),
+	specificRole: z.string().nullable().optional(),
 	avatarUrl: z.string().nullable().optional(),
 });
 

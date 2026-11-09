@@ -1,0 +1,15 @@
+export const PROJECT_LEADER_ROLE = "Project Leader";
+export const TEAM_LEADER_ROLE = "Team Leader";
+export const PROJECT_MEMBER_ROLE = "Project Member";
+
+export const PROJECT_ROLES = [
+	PROJECT_LEADER_ROLE,
+	TEAM_LEADER_ROLE,
+	PROJECT_MEMBER_ROLE,
+] as const;
+
+export type ProjectRole = (typeof PROJECT_ROLES)[number];
+
+export function isProjectRole(value: string): value is ProjectRole {
+	return (PROJECT_ROLES as readonly string[]).includes(value);
+}

@@ -31,6 +31,7 @@ import { insertAuditLog } from "@/lib/audit.js";
 import { captureAuditDiff } from "@/lib/audit-diff.js";
 import { ApiError } from "@/lib/errors.js";
 import { createNotification } from "@/lib/notification.helpers.js";
+import { isProjectRole, PROJECT_LEADER_ROLE } from "@/lib/project-roles.js";
 import { supabase } from "@/lib/supabase.js";
 import {
 	type AuthUser,
@@ -39,10 +40,7 @@ import {
 	REVIEW_DECISION,
 	ROLE_NAMES,
 } from "@/lib/types.js";
-import {
-	isProjectLeader,
-	PROJECT_LEADER_ROLE,
-} from "@/services/auth-user.service.js";
+import { isProjectLeader } from "@/services/auth-user.service.js";
 import {
 	isPdfFile,
 	MAX_PDF_UPLOAD_BYTES,
@@ -100,6 +98,7 @@ type ProposalTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type ProposalMemberInput = {
 	userId: string;
 	projectRole: string;
+	specificRole?: string | null | undefined;
 };
 
 async function synchronizeProposalSdgs(
@@ -138,10 +137,21 @@ async function synchronizeProposalMembers(
 	members: ProposalMemberInput[],
 	currentUserId: string,
 ) {
-	const normalizedMembers = members.map((member) => ({
-		userId: member.userId,
-		projectRole: member.projectRole.trim(),
-	}));
+	const normalizedMembers = members.map((member) => {
+		const projectRole = member.projectRole.trim();
+		if (!isProjectRole(projectRole)) {
+			throw new ApiError(
+				400,
+				"INVALID_PROJECT_ROLE",
+				"Select a valid team role.",
+			);
+		}
+		return {
+			userId: member.userId,
+			projectRole,
+			specificRole: member.specificRole?.trim() || null,
+		};
+	});
 	const userIds = normalizedMembers.map((member) => member.userId);
 
 	if (userIds.length === 0) {
@@ -233,13 +243,18 @@ async function synchronizeProposalMembers(
 		if (existingMember) {
 			await tx
 				.update(proposalMembers)
-				.set({ projectRole: member.projectRole, archivedAt: null })
+				.set({
+					projectRole: member.projectRole,
+					specificRole: member.specificRole,
+					archivedAt: null,
+				})
 				.where(eq(proposalMembers.memberId, existingMember.memberId));
 		} else {
 			await tx.insert(proposalMembers).values({
 				proposalId,
 				userId: member.userId,
 				projectRole: member.projectRole,
+				specificRole: member.specificRole,
 			});
 		}
 	}
@@ -282,6 +297,7 @@ export async function getProposalEditData(proposalId: string) {
 				memberId: proposalMembers.memberId,
 				userId: proposalMembers.userId,
 				projectRole: proposalMembers.projectRole,
+				specificRole: proposalMembers.specificRole,
 				name: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
 			})
 			.from(proposalMembers)
@@ -327,7 +343,7 @@ export async function createProposalInTransaction(
 		sectorNames?: string[] | undefined;
 		sectors?: SectorSelection[] | undefined;
 		sdgIds?: number[] | undefined;
-		members?: { userId: string; projectRole: string }[] | undefined;
+		members?: ProposalMemberInput[] | undefined;
 	},
 	user: AuthUser,
 	ipAddress = "127.0.0.1",

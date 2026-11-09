@@ -121,7 +121,10 @@ export function ProjectDetailsPage({
 					: "",
 				budgetPartner: Number(editProposalData.budgetPartner ?? 0),
 				budgetNeust: Number(editProposalData.budgetNeust ?? 0),
-				members: editProposalData.members ?? [],
+				members: (editProposalData.members ?? []).map((member) => ({
+					...member,
+					specificRole: member.specificRole ?? "",
+				})),
 			}
 		: undefined;
 

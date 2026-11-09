@@ -149,6 +149,7 @@ export function ProjectOverviewCard({
 											</span>
 											<span className="text-xs text-muted-foreground">
 												{member.role}
+												{member.specificRole ? ` · ${member.specificRole}` : ""}
 											</span>
 										</div>
 									</div>

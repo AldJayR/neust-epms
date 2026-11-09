@@ -11,6 +11,7 @@ import {
 	dashboardYearSchema,
 	periodMetadataSchema,
 } from "@/lib/dashboard-year";
+import { PROJECT_ROLES } from "@/lib/project-roles";
 import {
 	authorizeSessionUser,
 	getValidAccessToken,
@@ -60,7 +61,8 @@ const createProposalSchema = z.object({
 		.array(
 			z.object({
 				userId: z.uuid(),
-				projectRole: z.string().min(1),
+				projectRole: z.enum(PROJECT_ROLES),
+				specificRole: z.string().trim().max(100).nullable().optional(),
 			}),
 		)
 		.optional(),
@@ -107,6 +109,7 @@ export interface CreateProposalInput {
 	members?: {
 		userId: string;
 		projectRole: string;
+		specificRole?: string | null;
 	}[];
 }
 
@@ -361,7 +364,8 @@ const updateProposalSchema = z.object({
 		.array(
 			z.object({
 				userId: z.string().uuid(),
-				projectRole: z.string().min(1).max(100),
+				projectRole: z.enum(PROJECT_ROLES),
+				specificRole: z.string().trim().max(100).nullable().optional(),
 			}),
 		)
 		.min(1),

@@ -35,6 +35,7 @@ export async function listMembers(
 			proposalId: proposalMembers.proposalId,
 			userId: proposalMembers.userId,
 			projectRole: proposalMembers.projectRole,
+			specificRole: proposalMembers.specificRole,
 			addedAt: proposalMembers.addedAt,
 		})
 		.from(proposalMembers)
@@ -141,9 +142,14 @@ export async function addMember(
 		}
 
 		if (existingMember) {
+			const specificRole = body.specificRole?.trim() || null;
 			const [reactivatedMember] = await tx
 				.update(proposalMembers)
-				.set({ projectRole: body.projectRole, archivedAt: null })
+				.set({
+					projectRole: body.projectRole,
+					specificRole,
+					archivedAt: null,
+				})
 				.where(eq(proposalMembers.memberId, existingMember.memberId))
 				.returning();
 
@@ -156,7 +162,11 @@ export async function addMember(
 					userId: authUser.userId,
 					action: `Restored member ${existingMember.memberId} on proposal ${proposalId}`,
 					tableAffected: "proposal_members",
-					newValue: { archivedAt: null, projectRole: body.projectRole },
+					newValue: {
+						archivedAt: null,
+						projectRole: body.projectRole,
+						specificRole,
+					},
 					ipAddress,
 				},
 				tx,
@@ -171,6 +181,7 @@ export async function addMember(
 				proposalId,
 				userId: body.userId,
 				projectRole: body.projectRole,
+				specificRole: body.specificRole?.trim() || null,
 			})
 			.returning();
 

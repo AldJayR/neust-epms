@@ -3,8 +3,9 @@ import { db } from "@/db/client.js";
 import { proposalMembers } from "@/db/schema/proposal-members.js";
 import { roles } from "@/db/schema/roles.js";
 import { users } from "@/db/schema/users.js";
+import { PROJECT_LEADER_ROLE } from "@/lib/project-roles.js";
 
-export const PROJECT_LEADER_ROLE = "Project Leader";
+export { PROJECT_LEADER_ROLE } from "@/lib/project-roles.js";
 
 export async function isProjectLeader(
 	proposalId: string,

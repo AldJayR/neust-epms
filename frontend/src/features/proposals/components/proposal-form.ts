@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { sectorSelectionSchema } from "@/features/beneficiary-sectors/schema";
+import { PROJECT_ROLES } from "@/lib/project-roles";
 
 export const formSchema = z
 	.object({
@@ -24,7 +25,8 @@ export const formSchema = z
 			.array(
 				z.object({
 					userId: z.uuid(),
-					projectRole: z.string().min(1, "Role is required"),
+					projectRole: z.enum(PROJECT_ROLES, "Role is required"),
+					specificRole: z.string().max(100).optional(),
 					name: z.string(),
 				}),
 			)

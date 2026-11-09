@@ -3,6 +3,7 @@ export interface ProjectMember {
 	userId: string;
 	name: string;
 	role: string;
+	specificRole?: string | null;
 	avatarUrl?: string;
 }
 
