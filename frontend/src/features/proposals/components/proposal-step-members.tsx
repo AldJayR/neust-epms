@@ -15,7 +15,11 @@ import {
 } from "@/components/ui/select";
 import { searchUsersFn } from "@/features/auth";
 import type { AuthUser } from "@/lib/auth";
-import { MEMBER_ROLE_OPTIONS, PROJECT_MEMBER_ROLE } from "@/lib/project-roles";
+import {
+	PROJECT_LEADER_ROLE,
+	PROJECT_MEMBER_ROLE,
+	PROJECT_ROLES,
+} from "@/lib/project-roles";
 import type { FormValues } from "./proposal-form";
 
 export function ProposalStepMembers({
@@ -127,9 +131,15 @@ export function ProposalStepMembers({
 													<SelectValue />
 												</SelectTrigger>
 												<SelectContent>
-													{MEMBER_ROLE_OPTIONS.map((role) => (
-														<SelectItem key={role} value={role}>
-															{role}
+													{PROJECT_ROLES.map((role) => (
+														<SelectItem
+															key={role}
+															value={role}
+															disabled={role === PROJECT_LEADER_ROLE}
+														>
+															{role === PROJECT_LEADER_ROLE
+																? `${role} (current)`
+																: role}
 														</SelectItem>
 													))}
 												</SelectContent>
