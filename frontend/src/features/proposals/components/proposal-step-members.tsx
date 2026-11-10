@@ -147,12 +147,14 @@ export function ProposalStepMembers({
 										)}
 									/>
 								)}
-								<Input
-									{...form.register(`members.${index}.specificRole`)}
-									placeholder="Specific role (optional)"
-									maxLength={100}
-									className="h-8 flex-1 text-xs"
-								/>
+								{field.userId !== user.userId && (
+									<Input
+										{...form.register(`members.${index}.specificRole`)}
+										placeholder="Specific role (optional)"
+										maxLength={100}
+										className="h-8 flex-1 text-xs"
+									/>
+								)}
 							</div>
 						</div>
 					))}

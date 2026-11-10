@@ -282,7 +282,10 @@ export function useProposalWizard({
 						members: values.members.map((member) => ({
 							userId: member.userId,
 							projectRole: member.projectRole,
-							specificRole: member.specificRole || null,
+							specificRole:
+								member.userId === user.userId
+									? null
+									: member.specificRole || null,
 						})),
 					},
 				});
@@ -308,7 +311,10 @@ export function useProposalWizard({
 						members: values.members.map((member) => ({
 							userId: member.userId,
 							projectRole: member.projectRole,
-							specificRole: member.specificRole || null,
+							specificRole:
+								member.userId === user.userId
+									? null
+									: member.specificRole || null,
 						})),
 					},
 				});
