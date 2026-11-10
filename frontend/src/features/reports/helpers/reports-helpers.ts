@@ -1,5 +1,13 @@
 import type { ReportItem } from "@/types/report";
 
+const REPORTABLE_PROJECT_STATUSES = ["Ongoing", "Overdue"] as const;
+
+export function isReportableProjectStatus(status: string): boolean {
+	return REPORTABLE_PROJECT_STATUSES.includes(
+		status as (typeof REPORTABLE_PROJECT_STATUSES)[number],
+	);
+}
+
 export function filterReportsForView(
 	reports: ReportItem[],
 	{

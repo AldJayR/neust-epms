@@ -25,7 +25,7 @@ export function ReportsPage() {
 				title={<h1 className="text-2xl font-semibold text-heading">Reports</h1>}
 				actions={
 					<div className="flex items-center gap-3">
-						{(view.isFaculty || view.isRET) && (
+						{view.canSubmitReports && (
 							<Button onClick={() => setIsSubmissionPickerOpen(true)}>
 								<FilePlus className="size-4" />
 								Submit Report

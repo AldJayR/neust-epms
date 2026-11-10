@@ -14,6 +14,7 @@ import {
 	filterReportsByType,
 	filterReportsForView,
 	getProgressReportSequences,
+	isReportableProjectStatus,
 	paginateReports,
 } from "../helpers/reports-helpers";
 
@@ -123,13 +124,18 @@ export function useReportsView() {
 		progressReportSequences,
 		handleViewReport,
 	);
+	const reportableProjects =
+		projectsData?.items.filter(
+			(project) =>
+				project.leaderId === user?.userId &&
+				isReportableProjectStatus(project.projectStatus),
+		) ?? [];
 
 	return {
 		user,
-		projects:
-			projectsData?.items.filter(
-				(project) => project.leaderId === user?.userId,
-			) ?? [],
+		projects: reportableProjects,
+		canSubmitReports:
+			Boolean(isFaculty || isRET) && reportableProjects.length > 0,
 		isFaculty: Boolean(isFaculty),
 		isRET: Boolean(isRET),
 		activeTab,

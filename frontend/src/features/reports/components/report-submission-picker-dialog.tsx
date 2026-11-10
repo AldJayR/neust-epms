@@ -20,6 +20,7 @@ import type { FacultyProjectItem } from "@/features/faculty/public";
 import { projectReportingScheduleQueryOptions } from "@/features/projects/public";
 import { canSubmitMilestone } from "@/features/projects/reporting-schedule.functions";
 import { toManilaDisplayDate as toStableDate } from "@/lib/dates";
+import { isReportableProjectStatus } from "../helpers/reports-helpers";
 import { SubmitReportModal } from "./submit-report-modal";
 
 interface ReportSubmissionPickerDialogProps {
@@ -50,7 +51,7 @@ export function ReportSubmissionPickerDialog({
 		enabled: open && Boolean(projectId),
 	});
 	const eligibleProjects = projects.filter((project) =>
-		["Ongoing", "Overdue"].includes(project.projectStatus),
+		isReportableProjectStatus(project.projectStatus),
 	);
 	const milestones = schedule?.schedule.milestones.filter(
 		(_milestone, index, all) => canSubmitMilestone(all, index),
